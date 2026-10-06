@@ -46,7 +46,7 @@ SELF_SERVICE = "eduino-usb.service"
 UNIT_FILE = "/etc/systemd/system/robot-console.service"
 STATE_PATH = "/api/state"
 DEFAULT_PORT = 8080
-HEALTH_S = 30
+HEALTH_S = 60       # the real server starts in a few seconds; a slow first start must not undo the update
 ZIP_MAX = 1 << 30
 # the files the eduino-usb service itself runs: when an update changes one, the service restarts
 SELF_FILES = ("usb_setup.py", "kit_update.py", "wifi.py", "robot_label.py")
