@@ -14,12 +14,14 @@ python3 server.py --camera 0,2     # 카메라 번호 지정 (기본 auto: /dev/
 python3 server.py --camera kit.png,hand.png # 카메라 대신 그림 파일 (화면 시험용, 쉼표로 여러 대)
 sudo python3 autostart.py          # 한 번만: 로봇 전원을 켜면 서버가 저절로 켜지게 (systemd, --off 로 되돌림)
 sudo python3 wifi.py EDUINO-LAB 비밀번호   # 교실 Wi-Fi 로 옮기기 (--hotspot: 로봇 핫스팟으로, 인자 없이: 지금 연결 보기)
-sudo python3 usb_setup.py --watch  # (eduino-usb 서비스) USB 의 eduino/wifi.txt 를 꽂으면 적용 — 설치는 USB 키트의 install.py
+sudo python3 usb_setup.py --watch  # (eduino-usb 서비스) USB 를 꽂으면 서명된 새 키트로 업데이트(kit_update.py)하고 eduino/wifi.txt 적용 — 설치는 USB 키트의 install.py
 python3 agv_server.py              # 이동 로봇(myAGV 2023) 에서: 같은 화면 파일로 주행 콘솔 (--demo: 가짜 로봇)
 sudo python3 autostart.py --agv    # myAGV 에서 자동 시작
 ```
 
 - `static/` 은 저장소에 넣지 않습니다. `web-typescript/` 에서 `npm run build:robot` 으로 만듭니다.
+- `kit_signing_public.pem` 은 USB 키트 서명을 확인하는 공개 키입니다 (`kit_update.py` 가 씀, 비밀 키는 저장소 밖).
+  `VERSION` 은 저장소에 없고 `make_usb_kit.py` 가 키트를 만들 때 넣습니다 (`../README.md` 의 USB 키트 절).
 - 화면은 배포 사이트와 같은 웹 앱입니다. `/api/state` 가 응답하면 로봇 모드로 바뀝니다
   (`web-typescript/src/engine/simulator/robotLink.ts`).
 

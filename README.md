@@ -70,16 +70,23 @@ npm run gen:curriculum    # content-markdown/*.md → src/engine/education/curri
 
 ```bash
 sh desktop-go/build.sh                              # build:robot 후 desktop-go/dist/PhysicalAI-Simulator.zip (exe + 읽어보세요)
-python3 robot-python/tools/make_usb_kit.py -o dist  # dist/eduino_usb.zip (USB 키트) · dist/robot_console.zip
+export EDUINO_SIGNING_KEY=~/keys/eduino-kit-signing.pem   # USB 키트 서명용 비밀 키 (저장소 밖, 없으면 서명 없는 키트)
+python3 robot-python/tools/make_usb_kit.py -o dist  # dist/eduino_usb.zip (USB 키트) · dist/robot_console.zip (+ .sig)
 python3 robot-python/tools/make_release.py -o dist  # 배포 묶음: exe · USB · 매뉴얼 PDF · 수업 자료 PDF
 python3 -m compileall robot-python                  # 파이썬 문법 검사
 python3 robot-python/tools/check_hand_camera.py     # 손 카메라 좌표 왕복 (OpenCV · numpy, 로봇 없이)
+python3 robot-python/tools/check_usb_update.py      # USB 자동 업데이트 자체 시험 (로봇 없이, openssl 필요)
 ```
 
-**로봇에 올리기**: USB 키트의 `eduino/` 폴더를 USB 맨 위에 복사 → 로봇 화면에서 `설치하기` 더블클릭
-(`install.py`: `robot_console.zip` 을 로봇의 `~/robot_console/` 에 풀고, `autostart.py` 로 systemd 서비스 `robot-console` 을,
-그리고 USB 감시 서비스 `eduino-usb` 를 설치한 뒤 `wifi.txt` 를 적용).
-그 뒤로는 `eduino/wifi.txt` 만 고쳐 꽂으면 됩니다. 로봇 쪽 폴더 이름 `~/robot_console` 은 이미 설치된 로봇과 맞추려고 그대로 둡니다.
+**로봇에 올리기**: USB 키트의 `eduino/` 폴더를 USB 에 복사 → 로봇에 꽂고 로봇 터미널에서 한 줄
+`sudo python3 "$(find /media /mnt -maxdepth 6 -path '*eduino/install.py' 2>/dev/null | head -1)"`
+(FAT USB 의 파일에는 실행 권한이 없어 `설치하기` 를 더블클릭하면 로봇에 따라 글자 편집기로 열립니다).
+`install.py` 는 `robot_console.zip` 을 로봇의 `~/robot_console/` 에 풀고(`VERSION` 포함), `autostart.py` 로 systemd 서비스
+`robot-console` 을, 그리고 USB 감시 서비스 `eduino-usb` 를 설치한 뒤 `wifi.txt` 를 적용합니다.
+그 뒤로는 USB 를 꽂기만 하면 됩니다: `wifi.txt` 가 바뀌었으면 적용하고, 서명된 키트(`robot_console.zip.sig`)의
+`VERSION` 이 로봇보다 새것이면 로봇이 스스로 업데이트합니다 (실패하면 이전 버전으로 되돌림, 결과 파일에 버전 · 결과).
+서명 키 · 버전 · 업데이트 순서는 [`robot-python/README.md`](robot-python/README.md).
+로봇 쪽 이름 `~/robot_console` · `robot-console` · `eduino-usb` 는 이미 설치된 로봇과 맞추려고 그대로 둡니다.
 손으로 할 때는 [`manuals/setup/usb-kit.md`](manuals/setup/usb-kit.md), [`manuals/robot-arm/robot-console.md`](manuals/robot-arm/robot-console.md).
 로봇 없이 서버 시험: `cd robot-python/server && python3 server.py --demo` → `http://localhost:8080/console`.
 
