@@ -1,0 +1,1002 @@
+<title>로봇팔 수업 콘솔</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  /* Single light ("white tone") design by request: no dark variant. */
+  :root {
+    --page: #ffffff;
+    --soft: #f5f7fa;
+    --work: #fafbfc;
+    --line: #e4e8ed;
+    --ink: #1f2933;
+    --muted: #6b7682;
+    --faint: #a2abb5;
+    --sim: #1fae66;
+    --sim-soft: #e4f6ec;
+    --real: #f7851e;
+    --real-soft: #fff0e1;
+    --stop: #ef4638;
+    --stop-soft: #fdeceb;
+    --blk-start: #1fae66;
+    --blk-move: #7a5cf5;
+    --blk-grip: #f59a1b;
+    --blk-flow: #1ea7df;
+    --blk-adv: #7d8996;
+    --stage: #f4f6f9;
+    --floor: #e9edf1;
+    --grid-a: #cfd6dd;
+    --grid-b: #e0e5ea;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    background: var(--page);
+    color: var(--ink);
+    font-family: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    padding-inline: 16px;
+    padding-block: 12px 24px;
+  }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--blk-flow); outline-offset: 2px; }
+
+  .app { max-width: 1320px; margin-inline: auto; display: grid; gap: 12px; }
+
+  /* Header ------------------------------------------------------------- */
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 2px; }
+  .top h1 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
+  .conn { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; color: var(--muted); }
+  .conn .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--sim); box-shadow: 0 0 0 3px var(--sim-soft); }
+
+  /* Layout ------------------------------------------------------------- */
+  .layout { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 14px; align-items: start; }
+  .stage-col { display: grid; gap: 10px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); }
+  .card { border: 1px solid var(--line); border-radius: 14px; background: var(--page); min-width: 0; }
+
+  /* Stage -------------------------------------------------------------- */
+  .viewport { position: relative; height: min(460px, 56vh); min-height: 320px; background: var(--stage); border-radius: 14px; overflow: hidden; border: 1px solid var(--line); }
+  .viewport canvas { display: block; width: 100%; height: 100%; }
+  .mission {
+    position: absolute; top: 10px; left: 10px; display: inline-flex; align-items: center; gap: 8px;
+    padding: 5px 11px; border-radius: 999px; background: var(--page); border: 1px solid var(--line);
+    font-size: 13px; font-weight: 500;
+  }
+  .mission .sw { width: 11px; height: 11px; border-radius: 3px; background: #f5c33b; box-shadow: 0 0 0 1px rgba(0,0,0,.08); }
+  .mission.done { background: var(--sim-soft); border-color: transparent; color: var(--sim); font-weight: 600; }
+  .badge {
+    position: absolute; top: 10px; right: 10px; padding: 5px 11px; border-radius: 999px; font-size: 13px; font-weight: 600;
+  }
+  .badge.sim { background: var(--sim-soft); color: var(--sim); }
+  .badge.real { background: var(--real-soft); color: var(--real); }
+  .badge.stop { background: var(--stop-soft); color: var(--stop); }
+
+  .run-bar { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: none; border-radius: 12px;
+    padding: 12px 14px; font-weight: 700; font-size: 15px; color: #fff; cursor: pointer; white-space: nowrap;
+  }
+  .btn-sim { background: var(--sim); }
+  .btn-real { background: var(--real); }
+  .btn-stop { background: var(--stop); padding-inline: 18px; }
+  .btn:disabled { background: var(--soft); color: var(--faint); cursor: not-allowed; box-shadow: inset 0 0 0 1px var(--line); }
+  .btn:not(:disabled):hover { filter: brightness(1.05); }
+  .lock { margin: -2px 0 0; font-size: 12.5px; color: var(--muted); }
+  .lock.ok { color: var(--sim); }
+
+  .log { margin: 0; padding: 4px 0; list-style: none; max-height: 150px; overflow-y: auto; }
+  .log li { display: grid; grid-template-columns: 3.2rem minmax(0, 1fr); gap: 8px; align-items: baseline; padding: 3px 12px; font-size: 13px; }
+  .tag { font-size: 11.5px; font-weight: 600; padding: 1px 0; border-radius: 5px; text-align: center; }
+  .tag.info { background: var(--soft); color: var(--muted); }
+  .tag.sim { background: var(--sim-soft); color: var(--sim); }
+  .tag.real { background: var(--real-soft); color: var(--real); }
+  .tag.ok { background: var(--sim-soft); color: var(--sim); }
+  .tag.warn { background: #fff6d8; color: #9a6b00; }
+  .tag.err { background: var(--stop-soft); color: var(--stop); }
+  .log .fix { display: block; color: var(--muted); font-size: 12.5px; }
+
+  /* Editor ------------------------------------------------------------- */
+  .editor { display: flex; flex-direction: column; min-height: 620px; }
+  .tabs { display: flex; gap: 4px; padding: 6px; border-bottom: 1px solid var(--line); }
+  .tab {
+    flex: 1; border: none; background: transparent; border-radius: 9px; padding: 9px 10px; cursor: pointer;
+    font-weight: 600; color: var(--muted); display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .tab .n {
+    width: 20px; height: 20px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 12px;
+    background: var(--soft); color: var(--muted);
+  }
+  .tab[aria-selected="true"] { background: var(--soft); color: var(--ink); }
+  .tab[aria-selected="true"] .n { background: var(--ink); color: #fff; }
+  .pane { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+
+  /* Stage 1 */
+  .direct { padding: 16px; display: grid; gap: 18px; align-content: start; }
+  .sliders { display: grid; gap: 10px; }
+  .srow { display: grid; grid-template-columns: 2.2rem 1fr 3.4rem; gap: 12px; align-items: center; }
+  .srow label { font-weight: 600; color: var(--muted); font-size: 13px; }
+  .srow input { width: 100%; accent-color: var(--blk-move); }
+  .srow output { text-align: right; font-variant-numeric: tabular-nums; font-family: "JetBrains Mono", monospace; font-size: 13px; }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .seg button { border: none; background: var(--page); padding: 8px 16px; font-weight: 600; cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button:hover { background: var(--soft); }
+  .label { font-size: 13px; font-weight: 600; color: var(--muted); min-width: 3.4rem; }
+  .toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; cursor: pointer; margin-left: auto; }
+  .toggle input { width: 16px; height: 16px; accent-color: var(--blk-move); }
+  .btn-rec {
+    border: 1px solid var(--line); background: var(--page); border-radius: 10px; padding: 8px 14px; font-weight: 600; cursor: pointer;
+  }
+  .btn-rec .rd { color: var(--stop); }
+  .btn-rec:hover { background: var(--soft); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 4px; padding: 4px 6px 4px 11px; border-radius: 999px;
+    background: #efeaff; color: var(--blk-move); font-size: 13px; font-weight: 600;
+  }
+  .chip button { border: none; background: transparent; color: inherit; cursor: pointer; width: 20px; height: 20px; border-radius: 50%; }
+  .chip button:hover { background: rgba(122,92,245,.15); }
+  .empty { color: var(--faint); font-size: 13px; }
+
+  /* Stage 2: blocks */
+  .blocks { flex: 1; display: grid; grid-template-columns: 13.5rem minmax(0, 1fr); min-height: 0; }
+  .palette { border-right: 1px solid var(--line); padding: 12px; display: grid; gap: 5px; align-content: start; overflow-y: auto; background: var(--page); }
+  .palette .grp { font-size: 12px; font-weight: 600; color: var(--faint); margin: 8px 2px 1px; }
+  .palette .grp:first-child { margin-top: 0; }
+  .palette.trash { background: var(--stop-soft); }
+  .workspace {
+    padding: 16px; overflow: auto; min-height: 420px;
+    background-color: var(--work);
+    background-image: radial-gradient(circle, #dfe4ea 1px, transparent 1.2px);
+    background-size: 18px 18px;
+  }
+  .script { display: grid; gap: 3px; justify-items: start; padding-bottom: 60px; min-height: 100%; }
+
+  .block {
+    position: relative; display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px;
+    padding: 8px 12px; border-radius: 9px; color: #fff; font-weight: 600; font-size: 13.5px;
+    cursor: grab; user-select: none; max-width: 100%;
+  }
+  .block::after {
+    content: ""; position: absolute; left: 16px; bottom: -5px; width: 18px; height: 6px; background: inherit;
+    border-radius: 0 0 6px 6px; z-index: 1;
+  }
+  .block.start { background: var(--blk-start); border-radius: 18px 18px 9px 9px; padding-top: 10px; cursor: default; }
+  .block.move { background: var(--blk-move); }
+  .block.grip { background: var(--blk-grip); }
+  .block.flow { background: var(--blk-flow); }
+  .block.adv { background: var(--blk-adv); }
+  .palette .block { width: 100%; font-size: 13px; padding: 7px 10px; }
+  .block.running { box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--run, var(--sim)); }
+  .block.drop-before { box-shadow: 0 -4px 0 0 var(--ink); }
+  .block.dragging { opacity: .45; }
+
+  .field {
+    appearance: none; -webkit-appearance: none; border: none; border-radius: 999px; background: #fff; color: var(--ink);
+    padding: 2px 10px; font-weight: 600; font-size: 13px; height: 24px; line-height: 20px;
+  }
+  select.field {
+    padding-right: 24px; cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0h10L5 6z' fill='%236b7682'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 9px center;
+  }
+  input.field { width: 3.6rem; text-align: center; font-family: "JetBrains Mono", monospace; font-weight: 500; }
+  input.field.sm { width: 3rem; }
+  .del {
+    border: none; background: rgba(0,0,0,.18); color: #fff; width: 20px; height: 20px; border-radius: 50%;
+    cursor: pointer; font-size: 12px; line-height: 1; opacity: 0; margin-left: 2px;
+  }
+  .block:hover > .del, .block:focus-within > .del, .c-head:hover > .del, .c-head:focus-within > .del { opacity: 1; }
+  @media (hover: none) { .del { opacity: 1; } }
+
+  .block.repeat { display: grid; padding: 0; gap: 0; background: var(--blk-flow); min-width: 14rem; }
+  .block.repeat::after { left: 16px; }
+  .c-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 12px; }
+  .c-body {
+    margin-left: 16px; background: var(--work); border-radius: 0 8px 8px 0; padding: 6px 8px 10px 6px;
+    display: grid; gap: 3px; justify-items: start; min-height: 40px; min-width: 10rem;
+  }
+  .c-body.drop-into { background: #e3f4fb; }
+  .c-foot { height: 12px; }
+
+  .adv-joints { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+
+  /* Stage 3: python */
+  .code-wrap { flex: 1; display: grid; grid-template-columns: auto minmax(0, 1fr); background: var(--work); min-height: 420px; border-radius: 0 0 14px 14px; }
+  .gutter {
+    padding: 14px 6px 14px 12px; text-align: right; color: var(--faint); font-family: "JetBrains Mono", monospace;
+    font-size: 13px; line-height: 1.65; user-select: none; border-right: 1px solid var(--line); overflow: hidden;
+    font-variant-numeric: tabular-nums;
+  }
+  .gutter span { display: block; padding-inline: 5px; border-radius: 4px; }
+  .gutter span.running { background: var(--run, var(--sim)); color: #fff; }
+  .gutter span.err { background: var(--stop); color: #fff; }
+  textarea.code {
+    border: none; resize: none; background: transparent; padding: 14px 16px; font-family: "JetBrains Mono", monospace;
+    font-size: 13px; line-height: 1.65; white-space: pre; overflow: auto; width: 100%; tab-size: 4;
+  }
+  textarea.code:focus-visible { outline: none; }
+
+  @media (max-width: 920px) {
+    .layout { grid-template-columns: minmax(0, 1fr); }
+    .stage-col { position: static; }
+    .editor { min-height: 0; }
+  }
+  @media (max-width: 560px) {
+    .blocks { grid-template-columns: minmax(0, 1fr); }
+    .palette { border-right: none; border-bottom: 1px solid var(--line); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .palette .grp { grid-column: 1 / -1; }
+    .run-bar { grid-template-columns: 1fr 1fr; }
+    .run-bar .btn-stop { grid-column: 1 / -1; }
+    .tab { font-size: 13px; padding-inline: 4px; }
+  }
+</style>
+
+<div class="app">
+  <header class="top">
+    <h1>로봇팔 수업 콘솔</h1>
+    <span class="conn"><span class="dot"></span>mycobot-01 연결됨</span>
+  </header>
+
+  <div class="layout">
+    <section class="stage-col" aria-label="로봇">
+      <div class="viewport" id="viewport">
+        <span class="mission" id="mission"><span class="sw"></span>노란 상자를 초록 칸으로 옮기기</span>
+        <span class="badge" id="badge" hidden></span>
+      </div>
+      <div class="run-bar">
+        <button class="btn btn-sim" id="btn-sim" type="button">▶ 시뮬레이션</button>
+        <button class="btn btn-real" id="btn-real" type="button" disabled>▶ 로봇에서 실행</button>
+        <button class="btn btn-stop" id="btn-stop" type="button" aria-label="정지 (Esc)">■ 정지</button>
+      </div>
+      <p class="lock" id="lock">시뮬레이션에 성공하면 로봇에서 실행할 수 있어요.</p>
+      <div class="card"><ul class="log" id="log" aria-live="polite"></ul></div>
+    </section>
+
+    <section class="card editor" aria-label="편집기">
+      <nav class="tabs" role="tablist" aria-label="단계">
+        <button class="tab" role="tab" id="tab-1" aria-controls="pane-1" aria-selected="false" type="button"><span class="n">1</span>직접 움직이기</button>
+        <button class="tab" role="tab" id="tab-2" aria-controls="pane-2" aria-selected="true" type="button"><span class="n">2</span>블록 코딩</button>
+        <button class="tab" role="tab" id="tab-3" aria-controls="pane-3" aria-selected="false" type="button"><span class="n">3</span>파이썬</button>
+      </nav>
+
+      <div class="pane" role="tabpanel" id="pane-1" aria-labelledby="tab-1" hidden>
+        <div class="direct">
+          <div class="sliders" id="sliders"></div>
+          <div class="row">
+            <span class="label">그리퍼</span>
+            <span class="seg"><button type="button" id="g-open">열기</button><button type="button" id="g-close">닫기</button></span>
+            <label class="toggle" for="free"><input type="checkbox" id="free">손으로 움직이기</label>
+          </div>
+          <div class="row">
+            <button class="btn-rec" id="rec" type="button"><span class="rd">●</span> 지금 자세 기록</button>
+            <div class="chips" id="chips"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pane" role="tabpanel" id="pane-2" aria-labelledby="tab-2">
+        <div class="blocks">
+          <div class="palette" id="palette" aria-label="블록 꾸러미"></div>
+          <div class="workspace" id="workspace">
+            <div class="script" id="script"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pane" role="tabpanel" id="pane-3" aria-labelledby="tab-3" hidden>
+        <div class="code-wrap">
+          <div class="gutter" id="gutter" aria-hidden="true"></div>
+          <textarea class="code" id="code" spellcheck="false" aria-label="파이썬 코드"></textarea>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(() => {
+  /* Robot facts. Joint origins: RDK X5 URDF verbatim
+     (mycobot_description/urdf/mycobot_280_rdkx5/mycobot_280_rdkx5.urdf).
+     Limits: adopted per-axis limits (src/engine/robot/limits.ts). */
+  const CHAIN = [
+    { xyz: [0, 0, 0.13956], rpy: [0, 0, 0] },
+    { xyz: [0, 0, -0.001], rpy: [0, 1.5708, -1.5708] },
+    { xyz: [-0.1104, 0, 0], rpy: [0, 0, 0] },
+    { xyz: [-0.096, 0, 0.06462], rpy: [0, 0, -1.5708] },
+    { xyz: [0, -0.07318, 0], rpy: [1.5708, -1.5708, 0] },
+    { xyz: [0, 0.0456, 0], rpy: [-1.5708, 0, 0] },
+  ];
+  const MIN = [-168, -135, -150, -145, -155, -180];
+  const MAX = [168, 135, 150, 145, 160, 180];
+  const HOME = [0, 35, 10, -70, -90, 0];
+  const SPEED_CAP = 50;
+  const SPEEDS = [['느리게', 20], ['보통', 35], ['빠르게', 50]];
+  /* Named poses. Every pose and every move between them in the example
+     program was checked by FK to stay >= 53 mm above the table. */
+  const PRESETS = {
+    '물건 위': [35, 35, 10, -70, -90, 0],
+    '물건 잡기': [35, 10, 10, -70, -90, 0],
+    '놓을 곳 위': [-35, 35, 10, -70, -90, 0],
+    '놓을 곳': [-35, 10, 10, -70, -90, 0],
+  };
+  const recorded = {};   // '내 자세 1': [..]
+  const allPoses = () => ({ ...PRESETS, ...recorded });
+
+  const START_CODE = `from edu import robot
+
+robot.home()
+robot.gripper.open()
+robot.go_pose("물건 위")
+robot.go_pose("물건 잡기")
+robot.gripper.close()
+robot.go_pose("물건 위")
+robot.go_pose("놓을 곳 위")
+robot.go_pose("놓을 곳")
+robot.gripper.open()
+robot.go_pose("놓을 곳 위")
+robot.home()
+`;
+
+  const $ = (id) => document.getElementById(id);
+  const codeEl = $('code');
+
+  /* ================= Python <-> program ================= */
+  const NUM = String.raw`-?\d+(?:\.\d+)?`;
+  const RE = {
+    imp: /^from\s+edu\s+import\s+robot$/,
+    pass: /^pass$/,
+    repeat: /^for\s+\w+\s+in\s+range\(\s*(\d+)\s*\)\s*:$/,
+    home: /^robot\.home\(\s*\)$/,
+    open: /^robot\.gripper\.open\(\s*\)$/,
+    close: /^robot\.gripper\.close\(\s*\)$/,
+    wait: new RegExp(String.raw`^robot\.wait\(\s*(${NUM})\s*\)$`),
+    speed: new RegExp(String.raw`^robot\.set_speed\(\s*(${NUM})\s*\)$`),
+    pose: /^robot\.go_pose\(\s*["']([^"']+)["']\s*\)$/,
+    joint: new RegExp(String.raw`^robot\.move_joint\(\s*(\d+)\s*,\s*(${NUM})\s*\)$`),
+    move: new RegExp(String.raw`^robot\.move_joints\(\s*\[([^\]]*)\]\s*(?:,\s*speed\s*=\s*(${NUM}))?\s*\)$`),
+  };
+
+  function parseLine(body, line, errors) {
+    let m;
+    if (RE.home.test(body)) return { type: 'home', line };
+    if (RE.open.test(body)) return { type: 'grip', open: true, line };
+    if (RE.close.test(body)) return { type: 'grip', open: false, line };
+    if ((m = body.match(RE.wait))) return { type: 'wait', sec: Number(m[1]), line };
+    if ((m = body.match(RE.speed))) return { type: 'speed', value: Number(m[1]), line };
+    if ((m = body.match(RE.pose))) return { type: 'pose', name: m[1], line };
+    if ((m = body.match(RE.joint))) return { type: 'joint', j: Number(m[1]), deg: Number(m[2]), line };
+    if ((m = body.match(RE.move))) {
+      const joints = m[1].split(',').map((s) => s.trim()).filter(Boolean).map(Number);
+      if (joints.length !== 6 || joints.some((n) => !Number.isFinite(n))) {
+        errors.push({ line, msg: `관절 각도는 숫자 6개가 필요해요 (지금 ${joints.length}개).`, fix: '예: robot.move_joints([0, 30, 0, 0, 0, 0])' });
+        return null;
+      }
+      return { type: 'move', joints, speed: m[2] !== undefined ? Number(m[2]) : null, line };
+    }
+    errors.push({ line, msg: `알 수 없는 명령이에요: ${body}`, fix: '철자와 괄호를 확인해 주세요.' });
+    return null;
+  }
+
+  function parse(code) {
+    const steps = [], errors = [];
+    let loop = null;
+    code.split('\n').forEach((raw, idx) => {
+      const line = idx + 1;
+      const noComment = raw.replace(/\s+#.*$/, '').replace(/^\s*#.*$/, '');
+      if (!noComment.trim()) return;
+      const indent = noComment.match(/^ */)[0].length;
+      const body = noComment.trim();
+      if (RE.imp.test(body)) return;
+      if (indent === 0) loop = null;
+      else if (!loop) { errors.push({ line, msg: '이 줄은 앞에 빈칸이 필요 없어요.', fix: '줄 앞의 빈칸을 지워 주세요.' }); return; }
+      let m;
+      if ((m = body.match(RE.repeat))) {
+        if (indent > 0) { errors.push({ line, msg: '반복 안에 반복은 아직 쓸 수 없어요.' }); return; }
+        loop = { type: 'repeat', times: Number(m[1]), body: [], line };
+        steps.push(loop);
+        return;
+      }
+      if (RE.pass.test(body)) return;
+      const step = parseLine(body, line, errors);
+      if (step) (indent > 0 ? loop.body : steps).push(step);
+    });
+    return { steps, errors };
+  }
+
+  function serialize(steps) {
+    const out = ['from edu import robot', ''];
+    const one = (s) => {
+      switch (s.type) {
+        case 'home': return 'robot.home()';
+        case 'grip': return `robot.gripper.${s.open ? 'open' : 'close'}()`;
+        case 'wait': return `robot.wait(${s.sec})`;
+        case 'speed': return `robot.set_speed(${s.value})`;
+        case 'pose': return `robot.go_pose("${s.name}")`;
+        case 'joint': return `robot.move_joint(${s.j}, ${s.deg})`;
+        case 'move': return `robot.move_joints([${s.joints.join(', ')}]${s.speed ? `, speed=${s.speed}` : ''})`;
+        default: return '';
+      }
+    };
+    for (const s of steps) {
+      if (s.type === 'repeat') {
+        out.push(`for _ in range(${s.times}):`);
+        if (!s.body.length) out.push('    pass');
+        s.body.forEach((b) => out.push(`    ${one(b)}`));
+      } else out.push(one(s));
+    }
+    return out.join('\n') + '\n';
+  }
+
+  /* Safety check before anything moves. */
+  function check(steps) {
+    const errors = [], warnings = [], poses = allPoses();
+    const walk = (list) => list.forEach((s) => {
+      if (s.type === 'repeat') {
+        if (s.times < 1 || s.times > 20) errors.push({ line: s.line, msg: `${s.times}번 반복은 쓸 수 없어요.`, fix: '1에서 20 사이로 정해 주세요.' });
+        walk(s.body);
+      }
+      if (s.type === 'joint') {
+        if (s.j < 1 || s.j > 6) errors.push({ line: s.line, msg: `${s.j}번 관절은 없어요.`, fix: '1번부터 6번까지 있어요.' });
+        else if (s.deg < MIN[s.j - 1] || s.deg > MAX[s.j - 1]) errors.push({ line: s.line, msg: `${s.j}번 관절 ${s.deg}°는 움직일 수 있는 범위(${MIN[s.j - 1]}°~${MAX[s.j - 1]}°) 밖이에요.`, fix: `${MIN[s.j - 1]}°에서 ${MAX[s.j - 1]}° 사이로 바꿔 주세요.` });
+      }
+      if (s.type === 'move') s.joints.forEach((v, i) => {
+        if (v < MIN[i] || v > MAX[i]) errors.push({ line: s.line, msg: `${i + 1}번 관절 ${v}°는 움직일 수 있는 범위(${MIN[i]}°~${MAX[i]}°) 밖이에요.`, fix: `${MIN[i]}°에서 ${MAX[i]}° 사이로 바꿔 주세요.` });
+      });
+      const sp = s.type === 'speed' ? s.value : s.type === 'move' ? s.speed : null;
+      if (sp !== null && sp !== undefined) {
+        if (sp < 1 || sp > 100) errors.push({ line: s.line, msg: `속도 ${sp}는 쓸 수 없어요.`, fix: '1에서 100 사이로 정해 주세요.' });
+        else if (sp > SPEED_CAP) warnings.push({ line: s.line, msg: `수업 중에는 속도가 최대 ${SPEED_CAP}이라 ${SPEED_CAP}로 움직여요.` });
+      }
+      if (s.type === 'wait' && (s.sec < 0 || s.sec > 10)) errors.push({ line: s.line, msg: `${s.sec}초는 기다릴 수 없어요.`, fix: '0에서 10초 사이로 정해 주세요.' });
+      if (s.type === 'pose' && !poses[s.name]) errors.push({ line: s.line, msg: `'${s.name}'이라는 자세가 없어요.`, fix: '[직접 움직이기]에서 자세를 기록하거나 있는 자세를 골라 주세요.' });
+    });
+    walk(steps);
+    return { errors, warnings };
+  }
+
+  /* ================= Log ================= */
+  const TAGS = { info: '안내', sim: '시뮬', real: '로봇', ok: '성공', warn: '주의', err: '오류' };
+  function log(kind, msg, fix) {
+    const li = document.createElement('li');
+    const tag = document.createElement('span'); tag.className = `tag ${kind}`; tag.textContent = TAGS[kind];
+    const text = document.createElement('span'); text.textContent = msg;
+    if (fix) { const f = document.createElement('span'); f.className = 'fix'; f.textContent = fix; text.appendChild(f); }
+    li.append(tag, text);
+    $('log').appendChild(li);
+    $('log').scrollTop = $('log').scrollHeight;
+  }
+
+  /* ================= 3D stage ================= */
+  const viewport = $('viewport');
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  viewport.prepend(renderer.domElement);
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(36, 1, 0.01, 20);
+  // Framed by projecting the robot, box and pad: all inside 82% of the view, props in front.
+  camera.position.set(-0.474, 0.39, -0.744);
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.target.set(0.05, 0.09, -0.22);
+  controls.enableDamping = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  controls.minDistance = 0.3; controls.maxDistance = 2;
+  controls.update();
+
+  scene.add(new THREE.HemisphereLight(0xffffff, 0xb8c2cc, 0.9));
+  const sun = new THREE.DirectionalLight(0xffffff, 0.7); sun.position.set(1.4, 2.6, 1.1); scene.add(sun);
+  const fill = new THREE.DirectionalLight(0xffffff, 0.3); fill.position.set(-1.5, 1, -1); scene.add(fill);
+
+  const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(0.55, 64), new THREE.MeshStandardMaterial({ color: css('--floor'), roughness: 1 }));
+  floor.rotation.x = -Math.PI / 2; floor.position.y = -0.0006; scene.add(floor);
+  scene.add(new THREE.GridHelper(1.1, 22, css('--grid-a'), css('--grid-b')));
+
+  const bodyMat = new THREE.MeshStandardMaterial({ color: 0xf3f5f7, roughness: 0.45, metalness: 0.04 });
+  const darkMat = new THREE.MeshStandardMaterial({ color: 0x39424b, roughness: 0.65 });
+  const jointMat = new THREE.MeshStandardMaterial({ color: 0x4a5560, roughness: 0.4, metalness: 0.1 });
+  const Y = new THREE.Vector3(0, 1, 0);
+  function rod(parent, a, b, r, mat) {
+    const va = new THREE.Vector3(...a), vb = new THREE.Vector3(...b);
+    const dir = vb.clone().sub(va), len = dir.length();
+    if (len < 1e-4) return;
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, 28), mat);
+    m.quaternion.setFromUnitVectors(Y, dir.normalize());
+    m.position.copy(va.add(vb).multiplyScalar(0.5));
+    parent.add(m);
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(r, 20, 12), mat); cap.position.copy(vb); parent.add(cap);
+  }
+  function hub(parent, r, h) {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 32), jointMat);
+    m.rotation.x = Math.PI / 2;
+    parent.add(m);
+  }
+
+  const root = new THREE.Group();
+  root.rotation.x = -Math.PI / 2;   // URDF Z-up -> three Y-up. Inside root = URDF frame.
+  scene.add(root);
+  const plate = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.13, 0.012), darkMat); plate.position.z = 0.006; root.add(plate);
+  rod(root, [0, 0, 0.012], [0, 0, 0.115], 0.042, bodyMat);
+
+  const joints = [];
+  let parent = root;
+  CHAIN.forEach((j) => {
+    const g = new THREE.Group(); g.position.set(...j.xyz); g.rotation.set(...j.rpy); parent.add(g);
+    const r = new THREE.Group(); g.add(r); joints.push(r); parent = r;
+  });
+  hub(joints[0], 0.036, 0.05);
+  hub(joints[1], 0.026, 0.06); rod(joints[1], [0, 0, 0], [-0.1104, 0, 0], 0.021, bodyMat);
+  hub(joints[2], 0.025, 0.056); rod(joints[2], [0, 0, 0], [-0.096, 0, 0], 0.019, bodyMat); rod(joints[2], [-0.096, 0, 0], [-0.096, 0, 0.06462], 0.019, bodyMat);
+  hub(joints[3], 0.022, 0.05); rod(joints[3], [0, 0, 0], [0, -0.07318, 0], 0.019, bodyMat);
+  hub(joints[4], 0.021, 0.048); rod(joints[4], [0, 0, 0], [0, 0.0456, 0], 0.018, bodyMat);
+  const flange = joints[5];
+  hub(flange, 0.02, 0.012);
+  const palm = new THREE.Mesh(new THREE.BoxGeometry(0.052, 0.02, 0.018), darkMat); palm.position.z = 0.02; flange.add(palm);
+  const fGeo = new THREE.BoxGeometry(0.008, 0.016, 0.036);
+  const fingerL = new THREE.Mesh(fGeo, darkMat), fingerR = new THREE.Mesh(fGeo, darkMat);
+  fingerL.position.z = fingerR.position.z = 0.046; flange.add(fingerL, fingerR);
+  const tip = new THREE.Object3D(); tip.position.z = 0.06; flange.add(tip);
+
+  const state = { angles: HOME.slice(), grip: 1 };
+  function applyPose() {
+    joints.forEach((r, i) => { r.rotation.z = state.angles[i] * Math.PI / 180; });
+    const w = 0.006 + 0.014 * state.grip;
+    fingerL.position.x = w; fingerR.position.x = -w;
+    root.updateMatrixWorld(true);
+  }
+  const v3 = new THREE.Vector3();
+  function tipInRoot() { tip.getWorldPosition(v3); return root.worldToLocal(v3.clone()); }
+  function lowestPoint() {   // world Y == URDF Z: height above the table
+    let low = Infinity, which = '';
+    joints.forEach((r, i) => { if (!i) return; r.getWorldPosition(v3); if (v3.y < low) { low = v3.y; which = `${i + 1}번 관절`; } });
+    tip.getWorldPosition(v3); if (v3.y < low) { low = v3.y; which = '그리퍼 끝'; }
+    return { low, which };
+  }
+
+  /* Mission props, placed from FK of the named poses rather than by hand. */
+  const BOX = 0.036;
+  const box = new THREE.Mesh(new THREE.BoxGeometry(BOX, BOX, BOX), new THREE.MeshStandardMaterial({ color: 0xf5c33b, roughness: 0.55 }));
+  root.add(box);
+  const pad = new THREE.Mesh(new THREE.CircleGeometry(0.034, 48), new THREE.MeshBasicMaterial({ color: 0x1fae66, transparent: true, opacity: 0.35 }));
+  root.add(pad);
+  function poseTip(q) { const keep = state.angles; state.angles = q; applyPose(); const p = tipInRoot(); state.angles = keep; applyPose(); return p; }
+  const boxHome = poseTip(PRESETS['물건 잡기']);
+  const padAt = poseTip(PRESETS['놓을 곳']);
+  pad.position.set(padAt.x, padAt.y, 0.0008);
+  let holding = false;
+  function resetScene() {
+    if (holding) { root.attach(box); holding = false; }
+    box.rotation.set(0, 0, 0);
+    box.position.set(boxHome.x, boxHome.y, BOX / 2);
+    state.angles = HOME.slice(); state.grip = 1; applyPose();
+    $('mission').className = 'mission';
+    $('mission').innerHTML = '<span class="sw"></span>노란 상자를 초록 칸으로 옮기기';
+  }
+
+  function resize() {
+    const w = viewport.clientWidth, h = viewport.clientHeight;
+    if (!w || !h) return;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    const base = 36 * Math.PI / 180;
+    camera.fov = camera.aspect < 1 ? Math.min(75, 2 * Math.atan(Math.tan(base / 2) / camera.aspect) * 180 / Math.PI) : 36;
+    camera.updateProjectionMatrix();
+  }
+  new ResizeObserver(resize).observe(viewport);
+  resize(); resetScene();
+  (function loop() { controls.update(); renderer.render(scene, camera); requestAnimationFrame(loop); })();
+
+  /* ================= Motion (abortable) ================= */
+  class Stop extends Error {}
+  class Collision extends Error { constructor(info) { super('collision'); this.info = info; } }
+  let current = null;
+  function tween(ms, onT, token) {
+    return new Promise((resolve, reject) => {
+      const t0 = performance.now();
+      const step = (now) => {
+        if (token.aborted) return reject(new Stop());
+        const t = Math.min(1, (now - t0) / ms), e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+        try { onT(e); } catch (err) { return reject(err); }
+        t < 1 ? requestAnimationFrame(step) : resolve();
+      };
+      requestAnimationFrame(step);
+    });
+  }
+  const sleep = (ms, token) => tween(ms, () => {}, token);
+  async function moveTo(target, speed, token) {
+    const from = state.angles.slice();
+    const delta = Math.max(...target.map((v, i) => Math.abs(v - from[i])));
+    const ms = Math.max(250, (delta / (Math.min(speed, SPEED_CAP) * 2.4)) * 1000);
+    await tween(ms, (e) => {
+      state.angles = from.map((a, i) => a + (target[i] - a) * e);
+      applyPose();
+      const lp = lowestPoint(); if (lp.low < 0) throw new Collision(lp);
+    }, token);
+  }
+  async function gripTo(open, token) {
+    const from = state.grip, to = open ? 1 : 0;
+    await tween(350, (e) => { state.grip = from + (to - from) * e; applyPose(); }, token);
+    if (!open && !holding) {
+      const t = tipInRoot();
+      if (t.distanceTo(box.position) < 0.06) { flange.attach(box); holding = true; log('info', '상자를 잡았어요.'); }
+    } else if (open && holding) {
+      root.attach(box); holding = false;
+      box.rotation.set(0, 0, 0);
+      const z0 = box.position.z;
+      await tween(Math.max(120, z0 * 2500), (e) => { box.position.z = z0 + (BOX / 2 - z0) * e; }, token);
+      const d = Math.hypot(box.position.x - pad.position.x, box.position.y - pad.position.y);
+      if (d < 0.03) {
+        $('mission').className = 'mission done';
+        $('mission').textContent = '✓ 미션 성공!';
+        log('ok', '상자를 초록 칸에 놓았어요. 미션 성공!');
+      } else {
+        log('info', '상자를 내려놓았어요. 초록 칸에서는 조금 벗어났어요.');
+      }
+    }
+  }
+
+  /* ================= Run / gate ================= */
+  let passedCode = null, busy = false;
+  function badge(kind, text) { const b = $('badge'); b.hidden = !kind; b.className = `badge ${kind || ''}`; b.textContent = text || ''; }
+  function setRunColor(c) { document.documentElement.style.setProperty('--run', c ? `var(--${c})` : 'var(--sim)'); jointMat.color.set(c ? css(`--${c}`) : '#4a5560'); }
+  function setGate() {
+    const ok = passedCode === codeEl.value;
+    $('btn-real').disabled = !ok || busy;
+    $('btn-sim').disabled = busy;
+    $('lock').className = `lock${ok ? ' ok' : ''}`;
+    $('lock').textContent = ok ? '✓ 시뮬레이션 성공 — 로봇에서 실행할 수 있어요.' : '시뮬레이션에 성공하면 로봇에서 실행할 수 있어요.';
+  }
+  function markRunning(line) {
+    document.querySelectorAll('.gutter span').forEach((s) => s.classList.toggle('running', Number(s.dataset.line) === line));
+    document.querySelectorAll('[data-line]').forEach((b) => { if (b.classList.contains('block')) b.classList.toggle('running', Number(b.dataset.line) === line); });
+  }
+  function markError(lines) { document.querySelectorAll('.gutter span').forEach((s) => s.classList.toggle('err', lines.includes(Number(s.dataset.line)))); }
+
+  async function execute(mode) {
+    const code = codeEl.value;
+    const { steps, errors: pe } = parse(code);
+    const { errors: ce, warnings } = check(steps);
+    const errors = [...pe, ...ce];
+    markError(errors.map((e) => e.line));
+    if (errors.length) {
+      errors.forEach((e) => log('err', `${e.line}번째 줄: ${e.msg}`, e.fix));
+      if (mode === 'sim') { passedCode = null; setGate(); }
+      return false;
+    }
+    warnings.forEach((w) => log('warn', `${w.line}번째 줄: ${w.msg}`));
+
+    const token = { aborted: false }, ctx = { line: 0, speed: SPEEDS[1][1] };
+    current = token; busy = true; setGate(); setRunColor(mode);
+    resetScene();
+    badge(mode, mode === 'sim' ? '시뮬레이션' : '로봇 실행 중');
+    log(mode, mode === 'sim' ? '시뮬레이션을 시작해요.' : '로봇이 움직여요.');
+    const poses = allPoses();
+    const run = async (list) => {
+      for (const s of list) {
+        ctx.line = s.line; markRunning(s.line);
+        switch (s.type) {
+          case 'home': await moveTo(HOME, ctx.speed, token); break;
+          case 'pose': await moveTo(poses[s.name], ctx.speed, token); break;
+          case 'joint': { const t = state.angles.slice(); t[s.j - 1] = s.deg; await moveTo(t, ctx.speed, token); break; }
+          case 'move': await moveTo(s.joints, s.speed || ctx.speed, token); break;
+          case 'grip': await gripTo(s.open, token); break;
+          case 'wait': await sleep(s.sec * 1000, token); break;
+          case 'speed': ctx.speed = s.value; break;
+          case 'repeat': for (let k = 0; k < s.times; k++) { ctx.line = s.line; markRunning(s.line); await run(s.body); } break;
+        }
+      }
+    };
+    let ok = false;
+    try {
+      await run(steps);
+      ok = true;
+      if (mode === 'sim') { passedCode = code; log('ok', '시뮬레이션 성공! 이제 로봇에서 실행할 수 있어요.'); }
+      else log('ok', '로봇이 프로그램을 끝냈어요.');
+      badge(null);
+    } catch (err) {
+      if (err instanceof Collision) {
+        log('err', `${ctx.line}번째 줄: ${err.info.which}이 바닥에 닿아요.`, '팔이 덜 숙여지도록 각도를 바꿔 주세요.');
+        badge('stop', '바닥에 닿아서 멈춤');
+        if (mode === 'sim') passedCode = null;
+        markError([ctx.line]);
+      } else if (err instanceof Stop) {
+        log('info', '정지했어요.');
+        badge('stop', '정지');
+      } else throw err;
+    } finally {
+      markRunning(-1); busy = false; current = null; setRunColor(null); setGate();
+    }
+    return ok;
+  }
+
+  $('btn-sim').addEventListener('click', () => { if (!busy) execute('sim'); });
+  $('btn-real').addEventListener('click', async () => {
+    if (busy || passedCode !== codeEl.value) return;
+    const token = { aborted: false };
+    current = token; busy = true; setGate();
+    try {
+      badge('real', '로봇으로 보내는 중');
+      await sleep(600, token);
+      badge('real', '차례를 기다려요 · 앞에 1명');
+      await sleep(1600, token);
+    } catch (e) {
+      busy = false; current = null; setGate();
+      if (e instanceof Stop) { log('info', '전송을 취소했어요.'); badge('stop', '정지'); return; }
+      throw e;
+    }
+    busy = false; current = null;
+    await execute('real');
+  });
+  function stopAll() { if (current) current.aborted = true; }
+  $('btn-stop').addEventListener('click', stopAll);
+  document.addEventListener('keydown', (e) => {
+    const typing = /^(TEXTAREA|INPUT|SELECT)$/.test(document.activeElement?.tagName || '');
+    if (e.key === 'Escape' || (e.code === 'Space' && !typing && current)) { e.preventDefault(); stopAll(); }
+  });
+
+  /* ================= Python pane ================= */
+  function renderGutter() {
+    const n = codeEl.value.split('\n').length;
+    $('gutter').innerHTML = Array.from({ length: n }, (_, i) => `<span data-line="${i + 1}">${i + 1}</span>`).join('');
+    $('gutter').scrollTop = codeEl.scrollTop;
+  }
+  codeEl.addEventListener('scroll', () => { $('gutter').scrollTop = codeEl.scrollTop; });
+  codeEl.addEventListener('keydown', (e) => {
+    if (e.key !== 'Tab') return;
+    e.preventDefault();
+    const { selectionStart: a, selectionEnd: b, value } = codeEl;
+    codeEl.value = value.slice(0, a) + '    ' + value.slice(b);
+    codeEl.selectionStart = codeEl.selectionEnd = a + 4;
+    changed();
+  });
+  codeEl.addEventListener('input', changed);
+  function changed() { renderGutter(); renderScript(); setGate(); }
+  function setCode(code) { codeEl.value = code; changed(); }
+
+  /* ================= Blocks ================= */
+  const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; };
+  function sel(options, value, onChange, label) {
+    const s = el('select', 'field'); s.setAttribute('aria-label', label);
+    options.forEach(([t, v]) => { const o = el('option', '', t); o.value = String(v); s.appendChild(o); });
+    s.value = String(value);
+    s.addEventListener('change', () => onChange(s.value));
+    s.addEventListener('mousedown', (e) => e.stopPropagation());
+    return s;
+  }
+  function num(value, onChange, label, small) {
+    const i = el('input', `field${small ? ' sm' : ''}`); i.type = 'number'; i.value = value; i.step = 'any';
+    i.setAttribute('aria-label', label);
+    i.addEventListener('change', () => { const v = Number(i.value); if (Number.isFinite(v)) onChange(v); });
+    i.addEventListener('mousedown', (e) => e.stopPropagation());
+    return i;
+  }
+  const poseOptions = () => [['기본 자세', '__home__'], ...Object.keys(allPoses()).map((k) => [k, k])];
+  const speedOptions = (v) => { const o = SPEEDS.map(([t, n]) => [t, n]); if (!SPEEDS.some(([, n]) => n === v)) o.push([`${v}`, v]); return o; };
+
+  /* Fill a block's content. `commit` re-serializes the whole program. */
+  function fillBlock(b, s, commit, preview) {
+    const t = (x) => b.appendChild(el('span', '', x));
+    const ro = preview;   // palette copies are not editable
+    switch (s.type) {
+      case 'home': b.classList.add('move'); t('기본 자세로 가기'); break;
+      case 'pose':
+        b.classList.add('move');
+        if (ro) t('물건 위 ▾'); else b.appendChild(sel(poseOptions(), s.name, (v) => { if (v === '__home__') Object.assign(s, { type: 'home' }); else s.name = v; commit(); }, '자세'));
+        t('자세로 가기'); break;
+      case 'joint':
+        b.classList.add('move');
+        if (ro) t('1번 ▾'); else b.appendChild(sel([1, 2, 3, 4, 5, 6].map((n) => [`${n}번`, n]), s.j, (v) => { s.j = Number(v); commit(); }, '관절 번호'));
+        t('관절을');
+        if (ro) t('30°로'); else { b.appendChild(num(s.deg, (v) => { s.deg = v; commit(); }, '각도', true)); t('°로'); }
+        break;
+      case 'speed':
+        b.classList.add('move'); t('속도를');
+        if (ro) t('보통 ▾'); else b.appendChild(sel(speedOptions(s.value), s.value, (v) => { s.value = Number(v); commit(); }, '속도'));
+        t('으로'); break;
+      case 'grip':
+        b.classList.add('grip'); t('그리퍼');
+        if (ro) t(s.open ? '열기 ▾' : '닫기 ▾'); else b.appendChild(sel([['열기', 'open'], ['닫기', 'close']], s.open ? 'open' : 'close', (v) => { s.open = v === 'open'; commit(); }, '그리퍼'));
+        break;
+      case 'wait':
+        b.classList.add('flow');
+        if (ro) t('1'); else b.appendChild(num(s.sec, (v) => { s.sec = v; commit(); }, '초', true));
+        t('초 기다리기'); break;
+      case 'move': {
+        b.classList.add('adv'); t('6개 관절 한번에');
+        if (ro) break;
+        const g = el('span', 'adv-joints');
+        s.joints.forEach((v, i) => g.appendChild(num(v, (nv) => { s.joints[i] = nv; commit(); }, `${i + 1}번 관절 각도`, true)));
+        b.appendChild(g); break;
+      }
+    }
+  }
+
+  const PALETTE = [
+    ['움직이기', [{ type: 'home' }, { type: 'pose' }, { type: 'joint' }, { type: 'speed' }]],
+    ['그리퍼', [{ type: 'grip', open: true }, { type: 'grip', open: false }]],
+    ['흐름', [{ type: 'wait' }, { type: 'repeat' }]],
+    ['고급', [{ type: 'move' }]],
+  ];
+  function makeStep(proto) {
+    const round = (a) => Math.round(a);
+    switch (proto.type) {
+      case 'home': return { type: 'home' };
+      case 'pose': return { type: 'pose', name: '물건 위' };
+      case 'joint': return { type: 'joint', j: 1, deg: 30 };
+      case 'speed': return { type: 'speed', value: 35 };
+      case 'grip': return { type: 'grip', open: proto.open };
+      case 'wait': return { type: 'wait', sec: 1 };
+      case 'repeat': return { type: 'repeat', times: 2, body: [] };
+      case 'move': return { type: 'move', joints: state.angles.map(round), speed: null };
+    }
+  }
+
+  let drag = null;   // { kind: 'new', proto } | { kind: 'move', path }
+  function renderPalette() {
+    const p = $('palette'); p.replaceChildren();
+    PALETTE.forEach(([name, items]) => {
+      p.appendChild(el('div', 'grp', name));
+      items.forEach((proto) => {
+        let b;
+        if (proto.type === 'repeat') { b = el('div', 'block flow'); b.append(el('span', '', '2'), el('span', '', '번 반복하기')); }
+        else { b = el('div', 'block'); fillBlock(b, proto, null, true); }
+        b.draggable = true; b.tabIndex = 0; b.setAttribute('role', 'button');
+        b.setAttribute('aria-label', `${b.textContent} 블록 추가`);
+        b.addEventListener('dragstart', (e) => { drag = { kind: 'new', proto }; e.dataTransfer.setData('text/plain', 'block'); e.dataTransfer.effectAllowed = 'copyMove'; });
+        b.addEventListener('dragend', endDrag);
+        const add = () => applyDrop({ where: 'end' }, { kind: 'new', proto });
+        b.addEventListener('click', add);
+        b.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); add(); } });
+        p.appendChild(b);
+      });
+    });
+  }
+  // Dragging a placed block back onto the palette deletes it.
+  $('palette').addEventListener('dragover', (e) => { if (drag?.kind === 'move') { e.preventDefault(); $('palette').classList.add('trash'); } });
+  $('palette').addEventListener('dragleave', () => $('palette').classList.remove('trash'));
+  $('palette').addEventListener('drop', (e) => { e.preventDefault(); if (drag?.kind === 'move') applyDrop({ where: 'delete' }, drag); endDrag(); });
+
+  function endDrag() {
+    drag = null;
+    document.querySelectorAll('.drop-before, .drop-into, .dragging').forEach((n) => n.classList.remove('drop-before', 'drop-into', 'dragging'));
+    $('palette').classList.remove('trash');
+  }
+
+  /* Paths: [i] top level, [i, j] inside repeat i. */
+  function applyDrop(target, d) {
+    const { steps, errors } = parse(codeEl.value);
+    if (errors.length) { log('err', '파이썬에 오류가 있어서 블록을 바꿀 수 없어요.', '[파이썬]에서 먼저 고쳐 주세요.'); return; }
+    // Decide whether the drop is allowed BEFORE taking the block out of the program,
+    // so a refused drop never loses the block.
+    const intoLoop = target.where === 'into' || (target.where === 'before' && target.path.length === 2);
+    const movingType = d.kind === 'new' ? d.proto.type : (d.path.length === 1 ? steps[d.path[0]].type : steps[d.path[0]].body[d.path[1]].type);
+    if (intoLoop && movingType === 'repeat') { log('info', '반복 안에 반복은 넣을 수 없어요.'); return; }
+    let item, src = null;
+    if (d.kind === 'new') item = makeStep(d.proto);
+    else {
+      src = d.path;
+      if (target.where === 'before' && target.path.join() === src.join()) return;
+      if (src.length === 1 && steps[src[0]].type === 'repeat' && (target.where === 'into' ? target.i === src[0] : target.path?.length === 2 && target.path[0] === src[0])) return;
+      const list = src.length === 1 ? steps : steps[src[0]].body;
+      item = list.splice(src[src.length - 1], 1)[0];
+    }
+    if (target.where === 'delete') { setCode(serialize(steps)); return; }
+    let path = target.where === 'end' ? [steps.length] : target.where === 'into' ? [target.i, Infinity] : target.path.slice();
+    if (src) {
+      if (src.length === 1 && path[0] > src[0]) path[0] -= 1;
+      else if (src.length === 2 && path.length === 2 && path[0] === src[0] && path[1] > src[1]) path[1] -= 1;
+    }
+    const list = path.length === 1 ? steps : steps[path[0]].body;
+    list.splice(Math.min(path[path.length - 1], list.length), 0, item);
+    setCode(serialize(steps));
+  }
+
+  function wireBlock(b, path) {
+    b.draggable = true;
+    b.addEventListener('dragstart', (e) => { e.stopPropagation(); drag = { kind: 'move', path }; b.classList.add('dragging'); e.dataTransfer.setData('text/plain', 'block'); e.dataTransfer.effectAllowed = 'move'; });
+    b.addEventListener('dragend', endDrag);
+    b.addEventListener('dragover', (e) => { if (!drag) return; e.preventDefault(); e.stopPropagation(); document.querySelectorAll('.drop-before').forEach((n) => n.classList.remove('drop-before')); b.classList.add('drop-before'); });
+    b.addEventListener('dragleave', () => b.classList.remove('drop-before'));
+    b.addEventListener('drop', (e) => { e.preventDefault(); e.stopPropagation(); if (drag) applyDrop({ where: 'before', path }, drag); endDrag(); });
+  }
+  function delButton(onDel) { const x = el('button', 'del', '×'); x.type = 'button'; x.title = '지우기'; x.setAttribute('aria-label', '블록 지우기'); x.addEventListener('click', onDel); x.addEventListener('mousedown', (e) => e.stopPropagation()); return x; }
+
+  function renderScript() {
+    const box = $('script'); box.replaceChildren();
+    const hat = el('div', 'block start'); hat.append(el('span', '', '▶ 실행을 누르면')); box.appendChild(hat);
+    const { steps, errors } = parse(codeEl.value);
+    if (errors.length) {
+      const p = el('p', 'empty', `파이썬 ${errors[0].line}번째 줄에 오류가 있어 블록으로 볼 수 없어요.`);
+      box.appendChild(p); return;
+    }
+    const commit = () => setCode(serialize(steps));
+    const build = (s, path) => {
+      if (s.type === 'repeat') {
+        const b = el('div', 'block repeat'); b.dataset.line = s.line;
+        const head = el('div', 'c-head');
+        head.appendChild(num(s.times, (v) => { s.times = Math.max(1, Math.round(v)); commit(); }, '반복 횟수', true));
+        head.appendChild(el('span', '', '번 반복하기'));
+        head.appendChild(delButton(() => { steps.splice(path[0], 1); commit(); }));
+        const body = el('div', 'c-body');
+        s.body.forEach((c, j) => body.appendChild(build(c, [path[0], j])));
+        body.addEventListener('dragover', (e) => { if (!drag || e.target !== body) return; e.preventDefault(); e.stopPropagation(); body.classList.add('drop-into'); });
+        body.addEventListener('dragleave', () => body.classList.remove('drop-into'));
+        body.addEventListener('drop', (e) => { if (e.target !== body) return; e.preventDefault(); e.stopPropagation(); if (drag) applyDrop({ where: 'into', i: path[0] }, drag); endDrag(); });
+        b.append(head, body, el('div', 'c-foot'));
+        wireBlock(b, path);
+        return b;
+      }
+      const b = el('div', 'block'); b.dataset.line = s.line;
+      fillBlock(b, s, commit, false);
+      b.appendChild(delButton(() => { (path.length === 1 ? steps : steps[path[0]].body).splice(path[path.length - 1], 1); commit(); }));
+      wireBlock(b, path);
+      return b;
+    };
+    steps.forEach((s, i) => box.appendChild(build(s, [i])));
+  }
+  const ws = $('workspace');
+  ws.addEventListener('dragover', (e) => { if (drag) e.preventDefault(); });
+  ws.addEventListener('drop', (e) => { e.preventDefault(); if (drag) applyDrop({ where: 'end' }, drag); endDrag(); });
+
+  /* ================= Stage 1: direct control ================= */
+  const sliders = [];
+  state.angles.forEach((a, i) => {
+    const row = el('div', 'srow'); const id = `j${i + 1}`;
+    row.innerHTML = `<label for="${id}">J${i + 1}</label><input type="range" id="${id}" min="${MIN[i]}" max="${MAX[i]}" step="1" value="${a}"><output for="${id}">${a}°</output>`;
+    $('sliders').appendChild(row);
+    const input = row.querySelector('input'), out = row.querySelector('output');
+    input.addEventListener('input', () => {
+      if (busy) return;
+      state.angles[i] = Number(input.value); out.textContent = `${input.value}°`;
+      applyPose();
+      const lp = lowestPoint();
+      badge(lp.low < 0 ? 'stop' : null, lp.low < 0 ? `${lp.which}이 바닥에 닿아요` : '');
+    });
+    sliders.push({ input, out });
+  });
+  const syncSliders = () => sliders.forEach((s, i) => { s.input.value = Math.round(state.angles[i]); s.out.textContent = `${Math.round(state.angles[i])}°`; });
+  $('g-open').addEventListener('click', () => { if (!busy) gripTo(true, { aborted: false }); });
+  $('g-close').addEventListener('click', () => { if (!busy) gripTo(false, { aborted: false }); });
+  $('free').addEventListener('change', (e) => log('info', e.target.checked ? '팔을 손으로 잡고 움직일 수 있어요.' : '팔을 다시 고정했어요.'));
+
+  function renderChips() {
+    const c = $('chips'); c.replaceChildren();
+    const names = Object.keys(recorded);
+    if (!names.length) { c.appendChild(el('span', 'empty', '기록한 자세는 블록의 자세 목록에 나타나요.')); return; }
+    names.forEach((n) => {
+      const chip = el('span', 'chip', n);
+      const x = el('button', '', '×'); x.type = 'button'; x.setAttribute('aria-label', `${n} 지우기`);
+      x.addEventListener('click', () => { delete recorded[n]; renderChips(); changed(); });
+      chip.appendChild(x); c.appendChild(chip);
+    });
+  }
+  let recCount = 0;
+  $('rec').addEventListener('click', () => {
+    recCount += 1;
+    const name = `내 자세 ${recCount}`;
+    recorded[name] = state.angles.map((a) => Math.round(a));
+    renderChips(); renderScript();
+    log('info', `'${name}'을 기록했어요.`);
+  });
+
+  /* ================= Tabs ================= */
+  function selectTab(n) {
+    [1, 2, 3].forEach((k) => { $(`tab-${k}`).setAttribute('aria-selected', String(k === n)); $(`pane-${k}`).hidden = k !== n; });
+    if (n === 1) syncSliders();
+    try { localStorage.setItem('edu-console-tab', String(n)); } catch (_) {}
+  }
+  [1, 2, 3].forEach((k) => $(`tab-${k}`).addEventListener('click', () => selectTab(k)));
+
+  /* ================= Start ================= */
+  renderPalette(); renderChips();
+  setCode(START_CODE);
+  let startTab = 2;
+  try { const s = Number(localStorage.getItem('edu-console-tab')); if ([1, 2, 3].includes(s)) startTab = s; } catch (_) {}
+  selectTab(startTab);
+  log('info', '블록을 쌓고 [시뮬레이션]을 눌러 보세요.');
+})();
+</script>

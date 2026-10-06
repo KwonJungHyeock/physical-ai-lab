@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>상황 모니터 HUD 목업</title>
+<style>
+  @font-face { font-family: Pretendard; font-weight: 400; src: url("../../web-typescript/src/app/fonts/Pretendard-Regular.subset.woff2") format("woff2"); }
+  @font-face { font-family: Pretendard; font-weight: 600; src: url("../../web-typescript/src/app/fonts/Pretendard-SemiBold.subset.woff2") format("woff2"); }
+  @font-face { font-family: Pretendard; font-weight: 800; src: url("../../web-typescript/src/app/fonts/Pretendard-Bold.subset.woff2") format("woff2"); }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #262d36; }
+  body { font-family: Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif; color: #e8eef8; font-size: 12.5px; line-height: 1.4; }
+  .shot { position: relative; width: 1600px; height: 900px; background: url("img/sim/scene-lab.jpg") center / cover no-repeat; overflow: hidden; }
+  /* Glass panels: dark, see-through, blurred — the scene stays visible behind them. */
+  .glass { position: absolute; background: rgba(14, 19, 27, .58); border: 1px solid rgba(255,255,255,.12); border-radius: 14px; backdrop-filter: blur(10px) saturate(1.2); box-shadow: 0 10px 30px rgba(0,0,0,.25); padding: 10px 12px; }
+  .glass h5 { margin: 0 0 7px; font-size: 11px; letter-spacing: .1em; color: #9fb0c8; font-weight: 800; display: flex; justify-content: space-between; }
+  .glass h5 em { font-style: normal; letter-spacing: 0; color: #6f7f97; font-weight: 600; }
+  .mono { font-variant-numeric: tabular-nums; }
+  /* Status strip */
+  .status { left: 24px; top: 108px; display: flex; gap: 14px; align-items: center; padding: 8px 14px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: #3ddc84; box-shadow: 0 0 0 4px rgba(61,220,132,.2); }
+  .status b { font-size: 13px; }
+  .status span { color: #b9c6d8; }
+  .bar { width: 120px; height: 5px; border-radius: 9px; background: rgba(255,255,255,.12); overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 25%; background: #5b8cff; }
+  /* Joints */
+  .joints { left: 24px; top: 160px; width: 300px; }
+  .j { display: grid; grid-template-columns: 52px 1fr 64px; gap: 8px; align-items: center; margin: 5px 0; }
+  .j b { font-size: 12px; }
+  .j b small { color: #7f8ea8; font-weight: 600; margin-left: 3px; }
+  .track { position: relative; height: 8px; border-radius: 9px; background: rgba(255,255,255,.08); }
+  .track .lim { position: absolute; inset: 0; border-radius: 9px; background: linear-gradient(90deg, rgba(255,90,78,.45) 0 6%, transparent 6% 94%, rgba(255,90,78,.45) 94%); }
+  .track .zero { position: absolute; left: 50%; top: -3px; width: 1px; height: 14px; background: rgba(255,255,255,.3); }
+  .track .val { position: absolute; top: 0; height: 100%; border-radius: 9px; background: #5b8cff; }
+  .track .knob { position: absolute; top: -3px; width: 4px; height: 14px; border-radius: 3px; background: #fff; box-shadow: 0 0 8px #9fc0ff; }
+  .j .v { text-align: right; font-weight: 800; font-size: 13px; }
+  .j .v small { display: block; color: #7f8ea8; font-weight: 600; font-size: 10.5px; }
+  .j[data-warn] .track .val { background: #ffad1f; }
+  .j[data-warn] .v { color: #ffcf7a; }
+  /* TCP */
+  .tcp { left: 24px; top: 448px; width: 300px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .cell { background: rgba(255,255,255,.05); border-radius: 9px; padding: 5px 8px; }
+  .cell small { display: block; color: #7f8ea8; font-weight: 700; font-size: 10.5px; }
+  .cell b { font-size: 15px; }
+  .cell b i { font-style: normal; font-size: 10px; color: #7f8ea8; margin-left: 2px; font-weight: 600; }
+  .ax-x { color: #ff7a7a; } .ax-y { color: #5fe0a0; } .ax-z { color: #7fb0ff; }
+  .speed { margin-top: 8px; display: flex; align-items: baseline; gap: 8px; }
+  .speed b { font-size: 22px; }
+  .speed span { color: #7f8ea8; }
+  /* Right: chart + load */
+  .chart { right: 112px; top: 132px; width: 330px; }
+  .chart svg { width: 100%; height: 120px; display: block; }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; font-size: 11px; color: #b9c6d8; }
+  .legend i { display: inline-block; width: 10px; height: 3px; border-radius: 2px; margin-right: 4px; vertical-align: 3px; }
+  .load { right: 112px; top: 346px; width: 330px; }
+  .l { display: grid; grid-template-columns: 30px 1fr 42px; gap: 8px; align-items: center; margin: 4px 0; }
+  .l .t { height: 7px; border-radius: 9px; background: rgba(255,255,255,.08); overflow: hidden; }
+  .l .t i { display: block; height: 100%; border-radius: 9px; background: linear-gradient(90deg, #3ddc84, #3ddc84); }
+  .l[data-mid] .t i { background: linear-gradient(90deg, #3ddc84, #ffad1f); }
+  .l .p { text-align: right; font-weight: 800; }
+  .l[data-mid] .p { color: #ffcf7a; }
+  .hint { margin-top: 6px; color: #7f8ea8; font-size: 11px; }
+  /* Tags in the scene */
+  .tag { position: absolute; transform: translate(-50%, -100%); display: grid; justify-items: center; }
+  .tag span { background: rgba(14,19,27,.72); border: 1px solid rgba(255,255,255,.18); border-radius: 8px; padding: 3px 8px; font-weight: 800; white-space: nowrap; backdrop-filter: blur(6px); }
+  .tag span em { font-style: normal; color: #9fc0ff; margin-left: 4px; }
+  .tag i { width: 1.5px; height: 26px; background: linear-gradient(#fff, rgba(255,255,255,.2)); }
+  .tag b { width: 10px; height: 10px; border-radius: 50%; border: 2px solid #fff; background: #5b8cff; }
+  .target { position: absolute; width: 34px; height: 34px; border: 2px dashed #3ddc84; border-radius: 50%; transform: translate(-50%, -50%); }
+  .target::after { content: "목표 (215, -10, 45)"; position: absolute; left: 40px; top: 6px; white-space: nowrap; font-weight: 800; color: #9ff0c4; font-size: 11.5px; background: rgba(14,19,27,.78); border-radius: 7px; padding: 2px 7px; }
+  .trail { position: absolute; left: 0; top: 0; width: 1600px; height: 900px; pointer-events: none; }
+  /* HUD toggles */
+  .toggles { right: 112px; bottom: 70px; display: flex; gap: 6px; align-items: center; padding: 7px 10px; }
+  .toggles small { color: #9fb0c8; font-weight: 800; margin-right: 4px; }
+  .toggles span { border: 1px solid rgba(255,255,255,.2); border-radius: 999px; padding: 3px 10px; font-weight: 700; color: #b9c6d8; }
+  .toggles span[data-on] { background: #5b8cff; border-color: #5b8cff; color: #fff; }
+</style>
+</head>
+<body>
+<div class="shot">
+  <svg class="trail" viewBox="0 0 1600 900" aria-hidden="true">
+    <defs><linearGradient id="tr" x1="0" x2="1"><stop offset="0" stop-color="#ffad1f" stop-opacity="0"/><stop offset="1" stop-color="#ffad1f" stop-opacity=".95"/></linearGradient></defs>
+    <path d="M560 470 C 600 430, 640 450, 669 513" stroke="url(#tr)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+    <path d="M669 513 C 700 560, 740 610, 792 640" stroke="#3ddc84" stroke-width="2" stroke-dasharray="5 6" fill="none" opacity=".85"/>
+  </svg>
+  <div class="tag" style="left:669px;top:513px"><span>손끝 <em class="mono">152 mm/s</em></span><i></i><b></b></div>
+  <div class="target" style="left:792px;top:640px"></div>
+
+  <div class="glass status"><span class="dot"></span><b>시뮬레이션 실행 중</b><span class="mono">3 / 12 단계 · 1.0× · 00:07.4</span><span class="bar"><i></i></span></div>
+
+  <div class="glass joints">
+    <h5>관절 각도 <em>빨간 끝 = 한계 가까이</em></h5>
+    <div class="j"><b>J1<small>베이스</small></b><div class="track"><span class="lim"></span><span class="zero"></span><span class="val" style="left:50%;width:6%"></span><span class="knob" style="left:56%"></span></div><div class="v mono">+12.4°<small>18°/s</small></div></div>
+    <div class="j"><b>J2<small>숄더</small></b><div class="track"><span class="lim"></span><span class="zero"></span><span class="val" style="left:50%;width:15%"></span><span class="knob" style="left:65%"></span></div><div class="v mono">+45.9°<small>6°/s</small></div></div>
+    <div class="j" data-warn><b>J3<small>엘보</small></b><div class="track"><span class="lim"></span><span class="zero"></span><span class="val" style="left:9%;width:41%"></span><span class="knob" style="left:9%"></span></div><div class="v mono">−138.2°<small>한계 12° 남음</small></div></div>
+    <div class="j"><b>J4<small>손목1</small></b><div class="track"><span class="lim"></span><span class="zero"></span><span class="val" style="left:37%;width:13%"></span><span class="knob" style="left:37%"></span></div><div class="v mono">−41.3°<small>0°/s</small></div></div>
+    <div class="j"><b>J5<small>손목2</small></b><div class="track"><span class="lim"></span><span class="zero"></span><span class="val" style="left:50%;width:1%"></span><span class="knob" style="left:51%"></span></div><div class="v mono">+2.0°<small>0°/s</small></div></div>
+    <div class="j"><b>J6<small>손목3</small></b><div class="track"><span class="lim"></span><span class="zero"></span><span class="val" style="left:50%;width:3%"></span><span class="knob" style="left:53%"></span></div><div class="v mono">+9.6°<small>4°/s</small></div></div>
+  </div>
+
+  <div class="glass tcp">
+    <h5>손끝 (TCP) <em>로봇 기준 좌표</em></h5>
+    <div class="grid3">
+      <div class="cell"><small class="ax-x">X</small><b class="mono">198.4<i>mm</i></b></div>
+      <div class="cell"><small class="ax-y">Y</small><b class="mono">−22.7<i>mm</i></b></div>
+      <div class="cell"><small class="ax-z">Z</small><b class="mono">61.0<i>mm</i></b></div>
+      <div class="cell"><small>Rx</small><b class="mono">−179.6<i>°</i></b></div>
+      <div class="cell"><small>Ry</small><b class="mono">0.4<i>°</i></b></div>
+      <div class="cell"><small>Rz</small><b class="mono">−6.5<i>°</i></b></div>
+    </div>
+    <div class="speed"><b class="mono">152</b><span>mm/s 손끝 속도 · 목표까지 24 mm</span></div>
+  </div>
+
+  <div class="glass chart">
+    <h5>관절 각도 · 최근 5초 <em>움직이면 흘러가요</em></h5>
+    <svg viewBox="0 0 330 120" preserveAspectRatio="none">
+      <g stroke="rgba(255,255,255,.07)"><path d="M0 30H330M0 60H330M0 90H330"/></g>
+      <path d="M0 64 C 60 64, 90 60, 140 52 S 240 44, 330 46" stroke="#ff7a7a" stroke-width="2" fill="none"/>
+      <path d="M0 40 C 80 40, 120 38, 170 36 S 260 35, 330 35" stroke="#ffad1f" stroke-width="2" fill="none"/>
+      <path d="M0 98 C 70 98, 110 104, 160 108 S 250 110, 330 111" stroke="#5fe0a0" stroke-width="2" fill="none"/>
+      <path d="M0 74 C 90 74, 150 74, 330 74" stroke="#7fb0ff" stroke-width="2" fill="none"/>
+      <path d="M0 59 C 90 59, 150 59, 330 59" stroke="#b28dff" stroke-width="2" fill="none"/>
+      <path d="M0 57 C 90 57, 160 55, 330 53" stroke="#5ad7e8" stroke-width="2" fill="none"/>
+      <path d="M300 0V120" stroke="rgba(255,255,255,.35)" stroke-dasharray="3 4"/>
+    </svg>
+    <div class="legend"><span><i style="background:#ff7a7a"></i>J1</span><span><i style="background:#ffad1f"></i>J2</span><span><i style="background:#5fe0a0"></i>J3</span><span><i style="background:#7fb0ff"></i>J4</span><span><i style="background:#b28dff"></i>J5</span><span><i style="background:#5ad7e8"></i>J6</span></div>
+  </div>
+
+  <div class="glass load">
+    <h5>모터 부하 (추정) <em>중력 + 가속 토크 ÷ 정격</em></h5>
+    <div class="l"><b>J1</b><div class="t"><i style="width:12%"></i></div><span class="p mono">12%</span></div>
+    <div class="l" data-mid><b>J2</b><div class="t"><i style="width:64%"></i></div><span class="p mono">64%</span></div>
+    <div class="l"><b>J3</b><div class="t"><i style="width:38%"></i></div><span class="p mono">38%</span></div>
+    <div class="l"><b>J4</b><div class="t"><i style="width:15%"></i></div><span class="p mono">15%</span></div>
+    <div class="l"><b>J5</b><div class="t"><i style="width:6%"></i></div><span class="p mono">6%</span></div>
+    <div class="l"><b>J6</b><div class="t"><i style="width:3%"></i></div><span class="p mono">3%</span></div>
+    <p class="hint">블록 45g 을 들고 팔을 뻗으면 J2 부하가 올라가요 — 4학문 동역학과 연결.</p>
+  </div>
+
+  <div class="glass toggles"><small>모니터</small><span data-on>관절</span><span data-on>손끝</span><span data-on>그래프</span><span>부하</span><span>끄기</span></div>
+</div>
+</body>
+</html>

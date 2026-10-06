@@ -1,0 +1,751 @@
+'use client';
+
+/**
+ * Entry-style block editor. It never holds its own copy of the program: it
+ * parses the Python text, draws those blocks, and every edit re-serialises the
+ * whole program back to text. So blocks and Python can never disagree.
+ *
+ * Made for a first lesson: numbers are chips that open a small panel with a
+ * slider and step buttons (and the robot's present angle); a block is picked
+ * by clicking it, and palette blocks go in right after the picked one; every
+ * block has move up / down, copy and delete keys, so nothing needs dragging
+ * (dragging still works).
+ */
+
+import { useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react';
+
+import { BIN_NAMES, COLORS, SPOT_NAMES, type BinName, type ColorName, type SpotName, type Theme } from '@/engine/simulator/board';
+import { EFFECTOR_BY_ID, type EffectorId } from '@/engine/simulator/effectors';
+import { jointMax, jointMin } from '@/engine/robot/limits';
+import {
+  DEFAULT_VARIABLE,
+  MOVE_TIME_MAX,
+  MOVE_TIME_MIN,
+  SPEEDS,
+  parse,
+  serialize,
+  targetLabel,
+  type Step,
+  type Target,
+} from '@/engine/simulator/program';
+
+import { useLive, type Live } from '../liveStore';
+import css from '../console.module.css';
+
+type Proto =
+  | { type: Exclude<Step['type'], 'grip' | 'pump' | 'pen'> }
+  /** "N초 동안 관절을 …" (a joint move that takes a set time). */
+  | { type: 'joint'; timed: true }
+  | { type: 'grip'; open: boolean }
+  | { type: 'pump'; on: boolean }
+  | { type: 'pen'; down: boolean };
+
+type Path = number[];
+type Drag = { kind: 'new'; proto: Proto } | { kind: 'move'; path: Path };
+type DropTarget = { where: 'end' } | { where: 'delete' } | { where: 'before'; path: Path } | { where: 'into'; i: number };
+
+interface Props {
+  code: string;
+  onCode(code: string): void;
+  effector: EffectorId;
+  cameraFlange: boolean;
+  /** AI 키트: kit camera and bins A–D; 로봇팔 단독: the hand camera and the mat's 자리 1–4. */
+  theme: Theme;
+  poseNames: string[];
+  /** Live joint angles (the robot's present pose), read when a block needs it. */
+  live: Live;
+  runningLine: number;
+  onError(msg: string, fix?: string): void;
+}
+
+const COLOR_CLASS: Record<Step['type'], string> = {
+  home: css.c_move,
+  pose: css.c_move,
+  joint: css.c_move,
+  speed: css.c_move,
+  above: css.c_move,
+  down: css.c_move,
+  find: css.c_eye,
+  grip: css.c_grip,
+  pump: css.c_grip,
+  pen: css.c_grip,
+  push: css.c_grip,
+  wait: css.c_flow,
+  repeat: css.c_flow,
+  move: css.c_adv,
+  moveTo: css.c_adv,
+};
+
+function toolProtos(effector: EffectorId): Proto[] {
+  switch (EFFECTOR_BY_ID[effector].kind) {
+    case 'grip':
+      return [{ type: 'grip', open: true }, { type: 'grip', open: false }];
+    case 'suction':
+      return [{ type: 'pump', on: true }, { type: 'pump', on: false }];
+    case 'pen':
+      return [{ type: 'pen', down: true }, { type: 'pen', down: false }];
+    case 'press':
+      return [{ type: 'push' }];
+    case 'hold':
+    case 'none':
+      return [];
+  }
+}
+
+export default function BlockEditor({ code, onCode, effector, cameraFlange, theme, poseNames, live, runningLine, onError }: Props) {
+  const drag = useRef<Drag | null>(null);
+  const [dropKey, setDropKey] = useState<string | null>(null);
+  const [draggingKey, setDraggingKey] = useState<string | null>(null);
+  const [trash, setTrash] = useState(false);
+  /** The picked block (its path), where palette blocks are added after. */
+  const [picked, setPicked] = useState<string | null>(null);
+
+  const { steps, errors } = parse(code);
+  const variables = collectVariables(steps);
+
+  const palette: [string, Proto[]][] = [
+    ['움직이기', [{ type: 'home' }, ...(poseNames.length ? [{ type: 'pose' } as Proto] : []), { type: 'joint' }, { type: 'joint', timed: true }, { type: 'speed' }]],
+    ['카메라', [{ type: 'find' }]],
+    ['옮기기', [{ type: 'above' }, { type: 'down' }]],
+    [EFFECTOR_BY_ID[effector].name, toolProtos(effector)],
+    ['흐름', [{ type: 'wait' }, { type: 'repeat' }]],
+    ['고급', [{ type: 'moveTo' }, { type: 'move' }]],
+  ];
+
+  const makeStep = (proto: Proto): Step => {
+    const line = 0;
+    switch (proto.type) {
+      case 'home':
+        return { type: 'home', line };
+      case 'pose':
+        return { type: 'pose', name: poseNames[0] ?? '', line };
+      case 'joint':
+        return { type: 'joint', j: 1, deg: 30, sec: 'timed' in proto ? 2 : null, line };
+      case 'speed':
+        return { type: 'speed', value: 35, line };
+      case 'grip':
+        return { type: 'grip', open: proto.open, line };
+      case 'pump':
+        return { type: 'pump', on: proto.on, line };
+      case 'pen':
+        return { type: 'pen', down: proto.down, line };
+      case 'push':
+        return { type: 'push', line };
+      case 'wait':
+        return { type: 'wait', sec: 1, line };
+      case 'repeat':
+        return { type: 'repeat', times: 2, body: [], line };
+      case 'move':
+        return { type: 'move', joints: live.getAngles().map((a) => Math.round(a)), speed: null, line };
+      case 'moveTo':
+        return { type: 'moveTo', x: 200, y: 0, z: 80, line };
+      case 'find':
+        return { type: 'find', variable: DEFAULT_VARIABLE, camera: theme === 'arm' ? 'hand' : 'top', color: '빨강', line };
+      case 'above':
+      case 'down':
+        return { type: proto.type, target: variables.length ? { kind: 'var', name: variables[0] } : theme === 'arm' ? { kind: 'spot', spot: SPOT_NAMES[0] } : { kind: 'bin', bin: 'D' }, line };
+    }
+  };
+
+  const applyDrop = (target: DropTarget, d: Drag) => {
+    const parsed = parse(code);
+    if (parsed.errors.length) {
+      onError('파이썬에 오류가 있어서 블록을 바꿀 수 없어요.', '[파이썬]에서 먼저 고쳐 주세요.');
+      return;
+    }
+    const list0 = parsed.steps;
+    const at = (p: Path): Step => (p.length === 1 ? list0[p[0]] : (list0[p[0]] as Extract<Step, { type: 'repeat' }>).body[p[1]]);
+    // Decide whether the drop is allowed BEFORE taking the block out, so a
+    // refused drop never loses the block.
+    const intoLoop = target.where === 'into' || (target.where === 'before' && target.path.length === 2);
+    const movingType = d.kind === 'new' ? d.proto.type : at(d.path).type;
+    if (intoLoop && movingType === 'repeat') {
+      onError('반복 안에 반복은 넣을 수 없어요.');
+      return;
+    }
+    let item: Step;
+    let src: Path | null = null;
+    if (d.kind === 'new') item = makeStep(d.proto);
+    else {
+      src = d.path;
+      if (target.where === 'before' && target.path.join() === src.join()) return;
+      if (src.length === 1 && at(src).type === 'repeat') {
+        if (target.where === 'into' && target.i === src[0]) return;
+        if (target.where === 'before' && target.path.length === 2 && target.path[0] === src[0]) return;
+      }
+      const list = src.length === 1 ? list0 : (list0[src[0]] as Extract<Step, { type: 'repeat' }>).body;
+      item = list.splice(src[src.length - 1], 1)[0];
+    }
+    if (target.where === 'delete') {
+      onCode(serialize(list0));
+      return;
+    }
+    const path: Path =
+      target.where === 'end' ? [list0.length] : target.where === 'into' ? [target.i, Number.MAX_SAFE_INTEGER] : target.path.slice();
+    if (src) {
+      if (src.length === 1 && path[0] > src[0]) path[0] -= 1;
+      else if (src.length === 2 && path.length === 2 && path[0] === src[0] && path[1] > src[1]) path[1] -= 1;
+    }
+    const list = path.length === 1 ? list0 : (list0[path[0]] as Extract<Step, { type: 'repeat' }>).body;
+    list.splice(Math.min(path[path.length - 1], list.length), 0, item);
+    onCode(serialize(list0));
+  };
+
+  const endDrag = () => {
+    drag.current = null;
+    setDropKey(null);
+    setDraggingKey(null);
+    setTrash(false);
+  };
+
+  const commit = () => onCode(serialize(steps));
+
+  /* --- block content --------------------------------------------------- */
+
+  const sel = ({ value, options, onChange, label }: { value: string; options: [string, string][]; onChange(v: string): void; label: string }) => (
+    <select className={css.field} aria-label={label} value={value} onChange={(e) => onChange(e.target.value)} onMouseDown={(e) => e.stopPropagation()}>
+      {options.map(([t, v]) => (
+        <option key={v} value={v}>
+          {t}
+        </option>
+      ))}
+    </select>
+  );
+  const num = (
+    { value, onChange, label, min, max, step = 1, unit = '', joint }: { value: number; onChange(v: number): void; label: string; min: number; max: number; step?: number; unit?: string; joint?: number; small?: boolean },
+    key?: string | number,
+  ) => <NumChip key={key} value={value} onChange={onChange} label={label} min={min} max={max} step={step} unit={unit} joint={joint} live={live} />;
+
+  const colorOptions: [string, string][] = COLORS.map((c) => [c.name, c.name]);
+  const targetOptions = (): [string, string][] => [
+    ...variables.map((v): [string, string] => [targetLabel({ kind: 'var', name: v }), `var:${v}`]),
+    ...(theme === 'arm' ? SPOT_NAMES.map((n): [string, string] => [n, `spot:${n}`]) : BIN_NAMES.map((b): [string, string] => [`분류함 ${b}`, `bin:${b}`])),
+    ...(EFFECTOR_BY_ID[effector].kind === 'press' ? ([['버튼', 'button']] as [string, string][]) : []),
+  ];
+  const targetValue = (t: Target) => (t.kind === 'var' ? `var:${t.name}` : t.kind === 'bin' ? `bin:${t.bin}` : t.kind === 'spot' ? `spot:${t.spot}` : 'button');
+  const parseTargetValue = (v: string): Target =>
+    v === 'button'
+      ? { kind: 'button' }
+      : v.startsWith('var:')
+        ? { kind: 'var', name: v.slice(4) }
+        : v.startsWith('spot:')
+          ? { kind: 'spot', spot: v.slice(5) as SpotName }
+          : { kind: 'bin', bin: v.slice(4) as BinName };
+
+  /** Editable content for a placed block; `preview` = palette look. */
+  const content = (s: Step, preview: boolean): ReactNode => {
+    switch (s.type) {
+      case 'home':
+        return <span>기본 자세로 가기</span>;
+      case 'pose':
+        return (
+          <>
+            {preview ? <span>{poseNames[0]} ▾</span> : sel({ label: "자세", value: s.name, options: [...new Set([s.name, ...poseNames])].map((n) => [n, n]), onChange: (v) => ((s.name = v), commit()) })}
+            <span>자세로 가기</span>
+          </>
+        );
+      case 'joint':
+        return (
+          <>
+            {s.sec != null &&
+              (preview ? (
+                <span>2초 동안</span>
+              ) : (
+                <>
+                  {num({ label: '움직이는 시간', value: s.sec, unit: '초', min: MOVE_TIME_MIN, max: MOVE_TIME_MAX, step: 0.5, onChange: (v) => ((s.sec = v), commit()) })}
+                  <span>동안</span>
+                </>
+              ))}
+            {preview ? <span>1번 ▾</span> : sel({ label: "관절 번호", value: String(s.j), options: [1, 2, 3, 4, 5, 6].map((n) => [`${n}번`, String(n)]), onChange: (v) => ((s.j = Number(v)), commit()) })}
+            <span>관절을</span>
+            {preview ? (
+              <span>30°로</span>
+            ) : (
+              <>
+                {num({ label: `${s.j}번 관절 각도`, value: s.deg, unit: '°', min: jointMin()[s.j - 1], max: jointMax()[s.j - 1], joint: s.j - 1, onChange: (v) => ((s.deg = v), commit()) })}
+                <span>로</span>
+              </>
+            )}
+          </>
+        );
+      case 'speed': {
+        const opts: [string, string][] = SPEEDS.map(([t, n]) => [t, String(n)]);
+        if (!SPEEDS.some(([, n]) => n === s.value)) opts.push([String(s.value), String(s.value)]);
+        return (
+          <>
+            <span>속도를</span>
+            {preview ? <span>보통 ▾</span> : sel({ label: "속도", value: String(s.value), options: opts, onChange: (v) => ((s.value = Number(v)), commit()) })}
+            <span>으로</span>
+          </>
+        );
+      }
+      case 'find':
+        return (
+          <>
+            {preview ? <span>{theme === 'arm' ? '손 카메라로' : '키트 카메라로'}</span> : (
+              <>
+                {sel({
+                  label: '카메라',
+                  value: s.camera,
+                  options: [
+                    ...(theme === 'kit' || s.camera === 'top' ? ([['키트 카메라', 'top']] as [string, string][]) : []),
+                    ...(theme === 'arm' || cameraFlange || s.camera === 'hand' ? ([['손 카메라', 'hand']] as [string, string][]) : []),
+                  ],
+                  onChange: (v) => ((s.camera = v as 'top' | 'hand'), commit()),
+                })}
+                <span>로</span>
+              </>
+            )}
+            {preview ? <span>빨강 ▾</span> : sel({ label: "색", value: s.color, options: colorOptions, onChange: (v) => ((s.color = v as ColorName), commit()) })}
+            <span>블록 찾기</span>
+          </>
+        );
+      case 'above':
+      case 'down':
+        return (
+          <>
+            {preview ? (
+              <span>{variables.length ? '찾은 블록' : theme === 'arm' ? SPOT_NAMES[0] : '분류함 D'} ▾</span>
+            ) : (
+              sel({ label: '어디로', value: targetValue(s.target), options: withCurrent(targetOptions(), s.target), onChange: (v) => ((s.target = parseTargetValue(v)), commit()) })
+            )}
+            <span>{s.type === 'above' ? '위로 가기' : '까지 내려가기'}</span>
+          </>
+        );
+      case 'grip':
+        return <span>그리퍼 {s.open ? '열기' : '닫기'}</span>;
+      case 'pump':
+        return <span>흡착 {s.on ? '켜기' : '끄기'}</span>;
+      case 'pen':
+        return <span>펜 {s.down ? '내리기' : '올리기'}</span>;
+      case 'push':
+        return <span>실린더 누르기</span>;
+      case 'wait':
+        return (
+          <>
+            <span>⏸</span>
+            {preview ? <span>1초</span> : num({ label: '멈춰 있을 시간', value: s.sec, unit: '초', min: 0, max: 10, step: 0.5, onChange: (v) => ((s.sec = v), commit()) })}
+            <span>동안 멈추기</span>
+          </>
+        );
+      case 'moveTo':
+        return (
+          <>
+            <span>좌표로 가기</span>
+            {!preview && (
+              <span className={css.advJoints}>
+                x {num({ label: 'x (앞뒤, mm)', value: s.x, min: -280, max: 280, step: 5, onChange: (v) => ((s.x = v), commit()) })}
+                y {num({ label: 'y (좌우, mm)', value: s.y, min: -280, max: 280, step: 5, onChange: (v) => ((s.y = v), commit()) })}
+                z {num({ label: 'z (높이, mm)', value: s.z, min: 0, max: 400, step: 5, onChange: (v) => ((s.z = v), commit()) })}
+              </span>
+            )}
+          </>
+        );
+      case 'move':
+        return (
+          <>
+            <span>6개 관절 한번에</span>
+            {!preview && (
+              <span className={css.advJoints}>
+                {s.joints.map((v, i) =>
+                  num({ label: `${i + 1}번 관절 각도`, value: v, unit: '°', min: jointMin()[i], max: jointMax()[i], joint: i, onChange: (nv) => ((s.joints[i] = nv), commit()) }, i),
+                )}
+                <button
+                  type="button"
+                  className={css.fillNow}
+                  title="로봇의 지금 자세로 6개 각도를 채워요"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    s.joints = live.getAngles().map((a) => Math.round(a));
+                    commit();
+                  }}
+                >
+                  지금 자세
+                </button>
+              </span>
+            )}
+          </>
+        );
+      case 'repeat':
+        return <span>{preview ? '2번 반복하기' : ''}</span>;
+    }
+  };
+
+  const withCurrent = (opts: [string, string][], t: Target): [string, string][] => {
+    const v = targetValue(t);
+    return opts.some(([, o]) => o === v) ? opts : [[targetLabel(t), v], ...opts];
+  };
+
+  /* --- rendering --------------------------------------------------------- */
+
+  const dragProps = (path: Path) => ({
+    draggable: true,
+    onDragStart: (e: DragEvent) => {
+      e.stopPropagation();
+      drag.current = { kind: 'move', path };
+      setDraggingKey(path.join());
+      e.dataTransfer.setData('text/plain', 'block');
+      e.dataTransfer.effectAllowed = 'move';
+    },
+    onDragEnd: endDrag,
+    onDragOver: (e: DragEvent) => {
+      if (!drag.current) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setDropKey(`before:${path.join()}`);
+    },
+    onDrop: (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (drag.current) applyDrop({ where: 'before', path }, drag.current);
+      endDrag();
+    },
+  });
+
+  const removeAt = (path: Path) => {
+    const list = path.length === 1 ? steps : (steps[path[0]] as Extract<Step, { type: 'repeat' }>).body;
+    list.splice(path[path.length - 1], 1);
+    commit();
+  };
+
+  const listOf = (path: Path) => (path.length === 1 ? steps : (steps[path[0]] as Extract<Step, { type: 'repeat' }>).body);
+  const moveBy = (path: Path, dir: -1 | 1) => {
+    const list = listOf(path);
+    const k = path[path.length - 1];
+    const to = k + dir;
+    if (to < 0 || to >= list.length) return;
+    [list[k], list[to]] = [list[to], list[k]];
+    setPicked([...path.slice(0, -1), to].join());
+    commit();
+  };
+  const copyAt = (path: Path) => {
+    const list = listOf(path);
+    const k = path[path.length - 1];
+    list.splice(k + 1, 0, JSON.parse(JSON.stringify(list[k])) as Step);
+    setPicked([...path.slice(0, -1), k + 1].join());
+    commit();
+  };
+  const key = (label: string, text: string, fn: () => void) => (
+    <button
+      type="button"
+      title={label}
+      aria-label={label}
+      onMouseDown={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.stopPropagation();
+        fn();
+      }}
+    >
+      {text}
+    </button>
+  );
+  const del = (path: Path) => (
+    <span className={css.blockKeys}>
+      {key('위로', '↑', () => moveBy(path, -1))}
+      {key('아래로', '↓', () => moveBy(path, 1))}
+      {key('복사', '⧉', () => copyAt(path))}
+      {key('지우기', '×', () => {
+        setPicked(null);
+        removeAt(path);
+      })}
+    </span>
+  );
+
+  const classes = (s: Step, path: Path, extra = '') =>
+    [
+      css.block,
+      extra || COLOR_CLASS[s.type],
+      s.line === runningLine ? css.running : '',
+      dropKey === `before:${path.join()}` ? css.dropBefore : '',
+      draggingKey === path.join() ? css.dragging : '',
+      picked === path.join() ? css.picked : '',
+    ].join(' ');
+  const pick = (path: Path) => ({
+    onClick: (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setPicked((p) => (p === path.join() ? null : path.join()));
+    },
+  });
+
+  const build = (s: Step, path: Path): ReactNode => {
+    if (s.type === 'repeat') {
+      return (
+        <div key={path.join()} className={classes(s, path, css.repeat)} {...dragProps(path)} {...pick(path)}>
+          <div className={css.cHead}>
+            {num({ label: '반복 횟수', value: s.times, unit: '번', min: 1, max: 20, onChange: (v) => ((s.times = Math.max(1, Math.round(v))), commit()) })}
+            <span>반복하기</span>
+            {del(path)}
+          </div>
+          <div
+            className={`${css.cBody} ${dropKey === `into:${path[0]}` ? css.dropInto : ''}`}
+            onDragOver={(e) => {
+              if (!drag.current || e.target !== e.currentTarget) return;
+              e.preventDefault();
+              e.stopPropagation();
+              setDropKey(`into:${path[0]}`);
+            }}
+            onDrop={(e) => {
+              if (e.target !== e.currentTarget) return;
+              e.preventDefault();
+              e.stopPropagation();
+              if (drag.current) applyDrop({ where: 'into', i: path[0] }, drag.current);
+              endDrag();
+            }}
+          >
+            {s.body.map((c, j) => build(c, [path[0], j]))}
+          </div>
+          <div className={css.cFoot} />
+        </div>
+      );
+    }
+    return (
+      <div key={path.join()} className={classes(s, path)} {...dragProps(path)} {...pick(path)}>
+        {content(s, false)}
+        {del(path)}
+      </div>
+    );
+  };
+
+  return (
+    <div className={css.blocks}>
+      <div
+        className={`${css.palette} ${trash ? css.paletteTrash : ''}`}
+        aria-label="블록 꾸러미"
+        onDragOver={(e) => {
+          if (drag.current?.kind === 'move') {
+            e.preventDefault();
+            setTrash(true);
+          }
+        }}
+        onDragLeave={() => setTrash(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          if (drag.current?.kind === 'move') applyDrop({ where: 'delete' }, drag.current);
+          endDrag();
+        }}
+      >
+        <p className={css.paletteTip}>{picked ? '누르면 고른 블록 다음에 들어가요' : '누르면 맨 끝에 들어가요 · 끌어다 놓아도 돼요'}</p>
+        {palette.map(([name, items]) => (
+          <PaletteGroup key={name} name={name} empty={items.length === 0}>
+            {items.map((proto, k) => {
+              const preview = makeStep(proto);
+              const add = () => {
+                // After the picked block (inside a loop when it is in one), else at the end.
+                const at = picked ? picked.split(',').map(Number) : null;
+                const valid = at && (at.length === 1 ? at[0] < steps.length : at[0] < steps.length && steps[at[0]].type === 'repeat');
+                if (valid && at) {
+                  const next = [...at.slice(0, -1), at[at.length - 1] + 1];
+                  applyDrop(next.length === 1 && next[0] >= steps.length ? { where: 'end' } : { where: 'before', path: next }, { kind: 'new', proto });
+                  setPicked(next.join());
+                } else {
+                  applyDrop({ where: 'end' }, { kind: 'new', proto });
+                  setPicked(String(steps.length));
+                }
+              };
+              return (
+                <div
+                  key={`${name}-${k}`}
+                  className={`${css.block} ${COLOR_CLASS[proto.type]}`}
+                  draggable
+                  role="button"
+                  tabIndex={0}
+                  onDragStart={(e) => {
+                    drag.current = { kind: 'new', proto };
+                    e.dataTransfer.setData('text/plain', 'block');
+                    e.dataTransfer.effectAllowed = 'copyMove';
+                  }}
+                  onDragEnd={endDrag}
+                  onClick={add}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      add();
+                    }
+                  }}
+                >
+                  {content(preview, true)}
+                </div>
+              );
+            })}
+          </PaletteGroup>
+        ))}
+      </div>
+      <div
+        className={css.workspace}
+        onClick={() => setPicked(null)}
+        onDragOver={(e) => {
+          if (drag.current) e.preventDefault();
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          if (drag.current) applyDrop({ where: 'end' }, drag.current);
+          endDrag();
+        }}
+      >
+        <div className={css.script}>
+          <div className={`${css.block} ${css.start}`}>
+            <span>▶ 시뮬레이션을 누르면</span>
+          </div>
+          {errors.length ? (
+            <p className={css.empty}>파이썬 {errors[0].line}번째 줄에 오류가 있어 블록으로 볼 수 없어요.</p>
+          ) : (
+            steps.map((s, i) => build(s, [i]))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PaletteGroup({ name, empty, children }: { name: string; empty: boolean; children: ReactNode }) {
+  return (
+    <>
+      <div className={css.grp}>{name}</div>
+      {empty ? <p className={css.hint}>이 도구는 따로 쓰는 블록이 없어요.</p> : children}
+    </>
+  );
+}
+
+function collectVariables(steps: readonly Step[]): string[] {
+  const out: string[] = [];
+  const walk = (list: readonly Step[]) =>
+    list.forEach((s) => {
+      if (s.type === 'find' && !out.includes(s.variable)) out.push(s.variable);
+      if (s.type === 'repeat') walk(s.body);
+    });
+  walk(steps);
+  return out;
+}
+
+/**
+ * A number in a block, shown whole ("46°"). Clicking it opens a small panel:
+ * slider, step buttons, a number field and — for joint angles — the robot's
+ * present angle. Every change applies at once.
+ */
+/** "지금 로봇 N°": the joint's present angle, kept up to date while the chip's panel is open. */
+function NowButton({ live, joint, unit, onSet }: { live: Live; joint: number; unit: string; onSet(v: number): void }) {
+  const now = useLive(live, (v) => Math.round(v.angles[joint] ?? 0));
+  return (
+    <button type="button" className={css.fillNow} onClick={() => onSet(now)}>
+      지금 로봇 {now}
+      {unit}
+    </button>
+  );
+}
+
+function NumChip({
+  value,
+  onChange,
+  label,
+  min,
+  max,
+  step,
+  unit,
+  joint,
+  live,
+}: {
+  value: number;
+  onChange(v: number): void;
+  label: string;
+  min: number;
+  max: number;
+  step: number;
+  unit: string;
+  /** For a joint angle: which joint (0..5), to offer the robot's present angle. */
+  joint?: number;
+  live: Live;
+}) {
+  const [open, setOpen] = useState<{ left: number; top: number } | null>(null);
+  const chip = useRef<HTMLButtonElement>(null);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: Event) => {
+      if (e instanceof KeyboardEvent ? e.key === 'Escape' || e.key === 'Enter' : !box.current?.contains(e.target as Node) && !chip.current?.contains(e.target as Node)) setOpen(null);
+    };
+    const away = () => setOpen(null);
+    document.addEventListener('mousedown', close);
+    document.addEventListener('keydown', close);
+    window.addEventListener('resize', away);
+    return () => {
+      document.removeEventListener('mousedown', close);
+      document.removeEventListener('keydown', close);
+      window.removeEventListener('resize', away);
+    };
+  }, [open]);
+  const set = (v: number) => {
+    const r = Math.round(Math.min(max, Math.max(min, v)) / step) * step;
+    const clean = Number(r.toFixed(2));
+    if (clean !== value) onChange(clean);
+  };
+  const big = step < 1 ? 1 : (max - min) > 100 ? 10 : 5;
+  const small = step;
+  return (
+    <>
+      <button
+        ref={chip}
+        type="button"
+        className={css.numChip}
+        aria-label={`${label}: ${value}${unit}`}
+        aria-expanded={!!open}
+        onMouseDown={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (open) return setOpen(null);
+          const r = chip.current!.getBoundingClientRect();
+          setOpen({ left: Math.min(window.innerWidth - 250, Math.max(8, r.left - 20)), top: Math.min(window.innerHeight - 190, r.bottom + 6) });
+        }}
+      >
+        {value}
+        {unit}
+      </button>
+      {open && (
+        <div
+          ref={box}
+          className={css.numPop}
+          style={{ left: open.left, top: open.top }}
+          draggable={false}
+          onDragStart={(e) => e.preventDefault()}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-label={label}
+        >
+          <div className={css.numPopHead}>
+            <span>{label}</span>
+            <b>
+              {value}
+              {unit}
+            </b>
+          </div>
+          <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => set(Number(e.target.value))} aria-label={label} />
+          <div className={css.numPopKeys}>
+            <button type="button" onClick={() => set(value - big)}>−{big}</button>
+            <button type="button" onClick={() => set(value - small)}>−{small}</button>
+            <input
+              type="number"
+              step="any"
+              value={value}
+              aria-label={`${label} 직접 입력`}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                if (e.target.value !== '' && Number.isFinite(v)) set(v);
+              }}
+            />
+            <button type="button" onClick={() => set(value + small)}>+{small}</button>
+            <button type="button" onClick={() => set(value + big)}>+{big}</button>
+          </div>
+          <div className={css.numPopFoot}>
+            <span>
+              {min}
+              {unit} ~ {max}
+              {unit}
+            </span>
+            {joint !== undefined && <NowButton live={live} joint={joint} unit={unit} onSet={set} />}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}

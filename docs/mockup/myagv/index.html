@@ -1,0 +1,909 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>myAGV 주행·카메라 실습 목업</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<style>
+  :root {
+    --page: #fff; --soft: #f4f5f7; --line: #e4e7ec; --ink: #101828; --muted: #475467; --faint: #8a94a6;
+    --accent: #3454d1; --accent-soft: #eef1fd; --sim: #1fae66; --sim-soft: #e4f6ec; --real: #f7851e; --real-soft: #fff0e1;
+    --stop: #ef4638; --head: #1d2636; --blk-start: #1fae66; --blk-move: #7a5cf5; --blk-eye: #e0457b; --blk-led: #f59a1b; --blk-flow: #1ea7df; --blk-sense: #0f9f8f;
+    --dock-w: 336px; --editor-w: 392px; --gap: 14px; --top: 88px;
+    --shadow: 0 12px 32px rgba(16, 24, 40, 0.16), 0 2px 6px rgba(16, 24, 40, 0.06);
+    --font: 'Pretendard', 'Pretendard Variable', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #e9ecf0; color: var(--ink); font: 500 14px/1.45 var(--font); }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  #view { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+
+  /* top bar */
+  .top { position: fixed; top: 12px; left: var(--gap); right: var(--gap); z-index: 20; height: 62px; display: flex; align-items: center; gap: 14px; padding: 0 14px;
+    background: rgba(255,255,255,.94); backdrop-filter: blur(10px); border: 1px solid rgba(220,226,234,.95); border-radius: 16px; box-shadow: 0 8px 24px rgba(16,24,40,.1); }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand img { width: 40px; height: 28px; object-fit: contain; }
+  .brand b { font-size: 16px; white-space: nowrap; }
+  .chipBtn { border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 6px 12px; display: grid; line-height: 1.15; text-align: left; }
+  .chipBtn small { font-size: 10px; font-weight: 700; color: var(--faint); }
+  .chipBtn b { font-size: 13.5px; white-space: nowrap; }
+  .tabs { display: flex; background: var(--head); border-radius: 12px; padding: 3px; }
+  .tabs button { white-space: nowrap; border: none; background: transparent; color: #cdd5e1; padding: 7px 15px; border-radius: 9px; font-weight: 700; }
+  .tabs button[aria-selected=true] { background: #fff; color: var(--ink); }
+  .grp { display: flex; align-items: center; gap: 8px; }
+  .no { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--head); color: #fff; font: 700 11px var(--font); font-style: normal; }
+  .seg { display: inline-flex; background: var(--soft); border: 1px solid var(--line); border-radius: 11px; padding: 3px; gap: 2px; }
+  .seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 8px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+  .seg button[aria-pressed=true] { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(16,24,40,.14); }
+  .pick { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; border: 1px solid var(--line); background: #fff; border-radius: 12px; padding: 6px 12px; text-align: left; }
+  .pick span { display: grid; line-height: 1.15; min-width: 0; }
+  .pick small { color: var(--accent); font-weight: 700; font-size: 11px; }
+  .pick b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .conn { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 12px; background: var(--sim-soft); color: #137a47; font-weight: 700; white-space: nowrap; }
+  .conn i { width: 8px; height: 8px; border-radius: 50%; background: var(--sim); }
+  .modelMenu { position: absolute; top: calc(100% + 8px); left: 0; z-index: 40; width: 300px; background: #fff; border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); padding: 6px; display: none; }
+  .modelMenu[data-open] { display: block; }
+  .modelMenu button { width: 100%; border: none; background: transparent; text-align: left; padding: 9px 10px; border-radius: 10px; display: grid; gap: 1px; }
+  .modelMenu button:hover, .modelMenu button[aria-pressed=true] { background: var(--accent-soft); }
+  .modelMenu small { color: var(--muted); font-size: 12px; }
+
+  /* floating panels */
+  .panel { position: fixed; top: var(--top); bottom: var(--gap); z-index: 15; display: flex; flex-direction: column; background: rgba(255,255,255,.95); backdrop-filter: blur(12px);
+    border: 1px solid rgba(220,226,234,.95); border-radius: 16px; box-shadow: var(--shadow); overflow: hidden; }
+  .panel > header { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: var(--head); color: #fff; }
+  .panel > header b { font-size: 15px; }
+  .badge { font: 700 11px var(--font); padding: 3px 8px; border-radius: 6px; }
+  .dock { left: var(--gap); width: var(--dock-w); }
+  .dockBody { flex: 1; overflow: auto; padding: 10px; background: rgba(238,241,245,.7); display: grid; gap: 10px; align-content: start; }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px 12px; display: grid; gap: 9px; }
+  .card h3 { margin: 0; font-size: 13.5px; display: flex; align-items: center; gap: 7px; }
+  .card h3 em { margin-left: auto; font-style: normal; font-size: 11.5px; color: var(--faint); font-weight: 600; }
+  .lamps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .lamp { border: 1px solid var(--line); border-radius: 8px; padding: 5px 6px; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; }
+  .lamp i { width: 8px; height: 8px; border-radius: 50%; background: var(--sim); }
+  .readout { background: #111827; border-radius: 10px; padding: 8px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+  .readout div { background: #1d2636; border-radius: 7px; padding: 5px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+  .readout span { color: #8a94a6; font-size: 11px; font-weight: 700; }
+  .readout b { color: #7fd6ff; font-variant-numeric: tabular-nums; font-size: 14.5px; }
+  .readout div.v b { color: #9df0b8; }
+  .readout div.l { grid-column: 1 / -1; }
+  .readout div.l b { color: #ffb4a8; }
+  .readout p { grid-column: 1 / -1; margin: 2px 2px 0; display: flex; justify-content: space-between; color: #8a94a6; font-size: 11px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .btn { border: 1px solid var(--line); background: var(--soft); border-radius: 9px; padding: 8px 6px; font-weight: 700; font-size: 13px; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* joystick */
+  .sticks { display: grid; grid-template-columns: 1fr 92px; gap: 10px; align-items: center; }
+  .joy { position: relative; width: 168px; height: 168px; margin: 0 auto; border-radius: 50%; touch-action: none; user-select: none;
+    background: radial-gradient(circle at 50% 50%, #f7f8fa 0 38%, #eceff3 39% 100%); box-shadow: inset 0 0 0 1px #d6dbe3, inset 0 6px 14px rgba(16,24,40,.08); }
+  .joy::before, .joy::after { content: ''; position: absolute; background: #d9dee6; }
+  .joy::before { left: 50%; top: 12px; bottom: 12px; width: 1px; }
+  .joy::after { top: 50%; left: 12px; right: 12px; height: 1px; }
+  .joy .lbl { position: absolute; font-size: 10.5px; font-weight: 700; color: var(--faint); }
+  .joy .knob { position: absolute; left: 50%; top: 50%; width: 62px; height: 62px; margin: -31px 0 0 -31px; border-radius: 50%; z-index: 2;
+    background: radial-gradient(circle at 40% 35%, #8b73ff, #6a4ee8 70%); box-shadow: 0 6px 14px rgba(90,60,220,.35), inset 0 -3px 0 rgba(0,0,0,.15); display: grid; place-items: center; color: #fff; font-size: 11px; font-weight: 800; }
+  .turn { display: grid; gap: 6px; justify-items: center; }
+  .turnTrack { position: relative; width: 92px; height: 44px; border-radius: 22px; background: #eceff3; box-shadow: inset 0 0 0 1px #d6dbe3; touch-action: none; }
+  .turnTrack .knob { position: absolute; top: 4px; left: 50%; width: 36px; height: 36px; margin-left: -18px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #8b73ff, #6a4ee8 70%); color: #fff; display: grid; place-items: center; font-weight: 800; box-shadow: 0 4px 10px rgba(90,60,220,.3); }
+  .turn small { font-size: 11px; color: var(--faint); font-weight: 700; }
+  .stopBig { width: 92px; height: 44px; border: none; border-radius: 12px; background: linear-gradient(180deg, #f35547, #e03a2c); color: #fff; font-weight: 800; }
+  .speed { display: grid; gap: 4px; }
+  .speed label { display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 700; }
+  .speed label b { color: var(--accent); font-variant-numeric: tabular-nums; }
+  .speed input { width: 100%; accent-color: var(--accent); }
+  .inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .src { border: 1px solid var(--line); border-radius: 9px; padding: 6px 8px; font-size: 12px; display: grid; gap: 1px; }
+  .src b { font-size: 12.5px; display: flex; align-items: center; gap: 6px; }
+  .src b i { width: 8px; height: 8px; border-radius: 50%; background: var(--sim); }
+  .src b i.off { background: #c3c9d3; }
+  .src span { color: var(--faint); }
+  kbd { font: 700 10.5px var(--font); background: var(--soft); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 0 5px; }
+
+  /* straight-line calibration */
+  .calSteps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+  .calSteps span { font-size: 11px; font-weight: 700; color: var(--faint); border-top: 3px solid var(--line); padding-top: 4px; }
+  .calSteps span[data-on] { color: var(--accent); border-color: var(--accent); }
+  .calRes { background: var(--soft); border-radius: 9px; padding: 8px 10px; display: grid; gap: 2px; font-size: 12.5px; }
+  .calRes b { font-variant-numeric: tabular-nums; }
+  .calRes .bad { color: var(--stop); }
+  .calRes .good { color: #137a47; }
+  .motors { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+  .motor { border: 1px solid var(--line); border-radius: 8px; padding: 5px 4px; text-align: center; font-size: 11px; font-weight: 700; color: var(--muted); display: grid; gap: 3px; }
+  .motor i { display: block; height: 5px; border-radius: 3px; background: var(--soft); overflow: hidden; }
+  .motor i u { display: block; height: 100%; background: var(--blk-move); width: 0; }
+  .motor b { font-size: 12px; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .toggle { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700; }
+  .toggle input { accent-color: var(--accent); width: 16px; height: 16px; }
+  .toggle small { color: var(--faint); font-weight: 600; }
+  .leds { display: flex; gap: 6px; }
+  .leds button { flex: 1; height: 26px; border-radius: 8px; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--line); }
+  .leds button[aria-pressed=true] { box-shadow: 0 0 0 2px var(--ink); }
+
+  /* editor */
+  .editor { right: var(--gap); width: var(--editor-w); }
+  .editor header select { margin-left: auto; border: none; border-radius: 8px; padding: 5px 8px; font: 600 13px var(--font); }
+  .edBody { flex: 1; display: grid; grid-template-columns: 124px 1fr; min-height: 0; }
+  .palette { border-right: 1px solid var(--line); padding: 10px 8px; overflow: auto; display: grid; gap: 6px; align-content: start; background: #fbfbfd; }
+  .palette h4 { margin: 6px 2px 0; font-size: 11.5px; color: var(--faint); }
+  .work { padding: 12px; overflow: auto; background-image: radial-gradient(#e6e9ef 1px, transparent 1px); background-size: 16px 16px; }
+  .blk { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 5px; color: #fff; font-weight: 700; font-size: 13px; padding: 7px 10px; border-radius: 9px; margin: 0 0 4px; box-shadow: inset 0 -2px 0 rgba(0,0,0,.14); }
+  .palette .blk { font-size: 12px; padding: 6px 8px; width: 100%; }
+  .blk.start { background: var(--blk-start); border-radius: 16px 16px 9px 9px; }
+  .blk.move { background: var(--blk-move); }
+  .blk.eye { background: var(--blk-eye); }
+  .blk.sense { background: var(--blk-sense); }
+  .blk.led { background: var(--blk-led); }
+  .blk.flow { background: var(--blk-flow); }
+  .blk .c { background: #fff; color: var(--ink); border-radius: 12px; padding: 1px 9px; font-size: 12.5px; }
+  .blk .c.dd::after { content: ' ▾'; color: var(--faint); font-size: 10px; }
+  .stack { display: grid; justify-items: start; }
+  .inner { margin-left: 16px; padding-left: 8px; border-left: 4px solid var(--blk-flow); display: grid; justify-items: start; margin-bottom: 4px; }
+  .else { color: var(--blk-flow); font-weight: 800; font-size: 12px; margin: 2px 0 4px; }
+
+  /* over the 3D */
+  .free { position: fixed; z-index: 12; left: calc((var(--dock-w) + var(--gap) * 2 + 100% - var(--editor-w) - var(--gap) * 2) / 2); transform: translateX(-50%); }
+  .mission { top: var(--top); display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 16px; background: var(--head); color: #fff; border-radius: 14px; box-shadow: var(--shadow); white-space: nowrap; }
+  .mission .tag { background: var(--accent); padding: 3px 9px; border-radius: 7px; font-size: 12px; font-weight: 700; }
+  .mission p { margin: 0; color: #cdd5e1; font-size: 13px; }
+  .mission button { border: 1px solid rgba(255,255,255,.25); background: rgba(255,255,255,.08); color: #fff; border-radius: 9px; padding: 6px 12px; font-weight: 700; }
+  .viewbar { position: fixed; z-index: 12; top: calc(var(--top) + 64px); right: calc(var(--editor-w) + var(--gap) * 2 + 8px); display: flex; gap: 2px; padding: 4px; background: rgba(255,255,255,.94); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 4px 14px rgba(16,24,40,.08); }
+  .viewbar button { border: none; background: transparent; padding: 6px 10px; border-radius: 8px; font-weight: 700; font-size: 13px; color: var(--muted); }
+  .viewbar button[aria-pressed=true] { background: var(--accent-soft); color: var(--accent); }
+  .viewbar i { width: 1px; background: var(--line); margin: 4px 3px; }
+  .pip { position: fixed; z-index: 12; right: calc(var(--editor-w) + var(--gap) * 2 + 8px); bottom: 132px; width: 336px; background: #fff; border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; }
+  .pipHead { display: flex; align-items: center; gap: 8px; padding: 7px 10px; font-size: 12.5px; font-weight: 700; }
+  .pipHead .seg button { padding: 3px 9px; font-size: 12px; }
+  .pipHead span { margin-left: auto; color: var(--faint); font-size: 11.5px; }
+  .pipView { position: relative; aspect-ratio: 4 / 3; background: #0b1220; overflow: hidden; }
+  .pipView canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .pipView::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at center, transparent 58%, rgba(0,0,0,.34) 100%); }
+  .pipView .rec { position: absolute; left: 8px; top: 7px; z-index: 2; color: #fff; font: 700 10.5px var(--font); text-shadow: 0 1px 2px #000; }
+  .pipFoot { padding: 7px 10px; font-size: 12.5px; display: grid; gap: 2px; border-top: 1px solid var(--line); }
+  .pipFoot b { color: var(--blk-eye); }
+  .runbar { bottom: 64px; width: min(760px, calc(100% - var(--dock-w) - var(--editor-w) - var(--gap) * 4 - 16px)); display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(255,255,255,.96); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); }
+  .step { display: flex; align-items: center; gap: 7px; }
+  .step .n { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--line); color: var(--muted); font-size: 11px; font-weight: 700; }
+  .step.next .n { background: var(--accent); color: #fff; box-shadow: 0 0 0 3px var(--accent-soft); }
+  .arrow { flex: 0 1 18px; height: 2px; background: var(--line); }
+  .fbtn { height: 36px; padding: 0 14px; border: none; border-radius: 10px; color: #fff; font-weight: 700; white-space: nowrap; }
+  .fbtn.sim { background: linear-gradient(180deg, #25bf72, #1aa45f); }
+  .fbtn.real { background: var(--soft); color: var(--faint); box-shadow: inset 0 0 0 1px var(--line); display: grid; line-height: 1.1; text-align: left; }
+  .fbtn.real small { font-size: 11px; }
+  .fbtn.stop { margin-left: auto; background: linear-gradient(180deg, #f35547, #e03a2c); }
+  .goal { flex: 1; min-width: 120px; display: grid; gap: 4px; }
+  .goal span { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .goal span b { color: var(--accent); }
+  .track { height: 5px; background: var(--soft); border-radius: 3px; overflow: hidden; }
+  .track i { display: block; height: 100%; width: 0; background: var(--accent); }
+  .logbar { bottom: var(--gap); width: min(760px, calc(100% - var(--dock-w) - var(--editor-w) - var(--gap) * 4 - 16px)); display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: rgba(255,255,255,.94); border: 1px solid var(--line); border-radius: 12px; font-size: 13px; }
+  .logbar .k { background: var(--soft); border-radius: 6px; padding: 2px 8px; font-size: 12px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+  .logbar .k.err { background: #fdeceb; color: var(--stop); }
+  .logbar .k.ok { background: var(--sim-soft); color: #137a47; }
+  .logbar em { margin-left: auto; font-style: normal; color: var(--faint); font-size: 12px; white-space: nowrap; }
+
+  .mockTag { position: fixed; z-index: 60; left: calc(var(--dock-w) + var(--gap) * 2); bottom: var(--gap); display: flex; gap: 6px; align-items: center; padding: 5px; background: #f34a52; border-radius: 12px; box-shadow: 0 6px 18px rgba(243,74,82,.35); }
+  .mockTag b { color: #fff; font-size: 12px; padding: 0 6px; }
+  .mockTag button { border: none; border-radius: 8px; padding: 5px 10px; font-weight: 700; font-size: 12.5px; background: rgba(255,255,255,.2); color: #fff; }
+  .mockTag button[aria-pressed=true] { background: #fff; color: #d92d36; }
+
+  /* curriculum & features page */
+  .curri { position: fixed; inset: 0; z-index: 50; background: #f4f6f9; overflow: auto; padding: 96px 32px 72px; display: none; }
+  .curri[data-open] { display: block; }
+  .curri .wrap { max-width: 1320px; margin: 0 auto; display: grid; gap: 18px; }
+  .curri h1 { margin: 0; font-size: 26px; }
+  .curri h2 { margin: 0 0 10px; font-size: 18px; display: flex; align-items: center; gap: 8px; }
+  .curri .lead { margin: 4px 0 0; color: var(--muted); font-size: 15px; }
+  .sheet { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; box-shadow: 0 1px 2px rgba(16,24,40,.04); }
+  .cols3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .box { border-radius: 12px; padding: 12px 14px; border: 1px solid var(--line); font-size: 13.5px; color: var(--muted); }
+  .box.now { background: var(--sim-soft); border-color: #bfe8d2; }
+  .box.later { background: var(--soft); }
+  .box.rec { background: #eef1fd; border-color: #c9d3f7; }
+  .box h3 { margin: 0 0 6px; font-size: 14.5px; color: var(--ink); display: flex; gap: 8px; align-items: center; }
+  .box ul, .box ol { margin: 0; padding-left: 18px; display: grid; gap: 3px; }
+  .box b { color: var(--ink); }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th { text-align: left; font-size: 12px; color: var(--muted); padding: 8px 10px; border-bottom: 2px solid var(--line); background: #fafbfc; }
+  td { padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td:first-child { font-weight: 800; color: var(--faint); width: 34px; }
+  tr.sec td { background: var(--head); color: #fff; font-weight: 700; padding: 7px 10px; }
+  td code, .box code { font: 600 12px ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--soft); border-radius: 5px; padding: 1px 5px; color: #344054; white-space: nowrap; }
+  .t { display: inline-block; font-size: 11.5px; font-weight: 700; padding: 2px 7px; border-radius: 6px; margin: 1px 2px 1px 0; white-space: nowrap; }
+  .t.d { background: #efeaff; color: #5b3fd6; }
+  .t.c { background: #fde8f0; color: #b8285c; }
+  .t.e { background: #e3f3fb; color: #0f78a8; }
+  .t.s { background: var(--sim-soft); color: #137a47; }
+  .t.w { background: var(--real-soft); color: #b35a07; }
+  .t.l { background: #e0f5f2; color: #0b7a6e; }
+  .dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .net { display: grid; grid-template-columns: 1.25fr 1fr; gap: 14px; align-items: start; }
+  .net svg { width: 100%; height: auto; }
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.185.1/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.185.1/examples/jsm/" } }
+</script>
+</head>
+<body>
+<canvas id="view"></canvas>
+
+<header class="top">
+  <div class="brand"><img src="eduino-logo.png" alt="에듀이노" /><b>이동 로봇 실습</b></div>
+  <div style="position:relative"><button class="chipBtn" id="modelBtn" title="로봇 모델 바꾸기"><small>모델</small><b id="modelName">myAGV 2023 · Pi</b></button>
+    <div class="modelMenu" id="modelMenu">
+      <button data-model="pi" aria-pressed="true"><b>myAGV 2023 · Raspberry Pi</b><small>ROS 1 · 카메라 5MP 65° · 라이다 X2L · 0.9m/s</small></button>
+      <button data-model="jn"><b>myAGV 2023 · Jetson Nano</b><small>ROS 1 + ROS 2 · 카메라 8MP 77° · 라이다 X2L · 0.9m/s</small></button>
+      <button data-model="plus"><b>myAGV Plus</b><small>ROS 2 · 카메라 8MP 77° · 라이다 360° · 1.6m/s</small></button>
+    </div>
+  </div>
+  <span class="tabs" role="tablist"><button aria-selected="true">실습</button><button>점검</button></span>
+  <div class="grp"><i class="no">1</i><span class="seg"><button aria-pressed="true">초급</button><button>중급</button><button>고급</button></span></div>
+  <div class="grp"><i class="no">2</i><span class="seg"><button aria-pressed="true">주행 코스</button><button>빈 교실</button></span></div>
+  <div class="grp" style="flex:1;min-width:0"><i class="no">3</i><button class="pick"><span><small>카메라</small><b>색 카드 찾아 멈추기</b></span><span style="margin-left:auto;color:var(--faint)">▾</span></button></div>
+  <div class="conn"><i></i>시뮬레이션 · 로봇 찾기</div>
+</header>
+
+<aside class="panel dock">
+  <header><b>주행 패널</b><span class="badge" style="background:var(--sim);margin-left:auto">SIM</span></header>
+  <div class="dockBody">
+    <section class="card">
+      <h3>로봇 상태 <em>0.1초마다</em></h3>
+      <div class="lamps"><span class="lamp"><i></i>시뮬레이션</span><span class="lamp"><i></i>배터리 12.1V</span><span class="lamp" id="lampMove"><i style="background:#98a2b3"></i>멈춤</span></div>
+      <div class="readout">
+        <div><span>X</span><b id="rX">0.00</b></div><div><span>Y</span><b id="rY">0.00</b></div><div><span>방향</span><b id="rT">0°</b></div>
+        <div class="v"><span>앞뒤</span><b id="rVx">0.00</b></div><div class="v"><span>옆</span><b id="rVy">0.00</b></div><div class="v"><span>회전</span><b id="rW">0</b></div>
+        <div class="l"><span>라이다 · 가장 가까운 물체</span><b id="rL">—</b></div>
+        <p><span>위치 m · 방향 ° (자이로)</span><span>속도 m/s · °/s</span></p>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3>조종 <em>손을 떼면 멈춰요</em></h3>
+      <div class="sticks">
+        <div class="joy" id="joy"><span class="lbl" style="top:6px;left:50%;transform:translateX(-50%)">앞</span><span class="lbl" style="bottom:6px;left:50%;transform:translateX(-50%)">뒤</span><span class="lbl" style="left:8px;top:50%;transform:translateY(-50%)">왼</span><span class="lbl" style="right:8px;top:50%;transform:translateY(-50%)">오</span><div class="knob" id="joyKnob">이동</div></div>
+        <div class="turn">
+          <div class="turnTrack" id="turn"><div class="knob" id="turnKnob">⟲⟳</div></div><small>돌기 (좌우로 끌기)</small>
+          <button class="stopBig" id="stopBtn">■ 멈춤</button><small>Space</small>
+        </div>
+      </div>
+      <div class="speed"><label>최고 속도 <b id="spdTxt">0.20 m/s · 보통</b></label><input id="spd" type="range" min="0.05" max="0.5" step="0.05" value="0.2" /></div>
+      <div class="inputs">
+        <div class="src"><b><i></i>키보드</b><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 이동 · <kbd>Q</kbd><kbd>E</kbd> 돌기</span></div>
+        <div class="src"><b><i class="off" id="padLamp"></i><span id="padName" style="color:var(--ink)">게임패드</span></b><span id="padHint">USB·블루투스 패드를 꽂고 버튼을 누르세요</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3>직진 보정 <em>모터 차이로 휘는 것 바로잡기</em></h3>
+      <div class="calSteps"><span id="cs1" data-on>① 1m 직진 테스트</span><span id="cs2">② 휜 정도 재기</span><span id="cs3">③ 보정 저장</span></div>
+      <div class="motors" id="motors">
+        <div class="motor">앞 왼쪽<i><u id="mFL"></u></i><b id="mFLv">0</b></div><div class="motor">앞 오른쪽<i><u id="mFR"></u></i><b id="mFRv">0</b></div>
+        <div class="motor">뒤 왼쪽<i><u id="mRL"></u></i><b id="mRLv">0</b></div><div class="motor">뒤 오른쪽<i><u id="mRR"></u></i><b id="mRRv">0</b></div>
+      </div>
+      <div class="calRes" id="calRes"><span>아직 재지 않았어요. 로봇을 <b>보정 줄</b>에 두고 [1m 직진 테스트]를 눌러요.</span></div>
+      <div class="row2"><button class="btn primary" id="calTest">▶ 1m 직진 테스트</button><button class="btn" id="calSave" disabled>보정 저장</button></div>
+      <label class="toggle"><input type="checkbox" id="hold" /> 방향 유지 (자이로) <small>직진 중 틀어지면 자동으로 바로잡기</small></label>
+    </section>
+
+    <section class="card">
+      <h3>불빛 <em>연결 확인 때 깜빡여요</em></h3>
+      <div class="leds" id="leds">
+        <button style="background:#ef4638" data-c="#ef4638"></button><button style="background:#f59a1b" data-c="#f59a1b"></button><button style="background:#f5d90a" data-c="#f5d90a"></button>
+        <button style="background:#1fae66" data-c="#1fae66" aria-pressed="true"></button><button style="background:#3454d1" data-c="#3454d1"></button><button style="background:#ffffff" data-c="#ffffff"></button>
+      </div>
+    </section>
+  </div>
+</aside>
+
+<section class="free mission"><span class="tag">카메라</span><b>색 카드 찾아 멈추기</b><p>빨강 카드를 찾아 그 앞 30cm 에 멈춰요</p><button>예제 코드 처음으로</button></section>
+
+<div class="viewbar" id="viewbar">
+  <button data-v="fit" aria-pressed="true">맞춤</button><button data-v="top">위</button><button data-v="follow">뒤따라 보기</button><i></i>
+  <button data-t="trail" aria-pressed="true">궤적</button><button data-t="fov" aria-pressed="true">카메라 시야</button><button data-t="lidar" aria-pressed="true">라이다</button><i></i><button aria-pressed="true">카메라</button>
+</div>
+
+<div class="pip">
+  <div class="pipHead">앞 카메라 <span class="seg"><button aria-pressed="true">원본</button><button>찾기 표시</button></span><span id="camSpec">5MP · 65°</span></div>
+  <div class="pipView"><canvas id="cam" width="640" height="480"></canvas><canvas id="camOver" width="640" height="480"></canvas><span class="rec">● 640×480 · 15fps</span></div>
+  <div class="pipFoot" id="camFoot"><span>찾은 것 없음</span></div>
+</div>
+
+<div class="free runbar">
+  <div class="step next"><span class="n">1</span><button class="fbtn sim">▶ 시뮬레이션</button><span class="seg"><button aria-pressed="true" style="padding:4px 7px">×1</button><button style="padding:4px 7px">×2</button></span></div>
+  <span class="arrow"></span>
+  <div class="step goal"><span><em style="font-style:normal">② 빨강 카드 앞 30cm 에 멈추기</em><b id="goalTxt">0/1</b></span><span class="track"><i id="goalBar"></i></span></div>
+  <span class="arrow"></span>
+  <div class="step"><span class="n">3</span><button class="fbtn real">🔒 로봇에서 실행<small>시뮬레이션 통과 후</small></button></div>
+  <button class="fbtn stop">■ 정지</button>
+</div>
+<div class="free logbar"><span class="k" id="logK">안내</span><span id="logT">조이스틱을 끌거나 W A S D 로 움직여 보세요. 앞 카메라에 카드가 보이면 이름과 거리가 나와요.</span><em>기록 1 ▾</em></div>
+
+<section class="panel editor">
+  <header><b>블록 코딩</b><span class="badge" style="background:rgba(255,255,255,.14)">초급</span><select><option>색 카드 찾아 멈추기</option></select></header>
+  <div class="edBody">
+    <div class="palette">
+      <h4>움직이기</h4>
+      <span class="blk move">앞으로 <span class="c">1</span>초</span>
+      <span class="blk move">옆으로 <span class="c dd">왼쪽</span></span>
+      <span class="blk move">돌기 <span class="c">90</span>°</span>
+      <span class="blk move">속도 <span class="c dd">보통</span></span>
+      <span class="blk move">멈추기</span>
+      <h4>카메라</h4>
+      <span class="blk eye"><span class="c dd">빨강</span> 카드 찾기</span>
+      <span class="blk eye">마커 <span class="c">1</span> 찾기</span>
+      <span class="blk eye">사진 찍기</span>
+      <h4>센서</h4>
+      <span class="blk sense">앞 거리 (라이다)</span>
+      <span class="blk sense">방향 (자이로)</span>
+      <h4>불빛</h4>
+      <span class="blk led">불빛 <span class="c dd">초록</span></span>
+      <h4>흐름</h4>
+      <span class="blk flow">만약 · 아니면</span>
+      <span class="blk flow"><span class="c">3</span>번 반복</span>
+      <span class="blk flow">기다리기 <span class="c">1</span>초</span>
+    </div>
+    <div class="work">
+      <div class="stack">
+        <span class="blk start">▶ 시뮬레이션을 누르면</span>
+        <span class="blk move">속도를 <span class="c dd">보통</span> 으로</span>
+        <span class="blk led">불빛을 <span class="c dd">파랑</span> 으로</span>
+        <span class="blk flow"><span class="c">12</span>번 반복</span>
+        <div class="inner">
+          <span class="blk eye">카메라로 <span class="c dd">빨강</span> 카드 찾기</span>
+          <span class="blk flow">만약 <span class="c dd">찾았으면</span></span>
+          <div class="inner">
+            <span class="blk move">카드 쪽으로 <span class="c">0.5</span>초 가기</span>
+            <span class="blk flow">만약 거리 &lt; <span class="c">30</span>cm</span>
+            <div class="inner"><span class="blk move">멈추기</span><span class="blk led">불빛을 <span class="c dd">초록</span> 으로</span></div>
+          </div>
+          <span class="else">아니면</span>
+          <div class="inner"><span class="blk move"><span class="c dd">왼쪽</span> 으로 <span class="c">30</span>° 돌기</span></div>
+        </div>
+        <span class="blk move">멈추기</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="mockTag"><b>목업</b><button id="showApp" aria-pressed="true">화면</button><button id="showCurri">커리큘럼 · 기능 · 연결</button></div>
+
+<section class="curri" id="curri"><div class="wrap">
+  <div><h1>myAGV 주행 · 카메라 실습 — 커리큘럼, 들어갈 기능, 교실 Wi-Fi 연결</h1>
+    <p class="lead">이번 범위는 <b>주행 제어(키보드 · 조이스틱 · 게임패드) + 직진 보정 + 카메라 연동</b>. 라이다는 거리 보기까지, 지도 · 자율 주행은 다음 단계.</p></div>
+
+  <div class="sheet"><h2>하드웨어에 있는 것 · 이번 범위</h2>
+    <div class="cols3">
+      <div class="box now"><h3>✅ 이번에 만들기</h3><ul>
+        <li><b>조종</b>: 화면 조이스틱(이동) + 돌기, 키보드, USB·블루투스 게임패드. 손을 떼면 멈춤</li>
+        <li><b>직진 보정</b>: 1m 직진 테스트 → 휜 정도 재기 → 보정 저장, 자이로 방향 유지</li>
+        <li><b>카메라</b>: 앞 카메라, 사진, 색 카드 · ArUco 마커 찾기(거리 · 방향)</li>
+        <li><b>라이다 보기</b>: 주변 거리 점, 앞 장애물 거리 (블록 "앞 거리")</li></ul></div>
+      <div class="box later"><h3>⏭ 하드웨어엔 있고, 다음 단계</h3><ul>
+        <li><b>라이다</b>: YDLIDAR X2L (360° · 0.12~8m), Plus 도 360° 라이다</li>
+        <li><b>SLAM 지도 만들기</b>: Gmapping (Jetson Nano 는 Cartographer · RTAB-Map 도)</li>
+        <li><b>자율 주행</b>: move_base / Nav2 — 지도 위 목적지로</li>
+        <li>280 을 얹은 복합 로봇, 게임패드 + 270 팔 예제</li></ul></div>
+      <div class="box later"><h3>🔎 직진 보정에 대해 확인한 것</h3><ul>
+        <li>공식 펌웨어 · API(pymycobot <code>MyAgv</code>)에는 <b>모터를 하나씩</b> 조정하는 명령이 없음 — 로봇은 앞뒤 · 옆 · 회전 3값만 받고 바퀴 배분은 바닥 보드가 함</li>
+        <li>있는 것: 자이로 보정 상태(<code>set_gyro_state</code>), 멈춤 복구(<code>restore</code>), 모터 전체 전류</li>
+        <li>그래서 <b>3값에 더하는 보정값 + 자이로 방향 유지</b>로 같은 효과를 냄 (로봇마다 저장)</li></ul></div>
+    </div>
+  </div>
+
+  <div class="sheet"><h2>커리큘럼 (10차시) — 같은 과제를 초급 블록 · 중급 파이썬으로</h2>
+    <table>
+      <thead><tr><th>#</th><th>실습</th><th>배우는 것</th><th>초급 블록</th><th>중급 파이썬 (pymycobot 방식)</th><th>필요한 기능</th></tr></thead>
+      <tbody>
+        <tr class="sec"><td colspan="6">기본 주행</td></tr>
+        <tr><td>1</td><td><b>연결 · 조종해 보기</b></td><td>로봇 찾기로 연결, 키보드 · 조이스틱 · 게임패드로 움직이기, 불빛</td><td>불빛 [초록]</td><td><code>agv.set_led(1, 0, 255, 0)</code></td><td><span class="t s">로봇 찾기</span><span class="t d">조이스틱 · 키보드 · 패드</span><span class="t d">불빛</span></td></tr>
+        <tr><td>2</td><td><b>메카넘 바퀴: 앞뒤 · 옆 · 돌기</b></td><td>바퀴 4개가 어떻게 돌면 옆으로 가는지</td><td>앞으로 N초 · 옆으로 · 돌기</td><td><code>go_ahead</code> <code>pan_left</code> <code>clockwise_rotation</code></td><td><span class="t d">바퀴 4개 속도 표시</span></td></tr>
+        <tr><td>3</td><td><b>직진 보정: 왜 휘어질까</b></td><td>모터마다 힘이 조금씩 다름, 자이로로 방향 재기, 보정값</td><td>방향 (자이로) · 만약</td><td><code>yaw</code> 읽고 회전 보정</td><td><span class="t w">1m 직진 테스트</span><span class="t w">보정 저장</span><span class="t l">자이로</span></td></tr>
+        <tr><td>4</td><td><b>시간 · 속도 · 거리, 도형</b></td><td>거리 = 속도 × 시간, 사각형 · 지그재그</td><td>반복 · 돌기 90°</td><td><code>for</code> 반복</td><td><span class="t s">궤적 · 거리 재기</span><span class="t e">반복 블록</span></td></tr>
+        <tr><td>5</td><td><b>코스 주행 · 장애물</b></td><td>출발 → 장애물 피해 → 도착, 라이다로 앞 거리 보기</td><td>앞 거리 &lt; 30cm 이면 멈추기</td><td><code>lidar.front()</code></td><td><span class="t s">주행 코스</span><span class="t l">라이다 거리</span><span class="t s">부딪힘 검사</span></td></tr>
+        <tr class="sec"><td colspan="6">카메라</td></tr>
+        <tr><td>6</td><td><b>카메라 화면 · 사진</b></td><td>로봇 눈으로 보기, 화각</td><td>사진 찍기</td><td><code>camera.photo()</code></td><td><span class="t c">앞 카메라 창</span><span class="t s">시야 표시</span></td></tr>
+        <tr><td>7</td><td><b>색 카드 찾아 멈추기</b></td><td>색 인식, 만약 · 아니면</td><td>[빨강] 카드 찾기</td><td><code>card = camera.find("빨강")</code></td><td><span class="t c">색 찾기 (HSV)</span><span class="t c">거리 추정</span></td></tr>
+        <tr><td>8</td><td><b>색 카드 따라가기</b></td><td>화면 가운데에 오도록 돌고 다가가기</td><td>카드 쪽으로 가기</td><td><code>card.x</code> (−100~100) 로 회전</td><td><span class="t c">화면 위치 · 크기 값</span></td></tr>
+        <tr><td>9</td><td><b>ArUco 마커 앞에 서기</b></td><td>마커 번호 · 거리 · 각도</td><td>마커 [1] 찾기</td><td><code>m = camera.marker(1)</code></td><td><span class="t c">마커 인식</span><span class="t c">거리 · 방향</span></td></tr>
+        <tr><td>10</td><td><b>배달 미션 (종합)</b></td><td>마커 1 → 2 → 3 순서로 들르고 돌아오기</td><td>종합</td><td>종합</td><td><span class="t s">미션 판정</span><span class="t w">실제 로봇 실행</span></td></tr>
+        <tr class="sec"><td colspan="6">고급 (ROS 2, Jetson Nano · Plus)</td></tr>
+        <tr><td>+</td><td><b>토픽으로 조종 · 카메라 · 라이다 받기</b></td><td>cmd_vel 로 움직이고 /scan · 카메라 토픽 읽기</td><td>—</td><td><code>Twist → /cmd_vel</code> · <code>/scan</code> · <code>/camera/image_raw</code></td><td><span class="t e">ROS 2 편집기</span><span class="t w">Pi 판은 ROS 1</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="sheet"><h2>교실 Wi-Fi 연결 — 가장 간편한 방식</h2>
+    <div class="net">
+      <svg viewBox="0 0 620 300" role="img" aria-label="교실 전용 공유기 하나에 로봇과 PC 가 모두 연결">
+        <rect x="235" y="18" width="150" height="66" rx="14" fill="#1d2636"/><text x="310" y="46" fill="#fff" font-size="15" font-weight="700" text-anchor="middle" font-family="Pretendard">교실 전용 공유기</text><text x="310" y="68" fill="#cdd5e1" font-size="12" text-anchor="middle" font-family="Pretendard">Wi-Fi: EDUINO-LAB</text>
+        <g font-family="Pretendard" font-size="12" text-anchor="middle">
+          <g fill="#eef1fd" stroke="#c9d3f7"><rect x="20" y="200" width="118" height="70" rx="12"/><rect x="170" y="200" width="118" height="70" rx="12"/><rect x="330" y="200" width="118" height="70" rx="12"/><rect x="480" y="200" width="118" height="70" rx="12"/></g>
+          <text x="79" y="228" font-weight="700" fill="#101828">로봇 101</text><text x="79" y="248" fill="#475467">192.168.50.101</text>
+          <text x="229" y="228" font-weight="700" fill="#101828">로봇 102</text><text x="229" y="248" fill="#475467">192.168.50.102</text>
+          <text x="389" y="228" font-weight="700" fill="#101828">PC (학생)</text><text x="389" y="248" fill="#475467">[로봇 찾기]</text>
+          <text x="539" y="228" font-weight="700" fill="#101828">PC (학생)</text><text x="539" y="248" fill="#475467">[로봇 찾기]</text>
+        </g>
+        <g stroke="#3454d1" stroke-width="2" stroke-dasharray="6 5" fill="none"><path d="M270 84 L79 200"/><path d="M290 84 L229 200"/><path d="M330 84 L389 200"/><path d="M350 84 L539 200"/></g>
+        <rect x="140" y="140" width="340" height="26" rx="8" fill="#fff" stroke="#e4e7ec"/><text x="310" y="158" fill="#475467" font-size="12" text-anchor="middle" font-family="Pretendard">로봇마다 주소 고정 (공유기에서 예약) → 주소 끝 숫자 = 로봇 ID</text>
+        <text x="310" y="292" fill="#8a94a6" font-size="11.5" text-anchor="middle" font-family="Pretendard">공유기에 인터넷선을 꽂으면 PC 인터넷도 그대로</text>
+      </svg>
+      <div class="box rec"><h3>추천: 교실 전용 공유기 하나</h3><ol>
+        <li><b>교사, 한 번</b>: 공유기 이름을 EDUINO-LAB 으로, 로봇마다 주소 예약(.101~.130), 로봇에 번호 스티커</li>
+        <li><b>로봇마다, 한 번</b>: 로봇의 공장 핫스팟에 붙어 콘솔의 <b>[교실 Wi-Fi 연결]</b>에서 이름 · 비밀번호 입력 → 로봇이 공유기로 옮겨 감 (다음부터 자동)</li>
+        <li><b>학생, 매 수업</b>: PC 를 EDUINO-LAB 에 연결 → 바탕화면 바로가기 → <b>[로봇 찾기]</b> → 목록에서 내 로봇 → 불빛이 깜빡이면 맞음</li></ol></div>
+    </div>
+    <div class="cols3" style="margin-top:12px">
+      <div class="box"><h3>대안 1: 로봇 핫스팟 (공유기 없을 때)</h3><ul><li>PC 가 로봇의 Wi-Fi(ElephantRobotics_AP_…)에 직접 연결, 주소는 늘 10.42.0.1</li><li>1:1 은 간단하지만 그동안 PC 인터넷이 끊기고, 교실에 핫스팟이 많으면 서로 방해</li></ul></div>
+      <div class="box"><h3>대안 2: 학교 Wi-Fi</h3><ul><li>기기끼리 통신을 막아 두는 경우가 많음(클라이언트 격리 · 포트 차단) → 연결이 안 될 수 있음</li><li>쓰려면 학교 전산 담당에게 허용 요청 필요</li></ul></div>
+      <div class="box"><h3>앱에 들어갈 것</h3><ul><li><b>[교실 Wi-Fi 연결]</b> 설정 화면 (로봇 핫스팟으로 처음 한 번)</li><li><b>[로봇 찾기]</b>: 같은 Wi-Fi 의 로봇을 자동으로 목록에, 누르면 불빛 · 동작으로 확인</li><li>280 RDK X5 도 같은 방식 (같은 서버 · 같은 화면)</li></ul></div>
+    </div>
+  </div>
+
+  <div class="sheet"><h2>들어갈 기능</h2>
+    <div class="cols3">
+      <div class="box"><h3><span class="dot" style="background:var(--blk-move)"></span>조종</h3><ul>
+        <li><b>화면 조이스틱</b>: 끄는 방향 · 거리 = 이동 방향 · 속도 (메카넘이라 대각선 · 옆도)</li><li><b>돌기</b>: 좌우로 끄는 막대, <b>■ 멈춤</b></li>
+        <li><b>키보드</b> W A S D Q E, Space 멈춤</li><li><b>게임패드</b>: 왼쪽 스틱 이동, 오른쪽 스틱 돌기 (브라우저 기본 기능, 설치 없음)</li>
+        <li>최고 속도 제한 0.05~0.5 m/s, 부드러운 가감속, 유지 신호 끊기면 로봇이 스스로 정지</li></ul></div>
+      <div class="box"><h3><span class="dot" style="background:var(--real)"></span>직진 보정</h3><ul>
+        <li>보정 줄(1m 테이프)에서 <b>1m 직진 테스트</b></li><li>자이로로 <b>방향 틀어짐</b>, 줄자 · 카메라로 <b>옆 밀림</b> 재기</li>
+        <li><b>보정 저장</b>: 로봇마다 회전 · 옆 보정값 (로봇 안에 저장)</li><li><b>방향 유지</b>: 직진 중 자이로로 계속 바로잡기</li>
+        <li>시뮬레이터는 모터 하나를 약하게(뒤 오른쪽 88%) 만들어 <b>보정 전 · 후 궤적</b>을 비교</li></ul></div>
+      <div class="box"><h3><span class="dot" style="background:var(--blk-eye)"></span>카메라 · 라이다</h3><ul>
+        <li>앞 카메라 창, 사진, 찾기 표시</li><li>색 카드: 색 · 화면 위치 · 크기 · 거리</li><li>ArUco 마커: 번호 · 거리 · 각도</li>
+        <li><b>라이다 점</b> 표시, 가장 가까운 물체 · 앞 거리</li></ul></div>
+      <div class="box"><h3><span class="dot" style="background:var(--sim)"></span>시뮬레이터 (고품질)</h3><ul>
+        <li>바닥은 로봇팔 시뮬레이터와 같은 재질 · 격자, 교실 벽 · 창 빛 · 칠판, 주행 매트와 테이프 길</li><li>실물 재질 · 반사(환경광), 부드러운 그림자</li>
+        <li>공식 3D 모델 (2023 은 메카넘 바퀴 모양으로 교체)</li><li>카메라 화면에 렌즈 가장자리 어두움 · 잡음 · 초당 15장</li>
+        <li>메카넘 이동 계산, 모터 차이, 부딪힘 멈춤, 궤적</li></ul></div>
+      <div class="box"><h3><span class="dot" style="background:var(--blk-flow)"></span>편집기 · 실행</h3><ul>
+        <li>초급 블록: 움직이기 · 카메라 · 센서 · 불빛 · 흐름</li><li>중급 파이썬: pymycobot <code>MyAgv</code> 이름 + <code>camera</code> · <code>lidar</code></li>
+        <li>고급 ROS 2: <code>/cmd_vel</code> · <code>/scan</code> · 카메라 토픽</li><li>① 시뮬레이션 → ② 목표 → ③ 로봇에서 실행 (280 과 같은 흐름)</li></ul></div>
+      <div class="box"><h3><span class="dot" style="background:#667085"></span>점검 (납품 시연)</h3><ul>
+        <li>조이스틱 · 키보드 · 게임패드 각각 앞뒤 · 옆 · 대각선 · 돌기</li><li>즉시 정지, 속도 3단계</li><li>1m 직진 보정 전 · 후</li>
+        <li>카메라 영상 · 색 카드 · 마커, 라이다 거리</li><li>배달 미션 완주</li></ul></div>
+    </div>
+  </div>
+</div></section>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+/* ---------- models ---------- */
+const MODELS = {
+  pi: { name: 'myAGV 2023 · Pi', file: 'myagv2023.glb', cam: [0.13, 0.131], lidar: [0.065, 0.08], hfov: 65, spec: '5MP · 65°', size: [0.313, 0.229], plus: false },
+  jn: { name: 'myAGV 2023 · Jetson Nano', file: 'myagv2023.glb', cam: [0.13, 0.131], lidar: [0.065, 0.08], hfov: 77, spec: '8MP · 77°', size: [0.313, 0.229], plus: false },
+  plus: { name: 'myAGV Plus', file: 'myagvplus.glb', cam: [0.16, 0.069], lidar: [0.075, 0.091], hfov: 77, spec: '8MP · 77°', size: [0.333, 0.239], plus: true },
+};
+let model = MODELS.pi;
+
+/* ---------- renderer, light, environment ---------- */
+const canvas = document.getElementById('view');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(2, devicePixelRatio));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.VSMShadowMap;
+renderer.toneMapping = THREE.AgXToneMapping;
+renderer.toneMappingExposure = 1.15;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#eef1f5');
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environmentIntensity = 0.55;
+const camera = new THREE.PerspectiveCamera(36, 1, 0.02, 40);
+camera.layers.enable(1);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.maxPolarAngle = Math.PI * 0.49;
+
+scene.add(new THREE.HemisphereLight('#ffffff', '#cfd6de', 0.55));
+const sun = new THREE.DirectionalLight('#fff4e6', 2.6); // window light
+sun.position.set(3.6, 3.4, -2.6);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -3, right: 3, top: 3, bottom: -3, near: 0.5, far: 10 });
+sun.shadow.radius = 6; sun.shadow.blurSamples = 16; sun.shadow.bias = -0.0006;
+sun.target.position.set(0.8, 0, 0);
+scene.add(sun, sun.target);
+const fill = new THREE.DirectionalLight('#dfe8ff', 0.6); fill.position.set(-3, 2.5, 3); scene.add(fill);
+
+// floor coordinates: X forward from the start, Y to the left (metres) -> three (x, h, -y)
+const P = (x, y, h = 0) => new THREE.Vector3(x, h, -y);
+const tex = (w, h, draw, repeat) => { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; if (repeat) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(...repeat); } return t; };
+let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+
+/* ---------- classroom ---------- */
+const ROOM = { x0: -1.9, x1: 3.5, y0: -2.3, y1: 2.3 };
+// floor: the same as the robot-arm simulator — light grey, with a fine grid that fades out
+const floorMat = new THREE.MeshStandardMaterial({ color: '#e9edf2', roughness: 0.95 });
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(ROOM.x1 - ROOM.x0, ROOM.y1 - ROOM.y0), floorMat);
+const gridMat = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false,
+  uniforms: { cCell: { value: new THREE.Color('#d9dfe6') }, cSec: { value: new THREE.Color('#c3ccd6') }, centre: { value: new THREE.Vector2(0.8, 0.3) } },
+  vertexShader: 'varying vec3 vW; void main() { vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }',
+  fragmentShader: `varying vec3 vW; uniform vec3 cCell; uniform vec3 cSec; uniform vec2 centre;
+    float line(vec2 p, float s, float w) { vec2 q = p / s; vec2 g = abs(fract(q - 0.5) - 0.5) / fwidth(q); return 1.0 - min(min(g.x, g.y) / w, 1.0); }
+    void main() { float d = length(vW.xz - centre); float f = 1.0 - smoothstep(1.2, 3.4, d);
+      float a1 = line(vW.xz, 0.1, 0.6), a2 = line(vW.xz, 1.0, 1.0); float a = max(a1 * 0.55, a2) * f; if (a < 0.01) discard;
+      gl_FragColor = vec4(mix(cCell, cSec, a2), a); }`,
+});
+const grid = new THREE.Mesh(new THREE.PlaneGeometry(ROOM.x1 - ROOM.x0, ROOM.y1 - ROOM.y0), gridMat);
+grid.rotation.x = -Math.PI / 2; grid.position.copy(P((ROOM.x0 + ROOM.x1) / 2, (ROOM.y0 + ROOM.y1) / 2, 0.0006)); scene.add(grid);
+floor.rotation.x = -Math.PI / 2; floor.position.copy(P((ROOM.x0 + ROOM.x1) / 2, (ROOM.y0 + ROOM.y1) / 2)); floor.receiveShadow = true; scene.add(floor);
+const wallMat = new THREE.MeshStandardMaterial({ color: '#f6f7f9', roughness: 0.92 });
+const walls = [];
+function wall(x0, y0, x1, y1, h = 1.6) {
+  const len = Math.hypot(x1 - x0, y1 - y0); const m = new THREE.Mesh(new THREE.BoxGeometry(len, h, 0.08), wallMat);
+  m.position.copy(P((x0 + x1) / 2, (y0 + y1) / 2, h / 2)); m.rotation.y = Math.atan2(y1 - y0, x1 - x0); m.receiveShadow = true; scene.add(m);
+  const base = new THREE.Mesh(new THREE.BoxGeometry(len, 0.08, 0.1), new THREE.MeshStandardMaterial({ color: '#b9b2a6', roughness: 0.7 }));
+  base.position.copy(P((x0 + x1) / 2, (y0 + y1) / 2, 0.04)); base.rotation.y = m.rotation.y; scene.add(base);
+  walls.push([x0, y0, x1, y1]); return m;
+}
+wall(ROOM.x1, ROOM.y0, ROOM.x1, ROOM.y1); // far wall (windows)
+wall(ROOM.x0, ROOM.y1, ROOM.x1, ROOM.y1); // left wall (board)
+for (const y of [-1.4, 0.2]) { // windows
+  const win = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 0.9), new THREE.MeshBasicMaterial({ color: '#dcebff' }));
+  win.position.copy(P(ROOM.x1 - 0.045, y + 0.6, 1.0)); win.rotation.y = -Math.PI / 2; scene.add(win);
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.96, 1.26), new THREE.MeshStandardMaterial({ color: '#d7d2c8' })); frame.position.copy(P(ROOM.x1 - 0.05, y + 0.6, 1.0)); scene.add(frame); win.position.x -= 0.012;
+}
+const board = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.8, 0.03), [0, 0, 0, 0].map(() => new THREE.MeshStandardMaterial({ color: '#c8ccd2' })).concat([new THREE.MeshStandardMaterial({ color: '#fbfbf8', roughness: 0.25 }), new THREE.MeshStandardMaterial({ color: '#c8ccd2' })]));
+board.position.copy(P(0.9, ROOM.y1 - 0.06, 1.05)); board.rotation.y = Math.PI; scene.add(board);
+
+
+/* ---------- course mat ---------- */
+const MAT = { cx: 0.9, cy: 0, w: 2.4, h: 1.6 };
+const matTex = tex(2400, 1600, (g) => {
+  g.fillStyle = '#f7f8f9'; g.fillRect(0, 0, 2400, 1600);
+  for (let i = 0; i < 9000; i++) { g.fillStyle = `rgba(0,0,0,${rnd() * 0.025})`; g.fillRect(rnd() * 2400, rnd() * 1600, 2, 2); }
+  g.strokeStyle = '#e4e7eb'; g.lineWidth = 2;
+  for (let x = 0; x <= 2400; x += 100) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 1600); g.stroke(); }
+  for (let y = 0; y <= 1600; y += 100) { g.beginPath(); g.moveTo(0, y); g.lineTo(2400, y); g.stroke(); }
+  const px = (x, y) => [(x - (MAT.cx - MAT.w / 2)) * 1000, ((MAT.cy + MAT.h / 2) - y) * 1000];
+  g.strokeStyle = '#1b1e22'; g.lineWidth = 38; g.lineJoin = 'round'; g.lineCap = 'round';
+  g.beginPath(); [[0.0, 0], [1.0, 0], [1.25, 0.25], [1.25, 0.55], [1.7, 0.55], [1.85, 0.3], [1.85, -0.5], [0.5, -0.5], [0.2, -0.3]].forEach(([x, y], i) => { const [u, v] = px(x, y); i ? g.lineTo(u, v) : g.moveTo(u, v); }); g.stroke();
+  g.strokeStyle = 'rgba(255,255,255,.08)'; g.lineWidth = 6; g.stroke();
+  const box = (x, y, w, h, col, label) => { const [u, v] = px(x - w / 2, y + h / 2); g.strokeStyle = col; g.lineWidth = 12; g.setLineDash([34, 20]); g.strokeRect(u, v, w * 1000, h * 1000); g.setLineDash([]); g.fillStyle = col; g.font = '700 64px Pretendard, sans-serif'; g.fillText(label, u + 18, v + 76); };
+  box(0, 0, 0.42, 0.36, '#1fae66', '출발'); box(1.95, -0.62, 0.42, 0.3, '#3454d1', '도착');
+});
+const mat = new THREE.Mesh(new THREE.BoxGeometry(MAT.w, 0.004, MAT.h), [0, 0, 1, 0, 0, 0].map((i) => (i ? new THREE.MeshStandardMaterial({ map: matTex, roughness: 0.72 }) : new THREE.MeshStandardMaterial({ color: '#d9dde2' }))));
+mat.position.copy(P(MAT.cx, MAT.cy, 0.002)); mat.receiveShadow = true; scene.add(mat);
+// calibration lane: 1.2 m of tape with 10 cm ticks beside the mat
+const LANE = { x0: -0.55, y: -1.45 };
+const lane = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.3), new THREE.MeshStandardMaterial({ map: tex(1400, 300, (g) => {
+  g.clearRect(0, 0, 1400, 300); g.fillStyle = '#f5c518'; g.fillRect(40, 138, 1320, 24);
+  g.fillStyle = '#1b1e22'; for (let i = 0; i <= 12; i++) { const x = 90 + i * 100; g.fillRect(x - 2, i % 5 ? 118 : 100, 4, i % 5 ? 64 : 100); }
+  g.font = '700 40px Pretendard, sans-serif'; g.fillText('보정 줄 1m', 90, 70); g.fillText('0', 80, 262); g.fillText('1m', 1060, 262);
+}), transparent: true, roughness: 0.6 }));
+lane.rotation.x = -Math.PI / 2; lane.position.copy(P(LANE.x0 + 0.55, LANE.y, 0.003)); lane.receiveShadow = true; scene.add(lane);
+
+/* ---------- things on the course ---------- */
+const colliders = [];
+const cardboard = tex(512, 512, (g) => { g.fillStyle = '#c7a37a'; g.fillRect(0, 0, 512, 512); for (let i = 0; i < 4000; i++) { g.fillStyle = `rgba(90,60,30,${rnd() * 0.06})`; g.fillRect(rnd() * 512, rnd() * 512, 3, 1); } g.fillStyle = 'rgba(210,190,150,.8)'; g.fillRect(0, 236, 512, 40); g.fillStyle = 'rgba(0,0,0,.08)'; g.fillRect(0, 236, 512, 2); });
+function addBox(x, y, w, d, h) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({ map: cardboard, roughness: 0.85 }));
+  m.position.copy(P(x, y, h / 2)); m.castShadow = m.receiveShadow = true; scene.add(m);
+  colliders.push({ x, y, w, d }); return m;
+}
+addBox(0.95, 0.42, 0.22, 0.22, 0.16);
+addBox(1.45, -0.18, 0.18, 0.28, 0.12);
+
+const targets = [];
+const standMat = new THREE.MeshStandardMaterial({ color: '#9aa3b0', roughness: 0.35, metalness: 0.7 });
+function addStand(x, y, yawDeg, face, w, h, name, kind) {
+  const g = new THREE.Group(); g.position.copy(P(x, y)); g.rotation.y = THREE.MathUtils.degToRad(yawDeg);
+  const base = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.01, 0.13), standMat); base.position.y = 0.005; base.castShadow = true; g.add(base);
+  const post = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.05), standMat); post.position.y = 0.035; g.add(post);
+  const back = new THREE.MeshStandardMaterial({ color: '#f5f6f8', roughness: 0.5 });
+  const board = new THREE.Mesh(new THREE.BoxGeometry(0.004, h, w), [back, new THREE.MeshStandardMaterial({ map: face, roughness: 0.55 }), back, back, back, back]);
+  board.position.y = 0.06 + h / 2; board.castShadow = true; g.add(board);
+  scene.add(g); colliders.push({ x, y, w: 0.08, d: 0.13 });
+  targets.push({ name, kind, group: g, w, h, center: new THREE.Vector3(0, 0.06 + h / 2, 0) });
+}
+const cardTex = (col) => tex(200, 280, (g) => { g.fillStyle = '#fff'; g.fillRect(0, 0, 200, 280); g.fillStyle = col; g.fillRect(14, 14, 172, 252); });
+const arucoTex = (id) => { const t = tex(320, 320, (g) => { g.fillStyle = '#fff'; g.fillRect(0, 0, 320, 320); g.fillStyle = '#000'; g.fillRect(20, 20, 280, 280); let s = id * 9301 + 49297; const r = () => ((s = (s * 9301 + 49297) % 233280) / 233280); g.fillStyle = '#fff'; for (let i = 0; i < 6; i++) for (let j = 0; j < 6; j++) if (r() > 0.5) g.fillRect(60 + i * 33.3, 60 + j * 33.3, 33.4, 33.4); }); t.magFilter = THREE.NearestFilter; return t; };
+addStand(1.42, 0.12, 0, cardTex('#e5484d'), 0.1, 0.14, '빨강 카드', 'card');
+addStand(2.0, 0.55, 30, cardTex('#2f6fe4'), 0.1, 0.14, '파랑 카드', 'card');
+addStand(0.55, -0.72, 110, cardTex('#27a35a'), 0.1, 0.14, '초록 카드', 'card');
+addStand(0.2, 0.7, -110, cardTex('#f2c200'), 0.1, 0.14, '노랑 카드', 'card');
+addStand(2.08, -0.05, 0, arucoTex(1), 0.12, 0.12, '마커 1', 'marker');
+addStand(1.35, 0.78, -80, arucoTex(2), 0.12, 0.12, '마커 2', 'marker');
+addStand(1.1, -0.78, 95, arucoTex(3), 0.12, 0.12, '마커 3', 'marker');
+
+/* ---------- robot ---------- */
+const robot = new THREE.Group(); scene.add(robot);
+let modelRoot = null; const wheels = {};
+const eye = new THREE.PerspectiveCamera(50, 4 / 3, 0.045, 12); robot.add(eye);
+const fovLines = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: '#e0457b', transparent: true, opacity: 0.8 }));
+const fovFill = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({ color: '#e0457b', transparent: true, opacity: 0.05, side: THREE.DoubleSide, depthWrite: false }));
+fovLines.layers.set(1); fovFill.layers.set(1); robot.add(fovLines, fovFill);
+const ledLight = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.003, 0.11), new THREE.MeshBasicMaterial({ color: '#1fae66' })); robot.add(ledLight);
+
+function setFov() {
+  const [cx, cz] = model.cam;
+  const v = 2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(model.hfov / 2)) * 0.75);
+  eye.fov = THREE.MathUtils.radToDeg(v); eye.updateProjectionMatrix(); eye.position.set(cx, cz, 0); eye.rotation.set(0, -Math.PI / 2, 0);
+  const L = 0.4, hw = Math.tan(THREE.MathUtils.degToRad(model.hfov / 2)) * L, hh = Math.tan(v / 2) * L;
+  const o = new THREE.Vector3(cx, cz, 0), c = [[L, hh, hw], [L, hh, -hw], [L, -hh, -hw], [L, -hh, hw]].map(([x, y, z]) => new THREE.Vector3(cx + x, Math.max(0.003, cz + y), z));
+  const seg = []; c.forEach((p, i) => seg.push(o, p, p, c[(i + 1) % 4])); fovLines.geometry.setFromPoints(seg);
+  const tri = []; c.forEach((p, i) => tri.push(o, p, c[(i + 1) % 4])); fovFill.geometry.setFromPoints(tri);
+  ledLight.position.set(-model.size[0] / 2 + 0.022, 0.1335, 0);
+  document.getElementById('camSpec').textContent = model.spec;
+}
+const draco = new DRACOLoader().setDecoderPath('https://unpkg.com/three@0.185.1/examples/jsm/libs/draco/gltf/');
+const loader = new GLTFLoader().setDRACOLoader(draco);
+function loadModel(id) {
+  model = MODELS[id];
+  document.getElementById('modelName').textContent = model.name;
+  document.querySelectorAll('#modelMenu button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.model === id));
+  setFov();
+  return new Promise((res) => loader.load(model.file, (gltf) => {
+    if (modelRoot) robot.remove(modelRoot);
+    modelRoot = gltf.scene; modelRoot.rotation.x = -Math.PI / 2;
+    const rubber = new THREE.MeshStandardMaterial({ color: '#2a2e35', roughness: 0.78 });
+    const body = model.plus ? new THREE.MeshPhysicalMaterial({ color: '#f1f2f4', roughness: 0.38, clearcoat: 0.35, clearcoatRoughness: 0.4 })
+      : new THREE.MeshStandardMaterial({ color: '#23272e', roughness: 0.32, metalness: 0.55 });
+    const topPlate = new THREE.MeshStandardMaterial({ color: '#15181c', roughness: 0.45, metalness: 0.5 });
+    const laser = new THREE.MeshStandardMaterial({ color: '#1d2026', roughness: 0.3, metalness: 0.3 });
+    modelRoot.traverse((o) => {
+      if (o.name.startsWith('wheel_')) wheels[o.name.slice(6)] = o;
+      if (!o.isMesh) return;
+      o.castShadow = o.receiveShadow = true;
+      let wheel = false; for (let p = o; p; p = p.parent) if (p.name.startsWith('wheel_')) wheel = true;
+      o.material = wheel ? rubber : o.name.startsWith('laser') ? laser : !model.plus && o.name.startsWith('up') ? topPlate : body;
+    });
+    robot.add(modelRoot); res();
+  }));
+}
+
+/* ---------- motion: mecanum, with motors that are not quite equal ---------- */
+const pose = { x: 0, y: 0, th: 0 }; const vel = { vx: 0, vy: 0, wz: 0 }; const cmd = { vx: 0, vy: 0, wz: 0 };
+const GAIN = { fl: 1, fr: 1, rl: 1, rr: 0.88 }; // simulated: the rear-right motor is 12 % weaker
+const trim = { w: 0, y: 0 }; let hold = false, holdYaw = null;
+let speed = 0.2; const WR = 0.04, K = 0.221;
+let trail = [], trailLine = null; let lastLog = ''; let script = null;
+const trailMat = new THREE.LineBasicMaterial({ color: '#3454d1' });
+function setLog(kind, text) { if (text === lastLog) return; lastLog = text; const k = document.getElementById('logK'); k.textContent = kind === 'err' ? '멈춤' : kind === 'ok' ? '완료' : '안내'; k.className = 'k' + (kind ? ' ' + kind : ''); document.getElementById('logT').textContent = text; }
+function hits(x, y, th) {
+  const [L, W] = model.size; const c = Math.cos(th), s = Math.sin(th);
+  const pts = [[L / 2, W / 2], [L / 2, -W / 2], [-L / 2, W / 2], [-L / 2, -W / 2], [L / 2, 0], [0, W / 2], [0, -W / 2], [-L / 2, 0]].map(([a, b]) => [x + a * c - b * s, y + a * s + b * c]);
+  if (pts.some(([u, v]) => u < ROOM.x0 + 0.05 || u > ROOM.x1 - 0.05 || v < ROOM.y0 + 0.05 || v > ROOM.y1 - 0.05)) return true;
+  return colliders.some((o) => pts.some(([u, v]) => Math.abs(u - o.x) < o.w / 2 && Math.abs(v - o.y) < o.d / 2));
+}
+let wheelSpeed = { fl: 0, fr: 0, rl: 0, rr: 0 };
+function step(dt) {
+  let tx = cmd.vx, ty = cmd.vy, tw = cmd.wz;
+  if (script) { const s = script; s.t += dt; tx = s.vx; ty = 0; tw = 0; if (s.t >= s.T) { script = null; tx = 0; setTimeout(s.done, 700); } }
+  // saved correction: a little rotation and sideways per metre forward
+  ty += trim.y * tx; tw += trim.w * tx;
+  // hold heading with the gyro while going straight
+  if (hold && Math.abs(cmd.wz) < 1e-3 && Math.hypot(tx, ty) > 0.01) { if (holdYaw === null) holdYaw = pose.th; tw += 2.5 * (holdYaw - pose.th); } else holdYaw = null;
+  const a = 1.2 * dt, aw = 3 * dt;
+  vel.vx += THREE.MathUtils.clamp(tx - vel.vx, -a, a); vel.vy += THREE.MathUtils.clamp(ty - vel.vy, -a, a); vel.wz += THREE.MathUtils.clamp(tw - vel.wz, -aw, aw);
+  // wheel speeds asked for, then what the (unequal) motors actually give
+  const want = { fl: (vel.vx - vel.vy - K * vel.wz) / WR, fr: (vel.vx + vel.vy + K * vel.wz) / WR, rl: (vel.vx + vel.vy - K * vel.wz) / WR, rr: (vel.vx - vel.vy + K * vel.wz) / WR };
+  const got = {}; for (const k in want) got[k] = want[k] * GAIN[k];
+  const bx = (WR * (got.fl + got.fr + got.rl + got.rr)) / 4, by = (WR * (-got.fl + got.fr + got.rl - got.rr)) / 4, bw = (WR * (-got.fl + got.fr - got.rl + got.rr)) / (4 * K);
+  const c = Math.cos(pose.th), s = Math.sin(pose.th);
+  const nx = pose.x + (bx * c - by * s) * dt, ny = pose.y + (bx * s + by * c) * dt, nth = pose.th + bw * dt;
+  if (hits(nx, ny, nth)) { vel.vx = vel.vy = vel.wz = 0; Object.assign(cmd, { vx: 0, vy: 0, wz: 0 }); setLog('err', '앞에 물건이 있어요 — 부딪히기 전에 멈췄어요. 다른 방향으로 움직여 보세요.'); }
+  else { pose.x = nx; pose.y = ny; pose.th = nth; }
+  for (const k in wheels) wheels[k].rotation.y += got[k] * dt;
+  wheelSpeed = got;
+  robot.position.copy(P(pose.x, pose.y)); robot.rotation.y = pose.th;
+  const last = trail[trail.length - 1];
+  if (!last || Math.hypot(last.x - pose.x, last.y - pose.y) > 0.01) { trail.push({ x: pose.x, y: pose.y }); if (trail.length > 3000) trail.shift(); drawTrail(); }
+}
+function drawTrail() { if (trailLine) scene.remove(trailLine); trailLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(trail.map((p) => P(p.x, p.y, 0.006))), trailMat); trailLine.layers.set(1); trailLine.visible = show.trail; scene.add(trailLine); }
+
+/* ---------- inputs: joystick, keyboard, gamepad ---------- */
+const input = { joy: [0, 0], turn: 0, keys: new Set(), pad: [0, 0, 0] };
+function combine() {
+  const k = input.keys;
+  const kx = (k.has('w') ? 1 : 0) - (k.has('s') ? 1 : 0), ky = (k.has('a') ? 1 : 0) - (k.has('d') ? 1 : 0), kw = (k.has('q') ? 1 : 0) - (k.has('e') ? 1 : 0);
+  let x = -input.joy[1] + kx + input.pad[0], y = -input.joy[0] + ky + input.pad[1];
+  const n = Math.hypot(x, y); if (n > 1) { x /= n; y /= n; }
+  const w = THREE.MathUtils.clamp(-input.turn + kw + input.pad[2], -1, 1);
+  cmd.vx = x * speed; cmd.vy = y * speed; cmd.wz = w * speed * 3.2;
+}
+function dragPad(el, knob, onMove, axis) {
+  let id = null; const r = () => el.getBoundingClientRect();
+  const radius = (b) => (axis === 'x' ? (b.width - 40) / 2 : b.width / 2 - 34);
+  const move = (e) => { const b = r(); const R = radius(b); let dx = e.clientX - (b.left + b.width / 2), dy = axis === 'x' ? 0 : e.clientY - (b.top + b.height / 2); const n = Math.hypot(dx, dy); if (n > R) { dx *= R / n; dy *= R / n; } knob.style.transform = `translate(${dx}px, ${dy}px)`; onMove(dx / R, dy / R); };
+  el.addEventListener('pointerdown', (e) => { id = e.pointerId; el.setPointerCapture(id); move(e); });
+  el.addEventListener('pointermove', (e) => { if (e.pointerId === id) move(e); });
+  const up = (e) => { if (e.pointerId !== id) return; id = null; knob.style.transform = ''; onMove(0, 0); };
+  el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+  return (fx, fy) => { const R = radius(r()); knob.style.transform = fx || fy ? `translate(${fx * R}px, ${fy * R}px)` : ''; onMove(fx, fy); };
+}
+const setJoy = dragPad(document.getElementById('joy'), document.getElementById('joyKnob'), (x, y) => { input.joy = [x, y]; combine(); }, 'xy');
+const setTurn = dragPad(document.getElementById('turn'), document.getElementById('turnKnob'), (x) => { input.turn = x; combine(); }, 'x');
+const stopAll = () => { input.joy = [0, 0]; input.turn = 0; input.keys.clear(); input.pad = [0, 0, 0]; setJoy(0, 0); setTurn(0, 0); combine(); };
+document.getElementById('stopBtn').onclick = stopAll;
+addEventListener('keydown', (e) => { const k = e.key.toLowerCase(); if (k === ' ') { stopAll(); e.preventDefault(); return; } if (k.length === 1 && 'wasdqe'.includes(k)) { input.keys.add(k); combine(); } });
+addEventListener('keyup', (e) => { input.keys.delete(e.key.toLowerCase()); combine(); });
+function pollPad() {
+  const p = [...(navigator.getGamepads?.() ?? [])].find(Boolean);
+  document.getElementById('padLamp').classList.toggle('off', !p);
+  document.getElementById('padName').textContent = p ? '게임패드 연결됨' : '게임패드';
+  document.getElementById('padHint').textContent = p ? '왼쪽 스틱 이동 · 오른쪽 스틱 돌기' : 'USB·블루투스 패드를 꽂고 버튼을 누르세요';
+  if (!p) return;
+  const dz = (v) => (Math.abs(v) < 0.12 ? 0 : v);
+  input.pad = [-dz(p.axes[1] ?? 0), -dz(p.axes[0] ?? 0), -dz(p.axes[2] ?? 0)]; combine();
+}
+const spd = document.getElementById('spd');
+spd.oninput = () => { speed = +spd.value; document.getElementById('spdTxt').textContent = `${speed.toFixed(2)} m/s · ${speed < 0.15 ? '느리게' : speed < 0.3 ? '보통' : '빠르게'}`; combine(); };
+document.querySelectorAll('#leds button').forEach((b) => (b.onclick = () => { document.querySelectorAll('#leds button').forEach((x) => x.setAttribute('aria-pressed', x === b)); ledLight.material.color.set(b.dataset.c); }));
+const menu = document.getElementById('modelMenu');
+document.getElementById('modelBtn').onclick = () => menu.toggleAttribute('data-open');
+menu.querySelectorAll('[data-model]').forEach((b) => (b.onclick = () => { loadModel(b.dataset.model); menu.removeAttribute('data-open'); }));
+document.getElementById('hold').onchange = (e) => { hold = e.target.checked; };
+
+/* ---------- straight-line calibration ---------- */
+const calLines = new THREE.Group(); scene.add(calLines);
+let calResult = null;
+function calTest() {
+  stopAll(); trail = []; drawTrail();
+  Object.assign(pose, { x: LANE.x0, y: LANE.y, th: 0 }); Object.assign(vel, { vx: 0, vy: 0, wz: 0 });
+  const calibrated = trim.w !== 0 || hold;
+  document.getElementById('cs1').setAttribute('data-on', ''); document.getElementById('cs2').removeAttribute('data-on'); document.getElementById('cs3').removeAttribute('data-on');
+  document.getElementById('calRes').innerHTML = '<span>1m 앞으로 가는 중… 자이로로 방향을 재요.</span>';
+  setLog('', '1m 직진 테스트 중 — 보정 줄을 따라가는지 보세요.');
+  return new Promise((res) => {
+    script = { vx: 0.2, t: 0, T: 5.05, done: () => {
+      const d = Math.hypot(pose.x - LANE.x0, pose.y - LANE.y);
+      const dth = pose.th, side = pose.y - LANE.y;
+      calResult = { d, dth, side };
+      // a ribbon a few millimetres wide, so the two runs are easy to compare
+      const pts = trail.filter((_, i) => i % 3 === 0).map((p) => P(p.x, p.y, 0.01));
+      if (pts.length > 1) { const line = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 120, 0.006, 6), new THREE.MeshBasicMaterial({ color: calibrated ? '#1fae66' : '#ef4638' })); line.layers.set(1); calLines.add(line); }
+      const deg = THREE.MathUtils.radToDeg(dth), cm = side * 100, ok = Math.abs(deg) < 0.8 && Math.abs(cm) < 1;
+      document.getElementById('cs2').setAttribute('data-on', '');
+      document.getElementById('calRes').innerHTML = `<span>간 거리 <b>${d.toFixed(2)} m</b></span><span>방향 틀어짐 <b class="${ok ? 'good' : 'bad'}">${deg >= 0 ? '+' : ''}${deg.toFixed(1)}°</b> · 옆 밀림 <b class="${ok ? 'good' : 'bad'}">${cm >= 0 ? '+' : ''}${cm.toFixed(1)} cm</b></span><span style="color:var(--muted)">${calibrated ? (ok ? '✓ 보정 후: 거의 곧게 가요 (초록 선)' : '아직 조금 휘어요 — 한 번 더 저장해 보세요') : '빨간 선: 보정 전. 모터 힘이 조금씩 달라 휘어요'}</span>`;
+      document.getElementById('calSave').disabled = ok && calibrated;
+      setLog(ok ? 'ok' : '', ok ? '직진 보정이 잘 되었어요. 이 값은 로봇에 저장되어 다음에도 쓰여요.' : `1m 에 ${Math.abs(deg).toFixed(1)}° 틀어지고 ${Math.abs(cm).toFixed(1)}cm 밀렸어요. [보정 저장]을 눌러 보세요.`);
+      res();
+    } };
+  });
+}
+function calSave() {
+  if (!calResult) return;
+  const { d, dth, side } = calResult;
+  trim.w += -dth / d; trim.y += -(side - (d * dth) / 2) / d;
+  document.getElementById('cs3').setAttribute('data-on', '');
+  const wd = THREE.MathUtils.radToDeg(trim.w);
+  document.getElementById('calRes').innerHTML = `<span>저장한 보정값 (1m 갈 때마다)</span><span>회전 <b>${wd >= 0 ? '+' : ''}${wd.toFixed(2)}°</b> · 옆 <b>${trim.y >= 0 ? '+' : ''}${(trim.y * 100).toFixed(2)} cm</b></span><span style="color:var(--muted)">다시 [1m 직진 테스트]로 확인해요.</span>`;
+  document.getElementById('calSave').disabled = true;
+  setLog('ok', '보정값을 저장했어요. 다시 테스트해서 곧게 가는지 확인해요.');
+}
+document.getElementById('calTest').onclick = calTest;
+document.getElementById('calSave').onclick = calSave;
+
+/* ---------- lidar ---------- */
+const lidarGeo = new THREE.BufferGeometry(); const lidarPts = new THREE.Points(lidarGeo, new THREE.PointsMaterial({ color: '#ff3b30', size: 0.03, sizeAttenuation: true }));
+lidarPts.layers.set(1); lidarPts.frustumCulled = false; scene.add(lidarPts);
+let lidarNear = null;
+function rayBox(ox, oy, dx, dy, b) { const x0 = b.x - b.w / 2, x1 = b.x + b.w / 2, y0 = b.y - b.d / 2, y1 = b.y + b.d / 2; let t0 = 0, t1 = 8; for (const [o, d, lo, hi] of [[ox, dx, x0, x1], [oy, dy, y0, y1]]) { if (Math.abs(d) < 1e-9) { if (o < lo || o > hi) return null; continue; } let a = (lo - o) / d, b2 = (hi - o) / d; if (a > b2) [a, b2] = [b2, a]; t0 = Math.max(t0, a); t1 = Math.min(t1, b2); if (t0 > t1) return null; } return t0; }
+function raySeg(ox, oy, dx, dy, [x0, y0, x1, y1]) { const ex = x1 - x0, ey = y1 - y0, den = dx * ey - dy * ex; if (Math.abs(den) < 1e-9) return null; const t = ((x0 - ox) * ey - (y0 - oy) * ex) / den, u = ((x0 - ox) * dy - (y0 - oy) * dx) / den; return t > 0 && u >= 0 && u <= 1 ? t : null; }
+function scanLidar() {
+  const [lx, lh] = model.lidar; const ox = pose.x + Math.cos(pose.th) * lx, oy = pose.y + Math.sin(pose.th) * lx;
+  const pts = []; let near = 9, front = 9;
+  for (let i = 0; i < 360; i += 1) {
+    const a = pose.th + THREE.MathUtils.degToRad(i), dx = Math.cos(a), dy = Math.sin(a);
+    let best = 8;
+    for (const c of colliders) { const t = rayBox(ox, oy, dx, dy, c); if (t !== null && t > 0.12 && t < best) best = t; }
+    for (const w of walls) { const t = raySeg(ox, oy, dx, dy, w); if (t !== null && t < best) best = t; }
+    if (best < 8) { const n = best + (Math.random() - 0.5) * 0.01; pts.push(P(ox + dx * n, oy + dy * n, lh + 0.0175)); near = Math.min(near, best); if (i < 15 || i > 345) front = Math.min(front, best); }
+  }
+  lidarGeo.setFromPoints(pts); lidarNear = { near, front };
+}
+
+/* ---------- view ---------- */
+const show = { trail: true, fov: true, lidar: true };
+let view = 'fit';
+document.querySelectorAll('#viewbar [data-t]').forEach((b) => (b.onclick = () => { show[b.dataset.t] = !show[b.dataset.t]; b.setAttribute('aria-pressed', show[b.dataset.t]); }));
+document.querySelectorAll('#viewbar [data-v]').forEach((b) => (b.onclick = () => setView(b.dataset.v)));
+function setView(v) {
+  view = v; document.querySelectorAll('#viewbar [data-v]').forEach((x) => x.setAttribute('aria-pressed', x.dataset.v === v));
+  if (v === 'fit') { camera.position.copy(P(-1.45, -1.75, 1.8)); controls.target.copy(P(0.8, -0.3, 0)); }
+  if (v === 'top') { camera.position.copy(P(0.8, -0.3, 3.8)); controls.target.copy(P(0.8, -0.3, 0)); }
+  controls.update();
+}
+const curri = document.getElementById('curri');
+const showCurri = (on) => { curri.toggleAttribute('data-open', on); document.getElementById('showCurri').setAttribute('aria-pressed', on); document.getElementById('showApp').setAttribute('aria-pressed', !on); };
+document.getElementById('showCurri').onclick = () => showCurri(true);
+document.getElementById('showApp').onclick = () => showCurri(false);
+
+/* ---------- robot camera: picture, lens, finding ---------- */
+const camCanvas = document.getElementById('cam');
+const camR = new THREE.WebGLRenderer({ canvas: camCanvas, antialias: true });
+camR.setSize(640, 480, false); camR.toneMapping = THREE.AgXToneMapping; camR.toneMappingExposure = 1.3; camR.shadowMap.enabled = true; camR.shadowMap.type = THREE.VSMShadowMap;
+const over = document.getElementById('camOver').getContext('2d');
+const noise = (() => { const c = document.createElement('canvas'); c.width = 700; c.height = 520; const g = c.getContext('2d'); const d = g.createImageData(700, 520); for (let i = 0; i < d.data.length; i += 4) { const v = Math.random() * 255; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 12; } g.putImageData(d, 0, 0); return c; })();
+function findThings() {
+  over.clearRect(0, 0, 640, 480);
+  over.drawImage(noise, (Math.random() * 60) | 0, (Math.random() * 40) | 0, 640, 480, 0, 0, 640, 480);
+  const found = []; eye.updateMatrixWorld();
+  const eyePos = new THREE.Vector3().setFromMatrixPosition(eye.matrixWorld);
+  const blockers = scene.children.filter((o) => o.isMesh && o !== floor && o !== grid && o !== mat && o !== lane);
+  for (const t of targets) {
+    const g = t.group; g.updateMatrixWorld();
+    const pts = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => new THREE.Vector3(-0.003, t.center.y + (b * t.h) / 2, (a * t.w) / 2).applyMatrix4(g.matrixWorld));
+    const ctr = t.center.clone().applyMatrix4(g.matrixWorld);
+    const normal = new THREE.Vector3(-1, 0, 0).transformDirection(g.matrixWorld);
+    if (eyePos.clone().sub(ctr).dot(normal) <= 0) continue;
+    const sp = pts.map((p) => p.clone().project(eye)); if (sp.some((p) => p.z > 1 || p.z < -1)) continue;
+    const xs = sp.map((p) => (p.x + 1) * 320), ys = sp.map((p) => (1 - p.y) * 240);
+    const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+    if (x1 < 0 || x0 > 640 || y1 < 0 || y0 > 480 || x1 - x0 < 6) continue;
+    const dist = eyePos.distanceTo(ctr); if (dist > 3) continue;
+    const ray = new THREE.Raycaster(eyePos, ctr.clone().sub(eyePos).normalize(), 0.01, dist - 0.02);
+    if (ray.intersectObjects(blockers, false).length) continue;
+    found.push({ t, x0, x1, y0, y1, dist, off: Math.round(((x0 + x1) / 2 - 320) / 3.2) });
+  }
+  found.sort((a, b) => a.dist - b.dist);
+  over.lineWidth = 4; over.font = '700 26px Pretendard, sans-serif'; const used = [];
+  found.forEach((f, i) => {
+    over.strokeStyle = f.t.kind === 'marker' ? '#22c55e' : '#ffffff'; over.strokeRect(f.x0 - 4, f.y0 - 4, f.x1 - f.x0 + 8, f.y1 - f.y0 + 8);
+    if (i > 1) return;
+    const label = `${f.t.name} ${Math.round(f.dist * 100)}cm`; const w = over.measureText(label).width + 16;
+    let x = Math.min(640 - w, Math.max(0, f.x0 - 4)), y = f.y0 - 40;
+    while (used.some((u) => x < u.x + u.w && u.x < x + w && Math.abs(u.y - y) < 34)) y -= 36;
+    used.push({ x, y, w }); over.fillStyle = 'rgba(16,24,40,.85)'; over.fillRect(x, y, w, 32); over.fillStyle = '#fff'; over.fillText(label, x + 8, y + 25);
+  });
+  const foot = document.getElementById('camFoot');
+  foot.innerHTML = found.length ? found.slice(0, 2).map((f) => `<span><b>${f.t.name}</b> · 거리 약 ${Math.round(f.dist * 100)}cm · 화면 ${f.off === 0 ? '가운데' : f.off < 0 ? `왼쪽 ${-f.off}%` : `오른쪽 ${f.off}%`} · 크기 ${Math.round(((f.x1 - f.x0) * (f.y1 - f.y0)) / 3072)}%</span>`).join('') : '<span>찾은 것 없음 — 돌면서 찾아 보세요</span>';
+  const red = found.find((f) => f.t.name === '빨강 카드'); const ok = red && red.dist < 0.36 && Math.abs(red.off) < 20;
+  document.getElementById('goalTxt').textContent = ok ? '1/1' : '0/1'; document.getElementById('goalBar').style.width = ok ? '100%' : red ? `${Math.max(10, Math.min(90, 100 - red.dist * 60))}%` : '0%';
+}
+
+/* ---------- layout & loop ---------- */
+function resize() {
+  const W = innerWidth, H = innerHeight; renderer.setSize(W, H, false); camera.aspect = W / H;
+  const cs = getComputedStyle(document.documentElement); const px = (v) => parseFloat(cs.getPropertyValue(v));
+  const left = px('--dock-w') + px('--gap') * 2, right = px('--editor-w') + px('--gap') * 2;
+  camera.setViewOffset(W, H, -((left + (W - right)) / 2 - W / 2), -40, W, H); camera.updateProjectionMatrix();
+}
+addEventListener('resize', () => { if (!paused) resize(); });
+const clock = new THREE.Clock(); let camT = 0, uiT = 0, lidT = 0;
+const rX = document.getElementById('rX'), rY = document.getElementById('rY'), rT = document.getElementById('rT'), rVx = document.getElementById('rVx'), rVy = document.getElementById('rVy'), rW = document.getElementById('rW'), rL = document.getElementById('rL');
+let paused = false;
+function frame() {
+  if (paused) return requestAnimationFrame(frame);
+  const dt = Math.min(0.05, clock.getDelta()); const t = clock.elapsedTime;
+  pollPad(); step(dt);
+  fovLines.visible = fovFill.visible = show.fov; if (trailLine) trailLine.visible = show.trail; lidarPts.visible = show.lidar; calLines.visible = show.trail;
+  if (view === 'follow') { camera.position.lerp(P(pose.x - Math.cos(pose.th) * 0.9, pose.y - Math.sin(pose.th) * 0.9, 0.55), 0.08); controls.target.lerp(P(pose.x + Math.cos(pose.th) * 0.3, pose.y + Math.sin(pose.th) * 0.3, 0.05), 0.12); }
+  controls.update(); renderer.render(scene, camera);
+  if (t - lidT > 0.14) { lidT = t; scanLidar(); }
+  if (t - camT > 0.066) { camT = t; camR.render(scene, eye); findThings(); }
+  if (t - uiT > 0.1) {
+    uiT = t; const f = (v) => (Math.abs(v) < 0.005 ? '0.00' : v.toFixed(2));
+    rX.textContent = f(pose.x); rY.textContent = f(pose.y); rT.textContent = `${Math.round(THREE.MathUtils.radToDeg(pose.th))}°`;
+    rVx.textContent = f(vel.vx); rVy.textContent = f(vel.vy); rW.textContent = Math.round(THREE.MathUtils.radToDeg(vel.wz));
+    rL.textContent = lidarNear ? `${Math.round(lidarNear.near * 100)} cm · 앞 ${lidarNear.front < 8 ? Math.round(lidarNear.front * 100) + ' cm' : '없음'}` : '—';
+    for (const [k, id] of [['fl', 'mFL'], ['fr', 'mFR'], ['rl', 'mRL'], ['rr', 'mRR']]) { const v = wheelSpeed[k]; document.getElementById(id).style.width = `${Math.min(100, Math.abs(v) * 8)}%`; document.getElementById(id + 'v').textContent = `${v > 0.05 ? '+' : v < -0.05 ? '−' : ''}${Math.abs(v).toFixed(1)}`; }
+    const moving = Math.hypot(vel.vx, vel.vy, vel.wz) > 0.005; const lamp = document.getElementById('lampMove'); lamp.lastChild.textContent = moving ? '주행 중' : '멈춤'; lamp.firstChild.style.background = moving ? '#3454d1' : '#98a2b3';
+  }
+  requestAnimationFrame(frame);
+}
+
+/* for the screenshots: drive without a person at the controls */
+window.mock = {
+  teleport(x, y, thDeg, route = []) { trail = route.map(([a, b]) => ({ x: a, y: b })); drawTrail(); Object.assign(pose, { x, y, th: THREE.MathUtils.degToRad(thDeg) }); },
+  joy(x, y) { setJoy(x, y); }, turn(x) { setTurn(x, 0); }, release() { stopAll(); },
+  closeUp() { view = 'close'; camera.position.copy(P(pose.x + 0.42, pose.y - 0.42, 0.32)); controls.target.copy(P(pose.x, pose.y, 0.06)); controls.update(); },
+  lookAt(px, py, pz, tx, ty, tz) { view = 'custom'; camera.position.copy(P(px, py, pz)); controls.target.copy(P(tx, ty, tz)); controls.update(); },
+  pause(on = true) { paused = on; },
+  advance(sec) { for (let t = 0; t < sec; t += 0.02) step(0.02); scanLidar(); },
+  calTest, calSave, loadModel, setView, showCurri, ready: false,
+};
+await loadModel('pi'); resize(); setView('fit'); frame(); window.mock.ready = true;
+</script>
+</body>
+</html>

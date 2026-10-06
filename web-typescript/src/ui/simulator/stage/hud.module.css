@@ -1,0 +1,484 @@
+/* 상황 모니터 (Hud.tsx): see-through panels in a column at the left of the 3D view. */
+.hud {
+  position: absolute;
+  left: var(--inset-l, 12px);
+  top: calc(var(--top, 0px) + var(--hud-top, 12px));
+  bottom: 12px;
+  z-index: 4;
+  width: 318px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  overflow: auto;
+  scrollbar-width: none;
+  pointer-events: none;
+  color: #e8eef8;
+  font-size: 12px;
+  line-height: 1.35;
+}
+.hud::-webkit-scrollbar {
+  display: none;
+}
+.glass {
+  pointer-events: auto;
+  flex: none;
+  position: relative;
+  background: rgba(15, 21, 30, 0.8);
+  border: 1px solid rgba(160, 190, 255, 0.14);
+  border-radius: 12px;
+  backdrop-filter: blur(12px) saturate(1.2);
+  box-shadow:
+    0 12px 30px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  padding: 9px 11px;
+  font-variant-numeric: tabular-nums;
+}
+.ic {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Panel bar: four toggles the width of the column, and hide. */
+.bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr) 34px;
+  gap: 3px;
+  padding: 4px;
+}
+.hud .bar button,
+.hud .showBtn {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 30px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #8696ae;
+  position: relative;
+  cursor: pointer;
+}
+.hud .bar button:hover,
+.hud .showBtn:hover {
+  color: #dfe7f3;
+  background: rgba(255, 255, 255, 0.05);
+}
+.hud .bar button[aria-pressed='true'] {
+  color: #fff;
+  background: linear-gradient(180deg, rgba(91, 140, 255, 0.32), rgba(91, 140, 255, 0.14));
+  box-shadow:
+    inset 0 0 0 1px rgba(120, 160, 255, 0.55),
+    0 0 14px rgba(91, 140, 255, 0.18);
+}
+.hud .bar button[aria-pressed='true']::after {
+  content: '';
+  position: absolute;
+  left: 22%;
+  right: 22%;
+  bottom: 2px;
+  height: 2px;
+  border-radius: 2px;
+  background: #8fb2ff;
+  box-shadow: 0 0 6px #8fb2ff;
+}
+.hud .bar .hideBtn {
+  color: #6f7f97;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0 8px 8px 0;
+}
+/* `all: unset` above makes it inherit the column's pointer-events: none; the glass look comes back here. */
+.hud .showBtn {
+  align-self: flex-start;
+  padding: 0 12px;
+  height: 34px;
+  color: #b9c6d8;
+  pointer-events: auto;
+  background: rgba(15, 21, 30, 0.8);
+  border: 1px solid rgba(160, 190, 255, 0.14);
+  border-radius: 10px;
+  backdrop-filter: blur(12px) saturate(1.2);
+}
+
+/* Panel headers */
+.glass h5 {
+  margin: 0 0 6px;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  color: #a9b8cf;
+  font-weight: 800;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+.ht {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ht .ic {
+  width: 13px;
+  height: 13px;
+  color: #8fb2ff;
+}
+.glass h5 em {
+  font-style: normal;
+  letter-spacing: 0;
+  color: #6f7f97;
+  font-weight: 600;
+  font-size: 10px;
+  text-align: right;
+}
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  letter-spacing: 0;
+  font-weight: 700;
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  color: #9ff0c4;
+  background: rgba(61, 220, 132, 0.1);
+  border: 1px solid rgba(61, 220, 132, 0.25);
+}
+.status i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #3ddc84;
+  box-shadow: 0 0 8px #3ddc84;
+}
+.status[data-tone='run'] {
+  color: #a9c2ff;
+  background: rgba(91, 140, 255, 0.12);
+  border-color: rgba(91, 140, 255, 0.35);
+}
+.status[data-tone='run'] i {
+  background: #5b8cff;
+  box-shadow: 0 0 8px #5b8cff;
+  animation: blink 1s ease-in-out infinite;
+}
+.status[data-tone='real'] {
+  color: #ffcf7a;
+  background: rgba(255, 173, 31, 0.1);
+  border-color: rgba(255, 173, 31, 0.35);
+}
+.status[data-tone='real'] i {
+  background: #ffad1f;
+  box-shadow: 0 0 8px #ffad1f;
+}
+.status[data-tone='stop'] {
+  color: #ff9b93;
+  background: rgba(255, 90, 78, 0.1);
+  border-color: rgba(255, 90, 78, 0.35);
+}
+.status[data-tone='stop'] i {
+  background: #ff5a4e;
+  box-shadow: 0 0 8px #ff5a4e;
+}
+@keyframes blink {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* Joint dials */
+.dials {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+}
+.dials[data-four] {
+  grid-template-columns: repeat(2, 1fr);
+}
+.dial {
+  position: relative;
+  text-align: center;
+}
+.dial svg {
+  display: block;
+  margin: 0 auto;
+  overflow: visible;
+}
+.track {
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 7;
+  fill: none;
+  stroke-linecap: round;
+}
+.limit {
+  stroke: rgba(255, 90, 78, 0.55);
+  stroke-width: 7;
+  fill: none;
+}
+.t0,
+.tMajor,
+.tMinor {
+  stroke-width: 1;
+}
+.t0 {
+  stroke: rgba(255, 255, 255, 0.6);
+  stroke-width: 1.4;
+}
+.tMajor {
+  stroke: rgba(255, 255, 255, 0.28);
+}
+.tMinor {
+  stroke: rgba(255, 255, 255, 0.12);
+}
+.ringTrack {
+  stroke: rgba(255, 255, 255, 0.05);
+  stroke-width: 2.5;
+  fill: none;
+  stroke-linecap: round;
+}
+.ring {
+  stroke: #3ddc84;
+  stroke-width: 2.5;
+  fill: none;
+  stroke-linecap: round;
+  transition: stroke 0.3s;
+}
+.dial[data-load='mid'] .ring {
+  stroke: #ffad1f;
+}
+.dial[data-load='high'] .ring {
+  stroke: #ff5a4e;
+}
+.dials[data-noload] [data-loadring],
+.dials[data-noload] .loadPct {
+  display: none;
+}
+.fill,
+.glow {
+  stroke: #5b8cff;
+  stroke-width: 7;
+  fill: none;
+  stroke-linecap: round;
+}
+.glow {
+  opacity: 0.55;
+  filter: blur(2.4px);
+}
+.knob {
+  fill: #fff;
+  stroke: #5b8cff;
+  stroke-width: 2;
+}
+.goal {
+  fill: rgba(10, 14, 20, 0.6);
+  stroke: #cfe0ff;
+  stroke-width: 1.6;
+}
+.minmax {
+  font-size: 8px;
+  fill: #5f6f87;
+  text-anchor: middle;
+}
+.loadPct {
+  font-size: 8.5px;
+  font-weight: 800;
+  fill: #3ddc84;
+  text-anchor: middle;
+}
+.dial[data-load='mid'] .loadPct {
+  fill: #ffad1f;
+}
+.dial[data-load='high'] .loadPct {
+  fill: #ff5a4e;
+}
+.lab {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #a9b8cf;
+}
+.lab span {
+  color: #6f7f97;
+  font-weight: 600;
+  margin-left: 2px;
+}
+.val {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 45px;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+.spd {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 63px;
+  font-size: 9px;
+  color: #7f8ea8;
+}
+.dial[data-warn] .fill,
+.dial[data-warn] .glow {
+  stroke: #ffad1f;
+}
+.dial[data-warn] .knob {
+  stroke: #ffad1f;
+}
+.dial[data-warn] .glow {
+  animation: warn 1.4s ease-in-out infinite;
+}
+.dial[data-warn] .val {
+  color: #ffcf7a;
+}
+.dial[data-warn] .spd {
+  color: #ffad1f;
+}
+@keyframes warn {
+  50% {
+    opacity: 0.1;
+  }
+}
+.legend {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 4px;
+  font-size: 9.5px;
+  color: #7f8ea8;
+}
+.legend i {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  vertical-align: -1px;
+  margin-right: 4px;
+  box-sizing: border-box;
+}
+.lgNow {
+  background: #5b8cff;
+}
+.lgGoal {
+  border: 1.6px solid #cfe0ff;
+}
+.lgLoad {
+  background: #3ddc84;
+}
+.hint {
+  margin: 5px 0 0;
+  color: #7f8ea8;
+  font-size: 10.5px;
+}
+
+/* Tool tip */
+.grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+.cell {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 7px;
+  padding: 4px 7px;
+}
+.cell small {
+  display: block;
+  color: #7f8ea8;
+  font-weight: 800;
+  font-size: 9.5px;
+}
+.cell small[data-ax='X'] {
+  color: #ff7a7a;
+}
+.cell small[data-ax='Y'] {
+  color: #5fe0a0;
+}
+.cell small[data-ax='Z'] {
+  color: #7fb0ff;
+}
+.cell b {
+  font-size: 13px;
+}
+.cell[data-rot] b {
+  font-size: 11.5px;
+  color: #cdd7e6;
+}
+.cell b i {
+  font-style: normal;
+  font-size: 9px;
+  color: #7f8ea8;
+  margin-left: 2px;
+  font-weight: 600;
+}
+.speed {
+  margin-top: 6px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  align-items: center;
+}
+.speed b {
+  font-size: 18px;
+}
+.speed span {
+  color: #7f8ea8;
+  margin-left: 4px;
+  font-size: 10.5px;
+}
+.trace {
+  display: block;
+  width: 100%;
+  height: 28px;
+}
+.held {
+  display: block;
+  font-style: normal;
+  color: #9ff0c4;
+  font-weight: 700;
+  font-size: 10.5px;
+}
+.held:empty {
+  display: none;
+}
+
+/* Graph */
+.chart {
+  display: block;
+  width: 100%;
+  height: 75px;
+}
+.chips {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 5px;
+}
+.chips span {
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #b9c6d8;
+}
+.chips i {
+  display: inline-block;
+  width: 8px;
+  height: 3px;
+  border-radius: 2px;
+  margin-right: 4px;
+  vertical-align: 2px;
+}

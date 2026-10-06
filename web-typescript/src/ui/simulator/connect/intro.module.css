@@ -1,0 +1,364 @@
+/* The program intro (Intro.tsx). Every motion eases out; nothing flashes. */
+@property --sweep {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  overflow: hidden;
+  cursor: pointer;
+  color: #e8eef8;
+  background: radial-gradient(70% 60% at 50% 40%, #13233d 0%, #070b12 62%, #04060a 100%);
+  transition:
+    opacity 0.7s ease,
+    visibility 0.7s,
+    transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.splash[data-done] {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: scale(1.03);
+}
+.floor {
+  position: absolute;
+  left: -30%;
+  right: -30%;
+  bottom: -10%;
+  height: 60%;
+  transform: perspective(600px) rotateX(62deg);
+  transform-origin: 50% 0;
+  background-image:
+    linear-gradient(rgba(91, 140, 255, 0.2) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(91, 140, 255, 0.2) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: linear-gradient(180deg, transparent, #000 35%, #000 70%, transparent);
+  opacity: 0;
+  animation:
+    fadeIn 1.4s 0.1s ease-out forwards,
+    drift 14s linear infinite;
+}
+.scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  top: 20%;
+  background: linear-gradient(90deg, transparent, rgba(143, 178, 255, 0.85), transparent);
+  box-shadow: 0 0 18px rgba(143, 178, 255, 0.7);
+  opacity: 0;
+  animation: scan 1.6s 0.2s cubic-bezier(0.45, 0, 0.25, 1) forwards;
+}
+.glow {
+  position: absolute;
+  left: 50%;
+  top: 34%;
+  width: 900px;
+  height: 420px;
+  margin: -210px 0 0 -450px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(91, 140, 255, 0.32), transparent);
+  opacity: 0;
+  animation: fadeIn 1.6s 0.8s ease-out forwards;
+}
+.brand {
+  position: absolute;
+  left: 50%;
+  top: 29%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+/* The mark touches its picture's edges: the box gets room around it (padding, pulled back with
+   margin) so the glow is not cut by the box into a faint square. */
+.mark {
+  width: 150px;
+  height: 139px;
+  padding: 40px;
+  margin: -40px;
+  box-sizing: content-box;
+  background: url('/brand/robodyne-mark.png') center / contain no-repeat content-box;
+  mask-image: conic-gradient(from 0deg, #000 var(--sweep), transparent calc(var(--sweep) + 0.5deg));
+  filter: drop-shadow(0 0 12px rgba(143, 178, 255, 0.45));
+  animation:
+    sweep 1.25s 0.35s cubic-bezier(0.65, 0, 0.35, 1) forwards,
+    breathe 3.2s 1.7s ease-in-out infinite;
+}
+.word {
+  width: 380px;
+  height: 148px;
+  background: url('/brand/robodyne-word.png') left center / contain no-repeat;
+  opacity: 0;
+  transform: translateX(-22px);
+  filter: blur(8px);
+  animation: wordIn 1s 1.05s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.title {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 46%;
+  text-align: center;
+  opacity: 0;
+  animation: rise 0.9s 1.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.title b {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+.title b span {
+  color: #8fb2ff;
+}
+.title small {
+  display: block;
+  margin-top: 6px;
+  font-size: 12.5px;
+  color: #7f8ea8;
+  letter-spacing: 0.22em;
+}
+.robots {
+  position: absolute;
+  left: 50%;
+  bottom: 15%;
+  /* Its own width, not the half window left of `left: 50%` (or the row sits off centre). */
+  width: max-content;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+}
+.robots img {
+  width: min(16vw, 240px);
+  height: auto;
+  opacity: 0;
+  transform: translateY(56px) scale(0.94);
+  filter: drop-shadow(0 18px 24px rgba(0, 0, 0, 0.6));
+  animation: robotIn 1.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  user-select: none;
+}
+.robots img.hero {
+  width: min(19vw, 290px);
+}
+.reflect {
+  position: absolute;
+  left: 50%;
+  bottom: 9%;
+  width: 1300px;
+  height: 60px;
+  margin-left: -650px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(91, 140, 255, 0.26), transparent);
+  opacity: 0;
+  animation: fadeIn 1s 1.9s ease-out forwards;
+}
+.load {
+  position: absolute;
+  left: 50%;
+  bottom: 6%;
+  width: 360px;
+  margin-left: -180px;
+  text-align: center;
+  opacity: 0;
+  animation: fadeIn 0.6s 2.1s ease-out forwards;
+}
+.bar {
+  display: block;
+  height: 3px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+.bar i {
+  display: block;
+  height: 100%;
+  transform-origin: 0 50%;
+  transform: scaleX(0.03);
+  background: linear-gradient(90deg, #3f6fe6, #8fb2ff);
+  box-shadow: 0 0 10px #8fb2ff;
+  animation: barCreep 12s cubic-bezier(0.08, 0.75, 0.2, 1) forwards;
+}
+@keyframes barCreep {
+  to {
+    transform: scaleX(0.3);
+  }
+}
+.load small {
+  display: block;
+  margin-top: 9px;
+  font-size: 12px;
+  color: #7f8ea8;
+  letter-spacing: 0.04em;
+}
+/* The last frame: [연결하기] and 시뮬레이터로 시작 where the bar was. */
+.splash[data-final] {
+  cursor: default;
+}
+.splash[data-final] .load {
+  animation: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+/* Centred by its own width (the rise animation owns transform). */
+.actions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 4.5%;
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  justify-content: center;
+  gap: 10px 22px;
+  opacity: 0;
+  animation: rise 0.6s 0.15s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.actions small {
+  grid-column: 1 / -1;
+  text-align: center;
+  font-size: 12px;
+  color: #7f8ea8;
+}
+.actions .connect {
+  min-width: 190px;
+  height: 50px;
+  padding: 0 34px;
+  border: 1px solid rgba(170, 200, 255, 0.6);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #6b97ff, #3f6fe6);
+  color: #fff;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  box-shadow:
+    0 10px 30px rgba(63, 111, 230, 0.45),
+    0 0 0 6px rgba(91, 140, 255, 0.12);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.2s ease;
+}
+.actions .connect:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow:
+    0 14px 36px rgba(63, 111, 230, 0.55),
+    0 0 0 8px rgba(91, 140, 255, 0.16);
+}
+.actions .start {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 50px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: #b9c9e4;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.start span {
+  transition: transform 0.15s ease;
+}
+.start:hover:not(:disabled) {
+  color: #fff;
+}
+.start:hover:not(:disabled) span {
+  transform: translateX(3px);
+}
+.connect:focus-visible,
+.start:focus-visible {
+  outline: 2px solid #8fb2ff;
+  outline-offset: 4px;
+}
+.skip {
+  position: absolute;
+  right: 22px;
+  bottom: 18px;
+  font-size: 11.5px;
+  color: #5f6f87;
+  opacity: 0;
+  animation: fadeIn 0.6s 1s ease-out forwards;
+}
+/* Skipped: everything at its last frame. */
+.splash[data-skipped] * {
+  animation-delay: 0s !important;
+  animation-duration: 0.35s !important;
+}
+.splash[data-skipped] .floor {
+  animation:
+    fadeIn 0.35s ease-out forwards,
+    drift 14s linear infinite !important;
+}
+.splash[data-skipped] .mark {
+  animation:
+    sweep 0.35s ease-out forwards,
+    breathe 3.2s 0.4s ease-in-out infinite !important;
+}
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+@keyframes drift {
+  to {
+    background-position: 0 60px;
+  }
+}
+@keyframes scan {
+  0% {
+    top: 18%;
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    top: 86%;
+    opacity: 0;
+  }
+}
+@keyframes sweep {
+  to {
+    --sweep: 360deg;
+  }
+}
+@keyframes breathe {
+  50% {
+    filter: drop-shadow(0 0 22px rgba(143, 178, 255, 0.8));
+  }
+}
+@keyframes wordIn {
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+@keyframes rise {
+  from {
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes robotIn {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .splash * {
+    animation-duration: 0.01s !important;
+    animation-delay: 0s !important;
+  }
+}

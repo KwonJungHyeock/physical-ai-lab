@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=에듀이노 설치하기
+Name[ko]=에듀이노 설치하기
+Comment=로봇 콘솔 설치, 전원 켜면 서버 자동 시작, 이 USB 의 wifi.txt 로 Wi-Fi 연결
+Icon=system-software-install
+Terminal=true
+Exec=sh -c "f=\\$(ls /media/*/eduino/install.py /media/*/*/eduino/install.py /media/*/*/*/eduino/install.py /mnt/eduino/install.py 2>/dev/null | head -n 1); if [ -z \\"\\$f\\" ]; then echo 'USB 의 eduino/install.py 를 찾지 못했어요. USB 를 다시 꽂고 해 보세요.'; else echo '로봇 계정 비밀번호를 넣고 Enter (글자는 화면에 안 보여요)'; sudo python3 \\"\\$f\\"; fi; echo; echo '창을 닫으려면 Enter'; read x"

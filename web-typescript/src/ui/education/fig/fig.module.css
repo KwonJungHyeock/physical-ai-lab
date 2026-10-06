@@ -1,0 +1,73 @@
+/* Topic figures: on screen the marked parts draw themselves once; in print they are just drawn. */
+.fig {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  background: #fff;
+}
+
+@media screen {
+  .anim [data-anim='draw'] {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: draw 1.5s ease-out forwards;
+    animation-delay: var(--d, 0s);
+  }
+  .anim [data-anim='pop'] {
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: pop 0.45s cubic-bezier(0.3, 1.4, 0.5, 1) forwards;
+    animation-delay: var(--d, 0s);
+  }
+  .anim [data-anim='fade'] {
+    opacity: 0;
+    animation: fade 0.6s ease-out forwards;
+    animation-delay: var(--d, 0s);
+  }
+  .anim [data-anim='pulse'] {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: pulse 1.6s ease-in-out infinite;
+    animation-delay: var(--d, 0s);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim [data-anim] {
+    animation: none !important;
+    opacity: 1 !important;
+    stroke-dashoffset: 0 !important;
+  }
+}
+
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes fade {
+  to {
+    opacity: 1;
+  }
+}
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.18);
+  }
+}

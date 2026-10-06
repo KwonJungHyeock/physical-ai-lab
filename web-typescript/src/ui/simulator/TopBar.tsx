@@ -1,0 +1,111 @@
+'use client';
+
+/**
+ * Top bar, always on screen: the product name, the four screens (교육 · 시뮬레이터 · 라이브러리 ·
+ * 자료실), one line of what is open now (the task and its goal), and on the right the robot
+ * connection, settings and — while a real robot is connected — Stop.
+ */
+
+import Link from 'next/link';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+
+import Icon from './Icon';
+import css from './console.module.css';
+
+/** The screens: the robotics course, the simulator, the library to open things from, the downloads. */
+export type ConsoleView = 'learn' | 'sim' | 'library' | 'archive';
+
+const SCREENS: { id: ConsoleView; name: string; icon: string; title: string }[] = [
+  { id: 'learn', name: '교육', icon: 'book', title: '로봇공학 단원 · 수업' },
+  { id: 'sim', name: '시뮬레이터', icon: 'cube', title: '실습 · 코딩 · 로봇 연결' },
+  { id: 'library', name: '라이브러리', icon: 'gallery', title: '실습 과제 · 검수 시연 · 실습 환경 · 로봇 모델 · 도구' },
+  { id: 'archive', name: '자료실', icon: 'archive', title: '내려받기: 프로그램 · 교재 · 문항지 · 매뉴얼' },
+];
+
+interface Props {
+  view: ConsoleView;
+  onView(v: ConsoleView): void;
+  busy: boolean;
+  /** What is open now (the task chip in the simulator); nothing on the other screens. */
+  context?: ReactNode;
+  /** Settings menu items (`close` folds the menu). */
+  settings(close: () => void): ReactNode;
+  /** Connection button. */
+  status: ReactNode;
+  /** A real robot is connected: [■ 로봇 정지] shows on every screen (the simulator stops from its own panel and Esc). */
+  robotStop: boolean;
+  onStop(): void;
+}
+
+/** A chip with a small menu under it; closes on a click outside or Esc. */
+export function MenuChip({ label, title, className, children }: { label: ReactNode; title: string; className?: string; children: (close: () => void) => ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: PointerEvent) => {
+      if (!box.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const esc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    window.addEventListener('pointerdown', away);
+    window.addEventListener('keydown', esc);
+    return () => {
+      window.removeEventListener('pointerdown', away);
+      window.removeEventListener('keydown', esc);
+    };
+  }, [open]);
+  return (
+    <div className={`${css.menuChip} ${className ?? ''}`} ref={box}>
+      <button type="button" className={css.menuChipBtn} aria-expanded={open} aria-haspopup="true" title={title} onClick={() => setOpen((o) => !o)}>
+        {label}
+      </button>
+      {open && (
+        <div className={css.menuPop} role="menu">
+          {children(() => setOpen(false))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function TopBar({ view, onView, busy, context, settings, status, robotStop, onStop }: Props) {
+  return (
+    <header className={css.topBar} data-panel="topbar">
+      <Link className={css.lockup} href="/" title="ROBODYNE SYSTEMS · Physical AI 로봇 학습 시뮬레이터">
+        {/* eslint-disable-next-line @next/next/no-img-element -- a small fixed logo, also in the static export for the robot */}
+        <img src="/brand/robodyne-logo-ink.png" alt="ROBODYNE SYSTEMS" width={83} height={22} />
+        <i aria-hidden="true" />
+        <span className={css.product}>
+          <em>PHYSICAL AI</em>
+          <b>로봇 학습 시뮬레이터</b>
+        </span>
+      </Link>
+
+      <nav className={css.screens} role="tablist" aria-label="화면">
+        {SCREENS.map((s) => (
+          <button key={s.id} type="button" role="tab" aria-selected={view === s.id} disabled={busy && view !== s.id} onClick={() => onView(s.id)} title={s.title}>
+            <Icon name={s.icon} size={17} />
+            <span>{s.name}</span>
+          </button>
+        ))}
+      </nav>
+
+      <div className={css.context}>{context}</div>
+
+      <div className={css.topStatus}>
+        {status}
+        <MenuChip label={<Icon name="gear" size={18} />} title="설정" className={css.settingsChip}>
+          {(close) => settings(close)}
+        </MenuChip>
+        {robotStop && (
+          <button type="button" className={css.topStop} onClick={onStop} aria-label="로봇 정지 (Esc)" title="실제 로봇을 바로 멈춰요 (Esc · 스페이스)">
+            <Icon name="stop" size={14} />
+            <span>로봇 정지</span>
+          </button>
+        )}
+      </div>
+    </header>
+  );
+}

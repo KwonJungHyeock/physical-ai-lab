@@ -1,0 +1,557 @@
+/* The lesson's step bar (LessonBar) and its right-hand cards (LessonCards). Light tone. */
+
+/* step bar ------------------------------------------------------------------ */
+.bar {
+  display: grid;
+  grid-template-columns: minmax(240px, auto) minmax(0, 1fr) minmax(170px, auto);
+  gap: 18px;
+  align-items: center;
+  min-height: 64px;
+  padding: 6px 18px;
+  background: var(--page, #fff);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.barHead {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+.back {
+  flex: none;
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 10px;
+  padding: 7px 12px;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--ink);
+  cursor: pointer;
+}
+.back:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.ttl {
+  display: grid;
+  line-height: 1.25;
+  min-width: 0;
+}
+.ttl small {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 700;
+}
+.ttl b {
+  font-size: 16px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.prog {
+  justify-self: center;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+}
+.ln {
+  position: absolute;
+  left: 36px;
+  right: 36px;
+  top: 13px;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--line);
+}
+.ln i {
+  display: block;
+  height: 100%;
+  width: var(--fill, 0%);
+  border-radius: 3px;
+  background: linear-gradient(90deg, #12935f, #2f5be7);
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.ps {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  min-width: 72px;
+  padding: 0 2px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: var(--muted);
+  cursor: pointer;
+}
+.nd {
+  position: relative;
+  z-index: 1;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12.5px;
+  font-weight: 800;
+  border: 2px solid #cfd6e3;
+  background: #fff;
+  color: var(--muted);
+  transition:
+    background 0.3s,
+    border-color 0.3s,
+    color 0.3s,
+    transform 0.3s;
+}
+.ps > span:last-child {
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.ps[data-act] > span:last-child {
+  color: #2f5be7;
+}
+.ps:hover .nd {
+  border-color: #2f5be7;
+}
+.ps[data-st='done'] .nd {
+  background: #12935f;
+  border-color: #12935f;
+  color: #fff;
+}
+.ps[data-st='now'] .nd {
+  background: #2f5be7;
+  border-color: #2f5be7;
+  color: #fff;
+  transform: scale(1.14);
+}
+.ps[data-st='now'] .nd::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px solid #2f5be7;
+  opacity: 0.5;
+  animation: ring 1.6s ease-out infinite;
+}
+@keyframes ring {
+  from {
+    transform: scale(0.85);
+    opacity: 0.6;
+  }
+  to {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+.ps[data-st='now'] > span:last-child {
+  color: var(--ink);
+  font-weight: 800;
+}
+.now {
+  margin: 0;
+  justify-self: end;
+  text-align: right;
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 700;
+}
+.now b {
+  display: block;
+  font-size: 15px;
+  color: var(--ink);
+  animation: nowIn 0.35s ease;
+}
+@keyframes nowIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+/* cards ----------------------------------------------------------------------- */
+.cards {
+  height: 100%;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  background: var(--page, #fff);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.card {
+  overflow-y: auto;
+  padding: 16px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  scrollbar-width: thin;
+  animation: cardIn 0.35s ease;
+}
+.card > * {
+  flex: none;
+}
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+.mh {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.mh b {
+  font-size: 20px;
+  font-weight: 800;
+}
+.mhSub {
+  font-size: 14px;
+  font-weight: 800;
+  color: #2f5be7;
+}
+.mh small {
+  margin-left: auto;
+  font-size: 12.5px;
+  color: var(--muted);
+  font-weight: 700;
+  background: var(--soft);
+  border-radius: 999px;
+  padding: 2px 9px;
+}
+.actTitle {
+  margin: -6px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.actTitle i {
+  font-style: normal;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  background: #2f5be7;
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 800;
+}
+.key {
+  margin: 0;
+  font-size: 17.5px;
+  font-weight: 800;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #eef2ff;
+  border-left: 4px solid #2f5be7;
+  color: var(--ink);
+  word-break: keep-all;
+}
+.principle {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  counter-reset: pr;
+}
+.principle li {
+  counter-increment: pr;
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 8px;
+  font-size: 14.5px;
+  line-height: 1.55;
+  word-break: keep-all;
+}
+.principle li::before {
+  content: counter(pr);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--muted);
+}
+.fig {
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+.figBtn {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: #fff;
+  cursor: zoom-in;
+}
+.fig figcaption {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px 6px 12px;
+  border-top: 1px solid var(--line);
+  background: var(--soft);
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 700;
+}
+.fig figcaption span {
+  flex: 1;
+}
+.fig figcaption button {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 7px;
+  padding: 3px 8px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+.fig figcaption button[data-main] {
+  background: #2f5be7;
+  border-color: #2f5be7;
+  color: #fff;
+}
+.blk {
+  display: grid;
+  gap: 7px;
+}
+.lab {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--faint);
+  letter-spacing: 0.06em;
+}
+.say {
+  display: grid;
+  gap: 6px;
+}
+.say p {
+  margin: 0;
+  position: relative;
+  justify-self: start;
+  background: #f6f7fa;
+  border: 1px solid var(--line);
+  border-radius: 14px 14px 14px 4px;
+  padding: 9px 13px;
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.5;
+  word-break: keep-all;
+}
+.todo {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+.todo li {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 6px;
+  font-size: 14px;
+  line-height: 1.5;
+  word-break: keep-all;
+}
+.todo li::before {
+  content: '☐';
+  color: #2f5be7;
+  font-weight: 800;
+}
+.ans {
+  border: 1px dashed #cfd6e3;
+  border-radius: 11px;
+  padding: 9px 12px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #3c4559;
+}
+.ans summary {
+  cursor: pointer;
+  font-weight: 800;
+  color: var(--ink);
+  font-size: 13.5px;
+}
+.ans[open] summary {
+  margin-bottom: 6px;
+}
+.ans > div {
+  display: grid;
+  gap: 8px;
+}
+.ans p {
+  margin: 0;
+  word-break: keep-all;
+}
+.goals {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 4px;
+}
+.formulas {
+  display: grid;
+  gap: 4px;
+}
+.formulas code {
+  font-size: 13px;
+  background: var(--soft);
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+.terms {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.terms > small {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--faint);
+}
+.sum {
+  display: grid;
+  gap: 6px;
+}
+.sum > div {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  padding: 7px 10px;
+  background: #fff;
+}
+.sum > div[data-done] {
+  border-color: #b9e6d2;
+  background: #f3fbf7;
+}
+.sum i {
+  font-style: normal;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  background: #e8eeff;
+  color: #2f5be7;
+  font-size: 12px;
+  font-weight: 800;
+}
+.sum > div[data-done] i {
+  background: #12935f;
+  color: #fff;
+}
+.sum span {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+.sum small {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.sum b {
+  font-size: 13.5px;
+  line-height: 1.4;
+}
+.field {
+  border-radius: 11px;
+  background: #fff8ec;
+  border: 1px solid #fde3b4;
+  padding: 9px 12px;
+}
+.field small {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #b4530f;
+}
+.field p {
+  margin: 2px 0 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+.note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.nav {
+  display: flex;
+  gap: 8px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--line);
+  background: var(--soft);
+}
+.nav button {
+  flex: 1;
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 10px;
+  padding: 9px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink);
+  cursor: pointer;
+}
+.nav button[data-main] {
+  flex: 1.6;
+  background: #2f5be7;
+  border-color: #2f5be7;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(47, 91, 231, 0.25);
+}
+.nav button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+@media (max-width: 1280px) {
+  .bar {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .now {
+    display: none;
+  }
+  .ps {
+    min-width: 58px;
+  }
+}
+/* Phones: the steps go under the title and scroll sideways in their own row (never the page). */
+@media (max-width: 760px) {
+  .bar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .prog {
+    justify-self: stretch;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+}

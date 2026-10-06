@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>제품별 로드맵 목업</title>
+<style>
+  /* The app's own Pretendard subset. */
+  @font-face { font-family: Pretendard; font-weight: 400; src: url("../../web-typescript/src/app/fonts/Pretendard-Regular.subset.woff2") format("woff2"); }
+  @font-face { font-family: Pretendard; font-weight: 600; src: url("../../web-typescript/src/app/fonts/Pretendard-SemiBold.subset.woff2") format("woff2"); }
+  @font-face { font-family: Pretendard; font-weight: 800; src: url("../../web-typescript/src/app/fonts/Pretendard-Bold.subset.woff2") format("woff2"); }
+  :root {
+    --page: #f4f6f9;
+    --card: #ffffff;
+    --line: #e4e8ee;
+    --ink: #101828;
+    --muted: #667085;
+    --faint: #98a2b3;
+    --accent: #3454d1;
+    --accent-soft: #eef2ff;
+    --m: #3d7bff;
+    --k: #ff7a2f;
+    --p: #17b26a;
+    --sim: #c9d1dc;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--page);
+    color: var(--ink);
+    font-family: Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  .app { display: grid; grid-template-rows: auto auto 1fr; gap: 12px; height: 100vh; padding: 14px 16px 16px; min-width: 0; }
+
+  /* Top bar ----------------------------------------------------------- */
+  .top { display: flex; align-items: center; gap: 14px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 10px 14px; box-shadow: 0 1px 2px rgba(16,24,40,.04); }
+  .brand { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+  .brand small { color: var(--accent); font-weight: 800; letter-spacing: .14em; font-size: 11px; }
+  .brand h1 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -.01em; white-space: nowrap; }
+  .brand p { margin: 0; color: var(--muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .seg { margin-left: auto; display: inline-flex; background: #f2f4f7; border-radius: 12px; padding: 3px; gap: 2px; }
+  .seg button { border: 0; background: transparent; padding: 6px 14px; border-radius: 9px; font-weight: 700; color: var(--muted); }
+  .seg button[aria-pressed=true] { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgba(16,24,40,.12); }
+
+  /* Product shelf ----------------------------------------------------- */
+  .shelf { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px 12px; box-shadow: 0 1px 2px rgba(16,24,40,.04); min-width: 0; }
+  .shelfHead { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+  .shelfHead b { font-size: 15px; }
+  .shelfHead span { color: var(--muted); font-size: 12.5px; }
+  .tabs { display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; }
+  .tabs button { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 4px 11px; font-size: 12.5px; font-weight: 700; color: #475467; }
+  .tabs button[aria-pressed=true] { background: var(--ink); border-color: var(--ink); color: #fff; }
+  .tabs em { font-style: normal; color: var(--faint); margin-left: 4px; font-weight: 600; }
+  .tabs button[aria-pressed=true] em { color: #c8cfdb; }
+  .search { border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; font-size: 12.5px; color: var(--faint); min-width: 150px; }
+  .cards { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+  .prod { position: relative; flex: 0 0 158px; border: 1.5px solid var(--line); background: #fff; border-radius: 14px; padding: 8px 9px 9px; text-align: left; display: grid; gap: 2px; transition: border-color .2s, box-shadow .2s, transform .2s; }
+  .prod:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(16,24,40,.08); }
+  .prod[aria-pressed=true] { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+  .prod .ph { height: 92px; border-radius: 10px; background: radial-gradient(120% 90% at 50% 100%, #eef1f6 0%, #f8f9fb 60%, #fff 100%); display: grid; place-items: center; overflow: hidden; }
+  .prod img { max-width: 100%; max-height: 92px; object-fit: contain; filter: drop-shadow(0 6px 8px rgba(16,24,40,.12)); }
+  .prod b { font-size: 13px; line-height: 1.25; margin-top: 4px; }
+  .prod small { color: var(--muted); font-size: 11.5px; }
+  .prod .chk { position: absolute; top: 7px; right: 7px; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid #d0d5dd; background: #fff; display: grid; place-items: center; font-size: 12px; color: transparent; font-weight: 900; }
+  .prod[aria-pressed=true] .chk { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .prod .shop { position: absolute; top: 7px; left: 7px; font-size: 10px; font-weight: 800; color: #b54708; background: #fffaeb; border: 1px solid #fedf89; padding: 0 6px; border-radius: 999px; }
+  .vars { display: flex; gap: 3px; flex-wrap: wrap; margin-top: 3px; }
+  .vars i { font-style: normal; font-size: 10px; font-weight: 700; color: #475467; background: #f2f4f7; border-radius: 6px; padding: 0 5px; }
+
+  /* Road ------------------------------------------------------------ */
+  .main { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 12px; min-height: 0; }
+  .road { position: relative; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px 14px 12px; overflow: hidden; min-width: 0; box-shadow: 0 1px 2px rgba(16,24,40,.04); }
+  .road::before { content: ""; position: absolute; inset: 0; background-image: radial-gradient(#e7ebf1 1px, transparent 1px); background-size: 18px 18px; opacity: .7; pointer-events: none; }
+  .lanes { position: relative; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 8px; height: 100%; align-items: start; padding-top: 58px; }
+  /* A staircase: each 학문 one step higher than the one before, its topics hanging below it. */
+  .lane { position: relative; display: flex; flex-direction: column; gap: 5px; margin-top: calc((7 - var(--i)) * var(--rise, 25px)); min-width: 0; }
+  .laneHead { border-radius: 12px; padding: 8px 9px 7px; background: #fff; border: 1px solid var(--line); border-top: 4px solid var(--c); transition: box-shadow .3s, transform .3s; }
+  .laneHead[data-hit] { box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 22%, transparent), 0 10px 24px rgba(16,24,40,.10); transform: translateY(-2px); }
+  .laneHead .no { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--c); color: #fff; font-weight: 900; font-size: 12px; margin-right: 6px; }
+  .laneHead b { font-size: 13px; line-height: 1.25; word-break: keep-all; }
+  .laneHead small { display: block; color: var(--muted); font-size: 11px; margin-top: 3px; word-break: keep-all; }
+  .laneHead .cnt { display: block; margin-top: 5px; font-size: 11px; font-weight: 800; color: var(--c); }
+  .laneHead .cnt[data-zero] { color: var(--faint); }
+  .opt { font-size: 10px; font-weight: 800; color: #475467; background: #f2f4f7; border-radius: 6px; padding: 0 5px; margin-left: 4px; vertical-align: 2px; }
+  .chip { border-radius: 9px; padding: 5px 8px; font-size: 11.5px; font-weight: 700; line-height: 1.3; word-break: keep-all; background: #f7f8fa; color: #98a2b3; border: 1px dashed #d5dbe3; transition: background .35s, color .35s, border-color .35s; will-change: transform, opacity; }
+  .chip span { font-weight: 800; margin-right: 4px; }
+  .chip[data-on=full] { background: var(--c); color: #fff; border: 1px solid var(--c); box-shadow: 0 4px 10px color-mix(in srgb, var(--c) 30%, transparent); }
+  .chip[data-on=part] { background: color-mix(in srgb, var(--c) 10%, #fff); color: color-mix(in srgb, var(--c) 80%, #101828); border: 1.5px solid var(--c); }
+  .bands { position: absolute; left: 14px; right: 14px; top: 12px; display: flex; gap: 8px; }
+  .bands span { flex: var(--n); font-size: 11.5px; font-weight: 800; color: var(--c); border-bottom: 3px solid var(--c); padding-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bands small { color: var(--muted); font-weight: 600; margin-left: 6px; }
+  .flyer { position: fixed; left: 0; top: 0; z-index: 30; pointer-events: none; border-radius: 9px; }
+  .legend { position: absolute; left: 14px; top: 44px; display: flex; gap: 12px; font-size: 11.5px; color: var(--muted); }
+  .legend i { display: inline-block; width: 14px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+
+  /* Side ------------------------------------------------------------ */
+  .side { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow: auto; box-shadow: 0 1px 2px rgba(16,24,40,.04); }
+  .side h3 { margin: 0; font-size: 12px; color: var(--muted); letter-spacing: .08em; font-weight: 800; }
+  .owned { display: flex; flex-wrap: wrap; gap: 6px; }
+  .owned span { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px 3px 3px; }
+  .owned img { width: 24px; height: 24px; object-fit: contain; border-radius: 50%; background: #f2f4f7; }
+  .owned em { font-style: normal; color: var(--faint); font-weight: 600; }
+  .ringRow { display: flex; gap: 12px; align-items: center; }
+  .ring { position: relative; width: 84px; height: 84px; flex: none; }
+  .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .ring b { position: absolute; inset: 0; display: grid; place-items: center; font-size: 17px; font-weight: 900; }
+  .ringRow p { margin: 0; font-size: 13px; color: #344054; }
+  .ringRow p strong { color: var(--accent); }
+  .plan { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .plan li { display: grid; grid-template-columns: 24px 1fr auto; gap: 8px; align-items: center; border: 1px solid var(--line); border-radius: 12px; padding: 7px 9px; font-size: 12.5px; }
+  .plan li i { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--c); color: #fff; font-style: normal; font-weight: 900; font-size: 12px; }
+  .plan li small { color: var(--muted); font-size: 11px; display: block; }
+  .plan li em { font-style: normal; font-size: 11px; color: var(--muted); font-weight: 700; }
+  .plan li[data-sim] { opacity: .55; }
+  .go { border: 0; border-radius: 12px; background: var(--accent); color: #fff; font-weight: 800; padding: 11px; font-size: 14px; }
+  .add { border: 1px dashed #c7cff0; border-radius: 12px; padding: 9px 10px; font-size: 12px; color: #344054; background: #f8f9ff; }
+  .add b { color: var(--accent); }
+  .empty { color: var(--muted); font-size: 12.5px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <small>ROBOTICS ROADMAP</small>
+      <h1>로봇공학 로드맵</h1>
+      <p>가진 제품을 고르면 무엇을 실물로 배우고, 어떤 순서가 좋은지 바로 보여 줘요.</p>
+    </div>
+    <div class="seg" role="group" aria-label="수준">
+      <button aria-pressed="true">고등</button><button aria-pressed="false">대학</button>
+    </div>
+    <div class="seg" role="group" aria-label="보기">
+      <button aria-pressed="true">로드맵</button><button aria-pressed="false">제품별 표</button>
+    </div>
+  </header>
+
+  <section class="shelf" aria-label="보유 제품">
+    <div class="shelfHead">
+      <b>① 우리 학교에 있는 제품을 골라 보세요</b>
+      <span>여러 개 고를 수 있어요 · 에듀이노 판매 제품</span>
+      <div class="tabs" id="tabs"></div>
+      <span class="search">⌕ 제품 이름으로 찾기</span>
+    </div>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <div class="main">
+    <section class="road" aria-label="로드맵">
+      <div class="bands" id="bands"></div>
+      <div class="legend">
+        <span><i style="background:#3d7bff"></i>실물로 전체 실습</span>
+        <span><i style="background:#fff;border:1.5px solid #3d7bff"></i>실물로 일부</span>
+        <span><i style="background:#f7f8fa;border:1px dashed #c9d1dc"></i>시뮬레이터로</span>
+      </div>
+      <div class="lanes" id="lanes"></div>
+    </section>
+    <aside class="side" aria-label="추천 코스">
+      <h3>② 고른 제품</h3>
+      <div class="owned" id="owned"></div>
+      <div class="ringRow">
+        <div class="ring"><svg viewBox="0 0 42 42"><circle cx="21" cy="21" r="16" fill="none" stroke="#eef1f5" stroke-width="6"/><circle id="arc" cx="21" cy="21" r="16" fill="none" stroke="#3454d1" stroke-width="6" stroke-linecap="round" stroke-dasharray="0 100.5" style="transition: stroke-dasharray .8s cubic-bezier(.2,.8,.2,1)"/></svg><b id="pct">0%</b></div>
+        <p id="ringText"></p>
+      </div>
+      <h3>③ 추천 순서</h3>
+      <ol class="plan" id="plan"></ol>
+      <button class="go" id="go">추천 순서로 시작 →</button>
+      <div class="add" id="add"></div>
+    </aside>
+  </div>
+</div>
+
+<script>
+const TRACK = { M: { c: '#3d7bff', label: '움직임의 원리 (M)', motto: '어디로 · 얼마나 빨리 · 얼마의 힘으로' }, K: { c: '#ff7a2f', label: '정확한 제어 (K)', motto: '결과를 보고 고쳐서' }, P: { c: '#17b26a', label: '보고 판단하는 AI (P)', motto: '보고 판단해 스스로' } };
+const SUBJ = [
+  { id: 1, t: '기초 로봇공학', tag: '관절 수 · 위치와 방향', tr: 'M' },
+  { id: 2, t: '기구학 & 역기구학', tag: '각도 ↔ 손끝 위치', tr: 'M' },
+  { id: 3, t: '미분기구학 · 궤적', tag: '손끝 속도 · 부드럽게', tr: 'M' },
+  { id: 4, t: '로봇 동역학', tag: '무게를 버티는 힘', tr: 'M', opt: true },
+  { id: 5, t: '로봇 제어공학', tag: '목표를 보고 고치기', tr: 'K' },
+  { id: 6, t: '동작 계획', tag: '부딪히지 않는 길 · 집기', tr: 'P' },
+  { id: 7, t: '로봇 비전 · 인식', tag: '카메라로 색 · 위치', tr: 'P' },
+  { id: 8, t: '로봇 학습', tag: '보여 주면 따라 하기', tr: 'P' },
+];
+const TOPICS = [["1-1", "관절·링크·자유도"], ["1-2", "위치와 자세"], ["1-3", "자세 표현 — 회전의 순서"], ["1-4", "작업 공간"], ["2-1", "좌표 변환과 순기구학"], ["2-2", "역기구학"], ["2-3", "관절 이동과 직선 이동"], ["3-1", "속도와 자코비안"], ["3-2", "궤적 프로파일"], ["3-3", "경유점과 블렌딩"], ["3-4", "관절 동기화"], ["4-1", "중력 토크"], ["4-2", "관성과 가속 토크"], ["4-3", "질량과 마찰"], ["5-1", "피드백의 원리"], ["5-2", "PID 제어"], ["5-3", "궤적 추종"], ["5-4", "힘 제한과 안전 여유"], ["5-5", "오차와 캘리브레이션"], ["6-1", "충돌 검사"], ["6-2", "경로 계획"], ["6-3", "집기와 놓기"], ["6-4", "쌓기"], ["7-1", "카메라와 좌표"], ["7-2", "색으로 찾기"], ["7-3", "시각 서보"], ["8-1", "시연으로 배우기"], ["8-2", "캡스톤: 보고 판단해 집어 놓기"]];
+// Families: one card per product line (variants share a curriculum); cover = per 학문 2 full / 1 part / 0.
+const PRODUCTS = [
+  { id: 'mycobot280', name: 'myCobot 280', kind: '6축 협동 로봇팔', fam: 'arm6', shop: true, img: 'mycobot280-rdkx5', vars: ['RDK X5', 'Pi', 'M5', 'Jetson Nano', 'Arduino'], cover: [2,2,2,2,2,2,1,1] },
+  { id: 'mycobot320', name: 'myCobot 320', kind: '6축 · 가반 1kg', fam: 'arm6', shop: true, img: 'mycobot320', vars: ['Pi', 'M5'], cover: [2,2,2,2,2,2,1,1] },
+  { id: 'aikit', name: 'AI 키트', kind: '카메라 · 흡착 · 분류함', fam: 'kit', shop: true, img: 'aikit', vars: [], cover: [0,0,0,0,0,2,2,2] },
+  { id: 'myagv', name: 'myAGV 2023', kind: '이동 로봇 · 라이다', fam: 'mobile', shop: true, img: 'myagv', vars: ['Pi', 'Jetson Nano'], cover: [1,0,1,1,1,1,1,0] },
+  { id: 'mecharm', name: 'mechArm 270', kind: '6축 · 중심 대칭형', fam: 'arm6', shop: false, img: 'mecharm270', vars: ['Pi', 'M5'], cover: [2,2,2,1,1,2,1,0] },
+  { id: 'mypal', name: 'myPalletizer 260', kind: '4축 팔레타이저', fam: 'arm4', shop: false, img: 'mypalletizer260', vars: ['Pi', 'M5'], cover: [2,2,1,0,1,1,1,0] },
+  { id: 'ultra', name: 'ultraArm P340', kind: '4축 · 고정밀', fam: 'arm4', shop: false, img: 'ultraarm-p340', vars: [], cover: [2,2,1,0,1,1,1,0] },
+  { id: 'myarm', name: 'myArm M&C', kind: '원격 조작 · 데이터 수집', fam: 'learn', shop: false, img: 'myarm-m750', vars: ['M750', 'C650'], cover: [2,2,1,1,1,1,0,2] },
+  { id: 'mybuddy', name: 'myBuddy 280', kind: '양팔 로봇', fam: 'learn', shop: false, img: 'mybuddy', vars: [], cover: [2,2,1,0,1,1,1,1] },
+  { id: 'pro630', name: 'myCobot Pro 630', kind: '산업형 6축 · 2kg', fam: 'arm6', shop: false, img: 'mycobot-pro630', vars: ['Pro 450'], cover: [2,2,2,2,2,2,1,1] },
+  { id: 'solar', name: '솔라 트래커', kind: '2축 추적', fam: 'etc', shop: true, img: '', vars: [], cover: [1,1,0,0,2,0,0,0] },
+  { id: 'rccar', name: '메탈 RC카', kind: '구동 · 조향', fam: 'etc', shop: true, img: '', vars: [], cover: [1,0,0,1,1,0,0,0] },
+];
+const FAMS = [['all', '전체'], ['arm6', '6축 로봇팔'], ['arm4', '4축 로봇팔'], ['mobile', '이동 로봇'], ['kit', 'AI · 확장 키트'], ['learn', '양팔 · 원격 조작'], ['etc', '기타 교구']];
+// Renders of Elephant Robotics' official 3D models (BSD licence, see img/products/ATTRIBUTION.md).
+const IMG = Object.fromEntries(PRODUCTS.filter((p) => p.img).map((p) => [p.img, `img/products/${p.img}.png`]));
+const sel = new Set();
+
+const $ = (id) => document.getElementById(id);
+const imgOf = (p) => (IMG[p.img] ? `<img alt="" src="${IMG[p.img]}" onerror="this.replaceWith('◎')">` : `<span style="font-size:30px;color:#c0c7d2">◎</span>`);
+
+function renderShelf(fam = 'all') {
+  $('tabs').innerHTML = FAMS.map(([id, n]) => `<button data-fam="${id}" aria-pressed="${id === fam}">${n}<em>${id === 'all' ? PRODUCTS.length : PRODUCTS.filter((p) => p.fam === id).length}</em></button>`).join('');
+  $('cards').innerHTML = PRODUCTS.filter((p) => fam === 'all' || p.fam === fam)
+    .map((p) => `<button class="prod" data-id="${p.id}" aria-pressed="${sel.has(p.id)}">${p.shop ? '<span class="shop">에듀이노</span>' : ''}<span class="chk">✓</span><div class="ph">${imgOf(p)}</div><b>${p.name}</b><small>${p.kind}</small>${p.vars.length ? `<div class="vars">${p.vars.map((v) => `<i>${v}</i>`).join('')}</div>` : ''}</button>`)
+    .join('');
+}
+
+function renderRoad() {
+  const bandsN = { M: 4, K: 1, P: 3 };
+  $('bands').innerHTML = Object.entries(TRACK).map(([k, t]) => `<span style="--c:${t.c};--n:${bandsN[k]}">${t.label}<small>${t.motto}</small></span>`).join('');
+  $('lanes').innerHTML = SUBJ.map((s, i) => {
+    const c = TRACK[s.tr].c;
+    const ts = TOPICS.filter((t) => t[0].startsWith(s.id + '-'));
+    return `<div class="lane" style="--i:${i};--c:${c}"><div class="laneHead" id="h${s.id}"><span class="no">${s.id}</span><b>${s.t}</b>${s.opt ? '<span class="opt">심화</span>' : ''}<small>${s.tag}</small><span class="cnt" id="c${s.id}" data-zero>시뮬레이터로 ${ts.length}주제</span></div>${ts.map((t) => `<div class="chip" id="t${t[0]}"><span>${t[0]}</span>${t[1]}</div>`).join('')}</div>`;
+  }).join('');
+}
+
+// What the chosen products give each topic: the best of them; a partly covered 학문 gets its first half.
+function coverage() {
+  const out = {};
+  for (const s of SUBJ) {
+    const ts = TOPICS.filter((t) => t[0].startsWith(s.id + '-'));
+    const best = Math.max(0, ...[...sel].map((id) => PRODUCTS.find((p) => p.id === id).cover[s.id - 1]));
+    ts.forEach((t, i) => (out[t[0]] = best === 2 ? 'full' : best === 1 && i < Math.ceil(ts.length / 2) ? 'part' : ''));
+  }
+  return out;
+}
+
+function update(fromEl) {
+  const cov = coverage();
+  const from = fromEl?.getBoundingClientRect();
+  let k = 0;
+  for (const t of TOPICS) {
+    const el = $('t' + t[0]);
+    const was = el.dataset.on || '';
+    const now = cov[t[0]];
+    if (was === now) continue;
+    if (now && from) {
+      // Fly from the product card into the slot: start there, small, then glide home.
+      const r = el.getBoundingClientRect();
+      const dx = from.left + from.width / 2 - (r.left + r.width / 2);
+      const dy = from.top + from.height / 2 - (r.top + r.height / 2);
+      const delay = k++ * 32;
+      el.dataset.on = now;
+      const slow = Number(new URLSearchParams(location.search).get('slow') ?? 1);
+      el.animate(
+        [
+          { transform: `translate(${dx}px, ${dy}px) scale(.35) rotate(${(Math.random() - .5) * 40}deg)`, opacity: 0 },
+          { transform: `translate(${dx * .35}px, ${dy * .35 - 40}px) scale(.9)`, opacity: 1, offset: .55 },
+          { transform: 'none', opacity: 1 },
+        ],
+        { duration: 760 * slow, delay: delay * slow, easing: 'cubic-bezier(.2,.75,.25,1)', fill: 'backwards' },
+      );
+      const s = t[0][0];
+      setTimeout(() => { const h = $('h' + s); h.dataset.hit = ''; setTimeout(() => delete h.dataset.hit, 420 * slow); }, (delay + 700) * slow);
+    } else {
+      el.dataset.on = now;
+    }
+  }
+  for (const s of SUBJ) {
+    const ts = TOPICS.filter((t) => t[0].startsWith(s.id + '-'));
+    const real = ts.filter((t) => cov[t[0]]).length;
+    const c = $('c' + s.id);
+    if (real) { delete c.dataset.zero; c.textContent = `실물 ${real} / ${ts.length}주제`; } else { c.dataset.zero = ''; c.textContent = `시뮬레이터로 ${ts.length}주제`; }
+  }
+  renderSide(cov);
+}
+
+function renderSide(cov) {
+  const ps = PRODUCTS.filter((p) => sel.has(p.id));
+  $('owned').innerHTML = ps.length ? ps.map((p) => `<span>${IMG[p.img] ? `<img alt="" src="${IMG[p.img]}" onerror="this.remove()">` : ''}${p.name}${p.vars[0] ? `<em>${p.vars[0]}</em>` : ''}</span>`).join('') : '<span class="empty" style="border:0;padding:0">아직 고른 제품이 없어요 — 위에서 골라 보세요.</span>';
+  const full = TOPICS.filter((t) => cov[t[0]] === 'full').length;
+  const part = TOPICS.filter((t) => cov[t[0]] === 'part').length;
+  const ratio = (full + part * .5) / TOPICS.length;
+  $('arc').setAttribute('stroke-dasharray', `${(ratio * 100.5).toFixed(1)} 100.5`);
+  $('pct').textContent = Math.round(ratio * 100) + '%';
+  $('ringText').innerHTML = ps.length ? `${TOPICS.length}주제 중 <strong>${full + part}주제</strong>를 실물로 실습해요. 나머지 ${TOPICS.length - full - part}주제는 시뮬레이터로.` : '제품을 고르면 실물로 할 수 있는 만큼 채워져요.';
+  $('plan').innerHTML = SUBJ.map((s) => {
+    const ts = TOPICS.filter((t) => t[0].startsWith(s.id + '-'));
+    const real = ts.filter((t) => cov[t[0]]).length;
+    const with_ = ps.filter((p) => p.cover[s.id - 1] > 0).map((p) => p.name).slice(0, 2).join(' + ');
+    return `<li style="--c:${TRACK[s.tr].c}" ${real ? '' : 'data-sim'}><i>${s.id}</i><span>${s.t}<small>${real ? with_ : '시뮬레이터'}</small></span><em>${ts.length * 50}분</em></li>`;
+  }).join('');
+  const missing = PRODUCTS.filter((p) => !sel.has(p.id) && p.shop).map((p) => ({ p, gain: SUBJ.filter((s) => p.cover[s.id - 1] === 2 && !ps.some((q) => q.cover[s.id - 1] === 2)) })).filter((x) => x.gain.length).sort((a, b) => b.gain.length - a.gain.length)[0];
+  $('add').innerHTML = missing ? `<b>${missing.p.name}</b> 를 더하면 ${missing.gain.map((s) => s.t).join(' · ')} 도 실물로 해요.` : '고른 제품으로 로드맵을 모두 실물로 해요.';
+}
+
+document.addEventListener('click', (e) => {
+  const tab = e.target.closest('[data-fam]');
+  if (tab) return renderShelf(tab.dataset.fam);
+  const card = e.target.closest('.prod');
+  if (!card) return;
+  const id = card.dataset.id;
+  sel.has(id) ? sel.delete(id) : sel.add(id);
+  card.setAttribute('aria-pressed', sel.has(id));
+  update(sel.has(id) ? card : null);
+});
+
+renderShelf();
+renderRoad();
+update(null);
+// For screenshots: ?pick=mycobot280,aikit picks those after a moment.
+const pick = new URLSearchParams(location.search).get('pick');
+if (pick) setTimeout(() => pick.split(',').forEach((id, i) => setTimeout(() => document.querySelector(`.prod[data-id="${id}"]`)?.click(), i * 900)), 400);
+</script>
+</body>
+</html>

@@ -1,0 +1,857 @@
+/* 자료실 printable documents: A4, printed by tools/build/materials.mjs (margins set there). */
+.doc {
+  --ink: #101828;
+  --muted: #667085;
+  --line: #d0d5dd;
+  --soft: #f2f4f7;
+  --accent: #3454d1;
+  background: #fff;
+  color: var(--ink);
+  font-family: var(--font-ui), 'DejaVu Sans', sans-serif;
+  font-size: 9.6pt;
+  line-height: 1.5;
+  max-width: 182mm;
+  margin: 0 auto;
+  padding: 6mm 0;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.doc h1,
+.doc h2,
+.doc h3 {
+  line-height: 1.3;
+}
+.head {
+  border-bottom: 2px solid var(--ink);
+  padding-bottom: 3mm;
+  margin-bottom: 4mm;
+}
+.head small {
+  color: var(--muted);
+  font-size: 8.5pt;
+}
+.head h1 {
+  margin: 1mm 0 0;
+  font-size: 19pt;
+}
+.head p {
+  margin: 1mm 0 0;
+  color: var(--muted);
+}
+/* Theory book: cover, then one topic per page group, set like a lab workbook. */
+.cover {
+  min-height: 250mm;
+  display: flex;
+  flex-direction: column;
+  gap: 5mm;
+}
+.cover > small {
+  color: var(--muted);
+  font-size: 8.5pt;
+  border-bottom: 0.4mm solid var(--ink);
+  padding-bottom: 2mm;
+}
+.coverTitle {
+  display: flex;
+  align-items: center;
+  gap: 6mm;
+  margin-top: 14mm;
+}
+.coverTitle > span {
+  display: grid;
+  place-items: center;
+  width: 30mm;
+  height: 30mm;
+  border-radius: 5mm;
+  background: var(--track, var(--accent));
+  color: #fff;
+  font-size: 40pt;
+  font-weight: 900;
+}
+.coverTitle h1 {
+  margin: 0;
+  font-size: 28pt;
+  letter-spacing: -0.02em;
+}
+.coverTitle p {
+  margin: 1mm 0 0;
+  font-size: 12pt;
+  color: var(--muted);
+}
+.coverGoal {
+  border-left: 1.4mm solid var(--track, var(--accent));
+  background: var(--soft);
+  border-radius: 2mm;
+  padding: 3mm 4mm;
+  font-size: 11.5pt;
+  font-weight: 600;
+  line-height: 1.55;
+}
+.coverGoal b {
+  display: block;
+  font-size: 8.5pt;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.coverPre {
+  margin: 0;
+  font-size: 9.5pt;
+  color: #344054;
+}
+.coverPre b {
+  margin-right: 2mm;
+  color: var(--muted);
+}
+.toc {
+  margin: 2mm 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 2mm;
+}
+.toc li {
+  display: flex;
+  gap: 4mm;
+  align-items: baseline;
+  border-bottom: 0.25mm dashed var(--line);
+  padding-bottom: 2mm;
+}
+.toc li > b {
+  flex: none;
+  width: 12mm;
+  font-size: 13pt;
+  color: var(--track, var(--accent));
+}
+.toc li > span {
+  display: grid;
+  font-size: 12pt;
+  font-weight: 700;
+}
+.toc small {
+  font-size: 9pt;
+  font-weight: 400;
+  color: var(--muted);
+}
+.howto {
+  margin-top: auto;
+  font-size: 9pt;
+  color: #344054;
+  background: var(--soft);
+  border-radius: 2mm;
+  padding: 3mm 4mm;
+}
+.howto > b {
+  font-size: 9.5pt;
+}
+.howto ol {
+  margin: 1mm 0 0;
+  padding-left: 5mm;
+  display: grid;
+  gap: 1mm;
+}
+
+/* Symbols and on-screen names in text */
+.sym {
+  font-family: 'Cambria Math', 'STIX Two Math', 'Times New Roman', 'DejaVu Serif', serif;
+  font-style: italic;
+  font-weight: 600;
+  color: #1d4ed8;
+}
+ruby.sym rt {
+  font-family: var(--font-ui), 'DejaVu Sans', sans-serif;
+  font-style: normal;
+  font-size: 6pt;
+  font-weight: 700;
+  color: #2a5bb8;
+}
+.key {
+  font: inherit;
+  font-size: 0.88em;
+  font-weight: 700;
+  border: 0.25mm solid #98a2b3;
+  border-bottom-width: 0.5mm;
+  border-radius: 1mm;
+  padding: 0 1.2mm;
+  background: #fff;
+  white-space: nowrap;
+}
+
+.topic {
+  break-before: page;
+}
+.topicHead {
+  display: flex;
+  align-items: center;
+  gap: 3mm;
+  padding: 2.5mm 3mm;
+  border-radius: 2.5mm;
+  background: var(--ink);
+  color: #fff;
+  border-left: 2mm solid var(--track, var(--accent));
+}
+.topicHead > span {
+  font-size: 15pt;
+  font-weight: 900;
+  color: var(--track, #fff);
+}
+.topicHead h2 {
+  margin: 0;
+  font-size: 15pt;
+}
+.topicHead small {
+  font-size: 8.5pt;
+  color: #c4cddc;
+}
+.q {
+  display: flex;
+  gap: 2.5mm;
+  align-items: flex-start;
+  margin: 3mm 0;
+  padding: 2.5mm 3mm;
+  border: 0.3mm solid #c7d7fb;
+  background: #f3f7ff;
+  border-radius: 2mm;
+  font-size: 11pt;
+  font-weight: 700;
+  color: #17325c;
+}
+.q > b {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 6.5mm;
+  height: 6.5mm;
+  border-radius: 1.5mm;
+  background: #2a78d6;
+  color: #fff;
+  font-size: 10pt;
+}
+.figure {
+  margin: 0 0 3mm;
+  break-inside: avoid;
+}
+.fig {
+  width: 100%;
+  height: auto;
+  background: #fff;
+  border: 0.3mm solid var(--line, #e4e7ec);
+  border-radius: 2mm;
+}
+.figure figcaption {
+  margin-top: 1.2mm;
+  font-size: 8.6pt;
+  color: #475467;
+}
+.figure figcaption > b {
+  margin-right: 1.5mm;
+  color: var(--ink);
+}
+.legend {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0 3mm;
+  margin-left: 3mm;
+}
+.box {
+  margin: 0 0 2.5mm;
+  padding: 2.2mm 3mm 2.2mm 3.5mm;
+  border-radius: 2mm;
+  border-left: 1mm solid var(--c, #2a78d6);
+  background: var(--bg, #f6f9ff);
+  break-inside: avoid;
+}
+.box > b {
+  display: block;
+  font-size: 7.8pt;
+  letter-spacing: 0.08em;
+  color: var(--c, #2a78d6);
+}
+.box > p {
+  margin: 0.5mm 0 0;
+  font-size: 10.5pt;
+  font-weight: 600;
+}
+.box ol {
+  margin: 0.5mm 0 0;
+  padding-left: 5mm;
+  display: grid;
+  gap: 0.8mm;
+}
+.box[data-kind='principle'] {
+  --c: #475467;
+  --bg: #f8fafc;
+}
+.box[data-kind='compare'] {
+  --c: #eb6834;
+  --bg: #fff6ef;
+}
+.box[data-kind='goal'] {
+  --c: #6d4fe8;
+  --bg: #f4f1ff;
+}
+.box[data-kind='field'] {
+  --c: #0e7490;
+  --bg: #ecfeff;
+}
+.box[data-kind='key'] {
+  --c: #1fae66;
+  --bg: #ecf9f2;
+}
+.box .write {
+  margin-top: 2mm;
+  padding-bottom: 6mm;
+  border-bottom: 0.25mm solid #f0b48f;
+  font-size: 8.5pt;
+  font-weight: 700;
+  color: #c2410c;
+}
+.symTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 2mm;
+  font-size: 8.6pt;
+  break-inside: avoid;
+}
+.symTable caption {
+  text-align: left;
+  font-size: 8.5pt;
+  font-weight: 800;
+  color: #1d4ed8;
+  padding-bottom: 1mm;
+}
+.symTable th {
+  background: #f1f6ff;
+  color: #475467;
+  text-align: left;
+  font-size: 7.6pt;
+  padding: 0.8mm 2mm;
+}
+.symTable td {
+  border-top: 0.25mm solid #e1e9fb;
+  padding: 0.9mm 2mm;
+  vertical-align: top;
+}
+.symTable td:first-child {
+  font-size: 11pt;
+  width: 12mm;
+}
+.symTable td:nth-child(2),
+.symTable td:last-child {
+  white-space: nowrap;
+  color: #475467;
+  width: 1%;
+}
+.sec {
+  break-after: avoid;
+  margin: 4mm 0 1.5mm;
+  font-size: 11.5pt;
+  color: var(--ink);
+  display: flex;
+  align-items: baseline;
+  gap: 2.5mm;
+  border-bottom: 0.4mm solid var(--track, var(--accent));
+  padding-bottom: 0.8mm;
+}
+.sec small {
+  font-size: 8pt;
+  font-weight: 500;
+  color: var(--muted);
+}
+.para {
+  margin: 0 0 1.8mm;
+  text-align: justify;
+  line-height: 1.65;
+}
+.formula {
+  display: grid;
+  gap: 1mm;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 1.5mm;
+  padding: 2mm 3mm;
+  margin-top: 2mm;
+  break-inside: avoid;
+}
+.formula b {
+  font-size: 8.5pt;
+  color: var(--accent);
+}
+.formula code {
+  font-family: 'Cambria Math', 'STIX Two Math', 'DejaVu Serif', serif;
+  font-size: 10pt;
+}
+.lab {
+  break-before: page;
+}
+.labSteps {
+  display: grid;
+  gap: 2mm;
+}
+.labStep {
+  border: 0.3mm solid var(--line);
+  border-radius: 2mm;
+  overflow: hidden;
+  break-inside: avoid;
+}
+.labStep header {
+  display: flex;
+  align-items: center;
+  gap: 2mm;
+  padding: 1.2mm 2.5mm;
+  background: var(--ink);
+  color: #fff;
+}
+.labStep header span {
+  display: grid;
+  place-items: center;
+  width: 6mm;
+  height: 6mm;
+  border-radius: 1.2mm;
+  background: #2a78d6;
+  font-weight: 900;
+}
+.labStep dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 13mm 1fr;
+}
+.labStep dt {
+  padding: 1.5mm 2mm;
+  font-size: 8pt;
+  font-weight: 800;
+  color: #2a78d6;
+  border-top: 0.25mm solid var(--soft);
+}
+.labStep dt:nth-of-type(2) {
+  color: #c2410c;
+}
+.labStep dd {
+  margin: 0;
+  padding: 1.5mm 2.5mm 1.5mm 0;
+  border-top: 0.25mm solid var(--soft);
+}
+.record {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 3mm 0;
+  break-inside: avoid;
+}
+.record caption {
+  text-align: left;
+  font-size: 9pt;
+  font-weight: 800;
+  color: #138a50;
+  padding-bottom: 1mm;
+}
+.record th,
+.record td {
+  border: 0.3mm solid #9fd8b9;
+  padding: 1.2mm 2mm;
+  text-align: left;
+  font-size: 8.5pt;
+}
+.record thead th {
+  background: #ecf9f2;
+  color: #0b6b3c;
+}
+.record tbody th {
+  width: 32mm;
+  font-size: 11pt;
+  color: #138a50;
+}
+.record tbody th small {
+  display: block;
+  font-size: 7.6pt;
+  color: var(--ink);
+}
+.record td {
+  height: 11mm;
+}
+.terms {
+  display: grid;
+  grid-template-columns: 28mm 1fr 28mm 1fr;
+  gap: 0.8mm 2.5mm;
+  font-size: 8.4pt;
+  line-height: 1.4;
+  margin: 3mm 0 0;
+  padding-top: 2mm;
+  border-top: 0.25mm solid var(--line);
+}
+.terms dt {
+  font-weight: 700;
+}
+.terms dt small {
+  display: block;
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 7.5pt;
+}
+.terms dd {
+  margin: 0;
+}
+.sources {
+  font-size: 8pt;
+  color: var(--muted);
+}
+
+/* Question sheets: a two-column exam paper. */
+.examHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 6mm;
+  border-bottom: 2px solid var(--ink);
+  padding-bottom: 2.5mm;
+  margin-bottom: 3mm;
+}
+.examHead small {
+  color: var(--muted);
+  font-size: 8pt;
+}
+.examHead h1 {
+  margin: 0.5mm 0 1mm;
+  font-size: 18pt;
+}
+.examHead p {
+  margin: 0;
+  font-size: 8.5pt;
+  color: #344054;
+}
+.student {
+  flex: none;
+  border-collapse: collapse;
+  font-size: 8pt;
+}
+.student th {
+  font-weight: 600;
+  color: var(--muted);
+  border: 1px solid var(--ink);
+  padding: 0.6mm 2mm;
+  background: var(--soft);
+}
+.student td {
+  border: 1px solid var(--ink);
+  height: 8mm;
+  min-width: 15mm;
+  text-align: right;
+  vertical-align: bottom;
+  padding: 0 1.5mm 0.5mm;
+}
+.student td small {
+  color: var(--muted);
+}
+.qGroup + .qGroup {
+  margin-top: 5mm;
+  padding-top: 3mm;
+  border-top: 1.5px solid var(--ink);
+}
+.qCat {
+  break-after: avoid;
+  font-size: 12pt;
+  margin: 1mm 0 2mm;
+  display: flex;
+  align-items: baseline;
+  gap: 2mm;
+}
+.qCat span {
+  background: var(--ink);
+  color: #fff;
+  border-radius: 1.5mm;
+  padding: 0 2mm;
+}
+.qCat small {
+  font-size: 9pt;
+  color: var(--accent);
+}
+.examCols {
+  columns: 2;
+  column-gap: 8mm;
+  column-rule: 0.3mm solid #98a2b3;
+}
+.qTopic {
+  font-size: 9.5pt;
+  margin: 0 0 1.5mm;
+  padding: 0.8mm 2mm;
+  background: var(--soft);
+  border-left: 1mm solid var(--accent);
+  color: var(--accent);
+  break-after: avoid;
+  break-inside: avoid;
+}
+.qTopic + .item {
+  break-before: avoid;
+}
+.item ~ .qTopic {
+  margin-top: 3mm;
+}
+.qSyms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 3mm;
+  font-size: 7.5pt;
+  font-weight: 500;
+  color: var(--muted);
+  margin-top: 0.3mm;
+}
+/* One question (not .q, the theory pages' question box). */
+.item {
+  break-inside: avoid;
+  margin: 0 0 3.2mm;
+  font-size: 9.3pt;
+  line-height: 1.55;
+}
+.stem {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  column-gap: 1.5mm;
+  align-items: baseline;
+  margin: 0;
+  word-break: keep-all;
+}
+.qn {
+  font-weight: 700;
+  min-width: 5mm;
+}
+.lv {
+  font-size: 6.8pt;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 1mm;
+  padding: 0 0.8mm;
+  white-space: nowrap;
+  vertical-align: 1px;
+}
+.ox {
+  display: inline-flex;
+  gap: 1.2mm;
+  align-self: start;
+  margin-top: 0.3mm;
+}
+.ox i {
+  font-style: normal;
+  font-weight: 700;
+  width: 5.2mm;
+  height: 5.2mm;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--muted);
+  border-radius: 50%;
+  font-size: 8pt;
+}
+.choices {
+  list-style: none;
+  margin: 1mm 0 0;
+  padding: 0 0 0 6.5mm;
+  display: grid;
+  gap: 0.6mm 3mm;
+}
+.choices[data-cols='4'] {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.choices[data-cols='2'] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.choices[data-cols='1'] {
+  grid-template-columns: minmax(0, 1fr);
+}
+.choices li {
+  display: flex;
+  align-items: baseline;
+  gap: 1.2mm;
+  word-break: keep-all;
+}
+.choices li b {
+  flex: none;
+  font-weight: 600;
+}
+/* Short choices never break (a number and its unit stay together). */
+.choices[data-cols='4'] li,
+.choices[data-cols='2'] li {
+  white-space: nowrap;
+}
+.answers {
+  break-before: page;
+}
+.answers h2 {
+  font-size: 14pt;
+  border-bottom: 2px solid var(--ink);
+  padding-bottom: 1mm;
+  margin: 0 0 3mm;
+}
+.ans {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 8.4pt;
+  line-height: 1.5;
+  columns: 2;
+  column-gap: 8mm;
+  column-rule: 0.3mm solid #98a2b3;
+}
+.ans li {
+  break-inside: avoid;
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  column-gap: 1.5mm;
+  margin: 0 0 1.6mm;
+  word-break: keep-all;
+}
+.ansKey {
+  color: var(--accent);
+}
+.ansTopic {
+  font-size: 7pt;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 1mm;
+  padding: 0 0.8mm;
+}
+
+/* Glossary: a two-column dictionary. */
+.gloss h2 {
+  font-size: 11.5pt;
+  margin: 4mm 0 2mm;
+  padding: 1mm 2.5mm;
+  color: #fff;
+  background: var(--accent);
+  border-radius: 1.5mm;
+  break-after: avoid;
+}
+.glossCols {
+  columns: 2;
+  column-gap: 8mm;
+  column-rule: 0.3mm solid var(--line);
+}
+.term {
+  break-inside: avoid;
+  margin: 0 0 2.4mm;
+}
+.term dt {
+  font-weight: 700;
+  font-size: 9.6pt;
+}
+.term dt small {
+  font-weight: 400;
+  font-size: 7.6pt;
+  color: var(--muted);
+  margin-left: 1mm;
+}
+.term dd {
+  margin: 0.3mm 0 0;
+  font-size: 9pt;
+  word-break: keep-all;
+}
+.term dd span {
+  display: block;
+  color: var(--muted);
+  font-size: 8.4pt;
+}
+
+.q small {
+  display: block;
+  font-size: 7.5pt;
+  letter-spacing: 0.06em;
+  color: #2a78d6;
+}
+.doc > section > .write,
+.topic > .write {
+  margin: -1mm 0 3mm;
+  padding-bottom: 7mm;
+  border-bottom: 0.25mm solid #c7d7fb;
+  font-size: 8.5pt;
+  font-weight: 700;
+  color: #2a78d6;
+}
+.blank {
+  display: block;
+  margin-top: 1mm;
+  padding-bottom: 5mm;
+  border-bottom: 0.25mm dashed #d97706;
+  font-size: 8pt;
+  font-weight: 700;
+  color: #b45309;
+}
+.labStep dt:nth-of-type(n) {
+  color: #2a78d6;
+}
+.nextLesson {
+  margin: 3mm 0 0;
+  padding: 2mm 3mm;
+  border-left: 1mm solid #2a78d6;
+  background: #f6f9ff;
+  border-radius: 2mm;
+  font-size: 9.5pt;
+}
+.nextLesson b {
+  margin-right: 2mm;
+  color: #2a78d6;
+}
+.topicHead > span {
+  white-space: nowrap;
+}
+
+/* 수업 카드 content on the theory sheet ------------------------------------------ */
+.opening {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3mm;
+  margin: 0 0 2mm;
+  break-inside: avoid;
+}
+.opening > div {
+  border: 0.3mm solid var(--line);
+  border-radius: 2mm;
+  padding: 2mm 3mm;
+}
+.opening b {
+  display: block;
+  font-size: 7.8pt;
+  letter-spacing: 0.08em;
+  color: #2a78d6;
+}
+.opening ul {
+  margin: 0.8mm 0 0;
+  padding-left: 4.5mm;
+  display: grid;
+  gap: 0.6mm;
+  font-size: 9.5pt;
+}
+.opening .checks {
+  list-style: '☐  ';
+}
+.labStep header .change {
+  margin-left: auto;
+  font-style: normal;
+  font-size: 8pt;
+  font-weight: 700;
+  color: #ffd2b0;
+}
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1mm 4mm;
+  margin-top: 1mm;
+  font-size: 9pt;
+  font-weight: 700;
+  color: #b45309;
+}
+.labStep dd.point {
+  font-weight: 800;
+  color: #067647;
+}
+.teacher {
+  display: grid;
+  gap: 0.6mm;
+  margin: 2mm 0;
+  padding: 2mm 3mm;
+  border: 0.3mm dashed #98a2b3;
+  border-radius: 2mm;
+  font-size: 8.5pt;
+  color: #475467;
+  break-inside: avoid;
+}
+.teacher b {
+  font-size: 7.8pt;
+  letter-spacing: 0.08em;
+  color: #475467;
+}

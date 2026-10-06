@@ -1,0 +1,723 @@
+/*
+ * The theory column as a lab workbook: a kicker over each page's title, the
+ * question in a Q box, figures with a numbered caption and a symbol strip,
+ * 정의 / 원리 boxes, a lab sheet for each try (procedure + record table) and a
+ * conclusion box. Colours follow the figures: blue = concept, orange = look,
+ * green = result.
+ */
+
+.kicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 0 -6px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #6b7a90;
+}
+.kicker b {
+  color: #2a78d6;
+}
+.kicker::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, #d6e2fb, transparent);
+}
+.title {
+  margin: 0;
+  font-size: 21px;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Q — the topic's question */
+.question {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f3f7ff, #fbfcff);
+  border: 1px solid #d6e2fb;
+}
+.question > span {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: #2a78d6;
+  color: #fff;
+  font-weight: 900;
+  font-size: 15px;
+}
+.question p {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.6;
+  color: #17325c;
+}
+
+/* Figure with caption + symbol strip */
+.fig {
+  margin: 0;
+  border: 1px solid #e3e8ef;
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+}
+.figZoom {
+  display: block;
+  width: 100%;
+  border: 0;
+  padding: 0;
+  background: none;
+  cursor: zoom-in;
+}
+.figZoom > svg {
+  border-radius: 0;
+}
+.figBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-top: 1px solid #e3e8ef;
+  background: #fafbfc;
+}
+.figBar figcaption {
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #475467;
+}
+.figBar figcaption b {
+  margin-right: 6px;
+  color: #1f2937;
+  font-weight: 800;
+}
+.figTools {
+  flex: none;
+  display: flex;
+  gap: 6px;
+}
+.figTools button {
+  border: 1px solid #d0d5dd;
+  border-radius: 999px;
+  background: #fff;
+  padding: 3px 10px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: #667085;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.figTools button:hover {
+  color: #2a78d6;
+  border-color: #2a78d6;
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding: 6px 10px 8px;
+  border-top: 1px dashed #e3e8ef;
+  font-size: 12.5px;
+  color: #475467;
+}
+.legend span {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
+.legend span > :first-child {
+  color: #1d4ed8;
+  font-size: 14px;
+}
+
+/* 정의 · 원리 · 핵심 boxes */
+.box {
+  margin: 0;
+  padding: 12px 14px 12px 16px;
+  border-radius: 12px;
+  border-left: 4px solid var(--c, #2a78d6);
+  background: var(--bg, #f6f9ff);
+}
+.box > small {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 11.5px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: var(--c, #2a78d6);
+}
+.box > p {
+  margin: 0;
+  font-size: 15.5px;
+  font-weight: 650;
+  line-height: 1.65;
+  color: #101828;
+}
+.box[data-kind='principle'] {
+  --c: #475467;
+  --bg: #f8fafc;
+}
+.box[data-kind='key'] {
+  --c: #1fae66;
+  --bg: #ecf9f2;
+}
+.box[data-kind='compare'] {
+  --c: #eb6834;
+  --bg: #fff6ef;
+}
+.steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 7px;
+  counter-reset: p;
+}
+.steps li {
+  counter-increment: p;
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 8px;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: #344054;
+}
+.steps li::before {
+  content: counter(p);
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-top: 2px;
+  border-radius: 50%;
+  background: #475467;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+/* 자세히 — readable prose */
+.prose {
+  display: grid;
+  gap: 12px;
+}
+.prose p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.85;
+  color: #344054;
+}
+.prose p:first-child {
+  font-size: 15.5px;
+  color: #1f2937;
+}
+
+/* Lab sheet for one try */
+.labHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #101828;
+  color: #fff;
+}
+.labHead > i {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: #2a78d6;
+  font-style: normal;
+  font-weight: 900;
+  font-size: 17px;
+}
+.labHead div {
+  display: grid;
+  min-width: 0;
+  line-height: 1.3;
+}
+.labHead small {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #a9b6cc;
+}
+.labHead b {
+  font-size: 17px;
+}
+.labHead ol {
+  margin: 0 0 0 auto;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  gap: 4px;
+}
+.labHead ol li {
+  width: 22px;
+  height: 6px;
+  border-radius: 3px;
+  background: #344054;
+}
+.labHead ol li[data-on] {
+  background: #2a78d6;
+}
+.labHead ol li[data-done] {
+  background: #3ddc84;
+}
+.proc {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+.proc li {
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  gap: 10px;
+  padding: 11px 13px;
+  border-radius: 12px;
+  border: 1px solid var(--line-c, #d6e2fb);
+  background: var(--bg-c, #f6f9ff);
+}
+.proc li[data-kind='look'] {
+  --line-c: #fcd9c3;
+  --bg-c: #fff7f0;
+}
+.proc li > i {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--dot, #2a78d6);
+  color: #fff;
+  font-style: normal;
+  font-size: 13px;
+  font-weight: 800;
+}
+.proc li[data-kind='look'] > i {
+  --dot: #eb6834;
+}
+.proc li small {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  color: var(--dot, #2a78d6);
+}
+.proc li[data-kind='look'] small {
+  color: #c2410c;
+}
+.proc li p {
+  margin: 2px 0 0;
+  font-size: 15px;
+  line-height: 1.65;
+  color: #1f2937;
+}
+
+/* 기록표 — this try's results (filled by the simulator) */
+.record {
+  border: 1px solid #cdeedb;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+.record > header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  background: #ecf9f2;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  color: #138a50;
+}
+.record > header span {
+  margin-left: auto;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: #5b6b86;
+}
+.record dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+}
+.record dl div {
+  padding: 8px 12px;
+  border-top: 1px solid #eef2f6;
+  border-right: 1px solid #eef2f6;
+}
+.record dt {
+  font-size: 11.5px;
+  color: #667085;
+}
+.record dd {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: #101828;
+  font-variant-numeric: tabular-nums;
+}
+.record p {
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 13.5px;
+  color: #667085;
+}
+.record[data-done] {
+  border-color: #3ddc84;
+}
+
+/* 비교할 값 as chips */
+.values {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 13px;
+}
+.values > b {
+  margin-right: 2px;
+  font-size: 11.5px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  color: #c2410c;
+}
+.values > span {
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: #fff1e6;
+  border: 1px solid #fcd9c3;
+  color: #7c2d12;
+  font-weight: 650;
+}
+
+/* 수식 */
+.formulas {
+  display: grid;
+  gap: 8px;
+}
+.formulas code {
+  display: block;
+  font-family: 'Cambria Math', 'STIX Two Math', 'Times New Roman', serif;
+  font-size: 16px;
+  background: #f8fafc;
+  border: 1px solid #e3e8ef;
+  border-left: 4px solid #2a78d6;
+  border-radius: 8px;
+  padding: 9px 12px;
+  overflow-x: auto;
+}
+
+/* ▶ 시연 보기 — the try done as the 원고 says (GIF), in the lightbox */
+.clipBtn {
+  flex: none;
+  margin-left: auto;
+  border: 1px solid #3b4a63;
+  border-radius: 999px;
+  background: #1d2939;
+  color: #e4ebf5;
+  padding: 4px 11px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.clipBtn:hover {
+  background: #2a78d6;
+  border-color: #2a78d6;
+  color: #fff;
+}
+.labHead .clipBtn + ol {
+  margin-left: 4px;
+}
+.clip {
+  margin: 0;
+  display: grid;
+  gap: 8px;
+  max-width: min(92vw, 900px);
+  cursor: default;
+}
+.clip img {
+  display: block;
+  width: 100%;
+  max-height: 78vh;
+  object-fit: contain;
+  border-radius: 12px;
+  background: #0b1220;
+}
+.clip figcaption {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #e4ebf5;
+}
+.clip figcaption a {
+  margin-left: 10px;
+  color: #8fc1ff;
+  font-weight: 700;
+}
+
+/* ── Lesson plan (차시) pieces ─────────────────────────────────────────── */
+.lead {
+  margin: -4px 0 0;
+  font-size: 14px;
+  color: #475467;
+}
+.sub {
+  margin: 4px 0 -4px;
+  font-size: 15px;
+  font-weight: 800;
+  color: #1f2937;
+}
+.question > div {
+  display: grid;
+  gap: 2px;
+}
+.question small {
+  font-size: 11.5px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: #2a78d6;
+}
+.box[data-kind='goal'] {
+  --c: #6d4fe8;
+  --bg: #f4f1ff;
+}
+.box[data-kind='predict'] {
+  --c: #d97706;
+  --bg: #fffbeb;
+}
+.box[data-kind='field'] {
+  --c: #0e7490;
+  --bg: #ecfeff;
+}
+.box[data-kind='formula'] {
+  --c: #2a78d6;
+  --bg: #f8fafc;
+}
+.box[data-kind='goal'] .steps li::before {
+  background: #6d4fe8;
+}
+.box .values {
+  margin-top: 8px;
+}
+.flow h3 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #475467;
+}
+.flow ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px;
+}
+.flow li button {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  text-align: left;
+  padding: 8px 9px;
+  border: 1px solid #e3e8ef;
+  border-top: 3px solid #2a78d6;
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+.flow li:nth-child(3) button {
+  border-top-color: #eb6834;
+}
+.flow li:nth-child(4) button {
+  border-top-color: #1fae66;
+}
+.flow li:nth-child(5) button {
+  border-top-color: #6d4fe8;
+}
+.flow li button:hover {
+  background: #f8fafc;
+}
+.flow b {
+  font-size: 13.5px;
+}
+.flow small {
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: #667085;
+}
+.goalLine {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: #1f2937;
+}
+.goalLine > b {
+  margin-right: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #101828;
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 800;
+  vertical-align: 1px;
+}
+.recordRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 168px;
+  gap: 10px;
+  align-items: stretch;
+}
+.demo {
+  position: relative;
+  display: block;
+  padding: 0;
+  border: 1px solid #1d2939;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #0b1220;
+  cursor: zoom-in;
+}
+.demo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 120px;
+  object-fit: cover;
+}
+.demo span {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(16, 24, 40, 0.82);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 800;
+}
+.why {
+  border: 1px solid #c7d7fb;
+  border-radius: 12px;
+  background: #f6f9ff;
+  padding: 10px 14px;
+}
+.why summary {
+  cursor: pointer;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #1d4ed8;
+}
+.why p {
+  margin: 6px 0 0;
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: #1f2937;
+}
+.goalCheck {
+  border: 1px solid #e3e8ef;
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+.goalCheck h3 {
+  margin: 0 0 6px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 13.5px;
+  font-weight: 800;
+}
+.goalCheck h3 span {
+  font-weight: 700;
+  color: #667085;
+}
+.goalCheck ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+.goalCheck li {
+  position: relative;
+  padding-left: 26px;
+  font-size: 14px;
+  line-height: 1.55;
+}
+.goalCheck li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 2px;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #98a2b3;
+  border-radius: 4px;
+}
+.goalCheck li[data-done]::before {
+  content: '✓';
+  display: grid;
+  place-items: center;
+  border-color: #1fae66;
+  background: #1fae66;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+}
+.next {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  padding: 12px 14px;
+  border: 1px solid #c7d7fb;
+  border-left: 4px solid #2a78d6;
+  border-radius: 12px;
+  background: #f6f9ff;
+  font: inherit;
+  cursor: pointer;
+}
+.next small {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #2a78d6;
+}
+.next b {
+  font-size: 15.5px;
+}
+.next span {
+  font-size: 13.5px;
+  color: #475467;
+}
+.nextEnd {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #ecf9f2;
+  font-weight: 700;
+}

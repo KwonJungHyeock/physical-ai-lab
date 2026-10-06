@@ -1,0 +1,97 @@
+<?xml version="1.0"?>
+<!--
+  myPalletizer 260 (Pi / M5): Elephant Robotics' mycobot_description/urdf/mypalletizer_260_pi/
+  mypalletizer_260_pi.urdf (BSD 2-Clause), with two changes for the simulator:
+   - the head (link4) is kept level the way the real parallelogram linkage keeps it: the official
+     file fixes it to the forearm, so it tilted with joints 2 and 3; here two <mimic> joints turn
+     it back by -(joint 3) and -(joint 2) about the same axis;
+   - mesh names carry a "pal_" prefix (the node names in mypalletizer260.glb) and the flange
+     cylinder (link5) has no mesh.
+  Joint names, origins, axes and limits are the official ones.
+-->
+<robot name="mypalletizer_260">
+  <link name="base">
+    <visual>
+      <geometry><mesh filename="package://mycobot_description/urdf/mypalletizer_260_pi/pal_base.dae"/></geometry>
+      <origin xyz="0 0 0" rpy="0 0 3.1415926"/>
+    </visual>
+  </link>
+  <link name="link1">
+    <visual>
+      <geometry><mesh filename="package://mycobot_description/urdf/mypalletizer_260_pi/pal_link1.dae"/></geometry>
+      <origin xyz="0 -0.282 -0.115" rpy="1.5707963 0 -1.5707963"/>
+    </visual>
+  </link>
+  <link name="link2">
+    <visual>
+      <geometry><mesh filename="package://mycobot_description/urdf/mypalletizer_260_pi/pal_link2.dae"/></geometry>
+      <origin xyz="0 0.105 -0.414" rpy="0 1.5707963 3.1415926"/>
+    </visual>
+  </link>
+  <link name="link3">
+    <visual>
+      <geometry><mesh filename="package://mycobot_description/urdf/mypalletizer_260_pi/pal_link3.dae"/></geometry>
+      <origin xyz="0 0.235 -0.325" rpy="0 1.5707963 3.1419626"/>
+    </visual>
+  </link>
+  <link name="link3_level3"/>
+  <link name="link3_level2"/>
+  <link name="link4">
+    <visual>
+      <geometry><mesh filename="package://mycobot_description/urdf/mypalletizer_260_pi/pal_link4.dae"/></geometry>
+      <origin xyz="-0.12 -0.235 0.252" rpy="0 -1.5707963 0"/>
+    </visual>
+  </link>
+  <link name="link5"/>
+
+  <joint name="joint1_to_base" type="revolute">
+    <axis xyz="0 0 1"/>
+    <limit effort="1000.0" lower="-2.824" upper="2.824" velocity="0"/>
+    <parent link="base"/>
+    <child link="link1"/>
+    <origin xyz="0 0 0.12" rpy="0 0 0"/>
+  </joint>
+  <joint name="joint2_to_joint1" type="revolute">
+    <axis xyz="0 0 1"/>
+    <limit effort="1000.0" lower="-0.0349" upper="1.5708" velocity="0"/>
+    <parent link="link1"/>
+    <child link="link2"/>
+    <origin xyz="0 0 0.0" rpy="-1.5707963 0 0"/>
+  </joint>
+  <joint name="joint3_to_joint2" type="revolute">
+    <axis xyz="0 0 1"/>
+    <limit effort="1000.0" lower="-1.6057" upper="1.0471" velocity="0"/>
+    <parent link="link2"/>
+    <child link="link3"/>
+    <origin xyz="0.0 -0.14 0" rpy="0 0 0"/>
+  </joint>
+  <!-- The parallelogram linkage: the head turns back by joint 3 and joint 2, so it stays level. -->
+  <joint name="joint3_level" type="revolute">
+    <axis xyz="0 0 1"/>
+    <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0"/>
+    <mimic joint="joint3_to_joint2" multiplier="-1" offset="0"/>
+    <parent link="link3"/>
+    <child link="link3_level3"/>
+    <origin xyz="0.134 -0.005 0.0" rpy="0 0 0"/>
+  </joint>
+  <joint name="joint2_level" type="revolute">
+    <axis xyz="0 0 1"/>
+    <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0"/>
+    <mimic joint="joint2_to_joint1" multiplier="-1" offset="0"/>
+    <parent link="link3_level3"/>
+    <child link="link3_level2"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+  <joint name="joint4_to_joint3" type="fixed">
+    <parent link="link3_level2"/>
+    <child link="link4"/>
+    <origin xyz="0 0 0" rpy="3.1415926 0 0"/>
+  </joint>
+  <joint name="joint5_to_joint4" type="revolute">
+    <axis xyz="0 0 1"/>
+    <limit effort="1000.0" lower="-3.14" upper="3.14" velocity="0"/>
+    <parent link="link4"/>
+    <child link="link5"/>
+    <origin xyz="0.044 0 0" rpy="1.5707963 0 0"/>
+  </joint>
+</robot>

@@ -1,0 +1,1562 @@
+/* 교육 tab. Uses the console's colour tokens (defined on .app). */
+.learn {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(380px, 27vw, 460px);
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 10px;
+  /* Below the floating top bar on a PC window (--top, set by the console), above it otherwise. */
+  margin-top: var(--top, 0px);
+  height: calc(100dvh - var(--top, 0px) - 30px);
+  min-height: 600px;
+}
+.learn[hidden] {
+  display: none;
+}
+
+/* Stage ------------------------------------------------------------------ */
+.stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--page);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  min-height: 0;
+}
+
+.canvas {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.canvas[data-picking] canvas {
+  cursor: crosshair;
+}
+.stageHint {
+  margin: 0;
+  padding: 6px 14px 8px;
+  font-size: 12px;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+}
+
+/* Panel ------------------------------------------------------------------ */
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 2px;
+}
+
+.card {
+  background: var(--page);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: grid;
+  gap: 9px;
+  box-shadow: var(--shadow-sm);
+}
+.card h3 {
+  margin: 0;
+  font-size: 14.5px;
+}
+.note {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+/* A note that shows live numbers: stays visible in the control panel. */
+.live {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #344054;
+}
+.warnNote {
+  margin: 0;
+  font-size: 13px;
+  color: #b42318;
+  background: var(--stop-soft);
+  border-radius: 9px;
+  padding: 7px 10px;
+}
+.btnRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.btnRow > button,
+.solutions > button,
+.card > button {
+  border: 1px solid var(--line);
+  background: var(--page);
+  border-radius: 9px;
+  padding: 6px 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btnRow > button:hover:not(:disabled),
+.card > button:hover:not(:disabled) {
+  background: var(--soft);
+}
+.btnRow > button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.btnRow > .primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.btnRow > .primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 88%, #000);
+}
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.seg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.seg > button {
+  border: 1px solid var(--line);
+  background: var(--page);
+  border-radius: 8px;
+  padding: 5px 9px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.seg > button[aria-pressed='true'] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff !important;
+}
+.seg > button:disabled {
+  opacity: 0.5;
+}
+
+/* Sliders and numbers */
+.sliders {
+  display: grid;
+  gap: 2px;
+}
+.slider {
+  display: grid;
+  grid-template-columns: 54px 1fr 74px;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  padding: 1px 4px;
+  border-radius: 7px;
+}
+.slider[data-on] {
+  background: var(--accent-soft);
+}
+.slider input {
+  width: 100%;
+  accent-color: var(--accent);
+}
+.num {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  font-size: 12.5px;
+  color: #344054;
+}
+.row3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
+  gap: 6px;
+  align-items: center;
+}
+.row3 > button {
+  border: 1px solid var(--line);
+  background: var(--page);
+  border-radius: 8px;
+  padding: 6px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.readout {
+  display: grid;
+  background: var(--soft);
+  border-radius: 9px;
+  padding: 6px 9px;
+  line-height: 1.25;
+}
+.readout small {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.readout b {
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+.readout em {
+  font-style: normal;
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-left: 3px;
+  font-weight: 600;
+}
+.readout[data-tone='ok'] b {
+  color: #067647;
+}
+.readout[data-tone='bad'] b {
+  color: #b42318;
+}
+.readout[data-tone='warn'] b {
+  color: #b54708;
+}
+
+/* Bars */
+.bars {
+  display: grid;
+  gap: 4px;
+}
+.bar {
+  display: grid;
+  grid-template-columns: 26px 1fr 84px;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+}
+.barTrack {
+  position: relative;
+  height: 12px;
+  border-radius: 6px;
+  background: var(--soft);
+  overflow: hidden;
+}
+.barFill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--accent);
+  border-radius: 6px;
+  transition: width 0.08s linear;
+}
+.bar[data-over] .barFill {
+  background: var(--stop);
+}
+.bar[data-over] b,
+.bar[data-over] .num {
+  color: #b42318;
+}
+.barLimit {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  background: #101828;
+  opacity: 0.55;
+}
+
+/* Graphs */
+.graph {
+  margin: 0;
+}
+.graph figcaption {
+  font-size: 12.5px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.graph svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: var(--work);
+  border-radius: 8px;
+}
+.axis {
+  stroke: #c3ccd6;
+  stroke-width: 1;
+}
+.limit {
+  stroke: var(--stop);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+}
+.cursor {
+  stroke: #101828;
+  stroke-width: 1;
+  opacity: 0.4;
+}
+.tick {
+  font-size: 9.5px;
+  fill: var(--muted);
+}
+.legend {
+  display: flex;
+  gap: 10px;
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.legend i {
+  display: inline-block;
+  width: 10px;
+  height: 3px;
+  border-radius: 2px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+.graphs {
+  display: grid;
+  gap: 6px;
+}
+
+/* Matrices */
+.matrices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.matrix {
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+  font-size: 11.5px;
+  width: 100%;
+}
+.matrix caption {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  padding-bottom: 3px;
+}
+.matrix td {
+  border: 1px solid var(--line);
+  padding: 2px 4px;
+  text-align: right;
+}
+.matrix td[data-col='t'] {
+  background: var(--accent-soft);
+  font-weight: 700;
+}
+
+.formula {
+  border: 1px dashed #c3ccd6;
+  border-radius: 9px;
+  padding: 6px 10px;
+  font-size: 12.5px;
+  background: var(--work);
+}
+.formula summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--accent);
+}
+.formula p {
+  margin: 6px 0 0;
+}
+
+.choices {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: 8px;
+}
+.choices button {
+  width: 28px;
+  height: 24px;
+  border-radius: 7px;
+  border: 1px solid var(--line);
+  background: var(--page);
+  font-weight: 800;
+  cursor: pointer;
+}
+.choices button[data-right] {
+  background: var(--sim);
+  color: #fff;
+}
+.choices button[data-wrong] {
+  background: var(--stop);
+  color: #fff;
+}
+
+.solutions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+}
+.solutions small {
+  width: 100%;
+  color: var(--muted);
+}
+.solutions button {
+  border-width: 2px !important;
+  font-size: 12.5px;
+}
+
+.dpad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+}
+.dpad button {
+  border: 1px solid var(--line);
+  background: var(--soft);
+  border-radius: 9px;
+  padding: 9px 4px;
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+  touch-action: none;
+}
+.dpad button:active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.real {
+  display: grid;
+  gap: 4px;
+}
+.realBtn {
+  border: 1px solid var(--real);
+  background: var(--real-soft);
+  color: #93370d;
+  border-radius: 9px;
+  padding: 8px 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.realBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.real small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.log {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+  display: grid;
+  gap: 3px;
+  font-size: 12.5px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+.log li[data-tone='ok'] {
+  color: #067647;
+}
+.log li[data-tone='bad'] {
+  color: #b42318;
+}
+.log li[data-tone='warn'] {
+  color: #b54708;
+}
+.logUnit {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-radius: 5px;
+  padding: 0 5px;
+  margin-right: 5px;
+}
+
+
+/* Topic panel ------------------------------------------------------------- */
+.figure {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: var(--soft);
+  border-radius: 10px;
+}
+
+.termChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.termWrap {
+  position: relative;
+  display: inline;
+}
+.term {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: help;
+  text-decoration: underline dotted color-mix(in srgb, var(--accent) 70%, transparent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+.term[aria-expanded='true'] {
+  color: var(--accent);
+}
+.termChip {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  border-radius: 999px;
+  padding: 2px 9px;
+  cursor: help;
+}
+.termBubble {
+  position: absolute;
+  z-index: 30;
+  left: 0;
+  top: calc(100% + 6px);
+  width: max-content;
+  max-width: 280px;
+  display: grid;
+  gap: 4px;
+  padding: 9px 11px;
+  border-radius: 11px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.5;
+  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.25);
+  white-space: normal;
+}
+.termBubble b {
+  font-size: 13.5px;
+}
+.termBubble b small {
+  font-weight: 500;
+  opacity: 0.7;
+}
+.termMore {
+  opacity: 0.78;
+}
+.compare {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--page);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  font-size: 12.5px;
+}
+.compare th,
+.compare td {
+  padding: 6px 7px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+.compare thead th {
+  background: var(--soft);
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.compare tbody th {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.compare tbody th i {
+  font-style: normal;
+  color: var(--accent);
+}
+.compare td {
+  font-variant-numeric: tabular-nums;
+}
+.cardSub {
+  font-size: 11.5px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.quiz {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 10px;
+  font-size: 13.5px;
+}
+.quiz li p {
+  margin: 0 0 5px;
+  line-height: 1.5;
+}
+.oxBtns {
+  display: flex;
+  gap: 6px;
+}
+.oxBtns button {
+  width: 44px;
+  padding: 4px 0;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: var(--page);
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+}
+.oxBtns button[data-answer] {
+  border-color: var(--sim, #1fae66);
+  background: var(--sim-soft, #e8f7ef);
+  color: var(--sim, #1fae66);
+}
+.oxBtns button[data-picked]:not([data-answer]) {
+  border-color: #ef4638;
+  background: var(--stop-soft, #fdecea);
+  color: #b42318;
+}
+.mcBtns {
+  display: grid;
+  gap: 5px;
+}
+.mcBtns button {
+  text-align: left;
+  padding: 6px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: var(--page);
+  font: inherit;
+  font-size: 13.5px;
+  line-height: 1.4;
+  cursor: pointer;
+}
+.mcBtns button:hover:not(:disabled) {
+  background: var(--soft);
+}
+.mcBtns button[data-answer] {
+  border-color: var(--sim, #1fae66);
+  background: var(--sim-soft, #e8f7ef);
+  color: #067647;
+  font-weight: 700;
+}
+.mcBtns button[data-picked]:not([data-answer]) {
+  border-color: #ef4638;
+  background: var(--stop-soft, #fdecea);
+  color: #b42318;
+}
+.quizLevel {
+  font-style: normal;
+  font-size: 10.5px;
+  font-weight: 800;
+  border-radius: 6px;
+  padding: 1px 6px;
+  vertical-align: 1px;
+  color: var(--muted);
+  background: var(--soft);
+}
+.quizLevel[data-level='2'] {
+  color: #b54708;
+  background: #fffaeb;
+}
+.quizLevel[data-level='3'] {
+  color: #6941c6;
+  background: #f4f0ff;
+}
+.quizWhy {
+  display: block;
+  margin-top: 5px;
+  font-size: 12.5px;
+  color: #344054;
+  line-height: 1.5;
+}
+.quiz li[data-state='ok'] .quizWhy::first-letter {
+  color: var(--sim, #1fae66);
+}
+.verdict {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 7px 10px;
+}
+.verdict[data-tone='ok'] {
+  color: #067647;
+  background: var(--sim-soft);
+}
+.verdict[data-tone='bad'] {
+  color: #b42318;
+  background: var(--stop-soft);
+}
+.verdict[data-tone='warn'] {
+  color: #b54708;
+  background: #fef0c7;
+}
+
+/* Dark stage ---------------------------------------------------------------- */
+.stage {
+  background: #262d36;
+  border-color: #323b47;
+}
+
+.stage .stageHint {
+  border-top-color: #323b47;
+  color: #9aa6b8;
+}
+
+/* The simulator's view cube and view buttons, top right of the 3D view (console.module.css draws them). */
+.viewTools {
+  position: absolute;
+  z-index: 12;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Control panel over the 3D view (see-through glass) ------------------------- */
+.overlay {
+  position: absolute;
+  z-index: 15;
+  top: 12px;
+  left: 12px;
+  bottom: 12px;
+  width: 340px;
+  display: flex;
+  flex-direction: column;
+  background: rgba(250, 251, 253, 0.84);
+  backdrop-filter: blur(10px) saturate(1.2);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.overlayFold {
+  border: 0;
+  background: transparent;
+  font-size: 16px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 8px;
+}
+.overlayFold:hover {
+  background: rgba(16, 24, 40, 0.06);
+}
+.overlayTab {
+  position: absolute;
+  z-index: 15;
+  top: 12px;
+  left: 12px;
+  border: 0;
+  border-radius: 10px;
+  padding: 9px 14px;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 800;
+  background: rgba(250, 251, 253, 0.88);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+}
+.overlayBody {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px 4px 10px;
+}
+/* Inside the glass the topic's cards drop their own box. */
+.overlayBody .card {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 8px 10px;
+}
+.overlayBody .card + .card {
+  border-top: 1px solid rgba(16, 24, 40, 0.08);
+  border-radius: 0;
+}
+.overlayBody .readout {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+/* Guided practice inside the control panel -------------------------------------- */
+/* As tall as its controls (more of the scene shows), scrolling only when they do not fit. */
+.overlay {
+  width: 380px;
+  bottom: auto;
+  max-height: calc(100% - 24px);
+}
+
+.notesBtn {
+  flex: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  padding: 2px 9px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+}
+.notesBtn[aria-pressed='true'] {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+/* Side notes inside the controls fold away unless asked for (the theory column explains). */
+.overlay:not([data-notes]) .guideControls .note {
+  display: none;
+}
+.resultBox {
+  margin: 8px 8px 4px;
+}
+.resultBox[data-state='wait'] {
+  padding: 6px 4px;
+  text-align: center;
+}
+.chips {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.chips li {
+  min-width: 0;
+  background: var(--sim-soft);
+  border-radius: 9px;
+  padding: 5px 9px;
+}
+.chips small {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chips b {
+  display: block;
+  font-size: 13.5px;
+  line-height: 1.35;
+  word-break: keep-all;
+}
+.chips[data-small] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+}
+.chips[data-small] li {
+  padding: 3px 7px;
+}
+.chips[data-small] b {
+  font-size: 12px;
+}
+
+.guideWait {
+  color: var(--muted) !important;
+  font-size: 13px !important;
+}
+.guideControls {
+  margin: 2px 8px;
+  border: 1px dashed rgba(52, 84, 209, 0.35);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.guideNext {
+  display: block;
+  width: calc(100% - 24px);
+  margin: 8px 12px 4px;
+  border: 0;
+  border-radius: 11px;
+  padding: 11px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(52, 84, 209, 0.3);
+}
+.guideTable {
+  width: 100%;
+  margin: 0 0 6px;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+.guideTable th,
+.guideTable td {
+  text-align: left;
+  vertical-align: top;
+  padding: 6px 4px;
+  border-bottom: 1px solid rgba(16, 24, 40, 0.08);
+}
+.guideTable th {
+  width: 34px;
+  font-weight: 700;
+}
+.guideTable th button {
+  border: 0;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 800;
+  padding: 1px 6px;
+  margin-right: 5px;
+  cursor: pointer;
+}
+.guideTable tr:not([data-done]) td {
+  color: var(--faint);
+}
+
+.overlayTab small {
+  margin-left: 6px;
+  color: var(--accent);
+}
+
+.overlay[hidden] {
+  display: none;
+}
+
+/* 8-2 캡스톤: the five-stage pipeline strip (보기 → 좌표 → 역기구학 → 경로 → 집기·놓기). */
+.pipe {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 4px;
+}
+.pipe > div {
+  display: grid;
+  align-content: start;
+  gap: 1px;
+  min-width: 0;
+  padding: 5px 6px;
+  border-radius: 8px;
+  border-top: 3px solid var(--line);
+  background: var(--soft);
+  font-size: 11px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.pipe b {
+  font-size: 12px;
+}
+.pipe small {
+  font-weight: 700;
+  color: var(--muted);
+}
+.pipe > div[data-state='run'] {
+  border-top-color: var(--accent);
+}
+.pipe > div[data-state='run'] small {
+  color: var(--accent);
+}
+.pipe > div[data-state='done'] {
+  border-top-color: #12b76a;
+}
+.pipe > div[data-state='done'] small {
+  color: #067647;
+}
+.pipe > div[data-state='fail'] {
+  border-top-color: #f04438;
+  background: var(--stop-soft);
+}
+.pipe > div[data-state='fail'] small {
+  color: #b42318;
+}
+
+/* 학문 headers in the topic list: the name gives way to the count. */
+
+/* A figure or a try's GIF shown large over the screen. */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  padding: 24px;
+  background: rgba(13, 18, 28, 0.82);
+  cursor: zoom-out;
+}
+.lightboxFig {
+  width: min(96vw, calc((100dvh - 80px) * 16 / 9)) !important;
+  height: auto;
+  border-radius: 14px !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+.lightbox small {
+  color: #cfd8e6;
+  font-size: 13px;
+}
+.lightbox small a {
+  color: #8fc1ff;
+  font-weight: 700;
+}
+
+/* Symbols (`Kp`) and on-screen names ([실행]) in lesson text --------------- */
+.symGlyph {
+  font-family: 'Cambria Math', 'STIX Two Math', 'Times New Roman', 'Noto Serif', serif;
+  font-style: italic;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.sym {
+  font: inherit;
+  font-size: 1.04em;
+  line-height: 1.25;
+  color: #1d4ed8;
+  background: #eef4ff;
+  border: 1px solid #c7d7fb;
+  border-radius: 5px;
+  padding: 0 4px;
+  margin: 0 1px;
+  cursor: help;
+}
+.sym:hover,
+.sym[aria-expanded='true'] {
+  background: #dfe9ff;
+  border-color: #2a78d6;
+}
+.sym ruby {
+  ruby-position: over;
+}
+.symGloss {
+  font-family: var(--font-ui), sans-serif;
+  font-style: normal;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: #2a5bb8;
+  white-space: nowrap;
+  padding-bottom: 1px;
+}
+.symLabel {
+  display: inline-grid;
+  justify-items: start;
+  line-height: 1.15;
+}
+.symLabel small {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.uiKey {
+  display: inline-block;
+  font: inherit;
+  font-size: 0.86em;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #1f2937;
+  background: #fff;
+  border: 1px solid #cfd6e1;
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  padding: 0 6px;
+  margin: 0 1px;
+  white-space: nowrap;
+  vertical-align: 0.05em;
+}
+.symTable h3 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #1d4ed8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.symTable h3 span {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: #1d4ed8;
+  color: #fff;
+  font-size: 12px;
+}
+.symTable table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  line-height: 1.45;
+  background: #fff;
+  border: 1px solid #d6e2fb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.symTable th {
+  background: #f1f6ff;
+  color: #475467;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-align: left;
+  padding: 5px 8px;
+}
+.symTable td {
+  padding: 6px 8px;
+  border-top: 1px solid #e7eefc;
+  vertical-align: top;
+}
+.symTable td:first-child {
+  font-size: 16px;
+  color: #1d4ed8;
+  white-space: nowrap;
+  width: 1%;
+}
+.symTable td:nth-child(2),
+.symTable td:last-child {
+  white-space: nowrap;
+  color: #475467;
+  width: 1%;
+}
+.symTable td span {
+  color: #475467;
+}
+
+/* 수업 모드 (class mode) ----------------------------------------------------------- */
+/* The toggle and, in class mode, ← 로드맵 at the right of the 3D view's head line. */
+
+/* A small switch drawn in front of the label. */
+
+/* Class mode: no topic list or hints, a wider theory column and everything ~1.25× larger. */
+
+/* The theory column scales as a whole (text, tabs, figures, buttons). */
+
+/* The activity timer, floating at the bottom right of the 3D view. */
+
+@keyframes timerPulse {
+  50% {
+    box-shadow:
+      0 0 0 6px rgba(240, 68, 56, 0.25),
+      0 12px 32px rgba(16, 24, 40, 0.22);
+  }
+}
+
+
+/* ===========================================================================
+ * Lesson screen (2026-10): step bar on top, the 3D view as wide as it can be with the
+ * activity panel over its left side, short cards on the right.
+ * ======================================================================== */
+.learn > header {
+  grid-column: 1 / -1;
+}
+.learn .stage {
+  border-radius: 16px;
+}
+.learn .canvas {
+  flex: 1 1 auto;
+}
+.learn .stageHint {
+  position: absolute;
+  right: 12px;
+  bottom: 10px;
+  z-index: 5;
+  border: 0;
+  border-radius: 8px;
+  padding: 4px 10px;
+  background: rgba(10, 14, 20, 0.55);
+  color: #c4cedd;
+  pointer-events: none;
+}
+.learn .panel {
+  overflow: hidden;
+  padding: 0;
+}
+
+/* The activity panel: white card over the 3D view. */
+.learn .overlay {
+  width: 372px;
+  bottom: auto;
+  max-height: calc(100% - 24px);
+  gap: 8px;
+  padding: 12px 12px 10px;
+  background: rgba(255, 255, 255, 0.97);
+  border: 0;
+  color: #121a2b;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.38);
+}
+.learn .overlay[data-mode='mini'] {
+  width: 320px;
+  padding: 12px 14px;
+}
+.learn .overlay[hidden] {
+  display: none;
+}
+.mini {
+  display: grid;
+  gap: 6px;
+}
+.mini b {
+  font-size: 15px;
+  font-weight: 800;
+}
+.mini p {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #3c4559;
+}
+.mini button {
+  justify-self: start;
+  border: 1px solid #cfd7e6;
+  background: #fff;
+  border-radius: 9px;
+  padding: 6px 11px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  color: #2f5be7;
+  cursor: pointer;
+}
+.apHead {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.apHead b {
+  font-size: 16px;
+  font-weight: 800;
+}
+.apHead span {
+  flex: 1;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #2f5be7;
+}
+.apHead[hidden],
+.acts[hidden],
+.overlayBody[hidden] {
+  display: none;
+}
+.acts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+}
+.acts button {
+  width: 100%;
+  display: grid;
+  gap: 1px;
+  border: 0;
+  border-radius: 9px;
+  padding: 6px 4px;
+  background: #f1f4fa;
+  color: #8a93a8;
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.acts button b {
+  font-size: 12.5px;
+  font-weight: 800;
+}
+.acts button small {
+  font-size: 10.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.acts button[data-done] {
+  background: #e6f6ef;
+  color: #12935f;
+}
+.acts button[aria-current] {
+  background: #2f5be7;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(47, 91, 231, 0.3);
+}
+.chg {
+  display: grid;
+  gap: 2px;
+  border: 1.5px solid #ffd7b8;
+  background: #fff6ee;
+  border-radius: 11px;
+  padding: 8px 11px;
+  animation: chgIn 0.45s ease;
+}
+.chg small {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #c2410c;
+}
+.chg span {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+.chg s {
+  text-decoration: none;
+  color: #8a93a8;
+  font-weight: 700;
+}
+.chg i {
+  font-style: normal;
+  color: #c2410c;
+}
+.chg b {
+  color: #121a2b;
+}
+.chg[data-first] {
+  border-color: #cfd7e6;
+  background: #f6f8fc;
+}
+.chg[data-first] small {
+  color: #59637a;
+}
+@keyframes chgIn {
+  from {
+    transform: translateY(-4px);
+    opacity: 0;
+  }
+}
+.learn .overlayBody {
+  display: grid;
+  gap: 10px;
+  padding: 2px 0 0;
+  margin: 0 -4px;
+  padding-inline: 4px;
+}
+.pq {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  transition: opacity 0.25s;
+}
+.pq[hidden] {
+  display: none;
+}
+.pq > em {
+  font-style: normal;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #e8eeff;
+  color: #2f5be7;
+  font-size: 11.5px;
+  font-weight: 800;
+}
+.pq[data-st='now'] > em {
+  background: #2f5be7;
+  color: #fff;
+  box-shadow: 0 0 0 4px rgba(47, 91, 231, 0.15);
+}
+.pq[data-st='done'] > em {
+  background: #12935f;
+  color: #fff;
+}
+.pq[data-st='off'] {
+  opacity: 0.45;
+}
+.pq > div {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  font-size: 13px;
+}
+.pq > div > b {
+  font-size: 13.5px;
+  line-height: 1.4;
+}
+.opts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.opts button {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 1.5px solid #cfd7e6;
+  background: #fff;
+  border-radius: 9px;
+  padding: 6px 8px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #121a2b;
+  text-align: left;
+  cursor: pointer;
+}
+.opts button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.opts button i {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 800;
+  background: #e8eeff;
+  color: #2f5be7;
+}
+.opts button[aria-pressed='true'] i {
+  background: #2f5be7;
+  color: #fff;
+}
+.opts button[aria-pressed='true'] {
+  border-color: #2f5be7;
+  background: #e8eeff;
+  color: #1d3fae;
+}
+.doIt {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #3c4559;
+}
+.learn .guideControls {
+  margin: 0;
+}
+.learn .notesBtn {
+  justify-self: start;
+}
+.learn .resultBox {
+  margin: 0;
+  border-radius: 11px;
+}
+.learn .resultBox[data-state='done'] {
+  background: #e6f6ef;
+  padding: 8px 10px;
+  display: grid;
+  gap: 6px;
+  animation: chgIn 0.4s ease;
+}
+.learn .resultBox[data-state='wait'] {
+  background: #f6f8fc;
+  padding: 7px 10px;
+  text-align: left;
+}
+.learn .overlay[data-mode='cmp'] .resultBox[data-state='done'] {
+  background: transparent;
+  padding: 0;
+}
+.verdict[data-ok] {
+  margin: 0;
+  padding: 0;
+  font-size: 12.5px;
+  font-weight: 800;
+  background: none;
+}
+.verdict[data-ok='true'] {
+  color: #12935f;
+}
+.verdict[data-ok='false'] {
+  color: #c2410c;
+}
+.point {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.45;
+  color: #0e4f36;
+}
+.learn .resultBox .chips li {
+  background: #fff;
+}
+.whyBtn {
+  justify-self: start;
+  border: 0;
+  background: transparent;
+  padding: 2px 0;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  color: #2f5be7;
+  cursor: pointer;
+}
+.whyBtn:disabled {
+  color: #8a93a8;
+  cursor: default;
+}
+.whyText {
+  display: grid;
+  gap: 4px;
+  background: #f6f8fc;
+  border-radius: 9px;
+  padding: 8px 10px;
+}
+.whyText p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #3c4559;
+}
+.whyText button {
+  justify-self: start;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  color: #2f5be7;
+  cursor: pointer;
+}
+.learn .guideNext {
+  width: 100%;
+  margin: 2px 0 0;
+  background: #fff;
+  color: #121a2b;
+  border: 1px solid #cfd7e6;
+  box-shadow: none;
+}
+.learn .guideNext[data-ready] {
+  background: #2f5be7;
+  border-color: #2f5be7;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(47, 91, 231, 0.3);
+}
+.cmpWhat {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #59637a;
+  margin-bottom: 3px;
+}
+
+@media (max-width: 1180px) {
+  .learn {
+    grid-template-columns: minmax(0, 1fr) 360px;
+  }
+  .learn .overlay {
+    width: 320px;
+  }
+}
+@media (max-width: 860px) {
+  .learn {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 62vh auto;
+    height: auto;
+  }
+  .learn .panel {
+    overflow: visible;
+  }
+}

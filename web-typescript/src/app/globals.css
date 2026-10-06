@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+/*
+ * White tone across the site (the classroom console sets the look). The older
+ * developer pages under /spike keep their dark theme via app/spike/layout.tsx.
+ */
+:root {
+  --background: #ffffff;
+  --foreground: #1f2933;
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-ui);
+  --font-mono: var(--font-jetbrains-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-ui), "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+}

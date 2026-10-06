@@ -1,0 +1,89 @@
+/* First-run guide (FirstGuide.tsx): a card at the bottom of the 3D view, above the log line. */
+.guide {
+  position: absolute;
+  z-index: 24;
+  left: 50%;
+  bottom: 74px;
+  transform: translateX(-50%);
+  width: min(560px, calc(100% - 24px));
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: #fff;
+  color: #101828;
+  border: 1px solid #c9d4ff;
+  box-shadow: 0 16px 40px rgba(16, 24, 40, 0.28);
+}
+.dots {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.guide .dots button {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1.5px solid #d0d5dd;
+  background: #fff;
+  color: #667085;
+  font-weight: 900;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+.dots li[data-on] button {
+  border-color: #3454d1;
+  background: #3454d1;
+  color: #fff;
+}
+.dots li[data-done] button {
+  border-color: #12b76a;
+  background: #12b76a;
+  color: #fff;
+}
+.body small {
+  display: block;
+  color: #3454d1;
+  font-weight: 800;
+  font-size: 11.5px;
+}
+.body b {
+  display: block;
+  font-size: 15.5px;
+  margin: 1px 0 3px;
+}
+.body p {
+  margin: 0;
+  color: #475467;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.actions {
+  display: grid;
+  gap: 6px;
+}
+.guide .actions button {
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.guide .next {
+  border: 0;
+  background: #3454d1;
+  color: #fff;
+}
+.guide .next:hover {
+  background: #2a44b0;
+}
+.guide .skip {
+  border: 1px solid #e4e7ec;
+  background: #fff;
+  color: #667085;
+}

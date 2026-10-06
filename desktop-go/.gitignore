@@ -1,0 +1,4 @@
+# copied from robot-python/server/static by build.sh, embedded into the program
+site/
+dist/
+*.syso

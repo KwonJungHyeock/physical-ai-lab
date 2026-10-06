@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>작업대 꾸미기 목업</title>
+<style>
+  @font-face { font-family: Pretendard; font-weight: 400; src: url("../../web-typescript/src/app/fonts/Pretendard-Regular.subset.woff2") format("woff2"); }
+  @font-face { font-family: Pretendard; font-weight: 600; src: url("../../web-typescript/src/app/fonts/Pretendard-SemiBold.subset.woff2") format("woff2"); }
+  @font-face { font-family: Pretendard; font-weight: 800; src: url("../../web-typescript/src/app/fonts/Pretendard-Bold.subset.woff2") format("woff2"); }
+  :root { --ink: #101828; --muted: #667085; --line: #e4e8ee; --accent: #3454d1; --accent-soft: #eef2ff; color-scheme: light; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #262d36; }
+  body { font-family: Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif; color: var(--ink); font-size: 13px; line-height: 1.45; }
+  .shot { position: relative; width: 1600px; height: 900px; background: url("img/sim/scene-factory.jpg") center / cover no-repeat; overflow: hidden; }
+  /* Labels pinned to things in the scene. */
+  .pin { position: absolute; transform: translate(-50%, -100%); display: grid; justify-items: center; pointer-events: none; }
+  .pin span { background: rgba(16, 24, 40, .78); color: #fff; font-weight: 800; font-size: 11.5px; border-radius: 8px; padding: 3px 8px; white-space: nowrap; backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,.18); }
+  .pin span em { font-style: normal; font-weight: 600; color: #c8d3e6; margin-left: 4px; }
+  .pin i { width: 2px; height: 16px; background: rgba(255,255,255,.7); }
+  .pin b { width: 9px; height: 9px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 3px rgba(52, 84, 209, .7); }
+  .pin[data-bad] span { background: rgba(229, 72, 77, .9); }
+  /* The 작업대 panel, opened from the [작업대 ▾] chip. */
+  .panel { position: absolute; top: 76px; right: 96px; width: 412px; background: #fff; border-radius: 18px; box-shadow: 0 24px 60px rgba(0,0,0,.35), 0 0 0 1px rgba(16,24,40,.06); overflow: hidden; }
+  .ph { display: flex; align-items: center; gap: 10px; padding: 12px 14px 10px; border-bottom: 1px solid var(--line); }
+  .ph b { font-size: 15px; }
+  .ph small { color: var(--muted); }
+  .ph .x { margin-left: auto; color: var(--muted); font-size: 16px; }
+  .tabs { display: flex; gap: 4px; padding: 8px 12px 0; }
+  .tabs span { padding: 6px 12px; border-radius: 9px 9px 0 0; font-weight: 800; color: var(--muted); }
+  .tabs span[data-on] { color: var(--accent); box-shadow: inset 0 -2px 0 var(--accent); }
+  .sec { padding: 10px 14px; border-top: 1px solid #f0f2f5; }
+  .sec h4 { margin: 0 0 8px; font-size: 12px; color: var(--muted); letter-spacing: .04em; display: flex; justify-content: space-between; }
+  .sec h4 em { font-style: normal; font-weight: 600; color: var(--accent); }
+  .scenes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+  .scene { border: 1.5px solid var(--line); border-radius: 11px; overflow: hidden; background: #fff; }
+  .scene[data-on] { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .scene .im { height: 62px; background: #2b333d center / cover no-repeat; }
+  .scene b { display: block; font-size: 11.5px; padding: 5px 7px 1px; }
+  .scene small { display: block; font-size: 10.5px; color: var(--muted); padding: 0 7px 6px; }
+  .lib { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+  .obj { border: 1px solid var(--line); border-radius: 10px; padding: 7px 2px 5px; display: grid; justify-items: center; gap: 3px; font-size: 10.5px; font-weight: 700; color: #344054; background: #fbfcfd; }
+  .obj svg { width: 30px; height: 26px; }
+  .obj[data-drag] { border-color: var(--accent); background: var(--accent-soft); }
+  .props { display: grid; grid-template-columns: 74px 1fr; gap: 6px 10px; align-items: center; }
+  .props label { color: var(--muted); font-weight: 700; font-size: 12px; }
+  .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .sw { width: 20px; height: 20px; border-radius: 6px; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--line); }
+  .sw[data-on] { box-shadow: 0 0 0 2px var(--accent); }
+  .num { border: 1px solid var(--line); border-radius: 8px; padding: 3px 8px; font-weight: 700; font-size: 12px; min-width: 54px; text-align: right; }
+  .num small { color: var(--muted); font-weight: 600; margin-left: 2px; }
+  .seg { display: inline-flex; background: #f2f4f7; border-radius: 10px; padding: 3px; }
+  .seg span { padding: 5px 10px; border-radius: 8px; font-weight: 800; color: var(--muted); font-size: 12px; }
+  .seg span[data-on] { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(16,24,40,.12); }
+  .note { color: var(--muted); font-size: 11.5px; margin-top: 6px; }
+  .tog { width: 34px; height: 20px; border-radius: 999px; background: var(--accent); position: relative; }
+  .tog::after { content: ""; position: absolute; top: 3px; right: 3px; width: 14px; height: 14px; border-radius: 50%; background: #fff; }
+  .ghost { position: absolute; left: 430px; top: 470px; width: 64px; height: 50px; border: 2px dashed #9fc0ff; border-radius: 10px; background: rgba(91,140,255,.18); display: grid; place-items: center; color: #dbe7ff; font-weight: 800; font-size: 11px; }
+  .drag { position: absolute; left: 500px; top: 440px; font-size: 11px; color: #dbe7ff; font-weight: 700; }
+  .cap { position: absolute; left: 24px; bottom: 74px; max-width: 520px; background: rgba(16,24,40,.72); color: #e8eef8; border-radius: 14px; padding: 12px 14px; backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.12); }
+  .cap b { color: #fff; font-size: 14px; }
+  .cap p { margin: 4px 0 0; font-size: 12.5px; }
+</style>
+</head>
+<body>
+<div class="shot">
+  <div class="pin" style="left:800px;top:578px" data-bad><span>불량 부품 <em>빨강 · 40g</em></span><i></i><b></b></div>
+  <div class="pin" style="left:928px;top:440px"><span>검사 게이트 <em>통과하면 카메라 촬영</em></span><i></i><b></b></div>
+  <div class="pin" style="left:596px;top:620px"><span>OK 함</span><i></i><b></b></div>
+  <div class="pin" style="left:814px;top:450px"><span>NG 함</span><i></i><b></b></div>
+  <div class="ghost">놓을 곳</div>
+  <div class="drag">↙ 상자를 끌어다 놓는 중</div>
+
+  <div class="cap"><b>제조 라인 장면</b><p>컨베이어가 부품을 실어 오고, 카메라 게이트를 지난 부품 중 불량만 골라 NG 함에 넣는 과제. 장면마다 과제 · 채점이 함께 바뀌어요.</p></div>
+
+  <section class="panel" aria-label="작업대">
+    <div class="ph"><b>작업대 꾸미기</b><small>로봇팔 단독</small><span class="x">✕</span></div>
+    <div class="tabs"><span data-on>장면</span><span>오브젝트</span><span>물리</span></div>
+    <div class="sec">
+      <h4>장면 고르기 <em>테마를 고르면 배경 · 물건 · 과제가 한 번에</em></h4>
+      <div class="scenes">
+        <div class="scene"><div class="im" style="background:#3a434e"></div><b>빈 화면</b><small>내가 직접 꾸미기</small></div>
+        <div class="scene"><div class="im" style="background-image:url(img/sim/thumb-lab.jpg)"></div><b>피지컬 AI 실험실</b><small>블록 · 컵 · 카메라</small></div>
+        <div class="scene" data-on><div class="im" style="background-image:url(img/sim/thumb-factory.jpg)"></div><b>제조 라인</b><small>컨베이어 · 불량 분류</small></div>
+        <div class="scene"><div class="im" style="background-image:url(img/sim/thumb-logistics.jpg)"></div><b>물류 · 팔레타이징</b><small>상자 쌓기</small></div>
+        <div class="scene"><div class="im" style="background-image:url(img/sim/thumb-home.jpg)"></div><b>서비스 · 생활</b><small>컵 · 과일 · 쟁반</small></div>
+        <div class="scene"><div class="im" style="background:#1d232b;display:grid;place-items:center;color:#9fb0c8;font-weight:800">AI 키트</div><b>AI 키트 (공식)</b><small>검수 7종</small></div>
+      </div>
+    </div>
+    <div class="sec">
+      <h4>오브젝트 추가 <em>끌어다 책상에 놓기</em></h4>
+      <div class="lib">
+        <div class="obj"><svg viewBox="0 0 30 26"><path d="M8 9l7-4 7 4v8l-7 4-7-4z" fill="#e5484d"/><path d="M8 9l7 4 7-4M15 13v8" stroke="#fff" stroke-opacity=".5" fill="none"/></svg>블록</div>
+        <div class="obj"><svg viewBox="0 0 30 26"><ellipse cx="15" cy="7" rx="7" ry="3" fill="#a99bff"/><path d="M8 7v12c0 2 14 2 14 0V7" fill="#7a5cf5"/></svg>원기둥</div>
+        <div class="obj" data-drag><svg viewBox="0 0 30 26"><path d="M5 9l10-5 10 5v10l-10 5-10-5z" fill="#c89b62"/><path d="M5 9l10 5 10-5M15 14v10" stroke="#8a6436" fill="none"/></svg>택배 상자</div>
+        <div class="obj"><svg viewBox="0 0 30 26"><path d="M9 5h12l-2 17h-8z" fill="#5b8cff"/><ellipse cx="15" cy="5" rx="6" ry="2" fill="#9fc0ff"/></svg>컵</div>
+        <div class="obj"><svg viewBox="0 0 30 26"><circle cx="11" cy="15" r="6" fill="#e5484d"/><circle cx="19" cy="12" r="5" fill="#f5b400"/></svg>공 · 과일</div>
+        <div class="obj"><svg viewBox="0 0 30 26"><circle cx="15" cy="13" r="8" fill="#b9c0c8"/><circle cx="15" cy="13" r="3" fill="#6c7580"/></svg>부품</div>
+        <div class="obj"><svg viewBox="0 0 30 26"><path d="M6 8h18v12H6z" fill="#1fae66"/><path d="M8 10h14v8H8z" fill="#0f6b3f"/></svg>분류함</div>
+        <div class="obj"><svg viewBox="0 0 30 26"><path d="M4 14l11-5 11 5-11 5z" fill="#dfe4ea"/></svg>트레이</div>
+        <div class="obj"><svg viewBox="0 0 30 26"><path d="M4 15l11-5 11 5-11 5z" fill="#b98450"/><path d="M4 15v3l11 5 11-5v-3" fill="#a0703f"/></svg>팔레트</div>
+        <div class="obj"><svg viewBox="0 0 30 26"><path d="M3 15l18-8 6 3-18 8z" fill="#23272d"/><path d="M3 15v3l6 3 18-8v-3" fill="#9aa3ad"/></svg>컨베이어</div>
+        <div class="obj"><svg viewBox="0 0 30 26"><path d="M8 4h14v18H8z" fill="#f5c400"/><path d="M8 8l14 6M8 14l14 6" stroke="#1b1b1b" stroke-width="2.5"/></svg>장애물</div>
+        <div class="obj"><svg viewBox="0 0 30 26"><path d="M7 8h16v10H7z" fill="#2b3036"/><circle cx="15" cy="13" r="3.5" fill="#5b8cff"/></svg>카메라</div>
+      </div>
+    </div>
+    <div class="sec">
+      <h4>고른 오브젝트 · 불량 부품 <em>지우기</em></h4>
+      <div class="props">
+        <label>색</label><div class="row"><span class="sw" style="background:#c7ccd3"></span><span class="sw" data-on style="background:#e5484d"></span><span class="sw" style="background:#f5b400"></span><span class="sw" style="background:#2f6fed"></span><span class="sw" style="background:#1fae66"></span></div>
+        <label>크기</label><div class="row"><span class="num">48<small>mm</small></span><span class="num">48<small>mm</small></span><span class="num">18<small>mm</small></span></div>
+        <label>무게</label><div class="row"><span class="num">40<small>g</small></span><span class="note" style="margin:0">가반 250g 안</span></div>
+        <label>위치</label><div class="row"><span class="num">240<small>x</small></span><span class="num">-30<small>y</small></span><span class="num">70<small>z</small></span></div>
+      </div>
+    </div>
+    <div class="sec">
+      <h4>물리 엔진</h4>
+      <div class="seg"><span>끄기 · 정확한 동작</span><span data-on>켜기 · 실제처럼</span></div>
+      <p class="note">켜면 물건이 떨어지고 미끄러지고 쓰러져요 (무게 · 마찰 적용). 코딩 연습은 끄기, 쌓기 · 분류 같은 피지컬 AI 과제는 켜기를 추천해요.</p>
+    </div>
+  </section>
+</div>
+</body>
+</html>

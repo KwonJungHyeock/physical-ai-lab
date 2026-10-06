@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Physical AI Tool · 에듀이노 로봇 실습</title>
+<link rel="icon" href="data:image/png;base64,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">
+<!--
+  Physical AI Tool — the PC program of the Eduino robot console.
+
+  One file, kept on the desktop: double-click it and it finds the robots on
+  the classroom Wi-Fi (each robot's console server answers /api/state on
+  port 8080 to any page), then opens the chosen robot's console. The robot
+  it was downloaded from is written into ROBOTS below; robots opened from
+  here are remembered in this browser. No install, nothing runs but this page.
+-->
+<style>
+:root{--ink:#101828;--muted:#475467;--faint:#98a2b3;--line:#e4e7ec;--soft:#f4f5f7;--accent:#3454d1;--accent-soft:#eef1fd;--sim:#1fae66;--head:#1d2636;--head2:#283246;--warn:#b54708}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:#eef1f5;color:var(--ink);font:15px/1.5 "Pretendard","Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",sans-serif;display:grid;place-items:start center;padding:28px 16px}
+main{width:min(720px,100%);display:grid;gap:14px}
+header{display:flex;align-items:center;gap:14px;padding:18px 22px;border-radius:18px;background:linear-gradient(180deg,var(--head2),var(--head));color:#fff}
+header img{width:52px;height:auto;background:#fff;border-radius:10px;padding:5px}
+header h1{margin:0;font-size:22px;letter-spacing:-.01em}
+header p{margin:2px 0 0;color:#c3cad6;font-size:13.5px}
+section{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 18px;box-shadow:0 1px 2px rgba(16,24,40,.05)}
+h2{margin:0 0 10px;font-size:15.5px;display:flex;align-items:center;gap:8px}
+h2 small{font-weight:500;color:var(--muted);font-size:12.5px}
+ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+li{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px}
+li .id{flex:0 0 auto;min-width:64px;text-align:center;padding:6px 8px;border-radius:10px;background:var(--soft);font-weight:800;font-size:17px}
+li .what{flex:1;min-width:0}
+li .what b{display:block;font-size:14.5px}
+li .what small{color:var(--muted);font-size:12.5px}
+li[data-state=ok] .id{background:#e4f6ec;color:#137a47}
+li[data-state=off]{opacity:.6}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:#fff;padding:8px 14px;font-weight:700}
+button:disabled{opacity:.45;cursor:default}
+button.go{background:var(--accent);border-color:var(--accent);color:#fff}
+button.go:hover:not(:disabled){filter:brightness(1.08)}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+input{font:inherit;padding:8px 12px;border:1px solid var(--line);border-radius:10px;width:9em}
+input.id{width:6em;font-weight:800;text-align:center}
+.bar{height:6px;border-radius:99px;background:var(--soft);overflow:hidden;margin-top:10px}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+.note{margin:8px 0 0;color:var(--muted);font-size:13px}
+.empty{color:var(--faint);font-size:13.5px;padding:6px 2px}
+.warn{color:var(--warn)}
+footer{text-align:center;color:var(--faint);font-size:12px}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <img src="data:image/png;base64,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" alt="에듀이노">
+    <div>
+      <h1>Physical AI Tool</h1>
+      <p>에듀이노 로봇 실습 — 교실 Wi-Fi 의 로봇을 찾아 바로 열어요</p>
+    </div>
+  </header>
+
+  <section>
+    <h2>내 로봇 <small id="knownNote"></small></h2>
+    <ul id="known"></ul>
+  </section>
+
+  <section>
+    <h2>로봇 찾기 <small>PC 와 로봇이 같은 Wi-Fi 에 있어야 해요</small></h2>
+    <div class="row">
+      <button class="go" id="scan">같은 Wi-Fi 에서 찾기</button>
+      <span>네트워크 <input id="prefix" value="192.168.0." aria-label="찾을 네트워크 앞부분"></span>
+    </div>
+    <div class="bar" id="bar" hidden><i></i></div>
+    <ul id="found" style="margin-top:10px"></ul>
+    <p class="note" id="scanNote"></p>
+  </section>
+
+  <section>
+    <h2>로봇 ID 로 열기 <small>로봇 ID = 로봇 주소의 마지막 숫자 (USB 결과 파일에 적혀 있어요)</small></h2>
+    <form class="row" id="byId">
+      <input class="id" id="rid" inputmode="numeric" placeholder="예: 107" aria-label="로봇 ID">
+      <button class="go" type="submit">열기</button>
+      <span class="note" id="idNote" style="margin:0"></span>
+    </form>
+  </section>
+
+  <footer>이 파일을 바탕화면에 두면 다음부터 더블클릭 한 번으로 열려요.</footer>
+</main>
+<script>
+"use strict";
+// Written in by the robot console when this file is downloaded, and by each robot the USB kit
+// connects (eduino-usb service): [{ id, address, ips, name }].
+var ROBOTS = /*ROBOTS*/[];
+var PORT = 8080;
+var RECENT = "physical-ai-tool-robots";
+
+function $(id) { return document.getElementById(id); }
+function load() { try { return JSON.parse(localStorage.getItem(RECENT) || "[]") || []; } catch (e) { return []; } }
+function save(list) { try { localStorage.setItem(RECENT, JSON.stringify(list.slice(0, 8))); } catch (e) { /* this time only */ } }
+function remember(r) { save([{ id: r.id, address: r.address, model: r.model || "" }].concat(load().filter(function (x) { return x.address !== r.address; }))); }
+function known() {
+  var seen = {}, out = [];
+  ROBOTS.concat(load()).forEach(function (r) { if (r && r.address && !seen[r.address]) { seen[r.address] = 1; out.push(r); } });
+  return out;
+}
+function prefixOf(address) { var m = /^(\d+\.\d+\.\d+\.)\d+/.exec(address || ""); return m ? m[1] : null; }
+
+/** One robot's answer to /api/state, or null. */
+function probe(address, ms) {
+  var ctl = new AbortController();
+  var t = setTimeout(function () { ctl.abort(); }, ms || 1500);
+  return fetch("http://" + address + "/api/state", { mode: "cors", cache: "no-store", signal: ctl.signal })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (s) { return s && typeof s.connected === "boolean" ? s : null; })
+    .catch(function () { return null; })
+    .finally(function () { clearTimeout(t); });
+}
+function open(r) { remember(r); location.href = "http://" + r.address + "/console?from=pc"; }
+function identify(r, btn) {
+  btn.disabled = true;
+  fetch("http://" + r.address + "/api/identify", { method: "POST", mode: "cors", headers: { "Content-Type": "application/json" }, body: "{}" })
+    .catch(function () {}).finally(function () { setTimeout(function () { btn.disabled = false; }, 2500); });
+}
+function row(r, state) {
+  var li = document.createElement("li");
+  li.dataset.state = state;
+  var id = document.createElement("span"); id.className = "id"; id.textContent = r.id || r.address.split(":")[0].split(".").pop();
+  var what = document.createElement("span"); what.className = "what";
+  var b = document.createElement("b"); b.textContent = (r.label || r.model || "로봇") + (state === "ok" ? " · 연결 가능" : state === "off" ? " · 응답 없음" : " · 확인 중…");
+  var sm = document.createElement("small"); sm.textContent = "IP " + r.address.split(":")[0] + " · " + (r.model || "로봇") + (r.name ? " (" + r.name + ")" : "") + (state === "off" ? " — 로봇 전원과 Wi-Fi 를 확인해요" : "");
+  what.append(b, sm);
+  var wig = document.createElement("button"); wig.textContent = "움직여 확인"; wig.title = "이 로봇이 살짝 움직여요 (어느 로봇인지 확인)";
+  wig.onclick = function () { identify(r, wig); };
+  var go = document.createElement("button"); go.className = "go"; go.textContent = "열기";
+  go.onclick = function () { open(r); };
+  wig.disabled = state !== "ok";
+  li.append(id, what, wig, go);
+  return li;
+}
+function describe(address, s) {
+  return { id: s.robotId || address.split(":")[0].split(".").pop(), address: address, model: s.model || (s.kind === "agv" ? "myAGV" : "로봇팔"), name: s.host || "", label: s.label || "" };
+}
+
+// Known robots: checked at once, so the one that answers can be opened with one click.
+function showKnown() {
+  var list = known(), ul = $("known");
+  ul.textContent = "";
+  if (!list.length) {
+    var p = document.createElement("li"); p.className = "empty"; p.style.border = "none";
+    p.textContent = "아직 없어요. 아래 [같은 Wi-Fi 에서 찾기] 로 찾아요.";
+    ul.append(p);
+    return;
+  }
+  $("knownNote").textContent = "바로 열 수 있는지 확인하는 중…";
+  var left = list.length;
+  list.forEach(function (r) {
+    var li = row(r, "wait");
+    ul.append(li);
+    probe(r.address, 2500).then(function (s) {
+      var next = row(s ? describe(r.address, s) : r, s ? "ok" : "off");
+      li.replaceWith(next);
+      if (--left === 0) $("knownNote").textContent = "";
+    });
+  });
+  var p0 = prefixOf(list[0].address);
+  if (p0) $("prefix").value = p0;
+}
+
+// Whole network: every address of the prefix, 48 at a time.
+$("scan").onclick = function () {
+  var prefix = $("prefix").value.trim().replace(/\.?$/, ".");
+  if (!/^\d+\.\d+\.\d+\.$/.test(prefix)) { $("scanNote").textContent = "네트워크는 192.168.0. 처럼 숫자 세 개로 적어요."; return; }
+  var btn = $("scan"), bar = $("bar"), ul = $("found");
+  btn.disabled = true; bar.hidden = false; ul.textContent = ""; $("scanNote").textContent = "";
+  var next = 1, done = 0, hits = 0, seen = {};
+  function worker() {
+    if (next > 254) return Promise.resolve();
+    var n = next++, address = prefix + n + ":" + PORT;
+    return probe(address, 1500).then(function (s) {
+      done++;
+      bar.firstElementChild.style.width = (done / 254 * 100) + "%";
+      var key = s && (s.host || "") + (s.ips || []).join();
+      if (s && !seen[key]) { seen[key] = 1; hits++; ul.append(row(describe(address, s), "ok")); }
+      return worker();
+    });
+  }
+  var jobs = []; for (var i = 0; i < 48; i++) jobs.push(worker());
+  Promise.all(jobs).then(function () {
+    btn.disabled = false; bar.hidden = true;
+    $("scanNote").innerHTML = hits ? "로봇 " + hits + "대를 찾았어요. [움직여 확인] 으로 내 로봇인지 보고 [열기]." :
+      '<span class="warn">로봇을 찾지 못했어요.</span> 로봇 전원이 켜져 있는지, PC 와 로봇이 같은 Wi-Fi 인지, 네트워크 앞부분이 맞는지 확인해요 (PC 의 IP 주소 앞 세 숫자).';
+  });
+};
+
+$("byId").onsubmit = function (e) {
+  e.preventDefault();
+  var v = $("rid").value.trim(), prefix = $("prefix").value.trim().replace(/\.?$/, ".");
+  var address = /^\d{1,3}$/.test(v) ? prefix + v + ":" + PORT : /^[\w.-]+(:\d+)?$/.test(v) ? (v.indexOf(":") > 0 ? v : v + ":" + PORT) : null;
+  if (!address) { $("idNote").textContent = "숫자(로봇 ID)나 주소를 적어요."; return; }
+  $("idNote").textContent = "확인하는 중…";
+  probe(address, 2500).then(function (s) {
+    if (s) open(describe(address, s));
+    else $("idNote").innerHTML = '<span class="warn">' + address + " 에서 대답이 없어요.</span> ID 와 Wi-Fi 를 확인해요.";
+  });
+};
+
+showKnown();
+</script>
+</body>
+</html>
