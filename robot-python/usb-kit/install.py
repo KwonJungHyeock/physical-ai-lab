@@ -2,15 +2,19 @@
 """에듀이노 USB 키트 설치 — 로봇마다 한 번, 로봇 터미널에서:
 
     sudo python3 /media/*/eduino/install.py        (RDK X5: the stick is /media/<label>)
-    sudo python3 "$(find /media /mnt -maxdepth 4 -path '*eduino/install.py' 2>/dev/null | head -1)"   (anywhere)
+    sudo python3 "$(find /media /mnt -maxdepth 6 -path '*eduino/install.py' 2>/dev/null | head -1)"   (anywhere)
 
 Everything a robot needs for class, from the stick it runs from:
   1. unpacks robot_console.zip into the robot user's ~/robot_console
   2. makes the console server start at power-on (autostart.py; arm or myAGV, found out here)
   3. installs the `eduino-usb` service: from now on a stick with a new eduino/wifi.txt
-     is applied as soon as it is plugged in (usb_setup.py)
+     is applied as soon as it is plugged in, and a newer signed kit updates
+     ~/robot_console by itself (usb_setup.py, kit_update.py)
   4. applies this stick's wifi.txt right away, and writes the result
-     (robot ID, address) next to it: eduino/result-<robot name>.txt
+     (robot ID, address, console version) next to it: eduino/result-<robot name>.txt
+
+The zip's robot_console/VERSION stays in ~/robot_console/VERSION: the version the
+robot runs, which the eduino-usb service compares with the kit on a stick.
 
 Options:  arm | agv   choose the robot instead of detecting it
           --no-wifi   leave the Wi-Fi as it is
@@ -122,8 +126,16 @@ def unpack(user):
         for name in dirs + files:
             os.chown(os.path.join(root, name), user.pw_uid, user.pw_gid)
     os.chown(dest, user.pw_uid, user.pw_gid)
-    say(f"  {dest} 에 풀었어요.")
+    say(f"  {dest} 에 풀었어요 (버전 {installed_version(dest)}).")
     return dest
+
+
+def installed_version(dest):
+    try:
+        with open(os.path.join(dest, "VERSION"), encoding="utf-8", errors="replace") as f:
+            return f.read(200).strip() or "표시 없음"
+    except OSError:
+        return "표시 없음"
 
 
 def check_pymycobot():
@@ -136,7 +148,7 @@ def check_pymycobot():
 
 def usb_unit(dest):
     return f"""[Unit]
-Description=Eduino: apply eduino/wifi.txt from a USB stick when it is plugged in (usb_setup.py)
+Description=Eduino: a USB stick's signed kit updates the console, its eduino/wifi.txt sets the Wi-Fi (usb_setup.py)
 After=NetworkManager.service
 
 [Service]
@@ -179,14 +191,14 @@ def main(argv):
     if subprocess.run(auto, cwd=dest, env=env).returncode != 0:
         raise SystemExit("자동 시작 설치에 실패했어요 (위 메시지 참고).")
 
-    step(3, "USB 로 Wi-Fi 바꾸기 (앞으로는 wifi.txt 를 고쳐 꽂기만)")
+    step(3, "USB 로 Wi-Fi 바꾸기·업데이트 (앞으로는 USB 를 꽂기만)")
     with open(USB_UNIT, "w", encoding="utf-8") as f:
         f.write(usb_unit(dest))
     subprocess.run(["systemctl", "daemon-reload"], capture_output=True)
     subprocess.run(["systemctl", "enable", "eduino-usb.service"], capture_output=True)
     # started after step 4, so the service does not join in while this stick is being applied
     subprocess.run(["systemctl", "stop", "eduino-usb.service"], capture_output=True)
-    say("  설치했어요: eduino-usb (USB 를 꽂으면 eduino/wifi.txt 를 읽어 연결)")
+    say("  설치했어요: eduino-usb (USB 를 꽂으면 새 키트로 업데이트하고 eduino/wifi.txt 를 읽어 연결)")
 
     step(4, "교실 Wi-Fi 연결")
     ok = True
@@ -221,7 +233,8 @@ def main(argv):
     say("    또는 이 USB 의 eduino/'Physical AI Tool.html' 을 PC 바탕화면에 복사해")
     say("    더블클릭 → 로봇이 목록에 나오면 [열기] (주소를 몰라도 돼요)")
     say("=" * 60)
-    say("  다음부터: PC 에서 eduino/wifi.txt 를 고쳐 저장 → 로봇에 USB 를 꽂기 → 로봇이 살짝 움직이면 연결 끝.")
+    say("  다음부터: PC 에서 wifi.txt 를 고치고 새 키트의 eduino 폴더를 USB 에 복사 → 로봇에 꽂기")
+    say("            → 1~2분 뒤 로봇이 살짝 움직이면 끝 (업데이트도 저절로, 결과 파일에 버전).")
     return 0 if ok else 1
 
 

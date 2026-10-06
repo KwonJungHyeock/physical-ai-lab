@@ -4,6 +4,12 @@ __pycache__/
 .venv/
 venv/
 
+# The USB kit's private signing key (EDUINO_SIGNING_KEY / make_usb_kit.py --key) lives outside the
+# repository; never commit one. Only robot-python/server/kit_signing_public.pem is committed.
+eduino-kit-signing*.pem
+*.key
+*private*.pem
+
 # Output of robot-python/checks/robot_check.py when run from a checkout
 mycobot_check_*.txt
 
