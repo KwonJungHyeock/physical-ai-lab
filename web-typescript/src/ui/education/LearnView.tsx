@@ -6,7 +6,9 @@
  * and the 단원 in their three 대단원, fitted to the school's equipment, with a 단원 preview); a 차시 is one
  * lesson screen — the step bar on top (lesson/LessonBar), the 3D view with the activity panel
  * over it (stage/ControlOverlay), and a short card per step on the right (lesson/LessonCards).
- * From the home, 문제 해결 실습 (시범) opens lab/LabView: a working conveyor line to fix.
+ * The 교육 tab opens on the 로봇 산업단지 (map/ParkView): seven industrial sites in order, each opening
+ * when the one before it is finished — the 교육센터 is the 1단원 차시, the 스마트 공장 is lab/LabView (a
+ * working conveyor line to fix); 전체 차시 there opens the course home.
  */
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -23,6 +25,7 @@ import ControlOverlay from './stage/ControlOverlay';
 import { SymbolsProvider } from './lesson/Rich';
 import Course from './roadmap/Course';
 import LabView from './lab/LabView';
+import ParkView from './map/ParkView';
 import LessonBar from './lesson/LessonBar';
 import LessonCards, { PAGES, isActivity, type PageId, type ResumeSpot } from './lesson/LessonCards';
 import { TOPIC_PANELS } from './topics';
@@ -36,6 +39,7 @@ const MISSION_KEY = 'learn-missions';
 const OWNED_KEY = 'learn-owned';
 const LEVEL_KEY = 'learn-level';
 const RESUME_KEY = 'learn-resume';
+const LAB_KEY = 'lab-solved';
 const FIRST: TopicId = TOPICS[0].id;
 /** Stable "no results yet" (a fresh {} each render would re-render the memoised panel). */
 const NO_RESULTS: Partial<Record<StepKey, ResultRow>> = {};
@@ -83,8 +87,20 @@ const stepFor = (p: PageId, cur: StepView): StepView => (isActivity(p) || p === 
 
 export default function LearnView({ robot, chain, gripperRobot, real, hidden }: Props) {
   const [topicId, setTopicId] = useState<TopicId>(FIRST);
-  /** The course (front page), a lesson, or the problem-solving lab (opened once, then kept). */
-  const [screen, setScreen] = useState<'course' | 'topic' | 'lab'>('course');
+  /** The park (front page), the course, a lesson, or the problem-solving lab (opened once, then kept). */
+  const [screen, setScreen] = useState<'map' | 'course' | 'topic' | 'lab'>('map');
+  /** Where a lesson goes back to: the page it was opened from. */
+  const [lessonFrom, setLessonFrom] = useState<'map' | 'course'>('course');
+  /** The lab's problems solved so far (1 · 2 · 3), kept between visits. */
+  const [labSolved, setLabSolved] = useState<Partial<Record<1 | 2 | 3, boolean>>>({});
+  const onLabSolved = useCallback((p: 1 | 2 | 3) => {
+    setLabSolved((x) => {
+      if (x[p]) return x;
+      const next = { ...x, [p]: true };
+      writeJson(LAB_KEY, next);
+      return next;
+    });
+  }, []);
   const [labSeen, setLabSeen] = useState(false);
   const openLab = useCallback(() => {
     setLabSeen(true);
@@ -131,6 +147,7 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
     setOwnedRaw(o);
     if (readJson<string>(LEVEL_KEY, 'hs') === 'uni') setLevelRaw('uni');
     setMissions(readJson(MISSION_KEY, {}));
+    setLabSolved(readJson(LAB_KEY, {}));
     const r = readJson<Partial<ResumeSpot> | null>(RESUME_KEY, null);
     if (r && TOPIC_BY_ID.has(r.topic as TopicId) && PAGES.includes(r.page as PageId)) setResume({ topic: r.topic as TopicId, page: r.page as PageId });
   }, []);
@@ -205,12 +222,37 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
     };
   }, [choose, openLab]);
 
+  const fromMap = useCallback(
+    (t: TopicId) => {
+      setLessonFrom('map');
+      choose(t);
+    },
+    [choose],
+  );
+  const fromCourse = useCallback(
+    (t: TopicId, at?: PageId) => {
+      setLessonFrom('course');
+      choose(t, at);
+    },
+    [choose],
+  );
+  const progress = useMemo(() => ({ done, labSolved }), [done, labSolved]);
+
   const topic = TOPIC_BY_ID.get(topicId)!;
   const Panel = PANELS[topicId];
   const inLesson = !hidden && screen === 'topic';
 
   return (
     <>
+      <ParkView
+        robot={robot}
+        chain={chain}
+        progress={progress}
+        hidden={hidden || screen !== 'map'}
+        onTopic={fromMap}
+        onLab={openLab}
+        onCourse={() => setScreen('course')}
+      />
       <Course
         hidden={hidden || screen !== 'course'}
         done={done}
@@ -219,13 +261,15 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
         level={level}
         onLevel={setLevel}
         resume={resume}
-        onStart={choose}
-        onLab={openLab}
+        onStart={fromCourse}
+        onLab={() => setScreen('map')}
       />
-      {labSeen && <LabView robot={robot} chain={chain} gripperRobot={gripperRobot} hidden={hidden || screen !== 'lab'} onBack={() => setScreen('course')} />}
+      {labSeen && (
+        <LabView robot={robot} chain={chain} gripperRobot={gripperRobot} hidden={hidden || screen !== 'lab'} saved={labSolved} onSolved={onLabSolved} onBack={() => setScreen('map')} />
+      )}
       <SymbolsProvider symbols={topic.symbols}>
         <div className={css.learn} hidden={hidden || screen !== 'topic'}>
-          <LessonBar topic={topic} page={page} onPage={setPage} results={results[topicId] ?? NO_RESULTS} level={level} onBack={() => setScreen('course')} />
+          <LessonBar topic={topic} page={page} onPage={setPage} results={results[topicId] ?? NO_RESULTS} level={level} onBack={() => setScreen(lessonFrom)} />
           <section className={css.stage} aria-label="3D 실습 화면">
             <div className={css.canvas} data-picking={picking || undefined}>
               <LearnStage robot={robot} chain={chain} gripperRobot={gripperRobot} scene={scene} paused={!inLesson} shift={384} onTablePick={(mm) => pick.current?.(mm)} />

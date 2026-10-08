@@ -55,7 +55,7 @@ interface Props {
   resume: ResumeSpot | null;
   /** Start a lesson (leaves the home). */
   onStart(t: TopicId, page?: PageId): void;
-  /** Open 문제 해결 실습 (시범). */
+  /** Back to the 로봇 산업단지 (the 교육 home). */
   onLab(): void;
 }
 
@@ -326,8 +326,8 @@ function Hero({
           <button type="button" className={css.btnLine} onClick={onGear}>
             장비 선택하기
           </button>
-          <button type="button" className={css.btnLine} onClick={onLab} title="컨베이어 공정의 문제를 고치며 원리를 배워요">
-            문제 해결 실습 (시범)
+          <button type="button" className={css.btnLine} onClick={onLab} title="산업 현장을 골라 문제를 고치며 원리를 배워요">
+            ← 로봇 산업단지
           </button>
         </div>
       </div>

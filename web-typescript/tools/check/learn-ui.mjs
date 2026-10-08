@@ -105,7 +105,21 @@ for (const [w, h] of SIZES) {
       console.log(`${w}×${h} ${where.padEnd(14)} ${kind.padEnd(9)} ${String(what).slice(0, 50)} — ${detail}`);
     }
   };
-  // The 교육 home, once per size: the page (after the roadmap has played), 장비 선택하기, a 단원 preview.
+  // The 교육 tab opens on the 로봇 산업단지: its bar and card, with nothing picked and with each site picked.
+  const park = page.locator('section[aria-label="로봇 산업단지 3D 지도"]');
+  if (await park.isVisible().catch(() => false)) {
+    report(await page.locator('header:has(ol[aria-label="현장 순서"])').evaluate(inspect), '산업단지 바');
+    report(await park.locator('aside').evaluate(inspect), '산업단지 안내');
+    for (const site of ['center', 'factory', 'logistics', 'ai']) {
+      await page.evaluate((x) => window.__parkSelect(x), site);
+      await page.waitForTimeout(400);
+      report(await park.locator('aside').evaluate(inspect), `현장 ${site}`);
+    }
+    await page.evaluate(() => window.__parkSelect(null));
+    // 전체 차시: the course home (the roadmap and the 단원).
+    await page.getByRole('button', { name: '전체 차시', exact: true }).click();
+  } else report([['MISSING', '산업단지', '산업단지 맵이 안 보임']], '산업단지');
+  // The course home, once per size: the page (after the roadmap has played), 장비 선택하기, a 단원 preview.
   await page.waitForTimeout(3000);
   const home = page.locator('section[aria-label="교육 홈"]');
   if (await home.isVisible().catch(() => false)) {

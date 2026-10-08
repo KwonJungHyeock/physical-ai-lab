@@ -70,16 +70,23 @@ interface Props {
   chain: readonly ChainSegment[];
   gripperRobot: UrdfRobot | null;
   hidden?: boolean;
+  /** Problems solved on an earlier visit (kept by the 교육 tab). */
+  saved?: Partial<Record<ProblemId, boolean>>;
+  /** A problem was solved (a run passed). */
+  onSolved?(p: ProblemId): void;
   onBack(): void;
 }
 
 const stepIndex = (s: StepId) => STEPS.findIndex((x) => x.id === s);
 
-export default function LabView({ robot, chain, gripperRobot, hidden, onBack }: Props) {
+export default function LabView({ robot, chain, gripperRobot, hidden, saved, onSolved, onBack }: Props) {
   const [prob, setProb] = useState<ProblemId>(1);
   const [step, setStepRaw] = useState<StepId>('situation');
   const [reached, setReached] = useState<Record<ProblemId, number>>({ 1: 0, 2: 0, 3: 0 });
-  const [solved, setSolved] = useState<Record<ProblemId, boolean>>({ 1: false, 2: false, 3: false });
+  const [solved, setSolved] = useState<Record<ProblemId, boolean>>(() => ({ 1: !!saved?.[1], 2: !!saved?.[2], 3: !!saved?.[3] }));
+  useEffect(() => {
+    for (const p of [1, 2, 3] as const) if (solved[p]) onSolved?.(p);
+  }, [solved, onSolved]);
   const [answers, setAnswers] = useState<Record<ProblemId, number | null>>({ 1: null, 2: null, 3: null });
   const [v1, setV1] = useState<P1Values>(P1_DEFAULT);
   const [v2, setV2] = useState<P2Values>(() => p2DefaultValues(chain));

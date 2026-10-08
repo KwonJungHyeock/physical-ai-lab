@@ -13,7 +13,7 @@
     "check:transport": "tsx tests/robot/transport-check.mts",
     "check:kinematics": "tsx tests/robot/kinematics-check.mts",
     "check:arms": "tsx tests/robot/arms-check.mts",
-    "check": "npm run check:protocol && npm run check:transport && npm run check:kinematics && npm run check:arms && npm run check:console && npm run check:self && npm run check:practice && npm run check:demo && npm run check:python && npm run check:agv && npm run check:track && npm run check:robotics && npm run check:learn && npm run check:lab",
+    "check": "npm run check:protocol && npm run check:transport && npm run check:kinematics && npm run check:arms && npm run check:console && npm run check:self && npm run check:practice && npm run check:demo && npm run check:python && npm run check:agv && npm run check:track && npm run check:robotics && npm run check:learn && npm run check:lab && npm run check:park",
     "check:console": "tsx tests/simulator/console-check.mts",
     "check:self": "tsx tests/simulator/self-collision-check.mts",
     "build:robot": "node tools/build/robot.mjs",
@@ -25,6 +25,7 @@
     "check:robotics": "tsx tests/education/robotics-check.mts",
     "check:learn": "tsx tests/education/content-check.mts",
     "check:lab": "tsx tests/education/lab-check.mts",
+    "check:park": "tsx tests/education/park-check.mts",
     "gen:curriculum": "node tools/build/curriculum.mjs"
   },
   "dependencies": {
