@@ -55,12 +55,14 @@ interface Props {
   resume: ResumeSpot | null;
   /** Start a lesson (leaves the home). */
   onStart(t: TopicId, page?: PageId): void;
+  /** Open 문제 해결 실습 (시범). */
+  onLab(): void;
 }
 
 const sameSet = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((x) => b.includes(x));
 const hwOf = (owned: readonly ProductId[]) => PRODUCTS.filter((p) => p.id !== 'sim' && owned.includes(p.id));
 
-export default function Course({ hidden, done, owned, onOwned, level, onLevel, resume, onStart }: Props) {
+export default function Course({ hidden, done, owned, onOwned, level, onLevel, resume, onStart, onLab }: Props) {
   const cover = useMemo(() => topicCover(owned), [owned]);
   const nDone = TOPICS.filter((t) => done[t.id]).length;
   const [unit, setUnit] = useState<CategoryId | null>(null);
@@ -159,6 +161,7 @@ export default function Course({ hidden, done, owned, onOwned, level, onLevel, r
           onResume={() => onStart(here, resume?.topic === here ? resume.page : 'intro')}
           onGear={() => setPicking(true)}
           onGoal={() => setUnit('8')}
+          onLab={onLab}
         />
 
         {showFit && (
@@ -277,6 +280,7 @@ function Hero({
   onResume,
   onGear,
   onGoal,
+  onLab,
 }: {
   level: StudyLevel;
   onLevel(l: StudyLevel): void;
@@ -287,6 +291,7 @@ function Hero({
   onResume(): void;
   onGear(): void;
   onGoal(): void;
+  onLab(): void;
 }) {
   const t = TOPIC_BY_ID.get(here)!;
   // The ring fills from empty once it is on screen.
@@ -320,6 +325,9 @@ function Hero({
           </button>
           <button type="button" className={css.btnLine} onClick={onGear}>
             장비 선택하기
+          </button>
+          <button type="button" className={css.btnLine} onClick={onLab} title="컨베이어 공정의 문제를 고치며 원리를 배워요">
+            문제 해결 실습 (시범)
           </button>
         </div>
       </div>

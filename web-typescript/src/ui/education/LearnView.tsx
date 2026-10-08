@@ -6,6 +6,7 @@
  * and the 단원 in their three 대단원, fitted to the school's equipment, with a 단원 preview); a 차시 is one
  * lesson screen — the step bar on top (lesson/LessonBar), the 3D view with the activity panel
  * over it (stage/ControlOverlay), and a short card per step on the right (lesson/LessonCards).
+ * From the home, 문제 해결 실습 (시범) opens lab/LabView: a working conveyor line to fix.
  */
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -21,6 +22,7 @@ import { HOME_POSE, type Mm, type RealArm } from './lessons';
 import ControlOverlay from './stage/ControlOverlay';
 import { SymbolsProvider } from './lesson/Rich';
 import Course from './roadmap/Course';
+import LabView from './lab/LabView';
 import LessonBar from './lesson/LessonBar';
 import LessonCards, { PAGES, isActivity, type PageId, type ResumeSpot } from './lesson/LessonCards';
 import { TOPIC_PANELS } from './topics';
@@ -71,6 +73,8 @@ declare global {
     __learnPick?: (mm: Mm) => void;
     /** Open a 차시 at a step (tools/check/learn-sim.mjs and the guide screenshots). */
     __learnOpen?: (id: TopicId, page?: PageId) => void;
+    /** Open 문제 해결 실습 (시범). */
+    __learnLab?: () => void;
   }
 }
 
@@ -79,8 +83,13 @@ const stepFor = (p: PageId, cur: StepView): StepView => (isActivity(p) || p === 
 
 export default function LearnView({ robot, chain, gripperRobot, real, hidden }: Props) {
   const [topicId, setTopicId] = useState<TopicId>(FIRST);
-  /** The course (front page) or a lesson. */
-  const [screen, setScreen] = useState<'course' | 'topic'>('course');
+  /** The course (front page), a lesson, or the problem-solving lab (opened once, then kept). */
+  const [screen, setScreen] = useState<'course' | 'topic' | 'lab'>('course');
+  const [labSeen, setLabSeen] = useState(false);
+  const openLab = useCallback(() => {
+    setLabSeen(true);
+    setScreen('lab');
+  }, []);
   const [owned, setOwnedRaw] = useState<readonly ProductId[]>(DEFAULT_OWNED);
   const setOwned = (p: readonly ProductId[]) => {
     const next = p.includes('sim') ? p : [...p, 'sim' as const];
@@ -188,11 +197,13 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
     window.__learnOpen = (id: TopicId, at?: PageId) => {
       if (TOPIC_BY_ID.has(id)) choose(id, at);
     };
+    window.__learnLab = openLab;
     return () => {
       delete window.__learnPick;
       delete window.__learnOpen;
+      delete window.__learnLab;
     };
-  }, [choose]);
+  }, [choose, openLab]);
 
   const topic = TOPIC_BY_ID.get(topicId)!;
   const Panel = PANELS[topicId];
@@ -209,7 +220,9 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
         onLevel={setLevel}
         resume={resume}
         onStart={choose}
+        onLab={openLab}
       />
+      {labSeen && <LabView robot={robot} chain={chain} gripperRobot={gripperRobot} hidden={hidden || screen !== 'lab'} onBack={() => setScreen('course')} />}
       <SymbolsProvider symbols={topic.symbols}>
         <div className={css.learn} hidden={hidden || screen !== 'topic'}>
           <LessonBar topic={topic} page={page} onPage={setPage} results={results[topicId] ?? NO_RESULTS} level={level} onBack={() => setScreen('course')} />

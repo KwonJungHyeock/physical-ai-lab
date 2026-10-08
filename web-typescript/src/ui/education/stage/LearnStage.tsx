@@ -10,7 +10,7 @@
 
 import { CameraControls, Grid, Html, Line, useGLTF } from '@react-three/drei';
 import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
-import { Suspense, useCallback, useEffect, useMemo, useRef, type RefObject } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, type ReactNode, type RefObject } from 'react';
 import { Matrix4, NeutralToneMapping, Quaternion, Vector3, type Group, type PerspectiveCamera } from 'three';
 
 import { forwardKinematicsFrames, type ChainSegment } from '@/engine/robot/kinematics';
@@ -71,11 +71,26 @@ interface Props {
   paused?: boolean;
   /** Pixels of the view's left side covered by a panel: the picture is centred in the rest. */
   shift?: number;
+  /** The first view (and 처음 시점): camera then target, three.js metres (y up). */
+  home?: ViewPose;
+  /** Drives the arm every frame instead of `scene.angles` while it holds a pose (a played-back run). */
+  live?: RefObject<LiveArm | null>;
+  /** More to draw, in the robot base frame (metres, z up). */
+  children?: ReactNode;
+}
+
+/** Camera position then target, three.js metres (y up). */
+export type ViewPose = readonly [number, number, number, number, number, number];
+
+/** The arm as a frame loop sets it. */
+export interface LiveArm {
+  angles: readonly number[];
+  pump: boolean;
 }
 
 const v = (p: readonly number[]) => new Vector3(p[0] / 1000, p[1] / 1000, p[2] / 1000);
 
-export default function LearnStage({ robot, chain, gripperRobot, scene, onTablePick, paused, shift = 0 }: Props) {
+export default function LearnStage({ robot, chain, gripperRobot, scene, onTablePick, paused, shift = 0, home = HOME_VIEW, live, children }: Props) {
   const api = useRef<ViewApi | null>(null);
   return (
     <>
@@ -111,9 +126,11 @@ export default function LearnStage({ robot, chain, gripperRobot, scene, onTableP
         <directionalLight position={[-0.35, 0.95, -1.2]} intensity={1.15} color="#cfe0ff" />
         <Desk onTablePick={onTablePick} />
         <Suspense fallback={null}>
-          <SceneContent robot={robot} chain={chain} gripperRobot={gripperRobot} scene={scene} />
+          <SceneContent robot={robot} chain={chain} gripperRobot={gripperRobot} scene={scene} live={live}>
+            {children}
+          </SceneContent>
         </Suspense>
-        <ViewControl apiRef={api} />
+        <ViewControl apiRef={api} home={home} />
         <ViewShift px={shift} />
         <CameraControls makeDefault smoothTime={0.25} minDistance={0.15} maxDistance={3.2} maxPolarAngle={Math.PI * 0.49} dollyToCursor dollySpeed={0.6} />
       </Canvas>
@@ -135,7 +152,7 @@ function ViewShift({ px }: { px: number }) {
 }
 
 /** The first view: the arm's middle (robot z ≈ 130 mm) from the front right, camera then target. */
-const HOME_VIEW = [0.74, 0.62, 0.86, 0.0, 0.14, 0.0] as const;
+const HOME_VIEW: ViewPose = [0.74, 0.62, 0.86, 0.0, 0.14, 0.0];
 
 /** What the view tools (outside the canvas) can do with the camera. */
 interface ViewApi {
@@ -153,7 +170,7 @@ type Controls = {
 };
 
 /** Once the camera controls exist: the first view, and the view tools' handle on the camera. */
-function ViewControl({ apiRef }: { apiRef: RefObject<ViewApi | null> }) {
+function ViewControl({ apiRef, home }: { apiRef: RefObject<ViewApi | null>; home: ViewPose }) {
   const controls = useThree((s) => s.controls) as Controls | null;
   const done = useRef(false);
   useEffect(() => {
@@ -161,12 +178,12 @@ function ViewControl({ apiRef }: { apiRef: RefObject<ViewApi | null> }) {
     if (!done.current) {
       done.current = true;
       // The arm in the middle of the free part of the view (ViewShift moves it clear of the panel).
-      void controls.setLookAt(...HOME_VIEW, false);
+      void controls.setLookAt(...home, false);
     }
     apiRef.current = {
       // The simulator's directions (its view cube), and this view's own first one for 처음 시점.
       view: (name) => {
-        const to = name === 'home' || name === 'fit' ? HOME_VIEW : ([...VIEWS[name].pos, ...VIEWS[name].target] as const);
+        const to = name === 'home' || name === 'fit' ? home : ([...VIEWS[name].pos, ...VIEWS[name].target] as const);
         void controls.setLookAt(to[0], to[1], to[2], to[3], to[4], to[5], true);
       },
       zoom: (d) => void controls.dolly(controls.distance * 0.18 * d, true),
@@ -175,7 +192,7 @@ function ViewControl({ apiRef }: { apiRef: RefObject<ViewApi | null> }) {
     return () => {
       apiRef.current = null;
     };
-  }, [controls, apiRef]);
+  }, [controls, apiRef, home]);
   return null;
 }
 
@@ -236,7 +253,7 @@ function Desk({ onTablePick }: { onTablePick?: (mm: Mm) => void }) {
   );
 }
 
-function SceneContent({ robot, chain, gripperRobot, scene }: Omit<Props, 'onTablePick' | 'paused'>) {
+function SceneContent({ robot, chain, gripperRobot, scene, live, children }: Omit<Props, 'onTablePick' | 'paused'>) {
   const { nodes } = useGLTF(MODEL_URL, DRACO_PATH) as unknown as { nodes: GlbNodes };
   const arm = useMemo(() => buildArm(robot, chain, nodes), [robot, chain, nodes]);
   // A small gripper unless the lesson fits another tool (its tool point is the topics' 손끝).
@@ -260,11 +277,12 @@ function SceneContent({ robot, chain, gripperRobot, scene }: Omit<Props, 'onTabl
     toolWorld.current = createWorld(toolId, false, undefined, 'arm');
   }, [toolId]);
   useFrame(() => {
-    arm.setAngles(angles.current);
+    const drive = live?.current;
+    arm.setAngles(drive?.angles ?? angles.current);
     const w = toolWorld.current;
     if (!w) return;
-    w.angles = angles.current.slice();
-    w.pump = pumpOn.current;
+    w.angles = (drive?.angles ?? angles.current).slice();
+    w.pump = drive ? drive.pump : pumpOn.current;
     tool.update(w);
   });
 
@@ -350,6 +368,7 @@ function SceneContent({ robot, chain, gripperRobot, scene }: Omit<Props, 'onTabl
           </span>
         </Html>
       ))}
+      {children}
     </group>
   );
 }

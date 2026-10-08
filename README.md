@@ -13,7 +13,7 @@ physical-ai-lab/
 ├─ web-typescript/         웹 앱 (TypeScript · Next.js 16 · React 19) — 옮겨 갈 대상
 │  ├─ src/app/             페이지 (Next.js 경로): / · /console · /agv · /figures/[id] · /materials/[doc] · /spike/*
 │  ├─ src/ui/simulator/    [시뮬레이터] 탭과 콘솔 전체 — stage/ editors/ control/ connect/ tasks/ pages/
-│  ├─ src/ui/education/    [교육] 탭 — roadmap/ lesson/ stage/ topics/ fig/ print/
+│  ├─ src/ui/education/    [교육] 탭 — roadmap/ lesson/ stage/ topics/ fig/ print/ lab/(문제 해결 실습 · 시범)
 │  ├─ src/ui/agv/          이동 로봇(myAGV) 콘솔 화면
 │  ├─ src/ui/twin/         디지털 트윈 (스파이크 페이지)
 │  ├─ src/engine/          화면 없는 로직 (React 없음) — 그대로 옮겨 쓸 수 있음
@@ -144,6 +144,8 @@ URL 은 `/robot/…`, `/education/…`(`engine/education/media.ts`), `/library/�
   검사 스크립트는 로드 전에 `robot-console-model` = `mycobot280-rdkx5` 를 넣어 모델 선택 화면을 건너뜁니다.
 - `window.__learnOpen(topicId, page?)` — 수업 하나를 엽니다 (`ui/education/LearnView.tsx`).
   `window.__learnPick(mm)` — 실습 3D 무대에서 점 하나를 고릅니다. `tools/check/learn-ui.mjs` · `learn-sim.mjs` 가 씁니다.
+- `window.__learnLab()` — 교육 홈의 [문제 해결 실습 (시범)]을 엽니다. `window.__labOpen(문제, 단계, { solve?, at? })` — 문제 1–3 의
+  한 단계를 엽니다 (`solve`: 정답 값으로 다시 실행, `at`: 재생 시각 또는 `'end'`; `ui/education/lab/LabView.tsx`).
 
 ### 로봇 서버 API (`robot-python/server/`)
 앱은 **같은 주소**의 `/api/state` 가 대답하면 로봇 모드, 아니면 시뮬레이터로 동작합니다 (`engine/simulator/robotLink.ts`).

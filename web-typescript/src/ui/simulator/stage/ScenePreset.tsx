@@ -89,7 +89,7 @@ function Tape({ x0, x1, y0, y1, w = 30 }: { x0: number; x1: number; y0: number; 
 }
 
 /** A metal roller across x at (x, y, z), length len, radius r, with its axle ends, mm. */
-function Roller({ x, y, z, len, r, color = '#b9c1ca' }: { x: number; y: number; z: number; len: number; r: number; color?: string }) {
+export function Roller({ x, y, z, len, r, color = '#b9c1ca' }: { x: number; y: number; z: number; len: number; r: number; color?: string }) {
   return (
     <group position={[m(x), m(y), m(z)]}>
       <mesh rotation={[0, 0, Math.PI / 2]} castShadow receiveShadow>
@@ -262,7 +262,7 @@ function Factory() {
 }
 
 /** A wooden pallet: three bottom boards, nine blocks, five deck boards (fits SCENE_FIXED's 240 × 200 × 30). */
-function Pallet({ x, y }: { x: number; y: number }) {
+export function Pallet({ x, y }: { x: number; y: number }) {
   const W = <meshStandardMaterial color="#c8925a" map={wood([1, 1])} roughness={0.85} />;
   return (
     <group position={[m(x), m(y), 0]}>

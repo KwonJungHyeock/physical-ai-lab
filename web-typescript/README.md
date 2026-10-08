@@ -44,6 +44,7 @@ src/
       topics/             차시별 실습 화면 — 학문별 폴더 1-basics … 8-learning, 공용 kit · gcam · types
       fig/                주제 그림 28점 (f1 … f8 = 학문)
       print/              자료실 인쇄용 문서 (PDF)
+      lab/                문제 해결 실습 (시범) — 컨베이어 공정 문제 3개: LabView(화면) · LabBar · LabPanel · ConveyorCell(3D) · Timeline
     agv/                  이동 로봇(myAGV) 콘솔
     twin/                 디지털 트윈 (스파이크)
   engine/                 화면 없는 로직 (React 없음, three.js 수학 · Rapier 만 사용) — 그대로 옮겨 쓸 수 있음
@@ -53,6 +54,7 @@ src/
     python/               파이썬 실행 (Pyodide 웹 워커, 가짜 pymycobot · rclpy)
     vision/               영상 처리 (색 · 마커 · 추적)
     education/            교육 데이터: 원고 생성물(curriculum.gen.ts) · 카탈로그 · 로드맵 · 용어 · 기호 · 문항 · 자료실 목록
+      lab/                문제 해결 실습: 공정 배치(cell) · 시간 단위 실행(run: 벨트 · 센서 · 궤적 · 충돌) · 문제 3개(problems) · 글(chapter)
     agv/                  myAGV 시뮬레이터 · 서버 통신
     serial/               myCobot 시리얼 프로토콜 (Web Serial)
   types/                  Web Serial 타입
@@ -60,7 +62,7 @@ tests/                    자동 검증 (npm run check)
   robot/                  프로토콜 · 송수신 · 기구학 · 모델 · 추적
   simulator/              콘솔 · 자기 충돌 · 실습 예제 · 데모 · 파이썬 실행
   agv/                    myAGV
-  education/              교육 계산(physics) · 원고 형식(content) · sim/ 원고대로 눌러 볼 시나리오
+  education/              교육 계산(physics) · 원고 형식(content) · 문제 해결 실습(lab) · sim/ 원고대로 눌러 볼 시나리오
 tools/
   build/                  만들기: 원고 → 앱 데이터, 자료실 PDF, 그림 GIF, 로봇용 화면, Pyodide 복사, 서비스 워커, 매뉴얼 PDF
   check/                  브라우저 검사: 그림 정렬 · 쏠림(figures), 교육 화면(learn-ui), 원고 대조 · 시연 GIF(learn-sim)
@@ -109,6 +111,7 @@ npm run check:python      # tests/simulator — 중급·고급 파이썬 실행
 npm run check:agv         # tests/agv       — myAGV 주행 · 충돌 · 라이다 · 직진 보정
 npm run check:robotics    # tests/education — 교육용 계산 (자코비안 · 동역학 · 경로 계획)
 npm run check:learn       # tests/education — 교육 원고 형식 · 기호 · 문항 · 그림 · GIF
+npm run check:lab         # tests/education — 문제 해결 실습: 처음 값은 실패, 고친 값은 통과 (문제 3개)
 npm run gen:curriculum    # tools/build     — 원고 md → src/engine/education/curriculum.gen.ts
 npm run lint
 npm run build
