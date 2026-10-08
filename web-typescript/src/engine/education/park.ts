@@ -4,16 +4,23 @@
  * (a teacher can open them all). What makes a site finished:
  *  - 로봇 교육센터: the 1단원 차시 (the existing lessons — the basics before any site);
  *  - 스마트 공장: the three conveyor problems of the lab (lab/problems.ts);
+ *  - 물류 센터: the palletizing problems (lab/pallet.ts; ① is built, ② ③ are planned);
  *  - the others have no screens yet: they list their planned problems and stay 준비 중.
+ * Everything is done with the myCobot 280 RDK X5 (the product the school has); other products get
+ * their own problems when they come.
  * Each problem names the 단원 whose principle it teaches (the theory is in that 단원's PDF).
  */
 
 import { topicsOf, type CategoryId, type TopicId } from './catalog';
 
 export type SiteId = 'center' | 'factory' | 'logistics' | 'lab' | 'farm' | 'cafe' | 'ai';
+/** The problem-solving labs (one per site that has one). */
+export type LabId = 'factory' | 'logistics';
 
 export interface SiteProblem {
   title: string;
+  /** Its screen is built (a lab site's problems can come one at a time). */
+  ready?: boolean;
   /** What gets changed to fix it, in a few words. */
   fix: string;
   /** The 단원 whose principle it teaches. */
@@ -28,8 +35,9 @@ export interface Site {
   robot: string;
   desc: string;
   color: string;
-  /** What the site's problems are, once it has screens: 'lessons' (1단원 차시), 'lab' (the conveyor lab), or null (준비 중). */
+  /** What the site's problems are, once it has screens: 'lessons' (1단원 차시), 'lab' (a problem-solving lab, `lab`), or null (준비 중). */
   content: 'lessons' | 'lab' | null;
+  lab?: LabId;
   problems: readonly SiteProblem[];
 }
 
@@ -52,24 +60,26 @@ export const SITES: readonly Site[] = [
     desc: '컨베이어로 오는 상자를 집어 옮기는 라인이에요. 고장 난 공정을 값을 바꿔 고쳐요.',
     color: '#2f5be7',
     content: 'lab',
+    lab: 'factory',
     problems: [
-      { title: '옆을 집는다', fix: '관절 각도로 손끝 맞추기', units: ['2'] },
-      { title: '자리가 매번 바뀐다', fix: '좌표 지정 · 닿을 수 없는 자리', units: ['2', '1'] },
-      { title: '움직이는 상자를 놓친다', fix: '출발 시점 · 속도', units: ['3'] },
+      { title: '옆을 집는다', fix: '관절 각도로 손끝 맞추기', units: ['2'], ready: true },
+      { title: '자리가 매번 바뀐다', fix: '좌표 지정 · 닿을 수 없는 자리', units: ['2', '1'], ready: true },
+      { title: '움직이는 상자를 놓친다', fix: '출발 시점 · 속도', units: ['3'], ready: true },
     ],
   },
   {
     id: 'logistics',
     name: '물류 센터',
     kind: '물류',
-    robot: 'myAGV + 로봇팔',
-    desc: 'AGV가 선반을 돌며 팔로 물건을 집어 팔레트에 쌓아요.',
+    robot: 'myCobot 280 + 흡착 펌프',
+    desc: '컨베이어로 오는 상자를 팔레트에 차곡차곡 쌓아요 (팔레타이징).',
     color: '#d9622b',
-    content: null,
+    content: 'lab',
+    lab: 'logistics',
     problems: [
-      { title: '쌓다가 무너진다', fix: '쌓는 순서 · 놓는 높이', units: ['6', '4'] },
+      { title: '쌓다가 무너진다', fix: '층마다 놓는 높이 · 여유', units: ['2', '6'], ready: true },
       { title: '빨리 하니 미끄러진다', fix: '속도 · 가속과 관성', units: ['3', '4'] },
-      { title: 'AGV가 멈춘 자리가 어긋난다', fix: '이동 오차 · 위치 보정', units: ['5', '7'] },
+      { title: '팔레트 자리가 바뀐다', fix: '기준점 다시 잡기 · 좌표 보정', units: ['1', '2'] },
     ],
   },
   {
@@ -135,10 +145,10 @@ export const SITE_BY_ID: ReadonlyMap<SiteId, Site> = new Map(SITES.map((s) => [s
 /** The 차시 the 교육센터 asks for: 1단원 (기초). */
 export const centerTopics = (): readonly TopicId[] => topicsOf('1').map((t) => t.id);
 
-/** What has been done so far: finished 차시 and solved lab problems (1 · 2 · 3). */
+/** What has been done so far: finished 차시 and, per lab, its solved problems (1 · 2 · 3). */
 export interface ParkProgress {
   done: Partial<Record<TopicId, boolean>>;
-  labSolved: Partial<Record<1 | 2 | 3, boolean>>;
+  solved: Partial<Record<LabId, Partial<Record<1 | 2 | 3, boolean>>>>;
 }
 
 /** How many of a site's problems are done, out of how many (null: 준비 중). */
@@ -148,7 +158,7 @@ export function siteScore(id: SiteId, p: ParkProgress): { done: number; of: numb
     const t = centerTopics();
     return { done: t.filter((x) => p.done[x]).length, of: t.length };
   }
-  if (s.content === 'lab') return { done: ([1, 2, 3] as const).filter((k) => p.labSolved[k]).length, of: 3 };
+  if (s.content === 'lab') return { done: ([1, 2, 3] as const).filter((k) => p.solved[s.lab!]?.[k]).length, of: s.problems.length };
   return null;
 }
 

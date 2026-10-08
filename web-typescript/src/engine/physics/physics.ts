@@ -77,12 +77,18 @@ export interface PhysicsWorld {
    */
   stepTo(anglesDeg: readonly number[], dtS: number): void;
   blocks(): BlockPose[];
-  /** Close the gripper / switch the pump on: the nearest block within reach (mm) of the tool point is held. */
-  grab(reachMm?: number): string | null;
+  /**
+   * Close the gripper / switch the pump on: the nearest block within reach (mm) of the tool point is held.
+   * `upright`: it keeps its own orientation and only follows the tool point (a suction cup held
+   * straight down, whose turn about the vertical the lesson does not model).
+   */
+  grab(reachMm?: number, opts?: { upright?: boolean }): string | null;
   release(): void;
   held(): string | null;
   /** Mass held, kg (for the torque calculation). */
   heldMassKg(): number;
+  /** Put one more block in the world (a part that comes in during a run). */
+  add(block: BlockSpec): void;
   /** Start over with these blocks (and the arm at `armAngles`, when given). */
   reset(blocks: readonly BlockSpec[], obstacles?: readonly Box[], armAngles?: readonly number[]): void;
   dispose(): void;
@@ -111,10 +117,34 @@ export async function createPhysics(
   let arm: { body: RAPIER_NS.RigidBody; len: number }[] = [];
   let bodies = new Map<string, { body: RAPIER_NS.RigidBody; spec: BlockSpec; size: number; massKg: number }>();
   const tool = { p: new Vector3(), q: new Quaternion(), v: new Vector3() };
-  let hold: { id: string; rel: Vector3; relQ: Quaternion } | null = null;
+  let hold: { id: string; rel: Vector3; relQ: Quaternion; upright: boolean } | null = null;
   let angles = startAngles.slice();
   let lastDt = 1 / 60;
   const up = new Vector3(0, 1, 0);
+
+  const addBody = (s: BlockSpec) => {
+    const d = s.dims ?? [s.size ?? 25, s.size ?? 25, s.size ?? 25];
+    const size = Math.max(...d);
+    const massKg = (s.massG ?? 10) / 1000;
+    const desc = R.RigidBodyDesc.dynamic().setTranslation(s.at[0] * M, s.at[1] * M, s.at[2] * M).setCanSleep(true).setCcdEnabled(true);
+    const q = s.q ?? (s.yawDeg ? [0, 0, Math.sin((s.yawDeg * Math.PI) / 360), Math.cos((s.yawDeg * Math.PI) / 360)] : null);
+    if (q) desc.setRotation({ x: q[0], y: q[1], z: q[2], w: q[3] });
+    const body = world.createRigidBody(desc);
+    const h = d.map((v) => (v / 2) * M);
+    // Rapier's cylinder stands along its y axis: turned to stand on z.
+    const shape =
+      s.shape === 'ball'
+        ? R.ColliderDesc.ball(h[0])
+        : s.shape === 'cylinder'
+          ? R.ColliderDesc.cylinder(h[2], h[0]).setRotation({ x: Math.SQRT1_2, y: 0, z: 0, w: Math.SQRT1_2 })
+          : R.ColliderDesc.cuboid(h[0], h[1], h[2]);
+    const volume = s.shape === 'ball' ? (4 / 3) * Math.PI * h[0] ** 3 : s.shape === 'cylinder' ? Math.PI * h[0] ** 2 * 2 * h[2] : 8 * h[0] * h[1] * h[2];
+    const col = shape.setFriction(s.friction ?? 0.7).setRestitution(0.05).setDensity(massKg / volume);
+    // A given friction is the block's own surface: the slipperier of the two surfaces in contact sets it (Rapier averages by default).
+    if (s.friction !== undefined) col.setFrictionCombineRule(R.CoefficientCombineRule.Min);
+    world.createCollider(col, body);
+    bodies.set(s.id, { body, spec: s, size, massKg });
+  };
 
   const build = (specs: readonly BlockSpec[], obs: readonly Box[]) => {
     world.free();
@@ -131,29 +161,7 @@ export async function createPhysics(
       world.createCollider(R.ColliderDesc.cuboid(h[0], h[1], h[2]).setFriction(0.6), body);
     }
     bodies = new Map();
-    for (const s of specs) {
-      const d = s.dims ?? [s.size ?? 25, s.size ?? 25, s.size ?? 25];
-      const size = Math.max(...d);
-      const massKg = (s.massG ?? 10) / 1000;
-      const desc = R.RigidBodyDesc.dynamic().setTranslation(s.at[0] * M, s.at[1] * M, s.at[2] * M).setCanSleep(true).setCcdEnabled(true);
-      const q = s.q ?? (s.yawDeg ? [0, 0, Math.sin((s.yawDeg * Math.PI) / 360), Math.cos((s.yawDeg * Math.PI) / 360)] : null);
-      if (q) desc.setRotation({ x: q[0], y: q[1], z: q[2], w: q[3] });
-      const body = world.createRigidBody(desc);
-      const h = d.map((v) => (v / 2) * M);
-      // Rapier's cylinder stands along its y axis: turned to stand on z.
-      const shape =
-        s.shape === 'ball'
-          ? R.ColliderDesc.ball(h[0])
-          : s.shape === 'cylinder'
-            ? R.ColliderDesc.cylinder(h[2], h[0]).setRotation({ x: Math.SQRT1_2, y: 0, z: 0, w: Math.SQRT1_2 })
-            : R.ColliderDesc.cuboid(h[0], h[1], h[2]);
-      const volume = s.shape === 'ball' ? (4 / 3) * Math.PI * h[0] ** 3 : s.shape === 'cylinder' ? Math.PI * h[0] ** 2 * 2 * h[2] : 8 * h[0] * h[1] * h[2];
-      const col = shape.setFriction(s.friction ?? 0.7).setRestitution(0.05).setDensity(massKg / volume);
-      // A given friction is the block's own surface: the slipperier of the two surfaces in contact sets it (Rapier averages by default).
-      if (s.friction !== undefined) col.setFrictionCombineRule(R.CoefficientCombineRule.Min);
-      world.createCollider(col, body);
-      bodies.set(s.id, { body, spec: s, size, massKg });
-    }
+    for (const s of specs) addBody(s);
     arm = armCapsules(chain, angles, tcpMm).map((c) => {
       const len = Math.hypot(c.b[0] - c.a[0], c.b[1] - c.a[1], c.b[2] - c.a[2]) * M;
       const body = world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased());
@@ -208,8 +216,8 @@ export async function createPhysics(
       if (hold) {
         const h = bodies.get(hold.id);
         if (h) {
-          const p = hold.rel.clone().applyQuaternion(tool.q).add(tool.p).multiplyScalar(M);
-          const r = tool.q.clone().multiply(hold.relQ);
+          const p = (hold.upright ? hold.rel.clone() : hold.rel.clone().applyQuaternion(tool.q)).add(tool.p).multiplyScalar(M);
+          const r = hold.upright ? hold.relQ : tool.q.clone().multiply(hold.relQ);
           h.body.setNextKinematicTranslation({ x: p.x, y: p.y, z: p.z });
           h.body.setNextKinematicRotation({ x: r.x, y: r.y, z: r.z, w: r.w });
         }
@@ -237,7 +245,7 @@ export async function createPhysics(
         return { id: spec.id, color: spec.color, size, at: new Vector3(t.x / M, t.y / M, t.z / M), q: new Quaternion(r.x, r.y, r.z, r.w), held: hold?.id === spec.id };
       });
     },
-    grab(reachMm = 22) {
+    grab(reachMm = 22, opts = {}) {
       if (hold) return hold.id;
       let best: string | null = null;
       let bd = Infinity;
@@ -254,11 +262,11 @@ export async function createPhysics(
       const t = h.body.translation();
       const r = h.body.rotation();
       const inv = tool.q.clone().invert();
-      hold = {
-        id: best,
-        rel: new Vector3(t.x / M, t.y / M, t.z / M).sub(tool.p).applyQuaternion(inv),
-        relQ: inv.multiply(new Quaternion(r.x, r.y, r.z, r.w)),
-      };
+      const at = new Vector3(t.x / M, t.y / M, t.z / M).sub(tool.p);
+      const rot = new Quaternion(r.x, r.y, r.z, r.w);
+      hold = opts.upright
+        ? { id: best, rel: at, relQ: rot, upright: true }
+        : { id: best, rel: at.applyQuaternion(inv), relQ: inv.multiply(rot), upright: false };
       h.body.setBodyType(R.RigidBodyType.KinematicPositionBased, true);
       return best;
     },
@@ -276,6 +284,9 @@ export async function createPhysics(
     reset(specs, obs = [], armAngles) {
       if (armAngles) angles = armAngles.slice();
       build(specs, obs);
+    },
+    add(spec) {
+      addBody(spec);
     },
     dispose() {
       world.free();

@@ -16,7 +16,7 @@ const P = await import('../../src/engine/education/park');
 const { CATEGORIES } = await import('../../src/engine/education/catalog');
 const { SITE_AT, SITE_PROPS, ROADS } = await import('../../src/ui/education/map/parkLayout');
 
-const none = { done: {}, labSolved: {} };
+const none = { done: {}, solved: {} };
 let st = P.siteStates(none);
 assert.equal(P.SITES.length, 7);
 assert.deepEqual(
@@ -26,7 +26,7 @@ assert.deepEqual(
 assert.equal(P.currentSite(none), 'center');
 console.log('  ✓ nothing done: only the 교육센터 is open');
 
-const basics = { done: Object.fromEntries(P.centerTopics().map((t) => [t, true])), labSolved: {} };
+const basics = { done: Object.fromEntries(P.centerTopics().map((t) => [t, true])), solved: {} };
 assert.ok(P.centerTopics().length > 0);
 st = P.siteStates(basics);
 assert.equal(st.center, 'done');
@@ -36,15 +36,18 @@ assert.equal(P.currentSite(basics), 'factory');
 assert.deepEqual(P.siteScore('factory', basics), { done: 0, of: 3 });
 console.log('  ✓ 1단원 done: the 스마트 공장 opens');
 
-const partly = { ...basics, labSolved: { 1: true, 2: true } };
+const partly = { ...basics, solved: { factory: { 1: true, 2: true } } };
 assert.equal(P.siteStates(partly).logistics, 'locked');
-const lab = { ...basics, labSolved: { 1: true, 2: true, 3: true } };
+const lab = { ...basics, solved: { factory: { 1: true, 2: true, 3: true } } };
 st = P.siteStates(lab);
 assert.equal(st.factory, 'done');
 assert.equal(st.logistics, 'open');
-assert.equal(P.siteScore('logistics', lab), null);
+assert.deepEqual(P.siteScore('logistics', lab), { done: 0, of: 3 });
 assert.equal(st.lab, 'locked');
-console.log('  ✓ the lab solved: the 물류 센터 opens (준비 중)');
+const logi = { ...lab, solved: { ...lab.solved, logistics: { 1: true } } };
+assert.deepEqual(P.siteScore('logistics', logi), { done: 1, of: 3 });
+assert.equal(P.siteStates(logi).lab, 'locked');
+console.log('  ✓ the factory lab solved: the 물류 센터 opens; its ① solved alone does not open the next site');
 
 st = P.siteStates(basics, true);
 assert.ok(P.SITES.every((s) => st[s.id] !== 'locked'));
@@ -55,6 +58,7 @@ const units = new Set(CATEGORIES.map((c) => c.id));
 for (const s of P.SITES) {
   for (const p of s.problems) for (const u of p.units) assert.ok(units.has(u), `${s.id}: ${p.title} → 단원 ${u}`);
   assert.ok(s.content === 'lessons' || s.problems.length === 3, `${s.id}: three problems`);
+  assert.ok(s.content !== 'lab' || (s.lab && s.problems.some((p) => p.ready)), `${s.id}: a lab with a built problem`);
   assert.ok(SITE_AT[s.id] && SITE_PROPS[s.id].length > 0, `${s.id}: on the map`);
 }
 for (const [a, b] of ROADS) assert.ok(SITE_AT[a][0] === SITE_AT[b][0] || SITE_AT[a][1] === SITE_AT[b][1], `road ${a}–${b} runs straight`);

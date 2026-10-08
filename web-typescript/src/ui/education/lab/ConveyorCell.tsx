@@ -18,7 +18,7 @@ import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import { DoubleSide, Vector3, type Group, type Mesh, type MeshBasicMaterial, type MeshStandardMaterial, type Texture } from 'three';
 
-import { BEAM_Z, BELT, BIN, FRAME_HALF, PALLET, SENSOR_X, type BoxSpec, type Mm } from '@/engine/education/lab/cell';
+import { BEAM_Z, BELT, BIN, PALLET, SENSOR_X, type BoxSpec, type Mm } from '@/engine/education/lab/cell';
 
 import { Pallet, Roller } from '../../simulator/stage/ScenePreset';
 import { RBox, Turned, belt, brushed, cardboard, grain, pill } from '../../simulator/stage/sceneKit';
@@ -122,7 +122,7 @@ export default function ConveyorCell({ player, boxes, sensors, overlay }: Props)
 }
 
 /** The belt texture moves on by one cleat pitch (40 mm) per texture unit; boxes ride towards −y. */
-function scroll(t: Texture, units: number) {
+export function scroll(t: Texture, units: number) {
   t.offset.y = units;
 }
 
@@ -134,11 +134,21 @@ const Paint = ({ color, rough = 0.45 }: { color: string; rough?: number }) => (
 );
 const Rubber = () => <meshStandardMaterial color="#1d2025" roughness={0.9} />;
 
-/** The belt conveyor along y (its frame runs 30 mm past where boxes come on and fall off). */
-function BeltConveyor({ tex }: { tex: Texture }) {
-  const { x, width: w, top: h } = BELT;
-  const y0 = BELT.yOut - 30;
-  const y1 = BELT.yIn + 30;
+/** A belt conveyor along y: centre x, belt width and top, and where boxes come on and go off (mm). */
+export interface BeltGeometry {
+  x: number;
+  width: number;
+  top: number;
+  yIn: number;
+  yOut: number;
+}
+
+/** The belt conveyor along y (its frame runs 30 mm past where boxes come on and fall off); the compact cell's by default. */
+export function BeltConveyor({ tex, belt: B = BELT }: { tex: Texture; belt?: BeltGeometry }) {
+  const { x, width: w, top: h } = B;
+  const frameHalf = w / 2 + 12;
+  const y0 = B.yOut - 30;
+  const y1 = B.yIn + 30;
   const len = y1 - y0;
   const yc = (y0 + y1) / 2;
   const legs = [y0 + 50, yc, y1 - 50];
@@ -191,7 +201,7 @@ function BeltConveyor({ tex }: { tex: Texture }) {
         </group>
       ))}
       {/* Drive at the in-feed end, far side: a blue gear motor on a gearbox, a terminal box. */}
-      <group position={[m(x + FRAME_HALF + 30), m(BELT.yIn - 2), m(h - 22)]}>
+      <group position={[m(x + frameHalf + 30), m(B.yIn - 2), m(h - 22)]}>
         <mesh rotation={[0, 0, Math.PI / 2]} castShadow>
           <cylinderGeometry args={[m(17), m(17), m(44), 32]} />
           <Paint color="#2f4fb8" rough={0.35} />
@@ -214,7 +224,7 @@ function BeltConveyor({ tex }: { tex: Texture }) {
 }
 
 /** A cardboard box standing on z = −h/2 … h/2 of its group: tinted cardboard with the packing tape on top. */
-function CardBox({ size, color }: { size: Mm; color: string }) {
+export function CardBox({ size, color }: { size: Mm; color: string }) {
   const [sx, sy, sz] = size;
   return (
     <group>

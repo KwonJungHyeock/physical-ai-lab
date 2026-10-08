@@ -12,7 +12,7 @@ import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'r
 
 import { CATEGORIES, TOPIC_BY_ID, type TopicId } from '@/engine/education/catalog';
 import { josa } from '@/engine/education/lab/run';
-import { SITES, SITE_BY_ID, centerTopics, currentSite, siteScore, siteStates, type ParkProgress, type SiteId } from '@/engine/education/park';
+import { SITES, SITE_BY_ID, centerTopics, currentSite, siteScore, siteStates, type LabId, type ParkProgress, type SiteId } from '@/engine/education/park';
 import type { ChainSegment } from '@/engine/robot/kinematics';
 import type { UrdfRobot } from '@/engine/robot/urdf';
 
@@ -41,8 +41,8 @@ interface Props {
   hidden?: boolean;
   /** Open a 차시 (the 교육센터's lessons). */
   onTopic(id: TopicId): void;
-  /** Open the 스마트 공장 (문제 해결 실습). */
-  onLab(): void;
+  /** Open a site's problem-solving lab. */
+  onLab(lab: LabId): void;
   /** The whole course: every 단원 and 차시. */
   onCourse(): void;
 }
@@ -199,7 +199,7 @@ interface CardProps {
   progress: ParkProgress;
   state: 'done' | 'open' | 'locked';
   onTopic(id: TopicId): void;
-  onLab(): void;
+  onLab(lab: LabId): void;
   onClose(): void;
 }
 
@@ -214,11 +214,11 @@ function SiteCard({ id, progress, state, onTopic, onLab, onClose }: CardProps) {
       ? centerTopics().map((t) => ({ key: t, title: `${t} ${TOPIC_BY_ID.get(t)!.title}`, fix: TOPIC_BY_ID.get(t)!.question, units: ['1'], done: !!progress.done[t], open: () => onTopic(t) }))
       : s.problems.map((p, k) => ({
           key: String(k),
-          title: `${k + 1}. ${p.title}`,
           fix: p.fix,
           units: p.units,
-          done: s.content === 'lab' && !!progress.labSolved[(k + 1) as 1 | 2 | 3],
-          open: s.content === 'lab' ? onLab : null,
+          title: `${k + 1}. ${p.title}${s.content === 'lab' && !p.ready ? ' · 준비 중' : ''}`,
+          done: s.content === 'lab' && !!progress.solved[s.lab!]?.[(k + 1) as 1 | 2 | 3],
+          open: s.content === 'lab' && p.ready ? () => onLab(s.lab!) : null,
         }));
   const firstTodo = s.content === 'lessons' ? centerTopics().find((t) => !progress.done[t]) ?? centerTopics()[0] : null;
   const started = !!sc && sc.done > 0;
@@ -279,7 +279,7 @@ function SiteCard({ id, progress, state, onTopic, onLab, onClose }: CardProps) {
             {state === 'done' ? '기초 수업 다시 보기' : started ? '기초 수업 이어 하기' : '기초 수업 시작'} →
           </button>
         ) : s.content === 'lab' ? (
-          <button type="button" className={css.primary} onClick={onLab}>
+          <button type="button" className={css.primary} onClick={() => onLab(s.lab!)}>
             {state === 'done' ? '현장 다시 들어가기' : started ? '이어서 고치기' : '현장 들어가기'} →
           </button>
         ) : (

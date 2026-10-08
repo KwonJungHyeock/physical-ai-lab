@@ -15,6 +15,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { TOPIC_BY_ID, TOPICS, type StepKey, type TopicId } from '@/engine/education/catalog';
 import { DEFAULT_OWNED, PRODUCTS, type ProductId, type StudyLevel } from '@/engine/education/roadmap';
+import type { LabId } from '@/engine/education/park';
 import { forwardKinematicsFrames, type ChainSegment } from '@/engine/robot/kinematics';
 import type { UrdfRobot } from '@/engine/robot/urdf';
 import { workspaceProfile, type WorkspaceProfile } from '@/engine/physics/workspace';
@@ -25,6 +26,7 @@ import ControlOverlay from './stage/ControlOverlay';
 import { SymbolsProvider } from './lesson/Rich';
 import Course from './roadmap/Course';
 import LabView from './lab/LabView';
+import LogisticsLab from './lab/LogisticsLab';
 import ParkView from './map/ParkView';
 import LessonBar from './lesson/LessonBar';
 import LessonCards, { PAGES, isActivity, type PageId, type ResumeSpot } from './lesson/LessonCards';
@@ -40,6 +42,7 @@ const OWNED_KEY = 'learn-owned';
 const LEVEL_KEY = 'learn-level';
 const RESUME_KEY = 'learn-resume';
 const LAB_KEY = 'lab-solved';
+const LOGI_KEY = 'lab-solved-logistics';
 const FIRST: TopicId = TOPICS[0].id;
 /** Stable "no results yet" (a fresh {} each render would re-render the memoised panel). */
 const NO_RESULTS: Partial<Record<StepKey, ResultRow>> = {};
@@ -79,6 +82,8 @@ declare global {
     __learnOpen?: (id: TopicId, page?: PageId) => void;
     /** Open 문제 해결 실습 (시범). */
     __learnLab?: () => void;
+    /** Open the 물류 센터 lab. */
+    __learnLogi?: () => void;
   }
 }
 
@@ -88,7 +93,8 @@ const stepFor = (p: PageId, cur: StepView): StepView => (isActivity(p) || p === 
 export default function LearnView({ robot, chain, gripperRobot, real, hidden }: Props) {
   const [topicId, setTopicId] = useState<TopicId>(FIRST);
   /** The park (front page), the course, a lesson, or the problem-solving lab (opened once, then kept). */
-  const [screen, setScreen] = useState<'map' | 'course' | 'topic' | 'lab'>('map');
+  const [screen, setScreen] = useState<'map' | 'course' | 'topic' | 'lab' | 'logistics'>('map');
+  const [logiSeen, setLogiSeen] = useState(false);
   /** Where a lesson goes back to: the page it was opened from. */
   const [lessonFrom, setLessonFrom] = useState<'map' | 'course'>('course');
   /** The lab's problems solved so far (1 · 2 · 3), kept between visits. */
@@ -101,10 +107,28 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
       return next;
     });
   }, []);
+  const [logiSolved, setLogiSolved] = useState<Partial<Record<1 | 2 | 3, boolean>>>({});
+  const onLogiSolved = useCallback((p: 1 | 2 | 3) => {
+    setLogiSolved((x) => {
+      if (x[p]) return x;
+      const next = { ...x, [p]: true };
+      writeJson(LOGI_KEY, next);
+      return next;
+    });
+  }, []);
   const [labSeen, setLabSeen] = useState(false);
   const openLab = useCallback(() => {
     setLabSeen(true);
     setScreen('lab');
+  }, []);
+  const openSiteLab = useCallback((lab: LabId) => {
+    if (lab === 'logistics') {
+      setLogiSeen(true);
+      setScreen('logistics');
+    } else {
+      setLabSeen(true);
+      setScreen('lab');
+    }
   }, []);
   const [owned, setOwnedRaw] = useState<readonly ProductId[]>(DEFAULT_OWNED);
   const setOwned = (p: readonly ProductId[]) => {
@@ -148,6 +172,7 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
     if (readJson<string>(LEVEL_KEY, 'hs') === 'uni') setLevelRaw('uni');
     setMissions(readJson(MISSION_KEY, {}));
     setLabSolved(readJson(LAB_KEY, {}));
+    setLogiSolved(readJson(LOGI_KEY, {}));
     const r = readJson<Partial<ResumeSpot> | null>(RESUME_KEY, null);
     if (r && TOPIC_BY_ID.has(r.topic as TopicId) && PAGES.includes(r.page as PageId)) setResume({ topic: r.topic as TopicId, page: r.page as PageId });
   }, []);
@@ -215,12 +240,14 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
       if (TOPIC_BY_ID.has(id)) choose(id, at);
     };
     window.__learnLab = openLab;
+    window.__learnLogi = () => openSiteLab('logistics');
     return () => {
       delete window.__learnPick;
       delete window.__learnOpen;
       delete window.__learnLab;
+      delete window.__learnLogi;
     };
-  }, [choose, openLab]);
+  }, [choose, openLab, openSiteLab]);
 
   const fromMap = useCallback(
     (t: TopicId) => {
@@ -236,7 +263,7 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
     },
     [choose],
   );
-  const progress = useMemo(() => ({ done, labSolved }), [done, labSolved]);
+  const progress = useMemo(() => ({ done, solved: { factory: labSolved, logistics: logiSolved } }), [done, labSolved, logiSolved]);
 
   const topic = TOPIC_BY_ID.get(topicId)!;
   const Panel = PANELS[topicId];
@@ -250,7 +277,7 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
         progress={progress}
         hidden={hidden || screen !== 'map'}
         onTopic={fromMap}
-        onLab={openLab}
+        onLab={openSiteLab}
         onCourse={() => setScreen('course')}
       />
       <Course
@@ -264,6 +291,17 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
         onStart={fromCourse}
         onLab={() => setScreen('map')}
       />
+      {logiSeen && (
+        <LogisticsLab
+          robot={robot}
+          chain={chain}
+          gripperRobot={gripperRobot}
+          hidden={hidden || screen !== 'logistics'}
+          saved={logiSolved}
+          onSolved={onLogiSolved}
+          onBack={() => setScreen('map')}
+        />
+      )}
       {labSeen && (
         <LabView robot={robot} chain={chain} gripperRobot={gripperRobot} hidden={hidden || screen !== 'lab'} saved={labSolved} onSolved={onLabSolved} onBack={() => setScreen('map')} />
       )}
