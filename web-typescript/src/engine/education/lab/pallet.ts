@@ -26,17 +26,17 @@ import { linePlan, toolPoseAt } from './run';
 export const PBOX = { sx: 42, sy: 42, h: 40, massG: 40 } as const;
 /** Small wooden pallet at the arm's right: centre, deck height and size, mm. */
 export const PAL = { x: 85, y: -165, top: 18, sx: 120, sy: 112 } as const;
-/** Box pitch on the pallet (2 mm between boxes), mm. */
-export const PITCH = 44;
+/** Box pitch on the pallet (6 mm between boxes: room for the carried box to come down between its neighbours), mm. */
+export const PITCH = 48;
 export const LAYERS = 3;
 export const PER_LAYER = 4;
 export const N_BOXES = LAYERS * PER_LAYER;
 /** Where each box of a layer goes, from the pallet centre — the one nearest the arm first: the wrist hangs outwards over the next place, so a place further out is still empty. */
 export const SLOT_OFF: readonly [number, number][] = [
-  [-PITCH / 2, PITCH / 2],
-  [PITCH / 2, PITCH / 2],
-  [-PITCH / 2, -PITCH / 2],
   [PITCH / 2, -PITCH / 2],
+  [-PITCH / 2, -PITCH / 2],
+  [PITCH / 2, PITCH / 2],
+  [-PITCH / 2, PITCH / 2],
 ];
 
 /** In-feed belt conveyor along y at x: boxes ride towards −y to an end stop. */
@@ -53,20 +53,45 @@ export const DROP_OK_MM = 5;
 /** A carton gives this much under the cup's push; pressing a box further into the one below crushes it, mm. */
 export const PRESS_OK_MM = 3;
 
+/** Where the pallet stands (its centre), mm: as the cell was set up, or moved (problem ③). */
+export interface PalletPose {
+  x: number;
+  y: number;
+}
+export const PAL_HOME: PalletPose = { x: PAL.x, y: PAL.y };
+
+/**
+ * Everything a run of the line depends on: the work program's place heights (①), the speed
+ * settings for moves carrying a box and empty moves (②), the box's weight, and where the program
+ * thinks the pallet is against where it really is (③).
+ */
+export interface LineSetup {
+  pitch: number;
+  gap: number;
+  /** Speed setting 1..100 for travel moves with a box on the cup, without, and the short straight moves up and down onto a box or its place. */
+  carry: number;
+  empty: number;
+  vert: number;
+  massG: number;
+  prog: PalletPose;
+  real: PalletPose;
+}
+export const LINE_BASE: LineSetup = { pitch: PBOX.h, gap: 2, carry: 70, empty: 70, vert: 35, massG: PBOX.massG, prog: PAL_HOME, real: PAL_HOME };
+
 /** Fixed furniture: the conveyor and the pallet (for the arm's collision check and the physics). */
-export function palletCell(): Box[] {
+export function palletCell(pal: PalletPose = PAL_HOME): Box[] {
   return [
     { name: '컨베이어', min: [FEED.x - FEED.width / 2 - 8, FEED.yStop - 14, 0], max: [FEED.x + FEED.width / 2 + 8, FEED.yIn + 30, FEED.top] },
     { name: '컨베이어 끝 멈춤판', min: [FEED.x - FEED.width / 2 - 8, FEED.yStop - 14, FEED.top], max: [FEED.x + FEED.width / 2 + 8, FEED.yStop - 2, FEED.top + 22] },
-    { name: '팔레트', min: [PAL.x - PAL.sx / 2, PAL.y - PAL.sy / 2, 0], max: [PAL.x + PAL.sx / 2, PAL.y + PAL.sy / 2, PAL.top] },
+    { name: '팔레트', min: [pal.x - PAL.sx / 2, pal.y - PAL.sy / 2, 0], max: [pal.x + PAL.sx / 2, pal.y + PAL.sy / 2, PAL.top] },
   ];
 }
 
 /** Where box k (0 ..) should end up: centre, mm. */
-export function slotCentre(k: number): Mm {
+export function slotCentre(k: number, pal: PalletPose = PAL_HOME): Mm {
   const layer = Math.floor(k / PER_LAYER);
   const [dx, dy] = SLOT_OFF[k % PER_LAYER];
-  return [PAL.x + dx, PAL.y + dy, PAL.top + layer * PBOX.h + PBOX.h / 2];
+  return [pal.x + dx, pal.y + dy, PAL.top + layer * PBOX.h + PBOX.h / 2];
 }
 
 /* --- problem ① 쌓다가 무너진다 ------------------------------------------------- */
@@ -91,13 +116,60 @@ export const placeZ = (v: StackValues, layer: number) => FIRST_Z + layer * v.pit
 /** Where it should be: the cup on a box resting on the layer below. */
 export const restZ = (layer: number) => FIRST_Z + layer * PBOX.h;
 
+/* --- problem ② 빨리 하니 미끄러진다 ------------------------------------------- */
+
+/** Speed settings (1..100): travel with a box, travel without, the short moves up and down. */
+export interface SpeedValues {
+  carry: number;
+  empty: number;
+  vert: number;
+}
+/** The heavier product of ②, g. */
+export const HEAVY_G = 200;
+/** ②'s order: twelve boxes within this time, s. */
+export const TIME_LIMIT_S = 70;
+/** The foreman set every travel move to full speed (the moves up and down stayed as they were). */
+export const SPEED_DEFAULT: SpeedValues = { carry: 100, empty: 100, vert: 35 };
+export const SPEED_FIX: SpeedValues = { carry: 70, empty: 100, vert: 70 };
+
+/* --- problem ③ 팔레트 자리가 바뀐다 -------------------------------------------- */
+
+/** Where the pallet ended up after it was moved (the program still has PAL_HOME). */
+export const PAL_MOVED: PalletPose = { x: PAL.x + 25, y: PAL.y + 40 };
+/** The reference mark on the pallet deck (its far corner), from the pallet centre, mm. */
+export const MARK_OFF = [PAL.sx / 2 - 10, -(PAL.sy / 2 - 10)] as const;
+export const markAt = (p: PalletPose): [number, number] => [p.x + MARK_OFF[0], p.y + MARK_OFF[1]];
+/** The taught reference point (x, y): the program's pallet is placed from it. */
+export interface RefValues {
+  x: number;
+  y: number;
+}
+export const REF_DEFAULT: RefValues = { x: markAt(PAL_HOME)[0], y: markAt(PAL_HOME)[1] };
+export const REF_FIX: RefValues = { x: markAt(PAL_MOVED)[0], y: markAt(PAL_MOVED)[1] };
+export const progFromRef = (r: RefValues): PalletPose => ({ x: r.x - MARK_OFF[0], y: r.y - MARK_OFF[1] });
+
+export type LogiProblem = 1 | 2 | 3;
+export type LogiValues = StackValues | SpeedValues | RefValues;
+
+/** The line setup a problem runs with these values. */
+export function setupFor(p: LogiProblem, v: LogiValues): Partial<LineSetup> {
+  if (p === 1) return v as StackValues;
+  if (p === 2) return { ...(v as SpeedValues), massG: HEAVY_G };
+  return { real: PAL_MOVED, prog: progFromRef(v as RefValues) };
+}
+export const DEFAULTS: Record<LogiProblem, LogiValues> = { 1: STACK_DEFAULT, 2: SPEED_DEFAULT, 3: REF_DEFAULT };
+
 /* --- the run ----------------------------------------------------------------------- */
 
 const DT = 0.01;
 const FRAME_DT = 0.02;
+export const G = 9.81;
+/** How hard the suction cup holds a box (the 280's small pump, a 20 mm cup), N. */
+export const SUCTION_N = 2.8;
+/** The cup acceleration a box of this weight can take before it comes off the cup, m/s²: F = m (g + a). */
+export const accLimit = (massG: number) => SUCTION_N / (massG / 1000) - G;
 /** Arm speed setting (1..100) for the moves. */
 const SPEED = 70;
-const SPEED_SLOW = 35;
 /** Clearance under the carried box above the stack, and approach height above a box, mm. */
 const CLEAR = 30;
 const APPROACH = 30;
@@ -117,9 +189,12 @@ export interface PFrame {
   alarm: boolean;
   /** How far each box is crushed (pressed down by a box set on it), mm. */
   crush: number[];
+  /** The cup's acceleration, m/s², and whether it carries a box. */
+  acc: number;
+  carrying: boolean;
 }
 
-export type PEventKind = 'arrive' | 'grip' | 'press' | 'drop' | 'place' | 'moved' | 'hit' | 'unreachable' | 'limit' | 'done';
+export type PEventKind = 'arrive' | 'grip' | 'press' | 'drop' | 'place' | 'moved' | 'slip' | 'hit' | 'unreachable' | 'limit' | 'done';
 
 export interface PEvent {
   t: number;
@@ -148,7 +223,9 @@ export interface BoxResult {
 }
 
 export interface PalletRun {
-  values: StackValues;
+  values: LineSetup;
+  /** The largest cup acceleration while carrying a box, m/s². */
+  maxCarryAcc: number;
   frames: PFrame[];
   events: PEvent[];
   durationS: number;
@@ -181,7 +258,7 @@ class PalletSim {
   tip: Mm[] = [];
   failure: PEvent | null = null;
   alarm = false;
-  readonly fixed: Box[] = palletCell();
+  readonly fixed: Box[];
   readonly belt: BeltBox[] = Array.from({ length: N_BOXES }, () => ({ y: FEED.yIn - PBOX.sy / 2 - 4, on: false }));
   /** Boxes in the physics world: id `b{k}`; mode per box. */
   readonly mode: PBoxMode[] = Array.from({ length: N_BOXES }, () => 'wait');
@@ -195,10 +272,17 @@ class PalletSim {
   private held = -1;
   private nextFrame = 0;
 
+  /** Cup acceleration now (m/s², smoothed), and the last cup positions it comes from. */
+  acc = 0;
+  maxCarryAcc = 0;
+  private tips: Mm[] = [];
+
   constructor(
     readonly chain: readonly ChainSegment[],
     readonly phys: PhysicsWorld,
+    readonly setup: LineSetup,
   ) {
+    this.fixed = palletCell(setup.real);
     this.q = HOME_Q.slice();
     phys.setArm(this.q);
     this.belt[0].on = true;
@@ -227,7 +311,7 @@ class PalletSim {
   }
 
   private record() {
-    this.frames.push({ t: this.t, q: this.q.slice(), pump: this.pump, travel: this.travel, boxes: this.poses(), alarm: this.alarm, crush: this.crush.slice() });
+    this.frames.push({ t: this.t, q: this.q.slice(), pump: this.pump, travel: this.travel, boxes: this.poses(), alarm: this.alarm, crush: this.crush.slice(), acc: this.acc, carrying: this.held >= 0 });
     this.tip.push(tipOf(this.chain, this.q));
     this.nextFrame += FRAME_DT;
   }
@@ -257,9 +341,45 @@ class PalletSim {
     if (!isWithinJointLimits(this.q)) this.fail('limit', '관절이 움직일 수 있는 범위를 넘었어요', { at: tipOf(this.chain, this.q) });
     const c = this.failure ? null : poseContact(this.chain, this.q, this.fixed, TCP_MM);
     if (c) this.fail('hit', `팔이 ${c.what}에 닿았어요`, { at: c.at });
+    this.trackAcc();
     if (this.held >= 0) this.checkPress();
+    if (this.held >= 0) this.checkSlip();
     if (this.t + 1e-9 >= this.nextFrame) this.record();
     return !this.failure;
+  }
+
+  /**
+   * The cup's acceleration from its positions over the last 50 ms (a second difference over a 20 ms
+   * baseline, averaged): what the box on the cup feels besides its weight.
+   */
+  private trackAcc() {
+    this.tips.push(tipOf(this.chain, this.q));
+    if (this.tips.length > 7) this.tips.shift();
+    const n = this.tips.length;
+    if (n < 5) return;
+    const h = 2 * DT;
+    let sum = 0;
+    let k = 0;
+    for (let i = 4; i < n; i += 1) {
+      const [a, b, c] = [this.tips[i - 4], this.tips[i - 2], this.tips[i]];
+      sum += Math.hypot(c[0] - 2 * b[0] + a[0], c[1] - 2 * b[1] + a[1], c[2] - 2 * b[2] + a[2]) / (h * h) / 1000;
+      k += 1;
+    }
+    this.acc = sum / k;
+    if (this.held >= 0) this.maxCarryAcc = Math.max(this.maxCarryAcc, this.acc);
+  }
+
+  /** The cup holds the box with SUCTION_N; its weight and the force to accelerate it pull it off. */
+  private checkSlip() {
+    const m = this.setup.massG / 1000;
+    const need = m * (G + this.acc);
+    if (need <= SUCTION_N) return;
+    const k = this.held;
+    this.phys.release();
+    this.mode[k] = 'free';
+    this.held = -1;
+    this.pump = true;
+    this.fail('slip', `${k + 1}번 상자가 흡착 컵에서 떨어졌어요 (가속도 ${this.acc.toFixed(1)} m/s²) — 라인 정지`, { box: k, at: tipOf(this.chain, this.q), mm: this.acc });
   }
 
   /** The held box going below the top of a placed box under it: it presses into it (the deepest is kept). */
@@ -330,9 +450,9 @@ class PalletSim {
     this.pump = true;
     if (!this.wait(0.12)) return false;
     const b = this.belt[k];
-    this.phys.add({ id: `b${k}`, color: '#c9995f', at: [FEED.x, b.y, FEED.top + PBOX.h / 2], dims: [PBOX.sx, PBOX.sy, PBOX.h], massG: PBOX.massG, friction: 0.55 });
+    this.phys.add({ id: `b${k}`, color: '#c9995f', at: [FEED.x, b.y, FEED.top + PBOX.h / 2], dims: [PBOX.sx, PBOX.sy, PBOX.h], massG: this.setup.massG, friction: 0.55, ccd: false });
     this.phys.setArm(this.q);
-    const id = this.phys.grab(6, { upright: true });
+    const id = this.phys.grab(6, { upright: true, passThrough: true });
     if (id !== `b${k}`) return this.fail('hit', `${k + 1}번 상자를 흡착하지 못했어요`, { box: k });
     this.mode[k] = 'held';
     this.held = k;
@@ -384,7 +504,7 @@ class PalletSim {
     return true;
   }
 
-  finish(values: StackValues): PalletRun {
+  finish(): PalletRun {
     // Let the stack settle, then the frames end.
     if (!this.failure) this.wait(0.6);
     else {
@@ -399,7 +519,7 @@ class PalletSim {
     const blocks = new Map(this.phys.blocks().map((b) => [b.id, b]));
     const boxes = this.belt.map((_, k): BoxResult => {
       const b = blocks.get(`b${k}`);
-      const want = slotCentre(k);
+      const want = slotCentre(k, this.setup.real);
       if (!b || this.mode[k] !== 'free') return { at: b ? [b.at.x, b.at.y, b.at.z] : [FEED.x, this.belt[k].y, FEED.top + PBOX.h / 2], xyErr: 0, zErr: 0, tilt: 0, placed: false, ok: false, fallen: false, releaseGap: null };
       const xyErr = Math.hypot(b.at.x - want[0], b.at.y - want[1]);
       const zErr = b.at.z - want[2];
@@ -408,41 +528,42 @@ class PalletSim {
       const ok = xyErr <= OK_TOL.xyMm && Math.abs(zErr) <= OK_TOL.zMm && tilt <= OK_TOL.tiltDeg;
       return { at: [b.at.x, b.at.y, b.at.z], xyErr, zErr, tilt, placed: true, ok, fallen, releaseGap: this.releaseGap[k] };
     });
-    return { values, frames: this.frames, events: this.events, durationS: this.t, failure: this.failure, boxes, tip: this.tip };
+    return { values: this.setup, maxCarryAcc: this.maxCarryAcc, frames: this.frames, events: this.events, durationS: this.t, failure: this.failure, boxes, tip: this.tip };
   }
 }
 
-/** Run the line with these values: twelve boxes, three layers (stops early when something goes wrong). */
-export async function runStack(chain: readonly ChainSegment[], values: StackValues): Promise<PalletRun> {
-  const phys = await createPhysics(chain, TCP_MM, [], palletCell(), HOME_Q);
+/** Run the line (LINE_BASE with these changes): twelve boxes, three layers; it stops early when something goes wrong. */
+export async function runStack(chain: readonly ChainSegment[], change: Partial<LineSetup>): Promise<PalletRun> {
+  const setup: LineSetup = { ...LINE_BASE, ...change };
+  const phys = await createPhysics(chain, TCP_MM, [], palletCell(setup.real), HOME_Q);
   try {
-    const sim = new PalletSim(chain, phys);
+    const sim = new PalletSim(chain, phys, setup);
     const pickTop: Mm = [PICK[0], PICK[1], PICK[2] + PBOX.h / 2];
     for (let k = 0; k < N_BOXES && !sim.failure; k += 1) {
       const layer = Math.floor(k / PER_LAYER);
-      const slot = slotCentre(k);
+      const slot = slotCentre(k, setup.prog);
       // Above its place: clear of the boxes already in this layer (the carried box hangs under the cup).
       const overZ = PAL.top + (layer + 1) * PBOX.h + PBOX.h + CLEAR;
       // Above the box at the stop, wait for it, down onto it, pump on, up clear of the end stop.
-      if (!sim.moveTo([pickTop[0], pickTop[1], pickTop[2] + APPROACH])) break;
+      if (!sim.moveTo([pickTop[0], pickTop[1], pickTop[2] + APPROACH], setup.empty)) break;
       if (!sim.waitUntil(() => sim.belt[k].y <= FEED.yStop + PBOX.sy / 2 + 1e-6, 8)) break;
-      if (!sim.moveL(pickTop, SPEED_SLOW)) break;
+      if (!sim.moveL(pickTop, setup.vert)) break;
       if (!sim.grip(k)) break;
-      if (!sim.moveL([pickTop[0], pickTop[1], LIFT_Z])) break;
-      // Over its place on the pallet, down to the sheet's height, let go, up.
-      const z = placeZ(values, layer);
-      if (!sim.moveTo([slot[0], slot[1], Math.max(z, overZ)])) break;
-      if (!sim.moveL([slot[0], slot[1], z], SPEED_SLOW)) break;
+      if (!sim.moveL([pickTop[0], pickTop[1], LIFT_Z], setup.vert)) break;
+      // Over its place on the pallet, down to the program's height, let go, up.
+      const z = placeZ(setup, layer);
+      if (!sim.moveTo([slot[0], slot[1], Math.max(z, overZ)], setup.carry)) break;
+      if (!sim.moveL([slot[0], slot[1], z], setup.vert)) break;
       if (!sim.checkCrush(k)) break;
       if (!sim.release(k, layer)) break;
       if (!sim.checkStack()) break;
-      if (!sim.moveL([slot[0], slot[1], Math.max(z, overZ)])) break;
+      if (!sim.moveL([slot[0], slot[1], Math.max(z, overZ)], setup.vert)) break;
     }
     if (!sim.failure) {
-      sim.moveJ(HOME_Q);
+      sim.moveJ(HOME_Q, setup.empty);
       sim.log('done', '12개를 모두 쌓았어요');
     }
-    return sim.finish(values);
+    return sim.finish();
   } finally {
     phys.dispose();
   }
@@ -458,10 +579,11 @@ export interface StackScore {
   pressed: number;
   timeS: number;
   stopped: string | null;
+  slipped: boolean;
   pass: boolean;
 }
 
-export function scoreStack(run: PalletRun): StackScore {
+export function scoreStack(run: PalletRun, timeLimitS: number | null = null): StackScore {
   const placed = run.boxes.filter((b) => b.placed).length;
   const ok = run.boxes.filter((b) => b.ok).length;
   const fallen = run.boxes.filter((b) => b.fallen).length;
@@ -476,9 +598,13 @@ export function scoreStack(run: PalletRun): StackScore {
     pressed,
     timeS: run.durationS,
     stopped: run.failure?.text ?? null,
-    pass: !run.failure && ok === N_BOXES && maxDrop <= DROP_OK_MM && pressed <= PRESS_OK_MM,
+    slipped: run.events.some((e) => e.kind === 'slip'),
+    pass: !run.failure && ok === N_BOXES && maxDrop <= DROP_OK_MM && pressed <= PRESS_OK_MM && (timeLimitS === null || run.durationS <= timeLimitS),
   };
 }
 
 /** A worked fix (tools/check, the guide): the pitch is the box height, let go 2 mm above. */
 export const STACK_FIX: StackValues = { pitch: PBOX.h, gap: 2 };
+export const FIXES: Record<LogiProblem, LogiValues> = { 1: STACK_FIX, 2: SPEED_FIX, 3: REF_FIX };
+/** ②'s time limit applies to ② only. */
+export const limitFor = (p: LogiProblem) => (p === 2 ? TIME_LIMIT_S : null);

@@ -53,6 +53,8 @@ export interface BlockSpec {
   shape?: 'box' | 'cylinder' | 'ball';
   dims?: readonly [number, number, number];
   yawDeg?: number;
+  /** Continuous collision detection (default on: a fast block does not pass through a thin one). Off for parts set down slowly next to a moving held part, where its swept volume would push them. */
+  ccd?: boolean;
   /** Full orientation (x, y, z, w), when it is known (overrides yawDeg). */
   q?: readonly [number, number, number, number];
 }
@@ -82,7 +84,7 @@ export interface PhysicsWorld {
    * `upright`: it keeps its own orientation and only follows the tool point (a suction cup held
    * straight down, whose turn about the vertical the lesson does not model).
    */
-  grab(reachMm?: number, opts?: { upright?: boolean }): string | null;
+  grab(reachMm?: number, opts?: { upright?: boolean; passThrough?: boolean }): string | null;
   release(): void;
   held(): string | null;
   /** Mass held, kg (for the torque calculation). */
@@ -126,7 +128,7 @@ export async function createPhysics(
     const d = s.dims ?? [s.size ?? 25, s.size ?? 25, s.size ?? 25];
     const size = Math.max(...d);
     const massKg = (s.massG ?? 10) / 1000;
-    const desc = R.RigidBodyDesc.dynamic().setTranslation(s.at[0] * M, s.at[1] * M, s.at[2] * M).setCanSleep(true).setCcdEnabled(true);
+    const desc = R.RigidBodyDesc.dynamic().setTranslation(s.at[0] * M, s.at[1] * M, s.at[2] * M).setCanSleep(true).setCcdEnabled(s.ccd ?? true);
     const q = s.q ?? (s.yawDeg ? [0, 0, Math.sin((s.yawDeg * Math.PI) / 360), Math.cos((s.yawDeg * Math.PI) / 360)] : null);
     if (q) desc.setRotation({ x: q[0], y: q[1], z: q[2], w: q[3] });
     const body = world.createRigidBody(desc);
@@ -268,6 +270,8 @@ export async function createPhysics(
         ? { id: best, rel: at, relQ: rot, upright: true }
         : { id: best, rel: at.applyQuaternion(inv), relQ: inv.multiply(rot), upright: false };
       h.body.setBodyType(R.RigidBodyType.KinematicPositionBased, true);
+      // A part carried through other parts without touching them (the lesson checks contact itself).
+      if (opts.passThrough) h.body.collider(0).setSensor(true);
       return best;
     },
     release() {
@@ -276,6 +280,7 @@ export async function createPhysics(
       hold = null;
       if (!h) return;
       h.body.setBodyType(R.RigidBodyType.Dynamic, true);
+      h.body.collider(0).setSensor(false);
       const v = tool.v.clone().multiplyScalar(M / lastDt);
       h.body.setLinvel({ x: v.x, y: v.y, z: v.z }, true);
     },

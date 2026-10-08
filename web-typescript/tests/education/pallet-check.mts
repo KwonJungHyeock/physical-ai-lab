@@ -6,7 +6,12 @@
  *    the one under it by about 10 mm and stop the line;
  *  - the worked fix (pitch = box height, let go 2 mm above) stacks all twelve within tolerance;
  *  - letting go 10 mm above drops the boxes: it does not pass;
- *  - every place and the pick are within the arm's reach, and the same values give the same run.
+ *  - every place and the pick are within the arm's reach, and the same values give the same run;
+ *  - ② (a 200 g box): the foreman's full travel speed shakes the box off the cup; the worked fix
+ *    (slower with a box, faster up and down) stacks all twelve within the time limit, and its
+ *    largest acceleration with a box stays under the cup's limit; slow everywhere is too slow;
+ *  - ③ (the pallet moved): the old reference point puts the first box half off the pallet and it
+ *    falls; the reference taught again at the mark stacks all twelve on the moved pallet.
  *
  * Run with: npm run check:pallet
  */
@@ -55,4 +60,22 @@ const again = await P.runStack(chain, P.STACK_DEFAULT);
 assert.equal(again.durationS, before.durationS);
 assert.deepEqual(again.frames[again.frames.length - 1].boxes, before.frames[before.frames.length - 1].boxes);
 console.log('  ✓ the same values give the same run');
+const lim = P.accLimit(P.HEAVY_G);
+const s2b = P.scoreStack(await P.runStack(chain, P.setupFor(2, P.SPEED_DEFAULT)), P.TIME_LIMIT_S);
+assert.ok(s2b.slipped && !s2b.pass, JSON.stringify(s2b));
+const r2 = await P.runStack(chain, P.setupFor(2, P.SPEED_FIX));
+const s2 = P.scoreStack(r2, P.TIME_LIMIT_S);
+assert.ok(s2.pass, JSON.stringify(s2));
+assert.ok(r2.maxCarryAcc < lim, `${r2.maxCarryAcc} < ${lim}`);
+const s2slow = P.scoreStack(await P.runStack(chain, P.setupFor(2, { carry: 50, empty: 50, vert: 35 })), P.TIME_LIMIT_S);
+assert.ok(!s2slow.pass && !s2slow.slipped && s2slow.timeS > P.TIME_LIMIT_S);
+console.log(`  ✓ ② full speed: ${s2b.stopped}; fix: ${s2.timeS.toFixed(1)} s ≤ ${P.TIME_LIMIT_S} s, max ${r2.maxCarryAcc.toFixed(1)} < ${lim.toFixed(1)} m/s²; slow: ${s2slow.timeS.toFixed(0)} s`);
+
+const s3b = P.scoreStack(await P.runStack(chain, P.setupFor(3, P.REF_DEFAULT)));
+assert.ok(!s3b.pass && s3b.placed <= 2, JSON.stringify(s3b));
+const s3 = P.scoreStack(await P.runStack(chain, P.setupFor(3, P.REF_FIX)));
+assert.ok(s3.pass, JSON.stringify(s3));
+const s3off = P.scoreStack(await P.runStack(chain, P.setupFor(3, { x: P.REF_FIX.x + 8, y: P.REF_FIX.y })));
+assert.ok(!s3off.pass);
+console.log(`  ✓ ③ old reference: ${s3b.stopped}; taught again: ${s3.ok}/12; 8 mm off: does not pass`);
 console.log('pallet: all checks passed');

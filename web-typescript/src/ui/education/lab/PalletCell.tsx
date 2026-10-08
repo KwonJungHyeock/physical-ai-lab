@@ -16,7 +16,7 @@ import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, type RefObject } from 'react';
 import { Vector3, type Group, type Mesh, type MeshStandardMaterial } from 'three';
 
-import { FEED, N_BOXES, PAL, PBOX, type PFrame, type PalletRun } from '@/engine/education/lab/pallet';
+import { FEED, MARK_OFF, N_BOXES, PAL, PAL_HOME, PBOX, type PFrame, type PalletPose, type PalletRun } from '@/engine/education/lab/pallet';
 import type { Mm } from '@/engine/education/lab/cell';
 
 import { RBox, belt, wood } from '../../simulator/stage/sceneKit';
@@ -32,7 +32,7 @@ const CARTON = '#c9995f';
 /** The conveyor as drawn: its frame ends just behind the end stop. */
 const FEED_BELT = { x: FEED.x, width: FEED.width, top: FEED.top, yIn: FEED.yIn, yOut: FEED.yStop + 16 } as const;
 /** The pallet check post, at the pallet's back corner (away from the arm, out of the way of the view). */
-const CHECK_POST: Mm = [PAL.x - PAL.sx / 2 - 22, PAL.y - PAL.sy / 2 - 16, 0];
+const checkPost = (p: PalletPose): Mm => [p.x - PAL.sx / 2 - 22, p.y - PAL.sy / 2 - 16, 0];
 
 /** Playback of a pallet run: the time, whether it plays, and the arm pose LearnStage reads. */
 export class PalletPlayback {
@@ -106,16 +106,20 @@ export interface PalletOverlay {
   press?: { at: Mm; mm: number } | null;
   /** Tool tip path so far. */
   path?: Mm[] | null;
-  /** Show the slot numbers on the pallet. */
-  slots?: boolean;
+  /** Where the program thinks the pallet is (③): its outline on the floor, dashed. */
+  progPallet?: PalletPose | null;
+  /** The taught reference point under the cup (③ 값 고치기). */
+  refCursor?: Mm | null;
 }
 
 interface Props {
   player: PalletPlayback;
   overlay: PalletOverlay;
+  /** Where the pallet really stands. */
+  pallet?: PalletPose;
 }
 
-export default function PalletCell({ player, overlay }: Props) {
+export default function PalletCell({ player, overlay, pallet = PAL_HOME }: Props) {
   const beltTex = useMemo(() => {
     const t = belt([1, 1]).clone();
     t.repeat.set(1, (FEED_BELT.yIn - FEED_BELT.yOut) / 40);
@@ -156,8 +160,8 @@ export default function PalletCell({ player, overlay }: Props) {
     <group>
       <BeltConveyor tex={beltTex} belt={FEED_BELT} />
       <EndStop />
-      <MiniPallet />
-      <CheckPost lampRef={lampRef} greenRef={greenRef} />
+      <MiniPallet pose={pallet} />
+      <CheckPost at={checkPost(pallet)} lampRef={lampRef} greenRef={greenRef} />
       {Array.from({ length: N_BOXES }, (_, i) => (
         <group
           key={i}
@@ -206,9 +210,10 @@ function EndStop() {
 }
 
 /** A small wooden pallet: three bottom boards, nine blocks, five deck boards; deck top at PAL.top. */
-function MiniPallet() {
+function MiniPallet({ pose }: { pose: PalletPose }) {
   const W = <meshStandardMaterial color="#c8925a" map={wood([1, 1])} roughness={0.85} />;
-  const { x, y, sx, sy, top } = PAL;
+  const { sx, sy, top } = PAL;
+  const { x, y } = pose;
   const boardH = 3;
   const blockH = top - 2 * boardH;
   return (
@@ -230,13 +235,26 @@ function MiniPallet() {
           <meshStandardMaterial color="#d29d66" map={wood([1, 1])} roughness={0.82} />
         </RBox>
       ))}
+      {/* The reference mark: a red corner sticker with a cross, at the deck's far corner. */}
+      <group position={[m(MARK_OFF[0]), m(MARK_OFF[1]), m(top + 0.4)]}>
+        <mesh>
+          <circleGeometry args={[m(7), 32]} />
+          <meshStandardMaterial color="#e5484d" roughness={0.6} />
+        </mesh>
+        {[0, Math.PI / 2].map((r) => (
+          <mesh key={r} position={[0, 0, m(0.2)]} rotation={[0, 0, r]}>
+            <planeGeometry args={[m(12), m(1.4)]} />
+            <meshBasicMaterial color="#ffffff" />
+          </mesh>
+        ))}
+      </group>
     </group>
   );
 }
 
 /** The pallet check: an aluminium post, a light curtain head looking at the stack, a green / red stack light on top. */
-function CheckPost({ lampRef, greenRef }: { lampRef: RefObject<Mesh | null>; greenRef: RefObject<Mesh | null> }) {
-  const [x, y] = CHECK_POST;
+function CheckPost({ at, lampRef, greenRef }: { at: Mm; lampRef: RefObject<Mesh | null>; greenRef: RefObject<Mesh | null> }) {
+  const [x, y] = at;
   const h = PAL.top + 3 * PBOX.h + 40;
   return (
     <group>
@@ -281,9 +299,39 @@ const tag = (color: string, bg = 'rgba(255,255,255,.92)') => ({
 const GHOST_COLOR = { press: LEARN_COLORS.bad, drop: '#e0a020', ok: LEARN_COLORS.ok } as const;
 
 function Overlays({ overlay }: { overlay: PalletOverlay }) {
-  const { ghosts, press, path } = overlay;
+  const { ghosts, press, path, progPallet, refCursor } = overlay;
+  const outline = useMemo(() => {
+    if (!progPallet) return null;
+    const [hx, hy] = [PAL.sx / 2, PAL.sy / 2];
+    const z = PAL.top + 1;
+    return [
+      [-hx, -hy],
+      [hx, -hy],
+      [hx, hy],
+      [-hx, hy],
+      [-hx, -hy],
+    ].map(([a, b]) => v3([progPallet.x + a, progPallet.y + b, z]));
+  }, [progPallet]);
   return (
     <group>
+      {outline && progPallet && (
+        <>
+          <Line points={outline} color="#3454d1" lineWidth={2.5} dashed dashSize={0.008} gapSize={0.005} depthTest={false} renderOrder={9} />
+          <Html zIndexRange={[12, 0]} center position={v3([progPallet.x + MARK_OFF[0], progPallet.y + MARK_OFF[1], PAL.top + 30]).toArray()} style={{ pointerEvents: 'none' }}>
+            <span style={tag('#fff', '#3454d1')}>프로그램이 기억하는 팔레트</span>
+          </Html>
+        </>
+      )}
+      {refCursor && (
+        <group position={v3(refCursor)}>
+          <mesh renderOrder={9}>
+            <ringGeometry args={[m(4), m(6), 32]} />
+            <meshBasicMaterial color="#ffd28a" depthTest={false} toneMapped={false} />
+          </mesh>
+          <Line points={[v3([-12, 0, 0]), v3([12, 0, 0])]} color="#ffd28a" lineWidth={2} depthTest={false} renderOrder={9} />
+          <Line points={[v3([0, -12, 0]), v3([0, 12, 0])]} color="#ffd28a" lineWidth={2} depthTest={false} renderOrder={9} />
+        </group>
+      )}
       {path && path.length > 1 && <Line points={path.map(v3)} color={LEARN_COLORS.path} lineWidth={2} transparent depthTest={false} renderOrder={7} />}
       {ghosts?.map((g) => (
         <group key={g.key} position={v3(g.at)}>

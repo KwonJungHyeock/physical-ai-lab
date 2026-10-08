@@ -4,7 +4,7 @@
  * (a teacher can open them all). What makes a site finished:
  *  - 로봇 교육센터: the 1단원 차시 (the existing lessons — the basics before any site);
  *  - 스마트 공장: the three conveyor problems of the lab (lab/problems.ts);
- *  - 물류 센터: the palletizing problems (lab/pallet.ts; ① is built, ② ③ are planned);
+ *  - 물류 센터: the three palletizing problems (lab/pallet.ts);
  *  - the others have no screens yet: they list their planned problems and stay 준비 중.
  * Everything is done with the myCobot 280 RDK X5 (the product the school has); other products get
  * their own problems when they come.
@@ -78,8 +78,8 @@ export const SITES: readonly Site[] = [
     lab: 'logistics',
     problems: [
       { title: '쌓다가 무너진다', fix: '층마다 놓는 높이 · 여유', units: ['2', '6'], ready: true },
-      { title: '빨리 하니 미끄러진다', fix: '속도 · 가속과 관성', units: ['3', '4'] },
-      { title: '팔레트 자리가 바뀐다', fix: '기준점 다시 잡기 · 좌표 보정', units: ['1', '2'] },
+      { title: '빨리 하니 미끄러진다', fix: '속도 · 가속도와 흡착력', units: ['3', '4'], ready: true },
+      { title: '팔레트 자리가 바뀐다', fix: '기준점 다시 잡기 · 좌표 보정', units: ['1', '2'], ready: true },
     ],
   },
   {

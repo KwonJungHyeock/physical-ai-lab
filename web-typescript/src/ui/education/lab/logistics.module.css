@@ -485,3 +485,61 @@
 .siteBtn {
   background: var(--site) !important;
 }
+
+.jog {
+  display: flex;
+  gap: 5px;
+}
+.jog button {
+  flex: 1;
+  border: 1px solid #3a4556;
+  border-radius: 7px;
+  background: #2b3441;
+  color: #e8edf5;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 4px 0;
+  cursor: pointer;
+}
+.jog button:hover {
+  border-color: #d9622b;
+}
+.hmiNote {
+  color: #9fb0c8;
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+.graph {
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+.axis {
+  stroke: #d0d5dd;
+}
+.limit {
+  stroke: #e5484d;
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+}
+.limitTxt {
+  font-size: 10px;
+  font-weight: 800;
+  fill: #d92d20;
+}
+.empty {
+  fill: none;
+  stroke: #c3cad5;
+  stroke-width: 1.2;
+}
+.carry {
+  fill: none;
+  stroke: #d9622b;
+  stroke-width: 2.4;
+}
+.tick {
+  font-size: 9.5px;
+  fill: #667085;
+}
