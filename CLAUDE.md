@@ -20,7 +20,7 @@
 Keep code sorted by language (TypeScript only under `web-typescript/`, Python only under `robot-python/`,
 Go only under `desktop-go/`), then by part — don't drop new files into one flat folder:
 - `web-typescript/src/ui/simulator/{stage,editors,control,connect,tasks,pages}/`,
-  `web-typescript/src/ui/education/{roadmap,lesson,stage,topics,fig,print}/` (lesson screens in `topics/<N-학문>/`),
+  `web-typescript/src/ui/education/{roadmap,lesson,stage,topics,fig,print,lab}/` (lesson screens in `topics/<N-학문>/`, problem-solving labs in `lab/`),
   `web-typescript/src/ui/{agv,twin}/`.
 - `web-typescript/src/engine/{robot,physics,simulator,python,vision,education,agv,serial}/` — no React or DOM UI here.
 - `web-typescript/tests/{robot,simulator,agv,education}/`, `web-typescript/tools/{build,check}/`.
