@@ -4,12 +4,12 @@
 //   ERROR     a page error or console error while the screen was open
 //   MISSING   the screen did not open
 // Needs the app running (npm run dev) and Playwright.
-//   BASE=http://localhost:3000 node tools/check/site-ui.mjs [factory logistics bio farm cafe ai final]
+//   BASE=http://localhost:3000 node tools/check/site-ui.mjs [factory logistics bio farm cafe ai energy final]
 import { chromiumPath, inspect, loadPlaywright } from './inspect.mjs';
 
 const base = process.env.BASE ?? 'http://localhost:3000';
 const SIZES = (process.env.SIZES ?? '1600x900,1366x768').split(',').map((s) => s.split('x').map(Number));
-const ALL = ['factory', 'logistics', 'bio', 'farm', 'cafe', 'ai', 'final'];
+const ALL = ['factory', 'logistics', 'bio', 'farm', 'cafe', 'ai', 'energy', 'final'];
 const want = process.argv.length > 2 ? process.argv.slice(2) : ALL;
 const STEPS = ['brief', 'run', 'cause', 'fix', 'compare', 'done'];
 /** How each lab is opened from the 교육 tab, and how a step of a problem is shown. */
@@ -20,6 +20,7 @@ const LABS = {
   farm: { learn: '__learnFarm', hook: '__farmOpen' },
   cafe: { learn: '__learnCafe', hook: '__cafeOpen' },
   ai: { learn: '__learnAi', hook: '__aiOpen' },
+  energy: { learn: '__learnEnergy', hook: '__energyOpen' },
 };
 
 const { chromium } = await loadPlaywright();

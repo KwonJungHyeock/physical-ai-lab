@@ -30,6 +30,7 @@ import BioLab from './lab/BioLab';
 import FarmLab from './lab/FarmLab';
 import CafeLab from './lab/CafeLab';
 import AiLab from './lab/AiLab';
+import EnergyLab from './lab/EnergyLab';
 import DataCenter from './data/DataCenter';
 import FinalExam from './lab/FinalExam';
 import LogisticsLab from './lab/LogisticsLab';
@@ -99,6 +100,7 @@ declare global {
     __learnFarm?: () => void;
     __learnCafe?: () => void;
     __learnAi?: () => void;
+    __learnEnergy?: () => void;
     __learnFinal?: () => void;
   }
 }
@@ -348,6 +350,7 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
     window.__learnFarm = () => openSiteLab('farm');
     window.__learnCafe = () => openSiteLab('cafe');
     window.__learnAi = () => openSiteLab('ai');
+    window.__learnEnergy = () => openSiteLab('energy');
     window.__learnFinal = openFinal;
     return () => {
       delete window.__learnPick;
@@ -358,6 +361,7 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
       delete window.__learnFarm;
       delete window.__learnCafe;
       delete window.__learnAi;
+      delete window.__learnEnergy;
       delete window.__learnFinal;
     };
   }, [choose, openLab, openSiteLab, openFinal]);
@@ -398,6 +402,9 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
         pick={mapPick}
       />
       {dataSeen && <DataCenter hidden={hidden || screen !== 'data'} onBack={() => setScreen('map')} onOpenLab={(lab) => openSiteLab(lab)} />}
+      {energySeen && (
+        <EnergyLab robot={robot} chain={chain} gripperRobot={gripperRobot} hidden={hidden || screen !== 'energy'} level={level} saved={energySolved} onSolved={onEnergySolved} onBack={() => setScreen('map')} />
+      )}
       {finalSeen && <FinalExam robot={robot} chain={chain} gripperRobot={gripperRobot} hidden={hidden || screen !== 'final'} onBack={() => setScreen('map')} />}
       <Course
         hidden={hidden || screen !== 'course'}

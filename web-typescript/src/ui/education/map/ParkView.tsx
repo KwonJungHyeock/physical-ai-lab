@@ -126,8 +126,8 @@ export default function ParkView({ progress, hidden, onTopic, onLab, onCourse, o
                 onClick={() => select(s.id)}
                 title={`${s.name} · ${s.kind}`}
               >
-                <i>{states[s.id] === 'done' ? '✓' : tagOf(s.content).slice(0, 1)}</i>
-                <span>{s.name}</span>
+                <i>{states[s.id] === 'done' ? '✓' : ''}</i>
+                <span>{s.short}</span>
               </button>
             </li>
           ))}

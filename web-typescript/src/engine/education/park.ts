@@ -33,6 +33,8 @@ export interface SiteProblem {
 export interface Site {
   id: SiteId;
   name: string;
+  /** A short name for the top bar. */
+  short: string;
   /** The industry, in a word or two. */
   kind: string;
   /** The robot the student works with here. */
@@ -53,6 +55,7 @@ export const SITES: readonly Site[] = [
   {
     id: 'center',
     name: '로봇 아카데미',
+    short: '아카데미',
     kind: '로봇공학 이론',
     robot: 'myCobot 280',
     desc: '8학문 28차시로 로봇의 몸·움직임·제어·인식을 배우는 곳이에요. 1학문을 마치면 도시의 현장이 열려요.',
@@ -64,6 +67,7 @@ export const SITES: readonly Site[] = [
   {
     id: 'factory',
     name: '스마트팩토리',
+    short: '팩토리',
     kind: '제조 AI · 공정',
     robot: 'myCobot 280 + 컨베이어',
     desc: '컨베이어로 오는 상자를 집어 옮기는 라인이에요. 고장 난 공정을 값을 바꿔 고쳐요.',
@@ -81,6 +85,7 @@ export const SITES: readonly Site[] = [
   {
     id: 'logistics',
     name: '물류 허브',
+    short: '물류',
     kind: '물류 · 팔레타이징',
     robot: 'myCobot 280 + 흡착 펌프',
     desc: '컨베이어로 오는 상자를 팔레트에 차곡차곡 쌓아요 (팔레타이징).',
@@ -98,6 +103,7 @@ export const SITES: readonly Site[] = [
   {
     id: 'lab',
     name: '바이오·헬스케어',
+    short: '바이오',
     kind: '실험 자동화 · 의료',
     robot: 'myCobot 280 + 어댑티브 그리퍼',
     desc: '시료가 든 시험관을 쏟지 않고, 정확히, 부딪히지 않게 옮겨요.',
@@ -115,6 +121,7 @@ export const SITES: readonly Site[] = [
   {
     id: 'farm',
     name: '스마트팜',
+    short: '스마트팜',
     kind: '수확 · 선별 자동화',
     robot: 'myCobot 280 + 카메라 · 어댑티브 그리퍼',
     desc: '카메라로 익은 방울토마토만 찾아, 터뜨리지 않고 포장해요.',
@@ -132,6 +139,7 @@ export const SITES: readonly Site[] = [
   {
     id: 'cafe',
     name: '스마트시티',
+    short: '시티',
     kind: '서비스 로봇 · 돌봄',
     robot: 'myCobot 280 + 어댑티브 그리퍼',
     desc: '거리의 카페에서 음료를 흘리지 않고, 손님 손 앞에서 멈춰, 무거운 병도 건네요.',
@@ -149,6 +157,7 @@ export const SITES: readonly Site[] = [
   {
     id: 'ai',
     name: '피지컬 AI 연구소',
+    short: 'AI 연구소',
     kind: 'AI 인식 · 학습',
     robot: 'myCobot 280 + AI 키트 (카메라 · 흡착)',
     desc: '보고 판단해서 스스로 집어 놓아요. 배운 것을 모두 써요.',
@@ -166,23 +175,25 @@ export const SITES: readonly Site[] = [
   {
     id: 'energy',
     name: '에너지·자원순환',
+    short: '자원순환',
     kind: '재활용 선별 · 탄소',
     robot: 'myCobot 280 + AI 키트 (카메라 · 흡착)',
     desc: '섞여 들어온 재활용품을 카메라로 알아보고, 재질별 분류함에 빠르고 정확하게 나눠요.',
     issue: '분리배출이 잘못되어 재활용률이 낮고, 선별장 작업은 위험하고 느려요.',
     crew: ['myCobot 280 + AI 키트', '선별 로봇 라인', '수거 트럭 · 풍력 · 태양광'],
-    color: '#1f9e6e',
+    color: '#0b8a7a',
     content: 'lab',
     lab: 'energy',
     problems: [
-      { title: '투명 PET가 안 보인다', fix: '채도 · 밝기 문턱값', units: ['7'], ready: true },
-      { title: '빨리 하면 캔이 떨어진다', fix: '속도와 처리량의 균형', units: ['3', '4'], ready: true },
-      { title: '겹쳐 놓인 쓰레기', fix: '집는 순서 · 높이', units: ['6', '7'], ready: true },
+      { title: '투명 PET가 안 보인다', fix: '밝기 범위 · 배경과의 여유', units: ['7'], ready: true },
+      { title: '빨리 하면 떨어진다', fix: '종류마다 속도 · 분당 처리량', units: ['3', '4'], ready: true },
+      { title: '겹쳐 놓인 쓰레기', fix: '온전히 보이는 것부터 · 집는 순서', units: ['6', '7'], ready: true },
     ],
   },
   {
     id: 'data',
     name: '디지털 트윈 관제센터',
+    short: '관제센터',
     kind: '데이터 사이언스',
     robot: '모든 현장의 기록',
     desc: '모든 현장에서 돌린 실습 기록을 모아 그래프로 비교하고, 병목을 찾고, 시뮬과 실제 로봇을 견줘요.',
