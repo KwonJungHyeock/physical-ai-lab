@@ -61,7 +61,7 @@ import css from './lab.module.css';
 import lg from './site.module.css';
 
 /** The kit from the front right, a little above (three.js metres, y up): camera, then target. */
-const AI_VIEW: ViewPose = [0.7, 0.55, 0.5, 0.14, 0.06, 0.0];
+export const AI_VIEW: ViewPose = [0.7, 0.55, 0.5, 0.14, 0.06, 0.0];
 const SLOW = 0.35;
 const SLOW_LEAD_S = 1.6;
 

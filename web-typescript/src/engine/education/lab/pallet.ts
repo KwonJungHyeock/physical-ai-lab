@@ -143,6 +143,8 @@ export const markAt = (p: PalletPose): [number, number] => [p.x + MARK_OFF[0], p
 export interface RefValues {
   x: number;
   y: number;
+  /** The situation, not the student's: where the pallet really is now (default PAL_MOVED; 대단원 마무리 평가). */
+  moved?: PalletPose;
 }
 export const REF_DEFAULT: RefValues = { x: markAt(PAL_HOME)[0], y: markAt(PAL_HOME)[1] };
 export const REF_FIX: RefValues = { x: markAt(PAL_MOVED)[0], y: markAt(PAL_MOVED)[1] };
@@ -155,7 +157,7 @@ export type LogiValues = StackValues | SpeedValues | RefValues;
 export function setupFor(p: LogiProblem, v: LogiValues): Partial<LineSetup> {
   if (p === 1) return v as StackValues;
   if (p === 2) return { ...(v as SpeedValues), massG: HEAVY_G };
-  return { real: PAL_MOVED, prog: progFromRef(v as RefValues) };
+  return { real: (v as RefValues).moved ?? PAL_MOVED, prog: progFromRef(v as RefValues) };
 }
 export const DEFAULTS: Record<LogiProblem, LogiValues> = { 1: STACK_DEFAULT, 2: SPEED_DEFAULT, 3: REF_DEFAULT };
 

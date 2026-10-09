@@ -97,6 +97,8 @@ export interface HueValues {
 /** ②: the mm-per-pixel ratio the program turns pixels into millimetres with. */
 export interface RatioValues {
   ratio: number;
+  /** The situation, not the student's: the camera's height over the bench now (default CAM.z; 대단원 마무리 평가), mm. */
+  camZ?: number;
 }
 /** ③: how much narrower than the seen diameter the fingers close (mm), and the gripper speed (1 – 100). */
 export interface GripValues {
@@ -619,10 +621,10 @@ function gentleGrip(sim: FarmSim, f: Found, t: Tomato): FarmPick | null {
 
 /* --- ① 덜 익은 것도 딴다 · ② 카메라와 손끝이 안 맞는다 ------------------------------------------------- */
 
-function runSort(chain: readonly ChainSegment[], p: 1 | 2, values: FarmValues, range: HueValues, ratio: number): FarmRun {
+function runSort(chain: readonly ChainSegment[], p: 1 | 2, values: FarmValues, range: HueValues, ratio: number, camZ: number = CAM.z): FarmRun {
   const list = FARM_TOMATOES[p];
-  const img = toHsv(cameraPicture(list));
-  const found = findTomatoes(img, range, ratio, list);
+  const img = toHsv(cameraPicture(list, camZ));
+  const found = findTomatoes(img, range, ratio, list, camZ);
   const sim = new FarmSim(chain, list);
   sim.log('see', `사진에서 토마토 ${found.length}개를 찾았어요`);
   const picks: FarmPick[] = [];
@@ -653,13 +655,13 @@ function runSort(chain: readonly ChainSegment[], p: 1 | 2, values: FarmValues, r
 }
 
 export const runHue = (chain: readonly ChainSegment[], v: HueValues) => runSort(chain, 1, v, v, RATIO_NOW);
-export const runRatio = (chain: readonly ChainSegment[], v: RatioValues) => runSort(chain, 2, v, RIPE_RANGE, v.ratio);
+export const runRatio = (chain: readonly ChainSegment[], v: RatioValues) => runSort(chain, 2, v, RIPE_RANGE, v.ratio, v.camZ);
 
 /** ②: where each tomato's fingers would land for a ratio (no run): its distance from the picture's centre and the miss, mm. */
-export function ratioPreview(ratio: number): { k: number; r: number; offset: number; limit: number }[] {
+export function ratioPreview(ratio: number, camZ: number = CAM.z): { k: number; r: number; offset: number; limit: number }[] {
   const list = FARM_TOMATOES[2];
-  const img = toHsv(cameraPicture(list));
-  return findTomatoes(img, RIPE_RANGE, ratio, list)
+  const img = toHsv(cameraPicture(list, camZ));
+  return findTomatoes(img, RIPE_RANGE, ratio, list, camZ)
     .filter((f) => f.k >= 0)
     .map((f) => {
       const t = list[f.k];

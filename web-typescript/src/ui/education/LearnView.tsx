@@ -30,6 +30,7 @@ import BioLab from './lab/BioLab';
 import FarmLab from './lab/FarmLab';
 import CafeLab from './lab/CafeLab';
 import AiLab from './lab/AiLab';
+import FinalExam from './lab/FinalExam';
 import LogisticsLab from './lab/LogisticsLab';
 import ParkView from './map/ParkView';
 import LessonBar from './lesson/LessonBar';
@@ -96,6 +97,7 @@ declare global {
     __learnFarm?: () => void;
     __learnCafe?: () => void;
     __learnAi?: () => void;
+    __learnFinal?: () => void;
   }
 }
 
@@ -105,7 +107,13 @@ const stepFor = (p: PageId, cur: StepView): StepView => (isActivity(p) || p === 
 export default function LearnView({ robot, chain, gripperRobot, real, hidden }: Props) {
   const [topicId, setTopicId] = useState<TopicId>(FIRST);
   /** The park (front page), the course, a lesson, or the problem-solving lab (opened once, then kept). */
-  const [screen, setScreen] = useState<'map' | 'course' | 'topic' | 'lab' | 'logistics' | 'bio' | 'farm' | 'cafe' | 'ai'>('map');
+  const [screen, setScreen] = useState<'map' | 'course' | 'topic' | 'lab' | 'logistics' | 'bio' | 'farm' | 'cafe' | 'ai' | 'final'>('map');
+  /** 대단원 마무리 평가: mounted the first time it is opened. */
+  const [finalSeen, setFinalSeen] = useState(false);
+  const openFinal = useCallback(() => {
+    setFinalSeen(true);
+    setScreen('final');
+  }, []);
   const [logiSeen, setLogiSeen] = useState(false);
   const [bioSeen, setBioSeen] = useState(false);
   const [farmSeen, setFarmSeen] = useState(false);
@@ -313,6 +321,7 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
     window.__learnFarm = () => openSiteLab('farm');
     window.__learnCafe = () => openSiteLab('cafe');
     window.__learnAi = () => openSiteLab('ai');
+    window.__learnFinal = openFinal;
     return () => {
       delete window.__learnPick;
       delete window.__learnOpen;
@@ -322,8 +331,9 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
       delete window.__learnFarm;
       delete window.__learnCafe;
       delete window.__learnAi;
+      delete window.__learnFinal;
     };
-  }, [choose, openLab, openSiteLab]);
+  }, [choose, openLab, openSiteLab, openFinal]);
 
   const fromMap = useCallback(
     (t: TopicId) => {
@@ -355,7 +365,9 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
         onTopic={fromMap}
         onLab={openSiteLab}
         onCourse={() => setScreen('course')}
+        onFinal={openFinal}
       />
+      {finalSeen && <FinalExam robot={robot} chain={chain} gripperRobot={gripperRobot} hidden={hidden || screen !== 'final'} onBack={() => setScreen('map')} />}
       <Course
         hidden={hidden || screen !== 'course'}
         done={done}

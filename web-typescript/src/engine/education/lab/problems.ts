@@ -262,6 +262,8 @@ export interface P3Values {
   move: MoveType;
   /** Arm speed, % (pymycobot's speed 1..100). */
   speed: number;
+  /** The situation, not the student's: where the trigger sensor stands (default P3_SENSOR_Y), y mm (대단원 마무리 평가). */
+  sensorY?: number;
 }
 
 export const P3_BOX = BOX_A;
@@ -298,7 +300,7 @@ export interface P3Timing {
 
 /** The time plan, from the same trajectories the run follows (a dry run of one cycle). */
 export function p3Timing(chain: readonly ChainSegment[], v: P3Values): P3Timing {
-  const boxS = (P3_SENSOR_Y + P3_BOX.size[1] / 2 - v.waitY) / v.belt;
+  const boxS = ((v.sensorY ?? P3_SENSOR_Y) + P3_BOX.size[1] / 2 - v.waitY) / v.belt;
   const gapS = P3_PITCH_MM / v.belt;
   const w = toolPoseAt(chain, p3Wait(v));
   const c = w && toolPoseAt(chain, p3Catch(v), w.q);
@@ -313,7 +315,7 @@ export function p3Timing(chain: readonly ChainSegment[], v: P3Values): P3Timing 
 
 export function runP3(chain: readonly ChainSegment[], v: P3Values): LabRun {
   const boxes = P3_BOXES.map((spec, k) => ({ spec, enterAt: (k * P3_PITCH_MM) / v.belt }));
-  const run = new CellRun(chain, { boxes, sensors: [{ y: P3_SENSOR_Y, gate: false }], beltSpeed: v.belt, stopBeltAtGate: false });
+  const run = new CellRun(chain, { boxes, sensors: [{ y: v.sensorY ?? P3_SENSOR_Y, gate: false }], beltSpeed: v.belt, stopBeltAtGate: false });
   const wait = p3Wait(v);
   const w = toolPoseAt(chain, wait);
   const c = w && toolPoseAt(chain, p3Catch(v), w.q);

@@ -72,6 +72,8 @@ export interface CarryValues {
 export interface GuardValues {
   zoneSpeed: number;
   detect: number;
+  /** The situation, not the student's: the counter sensor's reaction time (default HAND.react; 대단원 마무리 평가), s. */
+  react?: number;
 }
 /** ③: how far out from J1 the bottle is carried while turning (mm), and the turn's time (s). */
 export interface TurnValues {
@@ -373,7 +375,7 @@ function carry(sim: CafeSim, vmax: number, accMs2: number, guard?: GuardValues):
           detectAt = sim.t;
           sim.log('detect', `센서가 손을 감지했어요 — 컵과 손 사이 ${gapMm.toFixed(0)} mm, 로봇 속도 ${v.toFixed(0)} mm/s`, { at: [p[0], p[1] - CUP.d / 2, p[2]], value: gapMm });
         }
-        if (detectAt >= 0 && !stopping && sim.t >= detectAt + HAND.react) stopping = true;
+        if (detectAt >= 0 && !stopping && sim.t >= detectAt + (guard.react ?? HAND.react)) stopping = true;
         if (gapMm <= 0) {
           if (v > 1) {
             sim.step(DT);
@@ -419,7 +421,7 @@ export function runCarry(chain: readonly ChainSegment[], v: CarryValues): CafeRu
 export function protectiveDistance(v: GuardValues): { react: number; brake: number; handWhileBraking: number; total: number } {
   const vr = v.zoneSpeed;
   const tb = vr / (HAND.brake * 1000);
-  const react = (HAND.speed + vr) * HAND.react;
+  const react = (HAND.speed + vr) * (v.react ?? HAND.react);
   const brake = (vr * vr) / (2 * HAND.brake * 1000);
   const handWhileBraking = HAND.speed * tb;
   return { react, brake, handWhileBraking, total: react + brake + handWhileBraking };

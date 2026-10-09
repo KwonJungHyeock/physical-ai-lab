@@ -83,7 +83,7 @@ import css from './lab.module.css';
 import lg from './site.module.css';
 
 /** The cell from the front right, a little above (three.js metres, y up): camera, then target. */
-const LAB_VIEW: ViewPose = [0.94, 0.63, 0.67, 0.1, 0.05, -0.08];
+export const LAB_VIEW: ViewPose = [0.94, 0.63, 0.67, 0.1, 0.05, -0.08];
 /** Near the moment it goes wrong: this much slower, starting this long before. */
 const SLOW = 0.35;
 const SLOW_LEAD_S = 1.6;

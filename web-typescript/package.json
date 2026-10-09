@@ -13,7 +13,7 @@
     "check:transport": "tsx tests/robot/transport-check.mts",
     "check:kinematics": "tsx tests/robot/kinematics-check.mts",
     "check:arms": "tsx tests/robot/arms-check.mts",
-    "check": "npm run check:protocol && npm run check:transport && npm run check:kinematics && npm run check:arms && npm run check:console && npm run check:self && npm run check:practice && npm run check:demo && npm run check:python && npm run check:agv && npm run check:track && npm run check:robotics && npm run check:learn && npm run check:lab && npm run check:park && npm run check:pallet && npm run check:bio && npm run check:farm && npm run check:cafe && npm run check:ai",
+    "check": "npm run check:protocol && npm run check:transport && npm run check:kinematics && npm run check:arms && npm run check:console && npm run check:self && npm run check:practice && npm run check:demo && npm run check:python && npm run check:agv && npm run check:track && npm run check:robotics && npm run check:learn && npm run check:lab && npm run check:park && npm run check:pallet && npm run check:bio && npm run check:farm && npm run check:cafe && npm run check:ai && npm run check:final",
     "check:console": "tsx tests/simulator/console-check.mts",
     "check:self": "tsx tests/simulator/self-collision-check.mts",
     "build:robot": "node tools/build/robot.mjs",
@@ -31,7 +31,8 @@
     "check:farm": "tsx tests/education/farm-check.mts",
     "check:cafe": "tsx tests/education/cafe-check.mts",
     "check:ai": "tsx tests/education/ai-check.mts",
-    "gen:curriculum": "node tools/build/curriculum.mjs"
+    "gen:curriculum": "node tools/build/curriculum.mjs",
+    "check:final": "tsx tests/education/final-check.mts"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.21.0",

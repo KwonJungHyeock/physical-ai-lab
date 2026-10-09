@@ -150,8 +150,8 @@ export default function AiCell({ player, prob, things, overlay }: Props) {
               <meshStandardMaterial color={thingColor(t)} roughness={0.55} />
             </RBox>
           ) : (
-            <mesh position={[0, 0, m(POST.h / 2)]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-              <cylinderGeometry args={[m(POST.d / 2), m(POST.d / 2), m(POST.h), 28]} />
+            <mesh position={[0, 0, m(t.h / 2)]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+              <cylinderGeometry args={[m(POST.d / 2), m(POST.d / 2), m(t.h), 28]} />
               <meshStandardMaterial color={thingColor(t)} roughness={0.5} />
             </mesh>
           )}

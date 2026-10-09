@@ -336,6 +336,13 @@
 .go:hover {
   filter: brightness(1.06);
 }
+.go:disabled {
+  background: #e4e8ee;
+  color: var(--muted);
+  box-shadow: none;
+  cursor: default;
+  filter: none;
+}
 .legend {
   display: grid;
   gap: 6px;

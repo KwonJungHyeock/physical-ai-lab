@@ -65,7 +65,7 @@ import css from './lab.module.css';
 import lg from './site.module.css';
 
 /** The cell from the front right, a little above (three.js metres, y up): camera, then target. */
-const FARM_VIEW: ViewPose = [0.74, 0.6, 0.6, 0.13, 0.1, -0.02];
+export const FARM_VIEW: ViewPose = [0.74, 0.6, 0.6, 0.13, 0.1, -0.02];
 const SLOW = 0.35;
 const SLOW_LEAD_S = 1.6;
 

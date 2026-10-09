@@ -45,9 +45,11 @@ interface Props {
   onLab(lab: LabId): void;
   /** The whole course: every 단원 and 차시. */
   onCourse(): void;
+  /** 대단원 마무리 평가 (opens once the six lab sites are done, or with 모든 현장 열기). */
+  onFinal(): void;
 }
 
-export default function ParkView({ robot, chain, progress, hidden, onTopic, onLab, onCourse }: Props) {
+export default function ParkView({ robot, chain, progress, hidden, onTopic, onLab, onCourse, onFinal }: Props) {
   const [selected, setSelected] = useState<SiteId | null>(null);
   const [allOpen, setAllOpenRaw] = useState(false);
   /** The 3D park loads the first time the map is shown. */
@@ -102,6 +104,7 @@ export default function ParkView({ robot, chain, progress, hidden, onTopic, onLa
     return out;
   }, [states, progress, next]);
   const nDone = SITES.filter((s) => states[s.id] === 'done').length;
+  const finalOpen = allOpen || SITES.filter((s) => s.content === 'lab').every((s) => states[s.id] === 'done');
   const select = useCallback((id: SiteId | null) => setSelected(id), []);
 
   return (
@@ -149,7 +152,7 @@ export default function ParkView({ robot, chain, progress, hidden, onTopic, onLa
           {selected ? (
             <SiteCard id={selected} progress={progress} state={states[selected]} onTopic={onTopic} onLab={onLab} onClose={() => select(null)} />
           ) : (
-            <Overview nDone={nDone} next={next} onGo={select} />
+            <Overview nDone={nDone} next={next} onGo={select} finalOpen={finalOpen} onFinal={onFinal} />
           )}
         </aside>
       </section>
@@ -157,7 +160,7 @@ export default function ParkView({ robot, chain, progress, hidden, onTopic, onLa
   );
 }
 
-function Overview({ nDone, next, onGo }: { nDone: number; next: SiteId; onGo(id: SiteId): void }) {
+function Overview({ nDone, next, onGo, finalOpen, onFinal }: { nDone: number; next: SiteId; onGo(id: SiteId): void; finalOpen: boolean; onFinal(): void }) {
   const n = SITE_BY_ID.get(next)!;
   return (
     <div className={css.over}>
@@ -174,9 +177,16 @@ function Overview({ nDone, next, onGo }: { nDone: number; next: SiteId; onGo(id:
           ))}
         </div>
       </div>
-      <button type="button" className={css.go} style={{ '--c': n.color } as CSSProperties} onClick={() => onGo(next)}>
-        <small>다음 현장</small>
-        <b>{n.name}</b>
+      {nDone < SITES.length && (
+        <button type="button" className={css.go} style={{ '--c': n.color } as CSSProperties} onClick={() => onGo(next)}>
+          <small>다음 현장</small>
+          <b>{n.name}</b>
+          <span>→</span>
+        </button>
+      )}
+      <button type="button" className={css.go} data-final disabled={!finalOpen} style={{ '--c': '#1d2939' } as CSSProperties} onClick={onFinal} title={finalOpen ? '여섯 현장의 문제를 새 숫자로 다시 풀어요' : '현장 6곳을 모두 마치면 열려요'}>
+        <small>{finalOpen ? '산업단지 종합 점검' : '🔒 현장 6곳을 모두 마치면 열려요'}</small>
+        <b>대단원 마무리 평가</b>
         <span>→</span>
       </button>
       <ul className={css.legend}>

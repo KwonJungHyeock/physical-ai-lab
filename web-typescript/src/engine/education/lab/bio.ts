@@ -84,6 +84,8 @@ export interface PoseValues {
 /** ②: the J1 zero correction subtracted from every command, degrees. */
 export interface CalibValues {
   zero: number;
+  /** The situation, not the student's: how much more J1 really turns (default J1_ERR_DEG; 대단원 마무리 평가). */
+  err?: number;
 }
 /** ③: the carrying height, and a waypoint on the way (or none). */
 export interface PathValues {
@@ -381,7 +383,7 @@ export function calibPreview(chain: readonly ChainSegment[], v: CalibValues): { 
     const q = poseAt(chain, h);
     if (!q) return { r: Math.hypot(h[0], h[1]), offset: NaN };
     const cmd = [q[0] - v.zero, ...q.slice(1)];
-    const real = toolAt(chain, [cmd[0] + J1_ERR_DEG, ...cmd.slice(1)]).tip;
+    const real = toolAt(chain, [cmd[0] + (v.err ?? J1_ERR_DEG), ...cmd.slice(1)]).tip;
     const [sx, sy] = scatter(k);
     return { r: Math.hypot(h[0], h[1]), offset: Math.hypot(real[0] + sx - h[0], real[1] + sy - h[1]) };
   });
@@ -389,7 +391,7 @@ export function calibPreview(chain: readonly ChainSegment[], v: CalibValues): { 
 
 export function runCalib(chain: readonly ChainSegment[], v: CalibValues): BioRun {
   const holes = Array.from({ length: ROW.n }, (_, k) => rowHole(k));
-  const sim = new BioSim(chain, holes.map((_, k) => trayHole(k)), [rackBox(TRAY.x, TRAY.y0 + 45, 30, 120, '시료 트레이'), rackBox(holes[2][0] + 8, holes[2][1] - 4, 150, 34, '분석 랙')], J1_ERR_DEG);
+  const sim = new BioSim(chain, holes.map((_, k) => trayHole(k)), [rackBox(TRAY.x, TRAY.y0 + 45, 30, 120, '시료 트레이'), rackBox(holes[2][0] + 8, holes[2][1] - 4, 150, 34, '분석 랙')], v.err ?? J1_ERR_DEG);
   const offsets: (number | null)[] = holes.map(() => null);
   // The commands carry the correction: J1 is told (wanted − zero).
   const cmd = (q: number[] | null) => (q ? [q[0] - v.zero, ...q.slice(1)] : null);

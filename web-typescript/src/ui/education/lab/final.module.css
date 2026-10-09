@@ -1,0 +1,485 @@
+/* 대단원 마무리 평가: the list of six items (with the score and the sheet), and the item screen's
+   panel — one column of cards (상황 · 원인 · 계산 · 고치기), hints, the principle. The item screen's
+   layout (bar, 3D stage, panel) is lab.module.css's. */
+
+/* The list ---------------------------------------------------------------------- */
+.hub {
+  margin-top: var(--top, 0px);
+  height: calc(100dvh - var(--top, 0px) - 30px);
+  min-height: 560px;
+  display: grid;
+  grid-template-rows: 48px minmax(0, 1fr);
+  gap: 10px;
+  color: var(--ink);
+  font-size: 13.5px;
+}
+.hub[hidden] {
+  display: none;
+}
+.hubBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 12px;
+  background: var(--page, #fff);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.hubBar b {
+  font-size: 16px;
+  font-weight: 800;
+}
+.hubBar span {
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 12.5px;
+}
+.hubBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 12px;
+  min-height: 0;
+}
+.intro,
+.items,
+.total {
+  background: var(--page, #fff);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 18px 20px;
+  box-shadow: var(--shadow-sm);
+}
+.intro {
+  grid-row: 1 / 3;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.intro h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+}
+.intro p {
+  margin: 0;
+  line-height: 1.65;
+  color: var(--muted);
+}
+.rules {
+  display: grid;
+  gap: 6px;
+  margin: 4px 0 0;
+  padding: 12px 14px;
+  list-style: none;
+  border-radius: 12px;
+  background: #f4f6fa;
+}
+.rules b {
+  display: inline-block;
+  min-width: 52px;
+  font-weight: 800;
+}
+.name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: auto;
+  font-weight: 800;
+}
+.name input {
+  flex: 1;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font: inherit;
+}
+.items {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  list-style: none;
+  align-content: start;
+}
+.items li {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--c);
+  border-radius: 12px;
+}
+.items li[data-state='done'] {
+  background: #f3faf6;
+}
+.items li > div {
+  display: grid;
+  line-height: 1.3;
+}
+.items small {
+  color: var(--c);
+  font-weight: 800;
+  font-size: 12px;
+}
+.items b {
+  font-size: 15px;
+  font-weight: 800;
+}
+.no {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--c);
+  color: #fff;
+  font-weight: 800;
+}
+.pts {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.total {
+  align-self: start;
+  display: grid;
+  grid-template-columns: repeat(3, auto) 1fr;
+  align-items: center;
+  gap: 24px;
+}
+.total > div:not(.totalBtns) {
+  display: grid;
+}
+.total small {
+  color: var(--muted);
+  font-weight: 700;
+}
+.total b {
+  font-size: 30px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.total b i {
+  font-size: 15px;
+  font-style: normal;
+  color: var(--muted);
+}
+.totalBtns {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.reset {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--muted);
+  border-radius: 10px;
+  padding: 8px 14px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.reset:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* The item's panel ------------------------------------------------------------- */
+.col {
+  overflow-y: auto !important;
+  gap: 10px !important;
+}
+.card {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+}
+.card[data-done] {
+  border-color: color-mix(in srgb, #1f9d55 45%, var(--line));
+}
+.card h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 800;
+}
+.card h3 span {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--site);
+  color: #fff;
+  font-size: 12px;
+}
+.card[data-done] h3 span {
+  background: #1f9d55;
+}
+.card p {
+  margin: 0;
+  line-height: 1.6;
+}
+.card > button {
+  justify-self: start;
+}
+.line {
+  padding: 8px 10px;
+  border-left: 4px solid var(--site);
+  background: var(--site-soft, #f3f5fa);
+  border-radius: 0 8px 8px 0;
+}
+.line b {
+  color: var(--site);
+  margin-right: 4px;
+}
+.spec {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+}
+.choices {
+  display: grid;
+  gap: 6px;
+}
+.choices button {
+  text-align: left;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+  line-height: 1.45;
+  cursor: pointer;
+}
+.choices button:not(:disabled):hover {
+  border-color: var(--site);
+}
+.choices button[data-r='ok'] {
+  border-color: #1f9d55;
+  background: #eefaf3;
+  font-weight: 700;
+}
+.choices button[data-r='no'] {
+  border-color: #e5484d;
+  background: #fdf0f0;
+  text-decoration: line-through;
+  color: var(--muted);
+}
+.choices button:disabled {
+  cursor: default;
+}
+.card .no,
+.card .yes {
+  font-weight: 800;
+}
+.card .no {
+  color: #c4320a;
+  width: auto;
+  height: auto;
+  display: block;
+  background: none;
+  border-radius: 0;
+}
+.yes {
+  color: #1f9d55;
+}
+.data {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 12.5px;
+}
+.data th,
+.data td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+.data th {
+  width: 42%;
+  color: var(--muted);
+  font-weight: 700;
+}
+.prompt {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #f4f6fa;
+  font-size: 12.5px;
+}
+.calcRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px 44px;
+  align-items: center;
+  gap: 8px;
+}
+.calcRow input,
+.field input[type='number'] {
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 700;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.calcRow em,
+.field em {
+  font-style: normal;
+  color: var(--muted);
+  font-size: 12px;
+}
+.fields {
+  display: grid;
+  gap: 10px;
+}
+.field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px 44px;
+  align-items: center;
+  gap: 4px 8px;
+  font-weight: 700;
+}
+.field input[type='range'] {
+  grid-column: 1 / -1;
+  accent-color: var(--site);
+}
+.seg {
+  grid-column: 2 / -1;
+  display: flex;
+  gap: 4px;
+}
+.seg button {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+.seg button[aria-pressed='true'] {
+  border-color: var(--site);
+  background: var(--site);
+  color: #fff;
+  font-weight: 800;
+}
+.hints {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fff8e6;
+  border: 1px solid #f5d98b;
+}
+.hints p {
+  margin: 0;
+  line-height: 1.55;
+}
+.hints b {
+  margin-right: 6px;
+  color: #a15c00;
+}
+.hints button {
+  justify-self: start;
+  border: 0;
+  background: none;
+  padding: 0;
+  color: #a15c00;
+  font: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.principle {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #eefaf3;
+  border: 1px solid #b6e3c8;
+}
+.principle b {
+  color: #1f7a45;
+}
+.principle p {
+  margin: 4px 0 0;
+  line-height: 1.6;
+}
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+}
+.score {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The result sheet ------------------------------------------------------------- */
+.sheet {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  margin-top: 12px;
+}
+.sheet th,
+.sheet td {
+  border: 1px solid #c9cfd8;
+  padding: 6px 8px;
+  text-align: center;
+  vertical-align: top;
+}
+.sheet td:first-child,
+.sheet td:last-child {
+  text-align: left;
+}
+.sheet small {
+  display: block;
+  color: #667085;
+  font-size: 11px;
+}
+.sheet thead th {
+  background: #f2f4f7;
+}
+.sheet tfoot td {
+  font-weight: 800;
+  background: #f8f9fb;
+}
+.sheetNote {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: #475467;
+  line-height: 1.6;
+}
+
+.rates {
+  display: inline-flex;
+  gap: 2px;
+  margin-left: 6px;
+}
+.rates button {
+  border: 0;
+  border-radius: 6px;
+  padding: 2px 7px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #c4cedd;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.rates button[aria-pressed='true'] {
+  background: #fff;
+  color: #1d2939;
+}

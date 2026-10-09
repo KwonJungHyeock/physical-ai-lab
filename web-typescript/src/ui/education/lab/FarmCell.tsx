@@ -112,6 +112,8 @@ interface Props {
   prob: FarmProblem;
   tomatoes: readonly Tomato[];
   overlay: FarmOverlay;
+  /** The camera's height when the situation moved it (대단원 마무리 평가: 540; it was at CAM.z before), mm. */
+  camZ?: number;
 }
 
 /** A tomato's skin colour for its hue (the same HSV the camera picture uses). */
@@ -119,7 +121,7 @@ export function tomatoColor(hue: number): string {
   return new Color().setHSL((((hue % 360) + 360) % 360) / 360, 0.78, 0.44).getStyle();
 }
 
-export default function FarmCell({ player, prob, tomatoes, overlay }: Props) {
+export default function FarmCell({ player, prob, tomatoes, overlay, camZ }: Props) {
   const refs = useRef<(Group | null)[]>([]);
   const juice = useRef<(Mesh | null)[]>([]);
 
@@ -145,7 +147,7 @@ export default function FarmCell({ player, prob, tomatoes, overlay }: Props) {
       <Greenhouse prob={prob} />
       <SortTray />
       <Punnet />
-      <CameraStand raised={prob === 2} />
+      <CameraStand raised={prob === 2} z={camZ ?? CAM.z} was={camZ === undefined ? CAM.zOld : CAM.z} />
       {tomatoes.map((t, i) => (
         <group key={i}>
           <group
@@ -297,9 +299,8 @@ function Punnet() {
 }
 
 /** The USB camera on a stand: a weighted base behind the tray, a post, a boom over the tray, the camera looking down. ② also shows where it was before. */
-function CameraStand({ raised }: { raised: boolean }) {
+function CameraStand({ raised, z, was }: { raised: boolean; z: number; was: number }) {
   const py = TRAY.y + TRAY.sy / 2 + 55;
-  const z = CAM.z;
   return (
     <group>
       <RBox at={[CAM.x, py, 6]} size={[90, 70, 12]} radius={4}>
@@ -324,13 +325,13 @@ function CameraStand({ raised }: { raised: boolean }) {
       </Html>
       {raised && (
         <group>
-          <RBox at={[CAM.x, CAM.y, CAM.zOld + 18]} size={[30, 64, 20]} radius={5} shadow={false}>
+          <RBox at={[CAM.x, CAM.y, was + 18]} size={[30, 64, 20]} radius={5} shadow={false}>
             <meshStandardMaterial color="#e5484d" transparent opacity={0.25} depthWrite={false} />
           </RBox>
-          <Html zIndexRange={[11, 4]} center position={[m(CAM.x - 60), m(CAM.y), m(CAM.zOld + 18)]} style={{ pointerEvents: 'none' }}>
-            <span style={{ ...tag('#fff', '#e5484d'), font: '800 11px var(--font-ui, system-ui)' }}>어제까지 {CAM.zOld} mm</span>
+          <Html zIndexRange={[11, 4]} center position={[m(CAM.x - 60), m(CAM.y), m(was + 18)]} style={{ pointerEvents: 'none' }}>
+            <span style={{ ...tag('#fff', '#e5484d'), font: '800 11px var(--font-ui, system-ui)' }}>어제까지 {was} mm</span>
           </Html>
-          <Sign at={[CAM.x, py - 7, 240]} yaw={Math.PI} w={60} h={26} lines={['80 mm 올림', '큰 트레이용']} fg="#ffffff" bg="#e5484d" />
+          <Sign at={[CAM.x, py - 7, 240]} yaw={Math.PI} w={60} h={26} lines={[`${z - was} mm 올림`, '큰 트레이용']} fg="#ffffff" bg="#e5484d" />
         </group>
       )}
     </group>

@@ -59,7 +59,7 @@ import css from './lab.module.css';
 import lg from './site.module.css';
 
 /** The café from the front right, a little above (three.js metres, y up): camera, then target. */
-const CAFE_VIEW: ViewPose = [0.7, 0.5, 0.56, 0.1, 0.08, 0.0];
+export const CAFE_VIEW: ViewPose = [0.7, 0.5, 0.56, 0.1, 0.08, 0.0];
 const SLOW = 0.35;
 const SLOW_LEAD_S = 1.6;
 const CARRY_LEN = Math.hypot(PICKUP[0] - BAR[0], PICKUP[1] - BAR[1]);

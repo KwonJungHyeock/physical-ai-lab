@@ -83,7 +83,7 @@ import css from './lab.module.css';
 import lg from './site.module.css';
 
 /** The cell from the front right, a little above (three.js metres, y up): camera, then target. */
-const LOGI_VIEW: ViewPose = [0.66, 0.46, 0.7, 0.1, 0.06, 0.1];
+export const LOGI_VIEW: ViewPose = [0.66, 0.46, 0.7, 0.1, 0.06, 0.1];
 /** Playback speed of a run (they take 10 – 100 s of line time), and near the moment it goes wrong. */
 const FAST = 3;
 const SLOW = 0.35;

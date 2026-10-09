@@ -103,7 +103,12 @@ export interface DemoValues {
 export interface PartValues {
   height: number;
   parallax: boolean;
+  /** The situation, not the student's: how tall the new parts really are (default POST.h; 대단원 마무리 평가), mm. */
+  partH?: number;
 }
+
+/** ③'s parts as they stand (their height from the situation). */
+export const partThings = (v: PartValues): readonly Thing[] => (v.partH === undefined ? AI_THINGS[3] : AI_THINGS[3].map((t) => ({ ...t, h: v.partH! })));
 export type AiValues = HsvValues | DemoValues | PartValues;
 
 export const AI_DEFAULTS: Record<AiProblem, AiValues> = {
@@ -683,7 +688,7 @@ export function partTarget(found: Found, t: Thing | null, v: PartValues): { x: n
 }
 
 export function runPart(chain: readonly ChainSegment[], v: PartValues): AiRun {
-  const list = AI_THINGS[3];
+  const list = partThings(v);
   const found = findThings(kitPicture(list), officialRanges(), list);
   const sim = new AiSim(chain, list);
   sim.log('see', `사진에서 ${found.length}개를 찾았어요`);
@@ -700,7 +705,7 @@ export function runPart(chain: readonly ChainSegment[], v: PartValues): AiRun {
 
 /** ③: each part's miss for values (no run), mm. */
 export function partPreview(v: PartValues) {
-  const list = AI_THINGS[3];
+  const list = partThings(v);
   return findThings(kitPicture(list), officialRanges(), list)
     .filter((f) => f.k >= 0)
     .map((f) => {
