@@ -1159,8 +1159,8 @@ const KIT_LOOK: Record<string, { color: string; roughness: number; metalness: nu
   pump_box: { color: '#2b2f34', roughness: 0.6, metalness: 0 },
 };
 
-/** Official AI Kit 2023 parts, already in the robot frame (robot-python/tools/convert_meshes.py kit). */
-function Kit() {
+/** Official AI Kit 2023 parts, already in the robot frame (robot-python/tools/convert_meshes.py kit). Also the 교육 AI 연구소 scene. */
+export function Kit() {
   const { nodes } = useGLTF(KIT_URL, DRACO_PATH) as unknown as { nodes: GlbNodes };
   const parts = useMemo(
     () =>
@@ -1224,7 +1224,7 @@ function boardTexture(): CanvasTexture {
   return t;
 }
 
-function CalibrationBoard() {
+export function CalibrationBoard() {
   const tex = useMemo(() => boardTexture(), []);
   const side = CAL_BOARD.size / 1000;
   return (

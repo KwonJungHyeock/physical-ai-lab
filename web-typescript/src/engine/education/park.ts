@@ -8,7 +8,7 @@
  *  - 바이오 실험실: the three tube-moving problems (lab/bio.ts);
  *  - 스마트팜: the three tomato-sorting problems (lab/farm.ts);
  *  - 서비스 카페: the three serving problems (lab/cafe.ts);
- *  - the others have no screens yet: they list their planned problems and stay 준비 중.
+ *  - AI 연구소: the three AI-kit problems (lab/ai.ts) — the last site.
  * Everything is done with the myCobot 280 RDK X5 (the product the school has); other products get
  * their own problems when they come.
  * Each problem names the 단원 whose principle it teaches (the theory is in that 단원's PDF).
@@ -18,7 +18,7 @@ import { topicsOf, type CategoryId, type TopicId } from './catalog';
 
 export type SiteId = 'center' | 'factory' | 'logistics' | 'lab' | 'farm' | 'cafe' | 'ai';
 /** The problem-solving labs (one per site that has one). */
-export type LabId = 'factory' | 'logistics' | 'bio' | 'farm' | 'cafe';
+export type LabId = 'factory' | 'logistics' | 'bio' | 'farm' | 'cafe' | 'ai';
 
 export interface SiteProblem {
   title: string;
@@ -134,14 +134,15 @@ export const SITES: readonly Site[] = [
     id: 'ai',
     name: 'AI 연구소',
     kind: '종합 미션',
-    robot: 'AI 키트 (카메라 · 흡착)',
+    robot: 'myCobot 280 + AI 키트 (카메라 · 흡착)',
     desc: '보고 판단해서 스스로 집어 놓아요. 배운 것을 모두 써요.',
     color: '#7a3fd1',
-    content: null,
+    content: 'lab',
+    lab: 'ai',
     problems: [
-      { title: '색이 섞여 있다', fix: '비전으로 찾아 분류', units: ['7'] },
-      { title: '시연을 보고 따라 하기', fix: '시연 학습', units: ['8'] },
-      { title: '처음 보는 배치', fix: '계획 + 인식 합치기', units: ['6', '7', '8'] },
+      { title: '색이 섞여 있다', fix: '겹치는 색 범위 · 판별 순서', units: ['7'], ready: true },
+      { title: '시연을 보고 따라 하기', fix: '궤적 재생과 정책', units: ['8'], ready: true },
+      { title: '처음 보는 물건', fix: '파이프라인 · 높이와 시차', units: ['6', '7', '8'], ready: true },
     ],
   },
 ];

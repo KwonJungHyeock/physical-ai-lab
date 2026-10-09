@@ -29,6 +29,7 @@ import FactoryLab from './lab/FactoryLab';
 import BioLab from './lab/BioLab';
 import FarmLab from './lab/FarmLab';
 import CafeLab from './lab/CafeLab';
+import AiLab from './lab/AiLab';
 import LogisticsLab from './lab/LogisticsLab';
 import ParkView from './map/ParkView';
 import LessonBar from './lesson/LessonBar';
@@ -49,6 +50,7 @@ const LOGI_KEY = 'lab-solved-logistics';
 const BIO_KEY = 'lab-solved-bio';
 const FARM_KEY = 'lab-solved-farm';
 const CAFE_KEY = 'lab-solved-cafe';
+const AI_KEY = 'lab-solved-ai';
 const FIRST: TopicId = TOPICS[0].id;
 /** Stable "no results yet" (a fresh {} each render would re-render the memoised panel). */
 const NO_RESULTS: Partial<Record<StepKey, ResultRow>> = {};
@@ -93,6 +95,7 @@ declare global {
     __learnBio?: () => void;
     __learnFarm?: () => void;
     __learnCafe?: () => void;
+    __learnAi?: () => void;
   }
 }
 
@@ -102,11 +105,12 @@ const stepFor = (p: PageId, cur: StepView): StepView => (isActivity(p) || p === 
 export default function LearnView({ robot, chain, gripperRobot, real, hidden }: Props) {
   const [topicId, setTopicId] = useState<TopicId>(FIRST);
   /** The park (front page), the course, a lesson, or the problem-solving lab (opened once, then kept). */
-  const [screen, setScreen] = useState<'map' | 'course' | 'topic' | 'lab' | 'logistics' | 'bio' | 'farm' | 'cafe'>('map');
+  const [screen, setScreen] = useState<'map' | 'course' | 'topic' | 'lab' | 'logistics' | 'bio' | 'farm' | 'cafe' | 'ai'>('map');
   const [logiSeen, setLogiSeen] = useState(false);
   const [bioSeen, setBioSeen] = useState(false);
   const [farmSeen, setFarmSeen] = useState(false);
   const [cafeSeen, setCafeSeen] = useState(false);
+  const [aiSeen, setAiSeen] = useState(false);
   /** Where a lesson goes back to: the page it was opened from. */
   const [lessonFrom, setLessonFrom] = useState<'map' | 'course'>('course');
   /** The lab's problems solved so far (1 · 2 · 3), kept between visits. */
@@ -155,6 +159,15 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
       return next;
     });
   }, []);
+  const [aiSolved, setAiSolved] = useState<Partial<Record<1 | 2 | 3, boolean>>>({});
+  const onAiSolved = useCallback((p: 1 | 2 | 3) => {
+    setAiSolved((x) => {
+      if (x[p]) return x;
+      const next = { ...x, [p]: true };
+      writeJson(AI_KEY, next);
+      return next;
+    });
+  }, []);
   const [labSeen, setLabSeen] = useState(false);
   const openLab = useCallback(() => {
     setLabSeen(true);
@@ -173,6 +186,9 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
     } else if (lab === 'cafe') {
       setCafeSeen(true);
       setScreen('cafe');
+    } else if (lab === 'ai') {
+      setAiSeen(true);
+      setScreen('ai');
     } else {
       setLabSeen(true);
       setScreen('lab');
@@ -224,6 +240,7 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
     setBioSolved(readJson(BIO_KEY, {}));
     setFarmSolved(readJson(FARM_KEY, {}));
     setCafeSolved(readJson(CAFE_KEY, {}));
+    setAiSolved(readJson(AI_KEY, {}));
     const r = readJson<Partial<ResumeSpot> | null>(RESUME_KEY, null);
     if (r && TOPIC_BY_ID.has(r.topic as TopicId) && PAGES.includes(r.page as PageId)) setResume({ topic: r.topic as TopicId, page: r.page as PageId });
   }, []);
@@ -295,6 +312,7 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
     window.__learnBio = () => openSiteLab('bio');
     window.__learnFarm = () => openSiteLab('farm');
     window.__learnCafe = () => openSiteLab('cafe');
+    window.__learnAi = () => openSiteLab('ai');
     return () => {
       delete window.__learnPick;
       delete window.__learnOpen;
@@ -303,6 +321,7 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
       delete window.__learnBio;
       delete window.__learnFarm;
       delete window.__learnCafe;
+      delete window.__learnAi;
     };
   }, [choose, openLab, openSiteLab]);
 
@@ -320,7 +339,7 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
     },
     [choose],
   );
-  const progress = useMemo(() => ({ done, solved: { factory: labSolved, logistics: logiSolved, bio: bioSolved, farm: farmSolved, cafe: cafeSolved } }), [done, labSolved, logiSolved, bioSolved, farmSolved, cafeSolved]);
+  const progress = useMemo(() => ({ done, solved: { factory: labSolved, logistics: logiSolved, bio: bioSolved, farm: farmSolved, cafe: cafeSolved, ai: aiSolved } }), [done, labSolved, logiSolved, bioSolved, farmSolved, cafeSolved, aiSolved]);
 
   const topic = TOPIC_BY_ID.get(topicId)!;
   const Panel = PANELS[topicId];
@@ -348,6 +367,9 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
         onStart={fromCourse}
         onLab={() => setScreen('map')}
       />
+      {aiSeen && (
+        <AiLab robot={robot} chain={chain} gripperRobot={gripperRobot} hidden={hidden || screen !== 'ai'} level={level} saved={aiSolved} onSolved={onAiSolved} onBack={() => setScreen('map')} />
+      )}
       {cafeSeen && (
         <CafeLab robot={robot} chain={chain} gripperRobot={gripperRobot} hidden={hidden || screen !== 'cafe'} level={level} saved={cafeSolved} onSolved={onCafeSolved} onBack={() => setScreen('map')} />
       )}
