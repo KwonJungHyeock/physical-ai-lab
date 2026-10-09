@@ -7,7 +7,7 @@
  * lesson screen — the step bar on top (lesson/LessonBar), the 3D view with the activity panel
  * over it (stage/ControlOverlay), and a short card per step on the right (lesson/LessonCards).
  * The 교육 tab opens on the 로봇 산업단지 (map/ParkView): seven industrial sites in order, each opening
- * when the one before it is finished — the 교육센터 is the 1단원 차시, the 스마트 공장 is lab/LabView (a
+ * when the one before it is finished — the 교육센터 is the 1단원 차시, the 스마트 공장 is lab/FactoryLab (a
  * working conveyor line to fix); 전체 차시 there opens the course home.
  */
 
@@ -25,7 +25,7 @@ import { HOME_POSE, type Mm, type RealArm } from './lessons';
 import ControlOverlay from './stage/ControlOverlay';
 import { SymbolsProvider } from './lesson/Rich';
 import Course from './roadmap/Course';
-import LabView from './lab/LabView';
+import FactoryLab from './lab/FactoryLab';
 import LogisticsLab from './lab/LogisticsLab';
 import ParkView from './map/ParkView';
 import LessonBar from './lesson/LessonBar';
@@ -304,7 +304,7 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
         />
       )}
       {labSeen && (
-        <LabView robot={robot} chain={chain} gripperRobot={gripperRobot} hidden={hidden || screen !== 'lab'} saved={labSolved} onSolved={onLabSolved} onBack={() => setScreen('map')} />
+        <FactoryLab robot={robot} chain={chain} gripperRobot={gripperRobot} hidden={hidden || screen !== 'lab'} level={level} saved={labSolved} onSolved={onLabSolved} onBack={() => setScreen('map')} />
       )}
       <SymbolsProvider symbols={topic.symbols}>
         <div className={css.learn} hidden={hidden || screen !== 'topic'}>

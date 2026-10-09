@@ -351,7 +351,7 @@ function SceneContent({ robot, chain, gripperRobot, scene, live, children }: Omi
             <meshBasicMaterial color={s.color} toneMapped={false} />
           </mesh>
           {s.label && (
-            <Html zIndexRange={[12, 0]} center position={[0, -0.03, 0]} style={{ pointerEvents: 'none' }}>
+            <Html zIndexRange={[12, 4]} center position={[0, -0.03, 0]} style={{ pointerEvents: 'none' }}>
               <span style={{ font: '700 12px var(--font, system-ui)', color: s.color, whiteSpace: 'nowrap', textShadow: '0 0 3px #fff' }}>{s.label}</span>
             </Html>
           )}
@@ -369,13 +369,13 @@ function SceneContent({ robot, chain, gripperRobot, scene, live, children }: Omi
             <sphereGeometry args={[0.012, 20, 14]} />
             <meshBasicMaterial color={LEARN_COLORS.bad} transparent opacity={0.55} depthTest={false} toneMapped={false} />
           </mesh>
-          <Html zIndexRange={[12, 0]} center position={[0, 0, 0.04]} style={{ pointerEvents: 'none' }}>
+          <Html zIndexRange={[12, 4]} center position={[0, 0, 0.04]} style={{ pointerEvents: 'none' }}>
             <span style={{ font: '800 13px var(--font, system-ui)', color: '#fff', background: LEARN_COLORS.bad, padding: '3px 8px', borderRadius: 8, whiteSpace: 'nowrap' }}>{scene.contact.text}</span>
           </Html>
         </group>
       )}
       {scene.labels?.map((l) => (
-        <Html zIndexRange={[12, 0]} key={l.key} center position={v(l.mm)} style={{ pointerEvents: 'none' }}>
+        <Html zIndexRange={[12, 4]} key={l.key} center position={v(l.mm)} style={{ pointerEvents: 'none' }}>
           <span style={{ font: '700 12px var(--font, system-ui)', color: l.color ?? '#101828', background: 'rgba(255,255,255,.88)', padding: '2px 6px', borderRadius: 6, whiteSpace: 'nowrap', boxShadow: '0 1px 3px rgba(16,24,40,.15)' }}>
             {l.text}
           </span>
@@ -472,7 +472,7 @@ function Target({ mm, ok, label }: { mm: Mm; ok: boolean; label?: string }) {
       {/* Drop line to the table. */}
       <Line points={[new Vector3(0, 0, 0), new Vector3(0, 0, -mm[2] / 1000)]} color={color} lineWidth={1} dashed dashSize={0.006} gapSize={0.004} />
       {label && (
-        <Html zIndexRange={[12, 0]} center position={[0, 0, 0.03]} style={{ pointerEvents: 'none' }}>
+        <Html zIndexRange={[12, 4]} center position={[0, 0, 0.03]} style={{ pointerEvents: 'none' }}>
           <span style={{ font: '700 12px var(--font, system-ui)', color, background: 'rgba(255,255,255,.9)', padding: '2px 6px', borderRadius: 6, whiteSpace: 'nowrap' }}>{label}</span>
         </Html>
       )}
@@ -551,7 +551,7 @@ function Arrow({ from, vec, color, label }: { from: Mm; vec: Mm; color: string; 
         <meshBasicMaterial color={color} depthTest={false} toneMapped={false} />
       </mesh>
       {label && (
-        <Html zIndexRange={[12, 0]} center position={[0, len + 0.012, 0]} style={{ pointerEvents: 'none' }}>
+        <Html zIndexRange={[12, 4]} center position={[0, len + 0.012, 0]} style={{ pointerEvents: 'none' }}>
           <span style={{ font: '700 12px var(--font, system-ui)', color, background: 'rgba(255,255,255,.9)', padding: '1px 6px', borderRadius: 6, whiteSpace: 'nowrap' }}>{label}</span>
         </Html>
       )}

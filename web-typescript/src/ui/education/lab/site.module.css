@@ -1,10 +1,16 @@
-/* 물류 센터 실습: the pieces the conveyor lab does not have — the work order, the line's board over
-   the 3D view, the operator panel (dark, like a real HMI), predictions, hints in three levels and the
-   principle card. Layout (bar, stage, panel) comes from lab.module.css. */
+/* 산업단지 현장 실습 (스마트 공장, 물류 센터, …): the pieces every site lab shares — the work order,
+   the line's board over the 3D view, the operator panel (dark, like a real HMI), measuring, the
+   explanation's gaps, the calculation, predictions, hints in three levels, the principle card, check
+   questions and the record sheet. Layout (bar, stage, panel) comes from lab.module.css. Each site
+   sets its colour on the screen's root: .site (물류 orange) or .factory (공장 blue). */
 
 .site {
   --site: #d9622b;
   --site-soft: #fdf0e8;
+}
+.factory {
+  --site: #2f5be7;
+  --site-soft: #edf2ff;
 }
 .dot {
   width: 10px;
@@ -451,8 +457,8 @@
   background: #fff;
   font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace;
   font-size: 12.5px;
-  overflow-x: auto;
-  white-space: nowrap;
+  line-height: 1.5;
+  word-break: keep-all;
 }
 .stars {
   font-size: 18px;
@@ -484,6 +490,9 @@
 }
 .siteBtn {
   background: var(--site) !important;
+}
+.siteBtn:disabled {
+  opacity: 0.45;
 }
 
 .jog {
@@ -993,7 +1002,7 @@
   font-size: 14px;
   padding: 4px 8px;
   border-radius: 6px;
-  background: #fdf0e8;
+  background: #f2f4f7;
 }
 .recordProb h3 small {
   margin-left: 6px;

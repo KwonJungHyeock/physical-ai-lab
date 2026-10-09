@@ -10,7 +10,11 @@
  *
  * Every frame it plays the run (engine/education/lab/run.ts frames, through ./playback): the
  * arm follows it (LearnStage reads `player.arm`), the boxes move and a box lights the beam it breaks. Overlays (miss line, 닿을 수 없음
- * markers, the reach arc, tool paths) are drawn from props.
+ * markers, the reach arc, tool paths, measured lengths) are drawn from props.
+ *
+ * Around it, the factory the story happens in (FactoryDressing): walkway lines, a parts shelf — and
+ * per problem what the story names: the moved stop sensor with its tag and the old position's tape
+ * (①), the A · B · C sample cart (②), the production board of the non-stop line (③).
  */
 
 import { Html, Line } from '@react-three/drei';
@@ -18,15 +22,14 @@ import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import { DoubleSide, Vector3, type Group, type Mesh, type MeshBasicMaterial, type MeshStandardMaterial, type Texture } from 'three';
 
-import { BEAM_Z, BELT, BIN, PALLET, SENSOR_X, type BoxSpec, type Mm } from '@/engine/education/lab/cell';
+import { BEAM_Z, BELT, BIN, BOX_A, BOX_B, BOX_C, PALLET, SENSOR_X, type BoxSpec, type Mm } from '@/engine/education/lab/cell';
+import type { ProblemId } from '@/engine/education/lab/problems';
 
 import { Pallet, Roller } from '../../simulator/stage/ScenePreset';
 import { RBox, Turned, belt, brushed, cardboard, grain, pill } from '../../simulator/stage/sceneKit';
 import { LEARN_COLORS } from '../stage/learn3d';
+import { Board, Dim, Shelf, Sign, Tape, m, tag, useHazard, v3, type CellDim } from './CellKit';
 import type { Playback } from './playback';
-
-const m = (mm: number) => mm / 1000;
-const v3 = (p: readonly number[]) => new Vector3(m(p[0]), m(p[1]), m(p[2]));
 
 export interface CellMarker {
   key: string;
@@ -46,6 +49,8 @@ export interface CellOverlay {
   ghostPath?: Mm[] | null;
   /** Sensor labels ("센서 1" …), one per sensor. */
   sensorNames?: string[];
+  /** What has been measured (원인 찾기). */
+  dims?: CellDim[];
 }
 
 interface Props {
@@ -54,9 +59,11 @@ interface Props {
   /** Sensor beam positions along the belt, y mm. */
   sensors: readonly number[];
   overlay: CellOverlay;
+  /** The problem (what the factory around the cell shows; none: the bare cell). */
+  prob?: ProblemId;
 }
 
-export default function ConveyorCell({ player, boxes, sensors, overlay }: Props) {
+export default function ConveyorCell({ player, boxes, sensors, overlay, prob }: Props) {
   const beltTex = useMemo(() => {
     const t = belt([1, 1]).clone();
     t.repeat.set(1, (BELT.yIn - BELT.yOut) / 40);
@@ -89,6 +96,7 @@ export default function ConveyorCell({ player, boxes, sensors, overlay }: Props)
 
   return (
     <group>
+      {prob && <FactoryDressing prob={prob} />}
       <BeltConveyor tex={beltTex} />
       <Pallet x={PALLET.x} y={PALLET.y} />
       <RejectBin />
@@ -279,7 +287,7 @@ function PhotoSensor({ y, name, beamRef, ledRef }: { y: number; name?: string; b
         <meshBasicMaterial color="#ff3b30" transparent opacity={0.45} depthWrite={false} toneMapped={false} />
       </mesh>
       {name && (
-        <Html zIndexRange={[11, 0]} center position={[m(ex + 4), m(y), m(BEAM_Z + 30)]} style={{ pointerEvents: 'none' }}>
+        <Html zIndexRange={[11, 4]} center position={[m(ex + 4), m(y), m(BEAM_Z + 30)]} style={{ pointerEvents: 'none' }}>
           <span style={{ font: '700 11px var(--font-ui, system-ui)', color: '#fff', background: 'rgba(16,24,40,.72)', padding: '1px 6px', borderRadius: 6, whiteSpace: 'nowrap' }}>{name}</span>
         </Html>
       )}
@@ -314,18 +322,8 @@ function RejectBin() {
 
 /* --- overlays ------------------------------------------------------------------ */
 
-const tag = (color: string, bg = 'rgba(255,255,255,.92)') => ({
-  font: '800 12px var(--font-ui, system-ui)',
-  color,
-  background: bg,
-  padding: '2px 7px',
-  borderRadius: 7,
-  whiteSpace: 'nowrap' as const,
-  boxShadow: '0 1px 4px rgba(0,0,0,.25)',
-});
-
 function Overlays({ overlay }: { overlay: CellOverlay }) {
-  const { miss, markers, reach, path, ghostPath } = overlay;
+  const { miss, markers, reach, path, ghostPath, dims } = overlay;
   const arc = useMemo(() => {
     if (!reach) return null;
     const pts: Vector3[] = [];
@@ -337,7 +335,7 @@ function Overlays({ overlay }: { overlay: CellOverlay }) {
       {arc && (
         <>
           <Line points={arc} color={LEARN_COLORS.accent} lineWidth={2} dashed dashSize={0.008} gapSize={0.005} transparent depthTest={false} renderOrder={6} />
-          <Html zIndexRange={[11, 0]} center position={arc[arc.length - 6].toArray()} style={{ pointerEvents: 'none' }}>
+          <Html zIndexRange={[11, 4]} center position={arc[arc.length - 6].toArray()} style={{ pointerEvents: 'none' }}>
             <span style={tag('#3454d1')}>손이 닿는 끝 · 높이 {reach!.z.toFixed(0)} mm</span>
           </Html>
         </>
@@ -354,7 +352,7 @@ function Overlays({ overlay }: { overlay: CellOverlay }) {
             <meshBasicMaterial color={miss.ok ? LEARN_COLORS.ok : '#ffffff'} depthTest={false} toneMapped={false} />
           </mesh>
           <Html
-            zIndexRange={[12, 0]}
+            zIndexRange={[12, 4]}
             center
             position={v3([(miss.from[0] + miss.to[0]) / 2, (miss.from[1] + miss.to[1]) / 2, Math.max(miss.from[2], miss.to[2]) + 26]).toArray()}
             style={{ pointerEvents: 'none' }}
@@ -363,6 +361,7 @@ function Overlays({ overlay }: { overlay: CellOverlay }) {
           </Html>
         </>
       )}
+      {dims?.map((d) => <Dim key={d.key} d={d} />)}
       {markers?.map((k) => (
         <group key={k.key} position={v3(k.mm)}>
           <mesh renderOrder={8}>
@@ -374,12 +373,88 @@ function Overlays({ overlay }: { overlay: CellOverlay }) {
             <meshBasicMaterial color={k.ok ? LEARN_COLORS.ok : LEARN_COLORS.bad} transparent opacity={0.8} side={DoubleSide} depthTest={false} toneMapped={false} />
           </mesh>
           {k.text && (
-            <Html zIndexRange={[12, 0]} center position={[0, 0, m(28)]} style={{ pointerEvents: 'none' }}>
+            <Html zIndexRange={[12, 4]} center position={[0, 0, m(28)]} style={{ pointerEvents: 'none' }}>
               <span style={tag(k.ok ? '#1f7a45' : '#fff', k.ok ? 'rgba(255,255,255,.92)' : '#e5484d')}>{k.text}</span>
             </Html>
           )}
         </group>
       ))}
+    </group>
+  );
+}
+
+/* --- the factory around the cell ----------------------------------------------- */
+
+/** A sample box on the cart, its letter on the side facing the line. */
+function Sample({ spec, at }: { spec: BoxSpec; at: [number, number, number] }) {
+  const [sx, sy, sz] = spec.size;
+  return (
+    <group>
+      <group position={v3([at[0], at[1], at[2] + sz / 2])}>
+        <CardBox size={[sx, sy, sz]} color={spec.color} />
+      </group>
+      <Sign at={[at[0], at[1] - sy / 2 - 0.6, at[2] + sz / 2]} w={Math.min(sx - 10, 40)} h={18} lines={[spec.id]} fg="#ffffff" bg="#2f5be7" />
+    </group>
+  );
+}
+
+/**
+ * The factory around the cell (on the desk, the cell's scale): walkway lines, a parts shelf behind
+ * the arm, and per problem what the story names (see the file comment).
+ */
+function FactoryDressing({ prob }: { prob: ProblemId }) {
+  const hazard = useHazard();
+  const yS = -55;
+  return (
+    <group>
+      <Tape a={[370, -330]} b={[370, 520]} w={10} color="#f2c230" />
+      <Tape a={[-260, -340]} b={[370, -340]} w={10} color="#f2c230" />
+      <Shelf x={-70} y={340} w={240} levels={[8, 88, 168]}>
+        {[-150, -100, -40, 10].map((dx) => (
+          <group key={dx} position={v3([dx, 340, 8 + 25])}>
+            <CardBox size={[44, 50, 50]} color="#c9995f" />
+          </group>
+        ))}
+        {[-140, -80, -20].map((dx) => (
+          <group key={dx} position={v3([dx, 340, 88 + 20])}>
+            <CardBox size={[50, 50, 40]} color="#d3a56d" />
+          </group>
+        ))}
+        <Sign at={[-70, 340 - 36.5, 230]} w={120} h={22} lines={['포장 2번 라인 · 부품 상자']} fg="#ffffff" bg="#2f5be7" />
+      </Shelf>
+      {prob === 1 && (
+        <>
+          {/* Where the stop sensor used to stand: the tape left on the floor beside the belt. */}
+          <Tape a={[SENSOR_X.emitter - 14, -14]} b={[SENSOR_X.emitter + 24, -14]} w={8} hazard={hazard} />
+          <Tape a={[SENSOR_X.reflector - 20, -14]} b={[SENSOR_X.reflector + 10, -14]} w={8} hazard={hazard} />
+          <Sign at={[SENSOR_X.emitter + 30, -14, 14]} yaw={0.9} w={46} h={11} lines={['예전 센서 자리']} fg="#1d2025" bg="#f7c731" />
+          {/* The tag on the moved sensor: on the far post, above the box, so it does not hide it. */}
+          <RBox at={[SENSOR_X.reflector, yS, BEAM_Z + 40]} size={[3, 3, 70]} radius={0.6}>
+            <meshStandardMaterial color="#59616b" metalness={0.5} roughness={0.5} />
+          </RBox>
+          <Sign at={[SENSOR_X.reflector + 2, yS, BEAM_Z + 70]} yaw={0.9} w={44} h={20} lines={['위치 변경', '정비팀 · 월']} fg="#ffffff" bg="#e5484d" />
+        </>
+      )}
+      {prob === 2 && (
+        <>
+          {/* The sample cart: a low steel table with one box of each kind. */}
+          <RBox at={[40, 250, 60]} size={[200, 90, 6]} radius={2}>
+            <meshStandardMaterial color="#c9cfd6" metalness={0.6} roughness={0.4} />
+          </RBox>
+          {[-1, 1].flatMap((sx) =>
+            [-1, 1].map((sy) => (
+              <RBox key={`${sx}${sy}`} at={[40 + sx * 92, 250 + sy * 38, 30]} size={[6, 6, 58]} radius={1}>
+                <meshStandardMaterial color="#59616b" metalness={0.5} roughness={0.5} />
+              </RBox>
+            )),
+          )}
+          <Sample spec={BOX_A} at={[-20, 250, 63]} />
+          <Sample spec={BOX_B} at={[50, 250, 63]} />
+          <Sample spec={BOX_C} at={[115, 250, 63]} />
+          <Sign at={[40, 204.4, 52]} w={120} h={14} lines={['혼류 생산 · 견본 A · B · C']} fg="#1d2025" bg="#ffffff" />
+        </>
+      )}
+      {prob === 3 && <Board at={[430, 120]} yaw={0.9} lines={['연속 운전 · 목표 720개/시간', '벨트 120 mm/s · 간격 600 mm']} />}
     </group>
   );
 }

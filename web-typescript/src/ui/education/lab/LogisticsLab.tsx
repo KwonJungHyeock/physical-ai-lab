@@ -20,11 +20,10 @@
  * in one go, then played back here (PalletCell).
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { createPortal } from 'react-dom';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { HOME_Q, type Mm } from '@/engine/education/lab/cell';
-import { LOGI_STEPS, LOGI_TEXT, type CheckQ, type LogiStepId } from '@/engine/education/lab/logistics';
+import { LOGI_STEPS, LOGI_TEXT, type LogiStepId } from '@/engine/education/lab/logistics';
 import {
   DEFAULTS,
   DROP_OK_MM,
@@ -68,8 +67,31 @@ import type { UrdfRobot } from '@/engine/robot/urdf';
 
 import LearnStage, { type LearnScene, type ViewPose } from '../stage/LearnStage';
 import PalletCell, { PalletPlayback, type PalletDim, type PalletOverlay } from './PalletCell';
+import {
+  Ask,
+  Boss,
+  Calc,
+  Cause,
+  Done,
+  ArrowDef,
+  Head,
+  Measure,
+  PredictHints,
+  PredictionCheck,
+  RecordSheet,
+  SiteBtn,
+  Goals,
+  answeredUpTo,
+  bodyClass,
+  calcOk,
+  causeTodo,
+  fmt,
+  freshFlow,
+  type FlowState,
+  type MeasureRow,
+} from './SiteFlow';
 import css from './lab.module.css';
-import lg from './logistics.module.css';
+import lg from './site.module.css';
 
 /** The cell from the front right, a little above (three.js metres, y up): camera, then target. */
 const LOGI_VIEW: ViewPose = [0.66, 0.46, 0.7, 0.1, 0.06, 0.1];
@@ -81,64 +103,19 @@ const SLOW_LEAD_S = 1.6;
 const PROBS: readonly LogiProblem[] = [1, 2, 3];
 /** ②: the largest cup acceleration with a box at full travel speed (measured by the engine), for the operator panel's rough guide. */
 const ACC_AT_FULL = 7.3;
-const NUM = ['①', '②', '③', '④'];
 
 interface Runs {
   before: PalletRun | null;
   latest: PalletRun | null;
 }
 
-/** One 다시 가동, for the student's record. */
-interface Attempt {
-  time: string;
-  values: LogiValues;
-  pass: boolean;
-  note: string;
-}
-
-interface ProbState {
+interface ProbState extends FlowState {
   step: LogiStepId;
-  reached: number;
   values: LogiValues;
   runs: Runs;
-  /** 원인 찾기: how many of the measurements have been taken, the cause picked, the wrong ones tried before it, the explanation's gaps. */
-  meas: number;
-  pick: number | null;
-  tried: number[];
-  blanks: (number | null)[];
-  /** 값 고치기: the numbers typed, and whether they have been checked. */
-  calc: string[];
-  calcChecked: boolean;
-  pred: number | null;
-  hints: number;
-  tries: number;
-  /** Why the prediction missed (the reason picked). */
-  missed: number | null;
-  /** 확인 문제: what was answered, and which have been checked. */
-  answers: string[];
-  shown: boolean[];
-  log: Attempt[];
 }
 
-const fresh = (p: LogiProblem): ProbState => ({
-  step: 'brief',
-  reached: 0,
-  values: DEFAULTS[p],
-  runs: { before: null, latest: null },
-  meas: 0,
-  pick: null,
-  tried: [],
-  blanks: LOGI_TEXT[p].blanks.answer.map(() => null),
-  calc: LOGI_TEXT[p].calc.fields.map(() => ''),
-  calcChecked: false,
-  pred: null,
-  hints: 0,
-  tries: 0,
-  missed: null,
-  answers: LOGI_TEXT[p].checks.map(() => ''),
-  shown: LOGI_TEXT[p].checks.map(() => false),
-  log: [],
-});
+const fresh = (p: LogiProblem): ProbState => ({ ...freshFlow(LOGI_TEXT[p]), step: 'brief', values: DEFAULTS[p], runs: { before: null, latest: null } });
 
 declare global {
   interface Window {
@@ -159,16 +136,6 @@ interface Props {
 }
 
 const stepIndex = (s: LogiStepId) => LOGI_STEPS.findIndex((x) => x.id === s);
-const fmt = (v: number, d = 0) => v.toFixed(d).replace('-', '−');
-/** A typed number (accepts the minus sign as printed, and a comma for the point). */
-const num = (s: string): number | null => {
-  const x = parseFloat(s.trim().replace(/[−–]/g, '-').replace(',', '.'));
-  return Number.isFinite(x) ? x : null;
-};
-const near = (s: string, answer: number, tol: number) => {
-  const x = num(s);
-  return x !== null && Math.abs(x - answer) <= tol;
-};
 /** Three.js world (y up, metres) from the robot frame (z up, mm). */
 const world = (p: Mm): [number, number, number] => [p[0] / 1000, p[2] / 1000, -p[1] / 1000];
 /** A close look at a point of the cell: from the same side as the usual view, nearer. */
@@ -206,17 +173,14 @@ function valuesText(p: LogiProblem, v: LogiValues): string {
 
 /* --- 원인 찾기: what to measure, per problem (each value drawn in 3D where it has a place) --- */
 
-interface MeasureRow {
-  label: string;
-  value: string;
-  bad?: boolean;
+interface LogiRow extends MeasureRow {
   dim?: PalletDim;
 }
 
 const DIM_OK = '#3454d1';
 const DIM_BAD = '#e5484d';
 
-function measureRows(prob: LogiProblem, run: PalletRun | null): MeasureRow[] {
+function measureRows(prob: LogiProblem, run: PalletRun | null): LogiRow[] {
   const f = run?.failure;
   if (prob === 1) {
     const v = DEFAULTS[1] as StackValues;
@@ -333,7 +297,7 @@ export default function LogisticsLab({ robot, chain, gripperRobot, hidden, level
           runs: { ...x.runs, [which]: run },
           tries: which === 'latest' ? x.tries + 1 : x.tries,
           missed: which === 'latest' ? null : x.missed,
-          log: which === 'latest' ? [...x.log, { time, values: v, pass: sc.pass, note: sc.pass ? `합격 · ${fmt(sc.timeS, 1)} s` : whyNotYet(p, sc) }] : x.log,
+          log: which === 'latest' ? [...x.log, { time, values: valuesText(p, v), pass: sc.pass, note: sc.pass ? `합격 · ${fmt(sc.timeS, 1)} s` : whyNotYet(p, sc) }] : x.log,
           step: then,
           reached: Math.max(x.reached, stepIndex(then)),
         }));
@@ -439,25 +403,11 @@ export default function LogisticsLab({ robot, chain, gripperRobot, hidden, level
           values = FIXES[p];
           latest = await runStack(chain, setupFor(p, values));
           const sc = scoreStack(latest, limitFor(p));
-          log = [...log, { time: '—', values, pass: sc.pass, note: sc.pass ? `합격 · ${fmt(sc.timeS, 1)} s` : whyNotYet(p, sc) }];
+          log = [...log, { time: '—', values: valuesText(p, values), pass: sc.pass, note: sc.pass ? `합격 · ${fmt(sc.timeS, 1)} s` : whyNotYet(p, sc) }];
           if (sc.pass) setSolved((x) => ({ ...x, [p]: true }));
         }
-        const past = stepIndex(step);
         setProb(p);
-        patch(p, (x) => ({
-          values,
-          log,
-          runs: { before, latest },
-          step,
-          reached: Math.max(x.reached, past),
-          meas: past >= stepIndex('cause') ? measureRows(p, before).length : x.meas,
-          pick: past > stepIndex('cause') ? T.choices.findIndex((c) => c.ok) : x.pick,
-          blanks: past > stepIndex('cause') ? [...T.blanks.answer] : x.blanks,
-          calc: past >= stepIndex('fix') && opts.solve ? T.calc.fields.map((f) => String(f.answer)) : x.calc,
-          calcChecked: (past >= stepIndex('fix') && !!opts.solve) || x.calcChecked,
-          pred: x.pred ?? 0,
-          tries: opts.solve ? x.tries + 1 : x.tries,
-        }));
+        patch(p, (x) => ({ ...answeredUpTo(T, x, stepIndex(step), measureRows(p, before).length, !!opts.solve), values, log, runs: { before, latest }, step }));
         if (opts.at !== undefined) {
           const at = opts.at;
           window.setTimeout(() => {
@@ -605,7 +555,7 @@ export default function LogisticsLab({ robot, chain, gripperRobot, hidden, level
           onBack={onBack}
         />
       </aside>
-      {record && <RecordSheet st={st} solved={solved} level={level} onClose={() => setRecord(false)} />}
+      {record && <RecordSheet site="물류 센터 (팔레타이징)" tone={lg.site} texts={LOGI_TEXT} st={st} solved={solved} level={level} onClose={() => setRecord(false)} />}
     </div>
   );
 }
@@ -618,7 +568,7 @@ interface PanelProps {
   busy: boolean;
   solved: boolean;
   level: StudyLevel;
-  rows: MeasureRow[];
+  rows: LogiRow[];
   sb: StackScore | null;
   sl: StackScore | null;
   patch(ch: Partial<ProbState> | ((x: ProbState) => Partial<ProbState>)): void;
@@ -630,24 +580,6 @@ interface PanelProps {
   onNext(): void;
   onBack(): void;
 }
-
-function Head({ eyebrow, title, solved }: { eyebrow: string; title: string; solved?: boolean }) {
-  return (
-    <div className={css.head}>
-      <div>
-        <small style={{ color: 'var(--site)' } as CSSProperties}>{eyebrow}</small>
-        <b>{title}</b>
-      </div>
-      {solved && <span className={css.solved}>✓ 해결</span>}
-    </div>
-  );
-}
-
-const SiteBtn = ({ children, ...p }: { children: ReactNode; disabled?: boolean; title?: string; onClick(): void }) => (
-  <button type="button" className={`${css.primary} ${lg.siteBtn}`} {...p}>
-    {children}
-  </button>
-);
 
 /** The work program as the line has it now (작업 지시). */
 function programLine(p: LogiProblem): string {
@@ -663,30 +595,22 @@ function programLine(p: LogiProblem): string {
   return `팔레트 기준점 (${fmt(v.x)}, ${fmt(v.y)}) mm — 처음 설치할 때 잡은 자리`;
 }
 
-const blanksOk = (p: LogiProblem, b: readonly (number | null)[]) => LOGI_TEXT[p].blanks.answer.every((a, i) => b[i] === a);
-const calcOk = (p: LogiProblem, c: readonly string[]) => LOGI_TEXT[p].calc.fields.every((f, i) => near(c[i] ?? '', f.answer, f.tol));
-/** Did the prediction come true (null: nothing to compare yet). */
-function predictionHit(st: ProbState, sl: StackScore | null): boolean | null {
-  if (!sl || st.pred === null) return null;
-  return sl.pass ? st.pred === 0 : sl.stopped || sl.slipped ? st.pred === 2 : st.pred === 1;
-}
+/** Which prediction the run bears out: all done, stopped (or dropped), or done but not to the standard. */
+const predictionOf = (sl: StackScore | null) => (!sl ? null : sl.pass ? 0 : sl.stopped || sl.slipped ? 2 : 1);
 
 function Panel(p: PanelProps) {
   const { prob, st, busy, sb, sl, rows } = p;
   const T = LOGI_TEXT[prob];
   const { runs } = st;
   const failure = runs.before?.failure;
-  const body = `${css.body} ${lg.scroll}`;
   switch (st.step) {
     case 'brief':
       return (
         <>
           <Head eyebrow={`${T.day} · 작업 지시서 ${T.order}`} title={T.orderTitle} solved={p.solved} />
-          <div className={body}>
+          <div className={bodyClass}>
             <p className={css.story}>{T.brief}</p>
-            <p className={lg.boss}>
-              <b>박 반장</b> {T.boss}
-            </p>
+            <Boss name="박 반장" line={T.boss} />
             <div className={lg.order}>
               <header>
                 작업 기준 <span>{T.order}</span>
@@ -717,14 +641,7 @@ function Panel(p: PanelProps) {
             <p className={lg.note}>
               <b>작업 프로그램</b> · {programLine(prob)}
             </p>
-            <details className={lg.goals}>
-              <summary>이번 문제에서 배울 것</summary>
-              <ol>
-                {T.goals.map((g) => (
-                  <li key={g}>{g}</li>
-                ))}
-              </ol>
-            </details>
+            <Goals goals={T.goals} />
             <p className={lg.note}>지금 값 그대로 한 번 가동해 보세요. 무엇이 문제인지는 그다음에 찾아요.</p>
           </div>
           <div className={css.foot}>
@@ -739,13 +656,9 @@ function Panel(p: PanelProps) {
       return (
         <>
           <Head eyebrow="가동 결과" title={failure ? `${(failure.box ?? 0) + 1}번 상자에서 멈췄어요` : '끝까지 쌓았어요'} solved={p.solved} />
-          <div className={body}>
+          <div className={bodyClass}>
             <p className={css.story}>{T.happened} 경광등이 빨갛게 켜졌어요.</p>
-            <ul className={lg.ask}>
-              {T.ask.map((q) => (
-                <li key={q}>{q}</li>
-              ))}
-            </ul>
+            <Ask ask={T.ask} />
             <p className={`${lg.note} ${lg.siteNote}`}>
               <b>찾아보기</b> · 아래 기록에서 시각을 누르면 그 순간으로 가요. 멈추기 직전에 무엇을 했나요?
             </p>
@@ -758,44 +671,19 @@ function Panel(p: PanelProps) {
         </>
       );
     case 'cause': {
-      const all = st.meas >= rows.length;
-      const right = st.pick !== null && !!T.choices[st.pick]?.ok;
-      const done = right && blanksOk(prob, st.blanks);
+      const todo = causeTodo(T, st, rows.length);
       return (
         <>
           <Head eyebrow="원인 찾기 · 측정" title={T.question} solved={p.solved} />
-          <div className={body}>
+          <div className={bodyClass}>
             <p className={css.story}>{T.look}</p>
             <Measure rows={rows} meas={st.meas} onMeasure={() => p.patch((x) => ({ meas: Math.min(rows.length, x.meas + 1) }))} />
             {prob === 2 && st.meas >= 4 && runs.before && <AccGraph run={runs.before} />}
-            {all && (
-              <>
-                <b className={lg.q}>{T.question}</b>
-                <div className={lg.choices}>
-                  {T.choices.map((c, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      data-r={st.pick === i ? (c.ok ? 'ok' : 'no') : st.tried.includes(i) ? 'tried' : undefined}
-                      disabled={right}
-                      onClick={() => p.patch((x) => ({ pick: i, tried: c.ok || x.tried.includes(i) ? x.tried : [...x.tried, i] }))}
-                    >
-                      {NUM[i]} {c.t}
-                    </button>
-                  ))}
-                </div>
-                {st.pick !== null && (
-                  <p className={lg.note} data-r={right ? 'ok' : 'no'}>
-                    <b>{right ? '맞아요.' : '다시 생각해 보세요.'}</b> {T.choices[st.pick].fb.replace(/^맞아요\.\s*/, '')}
-                  </p>
-                )}
-                {right && <Blanks prob={prob} value={st.blanks} on={(blanks) => p.patch({ blanks })} />}
-              </>
-            )}
+            <Cause T={T} st={st} all={st.meas >= rows.length} patch={p.patch} />
           </div>
           <div className={css.foot}>
-            <span className={lg.footNote}>{!all ? `측정 ${st.meas} / ${rows.length}` : !right ? '원인을 골라 보세요' : !done ? '설명의 빈칸을 채워요' : ''}</span>
-            <SiteBtn disabled={!done} onClick={() => p.onStep('fix')}>
+            <span className={lg.footNote}>{todo}</span>
+            <SiteBtn disabled={todo !== ''} onClick={() => p.onStep('fix')}>
               값 고치러 가기 →
             </SiteBtn>
           </div>
@@ -803,39 +691,19 @@ function Panel(p: PanelProps) {
       );
     }
     case 'fix': {
-      const ok = st.calcChecked && calcOk(prob, st.calc);
+      const ok = st.calcChecked && calcOk(T, st.calc);
       return (
         <>
           <Head eyebrow={ok ? '조작반 · 이 문제에 필요한 값만' : '값 고치기 · 먼저 계산'} title={prob === 1 ? '놓는 높이를 고쳐요' : prob === 2 ? '속도를 나눠 정해요' : '기준점을 다시 잡아요'} solved={p.solved} />
-          <div className={body}>
-            <Calc prob={prob} st={st} patch={p.patch} />
+          <div className={bodyClass}>
+            <Calc T={T} st={st} patch={p.patch} />
             {ok && (
               <>
                 <p className={`${lg.note} ${lg.siteNote}`}>{T.calc.after}</p>
                 {prob === 1 && <Hmi1 v={st.values as StackValues} on={(values) => p.patch({ values })} />}
                 {prob === 2 && <Hmi2 v={st.values as SpeedValues} on={(values) => p.patch({ values })} />}
                 {prob === 3 && <Hmi3 v={st.values as RefValues} on={(values) => p.patch({ values })} />}
-                <div className={lg.predict}>
-                  <b>가동 전에 예상해 보세요</b>
-                  <div>
-                    {T.predictions.map((t, i) => (
-                      <button key={i} type="button" aria-pressed={st.pred === i} onClick={() => p.patch({ pred: i })}>
-                        {t}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className={lg.hints}>
-                  <button type="button" onClick={() => p.patch((x) => ({ hints: Math.min(3, x.hints + 1) }))} disabled={st.hints >= 3}>
-                    힌트 보기 ({st.hints}/3)
-                  </button>
-                  {T.hints.slice(0, st.hints).map((h) => (
-                    <p key={h.k} className={lg.hint}>
-                      <em>{h.k}</em>
-                      {h.t}
-                    </p>
-                  ))}
-                </div>
+                <PredictHints T={T} st={st} patch={p.patch} />
               </>
             )}
           </div>
@@ -848,30 +716,13 @@ function Panel(p: PanelProps) {
         </>
       );
     }
-    case 'compare': {
-      const hit = predictionHit(st, sl);
+    case 'compare':
       return (
         <>
           <Head eyebrow="다시 가동 · 전과 후" title={sl?.pass ? '기준을 모두 넘었어요' : '아직 기준에 못 미쳐요'} solved={p.solved} />
-          <div className={body}>
+          <div className={bodyClass}>
             {sb && sl && <Compare prob={prob} sb={sb} sl={sl} before={runs.before!} latest={runs.latest!} />}
-            {hit !== null && (
-              <p className={lg.note} data-r={hit ? 'ok' : undefined}>
-                <b>{hit ? '예상 적중!' : '예상과 달랐어요.'}</b> 내 예상: “{T.predictions[st.pred!]}”. {hit ? '결과를 미리 맞혔어요.' : '왜 달랐을까요? 가장 가까운 생각을 골라 보세요.'}
-              </p>
-            )}
-            {hit === false && (
-              <>
-                <div className={lg.choices}>
-                  {T.missed.map((c, i) => (
-                    <button key={i} type="button" data-r={st.missed === i ? 'pick' : undefined} onClick={() => p.patch({ missed: i })}>
-                      {c.t}
-                    </button>
-                  ))}
-                </div>
-                {st.missed !== null && <p className={lg.note}>{T.missed[st.missed].fb}</p>}
-              </>
-            )}
+            <PredictionCheck T={T} st={st} hit={predictionOf(sl)} patch={p.patch} />
             {sl && !sl.pass && <p className={`${lg.note} ${lg.siteNote}`}>{whyNotYet(prob, sl)}</p>}
             {prob === 2 && runs.latest && <AccGraph run={runs.latest} />}
             {prob !== 2 && <Events run={runs.latest} onSeek={p.onSeek} />}
@@ -886,54 +737,12 @@ function Panel(p: PanelProps) {
           </div>
         </>
       );
-    }
-    case 'done': {
-      const stars = 3 - (st.hints >= 2 ? 1 : 0) - (st.tries > 2 ? 1 : 0);
+    case 'done':
       return (
         <>
           <Head eyebrow="해결 · 원리 카드" title={`${T.title} — 해결했어요`} solved={p.solved} />
-          <div className={body}>
-            <div className={lg.stars}>
-              {'★'.repeat(stars)}
-              {'☆'.repeat(3 - stars)}
-              <small>
-                다시 가동 {st.tries}번 · 힌트 {st.hints}번
-              </small>
-            </div>
-            <div className={lg.principle}>
-              <small>원리 카드 · {T.principle.unit}</small>
-              <b>{T.principle.title}</b>
-              <PrincipleFig prob={prob} />
-              <p className={lg.formula}>{T.principle.formula}</p>
-              {T.principle.lines.map((l) => (
-                <p key={l}>{l}</p>
-              ))}
-              <div className={lg.pdfLinks}>
-                {T.pdf.map((d) => (
-                  <a key={d.href} href={d.href} target="_blank" rel="noreferrer">
-                    PDF · {d.label}
-                  </a>
-                ))}
-              </div>
-            </div>
-            <Checks prob={prob} st={st} patch={p.patch} />
-            {p.level === 'uni' && (
-              <div className={lg.uni}>
-                <small>대학 · 더 깊이</small>
-                <b>{T.uni.title}</b>
-                {T.uni.lines.map((l) => (
-                  <p key={l}>{l}</p>
-                ))}
-                {T.uni.code && <pre>{T.uni.code}</pre>}
-              </div>
-            )}
-            <div className={lg.real}>
-              <b>실제 로봇으로</b>
-              <p>{T.real}</p>
-              <p className={lg.safety}>
-                <b>안전</b> {T.safety}
-              </p>
-            </div>
+          <div className={bodyClass}>
+            <Done T={T} st={st} level={p.level} fig={<PrincipleFig prob={prob} />} patch={p.patch} />
           </div>
           <div className={css.foot}>
             <button type="button" className={css.ghost} onClick={p.onRecord}>
@@ -943,7 +752,6 @@ function Panel(p: PanelProps) {
           </div>
         </>
       );
-    }
   }
 }
 
@@ -954,98 +762,7 @@ function whyNotYet(prob: LogiProblem, s: StackScore): string {
   return '팔레트 제자리를 벗어난 상자가 있어요.';
 }
 
-/* --- 원인 찾기 ------------------------------------------------------------------------- */
-
-/** The measurements, taken one at a time (each 재기 shows the next value, and draws it in 3D). */
-function Measure({ rows, meas, onMeasure }: { rows: MeasureRow[]; meas: number; onMeasure(): void }) {
-  return (
-    <div className={lg.measureBox}>
-      <dl className={lg.measure}>
-        {rows.map((r, i) => (
-          <div key={r.label} data-on={i < meas || undefined}>
-            <dt>{r.label}</dt>
-            <dd data-c={i < meas && r.bad ? 'bad' : undefined}>{i < meas ? r.value : '?'}</dd>
-          </div>
-        ))}
-      </dl>
-      {meas < rows.length && (
-        <button type="button" className={lg.measureBtn} onClick={onMeasure}>
-          📏 재기 — {rows[meas].label}
-        </button>
-      )}
-    </div>
-  );
-}
-
-/** The explanation to complete: the text with a choice in each gap. */
-function Blanks({ prob, value, on }: { prob: LogiProblem; value: readonly (number | null)[]; on(v: (number | null)[]): void }) {
-  const B = LOGI_TEXT[prob].blanks;
-  const parts = B.text.split(/([①②③④])/);
-  return (
-    <div className={lg.blanks}>
-      <b>설명을 완성해 보세요</b>
-      <p>
-        {parts.map((t, k) => {
-          const g = NUM.indexOf(t);
-          if (g < 0) return <span key={k}>{t}</span>;
-          const v = value[g];
-          return (
-            <select
-              key={k}
-              aria-label={`빈칸 ${t}`}
-              value={v ?? ''}
-              data-r={v === null ? undefined : v === B.answer[g] ? 'ok' : 'no'}
-              onChange={(e) => on(value.map((x, i) => (i === g ? (e.target.value === '' ? null : +e.target.value) : x)))}
-            >
-              <option value="">{t} 고르기</option>
-              {B.options[g].map((o, i) => (
-                <option key={o} value={i}>
-                  {o}
-                </option>
-              ))}
-            </select>
-          );
-        })}
-      </p>
-    </div>
-  );
-}
-
-/* --- 값 고치기 ------------------------------------------------------------------------- */
-
-/** The numbers to work out before the operator panel opens. */
-function Calc({ prob, st, patch }: { prob: LogiProblem; st: ProbState; patch: PanelProps['patch'] }) {
-  const C = LOGI_TEXT[prob].calc;
-  const ok = st.calcChecked && calcOk(prob, st.calc);
-  return (
-    <div className={lg.calc} data-ok={ok || undefined}>
-      <b>계산해 보세요</b>
-      <p>{C.prompt}</p>
-      {C.fields.map((f, i) => {
-        const r = st.calcChecked && st.calc[i] !== '' ? near(st.calc[i], f.answer, f.tol) : null;
-        return (
-          <label key={f.label} data-r={r === null ? undefined : r ? 'ok' : 'no'}>
-            <span>{f.label} =</span>
-            <input
-              inputMode="decimal"
-              value={st.calc[i]}
-              disabled={ok}
-              onChange={(e) => patch((x) => ({ calc: x.calc.map((c, j) => (j === i ? e.target.value : c)), calcChecked: false }))}
-            />
-            <em>{f.unit}</em>
-            {r !== null && <i>{r ? '✓' : '✗'}</i>}
-          </label>
-        );
-      })}
-      {!ok && (
-        <button type="button" className={css.small} disabled={st.calc.some((c) => c.trim() === '')} onClick={() => patch({ calcChecked: true })}>
-          확인
-        </button>
-      )}
-      {st.calcChecked && !ok && <small className={lg.calcNo}>✗ 표시된 칸을 다시 계산해 보세요.</small>}
-    </div>
-  );
-}
+/* --- 값 고치기: the operator panels -------------------------------------------------- */
 
 function Knob({ id, label, unit, v, min, max, step = 1, note, on }: { id: string; label: string; unit: string; v: number; min: number; max: number; step?: number; note: string; on(v: number): void }) {
   return (
@@ -1281,13 +998,13 @@ function PrincipleFig({ prob }: { prob: LogiProblem }) {
         {[0, 1, 2].map((k) => (
           <g key={k}>
             <line x1={112} x2={196} y1={66 - 26 * k} y2={66 - 26 * k} className={lg.figGuide} />
-            <line x1={140 + 14 * k} x2={140 + 14 * k} y1={104} y2={68 - 26 * k} className={lg.figArrow} markerEnd="url(#lgArrow)" />
+            <line x1={140 + 14 * k} x2={140 + 14 * k} y1={104} y2={68 - 26 * k} className={lg.figArrow} markerEnd="url(#siteArrow)" />
             <text x={200} y={70 - 26 * k} className={lg.figTxt}>
               {k + 1}층 = z₁ + {k} × h
             </text>
           </g>
         ))}
-        <line x1={50} x2={50} y1={64} y2={42} className={lg.figArrow} markerStart="url(#lgArrow)" markerEnd="url(#lgArrow)" />
+        <line x1={50} x2={50} y1={64} y2={42} className={lg.figArrow} markerStart="url(#siteArrow)" markerEnd="url(#siteArrow)" />
         <text x={36} y={57} className={lg.figTxt}>
           h
         </text>
@@ -1301,15 +1018,15 @@ function PrincipleFig({ prob }: { prob: LogiProblem }) {
       <svg className={lg.fig} viewBox="0 0 320 110" role="img" aria-label="흡착력은 무게와 가속에 필요한 힘을 함께 버틴다">
         <rect x={112} y={14} width={16} height={22} rx={3} className={lg.figCup} />
         <rect x={96} y={36} width={48} height={40} rx={3} className={lg.figBox} />
-        <line x1={120} x2={120} y1={34} y2={6} className={lg.figUp} markerEnd="url(#lgArrow)" />
+        <line x1={120} x2={120} y1={34} y2={6} className={lg.figUp} markerEnd="url(#siteArrow)" />
         <text x={126} y={12} className={lg.figTxt}>
           흡착력 F
         </text>
-        <line x1={112} x2={112} y1={76} y2={104} className={lg.figArrow} markerEnd="url(#lgArrow)" />
+        <line x1={112} x2={112} y1={76} y2={104} className={lg.figArrow} markerEnd="url(#siteArrow)" />
         <text x={40} y={102} className={lg.figTxt}>
           무게 m·g
         </text>
-        <line x1={144} x2={196} y1={56} y2={56} className={lg.figArrow} markerEnd="url(#lgArrow)" />
+        <line x1={144} x2={196} y1={56} y2={56} className={lg.figArrow} markerEnd="url(#siteArrow)" />
         <text x={150} y={50} className={lg.figTxt}>
           가속 a → 필요한 힘 m·a
         </text>
@@ -1327,7 +1044,7 @@ function PrincipleFig({ prob }: { prob: LogiProblem }) {
       <rect x={140} y={14} width={90} height={64} className={lg.figPalTop} />
       <circle cx={30} cy={98} r={5} className={lg.figMarkOld} />
       <circle cx={140} cy={78} r={5} className={lg.figMark} />
-      <line x1={36} x2={134} y1={96} y2={80} className={lg.figArrow} markerEnd="url(#lgArrow)" />
+      <line x1={36} x2={134} y1={96} y2={80} className={lg.figArrow} markerEnd="url(#siteArrow)" />
       {[
         [158, 32],
         [194, 32],
@@ -1347,181 +1064,5 @@ function PrincipleFig({ prob }: { prob: LogiProblem }) {
       </text>
       <ArrowDef />
     </svg>
-  );
-}
-
-function ArrowDef() {
-  return (
-    <defs>
-      <marker id="lgArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-        <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
-      </marker>
-    </defs>
-  );
-}
-
-/** Three check questions: a number, a choice (both marked), and one to write (the model answer after). */
-function Checks({ prob, st, patch }: { prob: LogiProblem; st: ProbState; patch: PanelProps['patch'] }) {
-  const Q = LOGI_TEXT[prob].checks;
-  const set = (i: number, a: string, show = false) => patch((x) => ({ answers: x.answers.map((v, j) => (j === i ? a : v)), shown: x.shown.map((v, j) => (j === i ? show || (v && x.answers[i] === a) : v)) }));
-  const show = (i: number) => patch((x) => ({ shown: x.shown.map((v, j) => (j === i ? true : v)) }));
-  return (
-    <div className={lg.checks}>
-      <b>확인 문제</b>
-      {Q.map((q, i) => {
-        const a = st.answers[i];
-        const res = st.shown[i] ? checkResult(q, a) : null;
-        return (
-          <div key={q.q} className={lg.check} data-r={res === null ? undefined : res ? 'ok' : 'no'}>
-            <p>
-              <b>{i + 1}.</b> {q.q}
-            </p>
-            {q.kind === 'num' && (
-              <div className={lg.checkRow}>
-                <input inputMode="decimal" value={a} aria-label={`${i + 1}번 답`} onChange={(e) => set(i, e.target.value)} />
-                <em>{q.unit}</em>
-                <button type="button" className={css.tiny} disabled={a.trim() === ''} onClick={() => show(i)}>
-                  확인
-                </button>
-              </div>
-            )}
-            {q.kind === 'mc' && (
-              <div className={lg.checkMc}>
-                {q.choices!.map((c, k) => (
-                  <button key={c} type="button" aria-pressed={a === String(k)} onClick={() => set(i, String(k), true)}>
-                    {NUM[k]} {c}
-                  </button>
-                ))}
-              </div>
-            )}
-            {q.kind === 'open' && (
-              <>
-                <textarea rows={2} value={a} aria-label={`${i + 1}번 답`} placeholder="내 생각을 적어 보세요" onChange={(e) => set(i, e.target.value)} />
-                {!st.shown[i] && (
-                  <button type="button" className={css.tiny} disabled={a.trim() === ''} onClick={() => show(i)}>
-                    모범 답 보기
-                  </button>
-                )}
-              </>
-            )}
-            {st.shown[i] && (
-              <small>
-                {res === null ? '모범 답 · ' : res ? '✓ 맞아요 · ' : '✗ 다시 보세요 · '}
-                {q.explain}
-              </small>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-/** A check question's answer: right, wrong, or null for one written in words. */
-function checkResult(q: CheckQ, a: string): boolean | null {
-  if (q.kind === 'num') return near(a, q.answer!, q.tol ?? 0.5);
-  if (q.kind === 'mc') return a === String(q.answer);
-  return null;
-}
-
-/* --- 실습 기록: everything the student did, on one page to print ------------------------ */
-
-function RecordSheet({ st, solved, level, onClose }: { st: Record<LogiProblem, ProbState>; solved: Record<LogiProblem, boolean>; level: StudyLevel; onClose(): void }) {
-  const date = useMemo(() => new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' }), []);
-  return createPortal(
-    <div className={`${lg.recordBack} logi-record`} role="dialog" aria-modal="true" aria-label="실습 기록">
-      <div className={lg.record}>
-        <header className={lg.recordHead}>
-          <div>
-            <small>산업단지 · 물류 센터 (팔레타이징) · myCobot 280</small>
-            <b>실습 기록지</b>
-          </div>
-          <div className={lg.recordWho}>
-            <span>날짜 {date}</span>
-            <span>과정 {level === 'uni' ? '대학' : '고등'}</span>
-            <span>학번 · 이름 ____________________</span>
-          </div>
-        </header>
-        {PROBS.map((p) => {
-          const T = LOGI_TEXT[p];
-          const s = st[p];
-          const right = T.choices.findIndex((c) => c.ok);
-          const firstPick = s.tried[0] ?? (s.pick === right ? right : null);
-          return (
-            <section key={p} className={lg.recordProb}>
-              <h3>
-                문제 {p} · {T.title} <small>{solved[p] ? '✓ 해결' : s.reached > 0 ? '진행 중' : '아직'}</small>
-              </h3>
-              <dl>
-                <dt>처음 고른 원인</dt>
-                <dd>{firstPick === null ? '—' : `${NUM[firstPick]} ${T.choices[firstPick].t}${firstPick === right ? ' (정답)' : ''}`}</dd>
-                <dt>원인 고르기</dt>
-                <dd>{s.pick === right ? `${s.tried.length + 1}번 만에 찾음` : '—'}</dd>
-                <dt>계산</dt>
-                <dd>{s.calcChecked ? T.calc.fields.map((f, i) => `${f.label} = ${s.calc[i] || '—'} ${f.unit}`).join(' / ') : '—'}</dd>
-                <dt>예상</dt>
-                <dd>
-                  {s.pred === null ? '—' : T.predictions[s.pred]}
-                  {s.missed !== null && ` → 다른 이유: ${T.missed[s.missed].t}`}
-                </dd>
-                <dt>힌트</dt>
-                <dd>{s.hints}번</dd>
-              </dl>
-              {s.log.length > 0 && (
-                <table>
-                  <thead>
-                    <tr>
-                      <th>다시 가동</th>
-                      <th>넣은 값</th>
-                      <th>결과</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {s.log.map((a, i) => (
-                      <tr key={i}>
-                        <td>
-                          {i + 1} · {a.time}
-                        </td>
-                        <td>{valuesText(p, a.values)}</td>
-                        <td>{a.note}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-              <ol className={lg.recordChecks}>
-                {T.checks.map((q, i) => {
-                  const a = s.answers[i];
-                  const r = s.shown[i] ? checkResult(q, a) : null;
-                  const shownA = q.kind === 'mc' && a !== '' ? `${NUM[+a]} ${q.choices![+a]}` : a;
-                  return (
-                    <li key={q.q}>
-                      {q.q}
-                      <span>
-                        {shownA ? `답: ${shownA}${q.kind === 'num' ? ` ${q.unit}` : ''}` : '답: ____________'}
-                        {r !== null && (r ? ' ✓' : ' ✗')}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ol>
-            </section>
-          );
-        })}
-        <footer className={lg.recordFoot}>
-          <span>오늘 알게 된 것 한 줄: ______________________________________________</span>
-          <span>선생님 확인 ________</span>
-        </footer>
-        <div className={lg.recordBtns}>
-          <button type="button" className={css.ghost} onClick={onClose}>
-            닫기
-          </button>
-          <button type="button" className={`${css.primary} ${lg.siteBtn}`} onClick={() => window.print()}>
-            인쇄 · PDF로 저장
-          </button>
-        </div>
-      </div>
-    </div>,
-    document.body,
   );
 }

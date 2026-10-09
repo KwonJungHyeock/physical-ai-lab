@@ -1,16 +1,14 @@
 'use client';
 
 /**
- * The lab's right panel: what the current step needs, and nothing that scrolls — 상황 (the story
- * and what the run measured), 원인 찾기 (the numbers to look at and one question), 값 고치기 (the
- * editors with live engine readouts: FK for ①, IK for ②, the time plan for ③), 다시 실행 · 비교
- * (before and after with measured numbers, ③'s timelines), 해결 확인 (the automatic checklist) and
- * 원리 정리 (one or two lines and the theory PDF).
+ * 스마트 공장 실습의 조각들 (FactoryLab uses them in its six steps): what a run did (headline, each
+ * box, the log), the operator panels with live engine readouts — FK for ① (J1 · J2 · J3), IK for ②
+ * (angles or coordinates, sensor 3, approach height), the time plan for ③ — and the before / after
+ * views of 다시 가동 · 비교 with the automatic checklist.
  */
 
-import { useDeferredValue, useMemo, type ReactNode } from 'react';
+import { useDeferredValue, useMemo } from 'react';
 
-import { PROBLEMS, STEPS, type StepId } from '@/engine/education/lab/chapter';
 import type { Mm } from '@/engine/education/lab/cell';
 import {
   GRIP_TOL_MM,
@@ -27,7 +25,6 @@ import {
   p1Live,
   p1Miss,
   p2DefaultValues,
-  p2Plan,
   p2Readings,
   p3Offsets,
   p3Timing,
@@ -53,136 +50,11 @@ export interface Runs {
   previous: LabRun | null;
 }
 
-interface Props {
-  chain: readonly ChainSegment[];
-  prob: ProblemId;
-  step: StepId;
-  reached: number;
-  solved: boolean;
-  runs: Runs;
-  busy: boolean;
-  playing: boolean;
-  playT: number;
-  answer: number | null;
-  onAnswer(i: number): void;
-  v1: P1Values;
-  v2: P2Values;
-  v3: P3Values;
-  onV1(v: P1Values): void;
-  onV2(v: P2Values): void;
-  onV3(v: P3Values): void;
-  onFocusRow(k: number): void;
-  /** ②: the IK plan for the values being edited (LabView works it out once for the 3D view and this panel). */
-  plan2: P2Plan[] | null;
-  onStep(s: StepId): void;
-  onRun(): void;
-  onReplay(): void;
-  onNext(): void;
-}
-
-const f1 = (v: number) => (Math.abs(v) < 0.05 ? '0.0' : v.toFixed(1));
-
-export default function LabPanel(props: Props) {
-  const { prob, step, onStep, busy } = props;
-  const text = PROBLEMS[prob - 1];
-  const at = STEPS.findIndex((s) => s.id === step);
-  const prev = STEPS[at - 1]?.id;
-  let body: ReactNode = null;
-  let action: ReactNode = null;
-  switch (step) {
-    case 'situation':
-      body = <Situation {...props} />;
-      action = (
-        <button type="button" className={css.primary} onClick={() => onStep('cause')} disabled={!props.runs.before || props.playing}>
-          원인 찾기 →
-        </button>
-      );
-      break;
-    case 'cause':
-      body = <Cause {...props} />;
-      action = (
-        <button type="button" className={css.primary} onClick={() => onStep('fix')} disabled={props.answer !== text.answer}>
-          값 고치기 →
-        </button>
-      );
-      break;
-    case 'fix':
-      body = <Fix {...props} />;
-      action = (
-        <button type="button" className={css.primary} onClick={props.onRun} disabled={busy}>
-          {busy ? '계산하는 중…' : '▶ 다시 실행'}
-        </button>
-      );
-      break;
-    case 'compare':
-      body = <Compare {...props} />;
-      action = (
-        <button type="button" className={css.primary} onClick={() => onStep('verify')} disabled={!props.runs.latest}>
-          해결 확인 →
-        </button>
-      );
-      break;
-    case 'verify': {
-      const pass = !!props.runs.latest && verdict(prob, props.runs.latest).pass;
-      body = <Verify {...props} />;
-      action = pass ? (
-        <button type="button" className={css.primary} onClick={() => onStep('principle')}>
-          원리 정리 →
-        </button>
-      ) : (
-        <button type="button" className={css.primary} onClick={() => onStep('fix')}>
-          ← 값 다시 고치기
-        </button>
-      );
-      break;
-    }
-    case 'principle':
-      body = <Principle {...props} />;
-      action =
-        prob < 3 ? (
-          <button type="button" className={css.primary} onClick={props.onNext}>
-            다음 문제 {PROBLEMS[prob].mark} →
-          </button>
-        ) : null;
-      break;
-  }
-  return (
-    <aside className={css.panel} aria-label={`${text.mark} ${text.title} · ${STEPS[at].label}`}>
-      <header className={css.head}>
-        <span className={css.mark}>{text.mark}</span>
-        <div>
-          <b>{text.title}</b>
-          <small>
-            {at + 1} / 6 · {STEPS[at].label}
-          </small>
-        </div>
-        {props.solved && <span className={css.solved}>✓ 해결</span>}
-      </header>
-      <div className={css.body}>{body}</div>
-      <footer className={css.foot}>
-        <button type="button" className={css.ghost} onClick={() => prev && onStep(prev)} disabled={!prev}>
-          ← 이전
-        </button>
-        {action}
-      </footer>
-    </aside>
-  );
-}
+export const f1 = (v: number) => (Math.abs(v) < 0.05 ? '0.0' : v.toFixed(1));
 
 /* --- pieces ------------------------------------------------------------------ */
 
-function RunState({ run, playing, busy, onReplay }: { run: LabRun | null; playing: boolean; busy: boolean; onReplay(): void }) {
-  return (
-    <div className={css.runState}>
-      <span data-live={playing || undefined}>{busy || !run ? '계산하는 중…' : playing ? '공정을 돌려 보는 중…' : `끝 · ${run.durationS.toFixed(1)} s 동안`}</span>
-      <button type="button" className={css.small} onClick={onReplay} disabled={!run || busy}>
-        ↻ 다시 보기
-      </button>
-    </div>
-  );
-}
-
-function Headline({ prob, run }: { prob: ProblemId; run: LabRun }) {
+export function Headline({ prob, run }: { prob: ProblemId; run: LabRun }) {
   const v = verdict(prob, run);
   return (
     <p className={css.headline} data-ok={v.pass || undefined}>
@@ -193,7 +65,7 @@ function Headline({ prob, run }: { prob: ProblemId; run: LabRun }) {
 }
 
 /** ②③: what happened to each box. */
-function BoxList({ run, offsets }: { run: LabRun; offsets?: (number | null)[] }) {
+export function BoxList({ run, offsets }: { run: LabRun; offsets?: (number | null)[] }) {
   return (
     <ul className={css.boxes}>
       {outcomes(run).map((o, k) => (
@@ -207,29 +79,8 @@ function BoxList({ run, offsets }: { run: LabRun; offsets?: (number | null)[] })
   );
 }
 
-function Situation({ prob, runs, playing, busy, onReplay }: Props) {
-  const text = PROBLEMS[prob - 1];
-  const run = runs.before;
-  const done = !!run && !playing;
-  return (
-    <>
-      <p className={css.story}>{text.story}</p>
-      <RunState run={run} playing={playing} busy={busy} onReplay={onReplay} />
-      {done && run && (
-        <div className={css.card}>
-          <Headline prob={prob} run={run} />
-          {prob === 1 && <P1Numbers run={run} />}
-          {prob === 2 && <BoxList run={run} />}
-          {prob === 3 && <BoxList run={run} offsets={p3Offsets(run)} />}
-        </div>
-      )}
-      {done && run && <EventLog run={run} />}
-    </>
-  );
-}
-
 /** What happened, in order, with the time it happened (the run's own log, the notable lines). */
-function EventLog({ run }: { run: LabRun }) {
+export function EventLog({ run }: { run: LabRun }) {
   const lines = run.events.filter((e) => e.kind === 'grip' || e.kind === 'miss' || e.kind === 'unreachable' || e.kind === 'hit' || e.kind === 'start').slice(0, 6);
   return (
     <div className={css.card}>
@@ -246,7 +97,7 @@ function EventLog({ run }: { run: LabRun }) {
   );
 }
 
-function P1Numbers({ run }: { run: LabRun }) {
+export function P1Numbers({ run }: { run: LabRun }) {
   const e = run.events.find((x) => x.kind === 'miss' || x.kind === 'grip');
   if (!e?.at || !e.to) return null;
   return (
@@ -281,52 +132,7 @@ function P1Numbers({ run }: { run: LabRun }) {
   );
 }
 
-function Cause(props: Props) {
-  const { prob, answer, onAnswer } = props;
-  const text = PROBLEMS[prob - 1];
-  return (
-    <>
-      <p className={css.look}>
-        <b>볼 곳</b> {text.look}
-      </p>
-      {prob === 1 && <Cause1 {...props} />}
-      {prob === 2 && <Cause2 {...props} />}
-      {prob === 3 && <Cause3 {...props} />}
-      <div className={css.quiz}>
-        <p>{text.question}</p>
-        <div role="radiogroup" aria-label={text.question}>
-          {text.choices.map((c, i) => (
-            <button key={c} type="button" role="radio" aria-checked={answer === i} data-pick={answer === i ? (i === text.answer ? 'ok' : 'no') : undefined} onClick={() => onAnswer(i)}>
-              {c}
-            </button>
-          ))}
-        </div>
-        {answer !== null && <p className={css.why}>{answer === text.answer ? text.why : '다시 생각해 보세요. 위의 숫자가 힌트예요.'}</p>}
-      </div>
-    </>
-  );
-}
-
-function Cause1({ chain }: Props) {
-  const live = p1Live(chain, P1_DEFAULT);
-  return (
-    <div className={css.card}>
-      <p className={css.cap}>
-        지시서 각도 J1 {P1_DEFAULT.j1}° · J2 {P1_DEFAULT.j2}° · J3 {P1_DEFAULT.j3}° → 순기구학으로 계산한 손끝
-      </p>
-      <XyzTable
-        rows={[
-          ['손끝 (계산)', live.tip],
-          ['상자 가운데', live.target],
-        ]}
-        delta={live.delta}
-        dist={live.missMm}
-      />
-    </div>
-  );
-}
-
-function XyzTable({ rows, delta, dist }: { rows: [string, Mm][]; delta: Mm; dist: number }) {
+export function XyzTable({ rows, delta, dist }: { rows: [string, Mm][]; delta: Mm; dist: number }) {
   return (
     <table className={css.table}>
       <thead>
@@ -366,41 +172,7 @@ function XyzTable({ rows, delta, dist }: { rows: [string, Mm][]; delta: Mm; dist
   );
 }
 
-function Cause2({ chain }: Props) {
-  const plan = useMemo(() => p2Plan(chain, { ...p2DefaultValues(chain), mode: 'coords' }), [chain]);
-  return (
-    <div className={css.card}>
-      <p className={css.cap}>멈춘 자리 (센서가 알려 줌) · 로봇 몸통(J1 축)에서의 거리</p>
-      <table className={css.table}>
-        <tbody>
-          {plan.map((p, k) => (
-            <tr key={k}>
-              <th>{P2_BOXES[k].name}</th>
-              <td>({p.target.map((v) => v.toFixed(0)).join(', ')})</td>
-              <td data-big={!p.q || undefined}>{p.radiusMm.toFixed(0)} mm</td>
-              <td data-big={!p.q || undefined} data-ok={!!p.q || undefined}>
-                {p.q ? '닿아요' : '닿지 않아요'}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <p className={css.cap}>각도 하나는 손끝 자리 하나예요. 문제 1의 각도는 상자 A 자리에만 맞아요.</p>
-    </div>
-  );
-}
-
-function Cause3({ chain }: Props) {
-  const t = useMemo(() => p3Timing(chain, P3_DEFAULT), [chain]);
-  return (
-    <div className={css.card}>
-      <p className={css.cap}>센서가 상자를 본 때부터 (벨트 {P3_DEFAULT.belt} mm/s)</p>
-      <TimePlan t={t} v={P3_DEFAULT} />
-    </div>
-  );
-}
-
-function TimePlan({ t, v }: { t: ReturnType<typeof p3Timing>; v: P3Values }) {
+export function TimePlan({ t, v }: { t: ReturnType<typeof p3Timing>; v: P3Values }) {
   if (!t.ok) return <p className={css.bad}>대기 자리에 손이 닿지 않아요. 대기 위치를 바꿔 보세요.</p>;
   const arrive = v.delayMs / 1000 + t.downS;
   const span = Math.max(arrive, t.boxS) * 1.15;
@@ -472,21 +244,7 @@ function Slider({
   );
 }
 
-function Fix(props: Props) {
-  const text = PROBLEMS[props.prob - 1];
-  return (
-    <>
-      <p className={css.look}>
-        <b>힌트</b> {text.hint}
-      </p>
-      {props.prob === 1 && <Fix1 {...props} />}
-      {props.prob === 2 && <Fix2 {...props} />}
-      {props.prob === 3 && <Fix3 {...props} />}
-    </>
-  );
-}
-
-function Fix1({ chain, v1, onV1 }: Props) {
+export function Fix1({ chain, v1, onV1 }: { chain: readonly ChainSegment[]; v1: P1Values; onV1(v: P1Values): void }) {
   const live = p1Live(chain, v1);
   const j = (k: keyof P1Values, label: string) => (
     <Slider label={label} value={v1[k]} min={P1_RANGE[k][0]} max={P1_RANGE[k][1]} step={0.1} unit="°" onChange={(x) => onV1({ ...v1, [k]: Math.round(x * 10) / 10 })} />
@@ -521,7 +279,7 @@ function Fix1({ chain, v1, onV1 }: Props) {
   );
 }
 
-function Fix2({ chain, v2, onV2, onFocusRow, plan2 }: Props) {
+export function Fix2({ chain, v2, onV2, onFocusRow, plan2 }: { chain: readonly ChainSegment[]; v2: P2Values; onV2(v: P2Values): void; onFocusRow(k: number): void; plan2: P2Plan[] | null }) {
   const plan = plan2 ?? [];
   const readings = p2Readings(v2.s3);
   const setTarget = (k: number, i: number, val: number) => {
@@ -606,7 +364,7 @@ function Fix2({ chain, v2, onV2, onFocusRow, plan2 }: Props) {
   );
 }
 
-function Fix3({ chain, v3, onV3 }: Props) {
+export function Fix3({ chain, v3, onV3 }: { chain: readonly ChainSegment[]; v3: P3Values; onV3(v: P3Values): void }) {
   const deferred = useDeferredValue(v3);
   const t = useMemo(() => p3Timing(chain, deferred), [chain, deferred]);
   const set = (k: keyof P3Values) => (x: number) => onV3({ ...v3, [k]: x });
@@ -641,29 +399,8 @@ function Fix3({ chain, v3, onV3 }: Props) {
 
 /* --- 비교 · 확인 · 정리 -------------------------------------------------------- */
 
-function Compare(props: Props) {
-  const { prob, runs, playing, busy, onReplay, playT } = props;
-  const { before, latest } = runs;
-  if (!before || !latest) return <p className={css.story}>값을 고친 뒤 [다시 실행]을 누르면 여기서 비교해요.</p>;
-  return (
-    <>
-      <RunState run={latest} playing={playing} busy={busy} onReplay={onReplay} />
-      {prob === 1 && <Compare1 before={before} latest={latest} />}
-      {prob === 2 && <CompareTable before={before} latest={latest} />}
-      {prob === 3 && (
-        <>
-          <Timeline run={before} title="처음 · 상자와 흡착 컵의 위치 (벨트 방향)" waitY={P3_DEFAULT.waitY} sensorY={P3_SENSOR_Y} maxT={Math.max(before.durationS, latest.durationS)} />
-          <Timeline run={latest} title="지금" waitY={props.v3.waitY} sensorY={P3_SENSOR_Y} cursor={playing ? playT : null} maxT={Math.max(before.durationS, latest.durationS)} />
-          <CompareTable before={before} latest={latest} timing />
-        </>
-      )}
-      {!playing && <Headline prob={prob} run={latest} />}
-    </>
-  );
-}
-
 /** ②③: each box before and after, in one small table (③ adds how early or late the cup came down). */
-function CompareTable({ before, latest, timing }: { before: LabRun; latest: LabRun; timing?: boolean }) {
+export function CompareTable({ before, latest, timing }: { before: LabRun; latest: LabRun; timing?: boolean }) {
   const cols = [before, latest].map((run) => ({ out: outcomes(run), off: timing ? p3Offsets(run) : null }));
   const when = (o: number | null | undefined) => (o === null || o === undefined ? '' : Math.abs(o) < 0.5 ? ' · 딱 맞음' : o > 0 ? ` · ${o.toFixed(0)} mm 일찍` : ` · ${(-o).toFixed(0)} mm 늦게`);
   return (
@@ -693,7 +430,7 @@ function CompareTable({ before, latest, timing }: { before: LabRun; latest: LabR
   );
 }
 
-function Compare1({ before, latest }: { before: LabRun; latest: LabRun }) {
+export function Compare1({ before, latest }: { before: LabRun; latest: LabRun }) {
   const a = p1Miss(before);
   const b = p1Miss(latest);
   const top = Math.max(a ?? 0, b ?? 0, 10);
@@ -755,46 +492,36 @@ function AnglesTable({ before, latest }: { before: LabRun; latest: LabRun }) {
   );
 }
 
-function Verify({ prob, runs }: Props) {
-  const run = runs.latest;
-  if (!run) return <p className={css.story}>먼저 값을 고쳐 다시 실행해 보세요.</p>;
+/** 해결 확인: the automatic checklist of a run (the work order's standards). */
+export function Checklist({ prob, run }: { prob: ProblemId; run: LabRun }) {
   const v = verdict(prob, run);
   return (
-    <>
-      <p className={css.banner} data-ok={v.pass || undefined}>
-        {v.pass ? '해결했어요!' : '아직이에요. 값을 다시 고쳐 보세요.'}
-      </p>
-      <ul className={css.checks}>
-        {v.checks.map((c) => (
-          <li key={c.label} data-ok={c.ok || undefined}>
-            <i>{c.ok ? '✓' : '✗'}</i>
-            <span>{c.label}</span>
-            <b>{c.value}</b>
-          </li>
-        ))}
-      </ul>
-    </>
+    <ul className={css.checks}>
+      {v.checks.map((c) => (
+        <li key={c.label} data-ok={c.ok || undefined}>
+          <i>{c.ok ? '✓' : '✗'}</i>
+          <span>{c.label}</span>
+          <b>{c.value}</b>
+        </li>
+      ))}
+    </ul>
   );
 }
 
-function Principle({ prob }: Props) {
-  const text = PROBLEMS[prob - 1];
+/** 다시 가동 · 비교: before and after with measured numbers (③ with both timelines), then the checklist. */
+export function CompareView({ prob, before, latest, playing, playT, waitY }: { prob: ProblemId; before: LabRun; latest: LabRun; playing: boolean; playT: number; waitY: number }) {
   return (
     <>
-      <div className={css.principle}>
-        {text.principle.map((l) => (
-          <p key={l}>{l}</p>
-        ))}
-      </div>
-      <div className={css.pdfs}>
-        <p className={css.cap}>이론 자료 (PDF)</p>
-        {text.pdf.map((p) => (
-          <a key={p.href} href={p.href} target="_blank" rel="noopener">
-            <span>PDF</span> {p.label}
-          </a>
-        ))}
-      </div>
-      {prob === 3 && <p className={css.cap}>세 문제를 다 풀었어요. 왼쪽 위 [← 교육 홈]으로 돌아갈 수 있어요.</p>}
+      {prob === 1 && <Compare1 before={before} latest={latest} />}
+      {prob === 2 && <CompareTable before={before} latest={latest} />}
+      {prob === 3 && (
+        <>
+          <Timeline run={before} title="처음 · 상자와 흡착 컵의 위치 (벨트 방향)" waitY={P3_DEFAULT.waitY} sensorY={P3_SENSOR_Y} maxT={Math.max(before.durationS, latest.durationS)} />
+          <Timeline run={latest} title="지금" waitY={waitY} sensorY={P3_SENSOR_Y} cursor={playing ? playT : null} maxT={Math.max(before.durationS, latest.durationS)} />
+          <CompareTable before={before} latest={latest} timing />
+        </>
+      )}
+      <Checklist prob={prob} run={latest} />
     </>
   );
 }

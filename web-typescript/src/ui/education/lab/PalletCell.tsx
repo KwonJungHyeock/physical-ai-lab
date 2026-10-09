@@ -19,8 +19,8 @@
 
 import { Html, Line } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import { useEffect, useMemo, useRef, type ReactNode, type RefObject } from 'react';
-import { CanvasTexture, DoubleSide, Quaternion, RepeatWrapping, SRGBColorSpace, Vector3, type Group, type Mesh, type MeshStandardMaterial } from 'three';
+import { useEffect, useMemo, useRef, type RefObject } from 'react';
+import { DoubleSide, Quaternion, Vector3, type Group, type Mesh, type MeshStandardMaterial } from 'three';
 
 import { FEED, HEAVY_G, MARK_OFF, N_BOXES, PAL, PAL_HOME, PBOX, type LogiProblem, type PFrame, type PalletPose, type PalletRun } from '@/engine/education/lab/pallet';
 import type { Mm } from '@/engine/education/lab/cell';
@@ -28,10 +28,9 @@ import type { Mm } from '@/engine/education/lab/cell';
 import { RBox, belt, wood } from '../../simulator/stage/sceneKit';
 import { LEARN_COLORS } from '../stage/learn3d';
 import type { LiveArm } from '../stage/LearnStage';
+import { Board, Dim, FlatLabel, Shelf, Sign, Steel, Tape, m, tag, useHazard, useTextTexture, v3, type CellDim } from './CellKit';
 import { BeltConveyor, CardBox, scroll } from './ConveyorCell';
 
-const m = (mm: number) => mm / 1000;
-const v3 = (p: readonly number[]) => new Vector3(m(p[0]), m(p[1]), m(p[2]));
 const FRAME_DT = 0.02;
 const BOX_SIZE: Mm = [PBOX.sx, PBOX.sy, PBOX.h];
 const CARTON = '#c9995f';
@@ -107,16 +106,7 @@ export class PalletPlayback {
   }
 }
 
-/** A measured length drawn in the cell (원인 찾기): from a to b, with its value. */
-export interface PalletDim {
-  key: string;
-  a: Mm;
-  b: Mm;
-  text: string;
-  color: string;
-  /** Where its value sits: at the middle (default), or at the far end to the left / right. */
-  label?: 'l' | 'r';
-}
+export type PalletDim = CellDim;
 
 export interface PalletOverlay {
   /** Where a box will be let go (값 고치기): its centre, and how it sits on what is under it. */
@@ -226,8 +216,6 @@ export default function PalletCell({ player, overlay, prob = 1, pallet = PAL_HOM
 
 /* --- models ------------------------------------------------------------------- */
 
-const Steel = () => <meshStandardMaterial color="#aeb6bf" metalness={0.8} roughness={0.3} />;
-
 /** The end stop across the belt: a steel plate on two brackets with a black rubber bumper facing the boxes. */
 function EndStop() {
   const y = FEED.yStop - 8;
@@ -326,58 +314,6 @@ function CheckPost({ at, lampRef, greenRef }: { at: Mm; lampRef: RefObject<Mesh 
 
 /* --- the warehouse around the cell --------------------------------------------- */
 
-/** A canvas texture with lines of text (signs, labels, stickers), px per mm `k`. */
-function useTextTexture(lines: readonly string[], w: number, h: number, fg: string, bg: string, k = 8): CanvasTexture {
-  const key = lines.join('\n');
-  const tex = useMemo(() => {
-    const c = document.createElement('canvas');
-    c.width = Math.round(w * k);
-    c.height = Math.round(h * k);
-    const g = c.getContext('2d')!;
-    g.fillStyle = bg;
-    g.fillRect(0, 0, c.width, c.height);
-    g.fillStyle = fg;
-    g.textAlign = 'center';
-    g.textBaseline = 'middle';
-    const rows = key.split('\n');
-    const size = Math.min(c.height / (rows.length * 1.25), (c.width * 1.6) / Math.max(...rows.map((r) => r.length + 1)));
-    rows.forEach((r, i) => {
-      g.font = `${i === 0 ? 800 : 700} ${Math.round(i === 0 ? size : size * 0.8)}px Pretendard, system-ui, sans-serif`;
-      g.fillText(r, c.width / 2, (c.height * (i + 0.5)) / rows.length);
-    });
-    const t = new CanvasTexture(c);
-    t.colorSpace = SRGBColorSpace;
-    t.anisotropy = 4;
-    return t;
-  }, [key, w, h, fg, bg, k]);
-  useEffect(() => () => tex.dispose(), [tex]);
-  return tex;
-}
-
-/** A flat sign standing up (its face towards `yaw`, 0 = facing −y, robot frame), centre `at`, mm. */
-function Sign({ at, w, h, yaw = 0, lines, fg = '#1d2025', bg = '#ffffff' }: { at: Mm; w: number; h: number; yaw?: number; lines: readonly string[]; fg?: string; bg?: string }) {
-  const tex = useTextTexture(lines, w, h, fg, bg);
-  return (
-    <group position={v3(at)} rotation={[0, 0, yaw]}>
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[m(w), m(h)]} />
-        <meshStandardMaterial map={tex} roughness={0.6} />
-      </mesh>
-    </group>
-  );
-}
-
-/** A label lying flat (on a box top, the floor), centre `at`, mm. */
-function FlatLabel({ at, w, h, rot = 0, lines, fg, bg }: { at: Mm; w: number; h: number; rot?: number; lines: readonly string[]; fg: string; bg: string }) {
-  const tex = useTextTexture(lines, w, h, fg, bg);
-  return (
-    <mesh position={v3(at)} rotation={[0, 0, rot]}>
-      <planeGeometry args={[m(w), m(h)]} />
-      <meshStandardMaterial map={tex} roughness={0.5} />
-    </mesh>
-  );
-}
-
 /** ②: the weight sticker on a heavy carton's top. */
 function WeightSticker() {
   return <FlatLabel at={[-8, 8, PBOX.h / 2 + 0.5]} w={20} h={13} rot={Math.PI / 2} lines={[`${HEAVY_G} g`, '무거움']} fg="#ffffff" bg="#d92d20" />;
@@ -396,84 +332,11 @@ function Creases() {
   );
 }
 
-/** Yellow and black hazard tape (a repeating stripe texture). */
-function useHazard(): CanvasTexture {
-  const tex = useMemo(() => {
-    const c = document.createElement('canvas');
-    c.width = 64;
-    c.height = 16;
-    const g = c.getContext('2d')!;
-    g.fillStyle = '#f2c230';
-    g.fillRect(0, 0, 64, 16);
-    g.fillStyle = '#1d2025';
-    for (let x = -16; x < 64; x += 16) {
-      g.beginPath();
-      g.moveTo(x, 16);
-      g.lineTo(x + 8, 16);
-      g.lineTo(x + 16, 0);
-      g.lineTo(x + 8, 0);
-      g.fill();
-    }
-    const t = new CanvasTexture(c);
-    t.colorSpace = SRGBColorSpace;
-    t.wrapS = RepeatWrapping;
-    return t;
-  }, []);
-  useEffect(() => () => tex.dispose(), [tex]);
-  return tex;
-}
-
-/** A strip of floor tape from a to b (on the floor), width w, mm. */
-function Tape({ a, b, w = 8, color, hazard }: { a: [number, number]; b: [number, number]; w?: number; color?: string; hazard?: CanvasTexture }) {
-  const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
-  const map = useMemo(() => {
-    if (!hazard) return null;
-    const t = hazard.clone();
-    t.repeat.set(len / 32, 1);
-    t.needsUpdate = true;
-    return t;
-  }, [hazard, len]);
-  useEffect(() => () => map?.dispose(), [map]);
-  return (
-    <mesh position={[m((a[0] + b[0]) / 2), m((a[1] + b[1]) / 2), m(0.6)]} rotation={[0, 0, Math.atan2(b[1] - a[1], b[0] - a[0])]} receiveShadow>
-      <planeGeometry args={[m(len), m(w)]} />
-      <meshStandardMaterial color={map ? '#ffffff' : color} map={map} roughness={0.7} />
-    </mesh>
-  );
-}
-
 /** A plain stock carton (on the shelf, in a pile), standing on z. */
 function Stock({ at, h = PBOX.h, color = CARTON }: { at: Mm; h?: number; color?: string }) {
   return (
     <group position={v3([at[0], at[1], at[2] + h / 2])}>
       <CardBox size={[PBOX.sx, PBOX.sy, h]} color={color} />
-    </group>
-  );
-}
-
-/** A small steel shelving unit (front facing −y), its centre x, y and size, with what stands on it. */
-function Shelf({ x, y, w = 250, d = 70, levels = [8, 98, 188] as const, children }: { x: number; y: number; w?: number; d?: number; levels?: readonly number[]; children?: ReactNode }) {
-  const top = levels[levels.length - 1] + 70;
-  return (
-    <group>
-      {[-1, 1].flatMap((sx) =>
-        [-1, 1].map((sy) => (
-          <RBox key={`${sx}${sy}`} at={[x + sx * (w / 2 - 4), y + sy * (d / 2 - 4), top / 2]} size={[7, 7, top]} radius={1}>
-            <meshStandardMaterial color="#2f5be7" metalness={0.4} roughness={0.45} />
-          </RBox>
-        )),
-      )}
-      {levels.map((z) => (
-        <group key={z}>
-          <RBox at={[x, y, z - 2]} size={[w - 4, d - 4, 4]} radius={0.8}>
-            <meshStandardMaterial color="#c9cfd6" metalness={0.6} roughness={0.4} />
-          </RBox>
-          <RBox at={[x, y - d / 2 + 3, z - 5]} size={[w - 4, 5, 10]} radius={1}>
-            <meshStandardMaterial color="#f08a24" roughness={0.5} />
-          </RBox>
-        </group>
-      ))}
-      {children}
     </group>
   );
 }
@@ -539,24 +402,6 @@ function Scale({ at }: { at: [number, number] }) {
         <meshStandardMaterial color="#2b3038" roughness={0.35} />
       </RBox>
       <Sign at={[x + 30, y - 48.6, 24]} w={34} h={20} lines={[`${HEAVY_G} g`]} fg="#6fe3a5" bg="#0f1a14" />
-    </group>
-  );
-}
-
-/** ②: a notice board on two legs by the line (the dispatch deadline). */
-function Board({ at, yaw, lines }: { at: [number, number]; yaw: number; lines: readonly string[] }) {
-  const [x, y] = at;
-  return (
-    <group position={[m(x), m(y), 0]} rotation={[0, 0, yaw]}>
-      {[-1, 1].map((s) => (
-        <RBox key={s} at={[s * 50, 3, 60]} size={[5, 5, 120]} radius={1}>
-          <Steel />
-        </RBox>
-      ))}
-      <RBox at={[0, 3, 112]} size={[118, 4, 50]} radius={1.5}>
-        <meshStandardMaterial color="#2b3038" roughness={0.5} />
-      </RBox>
-      <Sign at={[0, 0.6, 112]} w={112} h={44} lines={lines} fg="#ffffff" bg="#d92d20" />
     </group>
   );
 }
@@ -641,16 +486,6 @@ function CellDressing({ prob }: { prob: LogiProblem }) {
 
 /* --- overlays ------------------------------------------------------------------- */
 
-const tag = (color: string, bg = 'rgba(255,255,255,.92)') => ({
-  font: '800 12px var(--font-ui, system-ui)',
-  color,
-  background: bg,
-  padding: '2px 7px',
-  borderRadius: 7,
-  whiteSpace: 'nowrap' as const,
-  boxShadow: '0 1px 4px rgba(0,0,0,.25)',
-});
-
 const GHOST_COLOR = { press: LEARN_COLORS.bad, drop: '#e0a020', ok: LEARN_COLORS.ok } as const;
 
 function Overlays({ overlay }: { overlay: PalletOverlay }) {
@@ -672,7 +507,7 @@ function Overlays({ overlay }: { overlay: PalletOverlay }) {
       {outline && progPallet && (
         <>
           <Line points={outline} color="#3454d1" lineWidth={2.5} dashed dashSize={0.008} gapSize={0.005} depthTest={false} renderOrder={9} />
-          <Html zIndexRange={[12, 0]} center position={v3([progPallet.x + MARK_OFF[0], progPallet.y + MARK_OFF[1], PAL.top + 30]).toArray()} style={{ pointerEvents: 'none' }}>
+          <Html zIndexRange={[12, 4]} center position={v3([progPallet.x + MARK_OFF[0], progPallet.y + MARK_OFF[1], PAL.top + 30]).toArray()} style={{ pointerEvents: 'none' }}>
             <span style={tag('#fff', '#3454d1')}>프로그램이 기억하는 팔레트</span>
           </Html>
         </>
@@ -696,7 +531,7 @@ function Overlays({ overlay }: { overlay: PalletOverlay }) {
           </mesh>
           <BoxEdges color={GHOST_COLOR[g.state]} />
           {g.text && (
-            <Html zIndexRange={[12, 0]} center position={[0, 0, m(PBOX.h / 2 + 22)]} style={{ pointerEvents: 'none' }}>
+            <Html zIndexRange={[12, 4]} center position={[0, 0, m(PBOX.h / 2 + 22)]} style={{ pointerEvents: 'none' }}>
               <span style={tag('#fff', GHOST_COLOR[g.state])}>{g.text}</span>
             </Html>
           )}
@@ -709,7 +544,7 @@ function Overlays({ overlay }: { overlay: PalletOverlay }) {
           <Line points={[v3([0, 0, 0]), v3([0, 0, -press.mm])]} color={LEARN_COLORS.bad} lineWidth={4} depthTest={false} renderOrder={9} />
           <Line points={[v3([-28, 0, 0]), v3([28, 0, 0])]} color="#ffffff" lineWidth={2} dashed dashSize={0.004} gapSize={0.003} depthTest={false} renderOrder={9} />
           <Line points={[v3([-28, 0, -press.mm]), v3([28, 0, -press.mm])]} color={LEARN_COLORS.bad} lineWidth={2} depthTest={false} renderOrder={9} />
-          <Html zIndexRange={[12, 0]} center position={[0, 0, m(64)]} style={{ pointerEvents: 'none' }}>
+          <Html zIndexRange={[12, 4]} center position={[0, 0, m(64)]} style={{ pointerEvents: 'none' }}>
             <span style={tag('#fff', '#e5484d')}>아래 상자를 {press.mm.toFixed(0)} mm 눌렀어요</span>
           </Html>
         </group>
@@ -732,25 +567,6 @@ function BoxEdges({ color }: { color: string }) {
   return <Line points={pts} segments color={color} lineWidth={1.6} transparent depthTest={false} renderOrder={8} />;
 }
 
-/** A measured length: the line, a tick at each end, the value in the middle. */
-function Dim({ d }: { d: PalletDim }) {
-  const { a, b } = d;
-  const [dx, dy, dz] = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
-  // Ticks across the line: along x for an upright one, across it on the floor otherwise.
-  const flat = Math.hypot(dx, dy);
-  const t: Mm = Math.abs(dz) > flat ? [5, 0, 0] : [(-dy / flat) * 5, (dx / flat) * 5, 0];
-  const tick = (p: Mm) => [v3([p[0] - t[0], p[1] - t[1], p[2] - t[2]]), v3([p[0] + t[0], p[1] + t[1], p[2] + t[2]])];
-  return (
-    <group>
-      <Line points={[v3(a), v3(b)]} color={d.color} lineWidth={3} depthTest={false} renderOrder={10} />
-      <Line points={[...tick(a), ...tick(b)]} segments color={d.color} lineWidth={3} depthTest={false} renderOrder={10} />
-      <Html zIndexRange={[12, 0]} center position={(d.label ? v3(b) : v3([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2])).toArray()} style={{ pointerEvents: 'none' }}>
-        <span style={{ ...tag('#fff', d.color), display: 'inline-block', transform: d.label === 'l' ? 'translate(-58%, -70%)' : d.label === 'r' ? 'translate(58%, -70%)' : undefined }}>{d.text}</span>
-      </Html>
-    </group>
-  );
-}
-
 /** ②: the cup's acceleration as an arrow from the carried box (length ∝ m/s²), red over the cup's limit. */
 function AccArrow({ acc }: { acc: NonNullable<PalletOverlay['acc']> }) {
   const color = acc.over ? LEARN_COLORS.bad : LEARN_COLORS.ok;
@@ -765,7 +581,7 @@ function AccArrow({ acc }: { acc: NonNullable<PalletOverlay['acc']> }) {
         <coneGeometry args={[m(6), m(14), 16]} />
         <meshBasicMaterial color={color} depthTest={false} toneMapped={false} />
       </mesh>
-      <Html zIndexRange={[12, 0]} center position={v3([to[0], to[1], to[2] + 16]).toArray()} style={{ pointerEvents: 'none' }}>
+      <Html zIndexRange={[12, 4]} center position={v3([to[0], to[1], to[2] + 16]).toArray()} style={{ pointerEvents: 'none' }}>
         <span style={tag('#fff', color)}>가속도 {acc.mag.toFixed(1)} m/s²</span>
       </Html>
     </group>

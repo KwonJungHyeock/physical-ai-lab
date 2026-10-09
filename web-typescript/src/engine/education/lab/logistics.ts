@@ -7,79 +7,14 @@
  * filled in by the screen from the run, the rest were checked against the engine (check:pallet).
  */
 
-import type { Pdf } from './chapter';
 import type { LogiProblem } from './pallet';
+import { SITE_STEPS, type SiteStepId, type SiteText } from './siteText';
 
-export const LOGI_STEPS = [
-  { id: 'brief', label: '작업 지시' },
-  { id: 'run', label: '가동 · 문제' },
-  { id: 'cause', label: '원인 찾기' },
-  { id: 'fix', label: '값 고치기' },
-  { id: 'compare', label: '다시 가동 · 비교' },
-  { id: 'done', label: '해결 · 원리' },
-] as const;
+export type { CalcField, CheckQ, Choice } from './siteText';
 
-export type LogiStepId = (typeof LOGI_STEPS)[number]['id'];
-
-export interface Choice {
-  t: string;
-  ok?: boolean;
-  /** What the screen says back when this one is picked. */
-  fb: string;
-}
-
-/** A number to work out (계산 칸): within `tol` of `answer` is right. */
-export interface CalcField {
-  label: string;
-  answer: number;
-  tol: number;
-  unit: string;
-}
-
-export interface CheckQ {
-  q: string;
-  kind: 'num' | 'mc' | 'open';
-  /** num: the answer (and tolerance); mc: the right choice's index. */
-  answer?: number;
-  tol?: number;
-  unit?: string;
-  choices?: readonly string[];
-  /** Shown after answering (the model answer for open questions). */
-  explain: string;
-}
-
-export interface LogiText {
-  id: LogiProblem;
-  title: string;
-  about: string;
-  day: string;
-  order: string;
-  orderTitle: string;
-  goals: readonly string[];
-  /** The scene, read before running. */
-  brief: string;
-  /** The foreman. */
-  boss: string;
-  happened: string;
-  /** Questions the teacher (and the panel) asks right after the run. */
-  ask: readonly string[];
-  look: string;
-  question: string;
-  choices: readonly Choice[];
-  /** The explanation to complete: the text with ①②③ gaps, the options per gap and the right ones. */
-  blanks: { text: string; options: readonly (readonly string[])[]; answer: readonly number[] };
-  calc: { prompt: string; fields: readonly CalcField[]; after: string };
-  hints: readonly { k: string; t: string }[];
-  predictions: readonly string[];
-  /** Why a prediction that missed may have missed: pick one, read the reply. */
-  missed: readonly Choice[];
-  principle: { unit: string; title: string; formula: string; lines: readonly string[] };
-  pdf: readonly Pdf[];
-  checks: readonly CheckQ[];
-  uni: { title: string; lines: readonly string[]; code?: string };
-  real: string;
-  safety: string;
-}
+export const LOGI_STEPS = SITE_STEPS;
+export type LogiStepId = SiteStepId;
+export type LogiText = SiteText;
 
 export const LOGI_TEXT: Record<LogiProblem, LogiText> = {
   1: {
@@ -101,19 +36,19 @@ export const LOGI_TEXT: Record<LogiProblem, LogiText> = {
     look: '측정 도구로 세 곳의 높이를 재 보세요. 무엇과 무엇이 겹쳤나요?',
     question: '왜 2층 첫 상자에서 멈췄을까요?',
     choices: [
-      { t: '층 간격(30 mm)이 새 상자 높이(40 mm)보다 작아서, 2층 상자를 10 mm 낮게 내렸다', ok: true, fb: '맞아요. 층이 하나 올라가면 놓는 높이도 상자 높이만큼 올라가야 해요. 프로그램은 예전 상자(30 mm) 기준이라 10 mm 낮게 내려 아래 상자를 눌렀어요.' },
       { t: '흡착 컵이 상자를 너무 세게 빨아들여 상자가 찌그러졌다', fb: '찌그러진 건 컵에 붙은 상자인가요, 그 아래 상자인가요? 다시 보면 아래 1번 상자가 눌렸어요. 흡착력이 아니라 위치 문제예요.' },
+      { t: '층 간격(30 mm)이 새 상자 높이(40 mm)보다 작아서, 2층 상자를 10 mm 낮게 내렸다', ok: true, fb: '맞아요. 층이 하나 올라가면 놓는 높이도 상자 높이만큼 올라가야 해요. 프로그램은 예전 상자(30 mm) 기준이라 10 mm 낮게 내려 아래 상자를 눌렀어요.' },
       { t: '로봇이 낡아서 2층 높이를 정확히 못 맞췄다', fb: '기록을 보면 손끝은 프로그램 값(88 mm)에 정확히 갔어요. 로봇은 시킨 대로 정확히 했어요. 틀린 건 시킨 숫자예요.' },
       { t: '1층을 쌓을 때 상자가 조금씩 밀려서 2층이 비뚤어졌다', fb: '1층 상자는 제자리에서 1 mm도 안 벗어났어요. 옆으로가 아니라 높이가 문제예요.' },
     ],
     blanks: {
       text: '층이 하나 올라가면 놓는 높이는 ①만큼 올라가야 한다. 프로그램은 예전 상자 기준 ② mm만 올렸기 때문에 2층 상자를 ③ mm 낮게 내려 아래 상자를 눌렀다.',
       options: [
-        ['상자 높이', '여유', '팔레트 높이'],
-        ['30', '40', '58'],
+        ['여유', '상자 높이', '팔레트 높이'],
+        ['40', '58', '30'],
         ['10', '30', '40'],
       ],
-      answer: [0, 0, 0],
+      answer: [1, 2, 0],
     },
     calc: {
       prompt: '여유를 2 mm로 할 때 층마다 흡착 컵을 내릴 높이를 계산해 보세요. (1층 높이 58 mm, 상자 높이 40 mm)',
@@ -189,19 +124,19 @@ for k in range(12):
     look: '가속도 그래프에서 상자를 든 동안(굵은 선) 가장 큰 값과 빨간 점선(흡착 한계)을 읽어 보세요.',
     question: '왜 상자가 흡착 컵에서 떨어졌을까요?',
     choices: [
-      { t: '들고 옮길 때 가속도가 커서, 무게와 가속에 필요한 힘이 흡착력보다 커졌다', ok: true, fb: '맞아요. 흡착 컵은 상자의 무게와, 상자를 빨리 움직이게 하는 힘(질량 × 가속도)을 함께 버텨야 해요. 200 g 상자는 4.2 m/s²를 넘으면 떨어져요.' },
       { t: '속도가 너무 빨라서 공기 저항에 밀렸다', fb: '그래프를 보면 가속도가 큰 곳은 출발하고 멈출 때예요. 빠르게 같은 속도로 가는 동안에는 힘이 거의 들지 않아요. 속도가 아니라 속도가 바뀌는 정도(가속도)가 힘을 만들어요.' },
       { t: '상자가 무거워서 흡착 컵이 처음부터 잡지 못했다', fb: '상자는 들어 올리는 데 성공했어요. 가만히 들고 있으면 1.96 N만 필요하고 흡착력은 2.8 N이라 버틸 수 있어요.' },
       { t: '팔이 무거운 상자를 못 이겨 관절이 처졌다', fb: '280이 들 수 있는 무게는 250 g이에요. 200 g은 그 안이에요. 팔은 그대로 움직였고 상자만 떨어졌어요.' },
+      { t: '들고 옮길 때 가속도가 커서, 무게와 가속에 필요한 힘이 흡착력보다 커졌다', ok: true, fb: '맞아요. 흡착 컵은 상자의 무게와, 상자를 빨리 움직이게 하는 힘(질량 × 가속도)을 함께 버텨야 해요. 200 g 상자는 4.2 m/s²를 넘으면 떨어져요.' },
     ],
     blanks: {
       text: '흡착 컵은 상자의 ①와, 상자를 빨리 움직이게 하는 힘(② × 가속도)을 함께 버텨야 한다. 200 g 상자는 손끝 가속도가 ③ m/s²를 넘으면 떨어진다.',
       options: [
-        ['무게', '크기', '색깔'],
+        ['크기', '색깔', '무게'],
         ['질량', '속도', '거리'],
-        ['4.2', '9.8', '60'],
+        ['9.8', '4.2', '60'],
       ],
-      answer: [0, 0, 0],
+      answer: [2, 0, 1],
     },
     calc: {
       prompt: '흡착 컵이 붙잡는 힘 F = 2.8 N, 상자 질량 m = 0.2 kg, 중력 가속도 g = 9.81 m/s². 버틸 수 있는 가속도와, 그에 맞는 들고 이동 속도를 구해 보세요. (속도 100일 때 가속도 7.3 m/s², 가속도는 속도의 제곱에 비례)',
@@ -270,19 +205,19 @@ for k in range(12):
     look: '측정 도구로 실제 팔레트 끝과 상자를 놓은 자리, 표시선과 팔레트의 어긋남을 재 보세요.',
     question: '왜 첫 상자부터 떨어졌을까요?',
     choices: [
-      { t: '팔레트가 옮겨졌는데, 프로그램은 예전 팔레트 자리에 상자를 놓았다', ok: true, fb: '맞아요. 로봇은 기억하는 좌표로만 움직여요. 팔레트가 옮겨졌다는 걸 모르니 예전 자리에 그대로 놓았어요.' },
       { t: '로봇이 첫 상자 자리를 잘못 계산했다', fb: '기록을 보면 상자는 기억한 자리 (109, −189)에 정확히 놓였어요. 그 자리에 팔레트가 없었던 거예요.' },
       { t: '바닥이 젖어서 상자가 미끄러졌다', fb: '상자가 떨어지기 시작한 곳은 바닥이 아니라 팔레트 끝이에요. 물기는 함정이에요.' },
+      { t: '팔레트가 옮겨졌는데, 프로그램은 예전 팔레트 자리에 상자를 놓았다', ok: true, fb: '맞아요. 로봇은 기억하는 좌표로만 움직여요. 팔레트가 옮겨졌다는 걸 모르니 예전 자리에 그대로 놓았어요.' },
       { t: '상자가 가벼워서 바람에 날렸다', fb: '실내 출고장이고 상자는 그대로 내려놓였어요. 놓인 자리가 팔레트 밖이었어요.' },
     ],
     blanks: {
       text: '로봇은 ①로만 움직인다. 팔레트가 옮겨졌다는 걸 모르니 ② 자리에 상자를 놓았고, 그 자리는 실제 팔레트 끝에서 ③ mm 밖이었다.',
       options: [
-        ['기억한 좌표', '카메라로 본 모습', '바닥 표시선'],
-        ['예전', '새', '가장 가까운'],
-        ['8', '25', '40'],
+        ['카메라로 본 모습', '기억한 좌표', '바닥 표시선'],
+        ['새', '예전', '가장 가까운'],
+        ['25', '40', '8'],
       ],
-      answer: [0, 0, 0],
+      answer: [1, 1, 2],
     },
     calc: {
       prompt: '원인 찾기에서 잰 어긋남(앞 +25 mm, 로봇 쪽 +40 mm)으로 새 기준점을 먼저 계산해 보세요. 예전 기준점은 (135, −211)이에요. 그다음 손끝으로 표시를 찍어 확인해요.',

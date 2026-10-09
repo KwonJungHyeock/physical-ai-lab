@@ -40,6 +40,23 @@ export class Playback {
     this.lastTick = this.t;
   }
 
+  setRate(rate: number): void {
+    this.rate = rate;
+  }
+  pause(): void {
+    this.playing = false;
+  }
+  resume(): void {
+    if (this.run && this.t < this.run.durationS) this.playing = true;
+  }
+  /** Jump to time `t` (the screen hears it at once). */
+  seek(t: number): void {
+    if (!this.run) return;
+    this.t = Math.max(0, Math.min(this.run.durationS, t));
+    this.lastTick = this.t;
+    this.onTick?.(this.t, this.t >= this.run.durationS);
+  }
+
   /** Move on by `dt` seconds of screen time; the frame to draw (null: no run). */
   advance(dt: number): Frame | null {
     const run = this.run;
