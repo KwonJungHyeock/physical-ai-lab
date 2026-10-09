@@ -12,7 +12,7 @@
  * (dragging still works).
  */
 
-import { useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react';
+import { useEffect, useEffectEvent, useRef, useState, type DragEvent, type ReactNode } from 'react';
 
 import { BIN_NAMES, COLORS, SPOT_NAMES, type BinName, type ColorName, type SpotName, type Theme } from '@/engine/simulator/board';
 import { EFFECTOR_BY_ID, type EffectorId } from '@/engine/simulator/effectors';
@@ -100,6 +100,45 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
   /** The picked block (its path), where palette blocks are added after. */
   const [picked, setPicked] = useState<string | null>(null);
 
+  // 되돌리기 · 다시 하기: the programs before (and after) each change made here. A change from
+  // outside (another practice, the example put back) starts a new history.
+  const [hist, setHist] = useState<{ past: string[]; future: string[]; mine: string }>({ past: [], future: [], mine: code });
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the program was replaced from outside
+    if (code !== hist.mine) setHist({ past: [], future: [], mine: code });
+  }, [code, hist.mine]);
+  const edit = (next: string) => {
+    if (next === code) return;
+    setHist((h) => ({ past: [...h.past, code].slice(-60), future: [], mine: next }));
+    onCode(next);
+  };
+  const undo = () => {
+    const prev = hist.past.at(-1);
+    if (prev === undefined) return;
+    setHist({ past: hist.past.slice(0, -1), future: [...hist.future, code], mine: prev });
+    onCode(prev);
+  };
+  const redo = () => {
+    const next = hist.future.at(-1);
+    if (next === undefined) return;
+    setHist({ past: [...hist.past, code], future: hist.future.slice(0, -1), mine: next });
+    onCode(next);
+  };
+  // Ctrl+Z / Ctrl+Y (Ctrl+Shift+Z) while the blocks are open, but not while typing in a number.
+  const onHistoryKey = useEffectEvent((e: KeyboardEvent) => {
+    if (!(e.ctrlKey || e.metaKey) || /^(INPUT|TEXTAREA|SELECT)$/.test((e.target as HTMLElement).tagName)) return;
+    const k = e.key.toLowerCase();
+    if (k === 'z' && !e.shiftKey) undo();
+    else if (k === 'y' || (k === 'z' && e.shiftKey)) redo();
+    else return;
+    e.preventDefault();
+  });
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => onHistoryKey(e);
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
+
   const { steps, errors } = parse(code);
   const variables = collectVariables(steps);
 
@@ -177,7 +216,7 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
       item = list.splice(src[src.length - 1], 1)[0];
     }
     if (target.where === 'delete') {
-      onCode(serialize(list0));
+      edit(serialize(list0));
       return;
     }
     const path: Path =
@@ -188,7 +227,7 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
     }
     const list = path.length === 1 ? list0 : (list0[path[0]] as Extract<Step, { type: 'repeat' }>).body;
     list.splice(Math.min(path[path.length - 1], list.length), 0, item);
-    onCode(serialize(list0));
+    edit(serialize(list0));
   };
 
   const endDrag = () => {
@@ -198,7 +237,7 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
     setTrash(false);
   };
 
-  const commit = () => onCode(serialize(steps));
+  const commit = () => edit(serialize(steps));
 
   /* --- block content --------------------------------------------------- */
 
@@ -583,6 +622,14 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
           endDrag();
         }}
       >
+        <div className={css.undoBar} onClick={(e) => e.stopPropagation()}>
+          <button type="button" onClick={undo} disabled={!hist.past.length} title="되돌리기 (Ctrl+Z)" aria-label="되돌리기">
+            ↶
+          </button>
+          <button type="button" onClick={redo} disabled={!hist.future.length} title="다시 하기 (Ctrl+Y)" aria-label="다시 하기">
+            ↷
+          </button>
+        </div>
         <div className={css.script}>
           <div className={`${css.block} ${css.start}`}>
             <span>▶ 시뮬레이션을 누르면</span>

@@ -50,8 +50,6 @@ type Tab = 'find' | 'id' | 'wifi';
 interface Props {
   /** On a robot's own console: its ID and address, to show and to switch away from. */
   current?: { id: string; ips: string[] } | null;
-  /** Open on this tab (e.g. 'wifi' from the robot's status). */
-  initialTab?: Tab;
   /** Desktop simulator: ask the program for this PC's networks and search them at once. */
   auto?: boolean;
   /** The open program, as an address part (`#carry=…`) for the robot's console to put back. */
@@ -59,8 +57,8 @@ interface Props {
   onClose(): void;
 }
 
-export default function ConnectDialog({ current, initialTab, auto, carry, onClose }: Props) {
-  const [tab, setTab] = useState<Tab>(initialTab === 'wifi' && !current ? 'find' : (initialTab ?? 'find'));
+export default function ConnectDialog({ current, auto, carry, onClose }: Props) {
+  const [tab, setTab] = useState<Tab>('find');
   // On a robot's console its own network is the one to search; elsewhere the last one used.
   const hereNet = current?.ips[0]?.replace(/\d+$/, '');
   const [prefix, setPrefix] = useState(hereNet ?? '192.168.0.');

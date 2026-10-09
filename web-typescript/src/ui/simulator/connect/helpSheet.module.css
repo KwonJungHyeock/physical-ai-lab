@@ -1,0 +1,132 @@
+/* [?] 도움말 (HelpSheet.tsx): one window over the console, light like the other dialogs. */
+.sheet {
+  margin: auto;
+  padding: 0;
+  border: none;
+  border-radius: 18px;
+  width: min(640px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  background: #fff;
+  color: #101828;
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.32);
+}
+.sheet::backdrop {
+  background: rgba(15, 23, 42, 0.4);
+}
+.inner {
+  display: grid;
+  gap: 16px;
+  padding: 20px 22px;
+  font-size: 14px;
+}
+.head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.head h2 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 800;
+}
+.head p {
+  margin: 2px 0 0;
+  color: #667085;
+  font-size: 12.5px;
+}
+.mark {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: #eef2ff;
+  color: #3454d1;
+}
+.close {
+  margin-left: auto;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #e4e7ec;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.inner h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #3454d1;
+}
+.parts,
+.keys {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+.parts > div,
+.keys > div {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 10px;
+  align-items: baseline;
+}
+.parts dt {
+  font-weight: 800;
+}
+.parts dd,
+.keys dd {
+  margin: 0;
+  color: #475467;
+  line-height: 1.5;
+}
+.keys kbd {
+  display: inline-block;
+  padding: 2px 8px;
+  border: 1px solid #d0d5dd;
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: #f9fafb;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.steps {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 20px;
+  line-height: 1.5;
+}
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  padding-top: 4px;
+  border-top: 1px solid #eaecf0;
+}
+.foot button,
+.foot a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 9px 14px;
+  border: 1px solid #d0d5dd;
+  border-radius: 10px;
+  background: #fff;
+  color: #101828;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+.foot a {
+  border-color: #3454d1;
+  background: #3454d1;
+  color: #fff;
+}

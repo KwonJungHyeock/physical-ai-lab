@@ -11,6 +11,15 @@ import css from './firstGuide.module.css';
 
 const GUIDE_KEY = 'console-guide-done';
 
+/** Show the three steps again (도움말 → [처음 쓰는 방법 다시 보기]); the guide reads this on mounting. */
+export function resetFirstGuide(): void {
+  try {
+    localStorage.removeItem(GUIDE_KEY);
+  } catch {
+    /* private window */
+  }
+}
+
 const STEPS = (side: 'right' | 'left') => [
   { title: '직접 움직여 보기', text: `${side === 'left' ? '왼쪽' : '오른쪽'} [수동 제어]의 ◀ ▶ 를 누르거나, 3D 화면의 관절 점 ①~⑥ 을 끌어 팔을 돌려 보세요. 마우스로 화면을 돌리고 휠로 확대해요.` },
   { title: '프로그램 만들기', text: '[블록 코딩](초급) · [Python](중급) · [ROS 2](고급) 탭에서 과제의 예제를 고쳐 보세요. 만든 프로그램은 저절로 저장돼요. 과제는 위의 과제 이름을 누르면 [라이브러리]에서 바꿔요.' },

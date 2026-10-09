@@ -11,11 +11,10 @@
 physical-ai-lab/
 ├─ README.md               이 문서
 ├─ web-typescript/         웹 앱 (TypeScript · Next.js 16 · React 19) — 옮겨 갈 대상
-│  ├─ src/app/             페이지 (Next.js 경로): / · /console · /agv · /figures/[id] · /materials/[doc] · /spike/*
+│  ├─ src/app/             페이지 (Next.js 경로): / · /console · /agv · /figures/[id] · /materials/[doc] · /spike/parts (도구 썸네일 만들기용)
 │  ├─ src/ui/simulator/    [시뮬레이터] 탭과 콘솔 전체 — stage/ editors/ control/ connect/ tasks/ pages/
 │  ├─ src/ui/education/    [교육] 탭 — roadmap/ lesson/ stage/ topics/ fig/ print/ lab/(문제 해결 실습 · 시범)
 │  ├─ src/ui/agv/          이동 로봇(myAGV) 콘솔 화면
-│  ├─ src/ui/twin/         디지털 트윈 (스파이크 페이지)
 │  ├─ src/engine/          화면 없는 로직 (React 없음) — 그대로 옮겨 쓸 수 있음
 │  │  ├─ robot/            URDF · 순/역기구학 · 동작 계획 · 관절 한계 · 자기 충돌 · 로봇 모델 목록
 │  │  ├─ physics/          자코비안 · 동역학 · 경로 계획 · 충돌 · Rapier 월드 · 작업 공간 · 선형대수

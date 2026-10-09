@@ -115,7 +115,8 @@ export function buildTree(programs: ArchiveItem[], checks: ArchiveItem[]): ArcFo
           },
         ],
       },
-      { key: 'check', name: '검수 서류', note: '검수별 시각과 실측값을 한 장으로 (열어서 인쇄 → PDF)', folders: [], files: checks.map(fromItem) },
+      // Only while the teacher has the 검수 시연 on (none passed otherwise).
+      ...(checks.length ? [{ key: 'check', name: '검수 서류', note: '검수별 시각과 실측값을 한 장으로 (열어서 인쇄 → PDF)', folders: [], files: checks.map(fromItem) }] : []),
     ],
     files: [],
   };

@@ -43,7 +43,7 @@ import {
 } from '@/engine/simulator/robotLink';
 import { loadEvidence, reportHtml, saveEvidence, type Evidence, type PrepItem } from '@/engine/simulator/evidence';
 import { categoryOf, loadProgress, markKey, openCheck, saveProgress, type ConsoleMode, type Progress, type Where } from '@/engine/simulator/modules';
-import { DEFAULT_MODEL, modelById, type RobotModelId } from '@/engine/robot/catalog';
+import { DEFAULT_MODEL, MODEL_CHOICE, modelById, type RobotModelId } from '@/engine/robot/catalog';
 import { activeArm, adaptPython, armById, setActiveArm, type ArmSpec } from '@/engine/robot/arms';
 import {
   EMPTY_DESK,
@@ -86,7 +86,8 @@ import DemoCaption from './stage/DemoCaption';
 import { ResultCard, RunTimeline, applyFrame, snapshot, type Replay } from './stage/RunReplay';
 import Hud, { type HudStatus } from './stage/Hud';
 import Intro from './connect/Intro';
-import FirstGuide from './connect/FirstGuide';
+import FirstGuide, { resetFirstGuide } from './connect/FirstGuide';
+import HelpSheet from './connect/HelpSheet';
 import MissionCard from './tasks/MissionCard';
 import ModelPicker from './connect/ModelPicker';
 import ConnectDialog from './connect/ConnectDialog';
@@ -369,11 +370,14 @@ export default function Console() {
    * The arm open in the simulator (a real robot is always the myCobot 280 RDK X5 serving the page).
    * Its joint ranges, ready pose and Python class are in force everywhere from this render on.
    */
-  const arm = armById(robotMode ? DEFAULT_MODEL : model);
+  const arm = armById(robotMode || !MODEL_CHOICE ? DEFAULT_MODEL : model);
   setActiveArm(arm.id);
   setActiveDesk(desk);
   setMatNeeded(practiceUsesMat(practice.id));
   const [picking, setPicking] = useState(false);
+  /** [?] 도움말 open; the first-run guide's mount number (a new one shows the steps again). */
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [guideRun, setGuideRun] = useState(0);
   const router = useRouter();
   /** The 로봇 연결 dialog. */
   const [connectOpen, setConnectOpen] = useState(false);
@@ -616,12 +620,12 @@ export default function Console() {
       }
       const savedModel = modelById(localStorage.getItem(MODEL_KEY));
       // The mobile robot has its own page; this one opens on an arm.
-      if (savedModel?.status === 'ready' && savedModel.kind === 'arm') {
+      if (MODEL_CHOICE && savedModel?.status === 'ready' && savedModel.kind === 'arm') {
         switchArm(savedModel.id);
         setModel(savedModel.id);
       }
       // From the driving console's [로봇팔로 바꾸기]: straight to the model choice.
-      if (new URLSearchParams(window.location.search).has('pick')) setPicking(true);
+      if (MODEL_CHOICE && new URLSearchParams(window.location.search).has('pick')) setPicking(true);
       const d = JSON.parse(localStorage.getItem(DISPLAY_KEY) ?? 'null') as Partial<DisplayOpts> | null;
       if (d && typeof d === 'object') setDisplay({ ...DEFAULT_DISPLAY, ...d });
       // The level and practice left last time, with the student's program (kept in this browser), or
@@ -2564,7 +2568,8 @@ export default function Console() {
   // Another page shown (교육 · 라이브러리 · 자료실): the paused 3D view does not hold the start screen.
   const splashDone = started || scene3d === 'slow' || !!loadError || (view !== 'sim' && !!loaded);
   // Served by the robot: the model is the robot's own (myCobot 280 RDK X5 server).
-  const modelNow = robotMode ? DEFAULT_MODEL : model;
+  // With the model choice hidden (MODEL_CHOICE), it is the myCobot 280 RDK X5 everywhere.
+  const modelNow = robotMode || !MODEL_CHOICE ? DEFAULT_MODEL : model;
   /** Past the intro's last frame ([연결하기] or 시뮬레이터로 시작); on a robot's own console the intro steps aside by itself. */
   const [entered, setEntered] = useState(false);
   const pastIntro = entered || robotMode || picking;
@@ -2654,6 +2659,16 @@ export default function Console() {
           carry={() => (practice.id === 'demo' ? '' : carryHash({ level, theme, id: practice.id, code }))}
           onClose={() => setConnectOpen(false)} />
       )}
+      {helpOpen && (
+        <HelpSheet
+          onClose={() => setHelpOpen(false)}
+          onGuide={() => {
+            resetFirstGuide();
+            chooseView('sim');
+            setGuideRun((n) => n + 1);
+          }}
+        />
+      )}
       {showPicker && <ModelPicker current={modelNow} onPick={chooseModel} onClose={modelNow ? () => setPicking(false) : undefined} />}
       {prepOpen && (
         <div className={css.picker} role="dialog" aria-modal="true" aria-label="검수 준비 점검" onKeyDown={(e) => e.key === 'Escape' && setPrepOpen(false)} onMouseDown={(e) => e.target === e.currentTarget && setPrepOpen(false)}>
@@ -2735,6 +2750,7 @@ export default function Console() {
           busy={busy}
           robotStop={robotMode && !!robot?.connected}
           onStop={stop}
+          onHelp={() => setHelpOpen(true)}
           context={
             view === 'sim' || view === 'library' ? (
               <TaskChip
@@ -2767,20 +2783,22 @@ export default function Console() {
           }
           settings={(close) => (
             <>
-              <button
-                type="button"
-                role="menuitem"
-                disabled={busy}
-                onClick={() => {
-                  setPicking(true);
-                  close();
-                }}
-              >
-                <b>
-                  <Icon name="robot" size={15} /> 로봇 모델 바꾸기
-                </b>
-                <small>지금: {modelById(modelNow)?.short ?? '고르지 않음'}</small>
-              </button>
+              {MODEL_CHOICE && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  disabled={busy}
+                  onClick={() => {
+                    setPicking(true);
+                    close();
+                  }}
+                >
+                  <b>
+                    <Icon name="robot" size={15} /> 로봇 모델 바꾸기
+                  </b>
+                  <small>지금: {modelById(modelNow)?.short ?? '고르지 않음'}</small>
+                </button>
+              )}
               <button
                 type="button"
                 role="menuitem"
@@ -2793,6 +2811,24 @@ export default function Console() {
                   <Icon name="wifi" size={15} /> 로봇 연결 · 로봇 Wi-Fi
                 </b>
                 <small>같은 Wi-Fi 의 로봇 찾기 · 로봇의 Wi-Fi 바꾸기</small>
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                disabled={busy}
+                onClick={() => {
+                  chooseMode(mode === 'check' ? 'learn' : 'check');
+                  if (mode !== 'check') {
+                    setLibSection('checks');
+                    chooseView('library');
+                  }
+                  close();
+                }}
+              >
+                <b>
+                  <Icon name="check" size={15} /> {mode === 'check' ? '검수 시연 끝내기' : '검수 시연 (교사용)'}
+                </b>
+                <small>{mode === 'check' ? '학생 실습 화면으로 돌아가요' : '납품 검수 7종 · 검수 서류 — 학생 화면에는 보이지 않아요'}</small>
               </button>
               <small className={css.menuHead}>패널 위치</small>
               <span className={css.menuSeg} role="group" aria-label="패널 위치">
@@ -2850,6 +2886,8 @@ export default function Console() {
                 </button>
               </span>
             }
+            showChecks={mode === 'check'}
+            showModels={MODEL_CHOICE}
             model={modelNow}
             onModel={(id) => {
               chooseModel(id);
@@ -2888,7 +2926,7 @@ export default function Console() {
                 ? [{ icon: 'install', title: '이 PC 에 앱으로 설치', note: '인터넷 없이도 시뮬레이션 · 시작 메뉴에서 열기', action: '설치', run: () => void pcApp.install?.() }]
                 : []),
             ]}
-            checks={[{ icon: 'doc', title: '검수 결과표', note: '검수 1~7 의 시각 · 실측값 한 장 (열어서 인쇄 → PDF)', action: '저장', run: saveReport, file: '검수결과표.html' }]}
+            checks={mode !== 'check' ? [] : [{ icon: 'doc', title: '검수 결과표', note: '검수 1~7 의 시각 · 실측값 한 장 (열어서 인쇄 → PDF)', action: '저장', run: saveReport, file: '검수결과표.html' }]}
           />
         )}
         <div ref={shellRef} className={css.shell} data-dock={dockShown ? 'open' : 'closed'} data-side={side} data-tab={shownTab === 'direct' ? 'direct' : 'code'} style={view !== 'sim' ? { display: 'none' } : undefined}>
@@ -2960,7 +2998,7 @@ export default function Console() {
                     : '3D 로봇 모델이 아직 안 보여요. 새로고침(F5) 해 보고, 그래도 안 되면 크롬이나 엣지 최신 버전으로 열어 주세요.'}
                 </div>
               )}
-              {view === 'sim' && !showPicker && !connectOpen && !pcOffer && <FirstGuide side={side} />}
+              {view === 'sim' && !showPicker && !connectOpen && !pcOffer && <FirstGuide key={guideRun} side={side} />}
               {pcOffer && !showPicker && !connectOpen && (
                 <div className={css.pcOffer} role="dialog" aria-label="PC 프로그램 받기">
                   <span className={css.pcOfferIcon}>
@@ -3156,14 +3194,14 @@ export default function Console() {
             {dockShown ? (
               <>
                 <div className={css.sideHeader}>
-                  <button type="button" className={css.sideModel} onClick={() => setPicking(true)} disabled={busy} title="로봇 모델 바꾸기">
+                  <button type="button" className={css.sideModel} onClick={() => setPicking(true)} disabled={busy || !MODEL_CHOICE} title={MODEL_CHOICE ? '로봇 모델 바꾸기' : undefined}>
                     {/* eslint-disable-next-line @next/next/no-img-element -- a fixed picture, also in the robot's static export */}
                     <img src={MODEL_PIC[arm.family]} alt="" width={36} height={36} />
                     <span>
                       <b>{arm.name}</b>
                       <small>{modelById(modelNow)?.short?.replace(arm.name, '').replace(/^\s*·\s*/, '') || `${arm.dof}축`} · {arm.dof}축</small>
                     </span>
-                    <em>바꾸기</em>
+                    {MODEL_CHOICE && <em>바꾸기</em>}
                   </button>
                   <StatusLights lights={lights}>
                     <RobotStatus

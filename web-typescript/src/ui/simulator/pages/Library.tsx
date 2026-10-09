@@ -60,6 +60,10 @@ interface Props {
   onOpen(mode: ConsoleMode, where: Where): void;
   /** Beside the checks: the readiness check and the result sheet. */
   checkActions: ReactNode;
+  /** The acceptance checks are shown (the teacher turned the 검수 시연 on); hidden from students. */
+  showChecks: boolean;
+  /** The other robot models are offered (MODEL_CHOICE); hidden while the course is 280 RDK X5 only. */
+  showModels: boolean;
   model: RobotModelId | null;
   onModel(id: RobotModelId): void;
   scene: SceneId;
@@ -257,9 +261,10 @@ export default function Library(p: Props) {
     },
   ];
 
-  const total = groups.reduce((n, g) => n + g.cards.length, 0);
-  const sections: PageSection<LibrarySection>[] = [{ id: 'all', name: '전체', icon: 'grid', count: total }, ...groups.map((g) => ({ id: g.id, name: g.name, icon: g.icon, count: g.cards.length }))];
-  const open = groups.find((g) => g.id === p.section);
+  const shownGroups = groups.filter((g) => (g.id !== 'checks' || p.showChecks) && (g.id !== 'models' || p.showModels));
+  const total = shownGroups.reduce((n, g) => n + g.cards.length, 0);
+  const sections: PageSection<LibrarySection>[] = [{ id: 'all', name: '전체', icon: 'grid', count: total }, ...shownGroups.map((g) => ({ id: g.id, name: g.name, icon: g.icon, count: g.cards.length }))];
+  const open = shownGroups.find((g) => g.id === p.section);
   return (
     <PageShell
       label="LIBRARY"
@@ -274,7 +279,7 @@ export default function Library(p: Props) {
       {open ? (
         <div className={css.cards}>{open.cards}</div>
       ) : (
-        groups.map((g) => (
+        shownGroups.map((g) => (
           <section key={g.id} className={css.group} aria-label={g.name}>
             <header className={css.groupHead}>
               <h2>

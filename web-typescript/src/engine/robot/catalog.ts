@@ -97,4 +97,11 @@ export const MODELS: readonly RobotModel[] = [
 
 export const DEFAULT_MODEL: RobotModelId = 'mycobot280-rdkx5';
 
+/**
+ * The course is built for the myCobot 280 RDK X5 alone: the console opens on it without a model
+ * choice, and the other models (still all here, simulated) are hidden. `true` brings the choice back
+ * (first screen, gear menu, the panel's [바꾸기], the 라이브러리's 로봇 모델).
+ */
+export const MODEL_CHOICE = false;
+
 export const modelById = (id: string | null | undefined): RobotModel | undefined => MODELS.find((m) => m.id === id);

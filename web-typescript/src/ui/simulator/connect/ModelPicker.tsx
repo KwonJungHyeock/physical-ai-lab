@@ -81,8 +81,7 @@ function LineCard({ line, models, current, onPick }: { line: (typeof LINES)[numb
   );
 }
 
-/** `embedded`: just the product cards, for the 라이브러리 page (no window, no heading). */
-export default function ModelPicker({ current, onPick, onClose, embedded }: { current: RobotModelId | null; onPick(id: RobotModelId): void; onClose?(): void; embedded?: boolean }) {
+export default function ModelPicker({ current, onPick, onClose }: { current: RobotModelId | null; onPick(id: RobotModelId): void; onClose?(): void }) {
   const lines = (
     <ul className={css.lineGrid}>
       {LINES.map((l) => (
@@ -90,7 +89,6 @@ export default function ModelPicker({ current, onPick, onClose, embedded }: { cu
       ))}
     </ul>
   );
-  if (embedded) return lines;
   return (
     <div className={css.picker} role="dialog" aria-modal="true" aria-label="로봇 모델 고르기">
       <div className={`${css.pickerBox} ${css.modelBox}`}>

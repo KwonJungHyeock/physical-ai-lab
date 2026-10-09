@@ -6,7 +6,6 @@
  * connection, settings and — while a real robot is connected — Stop.
  */
 
-import Link from 'next/link';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 import Icon from './Icon';
@@ -35,6 +34,8 @@ interface Props {
   /** A real robot is connected: [■ 로봇 정지] shows on every screen (the simulator stops from its own panel and Esc). */
   robotStop: boolean;
   onStop(): void;
+  /** [?] 도움말: the screen, the order of work, the keys, the manual. */
+  onHelp(): void;
 }
 
 /** A chip with a small menu under it; closes on a click outside or Esc. */
@@ -70,10 +71,10 @@ export function MenuChip({ label, title, className, children }: { label: ReactNo
   );
 }
 
-export default function TopBar({ view, onView, busy, context, settings, status, robotStop, onStop }: Props) {
+export default function TopBar({ view, onView, busy, context, settings, status, robotStop, onStop, onHelp }: Props) {
   return (
     <header className={css.topBar} data-panel="topbar">
-      <Link className={css.lockup} href="/" title="ROBODYNE SYSTEMS · Physical AI 로봇 학습 시뮬레이터">
+      <button type="button" className={css.lockup} onClick={() => onView('sim')} title="ROBODYNE SYSTEMS · Physical AI 로봇 학습 시뮬레이터 — 시뮬레이터로">
         {/* eslint-disable-next-line @next/next/no-img-element -- a small fixed logo, also in the static export for the robot */}
         <img src="/brand/robodyne-logo-ink.png" alt="ROBODYNE SYSTEMS" width={83} height={22} />
         <i aria-hidden="true" />
@@ -81,7 +82,7 @@ export default function TopBar({ view, onView, busy, context, settings, status, 
           <em>PHYSICAL AI</em>
           <b>로봇 학습 시뮬레이터</b>
         </span>
-      </Link>
+      </button>
 
       <nav className={css.screens} role="tablist" aria-label="화면">
         {SCREENS.map((s) => (
@@ -96,6 +97,11 @@ export default function TopBar({ view, onView, busy, context, settings, status, 
 
       <div className={css.topStatus}>
         {status}
+        <div className={`${css.menuChip} ${css.settingsChip}`}>
+          <button type="button" className={css.menuChipBtn} onClick={onHelp} title="도움말 — 화면 · 순서 · 단축키 · 매뉴얼" aria-label="도움말">
+            <Icon name="help" size={18} />
+          </button>
+        </div>
         <MenuChip label={<Icon name="gear" size={18} />} title="설정" className={css.settingsChip}>
           {(close) => settings(close)}
         </MenuChip>
