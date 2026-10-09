@@ -1242,3 +1242,64 @@
   --site: #12935f;
   --site-soft: #e8f6ef;
 }
+
+.farm {
+  --site: #3a9b3a;
+  --site-soft: #ecf6ea;
+}
+
+/* The camera window over the 3D view (스마트팜): the photo, the mask, what the program found. */
+.cam {
+  position: absolute;
+  left: 12px;
+  top: 56px;
+  z-index: 5;
+  width: 300px;
+  padding: 6px;
+  border-radius: 12px;
+  background: rgba(16, 20, 26, 0.92);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+  color: #e6ebf2;
+}
+.cam:not([data-open]) {
+  width: auto;
+}
+.cam header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 5px;
+}
+.cam header button {
+  border: 1px solid #3a4452;
+  border-radius: 7px;
+  padding: 2px 8px;
+  background: transparent;
+  color: inherit;
+  font: 700 11.5px var(--font-ui, system-ui);
+  cursor: pointer;
+}
+.cam header > button {
+  border-color: transparent;
+  padding-left: 2px;
+}
+.cam header span {
+  display: flex;
+  gap: 4px;
+}
+.cam header button[aria-pressed='true'] {
+  border-color: #6fe3a5;
+  color: #6fe3a5;
+}
+.cam canvas {
+  display: block;
+  width: 100%;
+  border-radius: 8px;
+}
+.cam footer {
+  margin-top: 4px;
+  font-size: 10.5px;
+  color: #9fb0c8;
+  line-height: 1.35;
+}

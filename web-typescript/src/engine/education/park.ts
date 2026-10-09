@@ -6,6 +6,7 @@
  *  - 스마트 공장: the three conveyor problems of the lab (lab/problems.ts);
  *  - 물류 센터: the three palletizing problems (lab/pallet.ts);
  *  - 바이오 실험실: the three tube-moving problems (lab/bio.ts);
+ *  - 스마트팜: the three tomato-sorting problems (lab/farm.ts);
  *  - the others have no screens yet: they list their planned problems and stay 준비 중.
  * Everything is done with the myCobot 280 RDK X5 (the product the school has); other products get
  * their own problems when they come.
@@ -16,7 +17,7 @@ import { topicsOf, type CategoryId, type TopicId } from './catalog';
 
 export type SiteId = 'center' | 'factory' | 'logistics' | 'lab' | 'farm' | 'cafe' | 'ai';
 /** The problem-solving labs (one per site that has one). */
-export type LabId = 'factory' | 'logistics' | 'bio';
+export type LabId = 'factory' | 'logistics' | 'bio' | 'farm';
 
 export interface SiteProblem {
   title: string;
@@ -102,14 +103,15 @@ export const SITES: readonly Site[] = [
     id: 'farm',
     name: '스마트팜 · 식품',
     kind: '농업 · 식품',
-    robot: 'myCobot 280 + 카메라',
-    desc: '익은 과일만 골라 크기별로 나눠요.',
+    robot: 'myCobot 280 + 카메라 · 어댑티브 그리퍼',
+    desc: '카메라로 익은 방울토마토만 찾아, 터뜨리지 않고 포장해요.',
     color: '#3a9b3a',
-    content: null,
+    content: 'lab',
+    lab: 'farm',
     problems: [
-      { title: '덜 익은 것도 딴다', fix: '색으로 찾기 · 문턱값', units: ['7'] },
-      { title: '카메라와 손끝이 안 맞는다', fix: '카메라 좌표 → 로봇 좌표', units: ['7', '2'] },
-      { title: '물러서 터진다', fix: '힘 제한 · 느리게 잡기', units: ['4', '5'] },
+      { title: '덜 익은 것도 딴다', fix: '색으로 찾기 · 문턱값', units: ['7'], ready: true },
+      { title: '카메라와 손끝이 안 맞는다', fix: '픽셀 → mm · 카메라 보정', units: ['7', '2'], ready: true },
+      { title: '물러서 터진다', fix: '잡는 힘 · 안전 여유', units: ['4', '5'], ready: true },
     ],
   },
   {
