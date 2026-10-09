@@ -57,6 +57,7 @@
 | [`17-robotics-roadmap.md`](reports/education/17-robotics-roadmap.md) | 보고 #17 — 교육 탭을 로봇공학 로드맵(8개 학문 · 28주제)으로, md 원고 → 앱 |
 | [`18-education-quality.md`](reports/education/18-education-quality.md) | 보고 #18 — 기호 풀이 · 실습교육서 양식 · GIF · 28주제 검수 |
 | [`19-lesson-structure.md`](reports/education/19-lesson-structure.md) | 보고 #19 — 수업 순서(도입 → 개념 → 탐구 활동 → 정리 → 평가), 빈 곳 채우기, 오타 · 정렬 · 쏠림 · 내용 검수 |
+| [`20-world-map-plan.md`](reports/education/20-world-map-plan.md) | 보고 #20 — 통합 월드맵: 로봇 아카데미(이론 28차시) + 현장 테마 7곳 + 디지털 트윈 관제센터를 섬 도시 하나로, CC0 모델 자산 |
 
 ### [`system/`](reports/system/) — 시스템 구성
 | 문서 | 내용 |
