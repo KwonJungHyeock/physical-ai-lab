@@ -8,13 +8,14 @@
  * The next place to go pulses; a locked one keeps its robots still and shows a lock on its pin.
  * Drag to turn, wheel to zoom; the camera stays over the island.
  *
- * Lit by a warm sun with soft shadows, a sky dome and haze, with ambient occlusion, a little bloom
- * and AgX tone mapping.
+ * Lit by a warm sun with soft shadows, a sky dome and haze, with ambient occlusion and AgX tone
+ * mapping. (No bloom: its mip chain left the whole view black at fractional pixel ratios such as
+ * 1.5 — a 150 % Windows display.)
  */
 
 import { Html, OrbitControls } from '@react-three/drei';
 import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
-import { Bloom, EffectComposer, N8AO, SMAA, ToneMapping, Vignette } from '@react-three/postprocessing';
+import { EffectComposer, N8AO, SMAA, ToneMapping, Vignette } from '@react-three/postprocessing';
 import { ToneMappingMode } from 'postprocessing';
 import { Suspense, memo, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { MeshBasicMaterial, MeshStandardMaterial, PerspectiveCamera, Vector3, type Mesh } from 'three';
@@ -186,9 +187,11 @@ interface Props {
   paused: boolean;
   /** The card's width over the right of the view, px. */
   cardPx: number;
+  /** Ambient occlusion, tone mapping, vignette and SMAA (off: a plainer, cheaper picture). */
+  effects?: boolean;
 }
 
-export default function WorldScene({ onReady, views, selected, onSelect, paused, cardPx }: Props) {
+export default function WorldScene({ onReady, views, selected, onSelect, paused, cardPx, effects = true }: Props) {
   const { places, features } = world();
   const still = useMemo(() => new Set(DISTRICTS.filter((d) => views[d.id].state === 'locked').map((d) => d.id)), [views]);
   const start = HOME.at.clone().addScaledVector(HOME.dir, HOME.dist);
@@ -234,13 +237,14 @@ export default function WorldScene({ onReady, views, selected, onSelect, paused,
       </Suspense>
       <OrbitControls makeDefault target={HOME.at} enableDamping dampingFactor={0.08} minDistance={16} maxDistance={140} maxPolarAngle={1.32} minPolarAngle={0.3} screenSpacePanning={false} />
       <CameraRig focus={selected} cardPx={cardPx} />
-      <EffectComposer multisampling={0}>
-        <N8AO aoRadius={1.2} intensity={2.0} distanceFalloff={0.6} quality="medium" halfRes />
-        <Bloom luminanceThreshold={0.92} intensity={0.35} mipmapBlur />
-        <ToneMapping mode={ToneMappingMode.AGX} />
-        <Vignette offset={0.32} darkness={0.38} />
-        <SMAA />
-      </EffectComposer>
+      {effects && (
+        <EffectComposer multisampling={0}>
+          <N8AO aoRadius={1.2} intensity={2.0} distanceFalloff={0.6} quality="medium" halfRes />
+          <ToneMapping mode={ToneMappingMode.AGX} />
+          <Vignette offset={0.32} darkness={0.38} />
+          <SMAA />
+        </EffectComposer>
+      )}
     </Canvas>
   );
 }

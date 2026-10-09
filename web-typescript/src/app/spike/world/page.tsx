@@ -22,6 +22,7 @@ const VIEWS = Object.fromEntries(
 export default function WorldPage() {
   const [sheet, setSheet] = useState<PackId | null | undefined>(undefined);
   const [pick, setPick] = useState<SiteId | null>(null);
+  const [fx, setFx] = useState(true);
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
     const s = q.get('sheet');
@@ -29,13 +30,14 @@ export default function WorldPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- read the address after hydration
     setSheet(s && (PACKS as readonly string[]).includes(s) ? (s as PackId) : null);
     if (p && SITES.some((x) => x.id === p)) setPick(p as SiteId);
+    setFx(q.get('fx') !== 'none');
   }, []);
   const noop = useCallback(() => {}, []);
   if (sheet === undefined) return null;
   if (sheet) return <WorldSheet pack={sheet} />;
   return (
     <div style={{ width: '100vw', height: '100vh' }}>
-      <WorldScene onReady={noop} views={VIEWS} selected={pick} onSelect={setPick} paused={false} cardPx={0} />
+      <WorldScene onReady={noop} views={VIEWS} selected={pick} onSelect={setPick} paused={false} cardPx={0} effects={fx} />
     </div>
   );
 }
