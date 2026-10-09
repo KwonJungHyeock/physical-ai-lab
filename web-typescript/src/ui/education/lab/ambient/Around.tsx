@@ -7,6 +7,7 @@
  * its look (floor and sky) and its surroundings; the cell itself is the site's own *Cell.
  */
 
+import { createInstances } from '@react-three/drei';
 import type { ReactNode } from 'react';
 
 import { RBox, Turned, pill, vessel } from '../../../simulator/stage/sceneKit';
@@ -162,19 +163,27 @@ function PalletLoad({ at, z = 0, h = 90, color = '#c8925a' }: { at: Xy; z?: numb
 }
 
 /** Pallet racking along y: blue uprights, orange beams, a load on most bays. */
+/** Shapes repeated many times round the cells, each drawn in one call (instancing). */
+const [UprightSet, Upright] = createInstances();
+const [PalletSet, PalletPiece] = createInstances();
+const [LoadSet, Load] = createInstances();
+const [WrapSet, Wrap] = createInstances();
+const [StemSet, Stem] = createInstances();
+const [LeafSet, Leaf] = createInstances();
+const [FruitSet, Fruit] = createInstances();
+
 function Racking({ x, y0, y1, levels = [0, 170, 340], filled }: { x: number; y0: number; y1: number; levels?: readonly number[]; filled: (bay: number, level: number) => boolean }) {
   const bay = 190;
   const n = Math.floor((y1 - y0) / bay);
   const top = levels[levels.length - 1] + 150;
+  const loads = levels.flatMap((z, l) => Array.from({ length: n }, (_, b) => ({ b, l, z, h: l === 2 ? 70 : 100 })).filter((q) => filled(q.b, q.l)));
   return (
     <group>
-      {Array.from({ length: n + 1 }, (_, i) => y0 + i * bay).flatMap((y) =>
-        [-1, 1].map((sx) => (
-          <RBox key={`${y}${sx}`} at={[x + sx * 85, y, top / 2]} size={[10, 10, top]} radius={1}>
-            <meshStandardMaterial color="#2f5be7" metalness={0.35} roughness={0.45} />
-          </RBox>
-        )),
-      )}
+      <UprightSet limit={(n + 1) * 2}>
+        <boxGeometry args={[m(10), m(10), m(top)]} />
+        <meshStandardMaterial color="#2f5be7" metalness={0.35} roughness={0.45} />
+        {Array.from({ length: n + 1 }, (_, i) => y0 + i * bay).flatMap((y) => [-1, 1].map((sx) => <Upright key={`${y}${sx}`} position={[m(x + sx * 85), m(y), m(top / 2)]} />))}
+      </UprightSet>
       {levels.slice(1).flatMap((z) =>
         [-1, 1].map((sx) => (
           <RBox key={`${z}${sx}`} at={[x + sx * 85, (y0 + y0 + n * bay) / 2, z - 6]} size={[8, n * bay, 12]} radius={1}>
@@ -182,7 +191,28 @@ function Racking({ x, y0, y1, levels = [0, 170, 340], filled }: { x: number; y0:
           </RBox>
         )),
       )}
-      {levels.flatMap((z, l) => Array.from({ length: n }, (_, b) => (filled(b, l) ? <PalletLoad key={`${b}-${l}`} at={[x, y0 + bay / 2 + b * bay]} z={z} h={l === 2 ? 70 : 100} color={(b + l) % 3 ? '#c8925a' : '#b9824d'} /> : null)))}
+      {/* The loads: a pallet, a block of cartons (one box scaled to its height), the stretch wrap round it. */}
+      <PalletSet limit={loads.length}>
+        <boxGeometry args={[m(150), m(150), m(14)]} />
+        <meshStandardMaterial color="#c08a52" roughness={0.75} />
+        {loads.map((q) => (
+          <PalletPiece key={`${q.b}-${q.l}`} position={[m(x), m(y0 + bay / 2 + q.b * bay), m(q.z + 7)]} />
+        ))}
+      </PalletSet>
+      <LoadSet limit={loads.length}>
+        <boxGeometry args={[m(142), m(142), m(1)]} />
+        <meshStandardMaterial color="#ffffff" roughness={0.8} />
+        {loads.map((q) => (
+          <Load key={`${q.b}-${q.l}`} position={[m(x), m(y0 + bay / 2 + q.b * bay), m(q.z + 14 + q.h / 2)]} scale={[1, 1, q.h]} color={(q.b + q.l) % 3 ? '#c8925a' : '#b9824d'} />
+        ))}
+      </LoadSet>
+      <WrapSet limit={loads.length}>
+        <boxGeometry args={[m(146), m(146), m(1)]} />
+        <meshPhysicalMaterial color="#eef3f7" transparent opacity={0.28} roughness={0.15} clearcoat={1} depthWrite={false} />
+        {loads.map((q) => (
+          <Wrap key={`${q.b}-${q.l}`} position={[m(x), m(y0 + bay / 2 + q.b * bay), m(q.z + 14 + q.h / 2)]} scale={[1, 1, q.h - 6]} />
+        ))}
+      </WrapSet>
       <Blob at={[x, (y0 + y0 + n * bay) / 2]} w={200} d={n * bay} k={0.25} />
     </group>
   );
@@ -357,26 +387,29 @@ function TomatoBed({ x0, x1, y, seed = 0 }: { x0: number; x1: number; y: number;
         <cylinderGeometry args={[m(2), m(2), m(x1 - x0 + 40), 6]} />
         <meshStandardMaterial color="#1d2025" roughness={0.6} />
       </mesh>
-      {plants.map((px, k) => (
-        <Sway key={px} at={[px, y]} deg={2.5} rate={0.7 + ((k * 13 + seed) % 5) * 0.08} phase={k * 1.3 + seed}>
-          <mesh position={[0, 0, m(50 + 150)]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[m(3.5), m(4.5), m(300), 6]} />
-            <meshStandardMaterial color="#3d7a2c" roughness={0.8} />
-          </mesh>
-          {[100, 170, 240, 310].map((h, j) => (
-            <mesh key={h} position={[m(j % 2 ? 15 : -15), 0, m(50 + h)]} scale={[1.5, 0.75, 0.5]}>
-              <sphereGeometry args={[m(24), 9, 7]} />
-              <meshStandardMaterial color={j % 2 ? '#4f9a37' : '#5aa83f'} roughness={0.8} />
-            </mesh>
-          ))}
-          {[0, 1, 2].map((j) => (
-            <mesh key={j} position={[m(6 + j * 8), m(-20), m(50 + 130 - j * 6 + (k % 2) * 60)]}>
-              <sphereGeometry args={[m(11), 12, 9]} />
-              <meshPhysicalMaterial color={['#d8331f', '#e8762c', '#7dbb3c'][(j + k + seed) % 3]} roughness={0.3} clearcoat={0.8} />
-            </mesh>
-          ))}
-        </Sway>
-      ))}
+      <StemSet limit={plants.length}>
+        <cylinderGeometry args={[m(3.5), m(4.5), m(300), 6]} />
+        <meshStandardMaterial color="#3d7a2c" roughness={0.8} />
+        <LeafSet limit={plants.length * 4}>
+          <sphereGeometry args={[m(24), 9, 7]} />
+          <meshStandardMaterial color="#ffffff" roughness={0.8} />
+          <FruitSet limit={plants.length * 3}>
+            <sphereGeometry args={[m(11), 12, 9]} />
+            <meshPhysicalMaterial color="#ffffff" roughness={0.3} clearcoat={0.8} />
+            {plants.map((px, k) => (
+              <Sway key={px} at={[px, y]} deg={2.5} rate={0.7 + ((k * 13 + seed) % 5) * 0.08} phase={k * 1.3 + seed}>
+                <Stem position={[0, 0, m(50 + 150)]} rotation={[Math.PI / 2, 0, 0]} />
+                {[100, 170, 240, 310].map((h, j) => (
+                  <Leaf key={h} position={[m(j % 2 ? 15 : -15), 0, m(50 + h)]} scale={[1.5, 0.75, 0.5]} color={j % 2 ? '#4f9a37' : '#5aa83f'} />
+                ))}
+                {[0, 1, 2].map((j) => (
+                  <Fruit key={j} position={[m(6 + j * 8), m(-20), m(50 + 130 - j * 6 + (k % 2) * 60)]} color={['#d8331f', '#e8762c', '#7dbb3c'][(j + k + seed) % 3]} />
+                ))}
+              </Sway>
+            ))}
+          </FruitSet>
+        </LeafSet>
+      </StemSet>
       <RBox at={[(x0 + x1) / 2, y, 430]} size={[x1 - x0 + 40, 22, 8]} radius={3} shadow={false}>
         <meshStandardMaterial color="#d7c8ff" emissive="#b28cff" emissiveIntensity={0.9} toneMapped={false} />
       </RBox>
