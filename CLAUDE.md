@@ -10,7 +10,7 @@
   (the simulator to run and show without a robot or internet). Build with `sh desktop-go/build.sh`.
   Delivering it: during development send the zip split in two (`zip -s 30m`, under the 30 MB file limit);
   a confirmed final build goes on the `release` branch as one `PhysicalAI-Simulator.zip` + README (latest only).
-- `content-markdown/` — the lesson sources the app reads (8 md + `reference/`), Korean.
+- `content-markdown/` — the lesson sources the app reads (8 md + `reference/`), Korean; `sites/` = the 산업단지 site labs' lesson scripts (story, activities, answers, teacher's plan).
   `npm run gen:curriculum` turns them into `web-typescript/src/engine/education/curriculum.gen.ts`.
 - `manuals/` — step-by-step guides for people (Korean), by audience: `simulator/`, `setup/`, `robot-arm/`, `myagv/`, `course/`.
   The two delivered PDFs (simulator manual, teacher guide) are built from md there by `web-typescript/tools/build/guides.mjs`.
