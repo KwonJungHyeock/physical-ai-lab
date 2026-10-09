@@ -1,8 +1,10 @@
 'use client';
 
 /**
- * The start of the program: the company mark draws itself, the name comes in, the robots the program
- * teaches rise onto a lit floor, and the bar under them follows the real loading (robot description,
+ * The start of the program: the company mark draws itself, the name comes in, and a window under it
+ * goes through the places robots work — the 산업단지 and its six sites, pictures of the app's own 3D
+ * scenes (tools/build/intro-scenes.mjs) — each with one line of what the robot does there. The bar
+ * under them follows the real loading (robot description,
  * the model files, then the 3D scene), easing on between the steps so it never stands still. When both
  * the sequence has played and the 3D view is ready, the last frame offers [연결하기] (the 로봇 연결
  * window) and 시뮬레이터로 시작; the intro steps aside on either. A click skips the sequence (the bar
@@ -16,13 +18,18 @@ import { useEffect, useRef, useState } from 'react';
 
 import css from './intro.module.css';
 
-const ROBOTS = [
-  { src: '/brand/intro/mypalletizer260-pi.png', name: 'myPalletizer 260' },
-  { src: '/brand/intro/mecharm270-pi.png', name: 'mechArm 270' },
-  { src: '/brand/intro/mycobot280-rdkx5.png', name: 'myCobot 280', hero: true },
-  { src: '/brand/intro/mycobot320-pi.png', name: 'myCobot 320' },
-  { src: '/brand/intro/myagv.png', name: 'myAGV' },
+/** Where robots work: the pictures the window goes through, with what the robot does there. */
+const SCENES = [
+  { id: 'park', name: '로봇 산업단지', line: '일곱 현장에서 로봇이 일해요 — 하나씩 들어가 배워요' },
+  { id: 'factory', name: '스마트 공장', line: '센서가 알린 상자를 컨베이어에서 집어 옮겨요' },
+  { id: 'logistics', name: '물류 센터', line: '상자를 팔레트에 한 층씩 정확히 쌓아요' },
+  { id: 'bio', name: '바이오 실험실', line: '시험관을 정해진 칸에 1 mm 안으로 꽂아요' },
+  { id: 'farm', name: '스마트팜', line: '카메라로 익은 토마토를 찾아 따서 담아요' },
+  { id: 'cafe', name: '서비스 카페', line: '사람 곁에서 속도를 줄여 안전하게 음료를 건네요' },
+  { id: 'ai', name: 'AI 연구소', line: '처음 보는 부품도 AI 로 알아보고 분류해요' },
 ];
+/** How long each place shows, ms. */
+const SCENE_MS = 2600;
 /** How long the sequence plays before the intro may step aside, ms. */
 const SEQUENCE_MS = 3600;
 
@@ -44,6 +51,13 @@ export default function Intro({ progress, ready, note, gate }: Props) {
     const quick = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     const t = window.setTimeout(() => setPlayed(true), quick ? 600 : SEQUENCE_MS);
     return () => window.clearTimeout(t);
+  }, []);
+  // The places, one after another (on until the intro steps aside: the last frame waits on them).
+  const [scene, setScene] = useState(0);
+  useEffect(() => {
+    const quick = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const t = window.setInterval(() => setScene((n) => (n + 1) % SCENES.length), quick ? SCENE_MS * 2 : SCENE_MS);
+    return () => window.clearInterval(t);
   }, []);
   const final = ready && played;
   const done = final && (!gate || entered);
@@ -95,15 +109,28 @@ export default function Intro({ progress, ready, note, gate }: Props) {
         <b>
           Physical AI <span>로봇 학습 프로그램</span>
         </b>
-        <small>SIMULATOR · ROBOT CONSOLE · CURRICULUM</small>
+        <small>myCobot 280 RDK X5 · SIMULATOR · ROBOT CONSOLE · CURRICULUM</small>
       </div>
-      <div className={css.robots}>
-        {ROBOTS.map((r, i) => (
-          // eslint-disable-next-line @next/next/no-img-element -- fixed pictures, also in the static export
-          <img key={r.src} src={r.src} alt={r.name} className={r.hero ? css.hero : undefined} style={{ animationDelay: `${1.5 + i * 0.13}s` }} draggable={false} />
-        ))}
-      </div>
-      <div className={css.reflect} />
+      <figure className={css.places} aria-label="로봇이 일하는 곳">
+        <div className={css.window}>
+          {SCENES.map((p, i) => (
+            // eslint-disable-next-line @next/next/no-img-element -- fixed pictures, also in the static export
+            <img key={p.id} src={`/brand/intro/scene-${p.id}.jpg`} alt={p.name} data-on={i === scene || undefined} draggable={false} />
+          ))}
+          <figcaption key={scene} className={css.caption}>
+            <small>
+              {String(scene + 1).padStart(2, '0')} / {String(SCENES.length).padStart(2, '0')}
+            </small>
+            <b>{SCENES[scene].name}</b>
+            <span>{SCENES[scene].line}</span>
+          </figcaption>
+        </div>
+        <ol className={css.dots} aria-hidden="true">
+          {SCENES.map((p, i) => (
+            <li key={p.id} data-on={i === scene || undefined} />
+          ))}
+        </ol>
+      </figure>
       <div className={css.load} role="progressbar" aria-label="불러오기" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(target * 100)}>
         <span className={css.bar}>
           <i ref={bar} />
