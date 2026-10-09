@@ -11,6 +11,8 @@ import type { RobotAction } from './sim';
 
 export interface RobotState {
   connected: boolean;
+  /** Different on every start of the robot's server (a change: it restarted, run ids start over). */
+  boot?: string;
   demo: boolean;
   angles: number[] | null;
   running: boolean;

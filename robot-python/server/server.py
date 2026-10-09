@@ -73,7 +73,8 @@ SPEED_CAP = 50          # classroom speed limit (same as the console)
 ARRIVE_DEG = 2.0        # final arrival tolerance (J1 measured 1.4° on the real robot)
 VIA_DEG = 5.0           # intermediate waypoint of a straight line: send the next one early
 POLL_S = 0.1            # live angle refresh for the console
-DEADMAN_S = 3.0         # stop a run when the console has not polled for this long (0 = off; --deadman)
+DEADMAN_S = 5.0         # stop a run when the console has not polled for this long (0 = off; --deadman);
+                        # 5 s rides out a Wi-Fi roam or a busy classroom network without letting a lost arm go on
 SETTLE_S = 0.3         # after arriving, wait up to this long for the arm to stop moving before measuring
 JOG_LEAD_DEG = 15.0    # a jog target may lead the arm by at most this much per joint
 JOG_HOLD_S = 1.0       # jogging and no keep-alive for this long: the console let go (or went away), stop
@@ -332,19 +333,40 @@ class Pump:
         log(f"[펌프] {'켜기' if on else '끄기'}" + (" (데모)" if self.demo else ""))
 
 
+class NoArm:
+    """Stands in for the arm while its port cannot be opened: every call fails with the reason."""
+
+    def __init__(self, reason):
+        self.reason = reason
+
+    def __getattr__(self, name):
+        def fail(*_args, **_kwargs):
+            raise RuntimeError(self.reason)
+        return fail
+
+
 class Robot:
     """The arm plus a live state the console polls, and one program runner."""
 
     def __init__(self, demo, port, baud):
         self.demo = demo
         self.port, self.baud = port, baud
+        open_error = ""
         if demo:
             self.arm = DemoArm()
         else:
-            from pymycobot import MyCobot280RDKX5   # opening the port sends nothing to the arm
-            self.arm = MyCobot280RDKX5(port, baud)
-            time.sleep(0.3)
-            self.arm.power_on()
+            # A missing pymycobot or a port that will not open must not stop the server (systemd
+            # would restart it every few seconds and no PC could find the robot to learn why): it
+            # serves anyway, says what is wrong, and the poll loop keeps trying to open the port.
+            try:
+                from pymycobot import MyCobot280RDKX5   # opening the port sends nothing to the arm
+                self.arm = MyCobot280RDKX5(port, baud)
+                time.sleep(0.3)
+                self.arm.power_on()
+            except Exception as exc:
+                open_error = f"로봇 포트({port})를 열지 못했어요: {exc}"
+                log(f"[연결] {open_error}")
+                self.arm = NoArm(open_error)
         self.lock = threading.Lock()
         self.state = {
             "connected": False, "demo": demo, "angles": None, "updated": 0.0,
@@ -353,7 +375,7 @@ class Robot:
             "limp": [False] * 6,
             # When each joint was zero-calibrated from the console: {"1": unix time, ...}
             "calibrated": load_calibration(),
-            "message": "", "error": "", "read_errors": 0, "run": 0,
+            "message": "", "error": open_error, "read_errors": 0, "run": 0,
             # The gripper as last commanded: "open", "closed" or None (not told yet since the server started).
             "gripper": None,
             # Where the fingers stopped after the last open or close (0 closed .. 100 open), None until known.
@@ -363,6 +385,9 @@ class Robot:
         }
         self.start_lock = threading.Lock()
         self.last_seen = time.time()
+        # Until then the dead-man check waits (a short move asked by another PC: 로봇 찾기 [움직여 확인]).
+        self.grace_until = 0.0
+        self.reopen_at = time.time() + 10   # with no arm (NoArm): when to try the port again
         self.lost = False           # the current run was stopped by the dead-man check
         self.pump = Pump(demo)   # stays as it is on Stop: switching off would drop a held block
         self.abort = threading.Event()
@@ -393,6 +418,10 @@ class Robot:
 
     def _poll(self):
         while True:
+            if isinstance(self.arm, NoArm) and time.time() > self.reopen_at and not self.state["running"]:
+                self.reopen_at = time.time() + 10
+                if self.reconnect() is None:
+                    self.state["error"] = ""
             if not self.state["running"]:       # the runner reads angles itself while moving
                 self.read_angles()
                 # Hold-to-run: a jog lasts only while the console keeps sending targets.
@@ -410,7 +439,7 @@ class Robot:
             # Dead-man: the console polls /api/state several times a second. If it goes
             # quiet while the arm is moving (Wi-Fi dropped, laptop closed), nobody can
             # press Stop any more — so stop.
-            elif DEADMAN_S and time.time() - self.last_seen > DEADMAN_S and not self.abort.is_set():
+            elif DEADMAN_S and time.time() - self.last_seen > DEADMAN_S and time.time() > self.grace_until and not self.abort.is_set():
                 log(f"[정지] 화면과 {DEADMAN_S:g}초 넘게 연결이 끊겨 멈춥니다.")
                 self.lost = True
                 self.stop()
@@ -911,6 +940,10 @@ IDENTITY_AT = [0.0]
 WIFI = None
 # Read by other pages on the classroom network (로봇 찾기 on a student's PC lists every robot).
 CROSS_ORIGIN = ("/api/state", "/api/identify")
+# Different on every start: a console that sees it change knows the server restarted (its run ids start over).
+BOOT_ID = os.urandom(4).hex()
+# Files whose names change with every build (and the Python runtime): kept by the browser.
+LONG_CACHE = ("/_next/static/", "/pyodide/")
 
 
 def refresh_identity(force=False):
@@ -927,8 +960,14 @@ def current_label():
 
 
 def lan_ips():
-    ips = os.popen("hostname -I 2>/dev/null").read().split()
-    return [ip for ip in ips if ip.count(".") == 3 and not ip.startswith("127.")]
+    """The robot's IPv4 addresses, the one it reaches the network with (default route) first, so the
+    robot ID does not come from a container or a second adapter."""
+    ips = [ip for ip in os.popen("hostname -I 2>/dev/null").read().split() if ip.count(".") == 3 and not ip.startswith("127.")]
+    route = os.popen("ip -4 route get 1.1.1.1 2>/dev/null").read().split()
+    main = route[route.index("src") + 1] if "src" in route[:-1] else ""
+    # Container bridges (docker 172.17.x) last.
+    ips.sort(key=lambda ip: (ip != main, ip.startswith("172.17.")))
+    return ips
 
 
 class ConsoleServer(ThreadingHTTPServer):
@@ -944,6 +983,12 @@ class ConsoleServer(ThreadingHTTPServer):
 
 
 class Handler(SimpleHTTPRequestHandler):
+    # Keep-alive: the console asks for the state many times a second; one connection for all of them
+    # instead of a new one each time (a busy classroom Wi-Fi drops new connections first).
+    # Every reply must then say its length (send_json, the files, the camera picture, the preflight).
+    protocol_version = "HTTP/1.1"
+    # An idle kept-alive connection is closed after this long (each one holds a thread).
+    timeout = 30
     extensions_map = {
         **SimpleHTTPRequestHandler.extensions_map,
         ".glb": "model/gltf-binary", ".wasm": "application/wasm", ".js": "text/javascript",
@@ -966,6 +1011,7 @@ class Handler(SimpleHTTPRequestHandler):
         # Preflight for 로봇 찾기 (another page, possibly HTTPS, asking a robot on the local network)
         if self.path.split("?")[0] not in CROSS_ORIGIN:
             self.send_response(404)
+            self.send_header("Content-Length", "0")
             self.end_headers()
             return
         self.send_response(204)
@@ -973,7 +1019,21 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.send_header("Access-Control-Max-Age", "600")
+        self.send_header("Content-Length", "0")
         self.end_headers()
+
+    def same_origin(self):
+        """The request comes from this robot's own console (a same-origin request sends no Origin,
+        or the robot's own address), not from another page on the network."""
+        origin = self.headers.get("Origin")
+        if not origin:
+            return True
+        return urllib.parse.urlsplit(origin).netloc == (self.headers.get("Host") or "")
+
+    def end_headers(self):
+        if self.command in ("GET", "HEAD") and self.path.startswith(LONG_CACHE):
+            self.send_header("Cache-Control", "public, max-age=31536000, immutable")
+        super().end_headers()
 
     def send_json(self, obj, code=200):
         body = json.dumps(obj, ensure_ascii=False).encode()
@@ -1012,12 +1072,15 @@ class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path.split("?")[0] == "/api/state":
             refresh_identity()
-            ROBOT.seen()
+            # Only this robot's own console keeps a run alive: another PC's 로봇 찾기 asking the
+            # state (cross-origin) must not keep a run going after its own console has gone.
+            if self.same_origin():
+                ROBOT.seen()
             # age: seconds since the last good angle read, measured on the robot's clock
             age = round(time.time() - ROBOT.state["updated"], 2) if ROBOT.state["updated"] else None
             state = {k: v for k, v in ROBOT.state.items() if k != "arrivals"}
             state["arrivalCount"] = len(ROBOT.state["arrivals"])
-            return self.send_json({**state, **IDENTITY, "speedCap": SPEED_CAP, "age": age, "camera": CAMERA.available, "cameras": CAMERA.count,
+            return self.send_json({**state, **IDENTITY, "boot": BOOT_ID, "speedCap": SPEED_CAP, "age": age, "camera": CAMERA.available, "cameras": CAMERA.count,
                                    "pump": ROBOT.pump.available, "pumpError": ROBOT.pump.error})
         if self.path.split("?")[0] == "/api/wifi":
             try:
@@ -1049,6 +1112,12 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_POST(self):
         route = self.path.split("?")[0]
+        # Only JSON, and only from this robot's own console (or, for 움직여 확인, any page that
+        # asks first): a plain form or text/plain POST from another web page needs no preflight
+        # and would otherwise drive the arm.
+        ctype = (self.headers.get("Content-Type") or "").split(";")[0].strip().lower()
+        if ctype != "application/json" or (route not in CROSS_ORIGIN and not self.same_origin()):
+            return self.send_json({"ok": False, "error": "이 요청은 받을 수 없어요 (로봇 콘솔 화면에서만)."}, 403)
         try:
             body = self.read_json()
             if route == "/api/stop":
@@ -1070,6 +1139,9 @@ class Handler(SimpleHTTPRequestHandler):
                     return self.send_json({"ok": False, "error": "지금은 움직여 알려 줄 수 없어요."}, 409)
                 there = list(a)
                 there[0] += -5 if a[0] > 0 else 5
+                # Asked by another PC's page: its polls do not count for the dead-man check, so the
+                # little move gets time of its own.
+                ROBOT.grace_until = time.time() + 10
                 err, run = ROBOT.start([{"type": "angles", "angles": there, "speed": 35, "line": 0},
                                         {"type": "angles", "angles": list(a), "speed": 35, "line": 0}], "로봇 찾기: 이 로봇이에요")
                 return self.send_json({"ok": err is None, "error": err}, 200 if err is None else 409)

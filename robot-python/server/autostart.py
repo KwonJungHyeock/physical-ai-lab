@@ -49,7 +49,7 @@ Environment=PYTHONUNBUFFERED=1
 # The serial port and the camera may take a moment after power-on.
 ExecStartPre=/bin/sleep 3
 ExecStart={sys.executable} {os.path.join(HERE, script)} {args}
-Restart=on-failure
+Restart=always
 RestartSec=3
 
 [Install]

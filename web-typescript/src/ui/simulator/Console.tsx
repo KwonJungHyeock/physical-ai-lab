@@ -799,6 +799,7 @@ export default function Console() {
     let lastShown = '';
     let misses = 0;
     let everConnected = false;
+    let boot = '';
     let timer = 0;
     const apply = (s: RobotState | null) => {
       if (!s) {
@@ -832,8 +833,13 @@ export default function Console() {
         live.setAngles(s.angles);
       }
       if (realRunRef.current) setRunningLine(s.running && s.line ? s.line : -1);
+      // The server started again (power cut, update): its run ids start over, so a run this console
+      // was waiting for is gone — never wait for it.
+      const restarted = !!boot && !!s.boot && s.boot !== boot;
+      if (s.boot) boot = s.boot;
+      if (restarted) addLog('warn', realRunId.current ? '로봇 서버가 다시 켜졌어요. 실행하던 프로그램은 멈췄어요.' : '로봇 서버가 다시 켜졌어요.');
       // Compare run ids rather than watching for running → idle: a short run can start and end between two polls.
-      if (realRunId.current && s.run >= realRunId.current && !s.running) {
+      if (realRunId.current && (restarted || (s.run >= realRunId.current && !s.running))) {
         realRunId.current = 0;
         setRealRun(false);
         setBusy(false);
@@ -851,7 +857,8 @@ export default function Console() {
     // One request at a time (a slow answer never piles up requests behind it), 10 times a second
     // with a robot; a page with no robot server behind it (the PC simulator) asks only every 3 s.
     const tick = async () => {
-      const s = await fetchRobotState(AbortSignal.timeout(800));
+      // 1.5 s: a busy classroom Wi-Fi answers late now and then; three misses in a row still mean lost.
+      const s = await fetchRobotState(AbortSignal.timeout(1500));
       if (!alive) return;
       apply(s);
       timer = window.setTimeout(tick, s || misses < 3 ? 100 : everConnected ? 300 : 3000);

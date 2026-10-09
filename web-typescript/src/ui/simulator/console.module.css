@@ -8152,6 +8152,34 @@ button.jpRow:hover {
   font-size: 12.5px;
   color: #667085;
 }
+.linkChecks li[data-state='fail'] {
+  color: #d92d20;
+}
+.linkChecks li[data-state='fail'] i::before {
+  content: '×';
+  font-weight: 900;
+}
+/* The robot did not answer: why, and [다시 시도] / [돌아가기] */
+.linkError {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid #fecdca;
+  border-radius: 12px;
+  background: #fef3f2;
+  color: #912018;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.linkError p {
+  margin: 0 0 10px;
+}
+.linkError span {
+  display: flex;
+  gap: 8px;
+}
+.app .linkError .connectGo {
+  color: #fff;
+}
 @media (max-width: 860px) {
   .app .connectBox {
     grid-template-columns: 1fr;

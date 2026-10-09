@@ -144,7 +144,7 @@ func handler(root fs.FS) http.Handler {
 	})
 }
 
-// lanPrefixes: the first three numbers of this PC's private IPv4 addresses ("192.168.0."),
+// lanPrefixes: the first three numbers of this PC's private IPv4 networks ("192.168.0."; a /22 or /23 gives each of its /24s),
 // Wi-Fi adapters first, virtual adapters (VPN, Hyper-V, VirtualBox, VMware, WSL) left out.
 func lanPrefixes() []string {
 	type found struct {
@@ -184,17 +184,30 @@ func lanPrefixes() []string {
 			if ip == nil || !ip.IsPrivate() {
 				continue
 			}
-			p := fmt.Sprintf("%d.%d.%d.", ip[0], ip[1], ip[2])
-			if !seen[p] {
-				seen[p] = true
-				list = append(list, found{p, rank})
+			// The PC's own /24 first; on a school network of /23 or /22 also the other /24s of it
+			// (a robot on 192.168.1.x is not found from 192.168.0.x otherwise). Bigger: only its own.
+			own := fmt.Sprintf("%d.%d.%d.", ip[0], ip[1], ip[2])
+			prefixes := []string{own}
+			if ones, _ := ipn.Mask.Size(); ones >= 22 && ones < 24 {
+				base := ip.Mask(ipn.Mask)
+				for k := 0; k < 1<<(24-ones); k++ {
+					if p := fmt.Sprintf("%d.%d.%d.", base[0], base[1], int(base[2])+k); p != own {
+						prefixes = append(prefixes, p)
+					}
+				}
+			}
+			for _, p := range prefixes {
+				if !seen[p] {
+					seen[p] = true
+					list = append(list, found{p, rank})
+				}
 			}
 		}
 	}
 	sort.SliceStable(list, func(i, j int) bool { return list[i].rank < list[j].rank })
 	out := []string{}
 	for _, f := range list {
-		if len(out) < 3 {
+		if len(out) < 6 {
 			out = append(out, f.prefix)
 		}
 	}

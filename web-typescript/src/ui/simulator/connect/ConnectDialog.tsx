@@ -22,7 +22,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import { identifyRobot, networkPrefix, pcNetworks, ROBOT_PORT, sameRobot, scanNetwork, type FoundRobot } from '@/engine/simulator/discover';
+import { identifyRobot, networkPrefix, pcNetworks, probeRobot, ROBOT_PORT, sameRobot, scanNetwork, type FoundRobot } from '@/engine/simulator/discover';
 
 import Icon from '../Icon';
 import WifiPanel from './WifiPanel';
@@ -84,8 +84,8 @@ export default function ConnectDialog({ current, auto, carry, onClose }: Props) 
   const address = robotAddress(id, prefix);
   /** The search as the radar shows it. */
   const [scan, setScan] = useState<{ scanning: boolean; found: FoundRobot[]; progress: number }>({ scanning: false, found: [], progress: 0 });
-  /** Linking to a robot: the checks done so far (0–4), then its console opens. */
-  const [link, setLink] = useState<{ label: string; robot?: FoundRobot; addr: string; step: number } | null>(null);
+  /** Linking to a robot: the checks done so far (0–4), then its console opens; `error` when it did not answer. */
+  const [link, setLink] = useState<Link | null>(null);
   const go = (addr: string, label: string, robot?: FoundRobot) => {
     try {
       localStorage.setItem(PREFIX_KEY, prefix);
@@ -100,8 +100,29 @@ export default function ConnectDialog({ current, auto, carry, onClose }: Props) 
   useEffect(() => {
     carryNow.current = carry;
   });
+  // The first step asks the robot itself (its address may be a typed ID, a recent one, or a robot
+  // switched off since the search): the console opens only after it answered — never onto a
+  // browser error page in the program window, which has no address bar to come back from.
+  const asked = useRef<Link | null>(null);
   useEffect(() => {
-    if (!link) return;
+    if (!link || link.checked || link.error || asked.current === link) return;
+    asked.current = link;
+    const [host, port] = link.addr.split(':');
+    void (async () => {
+      let r = await probeRobot(host, 3000, Number(port) || ROBOT_PORT);
+      // A dozing Wi-Fi answers the second time.
+      if (!r) r = await probeRobot(host, 5000, Number(port) || ROBOT_PORT);
+      setLink((l) =>
+        l !== link
+          ? l
+          : r
+            ? { ...l, robot: r, checked: true, step: 1 }
+            : { ...l, error: `로봇(${link.addr})이 대답하지 않아요. 로봇 전원이 켜져 있는지, PC 와 같은 Wi-Fi 인지, ID 가 맞는지 확인해 주세요.` },
+      );
+    })();
+  }, [link]);
+  useEffect(() => {
+    if (!link || !link.checked || link.error) return;
     const quick = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     if (link.step >= LINK_STEPS.length) {
       const t = window.setTimeout(() => (window.location.href = `http://${link.addr}/console${carryNow.current?.() ?? ''}`), quick ? 0 : 450);
@@ -150,7 +171,7 @@ export default function ConnectDialog({ current, auto, carry, onClose }: Props) 
             ))}
           </div>
 
-          {link && <LinkSteps link={link} />}
+          {link && <LinkSteps link={link} onRetry={() => setLink({ label: link.label, robot: link.robot, addr: link.addr, step: 0 })} onBack={() => setLink(null)} />}
 
           {!link && tab === 'find' && <FindRobots prefix={prefix} setPrefix={setPrefix} here={current?.ips ?? []} auto={auto} onScan={setScan} onConnect={(r) => go(r.address, r.robotId, r)} />}
 
@@ -228,6 +249,17 @@ export default function ConnectDialog({ current, auto, carry, onClose }: Props) 
 /** What is checked, in order, before the robot's console opens. */
 const LINK_STEPS = ['네트워크', '로봇 서버', '로봇팔 신호', '콘솔 열기'] as const;
 
+interface Link {
+  label: string;
+  robot?: FoundRobot;
+  addr: string;
+  step: number;
+  /** The robot answered (its state read again just now). */
+  checked?: boolean;
+  /** It did not answer: why, and what to check. */
+  error?: string;
+}
+
 /** A picture of the robot's family for the link line. */
 function robotPicture(r?: FoundRobot): string {
   const m = `${r?.model ?? ''} ${r?.kind ?? ''}`;
@@ -247,7 +279,7 @@ function blipAt(r: FoundRobot): { left: string; top: string } {
   return { left: `${50 + Math.cos(a) * d * 46}%`, top: `${50 + Math.sin(a) * d * 46}%` };
 }
 
-function Radar({ scanning, found, progress, link }: { scanning: boolean; found: FoundRobot[]; progress: number; link: { robot?: FoundRobot; step: number } | null }) {
+function Radar({ scanning, found, progress, link }: { scanning: boolean; found: FoundRobot[]; progress: number; link: Link | null }) {
   return (
     <aside className={css.radarSide} data-scanning={scanning || undefined} data-linked={(link && link.step >= LINK_STEPS.length) || undefined} aria-hidden="true">
       <div className={css.radar}>
@@ -263,7 +295,9 @@ function Radar({ scanning, found, progress, link }: { scanning: boolean; found: 
         {link
           ? link.step >= LINK_STEPS.length
             ? '연결됐어요'
-            : '연결하는 중'
+            : link.error
+              ? '대답이 없어요'
+              : '연결하는 중'
           : scanning
             ? `찾는 중 · ${Math.round(progress * 100)}% · ${found.length}대`
             : found.length
@@ -274,7 +308,7 @@ function Radar({ scanning, found, progress, link }: { scanning: boolean; found: 
   );
 }
 
-function LinkSteps({ link }: { link: { label: string; robot?: FoundRobot; addr: string; step: number } }) {
+function LinkSteps({ link, onRetry, onBack }: { link: Link; onRetry(): void; onBack(): void }) {
   const done = link.step >= LINK_STEPS.length;
   // The arm's signal: known from the search (the server answers whether it reaches the arm).
   const armOk = link.robot ? link.robot.connected : true;
@@ -298,16 +332,30 @@ function LinkSteps({ link }: { link: { label: string; robot?: FoundRobot; addr: 
       </div>
       <ol className={css.linkChecks}>
         {LINK_STEPS.map((s, i) => (
-          <li key={s} data-state={i < link.step ? (i === 2 && !armOk ? 'warn' : 'ok') : i === link.step ? 'now' : undefined}>
+          <li key={s} data-state={i < link.step ? (i === 2 && !armOk ? 'warn' : 'ok') : i === link.step ? (link.error ? 'fail' : 'now') : undefined}>
             <i />
             {s}
           </li>
         ))}
       </ol>
-      <p className={css.linkNote}>
-        {done ? `${link.robot?.label || `로봇 ${link.label}`} 의 화면을 여는 중…` : `http://${link.addr}`}
-        {!armOk && link.step > 2 && ' · 로봇팔 신호가 없어요 (전원 · USB 선 확인)'}
-      </p>
+      {link.error ? (
+        <div className={css.linkError} role="alert">
+          <p>{link.error}</p>
+          <span>
+            <button type="button" className={css.connectGo} onClick={onRetry}>
+              다시 시도
+            </button>
+            <button type="button" className={css.ghost} onClick={onBack}>
+              돌아가기
+            </button>
+          </span>
+        </div>
+      ) : (
+        <p className={css.linkNote}>
+          {done ? `${link.robot?.label || `로봇 ${link.label}`} 의 화면을 여는 중…` : link.step === 0 ? `http://${link.addr} 에 물어보는 중…` : `http://${link.addr}`}
+          {!armOk && link.step > 2 && ' · 로봇팔 신호가 없어요 (전원 · USB 선 확인)'}
+        </p>
+      )}
     </div>
   );
 }
@@ -332,6 +380,8 @@ function FindRobots({
   const [progress, setProgress] = useState<number | null>(null);
   const [scanned, setScanned] = useState(false);
   const [notes, setNotes] = useState<Record<string, string>>({});
+  /** The second, slower search (the first found nothing). */
+  const [slow, setSlow] = useState(false);
   const abort = useRef<AbortController | null>(null);
   useEffect(() => () => abort.current?.abort(), []);
 
@@ -354,16 +404,29 @@ function FindRobots({
     } catch {
       /* ignore */
     }
-    await Promise.all(
-      nets.map((n, i) =>
-        scanNetwork(n, {
-          signal: ctl.signal,
-          parallel: Math.max(16, Math.round(48 / nets.length)),
-          onFound: (r) => setFound((f) => [...f.filter((x) => !sameRobot(x, r)), r].sort(byName)),
-          onProgress: (done, total) => (i === 0 ? setProgress(done / total) : undefined),
-        }),
-      ),
-    );
+    let any = 0;
+    const pass = (timeoutMs: number, from: number, span: number) =>
+      Promise.all(
+        nets.map((n, i) =>
+          scanNetwork(n, {
+            signal: ctl.signal,
+            timeoutMs,
+            parallel: Math.max(16, Math.round(48 / nets.length)),
+            onFound: (r) => {
+              any += 1;
+              setFound((f) => [...f.filter((x) => !sameRobot(x, r)), r].sort(byName));
+            },
+            onProgress: (done, total) => (i === 0 ? setProgress(from + (span * done) / total) : undefined),
+          }),
+        ),
+      );
+    await pass(1500, 0, 1);
+    // Nothing answered: once more, waiting longer (a robot's Wi-Fi dozing, a crowded network).
+    if (!any && !ctl.signal.aborted) {
+      setSlow(true);
+      await pass(3500, 0, 1);
+      setSlow(false);
+    }
     if (ctl.signal.aborted) return;
     setProgress(null);
     setScanned(true);
@@ -419,7 +482,7 @@ function FindRobots({
         {!net
           ? '주소 앞 세 숫자를 넣어요 (예: 192.168.0.)'
           : scanning
-            ? `${pcNets.length > 1 ? pcNets.join(' · ') : `${net}1 ~ ${net}254`} 에서 찾는 중… ${Math.round((progress ?? 0) * 100)}% · ${found.length}대 찾음`
+            ? `${slow ? '한 번 더, 천천히 · ' : ''}${pcNets.length > 1 ? pcNets.join(' · ') : `${net}1 ~ ${net}254`} 에서 찾는 중… ${Math.round((progress ?? 0) * 100)}% · ${found.length}대 찾음`
             : scanned
               ? found.length
                 ? `로봇 ${found.length}대를 찾았어요. 이름·IP 로 내 로봇을 고르고(헷갈리면 [움직여 확인]) [연결] 해요.`
@@ -478,6 +541,9 @@ function FindRobots({
           </li>
           <li>
             <b>로봇 서버</b> — 로봇 전원을 켜고 1분쯤 기다려요 (자동 시작). 그래도 없으면 [ID 로 연결] 에 로봇 ID 를 넣어 봐요.
+          </li>
+          <li>
+            <b>학교 · 손님용 Wi-Fi</b> — 기기끼리 서로 못 보게 막아 둔 망(AP 격리)이 많아요. 실습실 공유기에 PC 와 로봇을 함께 붙여요.
           </li>
         </ol>
       )}

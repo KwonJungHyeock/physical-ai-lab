@@ -43,7 +43,9 @@ import time
 
 CLASSROOM_PRIORITY = 10          # above the hotspot profile (0 by default)
 CONNECT_TIMEOUT_S = 45
-BOOT_WAIT_S = 45                 # at power-on: how long the classroom network may take before the hotspot comes on
+BOOT_WAIT_S = 120                # at power-on: how long the classroom network may take before the hotspot comes on
+                                 # (a router on the same power strip boots slower than the robot)
+RETRY_S = 300                    # on the fallback hotspot with nobody on it: try the classroom network again this often
 
 # Elephant Robotics' own hotspot on the myCobot 280 RDK X5 image (see the module notes).
 MAKER_DIR = "/usr/local/bin/hotspot-function"
@@ -74,6 +76,16 @@ def _split_terse(line):
 
 MAKER_NEEDS_ROOT = ("이 로봇(RDK X5)은 제조사 핫스팟을 끄고 켜야 해서 관리자 권한이 필요해요. "
                     "로봇 터미널에서 한 번만: cd ~/robot_console && sudo python3 wifi.py <Wi-Fi 이름> <비밀번호>")
+
+
+def hotspot_has_clients():
+    """A phone or PC is on the robot's hotspot now (`iw` lists its stations). When `iw` is missing,
+    say yes: better to keep the hotspot than to cut someone off."""
+    try:
+        names = [ln.split()[1] for ln in subprocess.run(["iw", "dev"], capture_output=True, text=True, timeout=5).stdout.splitlines() if ln.strip().startswith("Interface ")]
+        return any("Station" in subprocess.run(["iw", "dev", n, "station", "dump"], capture_output=True, text=True, timeout=5).stdout for n in names)
+    except (OSError, subprocess.SubprocessError, IndexError):
+        return True
 
 
 class MakerHotspot:
@@ -132,7 +144,8 @@ After=NetworkManager.service
 Wants=NetworkManager.service
 
 [Service]
-Type=oneshot
+# simple, not oneshot: on the fallback hotspot it keeps trying the classroom network
+Type=simple
 ExecStart={sys.executable} {os.path.join(here, "wifi.py")} --boot
 
 [Install]
@@ -241,6 +254,24 @@ class Wifi:
             time.sleep(2)
         self.log(f"[Wi-Fi] 켜짐: '{ssid}' 가 없어 로봇 핫스팟을 켜요.")
         self.maker.on()
+        # The classroom network may come later (the router was off, or slower to start). While
+        # nobody is on the hotspot, try it again now and then; someone on the hotspot is never cut off.
+        while True:
+            time.sleep(RETRY_S)
+            if hotspot_has_clients():
+                continue
+            self.log(f"[Wi-Fi] '{ssid}' 를 다시 찾아봐요 (핫스팟에 붙은 기기가 없어요).")
+            self.maker.off()
+            try:
+                self._nm("--wait", "30", "connection", "up", "id", ssid, timeout=40)
+                _, state, conn = self._device()
+                if state.startswith("connected") and conn == ssid:
+                    self.log(f"[Wi-Fi] '{ssid}' 에 연결됐어요.")
+                    return
+            except RuntimeError:
+                pass
+            self.log(f"[Wi-Fi] '{ssid}' 가 아직 없어 핫스팟을 다시 켜요.")
+            self.maker.on()
 
     # ---------------------------------------------------------------- API
     def status(self):
@@ -326,6 +357,8 @@ class Wifi:
                 pass
             args = ["connection", "add", "type", "wifi", "ifname", dev, "con-name", ssid, "ssid", ssid,
                     "802-11-wireless.hidden", "yes",
+                    # no Wi-Fi power saving: a dozing robot answers 로봇 찾기 too late and is missed
+                    "802-11-wireless.powersave", "2",
                     # prefer the classroom network at power-on; the hotspot stays as the fallback
                     "connection.autoconnect", "yes", "connection.autoconnect-priority", str(CLASSROOM_PRIORITY)]
             if password:
