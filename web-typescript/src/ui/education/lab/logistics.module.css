@@ -85,7 +85,7 @@
 }
 .player {
   position: absolute;
-  right: 12px;
+  right: 104px;
   top: 12px;
   z-index: 6;
   display: flex;
@@ -542,4 +542,529 @@
 .tick {
   font-size: 9.5px;
   fill: #667085;
+}
+
+/* Stage-flow pieces (작업 지시 → 해결): the foreman, goals, questions to ask, measuring, the
+   explanation's gaps, the calculation, check questions, the university card, the record sheet. */
+.scroll {
+  overflow-y: auto !important;
+  scrollbar-width: thin;
+}
+.slowPill {
+  position: absolute;
+  left: 50%;
+  top: 12px;
+  transform: translateX(-50%);
+  z-index: 6;
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(16, 24, 40, 0.72);
+  pointer-events: none;
+}
+.boss {
+  margin: 0;
+  padding: 7px 10px;
+  border-left: 3px solid var(--site);
+  border-radius: 0 9px 9px 0;
+  background: var(--site-soft);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.boss b {
+  margin-right: 6px;
+  font-size: 11.5px;
+  color: var(--site);
+}
+.goals {
+  font-size: 12.5px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 6px 10px;
+}
+.goals summary {
+  font-weight: 800;
+  cursor: pointer;
+}
+.goals ol {
+  margin: 6px 0 2px;
+  padding-left: 18px;
+  display: grid;
+  gap: 3px;
+  line-height: 1.45;
+}
+.ask {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 4px;
+}
+.ask li {
+  position: relative;
+  padding: 6px 10px 6px 30px;
+  border-radius: 9px;
+  background: #f4f6fb;
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+.ask li::before {
+  content: '?';
+  position: absolute;
+  left: 9px;
+  top: 6px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--site);
+  color: #fff;
+  font-size: 10.5px;
+  text-align: center;
+  line-height: 15px;
+}
+.q {
+  font-size: 13px;
+}
+.footNote {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.note[data-r='ok'] {
+  background: #e7f7ee;
+}
+.note[data-r='no'] {
+  background: #fef3f2;
+}
+.choices button[data-r='tried'] {
+  opacity: 0.55;
+}
+.choices button[data-r='pick'] {
+  border-color: var(--site);
+  background: var(--site-soft);
+}
+.choices button:disabled {
+  cursor: default;
+}
+.measureBox {
+  display: grid;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+}
+.measure > div {
+  display: contents;
+}
+.measure > div:not([data-on]) dt {
+  color: var(--faint);
+}
+.measureBtn {
+  justify-self: start;
+  border: 1px solid var(--site);
+  border-radius: 8px;
+  background: var(--site-soft);
+  color: #8a3a12;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+.blanks {
+  display: grid;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #f4f6fb;
+}
+.blanks p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 2;
+}
+.blanks select {
+  margin: 0 3px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 1px 4px;
+  font: inherit;
+  font-weight: 800;
+  background: #fff;
+}
+.blanks select[data-r='ok'] {
+  border-color: #1f9d55;
+  background: #e7f7ee;
+}
+.blanks select[data-r='no'] {
+  border-color: #e5484d;
+  background: #fef3f2;
+}
+.calc {
+  display: grid;
+  gap: 5px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+}
+.calc[data-ok] {
+  border-color: #b7e4c7;
+  background: #f3fbf6;
+}
+.calc p {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #344054;
+}
+.calc label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.calc label span {
+  flex: 1;
+  font-variant-numeric: tabular-nums;
+}
+.calc input,
+.checkRow input {
+  width: 72px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 3px 6px;
+  font: inherit;
+  font-weight: 800;
+  text-align: right;
+}
+.calc label[data-r='ok'] input {
+  border-color: #1f9d55;
+  background: #e7f7ee;
+}
+.calc label[data-r='no'] input {
+  border-color: #e5484d;
+  background: #fef3f2;
+}
+.calc em,
+.checkRow em {
+  font-style: normal;
+  color: var(--muted);
+  min-width: 34px;
+}
+.calc i {
+  font-style: normal;
+  font-weight: 800;
+}
+.calc label[data-r='ok'] i {
+  color: #1f9d55;
+}
+.calc label[data-r='no'] i {
+  color: #d92d20;
+}
+.calc > button {
+  justify-self: end;
+}
+.calcNo {
+  color: #b42318;
+  font-weight: 700;
+}
+.checks {
+  display: grid;
+  gap: 6px;
+}
+.check {
+  display: grid;
+  gap: 5px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+}
+.check[data-r='ok'] {
+  border-color: #b7e4c7;
+}
+.check[data-r='no'] {
+  border-color: #f4b4b0;
+}
+.check p {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.check small {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #344054;
+}
+.check textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 5px 7px;
+  font: inherit;
+  font-size: 12.5px;
+  resize: vertical;
+}
+.check > button {
+  justify-self: start;
+}
+.checkRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.checkMc {
+  display: grid;
+  gap: 4px;
+}
+.checkMc button {
+  text-align: left;
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 8px;
+  padding: 5px 9px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.checkMc button[aria-pressed='true'] {
+  border-color: var(--ink);
+  font-weight: 800;
+}
+.uni {
+  display: grid;
+  gap: 5px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #c9c3f0;
+  background: linear-gradient(180deg, #f1effd, #fff 70%);
+}
+.uni small {
+  font-size: 11px;
+  font-weight: 800;
+  color: #5b45c4;
+}
+.uni p {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+.uni pre {
+  margin: 0;
+  padding: 7px 9px;
+  border-radius: 8px;
+  background: #1f2631;
+  color: #e8edf5;
+  font-size: 11.5px;
+  overflow-x: auto;
+}
+.real {
+  display: grid;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--soft);
+}
+.real p {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.safety b {
+  color: #b42318;
+  margin-right: 4px;
+}
+
+/* Principle figure */
+.fig {
+  width: 100%;
+  height: auto;
+  color: #344054;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.figBox {
+  fill: #e3c193;
+  stroke: #8a6236;
+  stroke-width: 1;
+}
+.figPal,
+.figPalTop {
+  fill: #e2b989;
+  stroke: #8a6236;
+}
+.figOld {
+  fill: none;
+  stroke: #98a2b3;
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+}
+.figCup {
+  fill: #3a414b;
+}
+.figGuide {
+  stroke: #c3cad5;
+  stroke-dasharray: 3 3;
+}
+.figArrow {
+  stroke: #344054;
+  stroke-width: 1.6;
+}
+.figUp {
+  stroke: #1f9d55;
+  stroke-width: 2;
+  color: #1f9d55;
+}
+.figMark {
+  fill: #e5484d;
+}
+.figMarkOld {
+  fill: none;
+  stroke: #e5484d;
+  stroke-dasharray: 2 2;
+}
+.figTxt {
+  font-size: 10.5px;
+  font-weight: 700;
+  fill: #344054;
+}
+.figStrong {
+  font-size: 12px;
+  font-weight: 800;
+  fill: #1f7a45;
+}
+
+/* The record sheet (printed: only the sheet, see globals.css .logi-record) */
+.recordBack {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: start center;
+  overflow: auto;
+  padding: 24px 12px;
+  background: rgba(16, 24, 40, 0.45);
+}
+.record {
+  width: min(820px, 100%);
+  display: grid;
+  gap: 12px;
+  padding: 22px 26px;
+  border-radius: 14px;
+  background: #fff;
+  color: #101828;
+  font-size: 12.5px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+}
+.recordHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: end;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #101828;
+}
+.recordHead > div:first-child {
+  display: grid;
+}
+.recordHead small {
+  color: #667085;
+  font-weight: 700;
+}
+.recordHead b {
+  font-size: 20px;
+}
+.recordWho {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  font-weight: 700;
+}
+.recordProb {
+  display: grid;
+  gap: 6px;
+  break-inside: avoid;
+}
+.recordProb h3 {
+  margin: 0;
+  font-size: 14px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #fdf0e8;
+}
+.recordProb h3 small {
+  margin-left: 6px;
+  font-size: 11.5px;
+  color: #667085;
+}
+.recordProb dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 2px 10px;
+}
+.recordProb dt {
+  font-weight: 800;
+  color: #475467;
+}
+.recordProb dd {
+  margin: 0;
+}
+.recordProb table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.recordProb th,
+.recordProb td {
+  border: 1px solid #d0d5dd;
+  padding: 3px 6px;
+  text-align: left;
+}
+.recordProb th {
+  background: #f2f4f7;
+  font-size: 11.5px;
+}
+.recordChecks {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 3px;
+}
+.recordChecks span {
+  display: block;
+  font-weight: 700;
+  color: #344054;
+}
+.recordFoot {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid #d0d5dd;
+  font-weight: 700;
+}
+.recordBtns {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+@media print {
+  .recordBack {
+    position: static;
+    padding: 0;
+    background: none;
+    overflow: visible;
+  }
+  .record {
+    width: 100%;
+    padding: 0;
+    box-shadow: none;
+    border-radius: 0;
+  }
+  .recordBtns {
+    display: none;
+  }
 }

@@ -73,6 +73,8 @@ interface Props {
   shift?: number;
   /** The first view (and 처음 시점): camera then target, three.js metres (y up). */
   home?: ViewPose;
+  /** A close look the camera glides to (and back to `home` when it goes null): e.g. the moment a run went wrong. */
+  focus?: ViewPose | null;
   /** Drives the arm every frame instead of `scene.angles` while it holds a pose (a played-back run). */
   live?: RefObject<LiveArm | null>;
   /** More to draw, in the robot base frame (metres, z up). */
@@ -90,7 +92,7 @@ export interface LiveArm {
 
 const v = (p: readonly number[]) => new Vector3(p[0] / 1000, p[1] / 1000, p[2] / 1000);
 
-export default function LearnStage({ robot, chain, gripperRobot, scene, onTablePick, paused, shift = 0, home = HOME_VIEW, live, children }: Props) {
+export default function LearnStage({ robot, chain, gripperRobot, scene, onTablePick, paused, shift = 0, home = HOME_VIEW, focus = null, live, children }: Props) {
   const api = useRef<ViewApi | null>(null);
   return (
     <>
@@ -130,7 +132,7 @@ export default function LearnStage({ robot, chain, gripperRobot, scene, onTableP
             {children}
           </SceneContent>
         </Suspense>
-        <ViewControl apiRef={api} home={home} />
+        <ViewControl apiRef={api} home={home} focus={focus} />
         <ViewShift px={shift} />
         <CameraControls makeDefault smoothTime={0.25} minDistance={0.15} maxDistance={3.2} maxPolarAngle={Math.PI * 0.49} dollyToCursor dollySpeed={0.6} />
       </Canvas>
@@ -170,9 +172,20 @@ type Controls = {
 };
 
 /** Once the camera controls exist: the first view, and the view tools' handle on the camera. */
-function ViewControl({ apiRef, home }: { apiRef: RefObject<ViewApi | null>; home: ViewPose }) {
+function ViewControl({ apiRef, home, focus = null }: { apiRef: RefObject<ViewApi | null>; home: ViewPose; focus?: ViewPose | null }) {
   const controls = useThree((s) => s.controls) as Controls | null;
   const done = useRef(false);
+  const focused = useRef(false);
+  useEffect(() => {
+    if (!controls?.setLookAt) return;
+    if (focus) {
+      focused.current = true;
+      void controls.setLookAt(...focus, true);
+    } else if (focused.current) {
+      focused.current = false;
+      void controls.setLookAt(...home, true);
+    }
+  }, [controls, focus, home]);
   useEffect(() => {
     if (!controls?.setLookAt) return;
     if (!done.current) {

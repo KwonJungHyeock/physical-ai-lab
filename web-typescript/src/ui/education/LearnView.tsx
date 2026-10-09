@@ -297,6 +297,7 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
           chain={chain}
           gripperRobot={gripperRobot}
           hidden={hidden || screen !== 'logistics'}
+          level={level}
           saved={logiSolved}
           onSolved={onLogiSolved}
           onBack={() => setScreen('map')}

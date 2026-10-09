@@ -22,3 +22,10 @@ body {
   color: var(--foreground);
   font-family: var(--font-ui), "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
 }
+
+/* 물류 센터 실습 기록지: while it is open, print only the sheet (it is a direct child of body). */
+@media print {
+  body:has(> .logi-record) > :not(.logi-record) {
+    display: none !important;
+  }
+}
