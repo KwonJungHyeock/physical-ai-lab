@@ -23,3 +23,6 @@ robot-python/server/static/
 robot-python/server/models/
 web-typescript/.next-robot/
 web-typescript/out/
+
+# Split zips of the simulator sent during development (final builds go on the release branch)
+delivery*/
