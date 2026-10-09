@@ -52,6 +52,7 @@ import type { UrdfRobot } from '@/engine/robot/urdf';
 
 import LearnStage, { type LearnScene, type ViewPose } from '../stage/LearnStage';
 import CafeCell, { CafePlayback, type CafeMarker, type CafeOverlay } from './CafeCell';
+import { CafeAround, LOOKS } from './ambient/Around';
 import type { CellDim } from './CellKit';
 import { ArrowDef, Knob, PROBS, RecordSheet, SitePanel, answeredUpTo, fmt, freshFlow, type FlowState, type MeasureRow } from './SiteFlow';
 import css from './lab.module.css';
@@ -383,7 +384,8 @@ export default function CafeLab({ robot, chain, gripperRobot, hidden, level = 'h
       </header>
 
       <section className={css.stage} aria-label="3D 카페">
-        <LearnStage robot={robot} chain={chain} gripperRobot={gripperRobot} scene={scene} paused={hidden} home={CAFE_VIEW} focus={focus} live={player.arm}>
+        <LearnStage robot={robot} chain={chain} gripperRobot={gripperRobot} scene={scene} paused={hidden} home={CAFE_VIEW} focus={focus} live={player.arm} look={LOOKS.cafe}>
+          <CafeAround />
           <CafeCell player={player} prob={prob} overlay={overlay} />
         </LearnStage>
         {fail && playT >= fail.t && <div className={lg.alarm}>⚠ {fail.text.replace(/ — 작업 중지$/, '')}</div>}

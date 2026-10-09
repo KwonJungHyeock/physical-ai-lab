@@ -56,6 +56,7 @@ import type { UrdfRobot } from '@/engine/robot/urdf';
 
 import LearnStage, { type LearnScene, type ViewPose } from '../stage/LearnStage';
 import BioCell, { BioPlayback, type BioMarker, type BioOverlay } from './BioCell';
+import { BioAround, LOOKS } from './ambient/Around';
 import type { CellDim } from './CellKit';
 import { ArrowDef, Knob, PROBS, RecordSheet, SitePanel, answeredUpTo, fmt, freshFlow, type FlowState, type MeasureRow } from './SiteFlow';
 import css from './lab.module.css';
@@ -426,7 +427,8 @@ export default function BioLab({ robot, chain, gripperRobot, hidden, level = 'hs
       </header>
 
       <section className={css.stage} aria-label="3D 실험대">
-        <LearnStage robot={robot} chain={chain} gripperRobot={gripperRobot} scene={scene} paused={hidden} home={BIO_VIEW} focus={focus} live={player.arm}>
+        <LearnStage robot={robot} chain={chain} gripperRobot={gripperRobot} scene={scene} paused={hidden} home={BIO_VIEW} focus={focus} live={player.arm} look={LOOKS.bio}>
+          <BioAround />
           <BioCell player={player} prob={prob} overlay={overlay} tubes={nTubes} spill={spill} />
         </LearnStage>
         {frame?.alarm && fail && <div className={lg.alarm}>⚠ {fail.text}</div>}

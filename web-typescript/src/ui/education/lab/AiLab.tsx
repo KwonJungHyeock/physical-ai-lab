@@ -54,6 +54,7 @@ import { BLOCK_MM, CAL_BOARD, HOME_DEG } from '@/engine/simulator/board';
 
 import LearnStage, { type LearnScene, type ViewPose } from '../stage/LearnStage';
 import AiCell, { AiPlayback, thingColor, type AiMarker, type AiOverlay } from './AiCell';
+import { AiAround, LOOKS } from './ambient/Around';
 import type { CellDim } from './CellKit';
 import { ArrowDef, Knob, PROBS, RecordSheet, SitePanel, answeredUpTo, fmt, freshFlow, type FlowState, type MeasureRow } from './SiteFlow';
 import css from './lab.module.css';
@@ -403,7 +404,8 @@ export default function AiLab({ robot, chain, gripperRobot, hidden, level = 'hs'
       </header>
 
       <section className={css.stage} aria-label="3D AI 키트">
-        <LearnStage robot={robot} chain={chain} gripperRobot={gripperRobot} scene={scene} paused={hidden} home={AI_VIEW} focus={focus} live={player.arm}>
+        <LearnStage robot={robot} chain={chain} gripperRobot={gripperRobot} scene={scene} paused={hidden} home={AI_VIEW} focus={focus} live={player.arm} look={LOOKS.ai}>
+          <AiAround />
           <AiCell player={player} prob={prob} things={list} overlay={overlay} />
         </LearnStage>
         {fail && playT >= fail.t && <div className={lg.alarm}>⚠ {fail.text.replace(/ — 작업 중지$/, '')}</div>}

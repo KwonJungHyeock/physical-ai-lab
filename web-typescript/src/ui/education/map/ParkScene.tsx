@@ -21,6 +21,7 @@ import type { UrdfRobot } from '@/engine/robot/urdf';
 
 import { buildArm, type GlbNodes } from '../../simulator/stage/robotModel';
 import StudioLight from '../../simulator/stage/StudioLight';
+import { ParkTraffic, SiteLife } from './ParkLife';
 import { DECK, KIT_NAMES, PARK_PROPS, ROADS, SITE_AT, SITE_PROPS, SLAB, kitUrl, type Prop, type Xyz } from './parkLayout';
 import css from './park.module.css';
 
@@ -258,6 +259,7 @@ const SiteModel = memo(function SiteModel({ id, view, selected, robot, chain, on
         {SITE_PROPS[id].map((p, i) => (
           <PropView key={i} p={p} robot={robot} chain={chain} live={!locked} phase={view.no * 1.7 + i} />
         ))}
+        {!locked && <SiteLife id={id} />}
         <Html position={[0, 0, 3.9]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
           <button
             type="button"
@@ -417,6 +419,7 @@ export default function ParkScene({ robot, chain, onReady, views, selected, onSe
           {SITES.map((s) => (
             <SiteModel key={s.id} id={s.id} view={views[s.id]} selected={selected === s.id} robot={robot} chain={chain} onSelect={onSelect} />
           ))}
+          <ParkTraffic />
           <Ready onReady={onReady} />
         </Suspense>
       </group>

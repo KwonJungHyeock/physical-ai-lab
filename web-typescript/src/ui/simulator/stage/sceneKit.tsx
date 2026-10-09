@@ -25,7 +25,7 @@ function rand(seed: number) {
   return () => ((s = (s * 16807) % 2147483647) / 2147483647);
 }
 
-function canvasTexture(key: string, w: number, h: number, draw: (ctx: CanvasRenderingContext2D, r: () => number) => void, color = true, repeat: [number, number] = [1, 1]): Texture {
+export function canvasTexture(key: string, w: number, h: number, draw: (ctx: CanvasRenderingContext2D, r: () => number) => void, color = true, repeat: [number, number] = [1, 1]): Texture {
   const id = `${key}:${repeat.join('x')}`;
   const hit = cache.get(id);
   if (hit) return hit;

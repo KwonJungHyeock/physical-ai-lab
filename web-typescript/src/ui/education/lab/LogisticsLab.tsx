@@ -67,6 +67,7 @@ import type { UrdfRobot } from '@/engine/robot/urdf';
 
 import LearnStage, { type LearnScene, type ViewPose } from '../stage/LearnStage';
 import PalletCell, { PalletPlayback, type PalletDim, type PalletOverlay } from './PalletCell';
+import { LogisticsAround, LOOKS } from './ambient/Around';
 import {
   answeredUpTo,
   ArrowDef,
@@ -452,7 +453,8 @@ export default function LogisticsLab({ robot, chain, gripperRobot, hidden, level
       </header>
 
       <section className={css.stage} aria-label="3D 팔레타이징 셀">
-        <LearnStage robot={robot} chain={chain} gripperRobot={gripperRobot} scene={scene} paused={hidden} home={LOGI_VIEW} focus={focus} live={player.arm}>
+        <LearnStage robot={robot} chain={chain} gripperRobot={gripperRobot} scene={scene} paused={hidden} home={LOGI_VIEW} focus={focus} live={player.arm} look={LOOKS.logistics}>
+          <LogisticsAround />
           <PalletCell player={player} overlay={overlay} prob={prob} pallet={prob === 3 ? PAL_MOVED : PAL_HOME} />
         </LearnStage>
         {board?.stopped && <div className={lg.alarm}>⚠ {shown?.failure?.text ?? '라인 정지'}</div>}

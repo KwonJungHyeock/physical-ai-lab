@@ -182,13 +182,10 @@ function Demos() {
   );
 }
 
-/** The lab around the kit: a desk under it, a monitor showing the camera, a parts shelf, the sign. */
+/** The lab around the kit: a monitor showing the camera, a parts shelf, the sign. */
 function LabRoom({ prob }: { prob: AiProblem }) {
   return (
     <group>
-      <RBox at={[130, 0, -12]} size={[560, 640, 8]} radius={2} shadow={false}>
-        <meshStandardMaterial color="#e9edf2" roughness={0.85} />
-      </RBox>
       {/* A monitor on the desk behind-left: the camera's view and the program's log. */}
       <group>
         <RBox at={[-150, -60, 60]} size={[10, 170, 110]} radius={4}>

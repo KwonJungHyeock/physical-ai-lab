@@ -58,6 +58,7 @@ import type { UrdfRobot } from '@/engine/robot/urdf';
 
 import LearnStage, { type LearnScene, type ViewPose } from '../stage/LearnStage';
 import FarmCell, { FarmPlayback, type FarmMarker, type FarmOverlay } from './FarmCell';
+import { FarmAround, LOOKS } from './ambient/Around';
 import type { CellDim } from './CellKit';
 import { ArrowDef, Knob, PROBS, RecordSheet, SitePanel, answeredUpTo, fmt, freshFlow, type FlowState, type MeasureRow } from './SiteFlow';
 import css from './lab.module.css';
@@ -429,7 +430,8 @@ export default function FarmLab({ robot, chain, gripperRobot, hidden, level = 'h
       </header>
 
       <section className={css.stage} aria-label="3D 선별장">
-        <LearnStage robot={robot} chain={chain} gripperRobot={gripperRobot} scene={scene} paused={hidden} home={FARM_VIEW} focus={focus} live={player.arm}>
+        <LearnStage robot={robot} chain={chain} gripperRobot={gripperRobot} scene={scene} paused={hidden} home={FARM_VIEW} focus={focus} live={player.arm} look={LOOKS.farm}>
+          <FarmAround />
           <FarmCell player={player} prob={prob} tomatoes={FARM_TOMATOES[prob]} overlay={overlay} />
         </LearnStage>
         {frame?.alarm && fail && <div className={lg.alarm}>⚠ {fail.text.replace(/ — 작업 중지$/, '')}</div>}

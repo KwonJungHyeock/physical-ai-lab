@@ -65,6 +65,7 @@ import type { UrdfRobot } from '@/engine/robot/urdf';
 import LearnStage, { type LearnScene, type ViewPose } from '../stage/LearnStage';
 import type { CellDim } from './CellKit';
 import ConveyorCell, { type CellMarker, type CellOverlay } from './ConveyorCell';
+import { FactoryAround, LOOKS } from './ambient/Around';
 import { BoxList, CompareView, EventLog, Fix1, Fix2, Fix3, Headline, P1Numbers, type Runs } from './FactoryParts';
 import { Playback } from './playback';
 import {
@@ -500,7 +501,8 @@ export default function FactoryLab({ robot, chain, gripperRobot, hidden, level =
       </header>
 
       <section className={css.stage} aria-label="3D 공정 화면">
-        <LearnStage robot={robot} chain={chain} gripperRobot={gripperRobot} scene={scene} paused={hidden} home={LAB_VIEW} focus={focus} live={player.arm}>
+        <LearnStage robot={robot} chain={chain} gripperRobot={gripperRobot} scene={scene} paused={hidden} home={LAB_VIEW} focus={focus} live={player.arm} look={LOOKS.factory}>
+          <FactoryAround />
           <ConveyorCell player={player} boxes={specs} sensors={sensors} overlay={overlay} prob={prob} />
         </LearnStage>
         {board?.bad && !(end && pass) && <div className={lg.alarm}>⚠ {board.bad.text}</div>}

@@ -28,6 +28,8 @@ import { VIEWS, type ViewName } from '../../simulator/stage/Stage';
 import { GLYPH, ToolGlyph, ViewCube } from '../../simulator/stage/StageTools';
 import tools from '../../simulator/console.module.css';
 import { LEARN_COLORS, ellipsoid, ghostify, workspaceEnvelope, workspaceSection } from './learn3d';
+import { StageRobot, setAmbient, useAmbient } from '../lab/ambient/ambient';
+import { SiteGround, type SiteLook } from '../lab/ambient/Ground';
 import css from '../learn.module.css';
 
 const MODEL_URL = '/robot/rdkx5/rdkx5.glb';
@@ -79,6 +81,8 @@ interface Props {
   live?: RefObject<LiveArm | null>;
   /** More to draw, in the robot base frame (metres, z up). */
   children?: ReactNode;
+  /** A site's own floor and sky instead of the dark studio and grid (the site labs), with the ambient-motion switch. */
+  look?: SiteLook;
 }
 
 /** Camera position then target, three.js metres (y up). */
@@ -94,8 +98,9 @@ export interface LiveArm {
 
 const v = (p: readonly number[]) => new Vector3(p[0] / 1000, p[1] / 1000, p[2] / 1000);
 
-export default function LearnStage({ robot, chain, gripperRobot, scene, onTablePick, paused, shift = 0, home = HOME_VIEW, focus = null, live, children }: Props) {
+export default function LearnStage({ robot, chain, gripperRobot, scene, onTablePick, paused, shift = 0, home = HOME_VIEW, focus = null, live, children, look }: Props) {
   const api = useRef<ViewApi | null>(null);
+  const stageRobot = useMemo(() => ({ robot, chain }), [robot, chain]);
   return (
     <>
       <Canvas
@@ -110,7 +115,8 @@ export default function LearnStage({ robot, chain, gripperRobot, scene, onTableP
         }}
       >
         {/* The simulator's studio: slate background, its lights, its spot-lit desk and grid. */}
-        <color attach="background" args={[SCENE.sky]} />
+        <color attach="background" args={[look?.sky ?? SCENE.sky]} />
+        {look && <fog attach="fog" args={[look.sky, look.fog?.[0] ?? 2.2, look.fog?.[1] ?? 6.5]} />}
         <StudioLight intensity={0.5} softbox />
         <hemisphereLight args={['#ffffff', '#cfd6de', 0.3]} />
         <directionalLight
@@ -128,17 +134,25 @@ export default function LearnStage({ robot, chain, gripperRobot, scene, onTableP
         <directionalLight position={[-0.9, 0.55, -0.7]} intensity={0.35} color="#dfe8ff" />
         {/* Rim light from behind: a cool edge along the arm's silhouette against the dark backdrop. */}
         <directionalLight position={[-0.35, 0.95, -1.2]} intensity={1.15} color="#cfe0ff" />
-        <Desk onTablePick={onTablePick} />
+        {look ? (
+          <group rotation={[-Math.PI / 2, 0, 0]}>
+            <SiteGround look={look} />
+          </group>
+        ) : (
+          <Desk onTablePick={onTablePick} />
+        )}
         <Suspense fallback={null}>
-          <SceneContent robot={robot} chain={chain} gripperRobot={gripperRobot} scene={scene} live={live}>
-            {children}
-          </SceneContent>
+          <StageRobot.Provider value={stageRobot}>
+            <SceneContent robot={robot} chain={chain} gripperRobot={gripperRobot} scene={scene} live={live}>
+              {children}
+            </SceneContent>
+          </StageRobot.Provider>
         </Suspense>
         <ViewControl apiRef={api} home={home} focus={focus} />
         <ViewShift px={shift} />
         <CameraControls makeDefault smoothTime={0.25} minDistance={0.15} maxDistance={3.2} maxPolarAngle={Math.PI * 0.49} dollyToCursor dollySpeed={0.6} />
       </Canvas>
-      {!paused && <ViewTools apiRef={api} />}
+      {!paused && <ViewTools apiRef={api} ambient={!!look} />}
     </>
   );
 }
@@ -211,9 +225,14 @@ function ViewControl({ apiRef, home, focus = null }: { apiRef: RefObject<ViewApi
   return null;
 }
 
+/** Ambient motion on: a play-like wave; off: two pause bars. */
+const AMBIENT_ON = 'M3 12c2.5-5 5.5-5 8 0s5.5 5 8 0M3 17c2.5-3 5.5-3 8 0s5.5 3 8 0';
+const AMBIENT_OFF = 'M8 6v12M16 6v12';
+
 /** The simulator's view cube and a short rail (처음 시점 · 확대 · 축소) at the top right of the view. */
-function ViewTools({ apiRef }: { apiRef: RefObject<ViewApi | null> }) {
+function ViewTools({ apiRef, ambient }: { apiRef: RefObject<ViewApi | null>; ambient: boolean }) {
   const orient = useCallback(() => apiRef.current?.orient() ?? null, [apiRef]);
+  const moving = useAmbient();
   return (
     <div className={css.viewTools}>
       <ViewCube orient={orient} onView={(v) => apiRef.current?.view(v)} />
@@ -228,6 +247,21 @@ function ViewTools({ apiRef }: { apiRef: RefObject<ViewApi | null> }) {
         <button type="button" title="축소 (마우스 휠)" aria-label="축소" onClick={() => apiRef.current?.zoom(-1)}>
           <ToolGlyph d={GLYPH.minus} />
         </button>
+        {ambient && (
+          <>
+            <i className={tools.railSep} />
+            <button
+              type="button"
+              title={moving ? '주변 움직임 끄기 (다른 로봇·AGV·벨트 멈춤)' : '주변 움직임 켜기'}
+              aria-label="주변 움직임"
+              aria-pressed={moving}
+              data-on={moving || undefined}
+              onClick={() => setAmbient(!moving)}
+            >
+              <ToolGlyph d={moving ? AMBIENT_ON : AMBIENT_OFF} />
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
