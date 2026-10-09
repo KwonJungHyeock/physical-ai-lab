@@ -1,9 +1,9 @@
-/* First-run guide (FirstGuide.tsx): a card at the bottom of the 3D view, above the log line. */
+/* First-run guide (FirstGuide.tsx): a card at the bottom of the 3D view, above the 실습 환경 dock. */
 .guide {
   position: absolute;
   z-index: 24;
   left: 50%;
-  bottom: 74px;
+  bottom: 112px;
   transform: translateX(-50%);
   width: min(560px, calc(100% - 24px));
   display: grid;

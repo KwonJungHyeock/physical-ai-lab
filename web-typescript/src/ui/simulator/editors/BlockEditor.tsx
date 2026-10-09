@@ -150,7 +150,7 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
   const applyDrop = (target: DropTarget, d: Drag) => {
     const parsed = parse(code);
     if (parsed.errors.length) {
-      onError('파이썬에 오류가 있어서 블록을 바꿀 수 없어요.', '[파이썬]에서 먼저 고쳐 주세요.');
+      onError('블록 프로그램을 읽지 못해서 블록을 바꿀 수 없어요.', '위의 [예제 코드 처음으로]를 눌러 다시 시작해 주세요.');
       return;
     }
     const list0 = parsed.steps;
@@ -256,7 +256,7 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
                   <span>동안</span>
                 </>
               ))}
-            {preview ? <span>1번 ▾</span> : sel({ label: "관절 번호", value: String(s.j), options: [1, 2, 3, 4, 5, 6].map((n) => [`${n}번`, String(n)]), onChange: (v) => ((s.j = Number(v)), commit()) })}
+            {preview ? <span>1번 ▾</span> : sel({ label: "관절 번호", value: String(s.j), options: jointMin().map((_, i) => [`${i + 1}번`, String(i + 1)]), onChange: (v) => ((s.j = Number(v)), commit()) })}
             <span>관절을</span>
             {preview ? (
               <span>30°로</span>
@@ -344,7 +344,7 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
       case 'move':
         return (
           <>
-            <span>6개 관절 한번에</span>
+            <span>{s.joints.length}개 관절 한번에</span>
             {!preview && (
               <span className={css.advJoints}>
                 {s.joints.map((v, i) =>
@@ -353,7 +353,7 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
                 <button
                   type="button"
                   className={css.fillNow}
-                  title="로봇의 지금 자세로 6개 각도를 채워요"
+                  title={`로봇의 지금 자세로 ${s.joints.length}개 각도를 채워요`}
                   onMouseDown={(e) => e.stopPropagation()}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -588,7 +588,7 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
             <span>▶ 시뮬레이션을 누르면</span>
           </div>
           {errors.length ? (
-            <p className={css.empty}>파이썬 {errors[0].line}번째 줄에 오류가 있어 블록으로 볼 수 없어요.</p>
+            <p className={css.empty}>블록 프로그램을 읽지 못했어요 ({errors[0].line}번째 줄). 위의 [예제 코드 처음으로]를 눌러 다시 시작해 주세요.</p>
           ) : (
             steps.map((s, i) => build(s, [i]))
           )}

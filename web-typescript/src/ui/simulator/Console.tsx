@@ -61,6 +61,7 @@ import {
   type ObjectKind,
   type SceneId,
 } from '@/engine/simulator/desk';
+import { carryHash, loadLastPractice, loadProgram, readCarried, saveLastPractice, saveProgram } from '@/engine/simulator/programs';
 import { isStarter, newSession, placedBlocks, practiceFor, practicesFor, repeatability, starterFor, toolFits, toolNeeded, type Level, type PracticeId, type Session } from '@/engine/simulator/practices';
 import { check, parse, type CameraId, type Problem, type Step } from '@/engine/simulator/program';
 import { RunError, SelfCollision, Stop, createWorld, emptyStats, instantAnimate, jogTo, moveCheck, moveProblem, playTimeline, preflight, runProgram, type RobotAction, type RunHooks, type WorldState } from '@/engine/simulator/sim';
@@ -135,7 +136,7 @@ const PIP_SCALE = 0.5;
 const MODEL_KEY = 'robot-console-model';
 /** The simulator opens on the arm alone; the AI kit is one click away (the 실습 환경 dock). */
 const START_THEME: Theme = 'arm';
-const SECTION_KEY = 'robot-console-dock-open';
+const SECTION_KEY = 'robot-console-section';
 const MOUNT_KEY = 'robot-console-mount';
 const PC_OFFER_KEY = 'robot-console-pc-offered';
 /** Which real camera is which (kit / hand), when the robot has more than one. */
@@ -261,6 +262,8 @@ export default function Console() {
   const [effector, setEffector] = useState<EffectorId>('none');
   const [cameraFlange, setCameraFlange] = useState(false);
   const [code, setCode] = useState(() => practiceFor('basic', START_THEME, 'joints').starter('none', START_THEME));
+  /** The saved level, practice and program have been read (until then nothing is saved over them). */
+  const [restored, setRestored] = useState(false);
   /** The side panel is open (on a PC screen it floats over the 3D view and folds to an edge tab). */
   const [dockOpen, setDockOpen] = useState(true);
   /** The side panel's tab: direct control first, then one tab per language. */
@@ -621,24 +624,57 @@ export default function Console() {
       if (new URLSearchParams(window.location.search).has('pick')) setPicking(true);
       const d = JSON.parse(localStorage.getItem(DISPLAY_KEY) ?? 'null') as Partial<DisplayOpts> | null;
       if (d && typeof d === 'object') setDisplay({ ...DEFAULT_DISPLAY, ...d });
-      const savedLevel = localStorage.getItem(LEVEL_KEY) as Level | null;
-      if (savedLevel === 'python' || savedLevel === 'ros') {
-        const p = practiceFor(savedLevel, START_THEME, 'joints');
+      // The level and practice left last time, with the student's program (kept in this browser), or
+      // the program carried here from the PC's console when connecting to this robot.
+      const carried = readCarried(window.location.hash);
+      if (carried) window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      const stored = localStorage.getItem(LEVEL_KEY) as Level | null;
+      const savedLevel: Level = carried?.level ?? (stored === 'python' || stored === 'ros' ? stored : 'basic');
+      const th: Theme = carried?.theme ?? START_THEME;
+      const p = practiceFor(savedLevel, th, carried?.id ?? loadLastPractice(savedLevel) ?? 'joints');
+      const program = carried?.code ?? loadProgram(activeArm().id, savedLevel, th, p.id) ?? starterFor(p, 'none', th);
+      if (savedLevel !== 'basic' || th !== START_THEME || p.id !== 'joints' || program !== code) {
         setLevel(savedLevel);
+        setTheme(th);
         setPracticeId(p.id);
-        setCode(starterFor(p, 'none', START_THEME));
-        setLog([{ id: 0, kind: 'info', msg: FIRST_LOG[savedLevel] }]);
-        world.current = createWorld('none', false, BLOCK_START, START_THEME);
-        loadPython();
+        setCode(program);
+        setMatNeeded(practiceUsesMat(p.id));
+        if (savedLevel !== 'basic') setLog([{ id: 0, kind: 'info', msg: FIRST_LOG[savedLevel] }]);
+        world.current = createWorld('none', false, BLOCK_START, th);
+        if (savedLevel !== 'basic') loadPython();
       }
-      const savedTab = localStorage.getItem(TAB_KEY);
-      if (savedTab === 'direct' || savedTab === 'basic' || savedTab === 'python' || savedTab === 'ros') setTab(savedTab === 'direct' || savedTab === (savedLevel ?? 'basic') ? savedTab : 'direct');
+      if (carried) {
+        setTab(carried.level);
+        addLog('info', '시뮬레이터에서 만들던 프로그램을 가져왔어요.');
+      } else {
+        const savedTab = localStorage.getItem(TAB_KEY);
+        if (savedTab === 'direct' || savedTab === 'basic' || savedTab === 'python' || savedTab === 'ros') setTab(savedTab === 'direct' || savedTab === savedLevel ? savedTab : 'direct');
+      }
     } catch {
       /* storage blocked: keep the defaults */
     }
+    setRestored(true);
     // Once, on opening: the saved choices are read with the first render's handlers.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadPython]);
+
+  /** Keep the open program in this browser (an untouched example is forgotten). */
+  const keepProgram = (c: string) => {
+    // Not before the saved ones are read: the first render holds only the defaults.
+    if (restored && practice.id !== 'demo') saveProgram(arm.id, level, theme, practice.id, isStarter(c) ? null : c);
+  };
+  // Saved a moment after each change, so a reload or a closed window loses nothing; and the practice
+  // each level was left on.
+  const keepNow = useRef(keepProgram);
+  useEffect(() => {
+    keepNow.current = keepProgram;
+  });
+  useEffect(() => {
+    if (!restored || practice.id === 'demo') return;
+    saveLastPractice(level, practice.id);
+    const t = window.setTimeout(() => keepNow.current(code), 400);
+    return () => window.clearTimeout(t);
+  }, [restored, code, level, theme, practice.id, arm.id]);
 
   /* --- the real robot (only when served by the robot) --------------------- */
   const busyRef = useRef(false);
@@ -863,7 +899,7 @@ export default function Console() {
       addLog('info', `흡착 펌프 동작 ${pumpSteps.length}개는 빼고 움직임만 실행해요.`);
     }
     if (robot.released) {
-      addLog('err', '손으로 움직이기가 켜져 있어요.', '[직접 움직이기]에서 서보를 고정한 뒤 실행해 주세요.');
+      addLog('err', '손으로 움직이기가 켜져 있어요.', '패널 위 상태 표시등을 눌러 [서보 고정]을 누른 뒤 실행해 주세요.');
       return;
     }
     if (passed.start) {
@@ -879,7 +915,7 @@ export default function Console() {
       return;
     }
     if (!jointMoveSafe(robot.angles, HOME_DEG)) {
-      addLog('err', '지금 자세에서 기본 자세로 곧장 가면 팔이 책상에 닿아요.', '[직접 움직이기]에서 손으로 팔을 세운 뒤 다시 실행해 주세요.');
+      addLog('err', '지금 자세에서 기본 자세로 곧장 가면 팔이 책상에 닿아요.', '패널 위 상태 표시등의 [손으로 움직이기]로 팔을 세운 뒤 다시 실행해 주세요.');
       return;
     }
     const start = { type: 'angles' as const, angles: HOME_DEG.slice(), speed: 20, line: 0 };
@@ -933,8 +969,9 @@ export default function Console() {
   };
 
   /**
-   * Open a practice. Another level is another language: this language's program is kept for
-   * when its tab is opened again (`restore` brings a kept one back), so nothing is lost.
+   * Open a practice. The program open now is kept (in this browser, per practice), and the practice
+   * opens on the program left in it before, or on its example; another level is another language
+   * (`restore` brings back the one kept while its tab was closed), so nothing is lost.
    */
   const selectPractice = (lv: Level, th: Theme, id: PracticeId, restore?: string) => {
     if (busy) return;
@@ -942,8 +979,7 @@ export default function Console() {
     // The fitted tool stays on: a practice that needs another one asks for it ([끼우기]).
     const flange = cameraFlange;
     const levelChange = lv !== level;
-    const load =
-      restore !== undefined || levelChange || !code.trim() || isStarter(code) || window.confirm('지금 프로그램 대신 이 실습의 예제 프로그램을 불러올까요?\n(취소하면 지금 프로그램을 그대로 둬요)');
+    keepProgram(code);
     if (levelChange) {
       kept.current[level] = { theme, id: practice.id, code };
       setLevel(lv);
@@ -960,7 +996,7 @@ export default function Console() {
     setTheme(th);
     setPracticeId(p.id);
     fitCamView(th, flange);
-    if (load) setCode(restore ?? starterFor(p, effector, th));
+    setCode(restore ?? loadProgram(activeArm().id, lv, th, p.id) ?? starterFor(p, effector, th));
     layout.current = BLOCK_START;
     setMatNeeded(practiceUsesMat(p.id));
     world.current = createWorld(effector, flange, layout.current, th);
@@ -970,7 +1006,7 @@ export default function Console() {
     setPassed(null);
     setErrorLines([]);
     setBadge(null);
-    addLog('info', `${p.check ? `[검수 ${p.check}] ` : ''}${p.title} — ${p.goal}`);
+    addLog('info', `${mode === 'check' && p.check ? `[검수 ${p.check}] ` : ''}${p.title} — ${p.goal}`);
   };
 
   /**
@@ -981,6 +1017,7 @@ export default function Console() {
     const to = armById(next);
     if (to.id === activeArm().id) return;
     const untouched = !code.trim() || isStarter(code);
+    keepProgram(code);
     setActiveArm(to.id);
     const th: Theme = to.kit ? theme : 'arm';
     const e: EffectorId = to.tools.includes(effector) ? effector : 'none';
@@ -990,7 +1027,8 @@ export default function Console() {
     setCameraFlange(false);
     fitCamView(th, false);
     setPracticeId(p.id);
-    if (untouched) setCode(starterFor(p, e, th));
+    const kept = p.id === 'demo' ? null : loadProgram(to.id, level, th, p.id);
+    if (kept !== null || untouched) setCode(kept ?? starterFor(p, e, th));
     layout.current = BLOCK_START;
     world.current = createWorld(e, false, layout.current, th);
     setDemo(null);
@@ -1640,7 +1678,7 @@ export default function Console() {
   const openExport = () => {
     if (!passed) return;
     note(7, `로봇용 ${level === 'basic' ? '파이썬 API(pymycobot) 코드' : level === 'ros' ? 'ROS 2 노드' : '파이썬 파일'} 받기`, false);
-    setExportText(adaptPython(level === 'basic' ? toPymycobot(passed.actions, effector, passed.code) : passed.code, arm));
+    setExportText(adaptPython(level === 'basic' ? toPymycobot(passed.actions, effector, passed.code, theme) : passed.code, arm));
   };
 
   /* --- direct control ------------------------------------------------------ */
@@ -2214,7 +2252,7 @@ export default function Console() {
     }
     const cam: CameraId = theme === 'kit' ? 'top' : 'hand';
     const frame = stageApi.current?.capture(cam);
-    if (!frame) return addLog('err', theme === 'kit' ? '카메라 화면을 만들 수 없어요.' : '로봇팔 단독 테마에서는 카메라 플랜지를 달아야 해요.');
+    if (!frame) return addLog('err', theme === 'kit' ? '카메라 화면을 만들 수 없어요.' : '로봇팔 단독 실습 환경에서는 카메라 플랜지를 달아야 해요.');
     const [a, ms] = timed(() => analyse(cam, frame));
     cams.current?.push(cam, frame, true);
     session.current.visionRuns += 1;
@@ -2576,7 +2614,7 @@ export default function Console() {
       const w = openCheck(1, level, theme);
       if (w) selectPractice(w.level, w.theme, w.id);
     }
-    addLog('info', m === 'check' ? '검수 시연 모드예요. 위의 1~7 번호로 검수 항목을 하나씩 열어 시연해요.' : '실습 모드예요. 위의 [실습]에서 주제별 실습을 골라요.');
+    addLog('info', m === 'check' ? '검수 시연 모드예요. 위의 1~7 번호로 검수 항목을 하나씩 열어 시연해요.' : '실습 모드예요. [라이브러리]의 실습 과제에서 주제별 실습을 골라요.');
   };
 
   /** The real arm for the 교육 screens (only when this console runs on the robot). */
@@ -2610,7 +2648,11 @@ export default function Console() {
         }
       />
       {connectOpen && pastIntro && (
-        <ConnectDialog current={robotMode && robot?.robotId ? { id: robot.robotId, ips: robot.ips ?? [] } : null} auto={desktop} onClose={() => setConnectOpen(false)} />
+        <ConnectDialog
+          current={robotMode && robot?.robotId ? { id: robot.robotId, ips: robot.ips ?? [] } : null}
+          auto={desktop}
+          carry={() => (practice.id === 'demo' ? '' : carryHash({ level, theme, id: practice.id, code }))}
+          onClose={() => setConnectOpen(false)} />
       )}
       {showPicker && <ModelPicker current={modelNow} onPick={chooseModel} onClose={modelNow ? () => setPicking(false) : undefined} />}
       {prepOpen && (
@@ -2918,7 +2960,7 @@ export default function Console() {
                     : '3D 로봇 모델이 아직 안 보여요. 새로고침(F5) 해 보고, 그래도 안 되면 크롬이나 엣지 최신 버전으로 열어 주세요.'}
                 </div>
               )}
-              {view === 'sim' && !showPicker && !connectOpen && !pcOffer && <FirstGuide />}
+              {view === 'sim' && !showPicker && !connectOpen && !pcOffer && <FirstGuide side={side} />}
               {pcOffer && !showPicker && !connectOpen && (
                 <div className={css.pcOffer} role="dialog" aria-label="PC 프로그램 받기">
                   <span className={css.pcOfferIcon}>
@@ -3161,7 +3203,7 @@ export default function Console() {
                   ))}
                 </nav>
                 {shownTab === 'direct' ? (
-                  <div className={css.dockScroll} role="tabpanel" aria-label="직접 제어">
+                  <div className={css.dockScroll} role="tabpanel" aria-label="수동 제어">
                     {zeroMode ? (
                       <section className={css.dockSection} data-open="true" aria-label="영점 맞추기">
                         <header className={css.dockHead}>

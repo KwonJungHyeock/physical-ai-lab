@@ -15,7 +15,7 @@
  * simulator turns them into arm motion.
  */
 
-import type { ColorName } from './board';
+import type { ColorName, Theme } from './board';
 import { CAL_BOARD, TOP_CAMERA } from './board';
 import { EFFECTOR_BY_ID, type EffectorId } from './effectors';
 import type { RobotAction } from './sim';
@@ -23,7 +23,8 @@ import { activeArm, pumpPython } from '../robot/arms';
 
 const r1 = (v: number) => (Math.round(v * 10) / 10).toFixed(1);
 
-export function toPymycobot(actions: readonly RobotAction[], effector: EffectorId, code: string): string {
+/** `theme`: the 실습 환경 the program was checked in (the AI kit's fixed layout, or the arm alone on a desk). */
+export function toPymycobot(actions: readonly RobotAction[], effector: EffectorId, code: string, theme: Theme = 'kit'): string {
   const e = EFFECTOR_BY_ID[effector];
   const found = actions.filter((a): a is Extract<RobotAction, { type: 'found' }> => a.type === 'found');
   const usesPump = actions.some((a) => a.type === 'pump');
@@ -31,8 +32,12 @@ export function toPymycobot(actions: readonly RobotAction[], effector: EffectorI
     '# 로봇팔 실습에서 만든 프로그램 — myCobot 280 RDK X5',
     '# 시뮬레이션에서 계산하고 충돌 검사를 마친 관절 각도를 그대로 보냅니다.',
     `# 도구: ${e.name}`,
-    '# 작업 환경: AI 로봇 확장 키트 2023 (공식 배치 그대로). 로봇을 키트 받침판의 로봇 자리에 고정하세요.',
-    `#   보정판 중심 x ${CAL_BOARD.x}, y ${CAL_BOARD.y} mm / 카메라 렌즈 x ${TOP_CAMERA.x}, y ${TOP_CAMERA.y}, 높이 ${TOP_CAMERA.z} mm`,
+    ...(theme === 'kit'
+      ? [
+          '# 작업 환경: AI 로봇 확장 키트 2023 (공식 배치 그대로). 로봇을 키트 받침판의 로봇 자리에 고정하세요.',
+          `#   보정판 중심 x ${CAL_BOARD.x}, y ${CAL_BOARD.y} mm / 카메라 렌즈 x ${TOP_CAMERA.x}, y ${TOP_CAMERA.y}, 높이 ${TOP_CAMERA.z} mm`,
+        ]
+      : ['# 작업 환경: 로봇팔 단독 (책상 위). 물건은 시뮬레이션에서 놓은 자리와 같게 놓으세요 (로봇 바닥 중심 기준 mm).']),
   ];
   if (found.length) {
     out.push('# 카메라로 찾은 위치는 시뮬레이션에서 찾은 값으로 고정되어 있어요:');

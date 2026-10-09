@@ -54,10 +54,12 @@ interface Props {
   initialTab?: Tab;
   /** Desktop simulator: ask the program for this PC's networks and search them at once. */
   auto?: boolean;
+  /** The open program, as an address part (`#carry=…`) for the robot's console to put back. */
+  carry?: () => string;
   onClose(): void;
 }
 
-export default function ConnectDialog({ current, initialTab, auto, onClose }: Props) {
+export default function ConnectDialog({ current, initialTab, auto, carry, onClose }: Props) {
   const [tab, setTab] = useState<Tab>(initialTab === 'wifi' && !current ? 'find' : (initialTab ?? 'find'));
   // On a robot's console its own network is the one to search; elsewhere the last one used.
   const hereNet = current?.ips[0]?.replace(/\d+$/, '');
@@ -95,11 +97,16 @@ export default function ConnectDialog({ current, initialTab, auto, onClose }: Pr
     }
     setLink({ label, robot, addr, step: 0 });
   };
+  // The latest program at the moment of leaving (the console redraws while the dialog is open).
+  const carryNow = useRef(carry);
+  useEffect(() => {
+    carryNow.current = carry;
+  });
   useEffect(() => {
     if (!link) return;
     const quick = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     if (link.step >= LINK_STEPS.length) {
-      const t = window.setTimeout(() => (window.location.href = `http://${link.addr}/console`), quick ? 0 : 450);
+      const t = window.setTimeout(() => (window.location.href = `http://${link.addr}/console${carryNow.current?.() ?? ''}`), quick ? 0 : 450);
       return () => window.clearTimeout(t);
     }
     const t = window.setTimeout(() => setLink((l) => (l ? { ...l, step: l.step + 1 } : l)), quick ? 0 : 380);

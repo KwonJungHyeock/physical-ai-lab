@@ -3,7 +3,8 @@
 /**
  * The open task in the top bar, and the task gallery it opens.
  *
- * The chip shows the task (a click on it opens the 라이브러리 to pick another),
+ * The chip shows the task with the language (tab) it is done in — a task belongs to a language,
+ * so it stays put while the 수동 제어 tab is open — (a click on it opens the 라이브러리 to pick another),
  * its goal as it is reached (live, whichever panel tab is open: the first task
  * is done with direct control), and in the check demonstration the seven check
  * numbers, one click each. The gallery is a
@@ -119,14 +120,14 @@ export function TaskChip({ mode, practice, level, theme, progress, busy, world, 
         data-cat={mode === 'check' && practice.check ? 'check' : catOf(practice.id)}
         disabled={busy}
         onClick={onGallery}
-        title="라이브러리에서 다른 과제 고르기 (실습 · 검수 시연)"
-        aria-label={`과제: ${practice.title} — 라이브러리 열기`}
+        title={`${LEVEL_TAB[level].name} 과제 · ${categoryOf(practice.id)} — 누르면 라이브러리에서 다른 과제 고르기`}
+        aria-label={`${LEVEL_TAB[level].name} 과제: ${practice.title} — 라이브러리 열기`}
       >
         <span className={css.taskGlyph}>
           <TaskIcon id={practice.id} size={20} />
         </span>
         <span className={css.taskTag} data-check={mode === 'check' && practice.check ? true : undefined}>
-          {mode === 'check' && practice.check ? `검수 ${practice.check}` : categoryOf(practice.id)}
+          {mode === 'check' && practice.check ? `검수 ${practice.check}` : LEVEL_TAB[level].name}
         </span>
         <b className={css.taskTitle}>{practice.title}</b>
       </button>

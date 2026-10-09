@@ -182,7 +182,7 @@ robot.home()
 const TEACH = `from edu import robot
 
 robot.home()
-# [직접 움직이기]에서 자세를 3개 기록한 뒤 실행해요.
+# [수동 제어] → [자세 저장 · 불러오기]에서 자세를 3개 기록한 뒤 실행해요.
 robot.go_pose("내 자세 1")
 robot.go_pose("내 자세 2")
 robot.go_pose("내 자세 3")

@@ -360,7 +360,7 @@ const CameraViews = forwardRef<CameraViewsHandle, Props>(function CameraViews(
             type="button"
             aria-pressed={view === 'top'}
             disabled={!topAvailable}
-            title={topAvailable ? undefined : 'AI 키트 테마에 있어요'}
+            title={topAvailable ? undefined : '실습 환경이 AI 키트일 때 있어요'}
             onClick={() => onView('top')}
           >
             키트 카메라
@@ -480,7 +480,7 @@ const CameraViews = forwardRef<CameraViewsHandle, Props>(function CameraViews(
       {none && (
         <p className={css.camNone}>
           {view === 'top'
-            ? '로봇팔 단독 테마에는 키트 카메라가 없어요. 카메라 플랜지를 달면 손 카메라를 볼 수 있어요.'
+            ? '로봇팔 단독 실습 환경에는 키트 카메라가 없어요. 카메라 플랜지를 달면 손 카메라를 볼 수 있어요.'
             : view === 'hand'
               ? '카메라 플랜지를 달면 손 카메라를 볼 수 있어요.'
               : '로봇에 카메라가 연결되지 않았어요.'}

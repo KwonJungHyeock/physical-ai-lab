@@ -256,7 +256,8 @@ export default function ControlPanel(p: Props) {
     if (frame !== 'joint' || (e.target as HTMLElement).tagName === 'INPUT') return;
     if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
       e.preventDefault();
-      p.onSelect((p.selected + (e.key === 'ArrowUp' ? 5 : 1)) % 6);
+      const n = activeArm().dof;
+      p.onSelect((p.selected + (e.key === 'ArrowUp' ? n - 1 : 1)) % n);
     } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
       e.preventDefault();
       if (e.repeat || keyHold.current || p.busy) return;

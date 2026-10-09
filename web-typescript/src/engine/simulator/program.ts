@@ -342,15 +342,15 @@ export function check(steps: readonly Step[], ctx: CheckContext): { errors: Prob
             errors.push({
               line: s.line,
               msg: `'${s.name}'이라는 자세가 없어요.`,
-              fix: '[직접 움직이기]에서 자세를 기록하거나 있는 자세를 골라 주세요.',
+              fix: '[수동 제어] → [자세 저장 · 불러오기]에서 자세를 기록하거나 있는 자세를 골라 주세요.',
             });
           break;
         case 'find':
           if (s.camera === 'top' && ctx.theme === 'arm')
             errors.push({
               line: s.line,
-              msg: '로봇팔 단독 테마에는 키트 카메라가 없어요.',
-              fix: '[AI 키트] 테마로 바꾸거나, 카메라 플랜지를 달고 hand_camera.find 를 써 주세요.',
+              msg: '로봇팔 단독 실습 환경에는 키트 카메라가 없어요.',
+              fix: '실습 환경을 [AI 키트]로 바꾸거나, 카메라 플랜지를 달고 hand_camera.find 를 써 주세요.',
             });
           if (s.camera === 'hand' && !ctx.cameraFlange)
             errors.push({
@@ -363,9 +363,9 @@ export function check(steps: readonly Step[], ctx: CheckContext): { errors: Prob
         case 'above':
         case 'down':
           if (s.target.kind === 'bin' && ctx.theme === 'arm')
-            errors.push({ line: s.line, msg: '분류함은 AI 키트에만 있어요.', fix: '"자리 1"~"자리 4"를 쓰거나 [AI 키트] 테마로 바꿔 주세요.' });
+            errors.push({ line: s.line, msg: '분류함은 AI 키트에만 있어요.', fix: '"자리 1"~"자리 4"를 쓰거나 실습 환경을 [AI 키트]로 바꿔 주세요.' });
           if (s.target.kind === 'spot' && ctx.theme !== 'arm')
-            errors.push({ line: s.line, msg: `${s.target.spot}는 로봇팔 단독 테마의 작업 매트에만 있어요.`, fix: '"분류함 A"~"분류함 D"를 쓰거나 [로봇팔 단독] 테마로 바꿔 주세요.' });
+            errors.push({ line: s.line, msg: `${s.target.spot}는 로봇팔 단독 실습 환경의 작업 매트에만 있어요.`, fix: '"분류함 A"~"분류함 D"를 쓰거나 실습 환경을 [빈 화면]으로 바꿔 주세요.' });
           if (s.target.kind === 'var' && !assigned.has(s.target.name))
             errors.push({
               line: s.line,

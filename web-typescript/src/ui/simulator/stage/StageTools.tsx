@@ -6,6 +6,8 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useSta
 
 import type { CameraId } from '@/engine/simulator/program';
 
+import { activeArm } from '@/engine/robot/arms';
+
 import { AXIS_COLORS, type DisplayOpts } from './sceneHelpers';
 import type { CameraFrame, StageApi, ViewName } from './Stage';
 import css from '../console.module.css';
@@ -16,7 +18,7 @@ const DISPLAY_ITEMS: { key: keyof DisplayOpts; label: string; note: string; swat
   { key: 'jointPoints', label: '관절 선택 점', note: '관절 조그: 점 ①~⑥ 으로 고르고 링으로 돌리기', swatch: ['#2f5bea'] },
   { key: 'jointAxes', label: '관절 회전축', note: 'J1~J6 이 도는 축', swatch: ['#f08c00'] },
   { key: 'path', label: '도구 궤적', note: '도구 끝이 지나간 길', swatch: ['#3e63dd'] },
-  { key: 'reach', label: '작업 범위', note: '팔이 닿는 3D 공간 (반지름 약 300mm)', swatch: ['#3454d1'] },
+  { key: 'reach', label: '작업 범위', note: '팔이 닿는 3D 공간', swatch: ['#3454d1'] },
   { key: 'grid', label: '바닥 격자', note: '1cm 칸 · 10cm 굵은 선', swatch: ['#c3ccd6'] },
   { key: 'ghost', label: '끝 자세 미리보기', note: '블록 코딩: 프로그램이 끝날 때의 자세를 투명한 팔로', swatch: ['#6f9bff'] },
   { key: 'autoFold', label: '실행할 때 패널 접기', note: '실행하는 동안 3D 를 크게, 끝나면 다시 펼침', swatch: ['#1d2636'] },
@@ -60,7 +62,7 @@ function DisplayMenu({ display, onDisplay }: { display: DisplayOpts; onDisplay(d
               </span>
               <span>
                 <b>{it.label}</b>
-                <small>{it.note}</small>
+                <small>{it.key === 'reach' ? `${it.note} (반지름 약 ${activeArm().reachMm}mm)` : it.note}</small>
               </span>
             </label>
           ))}
