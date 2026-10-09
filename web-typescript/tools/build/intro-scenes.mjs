@@ -1,11 +1,13 @@
-// The intro's pictures: where robots work, taken from the app's own 3D scenes — the 산업단지 map and its
+// The intro's pictures: where robots work, taken from the app's own 3D scenes — the 로봇 시티 map and its
 // six site cells with the ambient life on (people, AGVs, belts). Each picture is the 3D view alone (the
 // largest canvas on screen), saved as public/brand/intro/scene-<id>.jpg. Needs the dev server
 // (npm run dev); BASE=http://host:port to use another.
 //   node tools/build/intro-scenes.mjs [park factory logistics bio farm cafe ai]
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import sharp from 'sharp';
 
 import { BASE, launch } from './guide-shots/lib.mjs';
 
@@ -62,7 +64,16 @@ for (const id of want) {
   const clip = await view();
   if (id === 'park') clip.width = Math.round(clip.width * 0.76);
   const file = path.join(out, `scene-${id}.jpg`);
-  await page.screenshot({ path: file, clip, type: 'jpeg', quality: 82 });
+  // A software renderer can be caught between frames (all black): take it again until it is lit.
+  for (let k = 0; k < 8; k++) {
+    const buf = await page.screenshot({ clip, type: 'jpeg', quality: 82 });
+    const { channels } = await sharp(buf).stats();
+    if (channels.slice(0, 3).reduce((a, c) => a + c.mean, 0) / 3 > 30 || k === 7) {
+      writeFileSync(file, buf);
+      break;
+    }
+    await page.waitForTimeout(1500);
+  }
   console.log(path.relative(web, file), `${clip.width}×${clip.height}`);
   await hide.evaluate((el) => el.remove());
   // Back to the map for the next one.
