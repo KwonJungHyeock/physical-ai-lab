@@ -460,6 +460,7 @@ export default function AiLab({ robot, chain, gripperRobot, hidden, level = 'hs'
       <aside className={css.panel} aria-label="실습 안내">
         <SitePanel
           T={T}
+          lab="ai"
           st={s}
           boss="한 박사"
           level={level}

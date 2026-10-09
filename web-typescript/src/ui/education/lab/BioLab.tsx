@@ -484,6 +484,7 @@ export default function BioLab({ robot, chain, gripperRobot, hidden, level = 'hs
       <aside className={css.panel} aria-label="실습 안내">
         <SitePanel
           T={T}
+          lab="bio"
           st={s}
           boss="이 연구원"
           level={level}

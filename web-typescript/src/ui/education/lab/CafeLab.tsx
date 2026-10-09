@@ -451,6 +451,7 @@ export default function CafeLab({ robot, chain, gripperRobot, hidden, level = 'h
       <aside className={css.panel} aria-label="실습 안내">
         <SitePanel
           T={T}
+          lab="cafe"
           st={s}
           boss="정 점장"
           level={level}

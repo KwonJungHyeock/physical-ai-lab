@@ -495,6 +495,7 @@ export default function FarmLab({ robot, chain, gripperRobot, hidden, level = 'h
       <aside className={css.panel} aria-label="실습 안내">
         <SitePanel
           T={T}
+          lab="farm"
           st={s}
           boss="최 팀장"
           level={level}

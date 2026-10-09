@@ -5,7 +5,8 @@
  *  - the least-squares line and Pearson r on known lines and a small worked example, and the plain-Korean reading;
  *  - histogram bins, round axis ticks, the numbers read out of check values ("최대 4.2 mm", "3 / 4개");
  *  - summaries (pass rate, tries to the first pass per student), the 병목;
- *  - the twin: a robot run pairs with the simulator run of the same lab, problem and values;
+ *  - the twin: a robot run pairs with the simulator run of the same lab, problem and values — also a run
+ *    written down in a lab's 실제 로봇 결과 적기 (the logged simulator run's values, bare numbers typed);
  *  - CSV: cells with commas, quotes and line breaks are quoted, and the file reads back;
  *  - the example class: the same seed gives the same records, it looks like a class, and the three questions have answers.
  *
@@ -318,3 +319,34 @@ assert.equal(D.labInfo('somewhere').name, 'somewhere');
 assert.ok(D.labOverview([]).every((o) => o.all.runs === 0 && o.spark.length === 0));
 assert.deepEqual(D.labsIn([rec({ lab: 'new' as Rec['lab'] })]).slice(-2), ['energy', 'new']);
 console.log('  ✓ labs: 에너지·자원순환 and labs not known yet get a label');
+
+/* --- the real robot's results, written down after a lab run (RobotRecord) ------------------------ */
+{
+  const mem = new Map<string, string>();
+  (globalThis as { localStorage?: unknown }).localStorage = {
+    getItem: (k: string) => mem.get(k) ?? null,
+    setItem: (k: string, v: string) => void mem.set(k, v),
+    removeItem: (k: string) => void mem.delete(k),
+  };
+  const L = await import('../../src/engine/education/runLog');
+  L.logRun({ lab: 'factory', problem: 2, pass: true, durationS: 7.25, values: { speed: 60, grip: { z: -3.5, wait: 0.4 } }, checks: [{ label: '흡착 위치 오차', ok: true, value: '최대 1.2 mm' }, { label: '옮긴 상자', ok: true, value: '3 / 3개' }] });
+  const sim = L.loadRuns().at(-1)!;
+  // What the form saves: the simulator run's (flattened) values again, the numbers as typed.
+  L.logRun({ lab: sim.lab, problem: sim.problem, pass: false, durationS: 8.5, values: sim.values, checks: sim.checks.map((c, i) => ({ label: c.label, ok: i === 1, value: ['2.9', '3'][i] })), source: 'robot' });
+  const all = L.loadRuns();
+  assert.equal(all.length, 2);
+  assert.deepEqual(all[1].values, all[0].values, 'flattening flat values keeps them');
+  const tp = D.pairTwin(all);
+  assert.equal(tp.length, 1);
+  near(tp[0].dDuration!, 1.25);
+  assert.deepEqual(
+    tp[0].checks.map((c) => [c.label, c.unit, c.diff]),
+    [
+      ['흡착 위치 오차', 'mm', 1.7],
+      ['옮긴 상자', '개', 0],
+    ],
+  );
+  assert.equal(tp[0].samePass, false);
+  delete (globalThis as { localStorage?: unknown }).localStorage;
+  console.log('  ✓ a real-robot result written down after a lab run pairs with its simulator run');
+}

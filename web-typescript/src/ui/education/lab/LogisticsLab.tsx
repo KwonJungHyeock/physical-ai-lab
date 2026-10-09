@@ -611,6 +611,7 @@ function Panel(p: PanelProps) {
   return (
     <SitePanel
       T={T}
+      lab="logistics"
       st={st}
       boss="박 반장"
       level={p.level}

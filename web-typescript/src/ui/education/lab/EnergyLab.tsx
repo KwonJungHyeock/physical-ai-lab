@@ -498,6 +498,7 @@ export default function EnergyLab({ robot, chain, gripperRobot, hidden, level = 
       <aside className={css.panel} aria-label="실습 안내">
         <SitePanel
           T={T}
+          lab="energy"
           st={s}
           boss="윤 팀장"
           level={level}

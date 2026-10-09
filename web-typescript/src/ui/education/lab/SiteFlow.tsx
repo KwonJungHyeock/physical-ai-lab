@@ -15,10 +15,12 @@ import { useMemo, type CSSProperties, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
 import type { StudyLevel } from '@/engine/education/roadmap';
+import type { RunLab } from '@/engine/education/runLog';
 import type { CheckQ, SiteProblem, SiteStepId, SiteText } from '@/engine/education/lab/siteText';
 
 import css from './lab.module.css';
 import lg from './site.module.css';
+import RobotRecord from './RobotRecord';
 
 export const NUM = ['①', '②', '③', '④'];
 export const PROBS: readonly SiteProblem[] = [1, 2, 3];
@@ -413,6 +415,8 @@ const STEP_GUIDE: Record<SiteStepId, string> = {
 /** What a lab puts into the shared steps: its own cards, operator panel and runs. */
 export interface SitePanelProps {
   T: SiteText;
+  /** Which lab this is (the real robot's results are logged under it). */
+  lab: RunLab;
   st: FlowState & { step: SiteStepId };
   /** The person in charge at this site (김 주임, 박 반장 …). */
   boss: string;
@@ -686,6 +690,7 @@ export function SitePanel(p: SitePanelProps) {
                 <p className={lg.safety}>
                   <b>안전</b> {T.safety}
                 </p>
+                <RobotRecord lab={p.lab} problem={T.id} />
               </div>
             </Sec>
             <Sec n={4} title="기록지 내기" state="info">
