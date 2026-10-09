@@ -76,6 +76,7 @@ import {
   SitePanel,
   type FlowState,
   type MeasureRow,
+  Knob,
 } from './SiteFlow';
 import css from './lab.module.css';
 import lg from './site.module.css';
@@ -677,20 +678,6 @@ function whyNotYet(prob: LogiProblem, s: StackScore): string {
 
 /* --- 값 고치기: the operator panels -------------------------------------------------- */
 
-function Knob({ id, label, unit, v, min, max, step = 1, note, on }: { id: string; label: string; unit: string; v: number; min: number; max: number; step?: number; note: string; on(v: number): void }) {
-  return (
-    <div className={lg.knob}>
-      <label htmlFor={id}>
-        {label}{' '}
-        <output>
-          {v} {unit}
-        </output>
-      </label>
-      <input id={id} type="range" min={min} max={max} step={step} value={v} onChange={(e) => on(+e.target.value)} />
-      <small>{note}</small>
-    </div>
-  );
-}
 
 function Hmi1({ v, on }: { v: StackValues; on(v: StackValues): void }) {
   return (

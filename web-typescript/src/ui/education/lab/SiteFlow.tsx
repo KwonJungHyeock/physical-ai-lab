@@ -706,6 +706,22 @@ export function SitePanel(p: SitePanelProps) {
   }
 }
 
+/** A slider on an operator panel: name, value with unit, what it does. */
+export function Knob({ id, label, unit, v, min, max, step = 1, note, on }: { id: string; label: string; unit: string; v: number; min: number; max: number; step?: number; note: string; on(v: number): void }) {
+  return (
+    <div className={lg.knob}>
+      <label htmlFor={id}>
+        {label}{' '}
+        <output>
+          {v} {unit}
+        </output>
+      </label>
+      <input id={id} type="range" min={min} max={max} step={step} value={v} onChange={(e) => on(+e.target.value)} />
+      <small>{note}</small>
+    </div>
+  );
+}
+
 /** The arrowhead the principle figures use (url(#siteArrow)). */
 export function ArrowDef() {
   return (

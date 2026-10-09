@@ -5,6 +5,7 @@
  *  - 로봇 교육센터: the 1단원 차시 (the existing lessons — the basics before any site);
  *  - 스마트 공장: the three conveyor problems of the lab (lab/problems.ts);
  *  - 물류 센터: the three palletizing problems (lab/pallet.ts);
+ *  - 바이오 실험실: the three tube-moving problems (lab/bio.ts);
  *  - the others have no screens yet: they list their planned problems and stay 준비 중.
  * Everything is done with the myCobot 280 RDK X5 (the product the school has); other products get
  * their own problems when they come.
@@ -15,7 +16,7 @@ import { topicsOf, type CategoryId, type TopicId } from './catalog';
 
 export type SiteId = 'center' | 'factory' | 'logistics' | 'lab' | 'farm' | 'cafe' | 'ai';
 /** The problem-solving labs (one per site that has one). */
-export type LabId = 'factory' | 'logistics';
+export type LabId = 'factory' | 'logistics' | 'bio';
 
 export interface SiteProblem {
   title: string;
@@ -86,14 +87,15 @@ export const SITES: readonly Site[] = [
     id: 'lab',
     name: '바이오 실험실',
     kind: '의료 · 실험',
-    robot: 'myCobot 280',
-    desc: '시험관을 정밀하게 옮기고 흔들리지 않게 따라요.',
+    robot: 'myCobot 280 + 어댑티브 그리퍼',
+    desc: '시료가 든 시험관을 쏟지 않고, 정확히, 부딪히지 않게 옮겨요.',
     color: '#12935f',
-    content: null,
+    content: 'lab',
+    lab: 'bio',
     problems: [
-      { title: '시험관이 기울어 쏟아진다', fix: '자세(방향) 유지', units: ['1', '2'] },
-      { title: '칸이 1mm씩 어긋난다', fix: '오차와 보정', units: ['5'] },
-      { title: '돌아가는 길에 부딪힌다', fix: '경유점 · 충돌 피하기', units: ['6'] },
+      { title: '시험관이 기울어 쏟아진다', fix: '자세(rx · ry · rz) 유지', units: ['1', '2'], ready: true },
+      { title: '먼 칸일수록 어긋난다', fix: '영점 오차와 캘리브레이션', units: ['5'], ready: true },
+      { title: '돌아가는 길에 부딪힌다', fix: '경유점 · 충돌 검사', units: ['6', '1'], ready: true },
     ],
   },
   {

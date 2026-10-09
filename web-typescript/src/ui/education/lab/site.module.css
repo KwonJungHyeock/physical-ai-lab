@@ -408,8 +408,13 @@
   text-align: right;
   white-space: nowrap;
 }
+.cmp td {
+  white-space: normal;
+  word-break: keep-all;
+}
 .cmp th:first-child,
 .cmp td:first-child {
+  min-width: 8.5em;
   text-align: left;
   color: var(--muted);
   font-weight: 700;
@@ -1232,4 +1237,8 @@
   padding: 7px 10px;
   font-size: 12.5px;
   text-align: left;
+}
+.bio {
+  --site: #12935f;
+  --site-soft: #e8f6ef;
 }

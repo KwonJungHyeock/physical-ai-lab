@@ -88,6 +88,8 @@ export type ViewPose = readonly [number, number, number, number, number, number]
 export interface LiveArm {
   angles: readonly number[];
   pump: boolean;
+  /** A gripper's finger opening, mm (none: as the tool rests). */
+  gap?: number;
 }
 
 const v = (p: readonly number[]) => new Vector3(p[0] / 1000, p[1] / 1000, p[2] / 1000);
@@ -296,6 +298,7 @@ function SceneContent({ robot, chain, gripperRobot, scene, live, children }: Omi
     if (!w) return;
     w.angles = (drive?.angles ?? angles.current).slice();
     w.pump = drive ? drive.pump : pumpOn.current;
+    if (drive?.gap !== undefined) w.gapMm = drive.gap;
     tool.update(w);
   });
 
