@@ -7,6 +7,7 @@
  *  - 물류 센터: the three palletizing problems (lab/pallet.ts);
  *  - 바이오 실험실: the three tube-moving problems (lab/bio.ts);
  *  - 스마트팜: the three tomato-sorting problems (lab/farm.ts);
+ *  - 서비스 카페: the three serving problems (lab/cafe.ts);
  *  - the others have no screens yet: they list their planned problems and stay 준비 중.
  * Everything is done with the myCobot 280 RDK X5 (the product the school has); other products get
  * their own problems when they come.
@@ -17,7 +18,7 @@ import { topicsOf, type CategoryId, type TopicId } from './catalog';
 
 export type SiteId = 'center' | 'factory' | 'logistics' | 'lab' | 'farm' | 'cafe' | 'ai';
 /** The problem-solving labs (one per site that has one). */
-export type LabId = 'factory' | 'logistics' | 'bio' | 'farm';
+export type LabId = 'factory' | 'logistics' | 'bio' | 'farm' | 'cafe';
 
 export interface SiteProblem {
   title: string;
@@ -118,14 +119,15 @@ export const SITES: readonly Site[] = [
     id: 'cafe',
     name: '서비스 카페',
     kind: '서비스',
-    robot: 'myCobot 280',
-    desc: '컵을 흘리지 않고 손님 쪽으로 건네요.',
+    robot: 'myCobot 280 + 어댑티브 그리퍼',
+    desc: '음료를 흘리지 않고, 손님 손 앞에서 멈춰, 무거운 병도 건네요.',
     color: '#b4530f',
-    content: null,
+    content: 'lab',
+    lab: 'cafe',
     problems: [
-      { title: '커피가 넘친다', fix: '부드러운 궤적 · 가속 줄이기', units: ['3'] },
-      { title: '사람 손과 가까워진다', fix: '안전 거리 · 속도 제한', units: ['5'] },
-      { title: '컵 무게가 바뀐다', fix: '무게와 관절 토크', units: ['4'] },
+      { title: '커피가 넘친다', fix: '가속도 · 궤적 프로파일', units: ['3'], ready: true },
+      { title: '손과 가까워진다', fix: '보호 거리 · 속도 제한', units: ['5'], ready: true },
+      { title: '컵 무게가 바뀐다', fix: '관성과 가속 토크', units: ['4'], ready: true },
     ],
   },
   {

@@ -1303,3 +1303,8 @@
   color: #9fb0c8;
   line-height: 1.35;
 }
+
+.cafe {
+  --site: #b4530f;
+  --site-soft: #fbefe5;
+}
