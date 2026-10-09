@@ -1,12 +1,13 @@
 'use client';
 
 /**
- * 서비스 카페 · 시음 음료 건네기 셀 in 3D (inside LearnStage's robot-frame group: metres, z up), in the
- * simulator's own style: the wooden bar with its espresso machine, the pickup counter (customers stand
- * beyond its edge), the drinks fridge behind on the left (③), the tasting cup with the coffee inside —
- * its surface tilting with the run's acceleration (①) — the bottled juice (③), and the customer's hand
- * reaching over the counter (②) with the sensor's detection zone. Around it: a menu board, stools,
- * pendant lights, plants, and per problem what the story names.
+ * 스마트시티 · 서비스 카페와 돌봄 셀 in 3D (inside LearnStage's robot-frame group: metres, z up), in the
+ * simulator's own style. ①② the café: the wooden bar with its espresso machine, the pickup counter
+ * (customers stand beyond its edge), the tasting cup with the coffee inside — its surface tilting with
+ * the run's acceleration (①) — and the customer's hand reaching over the counter (②) with the sensor's
+ * detection zone; round it a menu board, stools, pendant lights, plants. ③ 돌봄: a resident's room —
+ * the arm on a parked myAGV, the mini fridge, the low table by the bed, the full water bottle and the
+ * resident's hand on the bed.
  *
  * Every frame it plays the run (engine/education/lab/cafe.ts frames) through CafePlayback.
  */
@@ -23,6 +24,8 @@ import { RBox } from '../../simulator/stage/sceneKit';
 import { LEARN_COLORS } from '../stage/learn3d';
 import type { LiveArm } from '../stage/LearnStage';
 import { Dim, Sign, m, tag, v3, type CellDim } from './CellKit';
+import { CareBed } from './ambient/Around';
+import { AGV_TOP_MM, ParkedAgv } from './ambient/Props';
 
 const FRAME_DT = 0.02;
 const UP = new Vector3(0, 0, 1);
@@ -152,11 +155,16 @@ export default function CafeCell({ player, prob, overlay }: Props) {
 
   return (
     <group>
-      <Floor />
-      <Bar />
-      <Counter />
-      {prob === 3 && <Fridge />}
-      <CafeDressing prob={prob} />
+      {prob === 3 ? (
+        <CareRoom />
+      ) : (
+        <>
+          <Floor />
+          <Bar />
+          <Counter />
+          <CafeDressing prob={prob} />
+        </>
+      )}
       <group ref={drink} visible={false}>
         {prob === 3 ? <Bottle /> : <Cup
             surfaceRef={(el) => {
@@ -238,22 +246,22 @@ function Cup({ surfaceRef }: { surfaceRef(el: Mesh | null): void }) {
   );
 }
 
-/** ③: the bottled juice: a clear bottle, orange juice, a cap and a label. */
+/** ③: the full water bottle: clear plastic, water, a blue cap and a label. */
 function Bottle() {
   const r = BOTTLE.d / 2;
   return (
     <group>
       <mesh position={[0, 0, m(BOTTLE.h * 0.4)]} rotation={[Math.PI / 2, 0, 0]} renderOrder={3}>
         <cylinderGeometry args={[m(r), m(r), m(BOTTLE.h * 0.8), 28]} />
-        <meshPhysicalMaterial color="#ffb347" transparent opacity={0.85} roughness={0.1} clearcoat={1} />
+        <meshPhysicalMaterial color="#9fd3f0" transparent opacity={0.7} roughness={0.05} clearcoat={1} />
       </mesh>
       <mesh position={[0, 0, m(BOTTLE.h * 0.88)]} rotation={[Math.PI / 2, 0, 0]}>
         <cylinderGeometry args={[m(r * 0.55), m(r), m(BOTTLE.h * 0.16), 24]} />
-        <meshPhysicalMaterial color="#ffe2b3" transparent opacity={0.6} roughness={0.1} clearcoat={1} />
+        <meshPhysicalMaterial color="#d8eef9" transparent opacity={0.55} roughness={0.05} clearcoat={1} />
       </mesh>
       <mesh position={[0, 0, m(BOTTLE.h + 3)]} rotation={[Math.PI / 2, 0, 0]}>
         <cylinderGeometry args={[m(r * 0.58), m(r * 0.58), m(9), 20]} />
-        <meshStandardMaterial color="#3a9b3a" roughness={0.5} />
+        <meshStandardMaterial color="#2f6fd6" roughness={0.5} />
       </mesh>
       <mesh position={[0, 0, m(BOTTLE.h * 0.4)]} rotation={[Math.PI / 2, 0, 0]}>
         <cylinderGeometry args={[m(r + 0.3), m(r + 0.3), m(36), 28, 1, true]} />
@@ -349,21 +357,77 @@ function Counter() {
   );
 }
 
-/** ③: the small glass-door drinks fridge behind on the left, the bottle's shelf at its top. */
-function Fridge() {
-  const [x, y] = FRIDGE;
+/**
+ * ③ 돌봄: the resident's room. The arm stands on a parked myAGV (a mobile manipulator), so the floor
+ * is AGV_TOP_MM below the arm's base; the mini fridge's pull-out shelf and the low table by the bed
+ * are at the base's height, where the engine puts the bottle. The resident's hand rests on the bed.
+ */
+function CareRoom() {
+  const fz = -AGV_TOP_MM;
+  const [tx, ty] = PICKUP;
   return (
     <group>
-      <RBox at={[x - 70, y + 20, 60]} size={[90, 120, 120]} radius={6}>
+      <ParkedAgv z={fz} led="#3a8f6b" />
+      <MiniFridge />
+      {/* The low table by the bed: its top at the arm's base height, the bottle's spot marked. */}
+      <RBox at={[tx, ty - 10, -6]} size={[190, 130, 12]} radius={4}>
+        <meshStandardMaterial color="#c9a77c" roughness={0.6} />
+      </RBox>
+      {[
+        [-80, -55],
+        [80, -55],
+        [-80, 35],
+        [80, 35],
+      ].map(([dx, dy]) => (
+        <RBox key={`${dx},${dy}`} at={[tx + dx, ty - 10 + dy, (fz - 12) / 2]} size={[14, 14, -fz - 12]} radius={3}>
+          <meshStandardMaterial color="#a5835a" roughness={0.6} />
+        </RBox>
+      ))}
+      <mesh position={[m(tx), m(ty), m(0.6)]}>
+        <ringGeometry args={[m(24), m(28), 32]} />
+        <meshBasicMaterial color="#3a8f6b" toneMapped={false} />
+      </mesh>
+      {/* A pill cup and a folded towel on the table. */}
+      <mesh position={[m(tx - 60), m(ty - 40), m(12)]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[m(12), m(10), m(24), 18]} />
+        <meshStandardMaterial color="#ffffff" roughness={0.5} />
+      </mesh>
+      <RBox at={[tx + 62, ty - 42, 7]} size={[50, 36, 14]} radius={5}>
+        <meshStandardMaterial color="#f2b8a2" roughness={0.95} />
+      </RBox>
+      <CareBed at={[230, -470]} z={fz} len={560} w={420} top={196} />
+      <group position={[m(tx + 40), m(-282), m(fz + 196 + 18)]}>
+        <Hand />
+      </group>
+      <Sign at={[-130, 0, 200]} yaw={Math.PI / 2} w={150} h={70} lines={['스마트시티 돌봄 센터', '302호 · 물 드리기']} fg="#ffffff" bg="#3a8f6b" />
+      <Sign at={[300, 30, 40]} yaw={0.7} w={92} h={30} lines={['물병 180 g', '아침 컵 60 g의 3배']} fg="#ffffff" bg="#e5484d" />
+      <Html zIndexRange={[11, 4]} center position={[m(-40), m(150), m(fz + 60)]} style={{ pointerEvents: 'none' }}>
+        <span style={{ ...tag('#344054'), font: '800 10px var(--font-ui, system-ui)', padding: '0 4px' }}>myAGV · 멈춘 채</span>
+      </Html>
+    </group>
+  );
+}
+
+/** ③: the mini fridge behind on the left, standing on the floor, its pull-out shelf at the arm's base height. */
+function MiniFridge() {
+  const [x, y] = FRIDGE;
+  const fz = -AGV_TOP_MM;
+  const top = 120;
+  return (
+    <group>
+      <RBox at={[x - 70, y + 20, (fz + top) / 2]} size={[90, 120, top - fz]} radius={6}>
         <meshStandardMaterial color="#f5f7fa" roughness={0.5} />
       </RBox>
-      <RBox at={[x - 24.5, y + 20, 64]} size={[1, 100, 100]} radius={0.5} shadow={false}>
+      <RBox at={[x - 24.5, y + 20, (fz + top) / 2 + 4]} size={[1, 100, top - fz - 20]} radius={0.5} shadow={false}>
         <meshPhysicalMaterial color="#cfe7ff" transparent opacity={0.4} roughness={0.05} clearcoat={1} />
       </RBox>
       <RBox at={[x, y, 4]} size={[70, 70, 8]} radius={3}>
         <meshStandardMaterial color="#dfe6ee" roughness={0.6} />
       </RBox>
-      <Sign at={[x - 70, y + 20 - 60.6, 100]} w={70} h={16} lines={['음료 냉장고']} fg="#ffffff" bg="#2f5be7" />
+      <RBox at={[x - 4, y, (fz + 0) / 2]} size={[10, 50, -fz]} radius={2}>
+        <meshStandardMaterial color="#c9cfd6" metalness={0.5} roughness={0.4} />
+      </RBox>
+      <Sign at={[x - 70, y + 20 - 60.6, 100]} w={70} h={16} lines={['미니 냉장고']} fg="#ffffff" bg="#3a8f6b" />
     </group>
   );
 }
@@ -372,7 +436,7 @@ function Fridge() {
 function CafeDressing({ prob }: { prob: CafeProblem }) {
   return (
     <group>
-      <Sign at={[-130, 0, 200]} yaw={Math.PI / 2} w={150} h={90} lines={['로봇 시음 카페', '오늘의 커피 · 시음 무료', '병 주스 새 메뉴']} fg="#fdf3e2" bg="#2b2420" />
+      <Sign at={[-130, 0, 200]} yaw={Math.PI / 2} w={150} h={90} lines={['로봇 시음 카페', '오늘의 커피 · 시음 무료', '스마트시티 1층']} fg="#fdf3e2" bg="#2b2420" />
       {[-60, 60, 180].map((x) => (
         <group key={x}>
           <mesh position={[m(x), m(-300), m(55)]} rotation={[Math.PI / 2, 0, 0]}>
@@ -415,8 +479,7 @@ function CafeDressing({ prob }: { prob: CafeProblem }) {
       </group>
       {prob === 1 && <Sign at={[290, 20, 40]} yaw={0.7} w={90} h={30} lines={['빈 컵 회수 프로그램', '250 mm/s · 4 m/s²']} fg="#1d2939" bg="#fff6d6" />}
       {prob === 2 && <Sign at={[300, -110, 40]} yaw={0.7} w={92} h={30} lines={['점심시간 · 손님 많음', '센서 감지 50 mm']} fg="#ffffff" bg="#e5484d" />}
-      {prob === 3 && <Sign at={[300, 30, 40]} yaw={0.7} w={92} h={30} lines={['새 메뉴 병 주스 180 g', '시음 컵 60 g의 3배']} fg="#ffffff" bg="#e5484d" />}
-    </group>
+          </group>
   );
 }
 

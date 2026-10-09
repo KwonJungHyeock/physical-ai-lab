@@ -141,8 +141,8 @@ export const SITES: readonly Site[] = [
     name: '스마트시티',
     short: '시티',
     kind: '서비스 로봇 · 돌봄',
-    robot: 'myCobot 280 + 어댑티브 그리퍼',
-    desc: '거리의 카페에서 음료를 흘리지 않고, 손님 손 앞에서 멈춰, 무거운 병도 건네요.',
+    robot: 'myCobot 280 + 어댑티브 그리퍼 · myAGV 위 280 (모바일 매니퓰레이터)',
+    desc: '카페에서는 음료를 흘리지 않고 손님 손 앞에서 멈춰 건네고, 돌봄 센터에서는 모바일 매니퓰레이터가 어르신께 무거운 물병도 건네요.',
     issue: '고령 사회로 돌봄·서비스 일손이 모자라고, 로봇은 사람 곁에서 안전해야 해요.',
     crew: ['myCobot 280 (서빙)', '배달 로봇', '돌봄 보조 모바일 매니퓰레이터'],
     color: '#e39a1c',
@@ -151,7 +151,7 @@ export const SITES: readonly Site[] = [
     problems: [
       { title: '커피가 넘친다', fix: '가속도 · 궤적 프로파일', units: ['3'], ready: true },
       { title: '손과 가까워진다', fix: '보호 거리 · 속도 제한', units: ['5'], ready: true },
-      { title: '컵 무게가 바뀐다', fix: '관성과 가속 토크', units: ['4'], ready: true },
+      { title: '물병이 무거워졌다 (돌봄)', fix: '관성과 가속 토크', units: ['4'], ready: true },
     ],
   },
   {

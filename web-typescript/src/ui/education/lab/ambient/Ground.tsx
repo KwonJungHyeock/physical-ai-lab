@@ -22,6 +22,8 @@ export interface SiteLook {
   floor: FloorKind;
   /** Fog from / to, m from the camera. */
   fog?: readonly [number, number];
+  /** The floor's height in the robot frame, mm (default: where the robot stands; lower when the arm stands on a myAGV). */
+  groundZ?: number;
 }
 
 const S = 1024;
@@ -217,7 +219,7 @@ export function SiteGround({ look }: { look: SiteLook }) {
   const size = 14000;
   const map = useMemo(() => canvasTexture(`floor-${look.floor}`, S, S, f.draw, true, [size / f.tile, size / f.tile]), [look.floor, f]);
   return (
-    <mesh position={[m(150), 0, m(-0.3)]} receiveShadow>
+    <mesh position={[m(150), 0, m((look.groundZ ?? 0) - 0.3)]} receiveShadow>
       <planeGeometry args={[m(size), m(size)]} />
       <meshStandardMaterial map={map} roughness={f.rough} envMapIntensity={0.6} />
     </mesh>

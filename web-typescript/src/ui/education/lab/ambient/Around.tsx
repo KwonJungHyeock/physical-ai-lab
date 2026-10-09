@@ -15,11 +15,11 @@ import { CardBox } from '../ConveyorCell';
 import { Sign, Steel, Tape, m } from '../CellKit';
 import type { SiteLook } from './Ground';
 import { Blob } from './Ground';
-import { Beacon, Fan, Leds, Monitor, RouteAgv, RunningBelt, SignalTower, Steam, Sway, Turn, WorkingArm } from './Props';
+import { AGV_TOP_MM, Beacon, Fan, Leds, Monitor, RouteAgv, RunningBelt, SignalTower, Steam, Sway, Turn, WorkingArm } from './Props';
 
 type Xy = readonly [number, number];
 
-export type AroundSite = 'factory' | 'logistics' | 'bio' | 'farm' | 'cafe' | 'ai';
+export type AroundSite = 'factory' | 'logistics' | 'bio' | 'farm' | 'cafe' | 'care' | 'ai';
 
 export const LOOKS: Record<AroundSite, SiteLook> = {
   factory: { sky: '#c3ccd6', floor: 'epoxy' },
@@ -27,6 +27,8 @@ export const LOOKS: Record<AroundSite, SiteLook> = {
   bio: { sky: '#dfe6ec', floor: 'vinyl' },
   farm: { sky: '#dfe9e4', floor: 'greenhouse' },
   cafe: { sky: '#e9e0d4', floor: 'wood' },
+  /** 스마트시티 돌봄 (카페 ③): a resident's room; the arm stands on a myAGV, so the floor is lower. */
+  care: { sky: '#e6ebe4', floor: 'vinyl', groundZ: -AGV_TOP_MM },
   ai: { sky: '#d9dde6', floor: 'tiles' },
 };
 
@@ -565,6 +567,77 @@ export function CafeAround() {
       <WorkingArm at={[-320, 900]} yaw={Math.PI} job={{ pick: [150, -95, 40], place: [150, 95, 40], period: 10, item: 'cup' }} phase={2} table={[380, 260, 120]} />
       <Monitor at={[-560, 80]} z={125} yaw={-0.25} w={150} kind="orders" accent="#f0a14a" title="주문 현황" />
       <Steam at={[-500, 420]} z={140} n={4} r={6} rise={50} phase={0.7} />
+    </group>
+  );
+}
+
+/* --- 스마트시티 돌봄 (카페 ③) ------------------------------------------------------------------ */
+
+/** A care bed: frame, mattress, a folded blanket and a pillow; `z` is the floor, mm. */
+export function CareBed({ at, z = 0, len = 520, w = 300, top = 190, blanket = '#9fc7b5' }: { at: Xy; z?: number; len?: number; w?: number; top?: number; blanket?: string }) {
+  const [x, y] = at;
+  return (
+    <group position={[0, 0, m(z)]}>
+      <RBox at={[x, y, top / 2 - 20]} size={[len, w, top - 40]} radius={6}>
+        <meshStandardMaterial color="#d9dee3" roughness={0.6} />
+      </RBox>
+      <RBox at={[x, y, top - 20]} size={[len - 10, w - 10, 40]} radius={14}>
+        <meshStandardMaterial color="#f7f8f6" roughness={0.9} />
+      </RBox>
+      <RBox at={[x + len * 0.12, y, top + 4]} size={[len * 0.62, w + 4, 14]} radius={6}>
+        <meshStandardMaterial color={blanket} roughness={0.95} />
+      </RBox>
+      <RBox at={[x - len / 2 + 60, y, top + 8]} size={[80, w * 0.6, 22]} radius={10}>
+        <meshStandardMaterial color="#ffffff" roughness={0.9} />
+      </RBox>
+      <RBox at={[x - len / 2 + 6, y, top + 40]} size={[12, w, 130]} radius={5}>
+        <meshStandardMaterial color="#c9b79c" roughness={0.6} />
+      </RBox>
+    </group>
+  );
+}
+
+/**
+ * Round the resident's room (the floor `AGV_TOP_MM` below the arm, which stands on a myAGV): the
+ * room's walls, a second bed, the vital-signs screen, and the centre's delivery robot going up and
+ * down the corridor with cups on its tray.
+ */
+export function CareAround() {
+  const z = -AGV_TOP_MM;
+  return (
+    <group>
+      <group position={[0, 0, m(z)]}>
+        <Hall band="#3a8f6b" wall="#eef1ec" x={-2000} y={2000} />
+        <RouteAgv
+          route={[
+            [-1300, -400],
+            [-1300, 1500],
+            [-1500, 1500],
+            [-1500, -400],
+          ]}
+          speed={90}
+          led="#3a8f6b"
+          cargo={
+            <group>
+              <RBox at={[0, 0, 6]} size={[220, 160, 8]} radius={4}>
+                <meshStandardMaterial color="#e6ebe4" roughness={0.6} />
+              </RBox>
+              {[-50, 0, 50].map((dx) => (
+                <mesh key={dx} position={[m(dx), 0, m(26)]} rotation={[Math.PI / 2, 0, 0]}>
+                  <cylinderGeometry args={[m(15), m(12), m(32), 18]} />
+                  <meshStandardMaterial color="#fbfaf7" roughness={0.5} />
+                </mesh>
+              ))}
+            </group>
+          }
+        />
+      </group>
+      <CareBed at={[-700, -1100]} z={z} blanket="#c9b3d9" />
+      <Blob at={[-700, -1100]} w={520} d={300} k={0.25} />
+      <RBox at={[-420, -620, z / 2]} size={[160, 120, -z]} radius={4}>
+        <meshStandardMaterial color="#c9b79c" roughness={0.6} />
+      </RBox>
+      <Monitor at={[-420, -620]} yaw={0.6} w={130} kind="plot" accent="#3a8f6b" title="생체 신호" />
     </group>
   );
 }

@@ -1,5 +1,5 @@
 /**
- * 산업단지 · 서비스 카페 — 시음 음료 건네기 (myCobot 280 RDK X5 + 어댑티브 그리퍼, real size). The
+ * 로봇 시티 · 스마트시티 — 카페(①②)와 돌봄(③) (myCobot 280 RDK X5 + 어댑티브 그리퍼, real size). The
  * arm takes a drink from the bar and hands it to the customer at the pickup counter. Three problems,
  * each a run the screen plays back (CafeCell) and reads its numbers from:
  *
@@ -11,8 +11,9 @@
  *    distance closed while it reacts and brakes is larger than that. The fix is the speed near the
  *    counter and/or the detection distance: the protective distance
  *    S = (v_hand + v_robot) t_react + v_robot² ÷ (2a) + v_hand × v_robot ÷ a must be under it (5-4).
- *  ③ 컵 무게가 바뀐다 — the new bottled juice is three times the tasting cup's weight. The fast
- *    turn from the fridge to the counter (J1 only) needs τ = I α, I growing with m r² — the J1
+ *  ③ 물병이 무거워졌다 (돌봄) — a care-assist mobile manipulator (the same arm on a myAGV, parked)
+ *    hands an elderly resident a full water bottle, three times the cup's weight. The fast turn
+ *    from the mini fridge to the resident's low table (J1 only) needs τ = I α, I growing with m r² — the J1
  *    servo cannot give it and the arm stops. The fix: turn with the bottle closer in, and/or take
  *    longer (α ∝ 1/T²) (4-2 관성과 가속 토크). Torques from the arm's inverse dynamics (physics/
  *    dynamics.ts, its estimated masses and torque limits).
@@ -36,7 +37,7 @@ export const GAP = { open: 43, closed: 37 } as const;
 
 /** The tasting cup: outer diameter (where held), inner diameter, height; coffee 5 mm below the rim; full weight, kg. */
 export const CUP = { d: 40, inner: 36, h: 55, headspace: 5, kg: 0.06 } as const;
-/** ③: the bottled juice: diameter, height, full weight, kg. */
+/** ③: the full water bottle: diameter, height, weight, kg. */
 export const BOTTLE = { d: 40, h: 120, kg: 0.18 } as const;
 /** The cup spills once its surface slope passes 2h ÷ d; the acceleration that does it, m/s². */
 export const SPILL_SLOPE = (2 * CUP.headspace) / CUP.inner;
@@ -48,7 +49,7 @@ export const CARRY_Z = 110;
 /** The bar (where drinks are made) and the pickup spot on the counter, mm. */
 export const BAR: readonly [number, number] = [170, 120];
 export const PICKUP: readonly [number, number] = [170, -150];
-/** ③: the drinks fridge shelf behind on the left, mm. */
+/** ③: the mini fridge's shelf behind on the left (the resident's low table is at PICKUP), mm. */
 export const FRIDGE: readonly [number, number] = [-40, 190];
 /** The counter's edge (customers stand beyond it), y, mm. */
 export const COUNTER_EDGE_Y = -200;
@@ -288,17 +289,17 @@ function pickUp(sim: CafeSim, at: readonly number[], what: string, obj: string):
   return sim.moveJ(a, SPEED.down);
 }
 
-/** Down at the pickup spot, let go, back up and home. */
-function serve(sim: CafeSim): void {
+/** Down at the pickup spot (③: the resident's low table), let go, back up and home. */
+function serve(sim: CafeSim, where = '픽업 자리', said = '픽업 자리에 음료를 내려놓았어요'): void {
   const above: Mm = [PICKUP[0], PICKUP[1], CARRY_Z];
   const at: Mm = [PICKUP[0], PICKUP[1], GRIP_Z];
   const b = poseAt(sim.chain, at, sim.q);
-  if (!b) return void reach(sim, '픽업 자리', at);
+  if (!b) return void reach(sim, where, at);
   if (!sim.moveJ(b, SPEED.down)) return;
   sim.fingers(GAP.open);
   sim.mode = 'served';
   sim.drink = [PICKUP[0], PICKUP[1], 0];
-  sim.log('serve', '픽업 자리에 음료를 내려놓았어요', { at });
+  sim.log('serve', said, { at });
   const a = poseAt(sim.chain, above, sim.q);
   if (a && sim.moveJ(a, SPEED.down)) sim.moveJ(HOME_Q, SPEED.travel);
 }
@@ -472,7 +473,7 @@ export function runGuard(chain: readonly ChainSegment[], v: GuardValues): CafeRu
   return { ...run, stopGap, hitSpeed, served: served && !run.failure };
 }
 
-/* --- ③ 컵 무게가 바뀐다 -------------------------------------------------------------------- */
+/* --- ③ 물병이 무거워졌다 -------------------------------------------------------------------- */
 
 /** ③: the turn from the fridge side to the counter side at a radius: J1 from, to (°), and the other joints. */
 export function turnPoses(chain: readonly ChainSegment[], radius: number): { a: number[]; b: number[] } | null {
@@ -516,7 +517,7 @@ export function runTurn(chain: readonly ChainSegment[], v: TurnValues): CafeRun 
   const sim = new CafeSim(chain, FRIDGE, 'fridge');
   const limit = j1Limit(chain);
   let peakAlpha = 0;
-  if (pickUp(sim, FRIDGE, '병 주스', '병 주스를')) {
+  if (pickUp(sim, FRIDGE, '물병', '물병을')) {
     const P = turnPoses(chain, v.radius);
     if (!P) reach(sim, '도는 자리', [v.radius, 0, CARRY_Z]);
     else if (sim.moveJ(P.a, SPEED.down)) {
@@ -540,7 +541,7 @@ export function runTurn(chain: readonly ChainSegment[], v: TurnValues): CafeRun 
       sim.tau = 0;
       if (!sim.stopped) {
         const above = poseAt(chain, [PICKUP[0], PICKUP[1], CARRY_Z], sim.q);
-        if (above && sim.moveJ(above, SPEED.down)) serve(sim);
+        if (above && sim.moveJ(above, SPEED.down)) serve(sim, '어르신 탁자', '어르신 탁자에 물병을 내려놓았어요');
       }
     }
   }
@@ -619,9 +620,9 @@ export function scoreCafe(p: CafeProblem, run: CafeRun): CafeScore {
   }
   const checks: CafeCheck[] = [
     { label: 'J1 토크가 한계 안 (과부하 없음)', ok: f?.kind !== 'overload', value: f?.kind === 'overload' ? `${(f.value ?? 0).toFixed(2)} N·m 필요` : `최대 ${run.maxTau.toFixed(2)} N·m` },
-    { label: '픽업 자리에 놓음', ok: run.served, value: run.served ? '했어요' : '못 했어요' },
+    { label: '어르신 탁자에 놓음', ok: run.served, value: run.served ? '했어요' : '못 했어요' },
     stop,
   ];
   const pass = checks.every((c) => c.ok);
-  return { pass, checks, headline: pass ? '무거운 병도 과부하 없이 건넸어요' : f ? strip(f.text) : '아직 기준을 못 넘었어요' };
+  return { pass, checks, headline: pass ? '무거운 물병도 과부하 없이 탁자에 놓았어요' : f ? strip(f.text) : '아직 기준을 못 넘었어요' };
 }

@@ -1,14 +1,14 @@
 'use client';
 
 /**
- * 산업단지 · 서비스 카페 — 시음 음료 건네기 (myCobot 280 RDK X5 + 어댑티브 그리퍼, real size). The same
+ * 로봇 시티 · 스마트시티 — 카페에서 음료 건네기(①②)와 돌봄 로봇의 물병 건네기(③) (myCobot 280 RDK X5 + 어댑티브 그리퍼, real size). The same
  * screen and six steps as the other sites (SitePanel; the lesson script is content-markdown/sites/
  * cafe.md), the café in the 교육 3D view (LearnStage, the real arm with the official gripper) and the
  * engine's runs played back (CafeCell):
  *
  *  ① 커피가 넘친다 — the carry's acceleration (궤적 프로파일);
  *  ② 손과 가까워진다 — the speed near the counter and the sensor's detection distance (보호 거리);
- *  ③ 컵 무게가 바뀐다 — the turn's radius and time (관성과 가속 토크).
+ *  ③ 물병이 무거워졌다 (돌봄: the arm on a myAGV, in a resident's room) — the turn's radius and time (관성과 가속 토크).
  */
 
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
@@ -53,7 +53,7 @@ import { logRun } from '@/engine/education/runLog';
 
 import LearnStage, { type LearnScene, type ViewPose } from '../stage/LearnStage';
 import CafeCell, { CafePlayback, type CafeMarker, type CafeOverlay } from './CafeCell';
-import { CafeAround, LOOKS } from './ambient/Around';
+import { CafeAround, CareAround, LOOKS } from './ambient/Around';
 import type { CellDim } from './CellKit';
 import { ArrowDef, Knob, PROBS, RecordSheet, SitePanel, answeredUpTo, fmt, freshFlow, type FlowState, type MeasureRow } from './SiteFlow';
 import css from './lab.module.css';
@@ -80,7 +80,7 @@ const fresh = (p: CafeProblem): ProbState => ({ ...freshFlow(CAFE_TEXT[p]), step
 
 declare global {
   interface Window {
-    /** Open a problem of 서비스 카페 at a step, optionally with the worked fix run (and everything before it answered), and the playback at a time or its end (guide pictures, tools/check). */
+    /** Open a problem of 스마트시티 at a step, optionally with the worked fix run (and everything before it answered), and the playback at a time or its end (guide pictures, tools/check). */
     __cafeOpen?: (step: SiteStepId, opts?: { prob?: CafeProblem; solve?: boolean; at?: number | 'end' }) => void;
   }
 }
@@ -143,12 +143,12 @@ function measureRows(chain: readonly ChainSegment[], prob: CafeProblem, run: Caf
   const P = turnPoses(chain, v.radius);
   const a = Math.atan2(FRIDGE[1], FRIDGE[0]);
   return [
-    { label: '병 주스 · 시음 컵 무게', value: `${fmt(BOTTLE.kg * 1000)} g · ${fmt(CUP.kg * 1000)} g` },
-    { label: 'J1에 필요한 최대 토크 (병 · 컵)', value: `${fmt(b.tau, 2)} · ${fmt(c.tau, 2)} N·m`, bad: true },
+    { label: '물병 · 아침 컵 무게', value: `${fmt(BOTTLE.kg * 1000)} g · ${fmt(CUP.kg * 1000)} g` },
+    { label: 'J1에 필요한 최대 토크 (물병 · 컵)', value: `${fmt(b.tau, 2)} · ${fmt(c.tau, 2)} N·m`, bad: true },
     { label: 'J1 토크 한계', value: `${fmt(j1Limit(chain), 3)} N·m` },
     { label: '도는 각도 · 시간 · 최대 각가속도', value: `${fmt(Math.abs(b.dq))}° · ${v.time} s · ${fmt(b.alpha, 1)} rad/s²`, bad: true },
     {
-      label: '몸통에서 병까지 반지름',
+      label: '몸통에서 물병까지 반지름',
       value: `${v.radius} mm`,
       dim: P ? { key: 'r', a: [0, 0, CARRY_Z - GRIP_Z + 4], b: [v.radius * Math.cos(a), v.radius * Math.sin(a), CARRY_Z - GRIP_Z + 4], text: `${v.radius} mm`, color: DIM_OK } : undefined,
     },
@@ -356,8 +356,8 @@ export default function CafeLab({ robot, chain, gripperRobot, hidden, level = 'h
         </button>
         <b className={css.chapter}>
           <i className={lg.dot} aria-hidden />
-          서비스 카페
-          <small>음료 건네기</small>
+          스마트시티
+          <small>{prob === 3 ? '돌봄' : '카페'}</small>
         </b>
         <nav className={css.probs} aria-label="문제">
           {PROBS.map((p) => (
@@ -386,8 +386,8 @@ export default function CafeLab({ robot, chain, gripperRobot, hidden, level = 'h
       </header>
 
       <section className={css.stage} aria-label="3D 카페">
-        <LearnStage robot={robot} chain={chain} gripperRobot={gripperRobot} scene={scene} paused={hidden} home={CAFE_VIEW} focus={focus} live={player.arm} look={LOOKS.cafe}>
-          <CafeAround />
+        <LearnStage robot={robot} chain={chain} gripperRobot={gripperRobot} scene={scene} paused={hidden} home={CAFE_VIEW} focus={focus} live={player.arm} look={prob === 3 ? LOOKS.care : LOOKS.cafe}>
+          {prob === 3 ? <CareAround /> : <CafeAround />}
           <CafeCell player={player} prob={prob} overlay={overlay} />
         </LearnStage>
         {fail && playT >= fail.t && <div className={lg.alarm}>⚠ {fail.text.replace(/ — 작업 중지$/, '')}</div>}
@@ -396,7 +396,7 @@ export default function CafeLab({ robot, chain, gripperRobot, hidden, level = 'h
         {shown && (
           <div className={lg.board} aria-label="작업 현황">
             <div data-c={servedNow ? 'ok' : undefined}>
-              <small>건넨 음료</small>
+              <small>{prob === 3 ? '건넨 물병' : '건넨 음료'}</small>
               <b>{servedNow ? '1 / 1' : '0 / 1'}</b>
             </div>
             {prob === 1 && (
@@ -453,7 +453,7 @@ export default function CafeLab({ robot, chain, gripperRobot, hidden, level = 'h
           T={T}
           lab="cafe"
           st={s}
-          boss="정 점장"
+          boss={prob === 3 ? '윤 요양보호사' : '정 점장'}
           level={level}
           solved={solved[prob]}
           busy={busy}
@@ -463,14 +463,14 @@ export default function CafeLab({ robot, chain, gripperRobot, hidden, level = 'h
                 작업 기준 <span>{T.order}</span>
               </header>
               <dl>
-                <dt>음료</dt>
-                <dd>{prob === 3 ? `병 주스 Ø${BOTTLE.d} × ${BOTTLE.h} mm · ${fmt(BOTTLE.kg * 1000)} g` : `시음 컵 Ø${CUP.d} mm · 커피 입구 ${CUP.headspace} mm 아래까지`}</dd>
+                <dt>{prob === 3 ? '물병' : '음료'}</dt>
+                <dd>{prob === 3 ? `물을 가득 채운 물병 Ø${BOTTLE.d} × ${BOTTLE.h} mm · ${fmt(BOTTLE.kg * 1000)} g` : `시음 컵 Ø${CUP.d} mm · 커피 입구 ${CUP.headspace} mm 아래까지`}</dd>
                 <dt>옮기기</dt>
-                <dd>{prob === 3 ? '음료 냉장고 → 픽업대 (J1로 돌기)' : '바 → 픽업대 (직선 이동)'}</dd>
+                <dd>{prob === 3 ? '미니 냉장고 → 어르신 곁 낮은 탁자 (AGV는 멈춘 채 J1로 돌기)' : '바 → 픽업대 (직선 이동)'}</dd>
                 <dt>기준</dt>
-                <dd>{prob === 1 ? `넘치지 않기 · ${CARRY_MAX_S} s 안` : prob === 2 ? `움직이는 컵이 손에 닿지 않기 · 손 앞 ${STOP_MARGIN_MM} mm 넘게 남기고 멈춤` : 'J1 과부하 없이 건네기'}</dd>
+                <dd>{prob === 1 ? `넘치지 않기 · ${CARRY_MAX_S} s 안` : prob === 2 ? `움직이는 컵이 손에 닿지 않기 · 손 앞 ${STOP_MARGIN_MM} mm 넘게 남기고 멈춤` : 'J1 과부하 없이 탁자에 놓기'}</dd>
                 <dt>도구</dt>
-                <dd>어댑티브 그리퍼{prob === 2 ? ' · 픽업대 거리 센서' : ''}</dd>
+                <dd>{prob === 3 ? 'myAGV 위 myCobot 280 (모바일 매니퓰레이터) · ' : ''}어댑티브 그리퍼{prob === 2 ? ' · 픽업대 거리 센서' : ''}</dd>
               </dl>
             </div>
           }
@@ -513,7 +513,7 @@ export default function CafeLab({ robot, chain, gripperRobot, hidden, level = 'h
           onNext={() => (prob < 3 ? setProb((prob + 1) as CafeProblem) : onBack())}
         />
       </aside>
-      {record && <RecordSheet site="서비스 카페 (음료 건네기)" tone={lg.cafe} texts={CAFE_TEXT} st={st} solved={solved} level={level} onClose={() => setRecord(false)} />}
+      {record && <RecordSheet site="스마트시티 (카페 · 돌봄)" tone={lg.cafe} texts={CAFE_TEXT} st={st} solved={solved} level={level} onClose={() => setRecord(false)} />}
     </div>
   );
 }
@@ -521,7 +521,7 @@ export default function CafeLab({ robot, chain, gripperRobot, hidden, level = 'h
 function programLine(p: CafeProblem): string {
   if (p === 1) return '바 → 픽업대 직선 이동 · 최고 속도 250 mm/s · 가속도 4 m/s² — 빈 컵 회수 프로그램 그대로';
   if (p === 2) return `직선 이동 2 m/s² · 픽업대 구역(마지막 ${ZONE_MM} mm)에서도 250 mm/s · 센서 감지 50 mm → 정지`;
-  return '냉장고에서 집어 팔을 230 mm 뻗은 채 J1만 0.8 s에 143° 돌기 — 시음 컵 때 그대로';
+  return '냉장고에서 물병을 집어 팔을 230 mm 뻗은 채 J1만 0.8 s에 143° 돌기 — 아침 컵 때 그대로';
 }
 
 /* --- pieces ---------------------------------------------------------------------------------- */
@@ -669,9 +669,9 @@ function HmiTurn({ v, preview, limit, on }: { v: TurnValues; preview: ReturnType
     <div className={lg.hmi}>
       <header>
         <span>MOTION · J1 돌기</span>
-        <i>● 병 {fmt(BOTTLE.kg * 1000)} g · 143°</i>
+        <i>● 물병 {fmt(BOTTLE.kg * 1000)} g · 143°</i>
       </header>
-      <Knob id="cafe-r" label="도는 동안 병까지 반지름" unit="mm" v={v.radius} min={130} max={240} step={5} note="팔을 접을수록 작아져요" on={(radius) => on({ ...v, radius })} />
+      <Knob id="cafe-r" label="도는 동안 물병까지 반지름" unit="mm" v={v.radius} min={130} max={240} step={5} note="팔을 접을수록 작아져요" on={(radius) => on({ ...v, radius })} />
       <Knob id="cafe-t" label="도는 시간" unit="s" v={v.time} min={0.5} max={2} step={0.05} note="5차 궤적 — 최대 각가속도 = 5.77 × 각도 ÷ 시간²" on={(time) => on({ ...v, time: Math.round(time * 100) / 100 })} />
       <table className={lg.layers}>
         <tbody>
@@ -687,7 +687,7 @@ function HmiTurn({ v, preview, limit, on }: { v: TurnValues; preview: ReturnType
           </tr>
         </tbody>
       </table>
-      <small className={lg.hmiNote}>3D 화면의 점선 호가 병이 지나갈 길이에요 (초록: 한계 안, 빨강: 과부하).</small>
+      <small className={lg.hmiNote}>3D 화면의 점선 호가 물병이 지나갈 길이에요 (초록: 한계 안, 빨강: 과부하).</small>
     </div>
   );
 }

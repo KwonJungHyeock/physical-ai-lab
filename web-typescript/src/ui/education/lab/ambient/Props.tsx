@@ -25,6 +25,8 @@ import { Blob } from './Ground';
 
 const DRACO = '/draco/';
 const ARM_URL = '/robot/rdkx5/rdkx5.glb';
+/** The myAGV 2023's height to its top plate (the model's bounds), mm: where a mobile manipulator's arm stands. */
+export const AGV_TOP_MM = 132;
 const AGV_URL = '/robot/myagv/myagv2023.glb';
 
 type Xy = readonly [number, number];
@@ -181,10 +183,9 @@ export function WorkingArm({ at, yaw = 0, job, phase = 0, table = [380, 260, 70]
 
 /* --- myAGV on its route -------------------------------------------------------------------- */
 
-/** The official myAGV (2023) driving a closed route at `speed` mm/s, wheels turning, its LED bar lit; `cargo` rides on top. */
-export function RouteAgv({ route, speed = 120, phase = 0, cargo, led = '#1fae66' }: { route: readonly Xy[]; speed?: number; phase?: number; cargo?: ReactNode; led?: string }) {
+/** The myAGV model, its materials (dark shell, rubber wheels) and a way to turn its wheels. */
+function useAgvBody() {
   const { scene } = useGLTF(AGV_URL, DRACO);
-  const path = useMemo(() => loopPath(route), [route]);
   const body = useMemo(() => {
     const root = scene.clone(true);
     const mats = {
@@ -212,6 +213,13 @@ export function RouteAgv({ route, speed = 120, phase = 0, cargo, led = '#1fae66'
     };
   }, [scene]);
   useEffect(() => () => Object.values(body.mats).forEach((x) => x.dispose()), [body]);
+  return body;
+}
+
+/** The official myAGV (2023) driving a closed route at `speed` mm/s, wheels turning, its LED bar lit; `cargo` rides on top. */
+export function RouteAgv({ route, speed = 120, phase = 0, cargo, led = '#1fae66' }: { route: readonly Xy[]; speed?: number; phase?: number; cargo?: ReactNode; led?: string }) {
+  const path = useMemo(() => loopPath(route), [route]);
+  const body = useAgvBody();
   const g = useRef<Group>(null);
   const yaw = useRef<number | null>(null);
   const clock = useAmbientClock(phase);
@@ -234,13 +242,31 @@ export function RouteAgv({ route, speed = 120, phase = 0, cargo, led = '#1fae66'
   return (
     <group ref={g}>
       <primitive object={body.root} />
-      <mesh position={[m(-150), 0, m(134)]}>
+      <mesh position={[m(-150), 0, m(AGV_TOP_MM + 2)]}>
         <boxGeometry args={[m(12), m(110), m(3)]} />
         <meshBasicMaterial color={led} toneMapped={false} />
       </mesh>
       {cargo && <group position={[0, 0, m(140)]}>{cargo}</group>}
       <Blob at={[0, 0]} w={320} d={250} k={0.32} />
     </group>
+  );
+}
+
+/**
+ * A myAGV standing still with something on its back (a mobile manipulator's arm stands on it in the
+ * cell itself): `z` is where its wheels touch the floor, mm.
+ */
+export function ParkedAgv({ at = [0, 0], z = 0, yaw = 0, led = '#1fae66' }: { at?: Xy; z?: number; yaw?: number; led?: string }) {
+  const body = useAgvBody();
+  return (
+    <Place at={at} yaw={yaw} z={z}>
+      <primitive object={body.root} />
+      <mesh position={[m(-150), 0, m(AGV_TOP_MM + 2)]}>
+        <boxGeometry args={[m(12), m(110), m(3)]} />
+        <meshBasicMaterial color={led} toneMapped={false} />
+      </mesh>
+      <Blob at={[0, 0]} w={320} d={250} k={0.32} />
+    </Place>
   );
 }
 

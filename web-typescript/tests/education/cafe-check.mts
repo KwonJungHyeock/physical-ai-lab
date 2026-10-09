@@ -72,7 +72,7 @@ check('only detection 120 mm at 250 mm/s leaves 15 mm (not enough); only 100 mm/
   assert.equal(b.failure?.kind, 'touch');
 });
 
-console.log('③ 컵 무게가 바뀐다 — 관성 토크');
+console.log('③ 물병이 무거워졌다 (돌봄) — 관성 토크');
 check('the turn is 143°, 22.6 rad/s² at 0.8 s; J1 needs 0.40 N·m with the bottle, 0.26 with the cup; the limit is 0.285', () => {
   const v = C.CAFE_DEFAULTS[3] as { radius: number; time: number };
   const b = C.turnTorque(chain, v);
