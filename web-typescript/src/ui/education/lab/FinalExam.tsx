@@ -42,6 +42,30 @@ import lg from './site.module.css';
 import fx from './final.module.css';
 
 const KEY = 'final-exam';
+/** Sheets handed in on this computer (one per student), for the teacher's class table. */
+const CLASS_KEY = 'final-exam-class';
+
+interface Submitted {
+  name: string;
+  date: string;
+  records: Record<string, FinalRecord>;
+}
+
+const readClass = (): Submitted[] => {
+  try {
+    const v = JSON.parse(localStorage.getItem(CLASS_KEY) ?? '[]') as Submitted[];
+    return Array.isArray(v) ? v.filter((x) => x && typeof x.name === 'string' && x.records) : [];
+  } catch {
+    return [];
+  }
+};
+const writeClass = (list: Submitted[]) => {
+  try {
+    localStorage.setItem(CLASS_KEY, JSON.stringify(list));
+  } catch {
+    /* private window: for this visit only */
+  }
+};
 
 interface Saved {
   name: string;
@@ -83,9 +107,14 @@ export default function FinalExam({ robot, chain, gripperRobot, hidden, onBack }
   const [saved, setSaved] = useState<Saved>({ name: '', records: {} });
   const [open, setOpen] = useState<number | null>(null);
   const [sheet, setSheet] = useState(false);
+  const [klass, setKlass] = useState<Submitted[]>([]);
+  const [classOpen, setClassOpen] = useState(false);
   // What was kept on this computer, read after hydration (the page is a static export).
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => setSaved(readSaved()), []);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSaved(readSaved());
+    setKlass(readClass());
+  }, []);
   const save = useCallback((fn: (s: Saved) => Saved) => {
     setSaved((s) => {
       const next = fn(s);
@@ -205,9 +234,31 @@ export default function FinalExam({ robot, chain, gripperRobot, hidden, onBack }
                 </button>
                 <button
                   type="button"
+                  className={css.primary}
+                  title="이 학생의 결과를 반 기록에 넣고, 다음 학생이 새로 시작해요"
+                  onClick={() => {
+                    const who = saved.name.trim();
+                    if (!who) {
+                      window.alert('이름을 먼저 적어 주세요.');
+                      return;
+                    }
+                    if (!window.confirm(`${who} 학생의 결과(${total.score}점)를 반 기록에 저장하고 다음 학생을 시작할까요?`)) return;
+                    const next = [...klass, { name: who, date: new Date().toISOString(), records: saved.records }];
+                    writeClass(next);
+                    setKlass(next);
+                    save(() => ({ name: '', records: {} }));
+                  }}
+                >
+                  제출하고 다음 학생
+                </button>
+                <button type="button" className={fx.reset} onClick={() => setClassOpen(true)} title="교사용: 이 컴퓨터에서 제출한 학생들의 점수">
+                  반 결과 ({klass.length}명)
+                </button>
+                <button
+                  type="button"
                   className={fx.reset}
                   onClick={() => {
-                    if (window.confirm('이 컴퓨터의 평가 기록을 모두 지우고 처음부터 할까요? (교사용)')) save(() => ({ name: '', records: {} }));
+                    if (window.confirm('지금 학생의 기록을 지우고 처음부터 할까요? (반 기록은 그대로)')) save(() => ({ name: '', records: {} }));
                   }}
                 >
                   처음부터 다시
@@ -218,6 +269,16 @@ export default function FinalExam({ robot, chain, gripperRobot, hidden, onBack }
         </div>
       )}
       {sheet && <ResultSheet saved={saved} onClose={() => setSheet(false)} />}
+      {classOpen && (
+        <ClassSheet
+          list={klass}
+          onClear={() => {
+            writeClass([]);
+            setKlass([]);
+          }}
+          onClose={() => setClassOpen(false)}
+        />
+      )}
     </>
   );
 }
@@ -370,6 +431,17 @@ function ItemScreen({ item, no, robot, chain, gripperRobot, hidden, record, setR
               }}
             >
               {playing ? '❚❚ 멈춤' : '▶ 재생'}
+            </button>
+            <button
+              type="button"
+              title="끝으로 건너뛰어 결과 보기"
+              onClick={() => {
+                player.start(shown.run, 'end');
+                setEnded(true);
+                setPlaying(false);
+              }}
+            >
+              ⏭ 끝으로
             </button>
             <span>{shown === before ? '지금 프로그램' : '고친 값'}</span>
             <span className={fx.rates} role="group" aria-label="재생 속도">
@@ -632,13 +704,16 @@ function ItemCell({ item, player, values }: { item: FinalItem; player: Player; v
   }
 }
 
+/** The sheets' buttons take the site colour; the sheets are the whole park's, so the app's own blue. */
+const SHEET_TONE = { '--site': '#3454d1', '--site-soft': '#edf2ff' } as CSSProperties;
+
 /* --- the result sheet ---------------------------------------------------------------------- */
 
 function ResultSheet({ saved, onClose }: { saved: Saved; onClose(): void }) {
   const date = useMemo(() => new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' }), []);
   const total = scoreFinal(saved.records);
   return createPortal(
-    <div className={`${lg.recordBack} logi-record`} role="dialog" aria-modal="true" aria-label="평가 결과지">
+    <div className={`${lg.recordBack} logi-record`} style={SHEET_TONE} role="dialog" aria-modal="true" aria-label="평가 결과지">
       <div className={lg.record}>
         <header className={lg.recordHead}>
           <div>
@@ -704,6 +779,124 @@ function ResultSheet({ saved, onClose }: { saved: Saved; onClose(): void }) {
         <div className={lg.recordBtns}>
           <button type="button" className={`${css.primary} ${lg.siteBtn}`} onClick={() => window.print()}>
             인쇄 · PDF로 저장
+          </button>
+          <button type="button" onClick={onClose}>
+            닫기
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+/* --- the class table (teacher) -------------------------------------------------------------- */
+
+const SHORT: Record<string, string> = { factory: '공장', logistics: '물류', bio: '바이오', farm: '스마트팜', cafe: '카페', ai: 'AI' };
+
+/** The class as rows: name, date, each item's points, the total, the score and the grade. */
+function classRows(list: readonly Submitted[]) {
+  return list.map((x) => {
+    const t = scoreFinal(x.records);
+    return {
+      name: x.name,
+      date: new Date(x.date).toLocaleDateString('ko-KR'),
+      items: FINAL_ITEMS.map((it) => (x.records[it.id] ? scoreItem(it, x.records[it.id]).total : 0)),
+      ...t,
+    };
+  });
+}
+
+/** A CSV file (Excel opens it: UTF-8 with its byte-order mark) saved by the browser. */
+function downloadCsv(list: readonly Submitted[]) {
+  const rows = classRows(list);
+  const q = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+  const head = ['이름', '날짜', ...FINAL_ITEMS.map((it) => `${SHORT[it.id]} (10)`), '합계 (60)', '점수 (100)', '성취 수준'];
+  const body = rows.map((r) => [r.name, r.date, ...r.items, r.points, r.score, r.grade]);
+  const csv = '\ufeff' + [head, ...body].map((l) => l.map(q).join(',')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = `final-exam-class-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+function ClassSheet({ list, onClear, onClose }: { list: readonly Submitted[]; onClear(): void; onClose(): void }) {
+  const rows = classRows(list);
+  const avg = (k: number) => (rows.length ? rows.reduce((s, r) => s + r.items[k], 0) / rows.length : 0);
+  const avgScore = rows.length ? rows.reduce((s, r) => s + r.score, 0) / rows.length : 0;
+  return createPortal(
+    <div className={`${lg.recordBack} logi-record`} style={SHEET_TONE} role="dialog" aria-modal="true" aria-label="반 결과">
+      <div className={lg.record}>
+        <header className={lg.recordHead}>
+          <div>
+            <small>대단원 마무리 평가 · 이 컴퓨터에서 제출한 학생</small>
+            <b>반 결과</b>
+          </div>
+          <div className={lg.recordWho}>
+            <span>{rows.length}명</span>
+            <span>평균 {fmt(avgScore, 1)}점</span>
+          </div>
+        </header>
+        {rows.length === 0 ? (
+          <p className={fx.sheetNote}>아직 제출한 학생이 없어요. 학생이 평가를 마치면 목록에서 [제출하고 다음 학생]을 눌러요.</p>
+        ) : (
+          <table className={fx.sheet}>
+            <thead>
+              <tr>
+                <th>이름</th>
+                <th>날짜</th>
+                {FINAL_ITEMS.map((it) => (
+                  <th key={it.id}>{SHORT[it.id]}</th>
+                ))}
+                <th>점수</th>
+                <th>수준</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={i}>
+                  <td>{r.name}</td>
+                  <td>{r.date}</td>
+                  {r.items.map((v, k) => (
+                    <td key={k}>{v}</td>
+                  ))}
+                  <td>
+                    <b>{r.score}</b>
+                  </td>
+                  <td>{r.grade}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colSpan={2}>문항 평균 (10점 만점)</td>
+                {FINAL_ITEMS.map((it, k) => (
+                  <td key={it.id}>{fmt(avg(k), 1)}</td>
+                ))}
+                <td colSpan={2}>{fmt(avgScore, 1)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        )}
+        <p className={fx.sheetNote}>문항 평균이 낮은 현장이 반 전체가 다시 볼 곳이에요. CSV는 엑셀에서 바로 열려요.</p>
+        <div className={lg.recordBtns}>
+          <button type="button" className={`${css.primary} ${lg.siteBtn}`} disabled={!rows.length} onClick={() => downloadCsv(list)}>
+            CSV로 저장 (엑셀)
+          </button>
+          <button type="button" disabled={!rows.length} onClick={() => window.print()}>
+            인쇄 · PDF
+          </button>
+          <button
+            type="button"
+            disabled={!rows.length}
+            onClick={() => {
+              if (window.confirm('이 컴퓨터의 반 기록을 모두 지울까요? 먼저 CSV로 저장해 두세요.')) onClear();
+            }}
+          >
+            반 기록 지우기
           </button>
           <button type="button" onClick={onClose}>
             닫기
