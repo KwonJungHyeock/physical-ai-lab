@@ -1077,3 +1077,159 @@
     display: none;
   }
 }
+
+/* The panel as a manual: one line on what the step is for, the step's parts as a roadmap, then
+   each part as a numbered section — the one to do now outlined in the site's colour, the done ones
+   ticked, the ones still waiting greyed with the reason. */
+.guide {
+  margin: 0;
+  padding: 8px 11px;
+  border-radius: 10px;
+  background: var(--site-soft);
+  color: #1d2939;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.roadmap {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  counter-reset: none;
+}
+.roadmap li {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px 3px 4px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: #fff;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.roadmap li i {
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: #eef0f4;
+  font-style: normal;
+  font-size: 10.5px;
+  font-weight: 800;
+}
+.roadmap li[data-s='now'] {
+  border-color: var(--site);
+  color: var(--ink);
+}
+.roadmap li[data-s='now'] i {
+  background: var(--site);
+  color: #fff;
+}
+.roadmap li[data-s='done'] {
+  color: #1f7a45;
+}
+.roadmap li[data-s='done'] i {
+  background: #1f9d55;
+  color: #fff;
+}
+.roadmap li[data-s='todo'] {
+  opacity: 0.6;
+}
+.sec {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+}
+.sec > header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sec > header i {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #eef0f4;
+  color: #475467;
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 800;
+}
+.sec > header b {
+  font-size: 13.5px;
+  font-weight: 800;
+}
+.sec > header em {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--site);
+  color: #fff;
+  font-style: normal;
+  font-size: 10.5px;
+  font-weight: 800;
+}
+.sec[data-s='now'] {
+  border-color: var(--site);
+  box-shadow: 0 0 0 3px var(--site-soft);
+}
+.sec[data-s='now'] > header i {
+  background: var(--site);
+  color: #fff;
+}
+.sec[data-s='done'] > header i {
+  background: #1f9d55;
+  color: #fff;
+}
+.sec[data-s='todo'] {
+  background: #f8f9fb;
+  border-style: dashed;
+}
+.sec[data-s='todo'] > header b {
+  color: var(--faint);
+}
+.secWait {
+  margin: 0;
+  font-size: 12px;
+  color: var(--faint);
+}
+.secWait::before {
+  content: '🔒 ';
+}
+.secText {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: #344054;
+}
+.secText b {
+  color: var(--ink);
+}
+.scroll {
+  gap: 10px !important;
+}
+/* Inside a section the section is the box: no box in a box. */
+.sec .measureBox,
+.sec .calc {
+  border: 0;
+  padding: 0;
+  background: none;
+}
+.sec .measureBtn {
+  justify-self: stretch;
+  padding: 7px 10px;
+  font-size: 12.5px;
+  text-align: left;
+}

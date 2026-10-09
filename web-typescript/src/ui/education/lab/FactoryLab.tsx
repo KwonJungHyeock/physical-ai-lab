@@ -68,26 +68,13 @@ import ConveyorCell, { type CellMarker, type CellOverlay } from './ConveyorCell'
 import { BoxList, CompareView, EventLog, Fix1, Fix2, Fix3, Headline, P1Numbers, type Runs } from './FactoryParts';
 import { Playback } from './playback';
 import {
-  ArrowDef,
-  Ask,
-  Boss,
-  Calc,
-  Cause,
-  Done,
-  Goals,
-  Head,
-  Measure,
-  PROBS,
-  PredictHints,
-  PredictionCheck,
-  RecordSheet,
-  SiteBtn,
   answeredUpTo,
-  bodyClass,
-  calcOk,
-  causeTodo,
+  ArrowDef,
   fmt,
   freshFlow,
+  PROBS,
+  RecordSheet,
+  SitePanel,
   type FlowState,
   type MeasureRow,
 } from './SiteFlow';
@@ -630,150 +617,74 @@ function programLine(chain: readonly ChainSegment[], p: ProblemId): string {
 }
 
 function Panel(p: PanelProps) {
-  const { chain, prob, st, busy, rows } = p;
+  const { chain, prob, st } = p;
   const T = FACTORY_TEXT[prob];
   const { before, latest } = st.runs;
-  switch (st.step) {
-    case 'brief':
-      return (
-        <>
-          <Head eyebrow={`${T.day} · 작업 지시서 ${T.order}`} title={T.orderTitle} solved={p.solved} />
-          <div className={bodyClass}>
-            <p className={css.story}>{T.brief}</p>
-            <Boss name="김 주임" line={T.boss} />
-            <div className={lg.order}>
-              <header>
-                작업 기준 <span>{T.order}</span>
-              </header>
-              <dl>
-                <dt>상자</dt>
-                <dd>{prob === 2 ? 'A 60 · B 70 · C 50 mm 각 (높이 50 · 60 · 40)' : '60 × 60 × 50 mm'}</dd>
-                <dt>옮기기</dt>
-                <dd>{prob === 1 ? '1개' : prob === 2 ? 'A · B · C 3개' : '멈추지 않는 벨트에서 3개 연달아'} → 팔레트</dd>
-                <dt>흡착</dt>
-                <dd>상자 윗면 가운데에서 {GRIP_TOL_MM} mm 안</dd>
-                <dt>안전</dt>
-                <dd>벨트 · 센서 · 상자에 부딪히지 않기, 관절 범위 안</dd>
-              </dl>
+  const v = latest ? verdict(prob, latest) : null;
+  return (
+    <SitePanel
+      T={T}
+      st={st}
+      boss="김 주임"
+      level={p.level}
+      solved={p.solved}
+      busy={p.busy}
+      order={
+        <div className={lg.order}>
+          <header>
+            작업 기준 <span>{T.order}</span>
+          </header>
+          <dl>
+            <dt>상자</dt>
+            <dd>{prob === 2 ? 'A 60 · B 70 · C 50 mm 각 (높이 50 · 60 · 40)' : '60 × 60 × 50 mm'}</dd>
+            <dt>옮기기</dt>
+            <dd>{prob === 1 ? '1개' : prob === 2 ? 'A · B · C 3개' : '멈추지 않는 벨트에서 3개 연달아'} → 팔레트</dd>
+            <dt>흡착</dt>
+            <dd>상자 윗면 가운데에서 {GRIP_TOL_MM} mm 안</dd>
+            <dt>안전</dt>
+            <dd>벨트 · 센서 · 상자에 부딪히지 않기, 관절 범위 안</dd>
+          </dl>
+        </div>
+      }
+      program={programLine(chain, prob)}
+      runTitle={before ? verdict(prob, before).headline : '계산 중…'}
+      runResult={
+        before && (
+          <>
+            <div className={css.card}>
+              <Headline prob={prob} run={before} />
+              {prob === 1 && <P1Numbers run={before} />}
+              {prob === 2 && <BoxList run={before} />}
+              {prob === 3 && <BoxList run={before} offsets={p3Offsets(before)} />}
             </div>
-            <p className={lg.note}>
-              <b>작업 프로그램</b> · {programLine(chain, prob)}
-            </p>
-            <Goals goals={T.goals} />
-            <p className={lg.note}>지금 값 그대로 한 번 가동해 보세요. 무엇이 문제인지는 그다음에 찾아요.</p>
-          </div>
-          <div className={css.foot}>
-            <span />
-            <SiteBtn disabled={busy} onClick={p.onRunBefore}>
-              {busy ? '계산 중…' : '▶ 라인 가동'}
-            </SiteBtn>
-          </div>
-        </>
-      );
-    case 'run':
-      return (
+            <EventLog run={before} />
+          </>
+        )
+      }
+      playing={p.playing && st.step === 'run'}
+      rows={p.rows}
+      fixTitle={prob === 1 ? '관절 각도를 고쳐요' : prob === 2 ? '좌표로 지정하고 닿게 해요' : '시간 계획을 세워요'}
+      hmi={
         <>
-          <Head eyebrow="가동 결과" title={before ? verdict(prob, before).headline : '계산 중…'} solved={p.solved} />
-          <div className={bodyClass}>
-            <p className={css.story}>{T.happened}</p>
-            <Ask ask={T.ask} />
-            {before && !p.playing && (
-              <div className={css.card}>
-                <Headline prob={prob} run={before} />
-                {prob === 1 && <P1Numbers run={before} />}
-                {prob === 2 && <BoxList run={before} />}
-                {prob === 3 && <BoxList run={before} offsets={p3Offsets(before)} />}
-              </div>
-            )}
-            {before && !p.playing && <EventLog run={before} />}
-          </div>
-          <div className={css.foot}>
-            <span className={lg.footNote}>{p.playing ? '공정을 돌려 보는 중…' : ''}</span>
-            <SiteBtn onClick={() => p.onStep('cause')}>원인 찾으러 가기 →</SiteBtn>
-          </div>
+          {prob === 1 && <Fix1 chain={chain} v1={p.v1} onV1={p.onV1} />}
+          {prob === 2 && <Fix2 chain={chain} v2={p.v2} onV2={p.onV2} onFocusRow={p.onFocusRow} plan2={p.plan2} />}
+          {prob === 3 && <Fix3 chain={chain} v3={p.v3} onV3={p.onV3} />}
         </>
-      );
-    case 'cause': {
-      const todo = causeTodo(T, st, rows.length);
-      return (
-        <>
-          <Head eyebrow="원인 찾기 · 측정" title={T.question} solved={p.solved} />
-          <div className={bodyClass}>
-            <p className={css.story}>{T.look}</p>
-            <Measure rows={rows} meas={st.meas} onMeasure={() => p.patch((x) => ({ meas: Math.min(rows.length, x.meas + 1) }))} />
-            <Cause T={T} st={st} all={st.meas >= rows.length} patch={p.patch} />
-          </div>
-          <div className={css.foot}>
-            <span className={lg.footNote}>{todo}</span>
-            <SiteBtn disabled={todo !== ''} onClick={() => p.onStep('fix')}>
-              값 고치러 가기 →
-            </SiteBtn>
-          </div>
-        </>
-      );
-    }
-    case 'fix': {
-      const ok = st.calcChecked && calcOk(T, st.calc);
-      return (
-        <>
-          <Head eyebrow={ok ? '조작반 · 이 문제에 필요한 값만' : '값 고치기 · 먼저 계산'} title={prob === 1 ? '관절 각도를 고쳐요' : prob === 2 ? '좌표로 지정하고 닿게 해요' : '시간 계획을 세워요'} solved={p.solved} />
-          <div className={bodyClass}>
-            <Calc T={T} st={st} patch={p.patch} />
-            {ok && (
-              <>
-                <p className={`${lg.note} ${lg.siteNote}`}>{T.calc.after}</p>
-                {prob === 1 && <Fix1 chain={chain} v1={p.v1} onV1={p.onV1} />}
-                {prob === 2 && <Fix2 chain={chain} v2={p.v2} onV2={p.onV2} onFocusRow={p.onFocusRow} plan2={p.plan2} />}
-                {prob === 3 && <Fix3 chain={chain} v3={p.v3} onV3={p.onV3} />}
-                <PredictHints T={T} st={st} patch={p.patch} />
-              </>
-            )}
-          </div>
-          <div className={css.foot}>
-            <span className={lg.footNote}>{!ok ? '계산이 맞으면 조작반이 열려요' : st.pred === null ? '먼저 결과를 예상해 보세요' : ''}</span>
-            <SiteBtn disabled={busy || !ok || st.pred === null} onClick={p.onRunFix}>
-              {busy ? '계산 중…' : '▶ 다시 가동'}
-            </SiteBtn>
-          </div>
-        </>
-      );
-    }
-    case 'compare': {
-      const v = latest ? verdict(prob, latest) : null;
-      return (
-        <>
-          <Head eyebrow="다시 가동 · 전과 후" title={v?.pass ? '기준을 모두 넘었어요' : '아직 기준에 못 미쳐요'} solved={p.solved} />
-          <div className={bodyClass}>
-            {before && latest && <CompareView prob={prob} before={before} latest={latest} playing={p.playing} playT={p.playT} waitY={p.v3.waitY} />}
-            {!p.playing && <PredictionCheck T={T} st={st} hit={predictionOf(prob, latest)} patch={p.patch} />}
-          </div>
-          <div className={css.foot}>
-            <button type="button" className={css.ghost} onClick={() => p.onStep('fix')}>
-              ← 값 다시 고치기
-            </button>
-            <SiteBtn disabled={!v?.pass} onClick={() => p.onStep('done')}>
-              해결 확인 →
-            </SiteBtn>
-          </div>
-        </>
-      );
-    }
-    case 'done':
-      return (
-        <>
-          <Head eyebrow="해결 · 원리 카드" title={`${T.title} — 해결했어요`} solved={p.solved} />
-          <div className={bodyClass}>
-            <Done T={T} st={st} level={p.level} fig={<PrincipleFig prob={prob} />} patch={p.patch} />
-          </div>
-          <div className={css.foot}>
-            <button type="button" className={css.ghost} onClick={p.onRecord}>
-              실습 기록 · 인쇄
-            </button>
-            <SiteBtn onClick={p.onNext}>{prob < 3 ? `문제 ${prob + 1} · ${FACTORY_TEXT[(prob + 1) as ProblemId].title} →` : '산업단지로 →'}</SiteBtn>
-          </div>
-        </>
-      );
-  }
+      }
+      compare={before && latest && <CompareView prob={prob} before={before} latest={latest} playing={p.playing} playT={p.playT} waitY={p.v3.waitY} />}
+      hit={p.playing ? null : predictionOf(prob, latest)}
+      pass={!!v?.pass}
+      notYet={v && !v.pass ? v.headline + '.' : null}
+      fig={<PrincipleFig prob={prob} />}
+      nextLabel={prob < 3 ? `문제 ${prob + 1} · ${FACTORY_TEXT[(prob + 1) as ProblemId].title} →` : '산업단지로 →'}
+      patch={p.patch}
+      onRunBefore={p.onRunBefore}
+      onRunFix={p.onRunFix}
+      onStep={p.onStep}
+      onRecord={p.onRecord}
+      onNext={p.onNext}
+    />
+  );
 }
 
 /* --- 해결 · 원리: the principle card's figure, per problem -------------------------------------- */
@@ -795,7 +706,7 @@ function PrincipleFig({ prob }: { prob: ProblemId }) {
         <text x={120} y={102} className={lg.figTxt}>
           r = 221 mm (몸통 → 손끝)
         </text>
-        <text x={60} y={60} className={lg.figTxt}>
+        <text x={56} y={24} className={lg.figTxt}>
           J1 · θ (1° = 0.0175 rad → 3.9 mm)
         </text>
         <ArrowDef />

@@ -68,25 +68,12 @@ import type { UrdfRobot } from '@/engine/robot/urdf';
 import LearnStage, { type LearnScene, type ViewPose } from '../stage/LearnStage';
 import PalletCell, { PalletPlayback, type PalletDim, type PalletOverlay } from './PalletCell';
 import {
-  Ask,
-  Boss,
-  Calc,
-  Cause,
-  Done,
-  ArrowDef,
-  Head,
-  Measure,
-  PredictHints,
-  PredictionCheck,
-  RecordSheet,
-  SiteBtn,
-  Goals,
   answeredUpTo,
-  bodyClass,
-  calcOk,
-  causeTodo,
+  ArrowDef,
   fmt,
   freshFlow,
+  RecordSheet,
+  SitePanel,
   type FlowState,
   type MeasureRow,
 } from './SiteFlow';
@@ -599,160 +586,86 @@ function programLine(p: LogiProblem): string {
 const predictionOf = (sl: StackScore | null) => (!sl ? null : sl.pass ? 0 : sl.stopped || sl.slipped ? 2 : 1);
 
 function Panel(p: PanelProps) {
-  const { prob, st, busy, sb, sl, rows } = p;
+  const { prob, st, sb, sl, rows } = p;
   const T = LOGI_TEXT[prob];
   const { runs } = st;
   const failure = runs.before?.failure;
-  switch (st.step) {
-    case 'brief':
-      return (
-        <>
-          <Head eyebrow={`${T.day} · 작업 지시서 ${T.order}`} title={T.orderTitle} solved={p.solved} />
-          <div className={bodyClass}>
-            <p className={css.story}>{T.brief}</p>
-            <Boss name="박 반장" line={T.boss} />
-            <div className={lg.order}>
-              <header>
-                작업 기준 <span>{T.order}</span>
-              </header>
-              <dl>
-                <dt>상자</dt>
-                <dd>
-                  {PBOX.sx} × {PBOX.sy} × {PBOX.h} mm, {prob === 2 ? HEAVY_G : PBOX.massG} g
-                </dd>
-                <dt>쌓기</dt>
-                <dd>한 층 4개 × 3층 = {N_BOXES}개</dd>
-                {prob === 2 && (
-                  <>
-                    <dt>시간</dt>
-                    <dd>{TIME_LIMIT_S} s 안에</dd>
-                  </>
-                )}
-                <dt>상자 상태</dt>
-                <dd>
-                  찌그러짐 {PRESS_OK_MM} mm · 떨어뜨림 {DROP_OK_MM} mm 이하
-                </dd>
-                <dt>위치</dt>
-                <dd>
-                  팔레트 제자리에서 {OK_TOL.xyMm} mm, 기울기 {OK_TOL.tiltDeg}° 안
-                </dd>
-              </dl>
-            </div>
-            <p className={lg.note}>
-              <b>작업 프로그램</b> · {programLine(prob)}
-            </p>
-            <Goals goals={T.goals} />
-            <p className={lg.note}>지금 값 그대로 한 번 가동해 보세요. 무엇이 문제인지는 그다음에 찾아요.</p>
-          </div>
-          <div className={css.foot}>
-            <span />
-            <SiteBtn disabled={busy} onClick={p.onRunBefore}>
-              {busy ? '계산 중…' : '▶ 라인 가동'}
-            </SiteBtn>
-          </div>
-        </>
-      );
-    case 'run':
-      return (
-        <>
-          <Head eyebrow="가동 결과" title={failure ? `${(failure.box ?? 0) + 1}번 상자에서 멈췄어요` : '끝까지 쌓았어요'} solved={p.solved} />
-          <div className={bodyClass}>
-            <p className={css.story}>{T.happened} 경광등이 빨갛게 켜졌어요.</p>
-            <Ask ask={T.ask} />
-            <p className={`${lg.note} ${lg.siteNote}`}>
-              <b>찾아보기</b> · 아래 기록에서 시각을 누르면 그 순간으로 가요. 멈추기 직전에 무엇을 했나요?
-            </p>
-            <Events run={runs.before} onSeek={p.onSeek} />
-          </div>
-          <div className={css.foot}>
-            <span />
-            <SiteBtn onClick={() => p.onStep('cause')}>원인 찾으러 가기 →</SiteBtn>
-          </div>
-        </>
-      );
-    case 'cause': {
-      const todo = causeTodo(T, st, rows.length);
-      return (
-        <>
-          <Head eyebrow="원인 찾기 · 측정" title={T.question} solved={p.solved} />
-          <div className={bodyClass}>
-            <p className={css.story}>{T.look}</p>
-            <Measure rows={rows} meas={st.meas} onMeasure={() => p.patch((x) => ({ meas: Math.min(rows.length, x.meas + 1) }))} />
-            {prob === 2 && st.meas >= 4 && runs.before && <AccGraph run={runs.before} />}
-            <Cause T={T} st={st} all={st.meas >= rows.length} patch={p.patch} />
-          </div>
-          <div className={css.foot}>
-            <span className={lg.footNote}>{todo}</span>
-            <SiteBtn disabled={todo !== ''} onClick={() => p.onStep('fix')}>
-              값 고치러 가기 →
-            </SiteBtn>
-          </div>
-        </>
-      );
-    }
-    case 'fix': {
-      const ok = st.calcChecked && calcOk(T, st.calc);
-      return (
-        <>
-          <Head eyebrow={ok ? '조작반 · 이 문제에 필요한 값만' : '값 고치기 · 먼저 계산'} title={prob === 1 ? '놓는 높이를 고쳐요' : prob === 2 ? '속도를 나눠 정해요' : '기준점을 다시 잡아요'} solved={p.solved} />
-          <div className={bodyClass}>
-            <Calc T={T} st={st} patch={p.patch} />
-            {ok && (
+  return (
+    <SitePanel
+      T={T}
+      st={st}
+      boss="박 반장"
+      level={p.level}
+      solved={p.solved}
+      busy={p.busy}
+      order={
+        <div className={lg.order}>
+          <header>
+            작업 기준 <span>{T.order}</span>
+          </header>
+          <dl>
+            <dt>상자</dt>
+            <dd>
+              {PBOX.sx} × {PBOX.sy} × {PBOX.h} mm, {prob === 2 ? HEAVY_G : PBOX.massG} g
+            </dd>
+            <dt>쌓기</dt>
+            <dd>한 층 4개 × 3층 = {N_BOXES}개</dd>
+            {prob === 2 && (
               <>
-                <p className={`${lg.note} ${lg.siteNote}`}>{T.calc.after}</p>
-                {prob === 1 && <Hmi1 v={st.values as StackValues} on={(values) => p.patch({ values })} />}
-                {prob === 2 && <Hmi2 v={st.values as SpeedValues} on={(values) => p.patch({ values })} />}
-                {prob === 3 && <Hmi3 v={st.values as RefValues} on={(values) => p.patch({ values })} />}
-                <PredictHints T={T} st={st} patch={p.patch} />
+                <dt>시간</dt>
+                <dd>{TIME_LIMIT_S} s 안에</dd>
               </>
             )}
-          </div>
-          <div className={css.foot}>
-            <span className={lg.footNote}>{!ok ? '계산이 맞으면 조작반이 열려요' : st.pred === null ? '먼저 결과를 예상해 보세요' : ''}</span>
-            <SiteBtn disabled={busy || !ok || st.pred === null} onClick={p.onRunFix}>
-              {busy ? '계산 중…' : '▶ 다시 가동'}
-            </SiteBtn>
-          </div>
-        </>
-      );
-    }
-    case 'compare':
-      return (
+            <dt>상자 상태</dt>
+            <dd>
+              찌그러짐 {PRESS_OK_MM} mm · 떨어뜨림 {DROP_OK_MM} mm 이하
+            </dd>
+            <dt>위치</dt>
+            <dd>
+              팔레트 제자리에서 {OK_TOL.xyMm} mm, 기울기 {OK_TOL.tiltDeg}° 안
+            </dd>
+          </dl>
+        </div>
+      }
+      program={programLine(prob)}
+      runTitle={failure ? `${(failure.box ?? 0) + 1}번 상자에서 멈췄어요` : '끝까지 쌓았어요'}
+      runResult={
         <>
-          <Head eyebrow="다시 가동 · 전과 후" title={sl?.pass ? '기준을 모두 넘었어요' : '아직 기준에 못 미쳐요'} solved={p.solved} />
-          <div className={bodyClass}>
-            {sb && sl && <Compare prob={prob} sb={sb} sl={sl} before={runs.before!} latest={runs.latest!} />}
-            <PredictionCheck T={T} st={st} hit={predictionOf(sl)} patch={p.patch} />
-            {sl && !sl.pass && <p className={`${lg.note} ${lg.siteNote}`}>{whyNotYet(prob, sl)}</p>}
-            {prob === 2 && runs.latest && <AccGraph run={runs.latest} />}
-            {prob !== 2 && <Events run={runs.latest} onSeek={p.onSeek} />}
-          </div>
-          <div className={css.foot}>
-            <button type="button" className={css.ghost} onClick={() => p.onStep('fix')}>
-              ← 값 다시 고치기
-            </button>
-            <SiteBtn disabled={!sl?.pass} onClick={() => p.onStep('done')}>
-              해결 확인 →
-            </SiteBtn>
-          </div>
+          <p className={lg.secText}>기록에서 시각을 누르면 그 순간으로 가요. 멈추기 직전에 무엇을 했나요?</p>
+          <Events run={runs.before} onSeek={p.onSeek} />
         </>
-      );
-    case 'done':
-      return (
+      }
+      playing={false}
+      rows={rows}
+      measureExtra={prob === 2 && st.meas >= 4 && runs.before ? <AccGraph run={runs.before} /> : null}
+      fixTitle={prob === 1 ? '놓는 높이를 고쳐요' : prob === 2 ? '속도를 나눠 정해요' : '기준점을 다시 잡아요'}
+      hmi={
         <>
-          <Head eyebrow="해결 · 원리 카드" title={`${T.title} — 해결했어요`} solved={p.solved} />
-          <div className={bodyClass}>
-            <Done T={T} st={st} level={p.level} fig={<PrincipleFig prob={prob} />} patch={p.patch} />
-          </div>
-          <div className={css.foot}>
-            <button type="button" className={css.ghost} onClick={p.onRecord}>
-              실습 기록 · 인쇄
-            </button>
-            <SiteBtn onClick={p.onNext}>{prob < 3 ? `문제 ${prob + 1} · ${LOGI_TEXT[(prob + 1) as LogiProblem].title} →` : '산업단지로 →'}</SiteBtn>
-          </div>
+          {prob === 1 && <Hmi1 v={st.values as StackValues} on={(values) => p.patch({ values })} />}
+          {prob === 2 && <Hmi2 v={st.values as SpeedValues} on={(values) => p.patch({ values })} />}
+          {prob === 3 && <Hmi3 v={st.values as RefValues} on={(values) => p.patch({ values })} />}
         </>
-      );
-  }
+      }
+      compare={
+        <>
+          {sb && sl && <Compare prob={prob} sb={sb} sl={sl} before={runs.before!} latest={runs.latest!} />}
+          {prob === 2 && runs.latest && <AccGraph run={runs.latest} />}
+          {prob !== 2 && <Events run={runs.latest} onSeek={p.onSeek} />}
+        </>
+      }
+      hit={predictionOf(sl)}
+      pass={!!sl?.pass}
+      notYet={sl && !sl.pass ? whyNotYet(prob, sl) : null}
+      fig={<PrincipleFig prob={prob} />}
+      nextLabel={prob < 3 ? `문제 ${prob + 1} · ${LOGI_TEXT[(prob + 1) as LogiProblem].title} →` : '산업단지로 →'}
+      patch={p.patch}
+      onRunBefore={p.onRunBefore}
+      onRunFix={p.onRunFix}
+      onStep={p.onStep}
+      onRecord={p.onRecord}
+      onNext={p.onNext}
+    />
+  );
 }
 
 function whyNotYet(prob: LogiProblem, s: StackScore): string {
