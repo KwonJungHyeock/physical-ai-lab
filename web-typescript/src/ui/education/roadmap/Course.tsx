@@ -327,7 +327,7 @@ function Hero({
             장비 선택하기
           </button>
           <button type="button" className={css.btnLine} onClick={onLab} title="산업 현장을 골라 문제를 고치며 원리를 배워요">
-            ← 로봇 산업단지
+            ← 로봇 시티
           </button>
         </div>
       </div>

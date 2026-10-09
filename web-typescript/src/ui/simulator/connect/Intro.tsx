@@ -2,7 +2,7 @@
 
 /**
  * The start of the program: the company mark draws itself, the name comes in, and a window under it
- * goes through the places robots work — the 산업단지 and its six sites, pictures of the app's own 3D
+ * goes through the places robots work — the 로봇 시티 and its sites, pictures of the app's own 3D
  * scenes (tools/build/intro-scenes.mjs) — each with one line of what the robot does there. The bar
  * under them follows the real loading (robot description,
  * the model files, then the 3D scene), easing on between the steps so it never stands still. When both
@@ -20,7 +20,7 @@ import css from './intro.module.css';
 
 /** Where robots work: the pictures the window goes through, with what the robot does there. */
 const SCENES = [
-  { id: 'park', name: '로봇 산업단지', line: '일곱 현장에서 로봇이 일해요 — 하나씩 들어가 배워요' },
+  { id: 'park', name: '로봇 시티', line: '아카데미에서 배우고, 일곱 현장에서 로봇으로 문제를 풀어요' },
   { id: 'factory', name: '스마트 공장', line: '센서가 알린 상자를 컨베이어에서 집어 옮겨요' },
   { id: 'logistics', name: '물류 센터', line: '상자를 팔레트에 한 층씩 정확히 쌓아요' },
   { id: 'bio', name: '바이오 실험실', line: '시험관을 정해진 칸에 1 mm 안으로 꽂아요' },

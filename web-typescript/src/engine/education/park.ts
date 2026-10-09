@@ -1,24 +1,24 @@
 /**
- * 교육 홈 · 로봇 산업단지: the course as a walk through one industrial park. Seven sites in a fixed
- * order, each a scene with three problems to fix; a site opens when the one before it is finished
- * (a teacher can open them all). What makes a site finished:
- *  - 로봇 교육센터: the 1단원 차시 (the existing lessons — the basics before any site);
- *  - 스마트 공장: the three conveyor problems of the lab (lab/problems.ts);
- *  - 물류 센터: the three palletizing problems (lab/pallet.ts);
- *  - 바이오 실험실: the three tube-moving problems (lab/bio.ts);
- *  - 스마트팜: the three tomato-sorting problems (lab/farm.ts);
- *  - 서비스 카페: the three serving problems (lab/cafe.ts);
- *  - AI 연구소: the three AI-kit problems (lab/ai.ts) — the last site.
- * Everything is done with the myCobot 280 RDK X5 (the product the school has); other products get
- * their own problems when they come.
+ * 교육 홈 · 로봇 시티: the course as one island city (the map: ui/education/map/world). Nine places:
+ *  - 로봇 아카데미 (가운데, 'center'): the 8학문 28차시 theory course; finished = the 1단원 차시 (the
+ *    basics before any field);
+ *  - seven theme districts, each a real field where robots work, with a social problem and three
+ *    problems the student fixes in its lab: 스마트팩토리 (lab/problems.ts), 물류 허브 (lab/pallet.ts),
+ *    바이오·헬스케어 (lab/bio.ts), 스마트팜 (lab/farm.ts), 스마트시티 (lab/cafe.ts), 피지컬 AI 연구소
+ *    (lab/ai.ts), 에너지·자원순환 (lab/energy.ts);
+ *  - 디지털 트윈 관제센터 ('data'): data science over every lab run (runLog.ts) and the sim ↔ robot twin.
+ * The academy is open from the start; the themes and the data centre open once its 1단원 is finished
+ * (a teacher can open them all). The practice robot is the myCobot 280 RDK X5 (what the school has);
+ * each district also names the robots that work in that field (`crew`) — arms, mobile manipulators,
+ * AGVs — which the map shows and which get their own problems as they come.
  * Each problem names the 단원 whose principle it teaches (the theory is in that 단원's PDF).
  */
 
 import { topicsOf, type CategoryId, type TopicId } from './catalog';
 
-export type SiteId = 'center' | 'factory' | 'logistics' | 'lab' | 'farm' | 'cafe' | 'ai';
+export type SiteId = 'center' | 'factory' | 'logistics' | 'lab' | 'farm' | 'cafe' | 'ai' | 'energy' | 'data';
 /** The problem-solving labs (one per site that has one). */
-export type LabId = 'factory' | 'logistics' | 'bio' | 'farm' | 'cafe' | 'ai';
+export type LabId = 'factory' | 'logistics' | 'bio' | 'farm' | 'cafe' | 'ai' | 'energy';
 
 export interface SiteProblem {
   title: string;
@@ -35,11 +35,16 @@ export interface Site {
   name: string;
   /** The industry, in a word or two. */
   kind: string;
+  /** The robot the student works with here. */
   robot: string;
   desc: string;
+  /** The social problem the field faces, one line (themes and the data centre). */
+  issue?: string;
+  /** The robots that work in this field (shown on the map and the card), the practice robot first. */
+  crew: readonly string[];
   color: string;
-  /** What the site's problems are, once it has screens: 'lessons' (1단원 차시), 'lab' (a problem-solving lab, `lab`), or null (준비 중). */
-  content: 'lessons' | 'lab' | null;
+  /** What the place holds: 'lessons' (the theory course), 'lab' (a problem-solving lab, `lab`), 'data' (the data centre), or null (준비 중). */
+  content: 'lessons' | 'lab' | 'data' | null;
   lab?: LabId;
   problems: readonly SiteProblem[];
 }
@@ -47,21 +52,24 @@ export interface Site {
 export const SITES: readonly Site[] = [
   {
     id: 'center',
-    name: '로봇 교육센터',
-    kind: '기초',
+    name: '로봇 아카데미',
+    kind: '로봇공학 이론',
     robot: 'myCobot 280',
-    desc: '로봇의 몸과 좌표부터 익히는 출발점이에요.',
-    color: '#7c8db0',
+    desc: '8학문 28차시로 로봇의 몸·움직임·제어·인식을 배우는 곳이에요. 1학문을 마치면 도시의 현장이 열려요.',
+    crew: ['myCobot 280'],
+    color: '#2f5be7',
     content: 'lessons',
     problems: [], // the 1단원 차시 (centerTopics)
   },
   {
     id: 'factory',
-    name: '스마트 공장',
-    kind: '제조',
+    name: '스마트팩토리',
+    kind: '제조 AI · 공정',
     robot: 'myCobot 280 + 컨베이어',
     desc: '컨베이어로 오는 상자를 집어 옮기는 라인이에요. 고장 난 공정을 값을 바꿔 고쳐요.',
-    color: '#2f5be7',
+    issue: '생산 인력이 줄고, 사람 손의 반복 작업에서 불량이 나와요.',
+    crew: ['myCobot 280', '컨베이어 · 비전 검사', '모바일 매니퓰레이터 (부품 공급)', 'myAGV (공정 간 운반)'],
+    color: '#2f6fe7',
     content: 'lab',
     lab: 'factory',
     problems: [
@@ -72,11 +80,13 @@ export const SITES: readonly Site[] = [
   },
   {
     id: 'logistics',
-    name: '물류 센터',
-    kind: '물류',
+    name: '물류 허브',
+    kind: '물류 · 팔레타이징',
     robot: 'myCobot 280 + 흡착 펌프',
     desc: '컨베이어로 오는 상자를 팔레트에 차곡차곡 쌓아요 (팔레타이징).',
-    color: '#d9622b',
+    issue: '택배 물량은 늘고, 무거운 상자를 드는 반복 작업으로 다치는 사람이 많아요.',
+    crew: ['myCobot 280 + 흡착', 'myPalletizer (4축 적재)', 'myAGV (팔레트 운반)', '항만 크레인'],
+    color: '#e0662b',
     content: 'lab',
     lab: 'logistics',
     problems: [
@@ -87,11 +97,13 @@ export const SITES: readonly Site[] = [
   },
   {
     id: 'lab',
-    name: '바이오 실험실',
-    kind: '의료 · 실험',
+    name: '바이오·헬스케어',
+    kind: '실험 자동화 · 의료',
     robot: 'myCobot 280 + 어댑티브 그리퍼',
     desc: '시료가 든 시험관을 쏟지 않고, 정확히, 부딪히지 않게 옮겨요.',
-    color: '#12935f',
+    issue: '감염 위험이 있는 시료를 사람이 다루고, 반복 실험에서 작은 오차가 쌓여요.',
+    crew: ['myCobot 280 + 그리퍼', '실험실 협동로봇', '배송 로봇 (검체 운반)'],
+    color: '#d23c6a',
     content: 'lab',
     lab: 'bio',
     problems: [
@@ -102,11 +114,13 @@ export const SITES: readonly Site[] = [
   },
   {
     id: 'farm',
-    name: '스마트팜 · 식품',
-    kind: '농업 · 식품',
+    name: '스마트팜',
+    kind: '수확 · 선별 자동화',
     robot: 'myCobot 280 + 카메라 · 어댑티브 그리퍼',
     desc: '카메라로 익은 방울토마토만 찾아, 터뜨리지 않고 포장해요.',
-    color: '#3a9b3a',
+    issue: '농촌은 고령화로 일손이 모자라고, 수확 시기를 놓치면 작물이 버려져요.',
+    crew: ['myCobot 280 + 카메라', '수확용 모바일 매니퓰레이터', '자율 트랙터'],
+    color: '#3f9b3a',
     content: 'lab',
     lab: 'farm',
     problems: [
@@ -117,11 +131,13 @@ export const SITES: readonly Site[] = [
   },
   {
     id: 'cafe',
-    name: '서비스 카페',
-    kind: '서비스',
+    name: '스마트시티',
+    kind: '서비스 로봇 · 돌봄',
     robot: 'myCobot 280 + 어댑티브 그리퍼',
-    desc: '음료를 흘리지 않고, 손님 손 앞에서 멈춰, 무거운 병도 건네요.',
-    color: '#b4530f',
+    desc: '거리의 카페에서 음료를 흘리지 않고, 손님 손 앞에서 멈춰, 무거운 병도 건네요.',
+    issue: '고령 사회로 돌봄·서비스 일손이 모자라고, 로봇은 사람 곁에서 안전해야 해요.',
+    crew: ['myCobot 280 (서빙)', '배달 로봇', '돌봄 보조 모바일 매니퓰레이터'],
+    color: '#e39a1c',
     content: 'lab',
     lab: 'cafe',
     problems: [
@@ -132,11 +148,13 @@ export const SITES: readonly Site[] = [
   },
   {
     id: 'ai',
-    name: 'AI 연구소',
-    kind: '종합 미션',
+    name: '피지컬 AI 연구소',
+    kind: 'AI 인식 · 학습',
     robot: 'myCobot 280 + AI 키트 (카메라 · 흡착)',
     desc: '보고 판단해서 스스로 집어 놓아요. 배운 것을 모두 써요.',
-    color: '#7a3fd1',
+    issue: '로봇이 처음 보는 물건과 바뀐 환경에서도 스스로 판단해야 해요.',
+    crew: ['myCobot 280 + AI 키트', 'mechArm (시연 학습)', '모바일 매니퓰레이터', '드론'],
+    color: '#7a4fe0',
     content: 'lab',
     lab: 'ai',
     problems: [
@@ -144,6 +162,35 @@ export const SITES: readonly Site[] = [
       { title: '시연을 보고 따라 하기', fix: '궤적 재생과 정책', units: ['8'], ready: true },
       { title: '처음 보는 물건', fix: '파이프라인 · 높이와 시차', units: ['6', '7', '8'], ready: true },
     ],
+  },
+  {
+    id: 'energy',
+    name: '에너지·자원순환',
+    kind: '재활용 선별 · 탄소',
+    robot: 'myCobot 280 + AI 키트 (카메라 · 흡착)',
+    desc: '섞여 들어온 재활용품을 카메라로 알아보고, 재질별 분류함에 빠르고 정확하게 나눠요.',
+    issue: '분리배출이 잘못되어 재활용률이 낮고, 선별장 작업은 위험하고 느려요.',
+    crew: ['myCobot 280 + AI 키트', '선별 로봇 라인', '수거 트럭 · 풍력 · 태양광'],
+    color: '#1f9e6e',
+    content: 'lab',
+    lab: 'energy',
+    problems: [
+      { title: '투명 PET가 안 보인다', fix: '채도 · 밝기 문턱값', units: ['7'], ready: true },
+      { title: '빨리 하면 캔이 떨어진다', fix: '속도와 처리량의 균형', units: ['3', '4'], ready: true },
+      { title: '겹쳐 놓인 쓰레기', fix: '집는 순서 · 높이', units: ['6', '7'], ready: true },
+    ],
+  },
+  {
+    id: 'data',
+    name: '디지털 트윈 관제센터',
+    kind: '데이터 사이언스',
+    robot: '모든 현장의 기록',
+    desc: '모든 현장에서 돌린 실습 기록을 모아 그래프로 비교하고, 병목을 찾고, 시뮬과 실제 로봇을 견줘요.',
+    issue: '현장 데이터는 쌓이는데, 읽고 개선에 쓰는 사람이 부족해요.',
+    crew: ['디지털 트윈', '현장 센서 · 로봇 기록'],
+    color: '#0fa3b8',
+    content: 'data',
+    problems: [],
   },
 ];
 
@@ -176,18 +223,19 @@ export const siteFinished = (id: SiteId, p: ParkProgress) => {
 
 export type SiteState = 'done' | 'open' | 'locked';
 
-/** Done, open (the one before is finished, or all are opened), or locked. */
+/** The places the theme labs count in (everything but the academy and the data centre). */
+export const THEMES: readonly Site[] = SITES.filter((s) => s.content === 'lab');
+
+/** Done, open (the academy always; the rest once the academy is finished, or all are opened), or locked. */
 export function siteStates(p: ParkProgress, allOpen = false): Record<SiteId, SiteState> {
   const out = {} as Record<SiteId, SiteState>;
-  SITES.forEach((s, i) => {
-    const prevDone = i === 0 || siteFinished(SITES[i - 1].id, p);
-    out[s.id] = siteFinished(s.id, p) ? 'done' : prevDone || allOpen ? 'open' : 'locked';
-  });
+  const base = siteFinished('center', p);
+  for (const s of SITES) out[s.id] = siteFinished(s.id, p) ? 'done' : s.id === 'center' || base || allOpen ? 'open' : 'locked';
   return out;
 }
 
-/** The site to go to next: the first one open and not finished (the 교육센터 when nothing is done). */
+/** The place to go to next: the academy until its 1단원 is done, then the first theme not finished, then the data centre. */
 export function currentSite(p: ParkProgress): SiteId {
-  const st = siteStates(p);
-  return SITES.find((s) => st[s.id] === 'open')?.id ?? SITES[SITES.length - 1].id;
+  if (!siteFinished('center', p)) return 'center';
+  return THEMES.find((s) => !siteFinished(s.id, p))?.id ?? 'data';
 }

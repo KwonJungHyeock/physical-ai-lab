@@ -55,6 +55,7 @@ import { siteStepIndex, SITE_STEPS, type SiteStepId } from '@/engine/education/l
 import type { StudyLevel } from '@/engine/education/roadmap';
 import type { ChainSegment } from '@/engine/robot/kinematics';
 import type { UrdfRobot } from '@/engine/robot/urdf';
+import { logRun } from '@/engine/education/runLog';
 
 import LearnStage, { type LearnScene, type ViewPose } from '../stage/LearnStage';
 import FarmCell, { FarmPlayback, type FarmMarker, type FarmOverlay } from './FarmCell';
@@ -274,6 +275,7 @@ export default function FarmLab({ robot, chain, gripperRobot, hidden, level = 'h
           step: then,
           reached: Math.max(x.reached, siteStepIndex(then)),
         }));
+        if (which === 'latest') logRun({ lab: 'farm', problem: p, pass: sc.pass, durationS: run.durationS, values: v, checks: sc.checks });
         if (which === 'latest' && sc.pass) setSolved((x) => ({ ...x, [p]: true }));
         setBusy(false);
       }, 30);
@@ -396,7 +398,7 @@ export default function FarmLab({ robot, chain, gripperRobot, hidden, level = 'h
     <div className={`${css.lab} ${lg.farm}`} hidden={hidden}>
       <header className={css.bar}>
         <button type="button" className={css.back} onClick={onBack}>
-          ← 산업단지
+          ← 로봇 시티
         </button>
         <b className={css.chapter}>
           <i className={lg.dot} aria-hidden />
@@ -553,7 +555,7 @@ export default function FarmLab({ robot, chain, gripperRobot, hidden, level = 'h
           pass={!!sl?.pass}
           notYet={sl && !sl.pass ? sl.headline + '.' : null}
           fig={<PrincipleFig prob={prob} />}
-          nextLabel={prob < 3 ? `문제 ${prob + 1} · ${FARM_TEXT[(prob + 1) as FarmProblem].title} →` : '산업단지로 →'}
+          nextLabel={prob < 3 ? `문제 ${prob + 1} · ${FARM_TEXT[(prob + 1) as FarmProblem].title} →` : '로봇 시티로 →'}
           patch={(ch) => patch(prob, ch)}
           onRunBefore={() => go('before')}
           onRunFix={() => go('latest')}

@@ -53,6 +53,7 @@ import type { StudyLevel } from '@/engine/education/roadmap';
 import type { ChainSegment } from '@/engine/robot/kinematics';
 import { toolRpyDeg } from '@/engine/robot/tool';
 import type { UrdfRobot } from '@/engine/robot/urdf';
+import { logRun } from '@/engine/education/runLog';
 
 import LearnStage, { type LearnScene, type ViewPose } from '../stage/LearnStage';
 import BioCell, { BioPlayback, type BioMarker, type BioOverlay } from './BioCell';
@@ -258,6 +259,7 @@ export default function BioLab({ robot, chain, gripperRobot, hidden, level = 'hs
           step: then,
           reached: Math.max(x.reached, siteStepIndex(then)),
         }));
+        if (which === 'latest') logRun({ lab: 'bio', problem: p, pass: sc.pass, durationS: run.durationS, values: v, checks: sc.checks });
         if (which === 'latest' && sc.pass) setSolved((x) => ({ ...x, [p]: true }));
         setBusy(false);
       }, 30);
@@ -393,7 +395,7 @@ export default function BioLab({ robot, chain, gripperRobot, hidden, level = 'hs
     <div className={`${css.lab} ${lg.bio}`} hidden={hidden}>
       <header className={css.bar}>
         <button type="button" className={css.back} onClick={onBack}>
-          ← 산업단지
+          ← 로봇 시티
         </button>
         <b className={css.chapter}>
           <i className={lg.dot} aria-hidden />
@@ -544,7 +546,7 @@ export default function BioLab({ robot, chain, gripperRobot, hidden, level = 'hs
           pass={!!sl?.pass}
           notYet={sl && !sl.pass ? sl.headline + '.' : null}
           fig={<PrincipleFig prob={prob} />}
-          nextLabel={prob < 3 ? `문제 ${prob + 1} · ${BIO_TEXT[(prob + 1) as BioProblem].title} →` : '산업단지로 →'}
+          nextLabel={prob < 3 ? `문제 ${prob + 1} · ${BIO_TEXT[(prob + 1) as BioProblem].title} →` : '로봇 시티로 →'}
           patch={(ch) => patch(prob, ch)}
           onRunBefore={() => go('before')}
           onRunFix={() => go('latest')}

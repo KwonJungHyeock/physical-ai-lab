@@ -822,7 +822,7 @@ export function RecordSheet({
       <div className={lg.record}>
         <header className={lg.recordHead}>
           <div>
-            <small>산업단지 · {site} · myCobot 280</small>
+            <small>로봇 시티 · {site} · myCobot 280</small>
             <b>실습 기록지</b>
           </div>
           <div className={lg.recordWho}>

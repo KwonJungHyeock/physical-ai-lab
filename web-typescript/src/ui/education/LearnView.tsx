@@ -6,16 +6,16 @@
  * and the 단원 in their three 대단원, fitted to the school's equipment, with a 단원 preview); a 차시 is one
  * lesson screen — the step bar on top (lesson/LessonBar), the 3D view with the activity panel
  * over it (stage/ControlOverlay), and a short card per step on the right (lesson/LessonCards).
- * The 교육 tab opens on the 로봇 산업단지 (map/ParkView): seven industrial sites in order, each opening
- * when the one before it is finished — the 교육센터 is the 1단원 차시, the 스마트 공장 is lab/FactoryLab (a
- * working conveyor line to fix); 전체 차시 there opens the course home.
+ * The 교육 tab opens on the 로봇 시티 (map/ParkView): the 로봇 아카데미 (the 1학문 차시, and 전체 차시 for
+ * the whole course), seven theme places with their problem-solving labs (lab/*Lab), and the 관제센터
+ * (data/DataCenter) over every lab run. A lesson's 정리 card links to the places that use its 학문.
  */
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { TOPIC_BY_ID, TOPICS, type StepKey, type TopicId } from '@/engine/education/catalog';
 import { DEFAULT_OWNED, PRODUCTS, type ProductId, type StudyLevel } from '@/engine/education/roadmap';
-import type { LabId } from '@/engine/education/park';
+import type { LabId, SiteId } from '@/engine/education/park';
 import { forwardKinematicsFrames, type ChainSegment } from '@/engine/robot/kinematics';
 import type { UrdfRobot } from '@/engine/robot/urdf';
 import { workspaceProfile, type WorkspaceProfile } from '@/engine/physics/workspace';
@@ -30,6 +30,7 @@ import BioLab from './lab/BioLab';
 import FarmLab from './lab/FarmLab';
 import CafeLab from './lab/CafeLab';
 import AiLab from './lab/AiLab';
+import DataCenter from './data/DataCenter';
 import FinalExam from './lab/FinalExam';
 import LogisticsLab from './lab/LogisticsLab';
 import ParkView from './map/ParkView';
@@ -52,6 +53,7 @@ const BIO_KEY = 'lab-solved-bio';
 const FARM_KEY = 'lab-solved-farm';
 const CAFE_KEY = 'lab-solved-cafe';
 const AI_KEY = 'lab-solved-ai';
+const ENERGY_KEY = 'lab-solved-energy';
 const FIRST: TopicId = TOPICS[0].id;
 /** Stable "no results yet" (a fresh {} each render would re-render the memoised panel). */
 const NO_RESULTS: Partial<Record<StepKey, ResultRow>> = {};
@@ -107,7 +109,7 @@ const stepFor = (p: PageId, cur: StepView): StepView => (isActivity(p) || p === 
 export default function LearnView({ robot, chain, gripperRobot, real, hidden }: Props) {
   const [topicId, setTopicId] = useState<TopicId>(FIRST);
   /** The park (front page), the course, a lesson, or the problem-solving lab (opened once, then kept). */
-  const [screen, setScreen] = useState<'map' | 'course' | 'topic' | 'lab' | 'logistics' | 'bio' | 'farm' | 'cafe' | 'ai' | 'final'>('map');
+  const [screen, setScreen] = useState<'map' | 'course' | 'topic' | 'lab' | 'logistics' | 'bio' | 'farm' | 'cafe' | 'ai' | 'energy' | 'data' | 'final'>('map');
   /** 대단원 마무리 평가: mounted the first time it is opened. */
   const [finalSeen, setFinalSeen] = useState(false);
   const openFinal = useCallback(() => {
@@ -119,6 +121,18 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
   const [farmSeen, setFarmSeen] = useState(false);
   const [cafeSeen, setCafeSeen] = useState(false);
   const [aiSeen, setAiSeen] = useState(false);
+  const [energySeen, setEnergySeen] = useState(false);
+  const [dataSeen, setDataSeen] = useState(false);
+  /** A place to open on the map (a lesson's 이 원리를 쓰는 현장). */
+  const [mapPick, setMapPick] = useState<{ id: SiteId; n: number } | null>(null);
+  const openData = useCallback(() => {
+    setDataSeen(true);
+    setScreen('data');
+  }, []);
+  const toSite = useCallback((id: SiteId) => {
+    setMapPick((p) => ({ id, n: (p?.n ?? 0) + 1 }));
+    setScreen('map');
+  }, []);
   /** Where a lesson goes back to: the page it was opened from. */
   const [lessonFrom, setLessonFrom] = useState<'map' | 'course'>('course');
   /** The lab's problems solved so far (1 · 2 · 3), kept between visits. */
@@ -176,6 +190,15 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
       return next;
     });
   }, []);
+  const [energySolved, setEnergySolved] = useState<Partial<Record<1 | 2 | 3, boolean>>>({});
+  const onEnergySolved = useCallback((p: 1 | 2 | 3) => {
+    setEnergySolved((x) => {
+      if (x[p]) return x;
+      const next = { ...x, [p]: true };
+      writeJson(ENERGY_KEY, next);
+      return next;
+    });
+  }, []);
   const [labSeen, setLabSeen] = useState(false);
   const openLab = useCallback(() => {
     setLabSeen(true);
@@ -197,6 +220,9 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
     } else if (lab === 'ai') {
       setAiSeen(true);
       setScreen('ai');
+    } else if (lab === 'energy') {
+      setEnergySeen(true);
+      setScreen('energy');
     } else {
       setLabSeen(true);
       setScreen('lab');
@@ -249,6 +275,7 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
     setFarmSolved(readJson(FARM_KEY, {}));
     setCafeSolved(readJson(CAFE_KEY, {}));
     setAiSolved(readJson(AI_KEY, {}));
+    setEnergySolved(readJson(ENERGY_KEY, {}));
     const r = readJson<Partial<ResumeSpot> | null>(RESUME_KEY, null);
     if (r && TOPIC_BY_ID.has(r.topic as TopicId) && PAGES.includes(r.page as PageId)) setResume({ topic: r.topic as TopicId, page: r.page as PageId });
   }, []);
@@ -349,7 +376,10 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
     },
     [choose],
   );
-  const progress = useMemo(() => ({ done, solved: { factory: labSolved, logistics: logiSolved, bio: bioSolved, farm: farmSolved, cafe: cafeSolved, ai: aiSolved } }), [done, labSolved, logiSolved, bioSolved, farmSolved, cafeSolved, aiSolved]);
+  const progress = useMemo(
+    () => ({ done, solved: { factory: labSolved, logistics: logiSolved, bio: bioSolved, farm: farmSolved, cafe: cafeSolved, ai: aiSolved, energy: energySolved } }),
+    [done, labSolved, logiSolved, bioSolved, farmSolved, cafeSolved, aiSolved, energySolved],
+  );
 
   const topic = TOPIC_BY_ID.get(topicId)!;
   const Panel = PANELS[topicId];
@@ -358,15 +388,16 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
   return (
     <>
       <ParkView
-        robot={robot}
-        chain={chain}
         progress={progress}
         hidden={hidden || screen !== 'map'}
         onTopic={fromMap}
         onLab={openSiteLab}
         onCourse={() => setScreen('course')}
         onFinal={openFinal}
+        onData={openData}
+        pick={mapPick}
       />
+      {dataSeen && <DataCenter hidden={hidden || screen !== 'data'} onBack={() => setScreen('map')} onOpenLab={(lab) => openSiteLab(lab)} />}
       {finalSeen && <FinalExam robot={robot} chain={chain} gripperRobot={gripperRobot} hidden={hidden || screen !== 'final'} onBack={() => setScreen('map')} />}
       <Course
         hidden={hidden || screen !== 'course'}
@@ -434,7 +465,7 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
             </div>
           </section>
           <aside className={css.panel} aria-label={`${topic.title} 수업 카드`}>
-            <LessonCards key={topicId} topic={topic} page={page} onPage={setPage} results={results[topicId] ?? NO_RESULTS} onChecked={() => markDone(topicId)} level={level} onTopic={(t) => choose(t)} />
+            <LessonCards key={topicId} topic={topic} page={page} onPage={setPage} results={results[topicId] ?? NO_RESULTS} onChecked={() => markDone(topicId)} level={level} onTopic={(t) => choose(t)} onSite={toSite} />
           </aside>
         </div>
       </SymbolsProvider>

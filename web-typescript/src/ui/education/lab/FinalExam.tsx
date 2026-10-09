@@ -159,10 +159,10 @@ export default function FinalExam({ robot, chain, gripperRobot, hidden, onBack }
         <div className={fx.hub} hidden={hidden}>
           <header className={fx.hubBar}>
             <button type="button" className={css.back} onClick={onBack}>
-              ← 산업단지
+              ← 로봇 시티
             </button>
             <b>대단원 마무리 평가</b>
-            <span>산업단지 종합 점검 · myCobot 280</span>
+            <span>현장 종합 점검 · myCobot 280</span>
           </header>
           <div className={fx.hubBody}>
             <section className={fx.intro}>
@@ -717,7 +717,7 @@ function ResultSheet({ saved, onClose }: { saved: Saved; onClose(): void }) {
       <div className={lg.record}>
         <header className={lg.recordHead}>
           <div>
-            <small>로봇 산업단지 · myCobot 280</small>
+            <small>로봇 시티 · myCobot 280</small>
             <b>대단원 마무리 평가 결과지</b>
           </div>
           <div className={lg.recordWho}>

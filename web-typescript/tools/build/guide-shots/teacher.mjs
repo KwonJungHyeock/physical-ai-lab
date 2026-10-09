@@ -37,7 +37,7 @@ await btn('시뮬레이션만 (로봇 없이)').click({ timeout: 20000 }).catch(
 // The app always opens on the simulator: go to 교육.
 await page.getByRole('tab', { name: '교육' }).click();
 await settle(page, 4000);
-// The 교육 tab opens on the 로봇 산업단지: the course home is behind 전체 차시.
+// The 교육 tab opens on the 로봇 시티: the course home is behind 전체 차시.
 await page.getByRole('button', { name: '전체 차시', exact: true }).click().catch(() => {});
 await settle(page, 3000);
 

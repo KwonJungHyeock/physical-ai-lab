@@ -3,7 +3,8 @@
 /**
  * The world map's own pieces (procedural, not from the packs): block yards and plazas, farm soil
  * with furrows, greenhouses, the academy's eight 학문 pavilions, grassy hills, the data centre's
- * digital-twin hologram, and the myCobot 280 at each district on a pedestal in its colour.
+ * digital-twin hologram, the harbour (its crane at work, a ship alongside), and the robot arms of each
+ * place (the myCobot 280 the student uses, and the other arms of the field) on pedestals in its colour.
  */
 
 import { useGLTF } from '@react-three/drei';
@@ -29,7 +30,9 @@ import {
 } from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 
-import { DEFAULT_ARM } from '@/engine/robot/arms';
+import { SITE_BY_ID, type SiteId } from '@/engine/education/park';
+import { DEFAULT_ARM, armById } from '@/engine/robot/arms';
+import type { RobotModelId } from '@/engine/robot/catalog';
 import { buildChain } from '@/engine/robot/kinematics';
 import { parseUrdf, type UrdfRobot } from '@/engine/robot/urdf';
 
@@ -189,38 +192,41 @@ function shadowAll(o: Object3D) {
   });
 }
 
-/** One myCobot 280 (URDF z up → y up), idling slowly, on a pedestal ringed in its district's colour. */
-function MapArm({ robot, nodes, r, phase }: { robot: UrdfRobot; nodes: GlbNodes; r: MapRobot; phase: number }) {
+const armSpec = (r: MapRobot) => armById(r.arm ?? DEFAULT_ARM.id);
+const siteColor = (id: SiteId) => SITE_BY_ID.get(id)?.color ?? '#888';
+
+/** One arm (URDF z up → y up), idling slowly unless its place is locked, on a pedestal ringed in the place's colour. */
+function MapArm({ robot, nodes, r, phase, still }: { robot: UrdfRobot; nodes: GlbNodes; r: MapRobot; phase: number; still: boolean }) {
   const arm = useMemo(() => {
-    const a = buildArm(robot, buildChain(robot), nodes, {
-      dark: DEFAULT_ARM.dark,
-      flange: DEFAULT_ARM.flange,
-      textures: DEFAULT_ARM.textures,
-      flangeLink: DEFAULT_ARM.flangeLink,
-    });
+    const spec = armSpec(r);
+    const a = buildArm(robot, buildChain(robot), nodes, { dark: spec.dark, flange: spec.flange, textures: spec.textures, flangeLink: spec.flangeLink });
     shadowAll(a.root);
     a.setAngles(r.angles);
     return a;
   }, [robot, nodes, r]);
   const q = useRef(r.angles.slice());
   useFrame(({ clock }) => {
+    if (still) return;
     const t = clock.elapsedTime * 0.6 + phase;
     q.current[0] = r.angles[0] + 18 * Math.sin(t);
     q.current[1] = r.angles[1] + 8 * Math.sin(t * 1.3 + 1);
     q.current[2] = r.angles[2] + 10 * Math.sin(t * 0.9 + 2);
     arm.setAngles(q.current);
   });
-  const color = DISTRICTS.find((d) => d.id === r.district)?.color ?? '#888';
   const ped = r.pedestal ?? 0.7;
-  const h = r.district === 'academy' ? 0.7 : 0.18;
+  const h = r.district === 'center' ? 0.7 : ped ? 0.18 : 0;
   return (
     <group position={[r.x, r.y ?? 0, r.z]}>
-      <mesh position={[0, h / 2, 0]} material={mat('#f4f5f7', 0.6)} castShadow receiveShadow>
-        <cylinderGeometry args={[ped, ped * 1.08, h, 40]} />
-      </mesh>
-      <mesh position={[0, h + 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]} material={mat(color, 0.5)}>
-        <ringGeometry args={[ped * 0.82, ped * 0.97, 48]} />
-      </mesh>
+      {ped > 0 && (
+        <>
+          <mesh position={[0, h / 2, 0]} material={mat('#f4f5f7', 0.6)} castShadow receiveShadow>
+            <cylinderGeometry args={[ped, ped * 1.08, h, 40]} />
+          </mesh>
+          <mesh position={[0, h + 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]} material={mat(still ? '#a3abb8' : siteColor(r.district), 0.5)}>
+            <ringGeometry args={[ped * 0.82, ped * 0.97, 48]} />
+          </mesh>
+        </>
+      )}
       <group position={[0, h, 0]} rotation={[-Math.PI / 2, 0, (r.rot * Math.PI) / 180]} scale={r.s}>
         <primitive object={arm.root} />
       </group>
@@ -228,28 +234,46 @@ function MapArm({ robot, nodes, r, phase }: { robot: UrdfRobot; nodes: GlbNodes;
   );
 }
 
-function Robots({ robots }: { robots: readonly MapRobot[] }) {
+/** Every arm of one model: its URDF and meshes loaded once. */
+function ArmGroup({ id, robots, still }: { id: RobotModelId; robots: readonly MapRobot[]; still: ReadonlySet<SiteId> }) {
+  const spec = armById(id);
   const [robot, setRobot] = useState<UrdfRobot | null>(null);
   useEffect(() => {
-    void fetch(DEFAULT_ARM.urdf)
+    void fetch(spec.urdf)
       .then((res) => res.text())
       .then((t) => setRobot(parseUrdf(t)));
-  }, []);
-  const gltfs = useGLTF(DEFAULT_ARM.glbs as string[], DRACO) as unknown as {
-    nodes: GlbNodes;
-  }[];
+  }, [spec.urdf]);
+  const gltfs = useGLTF(spec.glbs as string[], DRACO) as unknown as { nodes: GlbNodes }[];
   const nodes = useMemo(() => Object.assign({}, ...gltfs.map((g) => g.nodes)) as GlbNodes, [gltfs]);
   if (!robot) return null;
   return (
     <>
       {robots.map((r, i) => (
-        <MapArm key={i} robot={robot} nodes={nodes} r={r} phase={i * 1.7} />
+        <MapArm key={i} robot={robot} nodes={nodes} r={r} phase={i * 1.7 + id.length} still={still.has(r.district)} />
       ))}
     </>
   );
 }
 
-/** A thin band in the district's colour just inside the kerb, so each block reads as one place. */
+function Robots({ robots, still }: { robots: readonly MapRobot[]; still: ReadonlySet<SiteId> }) {
+  const groups = useMemo(() => {
+    const m = new Map<RobotModelId, MapRobot[]>();
+    for (const r of robots) {
+      const id = r.arm ?? DEFAULT_ARM.id;
+      m.set(id, [...(m.get(id) ?? []), r]);
+    }
+    return [...m.entries()];
+  }, [robots]);
+  return (
+    <>
+      {groups.map(([id, rs]) => (
+        <ArmGroup key={id} id={id} robots={rs} still={still} />
+      ))}
+    </>
+  );
+}
+
+/** A thin band in the place's colour just inside the kerb, so each block reads as one place. */
 function Outline({ x, z, color }: { x: number; z: number; color: string }) {
   const geo = useMemo(() => {
     const o = 5.05;
@@ -270,27 +294,64 @@ function Slab({ x, z }: { x: number; z: number }) {
   return <mesh geometry={geo} position={[x, (SLAB_TOP - 0.1) / 2, z]} material={mat('#dedad2', 0.9)} receiveShadow />;
 }
 
-/** The harbour: a concrete quay out into the sea, a container crane over it, a cargo ship alongside. */
-function Harbour({ x, z }: { x: number; z: number }) {
-  const hull = useMemo(() => {
-    const sh = new Shape();
-    const L = 7.2;
-    const W = 1.5;
-    sh.moveTo(-W, -L)
-      .lineTo(W, -L)
-      .lineTo(W, L - 2)
-      .quadraticCurveTo(W, L, 0, L + 1.2)
-      .quadraticCurveTo(-W, L, -W, L - 2)
-      .closePath();
-    return new ExtrudeGeometry(sh, {
-      depth: 1.5,
-      bevelEnabled: true,
-      bevelSize: 0.12,
-      bevelThickness: 0.12,
-      bevelSegments: 2,
-    });
-  }, []);
+let hullGeo: ExtrudeGeometry | null = null;
+/** A cargo ship's hull (bow towards −z), shared. */
+function hull() {
+  if (hullGeo) return hullGeo;
+  const sh = new Shape();
+  const L = 7.2;
+  const W = 1.5;
+  sh.moveTo(-W, -L)
+    .lineTo(W, -L)
+    .lineTo(W, L - 2)
+    .quadraticCurveTo(W, L, 0, L + 1.2)
+    .quadraticCurveTo(-W, L, -W, L - 2)
+    .closePath();
+  hullGeo = new ExtrudeGeometry(sh, { depth: 1.5, bevelEnabled: true, bevelSize: 0.12, bevelThickness: 0.12, bevelSegments: 2 });
+  return hullGeo;
+}
+
+const BOX_COLORS = ['#d9622b', '#2f6fe7', '#3f9b3a', '#c23b3b', '#e3a21a', '#6b7c93'];
+
+/** A cargo ship: hull, red deck, white bridge at the stern; `boxes` rows of coloured containers on deck. */
+export function Ship({ boxes = 0 }: { boxes?: number }) {
+  return (
+    <group>
+      <mesh geometry={hull()} rotation={[-Math.PI / 2, 0, 0]} material={mat('#24395c', 0.6)} castShadow receiveShadow />
+      <mesh position={[0, 0.55, 0]} material={mat('#b8342c', 0.7)}>
+        <boxGeometry args={[3.1, 0.25, 14.2]} />
+      </mesh>
+      <mesh position={[0, 2.1, 5.6]} material={mat('#f4f4f2', 0.6)} castShadow>
+        <boxGeometry args={[2.6, 2.0, 1.6]} />
+      </mesh>
+      <mesh position={[0, 3.2, 5.6]} material={mat('#2b3442', 0.5)}>
+        <boxGeometry args={[2.8, 0.25, 1.8]} />
+      </mesh>
+      {Array.from({ length: boxes }, (_, j) =>
+        [-0.75, 0, 0.75].map((dx, i) => (
+          <mesh key={`${j}${i}`} position={[dx, 0.98 + ((i + j) % 2) * 0.6, -5 + j * 1.6]} material={mat(BOX_COLORS[(i * 2 + j) % BOX_COLORS.length], 0.7)} castShadow>
+            <boxGeometry args={[0.66, 0.6, 1.42]} />
+          </mesh>
+        )),
+      )}
+    </group>
+  );
+}
+
+/** The harbour: a concrete quay out into the sea, a container crane whose trolley carries a box out to the ship and back, the ship alongside. */
+function Harbour({ x, z, still }: { x: number; z: number; still: boolean }) {
   const orange = mat('#e8742e', 0.55);
+  const trolley = useRef<Group>(null);
+  const load = useRef<Group>(null);
+  useFrame(({ clock }) => {
+    if (still || !trolley.current || !load.current) return;
+    // 16 s a round: out over the ship, lower, raise, back over the quay, lower, raise.
+    const t = (clock.elapsedTime % 16) / 16;
+    const go = t < 0.5 ? smooth(t / 0.5) : 1 - smooth((t - 0.5) / 0.5);
+    trolley.current.position.x = -0.6 + go * 5.2;
+    const dip = Math.max(0, Math.sin(((t * 2) % 1) * Math.PI * 2 - Math.PI / 2));
+    load.current.position.y = -1.0 - dip * 1.6;
+  });
   const leg = (lx: number, lz: number) => (
     <mesh position={[lx, 2.0, lz]} material={orange} castShadow>
       <boxGeometry args={[0.22, 4.0, 0.22]} />
@@ -320,38 +381,38 @@ function Harbour({ x, z }: { x: number; z: number }) {
         <mesh position={[2.6, 4.1, 1.4]} material={orange} castShadow>
           <boxGeometry args={[9.0, 0.3, 0.3]} />
         </mesh>
-        <mesh position={[-0.9, 4.6, 0]} material={mat('#f2f2f2', 0.5)} castShadow>
-          <boxGeometry args={[1.0, 0.7, 2.6]} />
-        </mesh>
-        <mesh position={[4.0, 3.4, 0]} material={mat('#555b66', 0.5)}>
-          <boxGeometry args={[0.04, 1.4, 0.04]} />
-        </mesh>
+        <group ref={trolley} position={[-0.6, 4.45, 0]}>
+          <mesh material={mat('#f2f2f2', 0.5)} castShadow>
+            <boxGeometry args={[1.0, 0.5, 3.0]} />
+          </mesh>
+          <group ref={load} position={[0, -1.0, 0]}>
+            <mesh position={[0, 0.5, 0]} material={mat('#555b66', 0.5)}>
+              <boxGeometry args={[0.04, 1.0, 0.04]} />
+            </mesh>
+            <mesh material={mat('#2f6fe7', 0.6)} castShadow>
+              <boxGeometry args={[0.66, 0.6, 1.42]} />
+            </mesh>
+          </group>
+        </group>
       </group>
       <group position={[x + 10.3, -0.95, z]}>
-        <mesh geometry={hull} rotation={[-Math.PI / 2, 0, 0]} material={mat('#24395c', 0.6)} castShadow receiveShadow />
-        <mesh position={[0, 0.55, 0]} material={mat('#b8342c', 0.7)}>
-          <boxGeometry args={[3.1, 0.25, 14.2]} />
-        </mesh>
-        <mesh position={[0, 2.1, 5.6]} material={mat('#f4f4f2', 0.6)} castShadow>
-          <boxGeometry args={[2.6, 2.0, 1.6]} />
-        </mesh>
-        <mesh position={[0, 3.2, 5.6]} material={mat('#2b3442', 0.5)}>
-          <boxGeometry args={[2.8, 0.25, 1.8]} />
-        </mesh>
+        <Ship boxes={5} />
       </group>
     </group>
   );
 }
 
-export default function Features({ f }: { f: WorldFeatures }) {
+const smooth = (t: number) => t * t * (3 - 2 * t);
+
+export default function Features({ f, still = new Set() }: { f: WorldFeatures; still?: ReadonlySet<SiteId> }) {
   return (
     <>
       {f.slabs.map((b, i) => (
         <Slab key={i} {...b} />
       ))}
-      <Harbour {...f.harbour} />
+      <Harbour {...f.harbour} still={still.has('logistics')} />
       {DISTRICTS.filter((d) => d.id !== 'farm').map((d) => (
-        <Outline key={d.id} x={d.at[0]} z={d.at[1]} color={d.color} />
+        <Outline key={d.id} x={d.at[0]} z={d.at[1]} color={still.has(d.id) ? '#a3abb8' : siteColor(d.id)} />
       ))}
       {f.grounds.map((g, i) => (
         <GroundPiece key={i} g={g} />
@@ -366,7 +427,7 @@ export default function Features({ f }: { f: WorldFeatures }) {
         <Hill key={i} {...h} />
       ))}
       <Hologram {...f.holo} />
-      <Robots robots={f.robots} />
+      <Robots robots={f.robots} still={still} />
     </>
   );
 }

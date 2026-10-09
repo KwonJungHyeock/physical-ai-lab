@@ -3,7 +3,7 @@
 /**
  * 산업단지 · 스마트 공장 — 컨베이어 픽 앤 플레이스 (myCobot 280 RDK X5 + 흡착 펌프, real size).
  * The same screen and six steps as the 물류 센터 (SiteFlow; the lesson script is
- * content-markdown/sites/factory.md): a slim bar (← 산업단지, the site, problems ①②③, the six
+ * content-markdown/sites/factory.md): a slim bar (← 로봇 시티, the site, problems ①②③, the six
  * steps), the cell in the 교육 3D view (LearnStage, the real arm) with the line's board over it, and
  * one panel with what the step needs:
  *  작업 지시 → 가동 · 문제 (slows down and closes in on the moment it goes wrong) → 원인 찾기
@@ -61,6 +61,7 @@ import { SITE_STEPS, siteStepIndex, type SiteStepId } from '@/engine/education/l
 import type { StudyLevel } from '@/engine/education/roadmap';
 import type { ChainSegment } from '@/engine/robot/kinematics';
 import type { UrdfRobot } from '@/engine/robot/urdf';
+import { logRun } from '@/engine/education/runLog';
 
 import LearnStage, { type LearnScene, type ViewPose } from '../stage/LearnStage';
 import type { CellDim } from './CellKit';
@@ -318,6 +319,7 @@ export default function FactoryLab({ robot, chain, gripperRobot, hidden, level =
           step: then,
           reached: Math.max(x.reached, siteStepIndex(then)),
         }));
+        if (which === 'latest') logRun({ lab: 'factory', problem: p, pass: v.pass, durationS: run.durationS, values, checks: v.checks });
         if (which === 'latest' && v.pass) setSolved((x) => ({ ...x, [p]: true }));
         setBusy(false);
       }, 30);
@@ -467,7 +469,7 @@ export default function FactoryLab({ robot, chain, gripperRobot, hidden, level =
     <div className={`${css.lab} ${lg.factory}`} hidden={hidden}>
       <header className={css.bar}>
         <button type="button" className={css.back} onClick={onBack}>
-          ← 산업단지
+          ← 로봇 시티
         </button>
         <b className={css.chapter}>
           <i className={lg.dot} aria-hidden />
@@ -678,7 +680,7 @@ function Panel(p: PanelProps) {
       pass={!!v?.pass}
       notYet={v && !v.pass ? v.headline + '.' : null}
       fig={<PrincipleFig prob={prob} />}
-      nextLabel={prob < 3 ? `문제 ${prob + 1} · ${FACTORY_TEXT[(prob + 1) as ProblemId].title} →` : '산업단지로 →'}
+      nextLabel={prob < 3 ? `문제 ${prob + 1} · ${FACTORY_TEXT[(prob + 1) as ProblemId].title} →` : '로봇 시티로 →'}
       patch={p.patch}
       onRunBefore={p.onRunBefore}
       onRunFix={p.onRunFix}

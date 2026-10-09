@@ -1,25 +1,24 @@
 'use client';
 
 /**
- * 교육 홈 · 로봇 산업단지: the course as an industrial park to walk through (engine/education/park.ts).
- * One screen: a slim bar (the seven sites as a route, 전체 차시, the teacher's 모든 현장 열기), the park
- * in 3D (ParkScene), and a card on the right — the park at a glance, or the picked site with its
- * three problems and the way in. A site opens when the one before it is finished.
+ * 교육 홈 · 로봇 시티: the course as one island city (engine/education/park.ts). One screen: a slim
+ * bar (the nine places, 전체 차시, the teacher's 모든 현장 열기), the city in 3D (world/WorldScene),
+ * and a card on the right — the city at a glance, or the picked place: its social problem, the robots
+ * of that field, its three problems (each with the 학문 it teaches, a link into that 학문's 차시) and
+ * the way in. The 로봇 아카데미 is open from the start; the rest open once its 1학문 is finished.
  */
 
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
 
 import { CATEGORIES, TOPIC_BY_ID, type TopicId } from '@/engine/education/catalog';
-import { josa } from '@/engine/education/lab/run';
-import { SITES, SITE_BY_ID, centerTopics, currentSite, siteScore, siteStates, type LabId, type ParkProgress, type SiteId } from '@/engine/education/park';
-import type { ChainSegment } from '@/engine/robot/kinematics';
-import type { UrdfRobot } from '@/engine/robot/urdf';
+import { SITES, SITE_BY_ID, THEMES, centerTopics, currentSite, siteScore, siteStates, type LabId, type ParkProgress, type SiteId, type SiteState } from '@/engine/education/park';
+import { topicsOf, type CategoryId } from '@/engine/education/catalog';
 
-import type { SiteView } from './ParkScene';
 import css from './park.module.css';
+import type { SiteView } from './world/WorldScene';
 
-const ParkScene = dynamic(() => import('./ParkScene'), { ssr: false });
+const WorldScene = dynamic(() => import('./world/WorldScene'), { ssr: false });
 
 const ALL_OPEN_KEY = 'park-all-open';
 /** The card's width (px): the camera keeps the park in the space left of it. */
@@ -35,8 +34,6 @@ declare global {
 }
 
 interface Props {
-  robot: UrdfRobot;
-  chain: readonly ChainSegment[];
   progress: ParkProgress;
   hidden?: boolean;
   /** Open a 차시 (the 교육센터's lessons). */
@@ -45,11 +42,20 @@ interface Props {
   onLab(lab: LabId): void;
   /** The whole course: every 단원 and 차시. */
   onCourse(): void;
-  /** 대단원 마무리 평가 (opens once the six lab sites are done, or with 모든 현장 열기). */
+  /** 대단원 마무리 평가 (opens once the first six theme labs are done, or with 모든 현장 열기). */
   onFinal(): void;
+  /** The 디지털 트윈 관제센터. */
+  onData(): void;
+  /** Pick a place from outside (a lesson's 이 원리를 쓰는 현장); `n` changes on every request. */
+  pick?: { id: SiteId; n: number } | null;
 }
 
-export default function ParkView({ robot, chain, progress, hidden, onTopic, onLab, onCourse, onFinal }: Props) {
+/** The labs the 종합 점검 draws on (the first six; 에너지·자원순환 came later). */
+const FINAL_LABS = THEMES.filter((s) => s.lab !== 'energy');
+
+const tagOf = (content: (typeof SITES)[number]['content']) => (content === 'lessons' ? '이론' : content === 'data' ? '데이터' : '테마');
+
+export default function ParkView({ progress, hidden, onTopic, onLab, onCourse, onFinal, onData, pick }: Props) {
   const [selected, setSelected] = useState<SiteId | null>(null);
   const [allOpen, setAllOpenRaw] = useState(false);
   /** The 3D park loads the first time the map is shown. */
@@ -82,40 +88,35 @@ export default function ParkView({ robot, chain, progress, hidden, onTopic, onLa
     };
   }, []);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- a pick from outside opens that place's card
+  useEffect(() => void (pick && setSelected(pick.id)), [pick]);
+
   const states = useMemo(() => siteStates(progress, allOpen), [progress, allOpen]);
   const next = useMemo(() => currentSite(progress), [progress]);
   const views = useMemo(() => {
     const out = {} as Record<SiteId, SiteView>;
-    SITES.forEach((s, i) => {
+    SITES.forEach((s) => {
       const st = states[s.id];
       const sc = siteScore(s.id, progress);
-      const line =
-        st === 'done'
-          ? '완료'
-          : st === 'locked'
-            ? `${i}단계 완료 후 열림`
-            : !sc
-              ? `${s.kind} · 준비 중`
-              : sc.done > 0
-                ? `${s.kind} · ${sc.done}/${sc.of}`
-                : s.kind;
-      out[s.id] = { state: st, next: s.id === next && st === 'open', no: i + 1, line };
+      const line = st === 'done' ? '완료' : st === 'locked' ? '아카데미 1학문 후 열림' : sc && sc.done > 0 ? `${s.kind} · ${sc.done}/${sc.of}` : s.kind;
+      out[s.id] = { state: st, next: s.id === next && st === 'open', tag: tagOf(s.content), line };
     });
     return out;
   }, [states, progress, next]);
   const nDone = SITES.filter((s) => states[s.id] === 'done').length;
-  const finalOpen = allOpen || SITES.filter((s) => s.content === 'lab').every((s) => states[s.id] === 'done');
+  const nAll = SITES.filter((s) => s.content !== 'data').length;
+  const finalOpen = allOpen || FINAL_LABS.every((s) => states[s.id] === 'done');
   const select = useCallback((id: SiteId | null) => setSelected(id), []);
 
   return (
     <div className={css.park} hidden={hidden}>
       <header className={css.bar}>
         <b className={css.title}>
-          로봇 산업단지
-          <small>현장을 골라 들어가 문제를 해결해요</small>
+          로봇 시티
+          <small>이론은 아카데미에서, 현장의 문제는 각 구역에서 풀어요</small>
         </b>
-        <ol className={css.route} aria-label="현장 순서">
-          {SITES.map((s, i) => (
+        <ol className={css.route} aria-label="도시의 구역">
+          {SITES.map((s) => (
             <li key={s.id}>
               <button
                 type="button"
@@ -123,9 +124,9 @@ export default function ParkView({ robot, chain, progress, hidden, onTopic, onLa
                 aria-current={selected === s.id || undefined}
                 style={{ '--c': s.color } as CSSProperties}
                 onClick={() => select(s.id)}
-                title={`${i + 1}. ${s.name}`}
+                title={`${s.name} · ${s.kind}`}
               >
-                <i>{states[s.id] === 'done' ? '✓' : i + 1}</i>
+                <i>{states[s.id] === 'done' ? '✓' : tagOf(s.content).slice(0, 1)}</i>
                 <span>{s.name}</span>
               </button>
             </li>
@@ -135,24 +136,24 @@ export default function ParkView({ robot, chain, progress, hidden, onTopic, onLa
           <button type="button" className={css.line} onClick={onCourse} title="8단원 28차시 이론 수업 목록">
             전체 차시
           </button>
-          <label className={css.teacher} title="교사용: 앞 현장을 마치지 않아도 모든 현장을 열어요">
+          <label className={css.teacher} title="교사용: 아카데미 1학문을 마치지 않아도 모든 구역을 열어요">
             <input type="checkbox" checked={allOpen} onChange={(e) => setAllOpen(e.target.checked)} />
             모든 현장 열기
           </label>
         </div>
       </header>
-      <section className={css.stage} aria-label="로봇 산업단지 3D 지도">
-        {seen && <ParkScene robot={robot} chain={chain} onReady={onReady} views={views} selected={selected} onSelect={select} paused={!!hidden} cardPx={CARD_PX} />}
+      <section className={css.stage} aria-label="로봇 시티 3D 지도">
+        {seen && <WorldScene onReady={onReady} views={views} selected={selected} onSelect={select} paused={!!hidden} cardPx={CARD_PX} />}
         {!ready && (
           <p className={css.loading} role="status">
-            산업단지를 불러오는 중…
+            로봇 시티를 불러오는 중…
           </p>
         )}
-        <aside className={css.card} style={{ width: CARD_PX }} aria-label={selected ? `${SITE_BY_ID.get(selected)!.name} 안내` : '산업단지 안내'}>
+        <aside className={css.card} style={{ width: CARD_PX }} aria-label={selected ? `${SITE_BY_ID.get(selected)!.name} 안내` : '로봇 시티 안내'}>
           {selected ? (
-            <SiteCard id={selected} progress={progress} state={states[selected]} onTopic={onTopic} onLab={onLab} onClose={() => select(null)} />
+            <SiteCard id={selected} progress={progress} state={states[selected]} onTopic={onTopic} onLab={onLab} onData={onData} onClose={() => select(null)} />
           ) : (
-            <Overview nDone={nDone} next={next} onGo={select} finalOpen={finalOpen} onFinal={onFinal} />
+            <Overview states={states} nDone={nDone} nAll={nAll} next={next} onGo={select} finalOpen={finalOpen} onFinal={onFinal} />
           )}
         </aside>
       </section>
@@ -160,44 +161,53 @@ export default function ParkView({ robot, chain, progress, hidden, onTopic, onLa
   );
 }
 
-function Overview({ nDone, next, onGo, finalOpen, onFinal }: { nDone: number; next: SiteId; onGo(id: SiteId): void; finalOpen: boolean; onFinal(): void }) {
+function Overview({ states, nDone, nAll, next, onGo, finalOpen, onFinal }: { states: Record<SiteId, SiteState>; nDone: number; nAll: number; next: SiteId; onGo(id: SiteId): void; finalOpen: boolean; onFinal(): void }) {
   const n = SITE_BY_ID.get(next)!;
+  const counted = SITES.filter((s) => s.content !== 'data');
   return (
     <div className={css.over}>
-      <h2>산업 현장에서 배우는 로봇</h2>
-      <p>현장마다 로봇이 일하다 문제가 생겨요. 값을 바꿔 고치면서 원리를 익혀요. 이론은 단원별 PDF로 봐요.</p>
-      <div className={css.meter} role="progressbar" aria-label="완료한 현장" aria-valuenow={nDone} aria-valuemin={0} aria-valuemax={SITES.length}>
+      <h2>로봇이 일하는 도시에서 배워요</h2>
+      <p>
+        가운데 <b>로봇 아카데미</b>에서 로봇공학 8학문 28차시를 배우고, 둘레의 <b>현장</b>에서 사회 문제를 로봇으로 풀어요. <b>관제센터</b>에서는 모든 현장의 실습
+        기록을 데이터로 분석해요.
+      </p>
+      <div className={css.meter} role="progressbar" aria-label="완료한 구역" aria-valuenow={nDone} aria-valuemin={0} aria-valuemax={nAll}>
         <b>
-          {nDone} / {SITES.length}
+          {nDone} / {nAll}
         </b>
-        <span>현장 완료</span>
+        <span>구역 완료</span>
         <div>
-          {SITES.map((s, i) => (
-            <i key={s.id} data-on={i < nDone || undefined} style={{ '--c': s.color } as CSSProperties} />
+          {counted.map((s) => (
+            <i key={s.id} data-on={states[s.id] === 'done' || undefined} style={{ '--c': s.color } as CSSProperties} title={s.name} />
           ))}
         </div>
       </div>
-      {nDone < SITES.length && (
+      {nDone < nAll && (
         <button type="button" className={css.go} style={{ '--c': n.color } as CSSProperties} onClick={() => onGo(next)}>
-          <small>다음 현장</small>
+          <small>다음으로 갈 곳</small>
           <b>{n.name}</b>
           <span>→</span>
         </button>
       )}
+      <button type="button" className={css.go} style={{ '--c': SITE_BY_ID.get('data')!.color } as CSSProperties} onClick={() => onGo('data')}>
+        <small>실습 기록 분석 · 디지털 트윈</small>
+        <b>관제센터</b>
+        <span>→</span>
+      </button>
       <button type="button" className={css.go} data-final disabled={!finalOpen} style={{ '--c': '#1d2939' } as CSSProperties} onClick={onFinal} title={finalOpen ? '여섯 현장의 문제를 새 숫자로 다시 풀어요' : '현장 6곳을 모두 마치면 열려요'}>
-        <small>{finalOpen ? '산업단지 종합 점검' : '🔒 현장 6곳을 모두 마치면 열려요'}</small>
+        <small>{finalOpen ? '현장 종합 점검' : '🔒 현장 6곳(공장·물류·바이오·팜·시티·AI)을 마치면 열려요'}</small>
         <b>대단원 마무리 평가</b>
         <span>→</span>
       </button>
       <ul className={css.legend}>
         <li>
-          <i data-k="done">✓</i> 완료한 현장
+          <i data-k="done">✓</i> 완료
         </li>
         <li>
-          <i data-k="open">●</i> 들어갈 수 있는 현장
+          <i data-k="open">●</i> 들어갈 수 있음
         </li>
         <li>
-          <i data-k="locked">🔒</i> 앞 현장을 마치면 열려요
+          <i data-k="locked">🔒</i> 아카데미 1학문을 마치면 열려요
         </li>
       </ul>
     </div>
@@ -210,44 +220,60 @@ interface CardProps {
   state: 'done' | 'open' | 'locked';
   onTopic(id: TopicId): void;
   onLab(lab: LabId): void;
+  onData(): void;
   onClose(): void;
 }
 
-function SiteCard({ id, progress, state, onTopic, onLab, onClose }: CardProps) {
+/** A 학문's first 차시: where a problem's 학문 tag leads. */
+const unitStart = (u: CategoryId) => topicsOf(u)[0]?.id;
+
+function SiteCard({ id, progress, state, onTopic, onLab, onData, onClose }: CardProps) {
   const s = SITE_BY_ID.get(id)!;
-  const i = SITES.findIndex((x) => x.id === id);
-  const prev = i > 0 ? SITES[i - 1] : null;
   const sc = siteScore(id, progress);
   const locked = state === 'locked';
   const rows =
     s.content === 'lessons'
-      ? centerTopics().map((t) => ({ key: t, title: `${t} ${TOPIC_BY_ID.get(t)!.title}`, fix: TOPIC_BY_ID.get(t)!.question, units: ['1'], done: !!progress.done[t], open: () => onTopic(t) }))
+      ? centerTopics().map((t) => ({ key: t, title: `${t} ${TOPIC_BY_ID.get(t)!.title}`, fix: TOPIC_BY_ID.get(t)!.question, units: [] as CategoryId[], done: !!progress.done[t], open: () => onTopic(t) }))
       : s.problems.map((p, k) => ({
           key: String(k),
           fix: p.fix,
-          units: p.units,
+          units: p.units as CategoryId[],
           title: `${k + 1}. ${p.title}${s.content === 'lab' && !p.ready ? ' · 준비 중' : ''}`,
           done: s.content === 'lab' && !!progress.solved[s.lab!]?.[(k + 1) as 1 | 2 | 3],
           open: s.content === 'lab' && p.ready ? () => onLab(s.lab!) : null,
         }));
-  const firstTodo = s.content === 'lessons' ? centerTopics().find((t) => !progress.done[t]) ?? centerTopics()[0] : null;
+  const firstTodo = s.content === 'lessons' ? (centerTopics().find((t) => !progress.done[t]) ?? centerTopics()[0]) : null;
   const started = !!sc && sc.done > 0;
   return (
     <div className={css.site} style={{ '--c': locked ? '#8a94a6' : s.color } as CSSProperties} data-state={state}>
       <header>
         <span className={css.kind}>
-          {i + 1} · {s.kind}
+          {tagOf(s.content)} · {s.kind}
         </span>
         <button type="button" className={css.x} onClick={onClose} aria-label="닫기">
           ×
         </button>
       </header>
       <h2>{s.name}</h2>
-      <p className={css.robot}>{s.robot}</p>
       <p className={css.desc}>{s.desc}</p>
+      {s.issue && (
+        <p className={css.issue}>
+          <b>사회 문제</b>
+          {s.issue}
+        </p>
+      )}
+      <div className={css.crew} aria-label="이 현장의 로봇">
+        {s.crew.map((c, i) => (
+          <span key={c} data-main={i === 0 || undefined} title={i === 0 ? '실습에 쓰는 로봇' : '이 분야에서 함께 일하는 로봇'}>
+            {c}
+          </span>
+        ))}
+      </div>
       <div className={css.status}>
         {locked ? (
-          <>🔒 {prev ? josa(prev.name, '을') : ''} 마치면 열려요</>
+          <>🔒 로봇 아카데미 1학문(기초 로봇공학)을 마치면 열려요</>
+        ) : s.content === 'data' ? (
+          <>모든 현장의 실습 기록이 여기로 모여요</>
         ) : !sc ? (
           <>준비 중 — 이 현장의 문제는 곧 열려요</>
         ) : state === 'done' ? (
@@ -258,27 +284,37 @@ function SiteCard({ id, progress, state, onTopic, onLab, onClose }: CardProps) {
           </>
         )}
       </div>
-      <h3>{s.content === 'lessons' ? '기초 수업 (1단원)' : '이 현장의 문제'}</h3>
-      <ol className={css.probs}>
-        {rows.map((r) => (
-          <li key={r.key} data-done={r.done || undefined}>
-            <button type="button" disabled={locked || !r.open} onClick={r.open ?? undefined}>
-              <b>
-                {r.done && <i aria-label="완료">✓</i>}
-                {r.title}
-              </b>
-              {r.fix && <span>{r.fix}</span>}
-              <span className={css.tags}>
-                {r.units.map((u) => (
-                  <em key={u}>
-                    {u}단원 {unitName(u)}
-                  </em>
-                ))}
-              </span>
-            </button>
-          </li>
-        ))}
-      </ol>
+      {s.content !== 'data' && <h3>{s.content === 'lessons' ? '기초 수업 (1학문)' : '이 현장의 문제 — 학문을 누르면 그 이론 차시로 가요'}</h3>}
+      {s.content === 'data' ? (
+        <ul className={css.dataList}>
+          <li>현장별 성공률 · 작업 시간 비교, 병목 찾기</li>
+          <li>바꾼 값과 결과의 관계 — 산점도와 회귀선</li>
+          <li>시뮬레이션 ↔ 실제 로봇 오차 (디지털 트윈)</li>
+        </ul>
+      ) : (
+        <ol className={css.probs}>
+          {rows.map((r) => (
+            <li key={r.key} data-done={r.done || undefined}>
+              <button type="button" disabled={locked || !r.open} onClick={r.open ?? undefined}>
+                <b>
+                  {r.done && <i aria-label="완료">✓</i>}
+                  {r.title}
+                </b>
+                {r.fix && <span>{r.fix}</span>}
+              </button>
+              {r.units.length > 0 && (
+                <span className={css.tags}>
+                  {r.units.map((u) => (
+                    <button key={u} type="button" onClick={() => unitStart(u) && onTopic(unitStart(u)!)} title={`${u}학문 ${unitName(u)} — 이론 차시 열기`}>
+                      {u}학문 {unitName(u)} →
+                    </button>
+                  ))}
+                </span>
+              )}
+            </li>
+          ))}
+        </ol>
+      )}
       <div className={css.actions}>
         {locked ? (
           <button type="button" className={css.primary} disabled>
@@ -291,6 +327,10 @@ function SiteCard({ id, progress, state, onTopic, onLab, onClose }: CardProps) {
         ) : s.content === 'lab' ? (
           <button type="button" className={css.primary} onClick={() => onLab(s.lab!)}>
             {state === 'done' ? '현장 다시 들어가기' : started ? '이어서 고치기' : '현장 들어가기'} →
+          </button>
+        ) : s.content === 'data' ? (
+          <button type="button" className={css.primary} onClick={onData}>
+            관제센터 들어가기 →
           </button>
         ) : (
           <button type="button" className={css.primary} disabled>

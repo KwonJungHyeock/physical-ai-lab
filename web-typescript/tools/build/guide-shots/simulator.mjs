@@ -478,7 +478,7 @@ if (want('archive')) {
 if (want('learn')) {
   await screenTab('교육').click();
   await settle(page, 6000);
-  // The 교육 tab opens on the 로봇 산업단지: the course home is behind 전체 차시.
+  // The 교육 tab opens on the 로봇 시티: the course home is behind 전체 차시.
   await page.getByRole('button', { name: '전체 차시', exact: true }).click().catch(() => {});
   await settle(page, 3000);
   const home = page.locator('section[aria-label="교육 홈"]');

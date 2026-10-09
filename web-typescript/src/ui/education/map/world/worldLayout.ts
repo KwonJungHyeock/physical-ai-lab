@@ -9,21 +9,17 @@
  * Everything is placed by code from a seeded random, so the map is the same every time.
  */
 
+import type { SiteId } from '@/engine/education/park';
+import type { RobotModelId } from '@/engine/robot/catalog';
+
 import type { Place, PackId } from './worldAssets';
 
-export type DistrictId = 'academy' | 'city' | 'data' | 'bio' | 'ailab' | 'factory' | 'farm' | 'energy' | 'logistics';
-
+/** Where each place of the city stands: its block centre (x, z), its yard colour, the pin's height. */
 export interface District {
-  id: DistrictId;
-  name: string;
-  /** The real-life field, in a word or two. */
-  field: string;
-  /** Block centre (x, z). */
+  id: SiteId;
   at: readonly [number, number];
-  color: string;
   /** The block's inner ground. */
   ground: string;
-  /** Pin height above the ground. */
   pinY: number;
 }
 
@@ -31,88 +27,18 @@ export interface District {
 export const LINES = [-24, -8, 8, 24] as const;
 
 export const DISTRICTS: readonly District[] = [
-  {
-    id: 'academy',
-    name: '로봇 아카데미',
-    field: '로봇공학 이론 · 8학문 28차시',
-    at: [0, 0],
-    color: '#2f5be7',
-    ground: '#e8e3d8',
-    pinY: 7.2,
-  },
-  {
-    id: 'city',
-    name: '스마트시티',
-    field: '서비스 로봇 · 돌봄',
-    at: [-16, -16],
-    color: '#e39a1c',
-    ground: '#ddd2bf',
-    pinY: 9.5,
-  },
-  {
-    id: 'data',
-    name: '디지털 트윈 관제센터',
-    field: '데이터 사이언스',
-    at: [0, -16],
-    color: '#0fa3b8',
-    ground: '#d6dde6',
-    pinY: 10.5,
-  },
-  {
-    id: 'bio',
-    name: '바이오·헬스케어',
-    field: '실험 자동화 · 의료',
-    at: [16, -16],
-    color: '#d23c6a',
-    ground: '#e4eaee',
-    pinY: 7.6,
-  },
-  {
-    id: 'ailab',
-    name: '피지컬 AI 연구소',
-    field: 'AI 인식 · 학습',
-    at: [-16, 0],
-    color: '#7a4fe0',
-    ground: '#dcd9e8',
-    pinY: 6.4,
-  },
-  {
-    id: 'factory',
-    name: '스마트팩토리',
-    field: '제조 AI · 공정',
-    at: [16, 0],
-    color: '#2f6fe7',
-    ground: '#a3a9b1',
-    pinY: 7,
-  },
-  {
-    id: 'farm',
-    name: '스마트팜',
-    field: '수확 · 선별 자동화',
-    at: [-16, 16],
-    color: '#3f9b3a',
-    ground: '',
-    pinY: 4.6,
-  },
-  {
-    id: 'energy',
-    name: '에너지·자원순환',
-    field: '재활용 선별 · 탄소',
-    at: [0, 16],
-    color: '#1f9e6e',
-    ground: '#a6acb3',
-    pinY: 5.6,
-  },
-  {
-    id: 'logistics',
-    name: '물류 허브',
-    field: '팔레타이징 · 적재 효율',
-    at: [16, 16],
-    color: '#e0662b',
-    ground: '#9fa5ad',
-    pinY: 5.4,
-  },
+  { id: 'center', at: [0, 0], ground: '#e8e3d8', pinY: 7.2 },
+  { id: 'cafe', at: [-16, -16], ground: '#ddd2bf', pinY: 9.5 },
+  { id: 'data', at: [0, -16], ground: '#d6dde6', pinY: 10.5 },
+  { id: 'lab', at: [16, -16], ground: '#e4eaee', pinY: 7.6 },
+  { id: 'ai', at: [-16, 0], ground: '#dcd9e8', pinY: 6.4 },
+  { id: 'factory', at: [16, 0], ground: '#a3a9b1', pinY: 7 },
+  { id: 'farm', at: [-16, 16], ground: '', pinY: 4.6 },
+  { id: 'energy', at: [0, 16], ground: '#a6acb3', pinY: 5.6 },
+  { id: 'logistics', at: [16, 16], ground: '#9fa5ad', pinY: 5.4 },
 ];
+
+export const DISTRICT_BY_ID: ReadonlyMap<SiteId, District> = new Map(DISTRICTS.map((d) => [d.id, d]));
 
 /** The island's outline half sizes (x, z) and corner radius. */
 export const ISLAND = { hx: 32, hz: 31, r: 10 };
@@ -131,7 +57,9 @@ export interface Ground {
 
 /** A myCobot 280 shown at a district (scaled up to read on the map), on a pedestal in its colour. */
 export interface MapRobot {
-  district: DistrictId;
+  district: SiteId;
+  /** Which arm (the myCobot 280 RDK X5 when left out). */
+  arm?: RobotModelId;
   x: number;
   z: number;
   rot: number;
@@ -151,6 +79,8 @@ export interface WorldFeatures {
   /** The digital twin hologram over the data centre's plaza. */
   holo: { x: number; z: number };
   turbines: { x: number; z: number; rot: number; s: number }[];
+  /** Conveyor belts (boxes ride them, Life.tsx): centre, length along x before turning `rot`. */
+  conveyors: { x: number; z: number; len: number; rot: number }[];
   /** Blocks with a raised slab (every block but the farm). */
   slabs: { x: number; z: number }[];
   /** The harbour: a quay into the sea, a container crane, a ship alongside. */
@@ -222,25 +152,6 @@ function streetDress(r: () => number, cx: number, cz: number, trees = true): Pla
   return out;
 }
 
-/** Cars on the roads, in their lanes. */
-function traffic(r: () => number): Place[] {
-  const out: Place[] = [];
-  const cars = ['car_sedan', 'car_hatchback', 'car_taxi', 'car_stationwagon', 'car_sedan', 'car_hatchback'];
-  for (const z of LINES)
-    for (let x = LINES[0] + 3; x < LINES[3]; x += 5)
-      if (r() < 0.5) {
-        const east = r() < 0.5;
-        out.push(P('city', pick(r, cars), x + r() * 2, z + (east ? 0.45 : -0.45), east ? 90 : 270));
-      }
-  for (const x of LINES)
-    for (let z = LINES[0] + 3; z < LINES[3]; z += 5)
-      if (r() < 0.5) {
-        const south = r() < 0.5;
-        out.push(P('city', pick(r, cars), x + (south ? -0.45 : 0.45), z + r() * 2, south ? 0 : 180));
-      }
-  return out;
-}
-
 const F: WorldFeatures = {
   grounds: [],
   greenhouses: [],
@@ -249,6 +160,7 @@ const F: WorldFeatures = {
   robots: [],
   holo: { x: 0, z: -16 },
   turbines: [],
+  conveyors: [],
   slabs: [],
   harbour: { x: 29.5, z: 3 },
 };
@@ -278,7 +190,7 @@ function academy(r: () => number): Place[] {
     });
   }
   F.robots.push({
-    district: 'academy',
+    district: 'center',
     x: cx,
     z: cz + 0.8,
     rot: -40,
@@ -326,7 +238,7 @@ function city(r: () => number): Place[] {
   );
   out.push(P('city', 'bench', cx + 1.6, cz + 3.2, 0), P('city', 'firehydrant', cx + 5.2, cz + 5.4), P('city', 'trash_A', cx - 2.6, cz + 5.2));
   F.robots.push({
-    district: 'city',
+    district: 'cafe',
     x: cx - 1.4,
     z: cz + 1.6,
     rot: 30,
@@ -365,7 +277,7 @@ function bio(r: () => number): Place[] {
   out.push(P('space', 'landingpad_large', cx - 1.6, cz + 3.0, 0, 1.0));
   out.push(P('cars', 'ambulance', cx + 2.6, cz + 4.0, 0), P('cars', 'ambulance', cx + 3.8, cz + 4.0, 0));
   F.robots.push({
-    district: 'bio',
+    district: 'lab',
     x: cx + 1.0,
     z: cz + 0.4,
     rot: 200,
@@ -394,9 +306,9 @@ function ailab(r: () => number): Place[] {
   out.push(P('space', 'basemodule_D', cx - 3, cz - 3, 0, 1.4), P('space', 'roofmodule_solarpanels', cx - 3, cz - 3, 0, 1.4, 1.4));
   out.push(P('space', 'basemodule_E', cx + 1.0, cz - 3.2, 0, 1.4), P('space', 'basemodule_C', cx + 3.8, cz - 3.2, 0, 1.2));
   out.push(P('space', 'basemodule_garage', cx - 3.2, cz + 1.2, 90, 1.25), P('space', 'structure_tall', cx - 3.8, cz + 4, 0, 1.2));
-  out.push(P('space', 'landingpad_small', cx + 3.6, cz + 0, 0, 1.2), P('space', 'cargo_B', cx + 3.8, cz + 4.2, 30, 1.4));
+  out.push(P('space', 'landingpad_small', cx + 3.6, cz + 0, 0, 1.2), P('space', 'cargo_B', cx - 1.2, cz + 4.6, 30, 1.2));
   F.robots.push({
-    district: 'ailab',
+    district: 'ai',
     x: cx + 1.4,
     z: cz + 2.2,
     rot: 20,
@@ -404,28 +316,22 @@ function ailab(r: () => number): Place[] {
     angles: [-20, -40, -30, -30, 0, 0],
     pedestal: 0.75,
   });
+  F.robots.push({ district: 'ai', arm: 'mecharm270-pi', x: cx + 3.7, z: cz + 3.7, rot: 210, s: 8, angles: [0, -10, -20, 0, 0, 0], pedestal: 0.6 });
   return out;
 }
 
-/** 스마트팩토리: big halls, chimneys and tanks, a yard with the robot cell, containers, a truck. */
+/** 스마트팩토리: big halls, a chimney and tanks; in the yard a conveyor between two arms (myCobot 280 and 320). */
 function factory(r: () => number): Place[] {
   const [cx, cz] = [16, 0];
   const out = [...sidewalk(cx, cz), ...streetDress(r, cx, cz, false)];
   F.grounds.push({ x: cx, z: cz, w: 10, d: 10, color: '#a6acb4' });
   out.push(P('industry', 'building-a', cx - 2.4, cz - 3.2, 0, 1.25), P('industry', 'building-d', cx + 2.8, cz - 3.2, 0, 1.05));
-  out.push(P('industry', 'building-g', cx - 3.6, cz + 1.6, 90, 1.0));
-  out.push(P('industry', 'chimney-large', cx + 4.4, cz - 0.4, 0, 0.9), P('industry', 'detail-tank-large', cx + 4.0, cz + 2.0, 0, 0.75));
-  out.push(P('industry', 'shipping-container-a', cx - 1.2, cz + 4.2, 90), P('industry', 'shipping-container-c', cx - 1.2, cz + 3.5, 90));
-  out.push(P('cars', 'truck', cx + 2.4, cz + 4.0, 270), P('cars', 'tractor-shovel', cx - 2.8, cz + 4.2, 60));
-  F.robots.push({
-    district: 'factory',
-    x: cx + 0.8,
-    z: cz + 1.2,
-    rot: 220,
-    s: 9,
-    angles: [0, -25, -60, -5, 0, 0],
-    pedestal: 0.75,
-  });
+  out.push(P('industry', 'chimney-large', cx + 4.4, cz - 0.4, 0, 0.9), P('industry', 'detail-tank-large', cx + 4.0, cz + 2.4, 0, 0.75));
+  out.push(P('industry', 'shipping-container-a', cx - 4.0, cz + 4.4, 0), P('industry', 'shipping-container-c', cx - 3.3, cz + 4.4, 0));
+  out.push(P('cars', 'truck', cx + 2.6, cz + 4.4, 270));
+  F.robots.push({ district: 'factory', x: cx + 0.6, z: cz + 1.0, rot: 220, s: 9, angles: [0, -25, -60, -5, 0, 0], pedestal: 0.75 });
+  F.robots.push({ district: 'factory', arm: 'mycobot320-pi', x: cx - 1.6, z: cz + 3.9, rot: 30, s: 5.5, angles: [0, -20, -50, -15, 0, 0], pedestal: 0.6 });
+  F.conveyors.push({ x: cx - 0.4, z: cz + 2.6, len: 5.6, rot: 0 });
   return out;
 }
 
@@ -541,6 +447,8 @@ function logistics(r: () => number): Place[] {
     angles: [0, -10, -70, 0, 0, 0],
     pedestal: 0.75,
   });
+  F.robots.push({ district: 'logistics', arm: 'mypalletizer260-pi', x: cx + 1.6, z: cz + 3.9, rot: 200, s: 7, angles: [0, 10, 20, 0], pedestal: 0.6 });
+  F.conveyors.push({ x: cx - 1.6, z: cz + 0.6, len: 3.2, rot: 90 });
   // The harbour quay beyond the hub: container rows waiting for the ship.
   for (let i = 0; i < 3; i++)
     for (let j = 0; j < 3; j++)
@@ -619,6 +527,11 @@ function nature(r: () => number): Place[] {
   return out;
 }
 
+/** The ground height at (x, z): 0 on the flat, up a hill's surface where there is one. */
+export function groundY(f: WorldFeatures, x: number, z: number) {
+  return Math.max(0, ...f.hills.map((h) => h.h * Math.sqrt(Math.max(0, 1 - ((x - h.x) / h.rx) ** 2 - ((z - h.z) / h.rz) ** 2))));
+}
+
 let cached: { places: Place[]; features: WorldFeatures } | null = null;
 
 /** Every model on the map and the procedural features (built once). */
@@ -627,7 +540,6 @@ export function world(): { places: Place[]; features: WorldFeatures } {
   const r = rng(20261009);
   const places = [
     ...streets(),
-    ...traffic(r),
     ...academy(r),
     ...city(r),
     ...data(r),

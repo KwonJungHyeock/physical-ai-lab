@@ -1,24 +1,41 @@
 'use client';
 
 /**
- * /spike/world — the world map prototype; /spike/world?sheet=<pack> — one pack's models on a grid.
+ * /spike/world — the world map on its own (every place open, nothing picked; ?pick=<site> picks one);
+ * /spike/world?sheet=<pack> — one pack's models on a grid.
  */
 
 import dynamic from 'next/dynamic';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
+import { SITES, type SiteId } from '@/engine/education/park';
+import type { SiteView } from '@/ui/education/map/world/WorldScene';
 import { PACKS, type PackId } from '@/ui/education/map/world/worldAssets';
 
 const WorldSheet = dynamic(() => import('@/ui/education/map/world/WorldSheet'), { ssr: false });
-const WorldPreview = dynamic(() => import('@/ui/education/map/world/WorldPreview'), { ssr: false });
+const WorldScene = dynamic(() => import('@/ui/education/map/world/WorldScene'), { ssr: false });
+
+const VIEWS = Object.fromEntries(
+  SITES.map((s) => [s.id, { state: 'open', next: s.id === 'center', tag: s.content === 'lessons' ? '이론' : s.content === 'data' ? '데이터' : '테마', line: s.kind }]),
+) as Record<SiteId, SiteView>;
 
 export default function WorldPage() {
   const [sheet, setSheet] = useState<PackId | null | undefined>(undefined);
+  const [pick, setPick] = useState<SiteId | null>(null);
   useEffect(() => {
-    const q = new URLSearchParams(window.location.search).get('sheet');
+    const q = new URLSearchParams(window.location.search);
+    const s = q.get('sheet');
+    const p = q.get('pick');
     // eslint-disable-next-line react-hooks/set-state-in-effect -- read the address after hydration
-    setSheet(q && (PACKS as readonly string[]).includes(q) ? (q as PackId) : null);
+    setSheet(s && (PACKS as readonly string[]).includes(s) ? (s as PackId) : null);
+    if (p && SITES.some((x) => x.id === p)) setPick(p as SiteId);
   }, []);
+  const noop = useCallback(() => {}, []);
   if (sheet === undefined) return null;
-  return sheet ? <WorldSheet pack={sheet} /> : <WorldPreview />;
+  if (sheet) return <WorldSheet pack={sheet} />;
+  return (
+    <div style={{ width: '100vw', height: '100vh' }}>
+      <WorldScene onReady={noop} views={VIEWS} selected={pick} onSelect={setPick} paused={false} cardPx={0} />
+    </div>
+  );
 }

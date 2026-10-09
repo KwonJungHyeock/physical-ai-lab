@@ -2,7 +2,7 @@
 
 /**
  * 산업단지 · 물류 센터 — 팔레타이징 (myCobot 280 RDK X5 + 흡착 펌프, real size). One screen like
- * the conveyor lab: a slim bar (← 산업단지, the site, problems ①②③, the six steps), the cell in the
+ * the conveyor lab: a slim bar (← 로봇 시티, the site, problems ①②③, the six steps), the cell in the
  * 교육 3D view (LearnStage, the real arm) with the line's board over it, and one panel with what
  * the step needs, as the lesson script has it (content-markdown/sites/logistics.md):
  *  작업 지시 (the day, the foreman, the goals) → 가동 · 문제 (the run; it slows down and closes in
@@ -64,6 +64,7 @@ import { toolPoseAt } from '@/engine/education/lab/run';
 import type { StudyLevel } from '@/engine/education/roadmap';
 import type { ChainSegment } from '@/engine/robot/kinematics';
 import type { UrdfRobot } from '@/engine/robot/urdf';
+import { logRun } from '@/engine/education/runLog';
 
 import LearnStage, { type LearnScene, type ViewPose } from '../stage/LearnStage';
 import PalletCell, { PalletPlayback, type PalletDim, type PalletOverlay } from './PalletCell';
@@ -290,6 +291,20 @@ export default function LogisticsLab({ robot, chain, gripperRobot, hidden, level
           step: then,
           reached: Math.max(x.reached, stepIndex(then)),
         }));
+        if (which === 'latest')
+          logRun({
+            lab: 'logistics',
+            problem: p,
+            pass: sc.pass,
+            durationS: run.durationS,
+            values: v,
+            checks: [
+              { label: '바르게 놓은 상자', ok: sc.ok === sc.placed && sc.placed > 0, value: `${sc.ok} / ${sc.placed}` },
+              { label: '무너진 상자', ok: sc.fallen === 0, value: `${sc.fallen}개` },
+              { label: '놓을 때 높이', ok: !sc.slipped, value: `최대 ${fmt(sc.maxDrop, 1)} mm` },
+              { label: '작업 시간', ok: sc.pass, value: `${fmt(sc.timeS, 1)} s` },
+            ],
+          });
         if (which === 'latest' && sc.pass) setSolved((x) => ({ ...x, [p]: true }));
         setBusy(false);
       });
@@ -419,7 +434,7 @@ export default function LogisticsLab({ robot, chain, gripperRobot, hidden, level
     <div className={`${css.lab} ${lg.site}`} hidden={hidden}>
       <header className={css.bar}>
         <button type="button" className={css.back} onClick={onBack}>
-          ← 산업단지
+          ← 로봇 시티
         </button>
         <b className={css.chapter}>
           <i className={lg.dot} aria-hidden />
@@ -660,7 +675,7 @@ function Panel(p: PanelProps) {
       pass={!!sl?.pass}
       notYet={sl && !sl.pass ? whyNotYet(prob, sl) : null}
       fig={<PrincipleFig prob={prob} />}
-      nextLabel={prob < 3 ? `문제 ${prob + 1} · ${LOGI_TEXT[(prob + 1) as LogiProblem].title} →` : '산업단지로 →'}
+      nextLabel={prob < 3 ? `문제 ${prob + 1} · ${LOGI_TEXT[(prob + 1) as LogiProblem].title} →` : '로봇 시티로 →'}
       patch={p.patch}
       onRunBefore={p.onRunBefore}
       onRunFix={p.onRunFix}

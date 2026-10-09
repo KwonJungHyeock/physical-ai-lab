@@ -37,9 +37,12 @@ export interface FinalCalc {
   unit: string;
 }
 
+/** The six labs the 종합 점검 draws on (the first six theme labs; 에너지·자원순환 came later). */
+export type FinalLab = Exclude<LabId, 'energy'>;
+
 export interface FinalItem {
   id: string;
-  lab: LabId;
+  lab: FinalLab;
   /** The site lab problem it comes back to (1 · 2 · 3). */
   prob: 1 | 2 | 3;
   site: string;

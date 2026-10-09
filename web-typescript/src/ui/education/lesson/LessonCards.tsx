@@ -12,8 +12,9 @@ import { STEP_NAME, lessonNo, nextTopicOf, type StepKey, type Topic } from '@/en
 import { tryGif } from '@/engine/education/media';
 import type { StudyLevel } from '@/engine/education/roadmap';
 import { glossFirst } from '@/engine/education/symbols';
+import { THEMES, type SiteId } from '@/engine/education/park';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 
 import { TopicArt } from './TopicArt';
 import { QuickCheck } from './QuickCheck';
@@ -45,6 +46,9 @@ const MINUTES: Record<StudyLevel, Record<PageId, number>> = {
 };
 export const isActivity = (p: PageId): p is StepKey => p === 'A' || p === 'B' || p === 'C';
 
+/** The theme places with a problem that teaches this 학문. */
+const sitesOf = (cat: Topic['cat']) => THEMES.filter((s) => s.problems.some((p) => p.units.includes(cat)));
+
 interface Props {
   topic: Topic;
   page: PageId;
@@ -54,9 +58,11 @@ interface Props {
   level: StudyLevel;
   /** Open another topic (the 평가 card's 다음 차시). */
   onTopic(id: Topic['id']): void;
+  /** Go to a theme place on the map (the 정리 card's 이 원리를 쓰는 현장). */
+  onSite?(id: SiteId): void;
 }
 
-export default function LessonCards({ topic, page, onPage, results, onChecked, level, onTopic }: Props) {
+export default function LessonCards({ topic, page, onPage, results, onChecked, level, onTopic, onSite }: Props) {
   const i = PAGES.indexOf(page);
   /** The figure or an activity's demo shown large over the screen. */
   const [zoom, setZoom] = useState<null | { focus?: StepKey; clip?: StepKey }>(null);
@@ -109,7 +115,7 @@ export default function LessonCards({ topic, page, onPage, results, onChecked, l
         {page === 'intro' && <IntroCard topic={topic} fig={fig()} />}
         {page === 'theory' && <ConceptCard topic={topic} level={level} fig={fig()} />}
         {step && <ActivityCard step={step} fig={fig(step.key)} />}
-        {page === 'cmp' && <WrapCard topic={topic} results={results} />}
+        {page === 'cmp' && <WrapCard topic={topic} results={results} onSite={onSite} />}
         {page === 'check' && (
           <>
             <p className={css.key}>배운 것을 문제로 확인해요</p>
@@ -300,7 +306,7 @@ function ActivityCard({ step, fig }: { step: Topic['steps'][number]; fig: ReactN
   );
 }
 
-function WrapCard({ topic, results }: { topic: Topic; results: Partial<Record<StepKey, ResultRow>> }) {
+function WrapCard({ topic, results, onSite }: { topic: Topic; results: Partial<Record<StepKey, ResultRow>>; onSite?: (id: SiteId) => void }) {
   const [takeaway, field, ...goals] = glossFirst([topic.takeaway, topic.field, ...topic.objectives]);
   const done = KEYS.filter((k) => results[k]).length;
   return (
@@ -336,6 +342,16 @@ function WrapCard({ topic, results }: { topic: Topic; results: Partial<Record<St
           <p>
             <Rich text={field} />
           </p>
+          {onSite && sitesOf(topic.cat).length > 0 && (
+            <div className={css.fieldSites}>
+              <small>이 원리를 쓰는 로봇 시티 현장</small>
+              {sitesOf(topic.cat).map((s) => (
+                <button key={s.id} type="button" style={{ '--c': s.color } as CSSProperties} onClick={() => onSite(s.id)}>
+                  {s.name} →
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
       {goals.length > 0 && (
