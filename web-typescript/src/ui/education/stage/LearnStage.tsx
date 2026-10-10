@@ -192,6 +192,7 @@ function ViewControl({ apiRef, home, focus = null }: { apiRef: RefObject<ViewApi
   const controls = useThree((s) => s.controls) as Controls | null;
   const done = useRef(false);
   const focused = useRef(false);
+  const lastHome = useRef('');
   useEffect(() => {
     if (!controls?.setLookAt) return;
     if (focus) {
@@ -204,11 +205,16 @@ function ViewControl({ apiRef, home, focus = null }: { apiRef: RefObject<ViewApi
   }, [controls, focus, home]);
   useEffect(() => {
     if (!controls?.setLookAt) return;
+    const key = home.join(',');
     if (!done.current) {
       done.current = true;
       // The arm in the middle of the free part of the view (ViewShift moves it clear of the panel).
       void controls.setLookAt(...home, false);
+    } else if (lastHome.current !== key && !focused.current) {
+      // A problem with its own first view (a different room): glide there.
+      void controls.setLookAt(...home, true);
     }
+    lastHome.current = key;
     apiRef.current = {
       // The simulator's directions (its view cube), and this view's own first one for 처음 시점.
       view: (name) => {

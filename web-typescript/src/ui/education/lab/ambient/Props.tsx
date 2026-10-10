@@ -27,6 +27,8 @@ const DRACO = '/draco/';
 const ARM_URL = '/robot/rdkx5/rdkx5.glb';
 /** The myAGV 2023's height to its top plate (the model's bounds), mm: where a mobile manipulator's arm stands. */
 export const AGV_TOP_MM = 132;
+/** 돌봄 (스마트시티 ③): the arm's base above the floor — the myAGV plus its lift column, the height of a bedside table, mm. */
+export const CARE_ARM_Z = 550;
 const AGV_URL = '/robot/myagv/myagv2023.glb';
 
 type Xy = readonly [number, number];

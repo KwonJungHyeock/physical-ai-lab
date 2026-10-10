@@ -61,6 +61,8 @@ import lg from './site.module.css';
 
 /** The café from the front right, a little above (three.js metres, y up): camera, then target. */
 export const CAFE_VIEW: ViewPose = [0.7, 0.5, 0.56, 0.1, 0.08, 0.0];
+/** ③ 돌봄: from the front left, over the table to the resident on the bed (the room is at real size). */
+const CARE_VIEW: ViewPose = [-1.05, 1.45, 1.9, 0.42, 0.12, 0.16];
 const SLOW = 0.35;
 const SLOW_LEAD_S = 1.6;
 const CARRY_LEN = Math.hypot(PICKUP[0] - BAR[0], PICKUP[1] - BAR[1]);
@@ -386,7 +388,7 @@ export default function CafeLab({ robot, chain, gripperRobot, hidden, level = 'h
       </header>
 
       <section className={css.stage} aria-label="3D 카페">
-        <LearnStage robot={robot} chain={chain} gripperRobot={gripperRobot} scene={scene} paused={hidden} home={CAFE_VIEW} focus={focus} live={player.arm} look={prob === 3 ? LOOKS.care : LOOKS.cafe}>
+        <LearnStage robot={robot} chain={chain} gripperRobot={gripperRobot} scene={scene} paused={hidden} home={prob === 3 ? CARE_VIEW : CAFE_VIEW} focus={focus} live={player.arm} look={prob === 3 ? LOOKS.care : LOOKS.cafe}>
           {prob === 3 ? <CareAround /> : <CafeAround />}
           <CafeCell player={player} prob={prob} overlay={overlay} />
         </LearnStage>
@@ -466,7 +468,7 @@ export default function CafeLab({ robot, chain, gripperRobot, hidden, level = 'h
                 <dt>{prob === 3 ? '물병' : '음료'}</dt>
                 <dd>{prob === 3 ? `물을 가득 채운 물병 Ø${BOTTLE.d} × ${BOTTLE.h} mm · ${fmt(BOTTLE.kg * 1000)} g` : `시음 컵 Ø${CUP.d} mm · 커피 입구 ${CUP.headspace} mm 아래까지`}</dd>
                 <dt>옮기기</dt>
-                <dd>{prob === 3 ? '미니 냉장고 → 어르신 곁 낮은 탁자 (AGV는 멈춘 채 J1로 돌기)' : '바 → 픽업대 (직선 이동)'}</dd>
+                <dd>{prob === 3 ? '미니 냉장고 위 쟁반 → 침대 옆 협탁 (AGV는 멈춘 채 J1로 돌기)' : '바 → 픽업대 (직선 이동)'}</dd>
                 <dt>기준</dt>
                 <dd>{prob === 1 ? `넘치지 않기 · ${CARRY_MAX_S} s 안` : prob === 2 ? `움직이는 컵이 손에 닿지 않기 · 손 앞 ${STOP_MARGIN_MM} mm 넘게 남기고 멈춤` : 'J1 과부하 없이 탁자에 놓기'}</dd>
                 <dt>도구</dt>

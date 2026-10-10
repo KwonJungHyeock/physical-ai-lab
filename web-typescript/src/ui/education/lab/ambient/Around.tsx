@@ -15,7 +15,7 @@ import { CardBox } from '../ConveyorCell';
 import { Sign, Steel, Tape, m } from '../CellKit';
 import type { SiteLook } from './Ground';
 import { Blob } from './Ground';
-import { AGV_TOP_MM, Beacon, Fan, Leds, Monitor, RouteAgv, RunningBelt, SignalTower, Steam, Sway, Turn, WorkingArm } from './Props';
+import { CARE_ARM_Z, Beacon, Fan, Leds, Monitor, RouteAgv, RunningBelt, SignalTower, Steam, Sway, Turn, WorkingArm } from './Props';
 
 type Xy = readonly [number, number];
 
@@ -28,7 +28,7 @@ export const LOOKS: Record<AroundSite, SiteLook> = {
   farm: { sky: '#dfe9e4', floor: 'greenhouse' },
   cafe: { sky: '#e9e0d4', floor: 'wood' },
   /** 스마트시티 돌봄 (카페 ③): a resident's room; the arm stands on a myAGV, so the floor is lower. */
-  care: { sky: '#e6ebe4', floor: 'vinyl', groundZ: -AGV_TOP_MM },
+  care: { sky: '#e6ebe4', floor: 'vinyl', groundZ: -CARE_ARM_Z },
   ai: { sky: '#d9dde6', floor: 'tiles' },
 };
 
@@ -573,37 +573,86 @@ export function CafeAround() {
 
 /* --- 스마트시티 돌봄 (카페 ③) ------------------------------------------------------------------ */
 
-/** A care bed: frame, mattress, a folded blanket and a pillow; `z` is the floor, mm. */
-export function CareBed({ at, z = 0, len = 520, w = 300, top = 190, blanket = '#9fc7b5' }: { at: Xy; z?: number; len?: number; w?: number; top?: number; blanket?: string }) {
-  const [x, y] = at;
+/**
+ * A care bed at real size (along x, head at −x, turned by `yaw` about its centre): a frame on four castors, a mattress with its back
+ * section raised, side rails, head and foot boards, a folded blanket and a pillow; `z` is the floor, mm.
+ */
+export function CareBed({ at, z = 0, yaw = 0, rails = 'both', blanket = '#9fc7b5' }: { at: Xy; z?: number; yaw?: number; rails?: 'both' | 'far'; blanket?: string }) {
+  const x = 0;
+  const y = 0;
+  const L = 2000;
+  const W = 920;
+  const top = 520;
+  const head = x - L / 2;
+  const back = 650;
+  const tilt = 0.5;
+  const frame = <meshStandardMaterial color="#d6dbe0" metalness={0.55} roughness={0.35} />;
+  const board = <meshStandardMaterial color="#c9b79c" roughness={0.55} />;
   return (
-    <group position={[0, 0, m(z)]}>
-      <RBox at={[x, y, top / 2 - 20]} size={[len, w, top - 40]} radius={6}>
-        <meshStandardMaterial color="#d9dee3" roughness={0.6} />
+    <group position={[m(at[0]), m(at[1]), m(z)]} rotation={[0, 0, yaw]}>
+      {[-1, 1].flatMap((sx) =>
+        [-1, 1].map((sy) => (
+          <group key={`${sx}${sy}`}>
+            <RBox at={[x + sx * (L / 2 - 80), y + sy * (W / 2 - 70), (top - 180) / 2 + 60]} size={[40, 40, top - 180]} radius={4}>
+              {frame}
+            </RBox>
+            <mesh position={[m(x + sx * (L / 2 - 80)), m(y + sy * (W / 2 - 70)), m(40)]}>
+              <sphereGeometry args={[m(40), 16, 12]} />
+              <meshStandardMaterial color="#3a3f46" roughness={0.6} />
+            </mesh>
+          </group>
+        )),
+      )}
+      <RBox at={[x, y, top - 170]} size={[L - 80, W - 60, 60]} radius={8}>
+        {frame}
       </RBox>
-      <RBox at={[x, y, top - 20]} size={[len - 10, w - 10, 40]} radius={14}>
-        <meshStandardMaterial color="#f7f8f6" roughness={0.9} />
+      {/* mattress: the flat part, and the back section raised */}
+      <RBox at={[x + back / 2, y, top - 70]} size={[L - back - 60, W - 80, 140]} radius={30}>
+        <meshStandardMaterial color="#f4f6f7" roughness={0.9} />
       </RBox>
-      <RBox at={[x + len * 0.12, y, top + 4]} size={[len * 0.62, w + 4, 14]} radius={6}>
+      <group position={[m(head + back + 30), m(y), m(top - 140)]} rotation={[0, -tilt, 0]}>
+        <RBox at={[-back / 2, 0, 70]} size={[back, W - 80, 140]} radius={30}>
+          <meshStandardMaterial color="#f4f6f7" roughness={0.9} />
+        </RBox>
+        <RBox at={[-back + 140, 0, 175]} size={[200, W * 0.55, 80]} radius={30}>
+          <meshStandardMaterial color="#ffffff" roughness={0.95} />
+        </RBox>
+      </group>
+      <RBox at={[x + 420, y, top + 10]} size={[900, W - 60, 40]} radius={14}>
         <meshStandardMaterial color={blanket} roughness={0.95} />
       </RBox>
-      <RBox at={[x - len / 2 + 60, y, top + 8]} size={[80, w * 0.6, 22]} radius={10}>
-        <meshStandardMaterial color="#ffffff" roughness={0.9} />
+      <RBox at={[head + 20, y, top + 120]} size={[40, W, 520]} radius={10}>
+        {board}
       </RBox>
-      <RBox at={[x - len / 2 + 6, y, top + 40]} size={[12, w, 130]} radius={5}>
-        <meshStandardMaterial color="#c9b79c" roughness={0.6} />
+      <RBox at={[x + L / 2 - 20, y, top - 10]} size={[40, W, 340]} radius={10}>
+        {board}
       </RBox>
+      {/* side rails along the upper half: both sides, or only the far one (+y) where someone sits on the near edge */}
+      {(rails === 'both' ? [-1, 1] : [1]).map((sy) => (
+        <group key={sy}>
+          {[0, 1, 2].map((k) => (
+            <RBox key={k} at={[head + 520, y + sy * (W / 2 + 10), top + 60 + k * 90]} size={[800, 22, 22]} radius={10}>
+              {frame}
+            </RBox>
+          ))}
+          {[-1, 1].map((e) => (
+            <RBox key={e} at={[head + 520 + e * 380, y + sy * (W / 2 + 10), top + 100]} size={[22, 22, 220]} radius={10}>
+              {frame}
+            </RBox>
+          ))}
+        </group>
+      ))}
     </group>
   );
 }
 
 /**
- * Round the resident's room (the floor `AGV_TOP_MM` below the arm, which stands on a myAGV): the
+ * Round the resident's room (the floor CARE_ARM_Z below the arm, which stands on a myAGV and its lift column): the
  * room's walls, a second bed, the vital-signs screen, and the centre's delivery robot going up and
  * down the corridor with cups on its tray.
  */
 export function CareAround() {
-  const z = -AGV_TOP_MM;
+  const z = -CARE_ARM_Z;
   return (
     <group>
       <group position={[0, 0, m(z)]}>
@@ -632,12 +681,11 @@ export function CareAround() {
           }
         />
       </group>
-      <CareBed at={[-700, -1100]} z={z} blanket="#c9b3d9" />
-      <Blob at={[-700, -1100]} w={520} d={300} k={0.25} />
-      <RBox at={[-420, -620, z / 2]} size={[160, 120, -z]} radius={4}>
+      <CareBed at={[-1700, 900]} z={z} blanket="#c9b3d9" />
+      <RBox at={[-1600, -200, z / 2]} size={[400, 300, -z]} radius={4}>
         <meshStandardMaterial color="#c9b79c" roughness={0.6} />
       </RBox>
-      <Monitor at={[-420, -620]} yaw={0.6} w={130} kind="plot" accent="#3a8f6b" title="생체 신호" />
+      <Monitor at={[-1600, -200]} yaw={0.9} w={260} kind="plot" accent="#3a8f6b" title="생체 신호" />
     </group>
   );
 }

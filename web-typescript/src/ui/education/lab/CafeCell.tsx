@@ -25,7 +25,8 @@ import { LEARN_COLORS } from '../stage/learn3d';
 import type { LiveArm } from '../stage/LearnStage';
 import { Dim, Sign, m, tag, v3, type CellDim } from './CellKit';
 import { CareBed } from './ambient/Around';
-import { AGV_TOP_MM, ParkedAgv } from './ambient/Props';
+import Model from './ambient/Model';
+import { AGV_TOP_MM, CARE_ARM_Z, ParkedAgv } from './ambient/Props';
 
 const FRAME_DT = 0.02;
 const UP = new Vector3(0, 0, 1);
@@ -358,76 +359,72 @@ function Counter() {
 }
 
 /**
- * ③ 돌봄: the resident's room. The arm stands on a parked myAGV (a mobile manipulator), so the floor
- * is AGV_TOP_MM below the arm's base; the mini fridge's pull-out shelf and the low table by the bed
- * are at the base's height, where the engine puts the bottle. The resident's hand rests on the bed.
+ * ③ 돌봄: the resident's room at real size. The arm stands on a lift column on a parked myAGV (a
+ * mobile manipulator), its base CARE_ARM_Z above the floor — the height of the bedside table, whose
+ * top is where the engine puts the bottle down; the mini fridge stands with its top at the same
+ * height, the bottle on a tray on it. Round them: the care bed, a wheelchair, the privacy curtain, an
+ * armchair and a chest of drawers (model packs, see ambient/Model.tsx).
  */
 function CareRoom() {
-  const fz = -AGV_TOP_MM;
+  const fz = -CARE_ARM_Z;
   const [tx, ty] = PICKUP;
+  const [fx, fy] = FRIDGE;
   return (
     <group>
       <ParkedAgv z={fz} led="#3a8f6b" />
-      <MiniFridge />
-      {/* The low table by the bed: its top at the arm's base height, the bottle's spot marked. */}
-      <RBox at={[tx, ty - 10, -6]} size={[190, 130, 12]} radius={4}>
-        <meshStandardMaterial color="#c9a77c" roughness={0.6} />
-      </RBox>
-      {[
-        [-80, -55],
-        [80, -55],
-        [-80, 35],
-        [80, 35],
-      ].map(([dx, dy]) => (
-        <RBox key={`${dx},${dy}`} at={[tx + dx, ty - 10 + dy, (fz - 12) / 2]} size={[14, 14, -fz - 12]} radius={3}>
-          <meshStandardMaterial color="#a5835a" roughness={0.6} />
-        </RBox>
-      ))}
+      <LiftColumn />
+      <Model group="care" name="sideTable" at={[tx, ty - 20]} z={fz} h={CARE_ARM_Z} />
       <mesh position={[m(tx), m(ty), m(0.6)]}>
         <ringGeometry args={[m(24), m(28), 32]} />
         <meshBasicMaterial color="#3a8f6b" toneMapped={false} />
       </mesh>
-      {/* A pill cup and a folded towel on the table. */}
-      <mesh position={[m(tx - 60), m(ty - 40), m(12)]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[m(12), m(10), m(24), 18]} />
+      {/* A pill cup on the table, and the tray on the fridge the bottle is taken from. */}
+      <mesh position={[m(tx - 150), m(ty - 60), m(12)]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[m(14), m(11), m(24), 18]} />
         <meshStandardMaterial color="#ffffff" roughness={0.5} />
       </mesh>
-      <RBox at={[tx + 62, ty - 42, 7]} size={[50, 36, 14]} radius={5}>
-        <meshStandardMaterial color="#f2b8a2" roughness={0.95} />
+      <Model group="care" name="fridge" at={[fx - 20, fy + 40]} z={fz} yaw={-Math.PI / 2} h={CARE_ARM_Z - 6} />
+      <RBox at={[fx, fy, -3]} size={[120, 90, 6]} radius={2}>
+        <meshStandardMaterial color="#c9ced4" roughness={0.5} />
       </RBox>
-      <CareBed at={[230, -470]} z={fz} len={560} w={420} top={196} />
-      <group position={[m(tx + 40), m(-282), m(fz + 196 + 18)]}>
-        <Hand />
-      </group>
-      <Sign at={[-130, 0, 200]} yaw={Math.PI / 2} w={150} h={70} lines={['스마트시티 돌봄 센터', '302호 · 물 드리기']} fg="#ffffff" bg="#3a8f6b" />
-      <Sign at={[300, 30, 40]} yaw={0.7} w={92} h={30} lines={['물병 180 g', '아침 컵 60 g의 3배']} fg="#ffffff" bg="#e5484d" />
-      <Html zIndexRange={[11, 4]} center position={[m(-40), m(150), m(fz + 60)]} style={{ pointerEvents: 'none' }}>
-        <span style={{ ...tag('#344054'), font: '800 10px var(--font-ui, system-ui)', padding: '0 4px' }}>myAGV · 멈춘 채</span>
-      </Html>
+      {/* The bed along y beyond the table, its head away; the resident sits on its edge facing the robot. */}
+      <CareBed at={[1000, -300]} z={fz} yaw={-Math.PI / 2} rails="far" />
+      <Model group="people" name="elderWoman" at={[700, -260]} z={fz} yaw={-Math.PI / 2} />
+      <Model group="care" name="nightstand" at={[1080, 620]} z={fz} h={600} />
+      <Model group="care" name="wheelchair" at={[-350, 900]} z={fz} yaw={2.6} />
+      <Model group="care" name="curtain" at={[1650, -300]} z={fz} yaw={Math.PI / 2} />
+      <Model group="care" name="armchair" at={[-760, 420]} z={fz} yaw={-2.3} />
+      <Model group="care" name="drawers" at={[-1150, -150]} z={fz} yaw={Math.PI / 2} />
+      <Sign at={[-130, 0, 260]} yaw={Math.PI / 2} w={150} h={70} lines={['스마트시티 돌봄 센터', '302호 · 물 드리기']} fg="#ffffff" bg="#3a8f6b" />
+      <Sign at={[300, 30, 120]} yaw={0.7} w={92} h={30} lines={['물병 180 g', '아침 컵 60 g의 3배']} fg="#ffffff" bg="#e5484d" />
     </group>
   );
 }
 
-/** ③: the mini fridge behind on the left, standing on the floor, its pull-out shelf at the arm's base height. */
-function MiniFridge() {
-  const [x, y] = FRIDGE;
-  const fz = -AGV_TOP_MM;
-  const top = 120;
+/** The lift column between the myAGV's top plate and the arm's base: an aluminium profile with its plates. */
+function LiftColumn() {
+  const fz = -CARE_ARM_Z;
+  const bottom = fz + AGV_TOP_MM;
+  const h = -bottom;
   return (
     <group>
-      <RBox at={[x - 70, y + 20, (fz + top) / 2]} size={[90, 120, top - fz]} radius={6}>
-        <meshStandardMaterial color="#f5f7fa" roughness={0.5} />
+      <RBox at={[0, 0, bottom + 5]} size={[200, 160, 10]} radius={2}>
+        <meshStandardMaterial color="#2b3038" metalness={0.5} roughness={0.4} />
       </RBox>
-      <RBox at={[x - 24.5, y + 20, (fz + top) / 2 + 4]} size={[1, 100, top - fz - 20]} radius={0.5} shadow={false}>
-        <meshPhysicalMaterial color="#cfe7ff" transparent opacity={0.4} roughness={0.05} clearcoat={1} />
+      <RBox at={[0, 0, bottom + h / 2]} size={[90, 90, h - 20]} radius={3}>
+        <meshStandardMaterial color="#c7ccd2" metalness={0.75} roughness={0.32} />
       </RBox>
-      <RBox at={[x, y, 4]} size={[70, 70, 8]} radius={3}>
-        <meshStandardMaterial color="#dfe6ee" roughness={0.6} />
+      {[-1, 1].map((sx) => (
+        <RBox key={sx} at={[sx * 46, 0, bottom + h / 2]} size={[2, 30, h - 40]} radius={0.5} shadow={false}>
+          <meshStandardMaterial color="#8d949c" metalness={0.7} roughness={0.4} />
+        </RBox>
+      ))}
+      <RBox at={[0, 0, -6]} size={[150, 150, 12]} radius={2}>
+        <meshStandardMaterial color="#2b3038" metalness={0.5} roughness={0.4} />
       </RBox>
-      <RBox at={[x - 4, y, (fz + 0) / 2]} size={[10, 50, -fz]} radius={2}>
-        <meshStandardMaterial color="#c9cfd6" metalness={0.5} roughness={0.4} />
-      </RBox>
-      <Sign at={[x - 70, y + 20 - 60.6, 100]} w={70} h={16} lines={['미니 냉장고']} fg="#ffffff" bg="#3a8f6b" />
+      <Html zIndexRange={[11, 4]} center position={[m(0), m(130), m(bottom + 60)]} style={{ pointerEvents: 'none' }}>
+        <span style={{ ...tag('#344054'), font: '800 10px var(--font-ui, system-ui)', padding: '0 4px' }}>myAGV + 승강 기둥 · 멈춘 채</span>
+      </Html>
     </group>
   );
 }
