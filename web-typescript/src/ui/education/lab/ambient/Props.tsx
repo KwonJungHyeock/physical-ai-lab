@@ -29,6 +29,8 @@ const ARM_URL = '/robot/rdkx5/rdkx5.glb';
 export const AGV_TOP_MM = 132;
 /** 돌봄 (스마트시티 ③): the arm's base above the floor — the myAGV plus its lift column, the height of a bedside table, mm. */
 export const CARE_ARM_Z = 550;
+/** 카페 (스마트시티 ①②): the bar counter the arm stands on, its top above the floor, mm. */
+export const CAFE_COUNTER_MM = 900;
 const AGV_URL = '/robot/myagv/myagv2023.glb';
 
 type Xy = readonly [number, number];

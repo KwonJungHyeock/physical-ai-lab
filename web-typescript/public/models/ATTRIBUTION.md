@@ -13,6 +13,12 @@ otherwise unchanged. No credit is required by these licences; it is given here w
 | `care.glb` | `nightstand` | AWS RoboMaker Small House World (nightstand) | Amazon Web Services | MIT-0 |
 | `care.glb` | `curtain` | AWS RoboMaker Hospital World (privacy curtain) | Amazon Web Services | MIT-0 |
 | `care.glb` | `fridge` | Kenney Furniture Kit 2.0 (fridge small) | Kenney — www.kenney.nl | CC0 1.0 |
+| `cafe.glb` | `stool` | AWS RoboMaker Bookstore World (bar stool) | Amazon Web Services | MIT-0 |
+| `cafe.glb` | `table` | Poly Haven — Round Wooden Table 01 (scaled 0.75) | see polyhaven.com | CC0 1.0 |
+| `cafe.glb` | `chair` | Poly Haven — Dining Chair 02 | see polyhaven.com | CC0 1.0 |
+| `cafe.glb` | `lamp` | Poly Haven — Modern Ceiling Lamp 01 | see polyhaven.com | CC0 1.0 |
+| `cafe.glb` | `plant` | Poly Haven — Potted Plant 02 | see polyhaven.com | CC0 1.0 |
+| `cafe.glb` | `chalkboard` | Poly Haven — Standing Chalkboard 01 | see polyhaven.com | CC0 1.0 |
 | `people.glb` | `elderWoman`, `elderMan` | Quaternius — Background Posed Humans (hair tinted grey) | Quaternius — quaternius.com | CC0 1.0 (the pack's License.txt) |
 | `people.glb` | `workerMan` | Quaternius — Ultimate Modular Men | Quaternius | CC0 1.0 (the pack's License.txt) |
 | `people.glb` | `workerWoman`, `customer` | Quaternius — Ultimate Modular Women | Quaternius | CC0 1.0 (the pack's License.txt) |

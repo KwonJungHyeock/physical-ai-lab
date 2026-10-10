@@ -26,7 +26,7 @@ import type { LiveArm } from '../stage/LearnStage';
 import { Dim, Sign, m, tag, v3, type CellDim } from './CellKit';
 import { CareBed } from './ambient/Around';
 import Model from './ambient/Model';
-import { AGV_TOP_MM, CARE_ARM_Z, ParkedAgv } from './ambient/Props';
+import { AGV_TOP_MM, CAFE_COUNTER_MM, CARE_ARM_Z, ParkedAgv } from './ambient/Props';
 
 const FRAME_DT = 0.02;
 const UP = new Vector3(0, 0, 1);
@@ -161,6 +161,7 @@ export default function CafeCell({ player, prob, overlay }: Props) {
       ) : (
         <>
           <Floor />
+          <CounterBody />
           <Bar />
           <Counter />
           <CafeDressing prob={prob} />
@@ -278,7 +279,7 @@ function Hand() {
     <group>
       <mesh position={[0, m(-110), m(-6)]} rotation={[0, 0, 0]}>
         <boxGeometry args={[m(46), m(170), m(40)]} />
-        <meshStandardMaterial color="#2f5be7" roughness={0.7} />
+        <meshStandardMaterial color="#d6d9de" roughness={0.8} />
       </mesh>
       <mesh position={[0, m(-22), 0]} scale={[1, 1.3, 0.55]}>
         <sphereGeometry args={[m(26), 20, 14]} />
@@ -429,54 +430,59 @@ function LiftColumn() {
   );
 }
 
-/** The café around the cell: a menu board, stools beyond the counter, pendant lights, plants — and per problem the story's props. */
+/**
+ * The bar counter under the cell at real size: the arm, the bar and the pickup spot are on its top
+ * (z = 0); its body goes down CAFE_COUNTER_MM to the café floor — wood panels on the customers' side,
+ * a dark kick plate, a stone top edge.
+ */
+function CounterBody() {
+  const H = CAFE_COUNTER_MM;
+  const x0 = -180;
+  const x1 = 460;
+  const y0 = COUNTER_EDGE_Y;
+  const y1 = 420;
+  const cx = (x0 + x1) / 2;
+  return (
+    <group>
+      <RBox at={[cx, (y0 + y1) / 2, -H / 2 - 2]} size={[x1 - x0, y1 - y0, H - 4]} radius={4}>
+        <meshStandardMaterial color="#6b4529" roughness={0.65} />
+      </RBox>
+      {/* vertical wood slats along the customers' side */}
+      {Array.from({ length: 16 }, (_, i) => x0 + 20 + (i * (x1 - x0 - 40)) / 15).map((x) => (
+        <RBox key={x} at={[x, y0 - 4, -H / 2 + 40]} size={[30, 8, H - 160]} radius={2}>
+          <meshStandardMaterial color="#8a5a35" roughness={0.6} />
+        </RBox>
+      ))}
+      <RBox at={[cx, y0 + 20, -H + 50]} size={[x1 - x0 + 4, 50, 100]} radius={2}>
+        <meshStandardMaterial color="#2b2420" roughness={0.6} />
+      </RBox>
+      <RBox at={[cx, y0 - 10, -12]} size={[x1 - x0 + 30, 40, 24]} radius={4}>
+        <meshStandardMaterial color="#e9e4dc" roughness={0.35} />
+      </RBox>
+    </group>
+  );
+}
+
+/**
+ * The café round the cell at real size: bar stools on the customers' side, pendant lamps over the
+ * counter, the menu board on the bar, the customer (②) — and per problem the story's props.
+ */
 function CafeDressing({ prob }: { prob: CafeProblem }) {
+  const fz = -CAFE_COUNTER_MM;
   return (
     <group>
       <Sign at={[-130, 0, 200]} yaw={Math.PI / 2} w={150} h={90} lines={['로봇 시음 카페', '오늘의 커피 · 시음 무료', '스마트시티 1층']} fg="#fdf3e2" bg="#2b2420" />
-      {[-60, 60, 180].map((x) => (
-        <group key={x}>
-          <mesh position={[m(x), m(-300), m(55)]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[m(4), m(4), m(110), 10]} />
-            <meshStandardMaterial color="#2f3439" metalness={0.6} roughness={0.4} />
-          </mesh>
-          <mesh position={[m(x), m(-300), m(112)]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[m(26), m(26), m(10), 24]} />
-            <meshStandardMaterial color="#b4530f" roughness={0.6} />
-          </mesh>
-        </group>
+      {[560, 900].map((x) => (
+        <Model key={x} group="cafe" name="stool" at={[x, -520]} z={fz} yaw={0.3} />
       ))}
-      {[40, 200].map((x) => (
-        <group key={x}>
-          <mesh position={[m(x), m(-60), m(480)]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[m(1), m(1), m(120), 6]} />
-            <meshStandardMaterial color="#2f3439" />
-          </mesh>
-          <mesh position={[m(x), m(-60), m(410)]} rotation={[-Math.PI / 2, 0, 0]}>
-            <coneGeometry args={[m(30), m(28), 24, 1, true]} />
-            <meshStandardMaterial color="#3a414b" side={2} roughness={0.5} />
-          </mesh>
-          <mesh position={[m(x), m(-60), m(400)]}>
-            <sphereGeometry args={[m(9), 16, 12]} />
-            <meshStandardMaterial color="#fff2c6" emissive="#ffd27a" emissiveIntensity={1.2} toneMapped={false} />
-          </mesh>
-        </group>
+      {[-60, 420].map((x) => (
+        <Model key={x} group="cafe" name="lamp" at={[x, 120]} z={2000 - 952} scale={0.8} />
       ))}
-      <group>
-        <mesh position={[m(330), m(140), m(40)]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[m(34), m(28), m(80), 24]} />
-          <meshStandardMaterial color="#e9e2d6" roughness={0.6} />
-        </mesh>
-        {[0, 1, 2, 3, 4].map((k) => (
-          <mesh key={k} position={[m(330 + Math.cos(k * 1.3) * 18), m(140 + Math.sin(k * 1.3) * 18), m(110 + k * 8)]} scale={[1, 1, 1.6]}>
-            <sphereGeometry args={[m(24), 12, 10]} />
-            <meshStandardMaterial color={k % 2 ? '#3d7a2c' : '#4f9a37'} roughness={0.8} />
-          </mesh>
-        ))}
-      </group>
+      {/* ② the customer stands behind the counter edge; her reaching hand is the one the sensor sees */}
+      {prob === 2 && <Model group="people" name="customer" at={[200, -640]} z={fz} yaw={Math.PI} pose="Idle" />}
       {prob === 1 && <Sign at={[290, 20, 40]} yaw={0.7} w={90} h={30} lines={['빈 컵 회수 프로그램', '250 mm/s · 4 m/s²']} fg="#1d2939" bg="#fff6d6" />}
       {prob === 2 && <Sign at={[300, -110, 40]} yaw={0.7} w={92} h={30} lines={['점심시간 · 손님 많음', '센서 감지 50 mm']} fg="#ffffff" bg="#e5484d" />}
-          </group>
+    </group>
   );
 }
 

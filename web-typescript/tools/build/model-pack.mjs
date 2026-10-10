@@ -40,6 +40,17 @@ const GROUPS = {
       fridge: ['care-cafe/glb/kn-fridge-small.glb', 1.9],
     },
   },
+  cafe: {
+    tex: 512,
+    models: {
+      stool: ['care-cafe/glb/aws-bar-stool.glb', 1],
+      table: ['care-cafe/glb/ph-round-wooden-table-01.glb', 0.75],
+      chair: ['care-cafe/glb/ph-dining-chair-02.glb', 1],
+      lamp: ['care-cafe/glb/ph-modern-ceiling-lamp-01.glb', 1],
+      plant: ['care-cafe/glb/ph-potted-plant-02.glb', 1],
+      chalkboard: ['care-cafe/glb/ph-standing-chalkboard-01.glb', 1],
+    },
+  },
   people: {
     tex: 512,
     models: {

@@ -14,7 +14,7 @@ import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js
 
 import { m } from '../CellKit';
 
-export type ModelGroup = 'care' | 'people';
+export type ModelGroup = 'care' | 'cafe' | 'people';
 
 const url = (g: ModelGroup) => `/models/${g}.glb`;
 

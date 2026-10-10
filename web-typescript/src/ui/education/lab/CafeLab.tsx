@@ -60,7 +60,7 @@ import css from './lab.module.css';
 import lg from './site.module.css';
 
 /** The café from the front right, a little above (three.js metres, y up): camera, then target. */
-export const CAFE_VIEW: ViewPose = [0.7, 0.5, 0.56, 0.1, 0.08, 0.0];
+export const CAFE_VIEW: ViewPose = [1.3, 1.55, -1.35, 0.05, -0.15, 0.3];
 /** ③ 돌봄: from the front left, over the table to the resident on the bed (the room is at real size). */
 const CARE_VIEW: ViewPose = [-1.05, 1.45, 1.9, 0.42, 0.12, 0.16];
 const SLOW = 0.35;

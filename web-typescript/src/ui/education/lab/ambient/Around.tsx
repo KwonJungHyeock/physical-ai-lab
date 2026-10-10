@@ -15,7 +15,8 @@ import { CardBox } from '../ConveyorCell';
 import { Sign, Steel, Tape, m } from '../CellKit';
 import type { SiteLook } from './Ground';
 import { Blob } from './Ground';
-import { CARE_ARM_Z, Beacon, Fan, Leds, Monitor, RouteAgv, RunningBelt, SignalTower, Steam, Sway, Turn, WorkingArm } from './Props';
+import Model from './Model';
+import { CAFE_COUNTER_MM, CARE_ARM_Z, Beacon, Fan, Leds, Monitor, RouteAgv, RunningBelt, SignalTower, Steam, Sway, Turn, WorkingArm } from './Props';
 
 type Xy = readonly [number, number];
 
@@ -26,7 +27,7 @@ export const LOOKS: Record<AroundSite, SiteLook> = {
   logistics: { sky: '#cfd2d4', floor: 'concrete' },
   bio: { sky: '#dfe6ec', floor: 'vinyl' },
   farm: { sky: '#dfe9e4', floor: 'greenhouse' },
-  cafe: { sky: '#e9e0d4', floor: 'wood' },
+  cafe: { sky: '#e9e0d4', floor: 'wood', groundZ: -CAFE_COUNTER_MM },
   /** 스마트시티 돌봄 (카페 ③): a resident's room; the arm stands on a myAGV, so the floor is lower. */
   care: { sky: '#e6ebe4', floor: 'vinyl', groundZ: -CARE_ARM_Z },
   ai: { sky: '#d9dde6', floor: 'tiles' },
@@ -472,71 +473,52 @@ export function FarmAround() {
 /* --- 서비스 카페 --------------------------------------------------------------------------- */
 
 /** A small café table with two chairs and a cup on it, steaming. */
-function CafeTable({ at, phase = 0 }: { at: Xy; phase?: number }) {
+/** A café table with two chairs and a steaming cup on it, at real size on the floor (z = 0 of its group). */
+function CafeTable({ at, phase = 0, yaw = 0 }: { at: Xy; phase?: number; yaw?: number }) {
   const [x, y] = at;
+  const c = Math.cos(yaw);
+  const s = Math.sin(yaw);
   return (
     <group>
-      <mesh position={[m(x), m(y), m(130)]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[m(90), m(90), m(8), 32]} />
-        <meshStandardMaterial color="#efe6da" roughness={0.5} />
-      </mesh>
-      <mesh position={[m(x), m(y), m(63)]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[m(6), m(6), m(126), 10]} />
-        <meshStandardMaterial color="#2f3439" metalness={0.6} roughness={0.4} />
-      </mesh>
-      <mesh position={[m(x), m(y), m(3)]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[m(40), m(44), m(6), 24]} />
-        <meshStandardMaterial color="#2f3439" metalness={0.6} roughness={0.4} />
-      </mesh>
-      {[-1, 1].map((s) => (
-        <group key={s} position={[m(x + s * 150), m(y), 0]} rotation={[0, 0, s > 0 ? Math.PI : 0]}>
-          <RBox at={[0, 0, 80]} size={[80, 80, 10]} radius={4}>
-            <meshStandardMaterial color="#8a5a35" roughness={0.6} />
-          </RBox>
-          <RBox at={[-36, 0, 130]} size={[8, 80, 100]} radius={3}>
-            <meshStandardMaterial color="#8a5a35" roughness={0.6} />
-          </RBox>
-          {[-1, 1].flatMap((a) =>
-            [-1, 1].map((b) => (
-              <RBox key={`${a}${b}`} at={[a * 32, b * 32, 38]} size={[6, 6, 76]} radius={1}>
-                <meshStandardMaterial color="#2f3439" roughness={0.5} />
-              </RBox>
-            )),
-          )}
-        </group>
+      <Model group="cafe" name="table" at={at} yaw={yaw} />
+      {[-1, 1].map((k) => (
+        <Model key={k} group="cafe" name="chair" at={[x + k * 640 * c, y + k * 640 * s]} yaw={yaw + (k > 0 ? -Math.PI / 2 : Math.PI / 2)} />
       ))}
-      <group position={[m(x + 20), m(y - 10), m(134)]}>
-        <mesh position={[0, 0, m(14)]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[m(16), m(12), m(28), 20]} />
+      <group position={[m(x + 120), m(y - 60), m(754)]}>
+        <mesh position={[0, 0, m(45)]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[m(40), m(30), m(90), 20]} />
           <meshStandardMaterial color="#fbfaf7" roughness={0.5} />
         </mesh>
-        <mesh position={[0, 0, m(26)]}>
-          <circleGeometry args={[m(14), 20]} />
+        <mesh position={[0, 0, m(82)]}>
+          <circleGeometry args={[m(36), 20]} />
           <meshStandardMaterial color="#4a2511" roughness={0.3} />
         </mesh>
       </group>
-      <Steam at={[x + 20, y - 10]} z={170} n={5} r={6} rise={60} phase={phase} />
-      <Blob at={at} w={420} d={200} k={0.22} />
+      <Steam at={[x + 120, y - 60]} z={850} n={5} r={14} rise={160} phase={phase} />
     </group>
   );
 }
 
-/** The café round the robot bar: tables with steaming cups, a serving robot doing its round, the back bar's second robot, the order screen. */
+/**
+ * The café round the robot bar, at real size on the floor CAFE_COUNTER_MM below the counter top:
+ * tables with steaming cups, a serving robot doing its round, the back bar with the second robot,
+ * the order screen, a plant and the menu board.
+ */
 export function CafeAround() {
   return (
-    <group>
-      <Hall band="#b4530f" wall="#efe6da" x={-2200} y={2200} />
-      <CafeTable at={[-1450, 700]} />
-      <CafeTable at={[-1450, 180]} phase={1.3} />
-      <CafeTable at={[-450, 1250]} phase={2.6} />
+    <group position={[0, 0, m(-CAFE_COUNTER_MM)]}>
+      <Hall band="#b4530f" wall="#efe6da" x={-2600} y={2600} h={3000} />
+      <CafeTable at={[-1700, 900]} />
+      <CafeTable at={[-1700, -600]} phase={1.3} />
+      <CafeTable at={[-200, 1900]} phase={2.6} yaw={Math.PI / 2} />
       <RouteAgv
         route={[
-          [-800, 300],
-          [-800, 1300],
-          [-1100, 1300],
-          [-1100, 300],
+          [-900, 300],
+          [-900, 1500],
+          [-1200, 1500],
+          [-1200, 300],
         ]}
-        speed={100}
+        speed={160}
         led="#f0a14a"
         cargo={
           <group>
@@ -558,15 +540,17 @@ export function CafeAround() {
         }
       />
       {/* The back bar: a long counter, the second robot moving cups to the lids station, the order screen. */}
-      <RBox at={[-520, 300, 60]} size={[200, 700, 120]} radius={4}>
+      <RBox at={[-560, 300, 450]} size={[600, 1400, 900]} radius={6}>
         <meshStandardMaterial color="#5c3b23" roughness={0.6} />
       </RBox>
-      <RBox at={[-520, 300, 122]} size={[210, 710, 6]} radius={2}>
+      <RBox at={[-560, 300, 905]} size={[620, 1420, 10]} radius={3}>
         <meshStandardMaterial color="#efe6da" roughness={0.4} />
       </RBox>
-      <WorkingArm at={[-320, 900]} yaw={Math.PI} job={{ pick: [150, -95, 40], place: [150, 95, 40], period: 10, item: 'cup' }} phase={2} table={[380, 260, 120]} />
-      <Monitor at={[-560, 80]} z={125} yaw={-0.25} w={150} kind="orders" accent="#f0a14a" title="주문 현황" />
-      <Steam at={[-500, 420]} z={140} n={4} r={6} rise={50} phase={0.7} />
+      <WorkingArm at={[-420, 900]} yaw={Math.PI} job={{ pick: [150, -95, 40], place: [150, 95, 40], period: 10, item: 'cup' }} phase={2} table={[380, 260, 910]} />
+      <Monitor at={[-640, 80]} z={910} yaw={-0.25} w={300} kind="orders" accent="#f0a14a" title="주문 현황" />
+      <Steam at={[-560, 420]} z={930} n={4} r={10} rise={90} phase={0.7} />
+      <Model group="cafe" name="plant" at={[1100, -1300]} />
+      <Model group="cafe" name="chalkboard" at={[-1100, -1500]} yaw={-0.4} />
     </group>
   );
 }
