@@ -1,0 +1,33 @@
+{
+  "tex": 512,
+  "models": {
+    "wheelchair": [
+      "care-cafe/glb/ph-wheelchair-01.glb",
+      1
+    ],
+    "sideTable": [
+      "care-cafe/glb/ph-side-table-01.glb",
+      1
+    ],
+    "nightstand": [
+      "care-cafe/glb/aws-nightstand-white.glb",
+      1
+    ],
+    "armchair": [
+      "care-cafe/glb/ph-modern-arm-chair-01.glb",
+      1
+    ],
+    "curtain": [
+      "care-cafe/glb/aws-privacy-curtain.glb",
+      1
+    ],
+    "drawers": [
+      "care-cafe/glb/ph-drawer-cabinet.glb",
+      1
+    ],
+    "fridge": [
+      "care-cafe/glb/kn-fridge-small.glb",
+      1.9
+    ]
+  }
+}

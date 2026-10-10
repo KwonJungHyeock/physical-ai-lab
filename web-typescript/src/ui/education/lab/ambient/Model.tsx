@@ -9,17 +9,18 @@
 
 import { useGLTF } from '@react-three/drei';
 import { useMemo } from 'react';
-import { AnimationMixer, Box3, NearestFilter, Vector3, type AnimationClip, type Mesh, type Object3D, type Texture } from 'three';
+import { AnimationMixer, Box3, MeshStandardMaterial, NearestFilter, Vector3, type AnimationClip, type Mesh, type Object3D, type Texture } from 'three';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
 
 import { m } from '../CellKit';
 
-export type ModelGroup = 'care' | 'cafe' | 'people';
+/** One per JSON file in tools/build/model-packs/. */
+export type ModelGroup = 'care' | 'cafe' | 'people' | 'bio' | 'factory' | 'logistics' | 'farm' | 'ai' | 'energy';
 
 const url = (g: ModelGroup) => `/models/${g}.glb`;
 
 /** A fresh copy of the named model, casting and taking shadows; palette textures sampled without blur. */
-function useModelCopy(group: ModelGroup, name: string, pose?: string, at = 0.5): { obj: Object3D; size: Vector3 } {
+function useModelCopy(group: ModelGroup, name: string, pose?: string, at = 0.5, color?: string): { obj: Object3D; size: Vector3 } {
   const { scene, animations } = useGLTF(url(group));
   return useMemo(() => {
     const src = scene.getObjectByName(name);
@@ -30,6 +31,8 @@ function useModelCopy(group: ModelGroup, name: string, pose?: string, at = 0.5):
       const mesh = o as Mesh;
       if (!mesh.isMesh) return;
       mesh.castShadow = mesh.receiveShadow = true;
+      // One colour over the whole model (its own colours lost on export, or a site's colour).
+      if (color) mesh.material = new MeshStandardMaterial({ color, roughness: 0.55, metalness: 0.1 });
       for (const mt of ([] as unknown[]).concat(mesh.material)) {
         const t = (mt as { map?: Texture | null }).map;
         const img = t?.image as { width?: number; height?: number } | undefined;
@@ -51,7 +54,7 @@ function useModelCopy(group: ModelGroup, name: string, pose?: string, at = 0.5):
     obj.updateMatrixWorld(true);
     const size = new Box3().setFromObject(obj).getSize(new Vector3());
     return { obj, size };
-  }, [scene, animations, group, name, pose, at]);
+  }, [scene, animations, group, name, pose, at, color]);
 }
 
 interface Props {
@@ -70,10 +73,12 @@ interface Props {
   /** A rigged model's clip to hold (e.g. 'Idle'), and where in it (0 … 1). */
   pose?: string;
   poseAt?: number;
+  /** Paint the whole model one colour. */
+  color?: string;
 }
 
-export default function Model({ group, name, at = [0, 0], z = 0, yaw = 0, scale, h, w, pose, poseAt }: Props) {
-  const { obj, size } = useModelCopy(group, name, pose, poseAt);
+export default function Model({ group, name, at = [0, 0], z = 0, yaw = 0, scale, h, w, pose, poseAt, color }: Props) {
+  const { obj, size } = useModelCopy(group, name, pose, poseAt, color);
   const k = scale ?? (h ? m(h) / size.y : w ? m(w) / size.x : 1);
   return (
     <group position={[m(at[0]), m(at[1]), m(z)]} rotation={[0, 0, yaw]}>

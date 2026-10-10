@@ -1,0 +1,25 @@
+{
+  "tex": 512,
+  "models": {
+    "elderWoman": [
+      "people/glb/bph-elder-woman-sitting.glb",
+      1
+    ],
+    "elderMan": [
+      "people/glb/bph-elder-man-sitting.glb",
+      1
+    ],
+    "workerMan": [
+      "people/glb/umm-worker-man.glb",
+      0.95
+    ],
+    "workerWoman": [
+      "people/glb/umw-worker-woman.glb",
+      0.93
+    ],
+    "customer": [
+      "people/glb/umw-casual-woman.glb",
+      0.92
+    ]
+  }
+}

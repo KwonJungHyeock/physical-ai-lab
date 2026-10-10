@@ -13,7 +13,9 @@
  * Needs @gltf-transform/core, /extensions, /functions and sharp (not app dependencies: install them
  * next to this script's copy, outside the app).
  *
- * usage: SRC=<folder> node model-pack.mjs <outdir> [group,group]
+ * The groups are the JSON files in model-packs/ (one per pack, see that folder).
+ *
+ * usage: SRC=<folder> [PACKS=<model-packs folder, when this script is run from a copy>] node model-pack.mjs <outdir> [group,group]
  */
 import { Document, NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
@@ -26,42 +28,14 @@ const S = process.env.SRC ?? '.';
 const OUT = process.argv[2];
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
 
-/** name → [source file under SRC, scale to metres]. */
-const GROUPS = {
-  care: {
-    tex: 512,
-    models: {
-      wheelchair: ['care-cafe/glb/ph-wheelchair-01.glb', 1],
-      sideTable: ['care-cafe/glb/ph-side-table-01.glb', 1],
-      nightstand: ['care-cafe/glb/aws-nightstand-white.glb', 1],
-      armchair: ['care-cafe/glb/ph-modern-arm-chair-01.glb', 1],
-      curtain: ['care-cafe/glb/aws-privacy-curtain.glb', 1],
-      drawers: ['care-cafe/glb/ph-drawer-cabinet.glb', 1],
-      fridge: ['care-cafe/glb/kn-fridge-small.glb', 1.9],
-    },
-  },
-  cafe: {
-    tex: 512,
-    models: {
-      stool: ['care-cafe/glb/aws-bar-stool.glb', 1],
-      table: ['care-cafe/glb/ph-round-wooden-table-01.glb', 0.75],
-      chair: ['care-cafe/glb/ph-dining-chair-02.glb', 1],
-      lamp: ['care-cafe/glb/ph-modern-ceiling-lamp-01.glb', 1],
-      plant: ['care-cafe/glb/ph-potted-plant-02.glb', 1],
-      chalkboard: ['care-cafe/glb/ph-standing-chalkboard-01.glb', 1],
-    },
-  },
-  people: {
-    tex: 512,
-    models: {
-      elderWoman: ['people/glb/bph-elder-woman-sitting.glb', 1],
-      elderMan: ['people/glb/bph-elder-man-sitting.glb', 1],
-      workerMan: ['people/glb/umm-worker-man.glb', 0.95],
-      workerWoman: ['people/glb/umw-worker-woman.glb', 0.93],
-      customer: ['people/glb/umw-casual-woman.glb', 0.92],
-    },
-  },
-};
+/** One pack per file in model-packs/: { "tex": max texture size, "models": { name: [source file under SRC, scale to metres] } }. */
+const PACK_DIR = process.env.PACKS ?? path.join(path.dirname(new URL(import.meta.url).pathname), 'model-packs');
+const GROUPS = Object.fromEntries(
+  fs
+    .readdirSync(PACK_DIR)
+    .filter((f) => f.endsWith('.json'))
+    .map((f) => [f.slice(0, -5), JSON.parse(fs.readFileSync(path.join(PACK_DIR, f), 'utf8'))]),
+);
 
 const only = process.argv[3]?.split(',');
 fs.mkdirSync(OUT, { recursive: true });
