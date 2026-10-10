@@ -1,0 +1,21 @@
+{
+  "tex": 512,
+  "models": {
+    "box": [
+      "lab-industry/glb/ph-cardboard-box.glb",
+      1
+    ],
+    "handTruck": [
+      "lab-industry/glb/ph-hand-truck.glb",
+      1
+    ],
+    "wetSign": [
+      "lab-industry/glb/ph-wet-floor-sign.glb",
+      1
+    ],
+    "lamp": [
+      "interior/glb/ph_hanging_industrial_lamp.glb",
+      1
+    ]
+  }
+}

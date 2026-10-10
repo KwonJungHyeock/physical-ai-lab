@@ -83,8 +83,8 @@ import {
 import css from './lab.module.css';
 import lg from './site.module.css';
 
-/** The cell from the front right, a little above (three.js metres, y up): camera, then target. */
-export const LOGI_VIEW: ViewPose = [0.66, 0.46, 0.7, 0.1, 0.06, 0.1];
+/** The cell on its bench from the front right, at a standing person's eye, the warehouse behind it (three.js metres, y up): camera, then target. */
+export const LOGI_VIEW: ViewPose = [1.45, 0.7, 0.75, -0.15, 0.05, -0.05];
 /** Playback speed of a run (they take 10 – 100 s of line time), and near the moment it goes wrong. */
 const FAST = 3;
 const SLOW = 0.35;

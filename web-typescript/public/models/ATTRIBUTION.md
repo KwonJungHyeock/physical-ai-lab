@@ -25,7 +25,7 @@ otherwise unchanged. No credit is required by these licences; it is given here w
 | `farm.glb` | `tomatoPlant` | Quaternius — Ultimate Crops Pack (Tomato_4; fruit repainted red in the scene) | Quaternius — quaternius.com | CC0 1.0 (the pack page) |
 | `farm.glb` | `crate` | Poly Haven — Plastic Crate 02 | Fabi_G | CC0 1.0 |
 | `farm.glb` | `crateTomatoes` | KayKit Restaurant Bits 1.0 (crate_tomatoes, scaled 0.25) | Kay Lousberg — kaylousberg.com | CC0 1.0 |
-| `farm.glb` | `box` | Poly Haven — Cardboard Box 01 | see polyhaven.com | CC0 1.0 |
+| `farm.glb` | `box` | Poly Haven — Cardboard Box 01 | Rahul Chaudhary | CC0 1.0 |
 | `factory.glb` | `shelf` | Poly Haven — Steel Frame Shelves 01 | James Ray Cock | CC0 1.0 |
 | `factory.glb` | `rack` | Poly Haven — Worn Metal Rack | Luca B | CC0 1.0 |
 | `factory.glb` | `crate` | Poly Haven — Plastic Crate 02 | Fabi_G | CC0 1.0 |
@@ -49,6 +49,10 @@ otherwise unchanged. No credit is required by these licences; it is given here w
 | `bio.glb` | `micropipette` | MilkAndBanana — Lab Assets (bottle_micropipet) | MilkAndBanana | CC0 1.0 |
 | `bio.glb` | `microscope` | Poly Haven — Industrial Microscope | Lukas Walzer | CC0 1.0 |
 | `bio.glb` | `shelves` | Poly Haven — Steel Frame Shelves 01 | James Ray Cock | CC0 1.0 |
+| `logistics.glb` | `box` | Poly Haven — Cardboard Box 01 | Rahul Chaudhary | CC0 1.0 |
+| `logistics.glb` | `handTruck` | Poly Haven — Hand Truck | Mutanzom3D | CC0 1.0 |
+| `logistics.glb` | `wetSign` | Poly Haven — Wet Floor Sign 01 | Fran Calvente | CC0 1.0 |
+| `logistics.glb` | `lamp` | Poly Haven — Hanging Industrial Lamp | Kuutti Siitonen | CC0 1.0 |
 
 Licences: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/ ·
 MIT-0 — https://github.com/aws/mit-0 (no attribution clause) · Poly Haven — https://polyhaven.com/license.

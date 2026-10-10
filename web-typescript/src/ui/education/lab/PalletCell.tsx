@@ -11,16 +11,18 @@
  * them. Overlays: where the next box will be let go (값 고치기), the pressed depth and what has
  * been measured (원인 찾기), the cup's acceleration while it carries a box (②).
  *
- * Around it, the warehouse the story happens in (CellDressing): floor markings, a shelf with
- * stock, a finished pallet wrapped in film — and per problem what the story names: the old and
- * the new cartons (①), heavy cartons with their weight sticker, the scale and the dispatch
- * deadline (②), the pallet's floor marking where it used to stand, puddles and a wet-floor sign (③).
+ * The cell stands on a steel bench at real height (its top is z = 0; the warehouse floor is
+ * LOGISTICS_BENCH_MM below, see ambient/around/logistics.tsx). Around it, the warehouse the story
+ * happens in (CellDressing): a bench shelf with stock, a finished mini pallet wrapped in film — and
+ * per problem what the story names: the old and the new cartons (①), heavy cartons with their
+ * weight sticker, the parcel scale and the dispatch deadline (②), the pallet's marking where it used
+ * to stand, puddles on the washed floor and a wet-floor sign (③).
  */
 
 import { Html, Line } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, type RefObject } from 'react';
-import { DoubleSide, Quaternion, Vector3, type Group, type Mesh, type MeshStandardMaterial } from 'three';
+import { Quaternion, Vector3, type Group, type Mesh, type MeshStandardMaterial } from 'three';
 
 import { FEED, HEAVY_G, MARK_OFF, N_BOXES, PAL, PAL_HOME, PBOX, type LogiProblem, type PFrame, type PalletPose, type PalletRun } from '@/engine/education/lab/pallet';
 import type { Mm } from '@/engine/education/lab/cell';
@@ -28,8 +30,11 @@ import type { Mm } from '@/engine/education/lab/cell';
 import { RBox, belt, wood } from '../../simulator/stage/sceneKit';
 import { LEARN_COLORS } from '../stage/learn3d';
 import type { LiveArm } from '../stage/LearnStage';
-import { Board, Dim, FlatLabel, Shelf, Sign, Steel, Tape, m, tag, useHazard, useTextTexture, v3, type CellDim } from './CellKit';
+import { Dim, FlatLabel, Shelf, Sign, Steel, Tape, m, tag, useHazard, v3, type CellDim } from './CellKit';
 import { BeltConveyor, CardBox, scroll } from './ConveyorCell';
+import Bench from './ambient/Bench';
+import Model from './ambient/Model';
+import { LOGISTICS_BENCH_MM, Plate } from './ambient/around/logistics';
 
 const FRAME_DT = 0.02;
 const BOX_SIZE: Mm = [PBOX.sx, PBOX.sy, PBOX.h];
@@ -358,60 +363,81 @@ function WrappedPallet({ at, color = CARTON }: { at: [number, number]; color?: s
   );
 }
 
-/** A puddle on the floor (③: the floor was washed last night). */
+/** A puddle on the warehouse floor (③: the floor was washed last night). */
 function Puddle({ at, rx, ry, rot = 0 }: { at: [number, number]; rx: number; ry: number; rot?: number }) {
   return (
-    <mesh position={[m(at[0]), m(at[1]), m(0.8)]} rotation={[0, 0, rot]} scale={[rx / 10, ry / 10, 1]}>
+    <mesh position={[m(at[0]), m(at[1]), m(1.5 - LOGISTICS_BENCH_MM)]} rotation={[0, 0, rot]} scale={[rx / 10, ry / 10, 1]}>
       <circleGeometry args={[m(10), 40]} />
       <meshPhysicalMaterial color="#7d97ad" transparent opacity={0.5} roughness={0.04} metalness={0.2} clearcoat={1} depthWrite={false} />
     </mesh>
   );
 }
 
-/** ③: the yellow A-frame wet floor sign. */
-function WetSign({ at, yaw }: { at: [number, number]; yaw: number }) {
-  const tex = useTextTexture(['청소 중', '미끄럼 주의'], 46, 60, '#1d2025', '#f7c731');
-  const h = 72;
-  return (
-    <group position={[m(at[0]), m(at[1]), 0]} rotation={[0, 0, yaw]}>
-      {[1, -1].map((s) => (
-        <group key={s} position={[0, m(s * -8), m(h / 2)]} rotation={[s * 0.22, 0, 0]}>
-          <mesh rotation={[Math.PI / 2, s > 0 ? 0 : Math.PI, 0]} castShadow>
-            <planeGeometry args={[m(50), m(h)]} />
-            <meshStandardMaterial map={s > 0 ? tex : null} color={s > 0 ? '#ffffff' : '#f7c731'} roughness={0.5} side={DoubleSide} />
-          </mesh>
-        </group>
-      ))}
-    </group>
-  );
-}
-
-/** ②: the parcel scale by the belt, a heavy carton on it and its reading. */
+/** ②: the parcel scale on the bench by the belt (a real bench scale's size), a heavy carton on it and its reading. */
 function Scale({ at }: { at: [number, number] }) {
   const [x, y] = at;
   return (
     <group>
-      <RBox at={[x, y, 6]} size={[64, 64, 12]} radius={3}>
+      <RBox at={[x, y, 20]} size={[180, 180, 40]} radius={6}>
         <meshStandardMaterial color="#3a414b" roughness={0.5} />
       </RBox>
-      <RBox at={[x, y, 13]} size={[58, 58, 3]} radius={1}>
+      <RBox at={[x, y, 43]} size={[170, 170, 6]} radius={2}>
         <Steel />
       </RBox>
-      <Stock at={[x, y, 14.5]} color={HEAVY_CARTON} />
-      <RBox at={[x + 30, y - 44, 22]} size={[40, 8, 30]} radius={2}>
-        <meshStandardMaterial color="#2b3038" roughness={0.35} />
+      <Stock at={[x, y, 46]} color={HEAVY_CARTON} />
+      {/* the display pod on its cable, tilted up towards whoever weighs */}
+      <group position={[m(x + 20), m(y - 125), 0]} rotation={[0, 0, 0.35]}>
+        <RBox at={[0, 0, 22]} size={[110, 46, 44]} radius={5}>
+          <meshStandardMaterial color="#2b3038" roughness={0.35} />
+        </RBox>
+        <Sign at={[0, -23.6, 26]} w={84} h={28} lines={[`${HEAVY_G} g`]} fg="#6fe3a5" bg="#0f1a14" />
+      </group>
+    </group>
+  );
+}
+
+/** The cell's emergency stop on the bench: a yellow box with a red mushroom button. */
+function EStop({ at }: { at: [number, number] }) {
+  const [x, y] = at;
+  return (
+    <group>
+      <RBox at={[x, y, 35]} size={[70, 70, 70]} radius={5}>
+        <meshStandardMaterial color="#f2c230" roughness={0.45} />
       </RBox>
-      <Sign at={[x + 30, y - 48.6, 24]} w={34} h={20} lines={[`${HEAVY_G} g`]} fg="#6fe3a5" bg="#0f1a14" />
+      <mesh position={[m(x), m(y), m(76)]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[m(18), m(14), m(12), 24]} />
+        <meshStandardMaterial color="#2b3038" roughness={0.5} />
+      </mesh>
+      <mesh position={[m(x), m(y), m(86)]} scale={[1, 1, 0.55]} castShadow>
+        <sphereGeometry args={[m(22), 24, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial color="#d92d20" roughness={0.35} />
+      </mesh>
+    </group>
+  );
+}
+
+/** ②: the dispatch deadline on the bench, an A5 card in an acrylic stand, its face towards −y of `yaw`. */
+function DeskSign({ at, yaw, lines }: { at: [number, number]; yaw: number; lines: readonly string[] }) {
+  return (
+    <group position={[m(at[0]), m(at[1]), 0]} rotation={[0, 0, yaw]}>
+      <RBox at={[0, 10, 4]} size={[214, 50, 8]} radius={2}>
+        <meshPhysicalMaterial color="#e8eef3" transparent opacity={0.6} roughness={0.1} clearcoat={1} />
+      </RBox>
+      <RBox at={[0, 6, 80]} size={[214, 4, 150]} radius={2}>
+        <meshPhysicalMaterial color="#e8eef3" transparent opacity={0.35} roughness={0.1} clearcoat={1} />
+      </RBox>
+      <Plate at={[0, 3]} z={80} w={210} h={120} lines={lines} fg="#ffffff" bg="#d92d20" k={5} />
     </group>
   );
 }
 
 /**
- * The warehouse around the cell (all on the desk, the cell's scale): the walkway lines, a shelf of
- * stock behind the arm, a finished pallet wrapped for dispatch, and what each problem's story
- * names (see the file comment).
+ * The bench under the cell and what is round the cell: a bench shelf of stock behind the arm, a
+ * finished mini pallet wrapped for dispatch, and what each problem's story names (see the file
+ * comment) — on the bench, or at real size on the warehouse floor below it.
  */
 function CellDressing({ prob }: { prob: LogiProblem }) {
+  const fz = -LOGISTICS_BENCH_MM;
   const hazard = useHazard();
   const [hx, hy] = [PAL.sx / 2 + 8, PAL.sy / 2 + 8];
   const home: [number, number][] = [
@@ -422,9 +448,8 @@ function CellDressing({ prob }: { prob: LogiProblem }) {
   ];
   return (
     <group>
-      {/* Walkway: a yellow line in front of the line and one on the far side of the pallet. */}
-      <Tape a={[320, -420]} b={[320, 340]} w={10} color="#f2c230" />
-      <Tape a={[-300, -330]} b={[320, -330]} w={10} color="#f2c230" />
+      <Bench x0={-260} x1={560} y0={-340} y1={440} h={LOGISTICS_BENCH_MM} />
+      <EStop at={[500, -280]} />
       {/* The pallet's place, taped on the floor when the cell was set up (③: the pallet is no longer on it). */}
       {home.map((a, i) => (
         <Tape key={i} a={a} b={home[(i + 1) % 4]} w={7} hazard={hazard} />
@@ -468,16 +493,16 @@ function CellDressing({ prob }: { prob: LogiProblem }) {
       )}
       {prob === 2 && (
         <>
-          <Scale at={[300, 150]} />
-          <Board at={[300, 260]} yaw={0.75} lines={['출고 마감 16:30', '음료 세트 300건 · 트럭 대기']} />
+          <Scale at={[430, 150]} />
+          <DeskSign at={[440, 370]} yaw={0.75} lines={['출고 마감 16:30', '음료 세트 300건 · 트럭 대기']} />
         </>
       )}
       {prob === 3 && (
         <>
-          <Puddle at={[205, -250]} rx={42} ry={24} rot={0.3} />
-          <Puddle at={[20, -262]} rx={30} ry={17} rot={-0.4} />
-          <Puddle at={[-60, -150]} rx={24} ry={14} rot={0.8} />
-          <WetSign at={[-150, -110]} yaw={0.9} />
+          <Puddle at={[-620, -120]} rx={420} ry={230} rot={0.4} />
+          <Puddle at={[-620, 350]} rx={300} ry={160} rot={-0.3} />
+          <Puddle at={[-560, -820]} rx={260} ry={150} rot={0.9} />
+          <Model group="logistics" name="wetSign" at={[-760, -330]} z={fz} yaw={1.2} />
         </>
       )}
     </group>
