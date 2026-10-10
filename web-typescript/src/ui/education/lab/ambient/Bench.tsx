@@ -46,7 +46,7 @@ export default function Bench({ x0, x1, y0, y1, h, kind = 'steel' }: Props) {
       {c.panel ? (
         // a lab bench: closed cabinets under the top, a recessed plinth
         <>
-          <RBox at={[cx, cy, -(h - t) / 2 - t - 50]} size={[w - 20, d - 30, h - t - 100]} radius={4}>
+          <RBox at={[cx, cy, -t - (h - t - 100) / 2]} size={[w - 20, d - 30, h - t - 100]} radius={4}>
             <meshStandardMaterial color={c.panel} roughness={0.6} />
           </RBox>
           <RBox at={[cx, cy + 10, -h + 50]} size={[w - 60, d - 80, 100]} radius={2}>
