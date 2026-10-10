@@ -150,7 +150,8 @@ export default function LearnStage({ robot, chain, gripperRobot, scene, onTableP
         </Suspense>
         <ViewControl apiRef={api} home={home} focus={focus} />
         <ViewShift px={shift} />
-        <CameraControls makeDefault smoothTime={0.25} minDistance={0.15} maxDistance={3.2} maxPolarAngle={Math.PI * 0.49} dollyToCursor dollySpeed={0.6} />
+        {/* A site lab's room is built at real size: let the view draw back far enough to take it in. */}
+        <CameraControls makeDefault smoothTime={0.25} minDistance={0.15} maxDistance={look ? 6 : 3.2} maxPolarAngle={Math.PI * 0.49} dollyToCursor dollySpeed={0.6} />
       </Canvas>
       {!paused && <ViewTools apiRef={api} ambient={!!look} />}
     </>
