@@ -37,8 +37,10 @@ export function useTextTexture(lines: readonly string[], w: number, h: number, f
   const key = lines.join('\n');
   const tex = useMemo(() => {
     const c = document.createElement('canvas');
-    c.width = Math.round(w * k);
-    c.height = Math.round(h * k);
+    // k px per mm, but no side over 2048 px: a metre-wide wall sign would otherwise need a texture wider than some GPUs allow.
+    const px = Math.min(k, 2048 / Math.max(w, h));
+    c.width = Math.round(w * px);
+    c.height = Math.round(h * px);
     const g = c.getContext('2d')!;
     g.fillStyle = bg;
     g.fillRect(0, 0, c.width, c.height);
