@@ -12,7 +12,7 @@ import { STEP_NAME, lessonNo, nextTopicOf, type StepKey, type Topic } from '@/en
 import { tryGif } from '@/engine/education/media';
 import type { StudyLevel } from '@/engine/education/roadmap';
 import { glossFirst } from '@/engine/education/symbols';
-import { THEMES, type SiteId } from '@/engine/education/park';
+import { problemsUsing, THEMES, type SiteId } from '@/engine/education/park';
 
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 
@@ -48,6 +48,11 @@ export const isActivity = (p: PageId): p is StepKey => p === 'A' || p === 'B' ||
 
 /** The theme places with a problem that teaches this 학문. */
 const sitesOf = (cat: Topic['cat']) => THEMES.filter((s) => s.problems.some((p) => p.units.includes(cat)));
+/** The site problems this 차시 is learnt for (one of the 차시 they need), else the places of its 학문. */
+const usedBy = (t: Topic) => {
+  const ps = problemsUsing(t.id);
+  return ps.length ? ps.map(({ site, k }) => ({ id: site.id, color: site.color, label: `${site.name} ${k}. ${site.problems[k - 1].title}` })) : sitesOf(t.cat).map((s) => ({ id: s.id, color: s.color, label: s.name }));
+};
 
 interface Props {
   topic: Topic;
@@ -342,12 +347,12 @@ function WrapCard({ topic, results, onSite }: { topic: Topic; results: Partial<R
           <p>
             <Rich text={field} />
           </p>
-          {onSite && sitesOf(topic.cat).length > 0 && (
+          {onSite && usedBy(topic).length > 0 && (
             <div className={css.fieldSites}>
-              <small>이 원리를 쓰는 로봇 시티 현장</small>
-              {sitesOf(topic.cat).map((s) => (
-                <button key={s.id} type="button" style={{ '--c': s.color } as CSSProperties} onClick={() => onSite(s.id)}>
-                  {s.name} →
+              <small>{problemsUsing(topic.id).length ? '이 차시를 배우면 풀 수 있는 로봇 시티 현장 문제' : '이 원리를 쓰는 로봇 시티 현장'}</small>
+              {usedBy(topic).map((s) => (
+                <button key={s.label} type="button" style={{ '--c': s.color } as CSSProperties} onClick={() => onSite(s.id)}>
+                  {s.label} →
                 </button>
               ))}
             </div>

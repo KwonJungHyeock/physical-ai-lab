@@ -1,20 +1,21 @@
 /**
  * 교육 홈 · 로봇 시티: the course as one island city (the map: ui/education/map/world). Nine places:
- *  - 로봇 아카데미 (가운데, 'center'): the 8학문 28차시 theory course; finished = the 1단원 차시 (the
- *    basics before any field);
+ *  - 로봇 아카데미 (가운데, 'center'): the 8학문 28차시 theory course;
  *  - seven theme districts, each a real field where robots work, with a social problem and three
  *    problems the student fixes in its lab: 스마트팩토리 (lab/problems.ts), 물류 허브 (lab/pallet.ts),
  *    바이오·헬스케어 (lab/bio.ts), 스마트팜 (lab/farm.ts), 스마트시티 (lab/cafe.ts), 피지컬 AI 연구소
  *    (lab/ai.ts), 에너지·자원순환 (lab/energy.ts);
  *  - 디지털 트윈 관제센터 ('data'): data science over every lab run (runLog.ts) and the sim ↔ robot twin.
- * The academy is open from the start; the themes and the data centre open once its 1단원 is finished
- * (a teacher can open them all). The practice robot is the myCobot 280 RDK X5 (what the school has);
+ * Theory and practice take turns: each problem names the 차시 a beginner learns first (`needs`); a
+ * theme opens when its problem 1 can be followed, its other problems as their 차시 are learnt, and the
+ * next step (nextStep) sends the student to a problem as soon as it opens, else to the next 차시
+ * (a teacher can open everything). The practice robot is the myCobot 280 RDK X5 (what the school has);
  * each district also names the robots that work in that field (`crew`) — arms, mobile manipulators,
  * AGVs — which the map shows and which get their own problems as they come.
- * Each problem names the 단원 whose principle it teaches (the theory is in that 단원's PDF).
+ * Each problem also names the 단원 whose principle it teaches (`units`, the links to the theory).
  */
 
-import { topicsOf, type CategoryId, type TopicId } from './catalog';
+import { TOPICS, lessonNo, topicsOf, type CategoryId, type TopicId } from './catalog';
 
 export type SiteId = 'center' | 'factory' | 'logistics' | 'lab' | 'farm' | 'cafe' | 'ai' | 'energy' | 'data';
 /** The problem-solving labs (one per site that has one). */
@@ -26,8 +27,10 @@ export interface SiteProblem {
   ready?: boolean;
   /** What gets changed to fix it, in a few words. */
   fix: string;
-  /** The 단원 whose principle it teaches. */
+  /** The 단원 whose principle it teaches (the links to the theory). */
   units: readonly CategoryId[];
+  /** The 차시 a beginner learns first — the problem opens once they are done (its site opens with problem 1's). */
+  needs: readonly TopicId[];
 }
 
 export interface Site {
@@ -77,9 +80,9 @@ export const SITES: readonly Site[] = [
     content: 'lab',
     lab: 'factory',
     problems: [
-      { title: '옆을 집는다', fix: '관절 각도로 손끝 맞추기', units: ['2'], ready: true },
-      { title: '자리가 매번 바뀐다', fix: '좌표 지정 · 닿을 수 없는 자리', units: ['2', '1'], ready: true },
-      { title: '움직이는 상자를 놓친다', fix: '출발 시점 · 속도', units: ['3'], ready: true },
+      { title: '옆을 집는다', fix: '관절 각도로 손끝 맞추기', units: ['2'], needs: ['2-1'], ready: true },
+      { title: '자리가 매번 바뀐다', fix: '좌표 지정 · 닿을 수 없는 자리', units: ['2', '1'], needs: ['1-4', '2-2'], ready: true },
+      { title: '움직이는 상자를 놓친다', fix: '출발 시점 · 속도', units: ['3'], needs: ['2-3', '3-2'], ready: true },
     ],
   },
   {
@@ -95,9 +98,9 @@ export const SITES: readonly Site[] = [
     content: 'lab',
     lab: 'logistics',
     problems: [
-      { title: '쌓다가 무너진다', fix: '층마다 놓는 높이 · 여유', units: ['2', '6'], ready: true },
-      { title: '빨리 하니 미끄러진다', fix: '속도 · 가속도와 흡착력', units: ['3', '4'], ready: true },
-      { title: '팔레트 자리가 바뀐다', fix: '기준점 다시 잡기 · 좌표 보정', units: ['1', '2'], ready: true },
+      { title: '쌓다가 무너진다', fix: '층마다 놓는 높이 · 여유', units: ['2', '6'], needs: ['2-2'], ready: true },
+      { title: '빨리 하니 미끄러진다', fix: '속도 · 가속도와 흡착력', units: ['3', '4'], needs: ['3-2', '4-2'], ready: true },
+      { title: '팔레트 자리가 바뀐다', fix: '기준점 다시 잡기 · 좌표 보정', units: ['1', '2'], needs: ['1-2', '2-1'], ready: true },
     ],
   },
   {
@@ -113,9 +116,9 @@ export const SITES: readonly Site[] = [
     content: 'lab',
     lab: 'bio',
     problems: [
-      { title: '시험관이 기울어 쏟아진다', fix: '자세(rx · ry · rz) 유지', units: ['1', '2'], ready: true },
-      { title: '먼 칸일수록 어긋난다', fix: '영점 오차와 캘리브레이션', units: ['5'], ready: true },
-      { title: '돌아가는 길에 부딪힌다', fix: '경유점 · 충돌 검사', units: ['6', '1'], ready: true },
+      { title: '시험관이 기울어 쏟아진다', fix: '자세(rx · ry · rz) 유지', units: ['1', '2'], needs: ['1-2', '1-3'], ready: true },
+      { title: '먼 칸일수록 어긋난다', fix: '영점 오차와 캘리브레이션', units: ['5'], needs: ['5-5'], ready: true },
+      { title: '돌아가는 길에 부딪힌다', fix: '경유점 · 충돌 검사', units: ['6', '1'], needs: ['6-1', '6-2'], ready: true },
     ],
   },
   {
@@ -131,9 +134,9 @@ export const SITES: readonly Site[] = [
     content: 'lab',
     lab: 'farm',
     problems: [
-      { title: '덜 익은 것도 딴다', fix: '색으로 찾기 · 문턱값', units: ['7'], ready: true },
-      { title: '카메라와 손끝이 안 맞는다', fix: '픽셀 → mm · 카메라 보정', units: ['7', '2'], ready: true },
-      { title: '물러서 터진다', fix: '잡는 힘 · 안전 여유', units: ['4', '5'], ready: true },
+      { title: '덜 익은 것도 딴다', fix: '색으로 찾기 · 문턱값', units: ['7'], needs: ['7-2'], ready: true },
+      { title: '카메라와 손끝이 안 맞는다', fix: '픽셀 → mm · 카메라 보정', units: ['7', '2'], needs: ['7-1'], ready: true },
+      { title: '물러서 터진다', fix: '잡는 힘 · 안전 여유', units: ['4', '5'], needs: ['4-3', '5-4'], ready: true },
     ],
   },
   {
@@ -149,9 +152,9 @@ export const SITES: readonly Site[] = [
     content: 'lab',
     lab: 'cafe',
     problems: [
-      { title: '커피가 넘친다', fix: '가속도 · 궤적 프로파일', units: ['3'], ready: true },
-      { title: '손과 가까워진다', fix: '보호 거리 · 속도 제한', units: ['5'], ready: true },
-      { title: '물병이 무거워졌다 (돌봄)', fix: '관성과 가속 토크', units: ['4'], ready: true },
+      { title: '커피가 넘친다', fix: '가속도 · 궤적 프로파일', units: ['3'], needs: ['3-2'], ready: true },
+      { title: '손과 가까워진다', fix: '보호 거리 · 속도 제한', units: ['5'], needs: ['5-4'], ready: true },
+      { title: '물병이 무거워졌다 (돌봄)', fix: '관성과 가속 토크', units: ['4'], needs: ['4-2'], ready: true },
     ],
   },
   {
@@ -167,9 +170,9 @@ export const SITES: readonly Site[] = [
     content: 'lab',
     lab: 'ai',
     problems: [
-      { title: '색이 섞여 있다', fix: '겹치는 색 범위 · 판별 순서', units: ['7'], ready: true },
-      { title: '시연을 보고 따라 하기', fix: '궤적 재생과 정책', units: ['8'], ready: true },
-      { title: '처음 보는 물건', fix: '파이프라인 · 높이와 시차', units: ['6', '7', '8'], ready: true },
+      { title: '색이 섞여 있다', fix: '겹치는 색 범위 · 판별 순서', units: ['7'], needs: ['7-2'], ready: true },
+      { title: '시연을 보고 따라 하기', fix: '궤적 재생과 정책', units: ['8'], needs: ['8-1'], ready: true },
+      { title: '처음 보는 물건', fix: '파이프라인 · 높이와 시차', units: ['6', '7', '8'], needs: ['6-3', '7-1', '8-2'], ready: true },
     ],
   },
   {
@@ -185,9 +188,9 @@ export const SITES: readonly Site[] = [
     content: 'lab',
     lab: 'energy',
     problems: [
-      { title: '투명 PET가 안 보인다', fix: '밝기 범위 · 배경과의 여유', units: ['7'], ready: true },
-      { title: '빨리 하면 떨어진다', fix: '종류마다 속도 · 분당 처리량', units: ['3', '4'], ready: true },
-      { title: '겹쳐 놓인 쓰레기', fix: '온전히 보이는 것부터 · 집는 순서', units: ['6', '7'], ready: true },
+      { title: '투명 PET가 안 보인다', fix: '밝기 범위 · 배경과의 여유', units: ['7'], needs: ['7-2'], ready: true },
+      { title: '빨리 하면 떨어진다', fix: '종류마다 속도 · 분당 처리량', units: ['3', '4'], needs: ['3-2', '4-3'], ready: true },
+      { title: '겹쳐 놓인 쓰레기', fix: '온전히 보이는 것부터 · 집는 순서', units: ['6', '7'], needs: ['6-4', '7-2'], ready: true },
     ],
   },
   {
@@ -207,8 +210,11 @@ export const SITES: readonly Site[] = [
 
 export const SITE_BY_ID: ReadonlyMap<SiteId, Site> = new Map(SITES.map((s) => [s.id, s]));
 
-/** The 차시 the 교육센터 asks for: 1단원 (기초). */
-export const centerTopics = (): readonly TopicId[] => topicsOf('1').map((t) => t.id);
+/** The places the theme labs count in (everything but the academy and the data centre). */
+export const THEMES: readonly Site[] = SITES.filter((s) => s.content === 'lab');
+
+/** The 로봇 아카데미's 차시: the whole theory course, in order. */
+export const centerTopics = (): readonly TopicId[] => TOPICS.map((t) => t.id);
 
 /** What has been done so far: finished 차시 and, per lab, its solved problems (1 · 2 · 3). */
 export interface ParkProgress {
@@ -216,14 +222,24 @@ export interface ParkProgress {
   solved: Partial<Record<LabId, Partial<Record<1 | 2 | 3, boolean>>>>;
 }
 
-/** How many of a site's problems are done, out of how many (null: 준비 중). */
+export type ProblemNo = 1 | 2 | 3;
+const NOS: readonly ProblemNo[] = [1, 2, 3];
+
+/** The 차시 the academy is on: the 단원 of the first one not done (all done: the last 단원). */
+export function currentUnit(p: ParkProgress): CategoryId {
+  const t = TOPICS.find((x) => !p.done[x.id]) ?? TOPICS[TOPICS.length - 1];
+  return t.cat as CategoryId;
+}
+export const unitTopics = (p: ParkProgress): readonly TopicId[] => topicsOf(currentUnit(p)).map((t) => t.id);
+
+/** How many of a site's problems are done, out of how many (null: 준비 중). The academy counts all 28 차시. */
 export function siteScore(id: SiteId, p: ParkProgress): { done: number; of: number } | null {
   const s = SITE_BY_ID.get(id)!;
   if (s.content === 'lessons') {
     const t = centerTopics();
     return { done: t.filter((x) => p.done[x]).length, of: t.length };
   }
-  if (s.content === 'lab') return { done: ([1, 2, 3] as const).filter((k) => p.solved[s.lab!]?.[k]).length, of: s.problems.length };
+  if (s.content === 'lab') return { done: NOS.filter((k) => p.solved[s.lab!]?.[k]).length, of: s.problems.length };
   return null;
 }
 
@@ -234,19 +250,70 @@ export const siteFinished = (id: SiteId, p: ParkProgress) => {
 
 export type SiteState = 'done' | 'open' | 'locked';
 
-/** The places the theme labs count in (everything but the academy and the data centre). */
-export const THEMES: readonly Site[] = SITES.filter((s) => s.content === 'lab');
+/** The 차시 still to learn before a site's problem `k` opens (none: open). */
+export function problemMissing(site: Site, k: ProblemNo, p: ParkProgress): readonly TopicId[] {
+  return (site.problems[k - 1]?.needs ?? []).filter((t) => !p.done[t]);
+}
 
-/** Done, open (the academy always; the rest once the academy is finished, or all are opened), or locked. */
+/**
+ * Done, open, or locked. The academy is always open. A theme opens when its problem 1 can be followed
+ * (the 차시 it needs are done) — its problems 2 and 3 each open on their own 차시 in the lab; the data
+ * centre opens with the first theme. A teacher can open everything.
+ */
 export function siteStates(p: ParkProgress, allOpen = false): Record<SiteId, SiteState> {
   const out = {} as Record<SiteId, SiteState>;
-  const base = siteFinished('center', p);
-  for (const s of SITES) out[s.id] = siteFinished(s.id, p) ? 'done' : s.id === 'center' || base || allOpen ? 'open' : 'locked';
+  for (const s of SITES) {
+    if (siteFinished(s.id, p)) out[s.id] = 'done';
+    else if (s.content === 'lessons' || allOpen) out[s.id] = 'open';
+    else if (s.content === 'lab') out[s.id] = problemMissing(s, 1, p).length === 0 ? 'open' : 'locked';
+    else out[s.id] = THEMES.some((t) => problemMissing(t, 1, p).length === 0) ? 'open' : 'locked';
+  }
   return out;
 }
 
-/** The place to go to next: the academy until its 1단원 is done, then the first theme not finished, then the data centre. */
+/** Per lab, its problems that are not open yet and the 차시 each still needs (a teacher's 모든 현장 열기: none). */
+export function labLocks(p: ParkProgress, allOpen = false): Record<LabId, Partial<Record<ProblemNo, readonly TopicId[]>>> {
+  const out = {} as Record<LabId, Partial<Record<ProblemNo, readonly TopicId[]>>>;
+  for (const s of THEMES) {
+    const locks: Partial<Record<ProblemNo, readonly TopicId[]>> = {};
+    if (!allOpen) for (const k of NOS) if (!p.solved[s.lab!]?.[k] && problemMissing(s, k, p).length) locks[k] = problemMissing(s, k, p);
+    out[s.lab!] = locks;
+  }
+  return out;
+}
+
+/** What to do next. */
+export type NextStep = { kind: 'topic'; topic: TopicId } | { kind: 'lab'; site: SiteId; lab: LabId; prob: ProblemNo; uses: readonly TopicId[] } | { kind: 'data' };
+
+/**
+ * The course's next step, theory and practice in turn: as soon as a site problem can be followed (its
+ * 차시 learnt, and the site's earlier problems solved — ① 안내형 → ② → ③ 열린 과제), use what was just
+ * learnt there; otherwise the next 차시. Among open problems, the one whose 차시 came earliest first.
+ */
+export function nextStep(p: ParkProgress): NextStep {
+  let best: { site: Site; k: ProblemNo; at: number } | null = null;
+  for (const s of THEMES) {
+    for (const k of NOS) {
+      if (p.solved[s.lab!]?.[k]) continue;
+      const prev = NOS.filter((j) => j < k).every((j) => p.solved[s.lab!]?.[j]);
+      if (!prev || !s.problems[k - 1]?.ready || problemMissing(s, k, p).length) break;
+      const at = Math.max(0, ...s.problems[k - 1].needs.map(lessonNo));
+      if (!best || at < best.at) best = { site: s, k, at };
+      break;
+    }
+  }
+  if (best) return { kind: 'lab', site: best.site.id, lab: best.site.lab!, prob: best.k, uses: best.site.problems[best.k - 1].needs };
+  const t = TOPICS.find((x) => !p.done[x.id]);
+  return t ? { kind: 'topic', topic: t.id } : { kind: 'data' };
+}
+
+/** The place the next step is in (the map marks it). */
 export function currentSite(p: ParkProgress): SiteId {
-  if (!siteFinished('center', p)) return 'center';
-  return THEMES.find((s) => !siteFinished(s.id, p))?.id ?? 'data';
+  const n = nextStep(p);
+  return n.kind === 'topic' ? 'center' : n.kind === 'lab' ? n.site : 'data';
+}
+
+/** The site problems a 차시 is a step towards (it is among the 차시 they need), in site order. */
+export function problemsUsing(topic: TopicId): readonly { site: Site; k: ProblemNo }[] {
+  return THEMES.flatMap((s) => NOS.filter((k) => s.problems[k - 1]?.needs.includes(topic)).map((k) => ({ site: s, k })));
 }

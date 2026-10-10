@@ -32,6 +32,8 @@ for (const [w, h] of SIZES) {
   await ctx.addInitScript(() => {
     try {
       localStorage.setItem('robot-console-model', 'mycobot280-rdkx5');
+      // Every problem open, whatever 차시 are done (the teacher's 모든 현장 열기).
+      localStorage.setItem('park-all-open', 'true');
       // Still pictures: the checks read the panels, not the ambient motion.
       localStorage.setItem('edu-ambient', 'off');
     } catch {

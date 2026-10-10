@@ -26,7 +26,7 @@ const SCENES = {
 const want = process.argv.length > 2 ? process.argv.slice(2) : Object.keys(SCENES);
 
 mkdirSync(out, { recursive: true });
-const { browser, page } = await launch({ width: 1600, height: 900, storage: { 'robot-console-model': 'mycobot280-rdkx5', 'edu-ambient': 'on' } });
+const { browser, page } = await launch({ width: 1600, height: 900, storage: { 'robot-console-model': 'mycobot280-rdkx5', 'edu-ambient': 'on', 'park-all-open': 'true' } });
 page.setDefaultTimeout(240000);
 await page.goto(`${BASE}/console?from=sim`, { waitUntil: 'load', timeout: 240000 });
 await page.getByRole('button', { name: '시뮬레이터로 시작' }).click({ timeout: 240000 }).catch(() => {});

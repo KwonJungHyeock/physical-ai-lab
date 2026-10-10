@@ -59,6 +59,7 @@
 | [`18-education-quality.md`](reports/education/18-education-quality.md) | 보고 #18 — 기호 풀이 · 실습교육서 양식 · GIF · 28주제 검수 |
 | [`19-lesson-structure.md`](reports/education/19-lesson-structure.md) | 보고 #19 — 수업 순서(도입 → 개념 → 탐구 활동 → 정리 → 평가), 빈 곳 채우기, 오타 · 정렬 · 쏠림 · 내용 검수 |
 | [`20-world-map-plan.md`](reports/education/20-world-map-plan.md) | 보고 #20 — 통합 월드맵: 로봇 아카데미(이론 28차시) + 현장 테마 7곳 + 디지털 트윈 관제센터를 섬 도시 하나로, CC0 모델 자산 |
+| [`22-course-flow.md`](reports/education/22-course-flow.md) | 보고 #22 — 교육 전개 점검(이론 · 현장 · 흐름)과 1단계 수정: 문제마다 먼저 배울 차시, 이론과 현장을 번갈아 안내, 주차별 계획 2안 |
 
 ### [`system/`](reports/system/) — 시스템 구성
 | 문서 | 내용 |

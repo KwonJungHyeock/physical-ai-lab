@@ -589,3 +589,11 @@
   line-height: 1.7;
   font-size: 13.5px;
 }
+.tags button {
+  width: auto;
+}
+/* A 차시 still to learn before the problem opens. */
+.tags button[data-missing] {
+  background: #fff4e5;
+  color: #9a5b00;
+}

@@ -125,7 +125,8 @@ export const LEVEL_VIEW: Record<StudyLevel, LevelView> = {
     title: '보고 움직이며 원리 잡기',
     lead: '수식 없이 3D 시뮬레이터로 해 보고, 결과를 내 말로 설명해요. 한 주제 = 50분 한 차시.',
     minutes: 50,
-    optional: ['4'],
+    // 4 동역학 is not optional: 5 제어 starts from it, and four site problems need 4-2 · 4-3.
+    optional: [],
     fields: ['sensor', 'software', 'mobile', 'hri'],
     includes: ['그림 · 체험 활동', '확인 문제 (기초 · 응용)', '블록 코딩 · Python'],
   },

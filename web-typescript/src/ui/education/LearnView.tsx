@@ -15,7 +15,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { TOPIC_BY_ID, TOPICS, type StepKey, type TopicId } from '@/engine/education/catalog';
 import { DEFAULT_OWNED, PRODUCTS, type ProductId, type StudyLevel } from '@/engine/education/roadmap';
-import type { LabId, SiteId } from '@/engine/education/park';
+import { labLocks, type LabId, type ProblemNo, type SiteId } from '@/engine/education/park';
 import { forwardKinematicsFrames, type ChainSegment } from '@/engine/robot/kinematics';
 import type { UrdfRobot } from '@/engine/robot/urdf';
 import { workspaceProfile, type WorkspaceProfile } from '@/engine/physics/workspace';
@@ -34,6 +34,7 @@ import EnergyLab from './lab/EnergyLab';
 import DataCenter from './data/DataCenter';
 import FinalExam from './lab/FinalExam';
 import LogisticsLab from './lab/LogisticsLab';
+import { LabGateContext, type LabGate } from './lab/SiteFlow';
 import ParkView from './map/ParkView';
 import LessonBar from './lesson/LessonBar';
 import LessonCards, { PAGES, isActivity, type PageId, type ResumeSpot } from './lesson/LessonCards';
@@ -55,6 +56,7 @@ const FARM_KEY = 'lab-solved-farm';
 const CAFE_KEY = 'lab-solved-cafe';
 const AI_KEY = 'lab-solved-ai';
 const ENERGY_KEY = 'lab-solved-energy';
+const ALL_OPEN_KEY = 'park-all-open';
 const FIRST: TopicId = TOPICS[0].id;
 /** Stable "no results yet" (a fresh {} each render would re-render the memoised panel). */
 const NO_RESULTS: Partial<Record<StepKey, ResultRow>> = {};
@@ -135,6 +137,18 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
     setMapPick((p) => ({ id, n: (p?.n ?? 0) + 1 }));
     setScreen('map');
   }, []);
+  /** 모든 현장 열기 (the teacher's switch on the map): every site and problem open. */
+  const [allOpen, setAllOpenRaw] = useState(false);
+  useEffect(() => {
+    // Read after hydration (the page is a static export).
+    const v = readJson<unknown>(ALL_OPEN_KEY, false);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setAllOpenRaw(v === true || v === 1);
+  }, []);
+  const setAllOpen = useCallback((on: boolean) => {
+    setAllOpenRaw(on);
+    writeJson(ALL_OPEN_KEY, on);
+  }, []);
   /** Where a lesson goes back to: the page it was opened from. */
   const [lessonFrom, setLessonFrom] = useState<'map' | 'course'>('course');
   /** The lab's problems solved so far (1 · 2 · 3), kept between visits. */
@@ -206,7 +220,10 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
     setLabSeen(true);
     setScreen('lab');
   }, []);
-  const openSiteLab = useCallback((lab: LabId) => {
+  /** The problem a lab opens at when entered for it (the map's next step). */
+  const [labStart, setLabStart] = useState<LabGate['start']>(null);
+  const openSiteLab = useCallback((lab: LabId, prob?: ProblemNo) => {
+    if (prob) setLabStart((x) => ({ lab, prob, n: (x?.n ?? 0) + 1 }));
     if (lab === 'logistics') {
       setLogiSeen(true);
       setScreen('logistics');
@@ -385,14 +402,21 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
     [done, labSolved, logiSolved, bioSolved, farmSolved, cafeSolved, aiSolved, energySolved],
   );
 
+  const gate = useMemo<LabGate>(
+    () => ({ locks: labLocks(progress, allOpen), onLearn: fromMap, onMap: () => setScreen('map'), start: labStart }),
+    [progress, allOpen, fromMap, labStart],
+  );
+
   const topic = TOPIC_BY_ID.get(topicId)!;
   const Panel = PANELS[topicId];
   const inLesson = !hidden && screen === 'topic';
 
   return (
-    <>
+    <LabGateContext.Provider value={gate}>
       <ParkView
         progress={progress}
+        allOpen={allOpen}
+        onAllOpen={setAllOpen}
         hidden={hidden || screen !== 'map'}
         onTopic={fromMap}
         onLab={openSiteLab}
@@ -476,6 +500,6 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
           </aside>
         </div>
       </SymbolsProvider>
-    </>
+    </LabGateContext.Provider>
   );
 }

@@ -69,17 +69,7 @@ import ConveyorCell, { type CellMarker, type CellOverlay } from './ConveyorCell'
 import { FactoryAround, LOOKS } from './ambient/Around';
 import { BoxList, CompareView, EventLog, Fix1, Fix2, Fix3, Headline, P1Numbers, type Runs } from './FactoryParts';
 import { Playback } from './playback';
-import {
-  answeredUpTo,
-  ArrowDef,
-  fmt,
-  freshFlow,
-  PROBS,
-  RecordSheet,
-  SitePanel,
-  type FlowState,
-  type MeasureRow,
-} from './SiteFlow';
+import { ArrowDef, PROBS, ProbLock, RecordSheet, SitePanel, answeredUpTo, fmt, freshFlow, useLabStart, type FlowState, type MeasureRow } from './SiteFlow';
 import css from './lab.module.css';
 import lg from './site.module.css';
 
@@ -226,6 +216,7 @@ function valuesText(p: ProblemId, v: P1Values | P2Values | P3Values): string {
 
 export default function FactoryLab({ robot, chain, gripperRobot, hidden, level = 'hs', saved, onSolved, onBack }: Props) {
   const [prob, setProb] = useState<ProblemId>(1);
+  useLabStart('factory', setProb);
   const [st, setSt] = useState<Record<ProblemId, ProbState>>({ 1: fresh(1), 2: fresh(2), 3: fresh(3) });
   const [solved, setSolved] = useState<Record<ProblemId, boolean>>(() => ({ 1: !!saved?.[1], 2: !!saved?.[2], 3: !!saved?.[3] }));
   useEffect(() => {
@@ -482,6 +473,7 @@ export default function FactoryLab({ robot, chain, gripperRobot, hidden, level =
               <span className={css.num}>{p}</span>
               <span className={css.probName}>{FACTORY_TEXT[p].title}</span>
               {solved[p] && <i aria-label="해결">✓</i>}
+              <ProbLock lab="factory" p={p} />
             </button>
           ))}
         </nav>

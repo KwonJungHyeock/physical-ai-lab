@@ -69,17 +69,7 @@ import { logRun } from '@/engine/education/runLog';
 import LearnStage, { type LearnScene, type ViewPose } from '../stage/LearnStage';
 import PalletCell, { PalletPlayback, type PalletDim, type PalletOverlay } from './PalletCell';
 import { LogisticsAround, LOOKS } from './ambient/Around';
-import {
-  answeredUpTo,
-  ArrowDef,
-  fmt,
-  freshFlow,
-  RecordSheet,
-  SitePanel,
-  type FlowState,
-  type MeasureRow,
-  Knob,
-} from './SiteFlow';
+import { ArrowDef, Knob, ProbLock, RecordSheet, SitePanel, answeredUpTo, fmt, freshFlow, useLabStart, type FlowState, type MeasureRow } from './SiteFlow';
 import css from './lab.module.css';
 import lg from './site.module.css';
 
@@ -228,6 +218,7 @@ function accAt(run: PalletRun, i: number): { dir: Mm; mag: number } | null {
 
 export default function LogisticsLab({ robot, chain, gripperRobot, hidden, level = 'hs', saved, onSolved, onBack }: Props) {
   const [prob, setProb] = useState<LogiProblem>(1);
+  useLabStart('logistics', setProb);
   const [st, setSt] = useState<Record<LogiProblem, ProbState>>({ 1: fresh(1), 2: fresh(2), 3: fresh(3) });
   const [solved, setSolved] = useState<Record<LogiProblem, boolean>>({ 1: !!saved?.[1], 2: !!saved?.[2], 3: !!saved?.[3] });
   const [busy, setBusy] = useState(false);
@@ -447,6 +438,7 @@ export default function LogisticsLab({ robot, chain, gripperRobot, hidden, level
               <span className={css.num}>{p}</span>
               <span className={css.probName}>{LOGI_TEXT[p].title}</span>
               {solved[p] && <i aria-label="해결">✓</i>}
+              <ProbLock lab="logistics" p={p} />
             </button>
           ))}
         </nav>

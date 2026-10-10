@@ -1431,3 +1431,58 @@
   opacity: 0.45;
   cursor: default;
 }
+
+/* A problem not open yet: what it is about, the 차시 to learn first (each a way there), the way back. */
+.locked {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+.locked p,
+.locked small {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.locked small {
+  color: var(--faint);
+  font-size: 11.5px;
+}
+.locked ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+.locked li button {
+  width: 100%;
+  text-align: left;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--site-soft);
+  color: #1d2939;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.locked li button b {
+  color: var(--site);
+  margin-right: 4px;
+}
+.lockedBack {
+  justify-self: start;
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}

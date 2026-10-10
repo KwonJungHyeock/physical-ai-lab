@@ -11,9 +11,11 @@
  * FlowState.
  */
 
-import { useMemo, type CSSProperties, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, type CSSProperties, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
+import { TOPIC_BY_ID, type TopicId } from '@/engine/education/catalog';
+import type { LabId, ProblemNo } from '@/engine/education/park';
 import type { StudyLevel } from '@/engine/education/roadmap';
 import type { RunLab } from '@/engine/education/runLog';
 import type { CheckQ, SiteProblem, SiteStepId, SiteText } from '@/engine/education/lab/siteText';
@@ -24,6 +26,65 @@ import RobotRecord from './RobotRecord';
 
 export const NUM = ['①', '②', '③', '④'];
 export const PROBS: readonly SiteProblem[] = [1, 2, 3];
+
+/**
+ * Which problems are not open yet (the 차시 to learn first, engine/education/park.ts labLocks), a way
+ * to that 차시, and a problem to show when a lab is entered for it (the map's next step) — given by the
+ * 교육 view to every lab at once.
+ */
+export interface LabGate {
+  locks: Partial<Record<LabId, Partial<Record<ProblemNo, readonly TopicId[]>>>>;
+  onLearn(t: TopicId): void;
+  onMap(): void;
+  start: { lab: LabId; prob: ProblemNo; n: number } | null;
+}
+export const LabGateContext = createContext<LabGate | null>(null);
+
+const lockOf = (g: LabGate | null, lab: string, p: number) => g?.locks[lab as LabId]?.[p as ProblemNo] ?? null;
+
+/** Opens the problem the map asked for, when the lab is entered for it. */
+export function useLabStart(lab: LabId, setProb: (p: ProblemNo) => void) {
+  const start = useContext(LabGateContext)?.start;
+  useEffect(() => {
+    if (start && start.lab === lab) setProb(start.prob);
+  }, [start, lab, setProb]);
+}
+
+/** A lock on a problem's tab while its 차시 are still to learn. */
+export function ProbLock({ lab, p }: { lab: LabId; p: number }) {
+  const lock = lockOf(useContext(LabGateContext), lab, p);
+  return lock ? <i aria-label="먼저 배울 차시가 있어요" title={`먼저 배울 차시: ${lock.join(', ')}`}>🔒</i> : null;
+}
+
+/** What a problem not open yet shows instead of its steps: what it is about and the 차시 to learn first. */
+function LockedProblem({ T, lock }: { T: SiteText; lock: readonly TopicId[] }) {
+  const g = useContext(LabGateContext);
+  return (
+    <>
+      <Head eyebrow={`문제 ${T.id} · 아직 열리지 않았어요`} title={T.title} />
+      <div className={bodyClass}>
+        <section className={lg.locked} aria-label="먼저 배울 차시">
+          <p>
+            이 문제에서 다루는 것: <b>{T.about}</b>. 처음 보는 사람도 왜 그런지 납득할 수 있도록, 아래 차시를 먼저 배우면 열려요.
+          </p>
+          <ul>
+            {lock.map((t) => (
+              <li key={t}>
+                <button type="button" onClick={() => g?.onLearn(t)}>
+                  <b>{t}</b> {TOPIC_BY_ID.get(t)?.title} — 배우러 가기 →
+                </button>
+              </li>
+            ))}
+          </ul>
+          <small>차시를 마치면 이 현장으로 다시 오면 돼요. 선생님은 지도에서 [모든 현장 열기]로 바로 열 수 있어요.</small>
+          <button type="button" className={lg.lockedBack} onClick={() => g?.onMap()}>
+            로봇 시티 지도로 →
+          </button>
+        </section>
+      </div>
+    </>
+  );
+}
 
 /** A number as shown (the minus sign printed, not a hyphen). */
 export const fmt = (v: number, d = 0) => v.toFixed(d).replace('-', '−');
@@ -453,6 +514,11 @@ export interface SitePanelProps {
 }
 
 export function SitePanel(p: SitePanelProps) {
+  const lock = lockOf(useContext(LabGateContext), p.lab, p.T.id);
+  return lock ? <LockedProblem T={p.T} lock={lock} /> : <SiteSteps {...p} />;
+}
+
+function SiteSteps(p: SitePanelProps) {
   const { T, st, busy } = p;
   const guide = <p className={lg.guide}>{STEP_GUIDE[st.step]}</p>;
   switch (st.step) {

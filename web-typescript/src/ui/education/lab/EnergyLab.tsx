@@ -66,7 +66,7 @@ import LearnStage, { type LearnScene, type ViewPose } from '../stage/LearnStage'
 import EnergyCell, { EnergyPlayback, KIND_HEX, type EnergyMarker, type EnergyOverlay } from './EnergyCell';
 import { ENERGY_LOOK, EnergyAround } from './ambient/Around';
 import type { CellDim } from './CellKit';
-import { ArrowDef, Knob, PROBS, RecordSheet, SitePanel, answeredUpTo, fmt, freshFlow, type FlowState, type MeasureRow } from './SiteFlow';
+import { ArrowDef, Knob, PROBS, ProbLock, RecordSheet, SitePanel, answeredUpTo, fmt, freshFlow, useLabStart, type FlowState, type MeasureRow } from './SiteFlow';
 import css from './lab.module.css';
 import lg from './site.module.css';
 
@@ -231,6 +231,7 @@ function valuesText(p: EnergyProblem, v: EnergyValues): string {
 
 export default function EnergyLab({ robot, chain, gripperRobot, hidden, level = 'hs', saved, onSolved, onBack }: Props) {
   const [prob, setProb] = useState<EnergyProblem>(1);
+  useLabStart('energy', setProb);
   const [st, setSt] = useState<Record<EnergyProblem, ProbState>>({ 1: fresh(1), 2: fresh(2), 3: fresh(3) });
   const [solved, setSolved] = useState<Record<EnergyProblem, boolean>>({ 1: !!saved?.[1], 2: !!saved?.[2], 3: !!saved?.[3] });
   const [busy, setBusy] = useState(false);
@@ -423,6 +424,7 @@ export default function EnergyLab({ robot, chain, gripperRobot, hidden, level = 
               <span className={css.num}>{p}</span>
               <span className={css.probName}>{ENERGY_TEXT[p].title}</span>
               {solved[p] && <i aria-label="해결">✓</i>}
+              <ProbLock lab="energy" p={p} />
             </button>
           ))}
         </nav>
