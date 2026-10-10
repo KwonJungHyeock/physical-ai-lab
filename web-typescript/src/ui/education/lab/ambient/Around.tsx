@@ -33,6 +33,6 @@ export const LOOKS: Record<AroundSite, SiteLook> = {
   farm: FARM_LOOK,
   cafe: { sky: '#e9e0d4', floor: 'wood', groundZ: -CAFE_COUNTER_MM },
   /** 스마트시티 돌봄 (카페 ③): a resident's room; the arm stands on a myAGV and its lift column, so the floor is lower. */
-  care: { sky: '#e6ebe4', floor: 'vinyl', groundZ: -CARE_ARM_Z },
+  care: { sky: '#e6ebe4', floor: 'laminate', groundZ: -CARE_ARM_Z },
   ai: AI_LOOK,
 };

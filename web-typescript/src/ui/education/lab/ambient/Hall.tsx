@@ -3,11 +3,14 @@
 /** The site rooms' back walls (shared by every site's surroundings). */
 
 import { RBox } from '../../../simulator/stage/sceneKit';
+import { m } from '../CellKit';
+import { useTiled } from './Ground';
 
 /**
  * The building's two back walls (along y at x = `x`, along x at y = `y`), seen when the view is drawn
  * back: a wall with a coloured band, tall windows full of daylight (or glass panes for a greenhouse),
- * and pillars between them. The walls stand far enough out that the fog softens them.
+ * and pillars between them. The walls stand far enough out that the fog softens them. The wall's face
+ * is painted plaster (a CC0 texture, tinted the site's wall colour).
  */
 export function Hall({ x = -2600, y = 2600, h = 1500, wall = '#e6e9ed', band = '#2f5be7', glass = false }: { x?: number; y?: number; h?: number; wall?: string; band?: string; glass?: boolean }) {
   const span = 6000;
@@ -25,9 +28,12 @@ export function Hall({ x = -2600, y = 2600, h = 1500, wall = '#e6e9ed', band = '
         return (
           <group key={r.along}>
             {!glass && (
-              <RBox at={pos(r.from + span / 2, h / 2, -40)} size={size(span, h, 80)} radius={4} shadow={false}>
-                <meshStandardMaterial color={wall} roughness={0.9} />
-              </RBox>
+              <>
+                <RBox at={pos(r.from + span / 2, h / 2, -40)} size={size(span, h, 80)} radius={4} shadow={false}>
+                  <meshStandardMaterial color={wall} roughness={0.9} />
+                </RBox>
+                <PlasterFace at={pos(r.from + span / 2, h / 2, 1)} alongY={r.along === 'y'} w={span} h={h} color={wall} />
+              </>
             )}
             <RBox at={pos(r.from + span / 2, 60, 2)} size={size(span, 120, glass ? 60 : 12)} radius={2} shadow={false}>
               <meshStandardMaterial color={glass ? '#f2f4f1' : '#59616b'} roughness={0.7} />
@@ -60,6 +66,19 @@ export function Hall({ x = -2600, y = 2600, h = 1500, wall = '#e6e9ed', band = '
           </group>
         );
       })}
+    </group>
+  );
+}
+
+/** The wall's inner face: a `w` × `h` mm plane of painted plaster facing into the room (+x for the wall along y, −y for the other). */
+function PlasterFace({ at, alongY, w, h, color }: { at: [number, number, number]; alongY: boolean; w: number; h: number; color: string }) {
+  const maps = useTiled('wall-plaster', 1200, w, h);
+  return (
+    <group position={[m(at[0]), m(at[1]), m(at[2])]} rotation={[0, 0, alongY ? Math.PI / 2 : 0]}>
+      <mesh rotation={[Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[m(w), m(h)]} />
+        <meshStandardMaterial {...maps} color={color} normalScale={[0.8, 0.8]} envMapIntensity={0.5} />
+      </mesh>
     </group>
   );
 }

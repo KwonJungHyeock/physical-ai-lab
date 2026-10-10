@@ -2,19 +2,22 @@
 
 /**
  * The floor a site stands on, instead of the lessons' dark studio and grid: a wide plane with the
- * site's own surface — factory epoxy, warehouse concrete, lab vinyl, greenhouse ground cover, café
- * planks, a raised floor of tiles — drawn once on a canvas and repeated, fading into the site's sky
+ * site's own surface — factory epoxy, warehouse concrete, lab vinyl, café planks, a care room's
+ * laminate, office tiles: real material textures (CC0, public/models/tex, see its ATTRIBUTION.md) at
+ * their real tile size; greenhouse ground cover drawn once on a canvas — fading into the site's sky
  * with the fog. And a soft contact shadow for the things round the cell (outside the sun's shadow).
  *
  * Inside LearnStage's robot-frame group: metres, z up; sizes here in mm.
  */
 
+import { useTexture } from '@react-three/drei';
 import { useMemo } from 'react';
+import { RepeatWrapping, SRGBColorSpace, type Texture } from 'three';
 
 import { canvasTexture } from '../../../simulator/stage/sceneKit';
 import { m } from '../CellKit';
 
-export type FloorKind = 'epoxy' | 'concrete' | 'vinyl' | 'greenhouse' | 'wood' | 'tiles';
+export type FloorKind = 'epoxy' | 'concrete' | 'vinyl' | 'greenhouse' | 'wood' | 'tiles' | 'laminate';
 
 /** How a site's 3D view looks: its sky (background and fog) and floor. */
 export interface SiteLook {
@@ -72,7 +75,7 @@ function joint(g: CanvasRenderingContext2D, at: number, vertical: boolean, dark 
   else g.fillRect(0, at + 1.5, S, 1);
 }
 
-const FLOORS: Record<FloorKind, { tile: number; rough: number; draw: Draw }> = {
+const FLOORS: Record<Exclude<FloorKind, 'laminate'>, { tile: number; rough: number; draw: Draw }> = {
   // Grey-blue epoxy with flecks and scuffs; saw cuts every 1.2 m.
   epoxy: {
     tile: 2400,
@@ -213,14 +216,58 @@ const FLOORS: Record<FloorKind, { tile: number; rough: number; draw: Draw }> = {
   },
 };
 
+/** The floors with a real material: its texture set (public/models/tex/<set>), real tile size, mm, and a tint. */
+const TEXTURED: Partial<Record<FloorKind, { set: string; tile: number; tint: string }>> = {
+  epoxy: { set: 'floor-epoxy', tile: 3000, tint: '#c4cecc' },
+  concrete: { set: 'floor-concrete', tile: 2500, tint: '#e9e9e6' },
+  vinyl: { set: 'floor-lab', tile: 1500, tint: '#e6ecef' },
+  wood: { set: 'floor-wood', tile: 1700, tint: '#ffffff' },
+  tiles: { set: 'floor-tiles', tile: 1500, tint: '#d9dee3' },
+  laminate: { set: 'floor-laminate', tile: 1700, tint: '#ffffff' },
+};
+
+const GROUND_MM = 14000;
+
 /** The site's floor, 14 m across round the cell, a hair below the cell's own floors. */
 export function SiteGround({ look }: { look: SiteLook }) {
-  const f = FLOORS[look.floor];
-  const size = 14000;
-  const map = useMemo(() => canvasTexture(`floor-${look.floor}`, S, S, f.draw, true, [size / f.tile, size / f.tile]), [look.floor, f]);
+  const t = TEXTURED[look.floor];
+  const z = m((look.groundZ ?? 0) - 0.3);
+  return t ? <TexturedGround set={t.set} tile={t.tile} tint={t.tint} z={z} /> : <DrawnGround kind={look.floor as Exclude<FloorKind, 'laminate'>} z={z} />;
+}
+
+/** A texture set repeated at its real tile size over a `w` × `h` mm surface (copies, so each surface sets its own repeat). */
+export function useTiled(set: string, tile: number, w: number, h = w): { map: Texture; normalMap: Texture; roughnessMap: Texture } {
+  const base = useTexture({ map: `/models/tex/${set}/color.webp`, normalMap: `/models/tex/${set}/normal.webp`, roughnessMap: `/models/tex/${set}/rough.webp` });
+  return useMemo(() => {
+    const tiled = (t: Texture, srgb = false) => {
+      const c = t.clone();
+      c.wrapS = c.wrapT = RepeatWrapping;
+      c.repeat.set(w / tile, h / tile);
+      c.anisotropy = 8;
+      if (srgb) c.colorSpace = SRGBColorSpace;
+      c.needsUpdate = true;
+      return c;
+    };
+    return { map: tiled(base.map, true), normalMap: tiled(base.normalMap), roughnessMap: tiled(base.roughnessMap) };
+  }, [base, tile, w, h]);
+}
+
+function TexturedGround({ set, tile, tint, z }: { set: string; tile: number; tint: string; z: number }) {
+  const maps = useTiled(set, tile, GROUND_MM);
   return (
-    <mesh position={[m(150), 0, m((look.groundZ ?? 0) - 0.3)]} receiveShadow>
-      <planeGeometry args={[m(size), m(size)]} />
+    <mesh position={[m(150), 0, z]} receiveShadow>
+      <planeGeometry args={[m(GROUND_MM), m(GROUND_MM)]} />
+      <meshStandardMaterial {...maps} color={tint} normalScale={[0.6, 0.6]} envMapIntensity={0.6} />
+    </mesh>
+  );
+}
+
+function DrawnGround({ kind, z }: { kind: Exclude<FloorKind, 'laminate'>; z: number }) {
+  const f = FLOORS[kind];
+  const map = useMemo(() => canvasTexture(`floor-${kind}`, S, S, f.draw, true, [GROUND_MM / f.tile, GROUND_MM / f.tile]), [kind, f]);
+  return (
+    <mesh position={[m(150), 0, z]} receiveShadow>
+      <planeGeometry args={[m(GROUND_MM), m(GROUND_MM)]} />
       <meshStandardMaterial map={map} roughness={f.rough} envMapIntensity={0.6} />
     </mesh>
   );
