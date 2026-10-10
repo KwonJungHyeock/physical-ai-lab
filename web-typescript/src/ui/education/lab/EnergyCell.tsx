@@ -5,8 +5,8 @@
  * 2023 as the simulator draws it (plate, four bins, camera stand and camera — Stage's Kit — and the
  * calibration board with its two ArUco markers) set up as a sorting cell: a sign on each bin for the
  * kind it takes, the flattened pieces of the problem (crushed cans, clear and coloured PET, paper
- * packs) where they lie or fly, and round it a small sorting station: the day's intake crate, the
- * cell's monitor and its sign.
+ * packs) where they lie or fly — on a steel shop bench at real size, with the day's intake crate,
+ * the cell's screen and per problem the note the story names.
  *
  * Every frame it plays the run (engine/education/lab/energy.ts frames) through EnergyPlayback.
  */
@@ -18,12 +18,16 @@ import { Color, type Group } from 'three';
 
 import type { Mm } from '@/engine/education/lab/cell';
 import { KIND_NAME, KIND_OF_BIN, dims, type EnergyFrame, type EnergyProblem, type EnergyRun, type Item } from '@/engine/education/lab/energy';
-import { BINS, BIN_NAMES } from '@/engine/simulator/board';
+import { BINS, BIN_NAMES, DESK_Z } from '@/engine/simulator/board';
 
 import { RBox } from '../../simulator/stage/sceneKit';
 import { CalibrationBoard, Kit } from '../../simulator/stage/Stage';
 import { LEARN_COLORS } from '../stage/learn3d';
 import type { LiveArm } from '../stage/LearnStage';
+import Bench from './ambient/Bench';
+import Model from './ambient/Model';
+import { Monitor } from './ambient/Props';
+import { ENERGY_BENCH_MM } from './ambient/around/energy';
 import { Dim, Sign, m, tag, v3, type CellDim } from './CellKit';
 
 const FRAME_DT = 0.02;
@@ -213,41 +217,57 @@ function BinSigns() {
   );
 }
 
-/** Round the cell: the day's intake crate, the station's monitor and sign, and per problem what the story names. */
+/**
+ * The steel bench under the cell at real size (its top under the kit's plate, ENERGY_BENCH_MM above the
+ * hall's floor) and what stands on it: the day's intake crate of mixed pieces, the cell's screen with
+ * a keyboard, and per problem the note the story names.
+ */
 function Station({ prob }: { prob: EnergyProblem }) {
+  const note = (lines: readonly string[], fg: string, bg: string) => (
+    <group>
+      <RBox at={[400, -230, DESK_Z + 3]} size={[70, 24, 6]} radius={2} rot={0.7}>
+        <meshStandardMaterial color="#c9ced4" roughness={0.3} />
+      </RBox>
+      <Sign at={[400, -230, DESK_Z + 6 + 15]} yaw={0.7} w={92} h={30} lines={lines} fg={fg} bg={bg} />
+    </group>
+  );
   return (
     <group>
-      {/* The intake crate behind-left: mixed pieces waiting their turn. */}
-      <group>
-        <RBox at={[-120, 300, 40]} size={[180, 130, 80]} radius={4}>
-          <meshStandardMaterial color="#2f8f6a" roughness={0.6} />
-        </RBox>
-        {[
-          ['#c3cad2', -60, -30],
-          ['#dcefff', -20, 25],
-          ['#3c8f5c', 30, -25],
-          ['#f08a24', 55, 30],
-          ['#c3cad2', 10, 0],
-        ].map(([c, dx, dy], i) => (
-          <RBox key={i} at={[-120 + Number(dx), 300 + Number(dy), 84 + (i % 2) * 4]} size={[44, 30, 6]} radius={1.5} rot={i * 0.4}>
-            <meshStandardMaterial color={String(c)} roughness={0.5} transparent={c === '#dcefff'} opacity={c === '#dcefff' ? 0.5 : 1} />
+      <group position={[0, 0, m(DESK_Z)]}>
+        <Bench x0={-340} x1={480} y0={-720} y1={720} h={ENERGY_BENCH_MM} kind="steel" />
+        {/* The intake crate behind-right: today's mixed pieces waiting their turn. */}
+        <Model group="energy" name="crate" at={[-130, 500]} scale={0.65} />
+        {(
+          [
+            ['can', -90, -45, 0.3],
+            ['#dcefff', -20, 20, 1.3],
+            ['#3c8f5c', 50, -35, 1.9],
+            ['#f08a24', 90, 40, 1.2],
+            ['can', 10, -60, 2],
+            ['#dcefff', -90, 50, 1.8],
+            ['can', 110, -60, 0.7],
+          ] as const
+        ).map(([c, dx, dy, rot], i) =>
+          c === 'can' ? (
+            <Model key={i} group="energy" name="can" at={[-130 + dx, 500 + dy]} z={110 + (i % 3) * 8} yaw={rot} />
+          ) : (
+            <RBox key={i} at={[-130 + dx, 500 + dy, 120 + (i % 3) * 8]} size={[60, 160, 22]} radius={8} rot={rot}>
+              <meshStandardMaterial color={c} roughness={0.4} transparent={c === '#dcefff'} opacity={c === '#dcefff' ? 0.6 : 1} />
+            </RBox>
+          ),
+        )}
+        <Sign at={[-130, 500 - 133, 80]} w={240} h={56} lines={['오늘 들어온 것', '캔 · PET · 종이팩']} fg="#ffffff" bg="#2f8f6a" />
+        {/* The cell's screen on the bench behind-left: what it has sorted, its throughput. */}
+        <Monitor at={[-250, -560]} yaw={0.45} w={470} kind="plot" accent="#0b8a7a" title="재활용 선별 셀 · 제 칸 ÷ 시간 = 처리량" />
+        <group position={[m(-40), m(-480), 0]} rotation={[0, 0, 0.45]}>
+          <RBox at={[0, 0, 12]} size={[150, 440, 24]} radius={6}>
+            <meshStandardMaterial color="#3a3f47" roughness={0.6} />
           </RBox>
-        ))}
-        <Sign at={[-120, 300 - 66, 40]} w={150} h={22} lines={['오늘 들어온 것', '캔 · PET · 종이팩']} fg="#ffffff" bg="#2f8f6a" />
+        </group>
       </group>
-      {/* The station's monitor on the desk behind: what the cell has sorted. */}
-      <group>
-        <RBox at={[-150, -60, 60]} size={[10, 170, 110]} radius={4}>
-          <meshStandardMaterial color="#1f2226" roughness={0.4} />
-        </RBox>
-        <RBox at={[-150, -60, 4]} size={[50, 60, 8]} radius={3}>
-          <meshStandardMaterial color="#2b3038" roughness={0.5} />
-        </RBox>
-        <Sign at={[-143.6, -60, 62]} yaw={Math.PI / 2} w={150} h={88} lines={['재활용 선별 셀', '보기 → 나누기 → 집기', '제 칸 ÷ 시간 = 처리량']} fg="#e6ebf2" bg="#12332a" />
-      </group>
-      {prob === 1 && <Sign at={[400, -230, 40]} yaw={0.7} w={92} h={30} lines={['투명 PET는 따로!', 'A 분류함 새로 만듦']} fg="#0b3b5c" bg="#e6f6ff" />}
-      {prob === 2 && <Sign at={[400, -230, 40]} yaw={0.7} w={92} h={30} lines={['오늘 목표', '1분에 12개 이상']} fg="#ffffff" bg="#0b8a7a" />}
-      {prob === 3 && <Sign at={[400, -230, 40]} yaw={0.7} w={92} h={30} lines={['겹쳐서 들어왔어요', '위에서부터?']} fg="#ffffff" bg="#e5484d" />}
+      {prob === 1 && note(['투명 PET는 따로!', 'A 분류함 새로 만듦'], '#0b3b5c', '#e6f6ff')}
+      {prob === 2 && note(['오늘 목표', '1분에 12개 이상'], '#ffffff', '#0b8a7a')}
+      {prob === 3 && note(['겹쳐서 들어왔어요', '위에서부터?'], '#ffffff', '#e5484d')}
     </group>
   );
 }

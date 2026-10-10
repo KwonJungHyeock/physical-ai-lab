@@ -1,0 +1,29 @@
+{
+  "tex": 512,
+  "models": {
+    "can": [
+      "lab-industry/glb/kn-crushed-can.glb",
+      0.3
+    ],
+    "crate": [
+      "lab-industry/glb/ph-crate-yellow.glb",
+      1
+    ],
+    "tote": [
+      "lab-industry/glb/ph-tote-blue.glb",
+      1
+    ],
+    "pallet": [
+      "lab-industry/glb/kn-pallet.glb",
+      1.1
+    ],
+    "wetSign": [
+      "lab-industry/glb/ph-wet-floor-sign.glb",
+      1
+    ],
+    "handTruck": [
+      "lab-industry/glb/ph-hand-truck.glb",
+      1
+    ]
+  }
+}

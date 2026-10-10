@@ -70,8 +70,8 @@ import { ArrowDef, Knob, PROBS, RecordSheet, SitePanel, answeredUpTo, fmt, fresh
 import css from './lab.module.css';
 import lg from './site.module.css';
 
-/** The kit from the front right, a little above (three.js metres, y up): camera, then target. */
-export const ENERGY_VIEW: ViewPose = [0.7, 0.55, 0.5, 0.14, 0.06, 0.0];
+/** The cell on its bench from the front right, a little above, the sorting hall behind it at real size (three.js metres, y up): camera, then target. */
+export const ENERGY_VIEW: ViewPose = [2.1, 1.25, 1.7, -0.2, 0.35, 0.15];
 const SLOW = 0.35;
 const SLOW_LEAD_S = 1.6;
 /** The site's colour (the screen's --site): a recycling teal. */

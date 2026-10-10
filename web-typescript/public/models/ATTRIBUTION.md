@@ -53,6 +53,16 @@ otherwise unchanged. No credit is required by these licences; it is given here w
 | `logistics.glb` | `handTruck` | Poly Haven — Hand Truck | Mutanzom3D | CC0 1.0 |
 | `logistics.glb` | `wetSign` | Poly Haven — Wet Floor Sign 01 | Fran Calvente | CC0 1.0 |
 | `logistics.glb` | `lamp` | Poly Haven — Hanging Industrial Lamp | Kuutti Siitonen | CC0 1.0 |
+| `ai.glb` | `desk` | Poly Haven — Metal Office Desk | Ulan Cabanilla | CC0 1.0 |
+| `ai.glb` | `workDesk`, `chair`, `screen`, `plant` | Kenney Furniture Kit 2.0 (desk, chairDesk, computerScreen, pottedPlant) | Kenney — www.kenney.nl | CC0 1.0 |
+| `ai.glb` | `shelves` | Poly Haven — Steel Frame Shelves 01 | James Ray Cock | CC0 1.0 |
+| `ai.glb` | `tote` | Poly Haven — Industrial Plastic Container | Galo Benivegna | CC0 1.0 |
+| `energy.glb` | `can` | Kenney Food Kit 2.0 (soda-can-crushed) | Kenney — www.kenney.nl | CC0 1.0 |
+| `energy.glb` | `crate` | Poly Haven — Plastic Crate 02 | Fabi_G | CC0 1.0 |
+| `energy.glb` | `tote` | Poly Haven — Industrial Plastic Container | Galo Benivegna | CC0 1.0 |
+| `energy.glb` | `pallet` | Kenney Retro Urban Kit 2.0 (pallet) | Kenney — www.kenney.nl | CC0 1.0 |
+| `energy.glb` | `wetSign` | Poly Haven — Wet Floor Sign 01 | Fran Calvente | CC0 1.0 |
+| `energy.glb` | `handTruck` | Poly Haven — Hand Truck | Mutanzom3D | CC0 1.0 |
 
 Licences: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/ ·
 MIT-0 — https://github.com/aws/mit-0 (no attribution clause) · Poly Haven — https://polyhaven.com/license.

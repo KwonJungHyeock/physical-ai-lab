@@ -4,8 +4,9 @@
  * AI 연구소 셀 in 3D (inside LearnStage's robot-frame group: metres, z up): the official AI Kit 2023
  * as the simulator draws it (its plate, four bins, camera stand and camera — Stage's Kit — and the
  * calibration board with its two real ArUco markers), the blocks or parts of the problem in their
- * colours, ② the demonstration spots, and around it a small lab: a monitor with the camera's
- * picture, a shelf of spare parts, the lab's sign, and per problem what the story names.
+ * colours, ② the demonstration spots — on a black phenolic lab bench at real size, with a screen
+ * showing the camera's picture, a keyboard, a tray of spare blocks, the lab's desk sign, and per
+ * problem the note the story names.
  *
  * Every frame it plays the run (engine/education/lab/ai.ts frames) through AiPlayback.
  */
@@ -16,13 +17,16 @@ import { useRef } from 'react';
 import { Color, type Group } from 'three';
 
 import type { Mm } from '@/engine/education/lab/cell';
-import { BLOCK_MM } from '@/engine/simulator/board';
+import { BLOCK_MM, DESK_Z } from '@/engine/simulator/board';
 import { DEMOS, POST, type AiFrame, type AiProblem, type AiRun, type Thing } from '@/engine/education/lab/ai';
 
 import { RBox } from '../../simulator/stage/sceneKit';
 import { CalibrationBoard, Kit } from '../../simulator/stage/Stage';
 import { LEARN_COLORS } from '../stage/learn3d';
 import type { LiveArm } from '../stage/LearnStage';
+import Bench from './ambient/Bench';
+import { Monitor } from './ambient/Props';
+import { AI_BENCH_MM } from './ambient/around/ai';
 import { Dim, Sign, m, tag, v3, type CellDim } from './CellKit';
 
 const FRAME_DT = 0.02;
@@ -182,38 +186,48 @@ function Demos() {
   );
 }
 
-/** The lab around the kit: a monitor showing the camera, a parts shelf, the sign. */
+/**
+ * The black phenolic bench under the kit at real size (its top under the kit's plate, AI_BENCH_MM above
+ * the lab floor) and what stands on it: a screen with the camera's picture and the program's steps, a
+ * keyboard, a tray of spare blocks with the lab's desk sign, and per problem the note the story names.
+ */
 function LabRoom({ prob }: { prob: AiProblem }) {
+  const note = (lines: readonly string[], fg: string, bg: string) => (
+    <group>
+      <RBox at={[400, -230, DESK_Z + 3]} size={[70, 24, 6]} radius={2} rot={0.7}>
+        <meshStandardMaterial color="#c9ced4" roughness={0.3} />
+      </RBox>
+      <Sign at={[400, -230, DESK_Z + 6 + 15]} yaw={0.7} w={92} h={30} lines={lines} fg={fg} bg={bg} />
+    </group>
+  );
   return (
     <group>
-      {/* A monitor on the desk behind-left: the camera's view and the program's log. */}
-      <group>
-        <RBox at={[-150, -60, 60]} size={[10, 170, 110]} radius={4}>
-          <meshStandardMaterial color="#1f2226" roughness={0.4} />
-        </RBox>
-        <RBox at={[-144.4, -60, 62]} size={[1, 156, 96]} radius={1} shadow={false}>
-          <meshStandardMaterial color="#0f1720" emissive="#2f5be7" emissiveIntensity={0.35} />
-        </RBox>
-        <RBox at={[-150, -60, 4]} size={[50, 60, 8]} radius={3}>
-          <meshStandardMaterial color="#2b3038" roughness={0.5} />
-        </RBox>
-        <Sign at={[-143.6, -60, 90]} yaw={Math.PI / 2} w={120} h={22} lines={['카메라 → 색 찾기 → 좌표', '→ 역기구학 → 집기 · 놓기']} fg="#e6ebf2" bg="#141a22" />
-      </group>
-      {/* Spare parts shelf on the right-back. */}
-      <group>
-        <RBox at={[-40, 420, 40]} size={[220, 60, 80]} radius={4}>
+      <group position={[0, 0, m(DESK_Z)]}>
+        <Bench x0={-340} x1={480} y0={-720} y1={720} h={AI_BENCH_MM} kind="phenolic" />
+        {/* The screen on the bench behind-left: the camera's picture, what the program found. */}
+        <Monitor at={[-250, -560]} yaw={0.45} w={470} kind="vision" accent="#7a3fd1" title="카메라 → 색 찾기 → 좌표 → 집기" />
+        <group position={[m(-40), m(-480), 0]} rotation={[0, 0, 0.45]}>
+          <RBox at={[0, 0, 12]} size={[150, 440, 24]} radius={6}>
+            <meshStandardMaterial color="#3a3f47" roughness={0.6} />
+          </RBox>
+          <RBox at={[10, 300, 16]} size={[110, 64, 32]} radius={20}>
+            <meshStandardMaterial color="#3a3f47" roughness={0.5} />
+          </RBox>
+        </group>
+        {/* Spare blocks in a tray on the right-back, the lab's desk sign in front of it. */}
+        <RBox at={[-120, 520, 15]} size={[260, 120, 30]} radius={4}>
           <meshStandardMaterial color="#f5f7fa" roughness={0.6} />
         </RBox>
         {[-80, -40, 0, 40, 80].map((dx, i) => (
-          <RBox key={dx} at={[-40 + dx, 420, 80 + BLOCK_MM / 2]} size={[BLOCK_MM, BLOCK_MM, BLOCK_MM]} radius={1.5}>
+          <RBox key={dx} at={[-120 + dx, 520, 30 + BLOCK_MM / 2]} size={[BLOCK_MM, BLOCK_MM, BLOCK_MM]} radius={1.5}>
             <meshStandardMaterial color={['#d63a26', '#f2c230', '#2e9e5b', '#2c55c9', '#9bd23a'][i]} roughness={0.55} />
           </RBox>
         ))}
-        <Sign at={[-40, 420 - 30.6, 40]} w={110} h={20} lines={['AI 연구소 · 피지컬 AI', '보고 · 판단하고 · 움직인다']} fg="#ffffff" bg="#7a3fd1" />
+        <Sign at={[-120, 520 - 61, 15]} w={180} h={28} lines={['AI 연구소 · 피지컬 AI', '보고 · 판단하고 · 움직인다']} fg="#ffffff" bg="#7a3fd1" />
       </group>
-      {prob === 1 && <Sign at={[400, -230, 40]} yaw={0.7} w={92} h={30} lines={['새 블록 세트 도착', '초록이 연두색이에요']} fg="#1d2939" bg="#fff6d6" />}
-      {prob === 2 && <Sign at={[400, -230, 40]} yaw={0.7} w={92} h={30} lines={['시연 기록 10개', '시연 1 = 지금 프로그램']} fg="#ffffff" bg="#7a3fd1" />}
-      {prob === 3 && <Sign at={[400, -230, 40]} yaw={0.7} w={92} h={30} lines={['새 부품 Ø30 × 60 mm', '블록은 25 mm']} fg="#ffffff" bg="#e5484d" />}
+      {prob === 1 && note(['새 블록 세트 도착', '초록이 연두색이에요'], '#1d2939', '#fff6d6')}
+      {prob === 2 && note(['시연 기록 10개', '시연 1 = 지금 프로그램'], '#ffffff', '#7a3fd1')}
+      {prob === 3 && note(['새 부품 Ø30 × 60 mm', '블록은 25 mm'], '#ffffff', '#e5484d')}
     </group>
   );
 }
