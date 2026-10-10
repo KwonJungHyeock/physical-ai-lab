@@ -1,0 +1,29 @@
+{
+  "tex": 512,
+  "models": {
+    "shelf": [
+      "lab-industry/glb/ph-steel-shelves-narrow.glb",
+      0.1
+    ],
+    "rack": [
+      "lab-industry/glb/ph-metal-rack.glb",
+      1
+    ],
+    "crate": [
+      "lab-industry/glb/ph-crate-yellow.glb",
+      1
+    ],
+    "tote": [
+      "lab-industry/glb/ph-tote-blue.glb",
+      1
+    ],
+    "handTruck": [
+      "lab-industry/glb/ph-hand-truck.glb",
+      1
+    ],
+    "signalTower": [
+      "lab-industry/glb/kn-signal-tower.glb",
+      0.3
+    ]
+  }
+}
