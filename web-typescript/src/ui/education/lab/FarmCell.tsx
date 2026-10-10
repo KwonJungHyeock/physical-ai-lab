@@ -5,8 +5,9 @@
  * simulator's own style: the black sorting tray with its two calibration markers, the tomatoes (their
  * colour from the hue the engine gives them, a green calyx on top), the clear punnet they are packed
  * into, the USB camera on its stand looking straight down (its view drawn as thin lines to the tray's
- * corners), and the greenhouse around it — tomato rows, grow lights, harvest crates — with per problem
- * what the story names (last season's paprika program, the raised camera, the force gauge).
+ * corners), all on the packing room's sorting table at real height (FARM_TABLE_MM; the greenhouse's rows
+ * stand round it on the floor below, see ambient/around/farm.tsx), with today's harvest crate at its far
+ * end and per problem what the story names (last season's paprika program, the raised camera, the force gauge).
  *
  * Every frame it plays the run (engine/education/lab/farm.ts frames) through FarmPlayback: the arm and
  * gripper follow it, the tomatoes go where the run had them (a burst one flattens, red juice under it).
@@ -24,6 +25,9 @@ import { RBox } from '../../simulator/stage/sceneKit';
 import { LEARN_COLORS } from '../stage/learn3d';
 import type { LiveArm } from '../stage/LearnStage';
 import { Dim, Sign, Tape, m, tag, v3, type CellDim } from './CellKit';
+import Bench from './ambient/Bench';
+import Model from './ambient/Model';
+import { CherryFill, FARM_TABLE_MM } from './ambient/around/farm';
 
 const FRAME_DT = 0.02;
 
@@ -143,8 +147,9 @@ export default function FarmCell({ player, prob, tomatoes, overlay, camZ }: Prop
 
   return (
     <group>
+      <Bench x0={TABLE.x0} x1={TABLE.x1} y0={TABLE.y0} y1={TABLE.y1} h={FARM_TABLE_MM} kind="table" />
       <Floor />
-      <Greenhouse prob={prob} />
+      <TableDressing prob={prob} />
       <SortTray />
       <Punnet />
       <CameraStand raised={prob === 2} z={camZ ?? CAM.z} was={camZ === undefined ? CAM.zOld : CAM.z} />
@@ -177,7 +182,10 @@ export default function FarmCell({ player, prob, tomatoes, overlay, camZ }: Prop
 
 /* --- models ------------------------------------------------------------------------------- */
 
-/** The sorting room's floor-level bench: a light work surface. */
+/** The sorting table's top (robot frame, mm): the arm, tray, punnet and camera stand in front, the harvest crate at the far (−x) end. */
+const TABLE = { x0: -780, x1: 470, y0: -340, y1: 340 } as const;
+
+/** The work mat on the sorting table under the cell: a light, washable surface. */
 function Floor() {
   return (
     <RBox at={[130, 0, 0.5]} size={[460, 520, 1]} radius={0.5} shadow={false}>
@@ -338,64 +346,20 @@ function CameraStand({ raised, z, was }: { raised: boolean; z: number; was: numb
   );
 }
 
-/** One greenhouse row: a raised bed, tall tomato plants on strings, a few trusses of fruit. */
-function PlantRow({ x0, x1, y }: { x0: number; x1: number; y: number }) {
-  const plants = useMemo(() => Array.from({ length: Math.floor((x1 - x0) / 60) + 1 }, (_, k) => x0 + k * 60), [x0, x1]);
-  return (
-    <group>
-      <RBox at={[(x0 + x1) / 2, y, 30]} size={[x1 - x0 + 40, 70, 60]} radius={4}>
-        <meshStandardMaterial color="#f2f4f1" roughness={0.6} />
-      </RBox>
-      {plants.map((px, k) => (
-        <group key={px}>
-          <mesh position={[m(px), m(y), m(60 + 170)]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[m(4), m(5), m(340), 8]} />
-            <meshStandardMaterial color="#3d7a2c" roughness={0.8} />
-          </mesh>
-          {[110, 190, 270, 350].map((h, j) => (
-            <mesh key={h} position={[m(px + (j % 2 ? 16 : -16)), m(y), m(60 + h)]} scale={[1.4, 0.7, 0.5]}>
-              <sphereGeometry args={[m(26), 10, 8]} />
-              <meshStandardMaterial color={j % 2 ? '#4f9a37' : '#5aa83f'} roughness={0.8} />
-            </mesh>
-          ))}
-          {[0, 1, 2].map((j) => (
-            <mesh key={j} position={[m(px + 8 + j * 9), m(y - 22), m(60 + 150 - j * 6 + (k % 2) * 60)]}>
-              <sphereGeometry args={[m(13), 14, 10]} />
-              <meshPhysicalMaterial color={tomatoColor([3, 26, 80][(j + k) % 3])} roughness={0.3} clearcoat={0.8} />
-            </mesh>
-          ))}
-        </group>
-      ))}
-      {/* A grow light over the row. */}
-      <RBox at={[(x0 + x1) / 2, y, 470]} size={[x1 - x0 + 40, 26, 10]} radius={3}>
-        <meshStandardMaterial color="#d7c8ff" emissive="#b28cff" emissiveIntensity={0.9} toneMapped={false} />
-      </RBox>
-    </group>
-  );
-}
-
-/** The greenhouse round the sorting cell, and per problem the story's props. */
-function Greenhouse({ prob }: { prob: FarmProblem }) {
+/**
+ * The rest of the sorting table, and per problem the story's props: the green tape marking the work
+ * area, today's harvest in a yellow crate at the far end (cherry tomatoes heaped in it) with the
+ * packing room's label.
+ */
+function TableDressing({ prob }: { prob: FarmProblem }) {
   return (
     <group>
       <Tape a={[-120, 260]} b={[380, 260]} w={8} color="#3a9b3a" />
       <Tape a={[-120, -270]} b={[380, -270]} w={8} color="#3a9b3a" />
-      <PlantRow x0={-80} x1={340} y={380} />
-      {/* Harvest crates stacked by the bench. */}
-      {[0, 1].map((k) => (
-        <group key={k}>
-          <RBox at={[-110, 150, 30 + k * 62]} size={[120, 80, 58]} radius={4}>
-            <meshStandardMaterial color={k ? '#2f8f46' : '#e0a321'} roughness={0.6} />
-          </RBox>
-          {Array.from({ length: 6 }, (_, j) => (
-            <mesh key={j} position={[m(-140 + (j % 3) * 30), m(135 + Math.floor(j / 3) * 30), m(62 + k * 62)]}>
-              <sphereGeometry args={[m(13), 14, 10]} />
-              <meshPhysicalMaterial color={tomatoColor(k ? 4 : 28)} roughness={0.3} clearcoat={0.8} />
-            </mesh>
-          ))}
-        </group>
-      ))}
-      <Sign at={[-110, 150 - 40.8, 60]} w={100} h={22} lines={['햇살 스마트팜 선별장', '오늘 수확 · 방울토마토']} fg="#ffffff" bg="#3a9b3a" />
+      {/* Today's harvest: a yellow crate turned across the table, heaped with cherry tomatoes. */}
+      <Model group="farm" name="crate" at={[-530, 50]} yaw={Math.PI / 2} />
+      <CherryFill at={[-530, 50]} z={205} w={360} d={460} />
+      <Sign at={[-530, 50 - 258, 130]} w={250} h={56} lines={['햇살 스마트팜 선별장', '오늘 수확 · 방울토마토']} fg="#ffffff" bg="#3a9b3a" />
       {prob === 1 && <Sign at={[300, -135, 40]} yaw={0.6} w={94} h={34} lines={['파프리카 선별 프로그램', '(지난 시즌) 색상 −10 ~ 40°']} fg="#1d2939" bg="#fff6d6" />}
       {prob === 3 && (
         <group>

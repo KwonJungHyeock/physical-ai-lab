@@ -1,0 +1,21 @@
+{
+  "tex": 512,
+  "models": {
+    "tomatoPlant": [
+      "lab-industry/glb/qt-tomato-plant.glb",
+      0.01
+    ],
+    "crate": [
+      "lab-industry/glb/ph-crate-yellow.glb",
+      1
+    ],
+    "crateTomatoes": [
+      "lab-industry/glb/kk-crate-tomatoes.glb",
+      0.25
+    ],
+    "box": [
+      "lab-industry/glb/ph-cardboard-box.glb",
+      1
+    ]
+  }
+}

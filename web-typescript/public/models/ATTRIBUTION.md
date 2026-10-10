@@ -22,6 +22,10 @@ otherwise unchanged. No credit is required by these licences; it is given here w
 | `people.glb` | `elderWoman`, `elderMan` | Quaternius — Background Posed Humans (hair tinted grey) | Quaternius — quaternius.com | CC0 1.0 (the pack's License.txt) |
 | `people.glb` | `workerMan` | Quaternius — Ultimate Modular Men | Quaternius | CC0 1.0 (the pack's License.txt) |
 | `people.glb` | `workerWoman`, `customer` | Quaternius — Ultimate Modular Women | Quaternius | CC0 1.0 (the pack's License.txt) |
+| `farm.glb` | `tomatoPlant` | Quaternius — Ultimate Crops Pack (Tomato_4; fruit repainted red in the scene) | Quaternius — quaternius.com | CC0 1.0 (the pack page) |
+| `farm.glb` | `crate` | Poly Haven — Plastic Crate 02 | Fabi_G | CC0 1.0 |
+| `farm.glb` | `crateTomatoes` | KayKit Restaurant Bits 1.0 (crate_tomatoes, scaled 0.25) | Kay Lousberg — kaylousberg.com | CC0 1.0 |
+| `farm.glb` | `box` | Poly Haven — Cardboard Box 01 | see polyhaven.com | CC0 1.0 |
 
 Licences: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/ ·
 MIT-0 — https://github.com/aws/mit-0 (no attribution clause) · Poly Haven — https://polyhaven.com/license.

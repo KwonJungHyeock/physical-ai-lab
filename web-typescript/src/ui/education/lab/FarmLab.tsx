@@ -65,8 +65,8 @@ import { ArrowDef, Knob, PROBS, RecordSheet, SitePanel, answeredUpTo, fmt, fresh
 import css from './lab.module.css';
 import lg from './site.module.css';
 
-/** The cell from the front right, a little above (three.js metres, y up): camera, then target. */
-export const FARM_VIEW: ViewPose = [0.74, 0.6, 0.6, 0.13, 0.1, -0.02];
+/** The cell from the front right, above the sorting table, the greenhouse's rows behind it (three.js metres, y up): camera, then target. */
+export const FARM_VIEW: ViewPose = [1.3, 0.75, 1.15, -0.02, 0.1, -0.25];
 const SLOW = 0.35;
 const SLOW_LEAD_S = 1.6;
 
