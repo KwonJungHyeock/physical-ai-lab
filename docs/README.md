@@ -37,7 +37,7 @@
 | [`07-ai-kit.md`](reports/research/07-ai-kit.md) | 보고 #7 — AI 로봇 확장 키트: 공식 모델·코드·사진으로 시뮬레이터 맞추기, 실측할 값 |
 | [`10-direction.md`](reports/research/10-direction.md) | 보고 #10 — 사양 전수조사(틀린 곳·미확정), 흡착 펌프 제어 핀, 연결 구조, 수준별 3단계 제안 |
 | [`12-myagv.md`](reports/research/12-myagv.md) | 보고 #12 — myAGV(이동 로봇) 조사: 버전 5종 사양, 명령 방식, ROS 패키지 · 3D 모델, 시뮬레이터 설계안 |
-| [`21-model-assets.md`](reports/research/21-model-assets.md) | 보고 #21 — 3D 모델 자산 1단계: 코드로 만든 소품 약 100종 현황, 판정 물체와 꾸밈 소품 구분, 바꿀 순서, 모을 모델 목록, 자산 라이브러리 설계 |
+| [`21-model-assets.md`](reports/research/21-model-assets.md) | 보고 #21 — 3D 모델 자산: 코드로 만든 소품 현황(1단계), CC0 모델 팩 9개 · 바닥/벽 재질 7종 수집, 현장 7곳을 실제 크기 작업대 · 방으로 교체(2~4단계), 남은 한계 |
 
 ### [`console/`](reports/console/) — 실습 콘솔 · 실기 점검 · 검수
 | 문서 | 내용 |
