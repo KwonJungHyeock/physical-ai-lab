@@ -1,0 +1,22 @@
+{
+  "tex": 512,
+  "models": {
+    "counter": ["lab-industry/src/itch-labassets/x/Lab Assets/GLB/All/counter_counter.glb", 0.01],
+    "counterShelves": ["lab-industry/glb/mb-lab-bench.glb", 0.01],
+    "counterSink": ["lab-industry/src/itch-labassets/x/Lab Assets/GLB/All/counter_counter_sink.glb", 0.01],
+    "wallCabinet": ["lab-industry/src/itch-labassets/x/Lab Assets/GLB/All/cabinet_cabinet.glb", 0.01],
+    "wallShelf": ["lab-industry/glb/mb-wall-cabinet.glb", 0.01],
+    "centrifuge": ["lab-industry/glb/mb-centrifuge.glb", 0.01],
+    "microscope": ["lab-industry/glb/ph-microscope.glb", 1],
+    "hotPlate": ["lab-industry/glb/mb-hot-plate.glb", 0.01],
+    "tubeRack": ["lab-industry/glb/mb-test-tube-rack.glb", 0.01],
+    "reagentBottle": ["lab-industry/src/itch-labassets/x/Lab Assets/GLB/All/bottle_glassware_reagent_bottle_large.glb", 0.01],
+    "plasticBottle": ["lab-industry/src/itch-labassets/x/Lab Assets/GLB/All/bottle_plastic_bottle_medium.glb", 0.01],
+    "flask": ["lab-industry/src/itch-labassets/x/Lab Assets/GLB/All/bottle_glassware_erlenmeyer_flask_large.glb", 0.01],
+    "washBottle": ["lab-industry/src/itch-labassets/x/Lab Assets/GLB/All/misc_wash_bottle.glb", 0.01],
+    "extinguisher": ["lab-industry/src/itch-labassets/x/Lab Assets/GLB/All/ppe_fire_extinguisher_clamp.glb", 0.01],
+    "gown": ["lab-industry/src/itch-labassets/x/Lab Assets/GLB/All/ppe_lab_gown.glb", 0.01],
+    "micropipette": ["lab-industry/glb/mb-micropipette.glb", 0.025],
+    "shelves": ["lab-industry/glb/ph-steel-shelves-narrow.glb", 0.1]
+  }
+}

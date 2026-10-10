@@ -32,6 +32,23 @@ otherwise unchanged. No credit is required by these licences; it is given here w
 | `factory.glb` | `tote` | Poly Haven — Industrial Plastic Container | Galo Benivegna | CC0 1.0 |
 | `factory.glb` | `handTruck` | Poly Haven — Hand Truck | Mutanzom3D | CC0 1.0 |
 | `factory.glb` | `signalTower` | Kenney Factory Kit 3.0 (warning-traffic) | Kenney — www.kenney.nl | CC0 1.0 |
+| `bio.glb` | `counter` | MilkAndBanana — Lab Assets (counter_counter) | MilkAndBanana | CC0 1.0 |
+| `bio.glb` | `counterShelves` | MilkAndBanana — Lab Assets (counter_counter_3_shelves) | MilkAndBanana | CC0 1.0 |
+| `bio.glb` | `counterSink` | MilkAndBanana — Lab Assets (counter_counter_sink) | MilkAndBanana | CC0 1.0 |
+| `bio.glb` | `wallCabinet` | MilkAndBanana — Lab Assets (cabinet_cabinet) | MilkAndBanana | CC0 1.0 |
+| `bio.glb` | `wallShelf` | MilkAndBanana — Lab Assets (cabinet_cabinet_two_shelves) | MilkAndBanana | CC0 1.0 |
+| `bio.glb` | `centrifuge` | MilkAndBanana — Lab Assets (machine_centrifuge) | MilkAndBanana | CC0 1.0 |
+| `bio.glb` | `hotPlate` | MilkAndBanana — Lab Assets (machine_hot_plate) | MilkAndBanana | CC0 1.0 |
+| `bio.glb` | `tubeRack` | MilkAndBanana — Lab Assets (bottle_test_tube_rack) | MilkAndBanana | CC0 1.0 |
+| `bio.glb` | `reagentBottle` | MilkAndBanana — Lab Assets (bottle_glassware_reagent_bottle_large) | MilkAndBanana | CC0 1.0 |
+| `bio.glb` | `plasticBottle` | MilkAndBanana — Lab Assets (bottle_plastic_bottle_medium) | MilkAndBanana | CC0 1.0 |
+| `bio.glb` | `flask` | MilkAndBanana — Lab Assets (bottle_glassware_erlenmeyer_flask_large) | MilkAndBanana | CC0 1.0 |
+| `bio.glb` | `washBottle` | MilkAndBanana — Lab Assets (misc_wash_bottle) | MilkAndBanana | CC0 1.0 |
+| `bio.glb` | `extinguisher` | MilkAndBanana — Lab Assets (ppe_fire_extinguisher_clamp) | MilkAndBanana | CC0 1.0 |
+| `bio.glb` | `gown` | MilkAndBanana — Lab Assets (ppe_lab_gown) | MilkAndBanana | CC0 1.0 |
+| `bio.glb` | `micropipette` | MilkAndBanana — Lab Assets (bottle_micropipet) | MilkAndBanana | CC0 1.0 |
+| `bio.glb` | `microscope` | Poly Haven — Industrial Microscope | Lukas Walzer | CC0 1.0 |
+| `bio.glb` | `shelves` | Poly Haven — Steel Frame Shelves 01 | James Ray Cock | CC0 1.0 |
 
 Licences: CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/ ·
 MIT-0 — https://github.com/aws/mit-0 (no attribution clause) · Poly Haven — https://polyhaven.com/license.

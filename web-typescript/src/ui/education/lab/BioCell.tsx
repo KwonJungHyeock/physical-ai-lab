@@ -25,7 +25,10 @@ import { CENTRIFUGE, DST, RACK, ROW, SRC, TRAY, TUBE, rowHole, trayHole, type Bi
 import { RBox } from '../../simulator/stage/sceneKit';
 import { LEARN_COLORS } from '../stage/learn3d';
 import type { LiveArm } from '../stage/LearnStage';
-import { Dim, Shelf, Sign, Tape, m, tag, v3, type CellDim } from './CellKit';
+import { Dim, Sign, Tape, m, tag, v3, type CellDim } from './CellKit';
+import Bench from './ambient/Bench';
+import Model from './ambient/Model';
+import { BIO_BENCH_MM } from './ambient/around/bio';
 
 const FRAME_DT = 0.02;
 const UP = new Vector3(0, 0, 1);
@@ -314,59 +317,142 @@ function Centrifuge() {
   );
 }
 
-/** The lab around the cell: a reagent shelf, a pipette stand, a biohazard bin, the floor line — and per problem the story's props. */
+/** The lab bench under the cell (robot frame): its top's extent, mm; the top is z = 0, the floor BIO_BENCH_MM below. */
+const BENCH = { x0: -420, x1: 460, y0: -700, y1: 780 } as const;
+
+/**
+ * The front of the lab bench's cabinets (its +x face): a row of drawers under the top, door pairs
+ * below, each with its bar handle; the bench itself (top, cabinet body, plinth) is the shared <Bench kind="lab">.
+ */
+function BenchFront() {
+  const { x1, y0, y1 } = BENCH;
+  const H = BIO_BENCH_MM;
+  const n = 4;
+  const bay = (y1 - y0 - 40) / n;
+  const face = <meshStandardMaterial color="#e6eaee" roughness={0.55} />;
+  const bar = <meshStandardMaterial color="#8d969f" metalness={0.6} roughness={0.35} />;
+  return (
+    <group>
+      {Array.from({ length: n }, (_, i) => y0 + 20 + bay * (i + 0.5)).map((y) => (
+        <group key={y}>
+          <RBox at={[x1 - 6, y, -75]} size={[8, bay - 8, 86]} radius={2}>
+            {face}
+          </RBox>
+          <RBox at={[x1 - 1, y, -60]} size={[8, 120, 10]} radius={4}>
+            {bar}
+          </RBox>
+          {[-1, 1].map((s) => (
+            <group key={s}>
+              <RBox at={[x1 - 6, y + (s * bay) / 4, -(H + 125) / 2 + 50]} size={[8, bay / 2 - 8, H - 245]} radius={2}>
+                {face}
+              </RBox>
+              <RBox at={[x1 - 1, y + s * 22, -200]} size={[8, 10, 120]} radius={4}>
+                {bar}
+              </RBox>
+            </group>
+          ))}
+        </group>
+      ))}
+    </group>
+  );
+}
+
+/**
+ * A low reagent shelf across the bench's far end (+y), beside the cell and off the view's line past
+ * the arm to the lab: one white shelf on steel uprights, brown and clear bottles and wash bottles on
+ * it, buffer bottles under it, the lab's sign along its edge.
+ */
+function ReagentShelf() {
+  const y = BENCH.y1 - 95;
+  const x0 = BENCH.x0;
+  const x1 = 180;
+  const shelf = 300;
+  const steel = <meshStandardMaterial color="#9aa3ad" metalness={0.65} roughness={0.35} />;
+  const bottles: readonly { x: number; z: number; name: string; color: string; h: number }[] = [
+    ...[-360, -285, -210].map((x, i) => ({ x, z: shelf, name: 'reagentBottle', color: i % 2 ? '#dfe9ef' : '#7a3f12', h: 160 })),
+    ...[-110, -30].map((x) => ({ x, z: shelf, name: 'plasticBottle', color: '#2f7de1', h: 190 })),
+    ...[60, 135].map((x) => ({ x, z: shelf, name: 'reagentBottle', color: '#7a3f12', h: 150 })),
+    ...[-350, -270].map((x) => ({ x, z: 0, name: 'plasticBottle', color: '#f3f5f7', h: 220 })),
+    ...[-150, -80].map((x) => ({ x, z: 0, name: 'washBottle', color: '#f2f4f6', h: 180 })),
+  ];
+  return (
+    <group>
+      {[x0 + 15, x1 - 15].map((x) => (
+        <RBox key={x} at={[x, y, (shelf + 40) / 2]} size={[30, 30, shelf + 40]} radius={3}>
+          {steel}
+        </RBox>
+      ))}
+      <RBox at={[(x0 + x1) / 2, y, shelf - 9]} size={[x1 - x0, 180, 18]} radius={3}>
+        <meshStandardMaterial color="#f2f4f6" roughness={0.5} />
+      </RBox>
+      {bottles.map((b) => (
+        <Model key={`${b.x},${b.z}`} group="bio" name={b.name} at={[b.x, y]} z={b.z} h={b.h} color={b.color} />
+      ))}
+      <Sign at={[(x0 + x1) / 2, y - 91, shelf - 9]} w={300} h={17} lines={['새움 바이오 분석실 · 장갑 · 보안경 착용']} fg="#ffffff" bg="#12935f" />
+    </group>
+  );
+}
+
+/** A pipette stand at real size: a heavy round foot, a post, three micropipettes hanging from its arms. */
+function PipetteStand({ at }: { at: readonly [number, number] }) {
+  const [x, y] = at;
+  return (
+    <group>
+      <mesh position={[m(x), m(y), m(8)]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[m(75), m(80), m(16), 32]} />
+        <meshStandardMaterial color="#3a414b" roughness={0.5} />
+      </mesh>
+      <RBox at={[x, y, 190]} size={[14, 14, 360]} radius={4}>
+        <meshStandardMaterial color="#c9cfd6" metalness={0.6} roughness={0.35} />
+      </RBox>
+      {[-1, 0, 1].map((k) => {
+        const a = (k * 2 * Math.PI) / 3 + 0.4;
+        const px = x + 45 * Math.cos(a);
+        const py = y + 45 * Math.sin(a);
+        return (
+          <group key={k}>
+            <RBox at={[(x + px) / 2, (y + py) / 2, 330]} rot={a} size={[48, 12, 10]} radius={3}>
+              <meshStandardMaterial color="#e5e7eb" roughness={0.45} />
+            </RBox>
+            <Model group="bio" name="micropipette" at={[px, py]} z={70} h={250} yaw={a} color={k ? '#eef0f2' : '#12935f'} />
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
+/** A benchtop biohazard waste box: yellow, a lid with a slot, the label. */
+function WasteBox({ at }: { at: readonly [number, number] }) {
+  const [x, y] = at;
+  return (
+    <group>
+      <RBox at={[x, y, 95]} size={[160, 130, 190]} radius={8}>
+        <meshStandardMaterial color="#f2c230" roughness={0.5} />
+      </RBox>
+      <RBox at={[x, y, 196]} size={[168, 138, 14]} radius={5}>
+        <meshStandardMaterial color="#e2a91a" roughness={0.5} />
+      </RBox>
+      <Sign at={[x + 80.5, y, 105]} yaw={Math.PI / 2} w={100} h={50} lines={['의료 폐기물', '생물 위해']} fg="#1d2025" bg="#ffffff" />
+    </group>
+  );
+}
+
+/**
+ * The lab round the cell at real size: the white lab bench the arm stands on (its cabinets down to
+ * the floor), a reagent shelf across its far end, a pipette stand, the biohazard waste box and a
+ * rack of tubes waiting — and per problem the story's props.
+ */
 function LabDressing({ prob }: { prob: BioProblem }) {
   return (
     <group>
+      <Bench {...BENCH} h={BIO_BENCH_MM} kind="lab" />
+      <BenchFront />
       <Tape a={[330, -260]} b={[330, 300]} w={8} color="#2f9e6b" />
-      <Shelf x={-60} y={250} w={220} levels={[8, 88, 168]}>
-        {[-140, -110, -80, -50, -20, 10].map((dx, i) => (
-          <group key={dx}>
-            <mesh position={[m(-60 + dx + 15), m(250), m(8 + 30)]} rotation={[Math.PI / 2, 0, 0]}>
-              <cylinderGeometry args={[m(13), m(13), m(60), 24]} />
-              <meshPhysicalMaterial color={i % 2 ? '#e7f1fb' : '#fdf3e2'} transparent opacity={0.85} roughness={0.15} clearcoat={1} />
-            </mesh>
-            <mesh position={[m(-60 + dx + 15), m(250), m(8 + 64)]} rotation={[Math.PI / 2, 0, 0]}>
-              <cylinderGeometry args={[m(8), m(8), m(10), 20]} />
-              <meshStandardMaterial color={i % 2 ? '#2f5be7' : '#d9622b'} roughness={0.5} />
-            </mesh>
-          </group>
-        ))}
-        {[-120, -60, 0].map((dx) => (
-          <RBox key={dx} at={[-60 + dx + 20, 250, 88 + 22]} size={[44, 50, 44]} radius={3}>
-            <meshStandardMaterial color="#f5f7fa" roughness={0.6} />
-          </RBox>
-        ))}
-        <Sign at={[-60, 250 - 36.5, 236]} w={110} h={20} lines={['새움 바이오 분석실', '장갑 · 보안경 착용']} fg="#ffffff" bg="#12935f" />
-      </Shelf>
-      {/* A pipette stand: a base, a post, three pipettes hanging. */}
-      <group>
-        <RBox at={[-40, -190, 4]} size={[60, 40, 8]} radius={3}>
-          <meshStandardMaterial color="#3a414b" roughness={0.5} />
-        </RBox>
-        <RBox at={[-40, -190, 70]} size={[8, 8, 130]} radius={2}>
-          <meshStandardMaterial color="#c9cfd6" metalness={0.6} roughness={0.35} />
-        </RBox>
-        {[-18, 0, 18].map((dy) => (
-          <group key={dy}>
-            <RBox at={[-40, -190 + dy, 112]} size={[16, 10, 30]} radius={4}>
-              <meshStandardMaterial color={dy ? '#e5e7eb' : '#12935f'} roughness={0.45} />
-            </RBox>
-            <mesh position={[m(-40), m(-190 + dy), m(80)]} rotation={[Math.PI / 2, 0, 0]}>
-              <cylinderGeometry args={[m(3), m(1.5), m(40), 12]} />
-              <meshStandardMaterial color="#d0d5dd" roughness={0.4} />
-            </mesh>
-          </group>
-        ))}
-      </group>
-      {/* Biohazard bin. */}
-      <group>
-        <mesh position={[m(-150), m(-120), m(40)]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[m(34), m(30), m(80), 32]} />
-          <meshStandardMaterial color="#f2c230" roughness={0.5} />
-        </mesh>
-        <Sign at={[-150 + 30, -120 - 18, 48]} yaw={-0.55} w={36} h={14} lines={['의료 폐기물']} fg="#1d2025" bg="#ffffff" />
-      </group>
+      <ReagentShelf />
+      <PipetteStand at={[-300, -330]} />
+      <WasteBox at={[-320, -610]} />
+      <Model group="bio" name="tubeRack" at={[330, 430]} yaw={Math.PI / 2} w={250} color="#2f7de1" />
       {prob === 1 && <Sign at={[250, 80, 40]} yaw={0.9} w={88} h={34} lines={['붓기 프로그램 (복사본)', 'ry −35 · 병을 기울여 붓기']} fg="#1d2939" bg="#fff6d6" />}
       {prob === 2 && <Sign at={[-30, -62, 60]} yaw={0.4} w={86} h={30} lines={['정비 기록 · J1 서보 교체', '영점 확인 필요']} fg="#ffffff" bg="#e5484d" />}
     </group>

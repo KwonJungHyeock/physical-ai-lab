@@ -64,7 +64,7 @@ import css from './lab.module.css';
 import lg from './site.module.css';
 
 /** The bench from the front right, a little above (three.js metres, y up): camera, then target. */
-export const BIO_VIEW: ViewPose = [0.6, 0.42, 0.52, 0.12, 0.05, -0.0];
+export const BIO_VIEW: ViewPose = [1.4, 0.95, 0.4, -0.3, 0.2, 0.05];
 const SLOW = 0.35;
 const SLOW_LEAD_S = 1.6;
 
