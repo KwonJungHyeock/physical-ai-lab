@@ -18,12 +18,14 @@ import {
   BOTTLE,
   CAFE_DEFAULTS,
   CAFE_FIXES,
+  CARE_J1_LIMIT,
   CARRY_MAX_S,
   CARRY_Z,
   CUP,
   FRIDGE,
   GRIP_Z,
   HAND,
+  J1_MAX_SPEED,
   PICKUP,
   SPILL_ACC,
   SPILL_SLOPE,
@@ -146,9 +148,9 @@ function measureRows(chain: readonly ChainSegment[], prob: CafeProblem, run: Caf
   const a = Math.atan2(FRIDGE[1], FRIDGE[0]);
   return [
     { label: '물병 · 아침 컵 무게', value: `${fmt(BOTTLE.kg * 1000)} g · ${fmt(CUP.kg * 1000)} g` },
-    { label: 'J1에 필요한 최대 토크 (물병 · 컵)', value: `${fmt(b.tau, 2)} · ${fmt(c.tau, 2)} N·m`, bad: true },
-    { label: 'J1 토크 한계', value: `${fmt(j1Limit(chain), 3)} N·m` },
-    { label: '도는 각도 · 시간 · 최대 각가속도', value: `${fmt(Math.abs(b.dq))}° · ${v.time} s · ${fmt(b.alpha, 1)} rad/s²`, bad: true },
+    { label: 'J1에 필요한 최대 토크 (물병 · 컵)', value: `${fmt(b.tau, 3)} · ${fmt(c.tau, 3)} N·m`, bad: true },
+    { label: 'J1 토크 제한 (돌봄 모드, 안전 설정)', value: `${fmt(CARE_J1_LIMIT, 2)} N·m (서보 자체는 약 ${fmt(j1Limit(chain), 2)})` },
+    { label: '도는 각도 · 시간 · 최대 각가속도', value: `${fmt(Math.abs(b.dq))}° · ${v.time} s · ${fmt(b.alpha, 2)} rad/s² (최고 ${fmt(b.speed)}°/s, 서보 ${J1_MAX_SPEED}°/s까지)`, bad: true },
     {
       label: '몸통에서 물병까지 반지름',
       value: `${v.radius} mm`,
@@ -165,7 +167,7 @@ function predictionOf(prob: CafeProblem, run: CafeRun | null): number | null {
   const k = run.failure?.kind;
   if (prob === 1) return k === 'spill' ? 2 : 1;
   if (prob === 2) return k === 'touch' ? 2 : 1;
-  return k === 'overload' ? 2 : 1;
+  return k === 'overload' || k === 'overspeed' ? 2 : 1;
 }
 
 function valuesText(p: CafeProblem, v: CafeValues): string {
@@ -195,7 +197,7 @@ export default function CafeLab({ robot, chain, gripperRobot, hidden, level = 'h
   const slowFrom = useRef<number | null>(null);
   const s = st[prob];
   const { step, runs } = s;
-  const limit = useMemo(() => j1Limit(chain), [chain]);
+  const limit = CARE_J1_LIMIT;
 
   useEffect(() => {
     for (const p of PROBS) if (solved[p]) onSolved?.(p);
@@ -295,7 +297,7 @@ export default function CafeLab({ robot, chain, gripperRobot, hidden, level = 'h
     }
     if (prob === 3) {
       const r = (v as TurnValues).radius;
-      const ok = step === 'fix' ? !!turnPrev && turnPrev.tau <= limit : shown ? shown.failure?.kind !== 'overload' : false;
+      const ok = step === 'fix' ? !!turnPrev && turnPrev.tau <= limit && turnPrev.speed <= J1_MAX_SPEED : shown ? shown.failure?.kind !== 'overload' && shown.failure?.kind !== 'overspeed' : false;
       o.turn = { radius: r, ok };
     }
     if (step === 'fix') return o;
@@ -417,7 +419,7 @@ export default function CafeLab({ robot, chain, gripperRobot, hidden, level = 'h
             )}
             {prob === 3 && (
               <div data-c={(frame?.tau ?? 0) > limit ? 'bad' : undefined}>
-                <small>J1 토크 (한계 {fmt(limit, 2)})</small>
+                <small>J1 토크 (제한 {fmt(limit, 2)})</small>
                 <b>{fmt(frame?.tau ?? 0, 2)} N·m</b>
               </div>
             )}
@@ -525,7 +527,7 @@ export default function CafeLab({ robot, chain, gripperRobot, hidden, level = 'h
 function programLine(p: CafeProblem): string {
   if (p === 1) return '바 → 픽업대 직선 이동 · 최고 속도 250 mm/s · 가속도 4 m/s² — 빈 컵 회수 프로그램 그대로';
   if (p === 2) return `직선 이동 2 m/s² · 픽업대 구역(마지막 ${ZONE_MM} mm)에서도 250 mm/s · 센서 감지 50 mm → 정지`;
-  return '냉장고에서 물병을 집어 팔을 230 mm 뻗은 채 J1만 0.8 s에 143° 돌기 — 아침 컵 때 그대로';
+  return `냉장고에서 물병을 집어 팔을 230 mm 뻗은 채 J1만 1.4 s에 143° 돌기 · 돌봄 모드 J1 토크 제한 ${CARE_J1_LIMIT} N·m — 아침 컵 때 그대로`;
 }
 
 /* --- pieces ---------------------------------------------------------------------------------- */
@@ -535,7 +537,7 @@ function Events({ run, onSeek }: { run: CafeRun | null; onSeek(t: number): void 
   return (
     <ol className={lg.events} aria-label="작업 기록">
       {run.events.map((e, i) => (
-        <li key={i} data-k={['spill', 'touch', 'overload', 'unreachable', 'hit'].includes(e.kind) ? 'bad' : e.kind === 'detect' ? 'warn' : undefined}>
+        <li key={i} data-k={['spill', 'touch', 'overload', 'overspeed', 'unreachable', 'hit'].includes(e.kind) ? 'bad' : e.kind === 'detect' ? 'warn' : undefined}>
           <button type="button" onClick={() => onSeek(Math.max(0, e.t - 0.6))}>
             <time>{e.t.toFixed(1)} s</time>
             <span>{e.text}</span>
@@ -669,6 +671,7 @@ function HmiGuard({ v, on }: { v: GuardValues; on(v: GuardValues): void }) {
 
 function HmiTurn({ v, preview, limit, on }: { v: TurnValues; preview: ReturnType<typeof turnTorque> | null; limit: number; on(v: TurnValues): void }) {
   const tau = preview?.tau ?? NaN;
+  const speed = preview?.speed ?? NaN;
   return (
     <div className={lg.hmi}>
       <header>
@@ -676,7 +679,7 @@ function HmiTurn({ v, preview, limit, on }: { v: TurnValues; preview: ReturnType
         <i>● 물병 {fmt(BOTTLE.kg * 1000)} g · 143°</i>
       </header>
       <Knob id="cafe-r" label="도는 동안 물병까지 반지름" unit="mm" v={v.radius} min={130} max={240} step={5} note="팔을 접을수록 작아져요" on={(radius) => on({ ...v, radius })} />
-      <Knob id="cafe-t" label="도는 시간" unit="s" v={v.time} min={0.5} max={2} step={0.05} note="5차 궤적 — 최대 각가속도 = 5.77 × 각도 ÷ 시간²" on={(time) => on({ ...v, time: Math.round(time * 100) / 100 })} />
+      <Knob id="cafe-t" label="도는 시간" unit="s" v={v.time} min={1} max={2.5} step={0.05} note="5차 궤적 — 최대 각가속도 = 5.77 × 각도 ÷ 시간², 최고 속도 = 1.875 × 각도 ÷ 시간" on={(time) => on({ ...v, time: Math.round(time * 100) / 100 })} />
       <table className={lg.layers}>
         <tbody>
           <tr>
@@ -684,14 +687,18 @@ function HmiTurn({ v, preview, limit, on }: { v: TurnValues; preview: ReturnType
             <td>{preview ? `${fmt(preview.alpha, 1)} rad/s²` : '…'}</td>
           </tr>
           <tr>
-            <td>J1에 필요한 최대 토크 (한계 {fmt(limit, 3)})</td>
+            <td>J1 최고 속도 (서보 {J1_MAX_SPEED}°/s까지)</td>
+            <td data-c={!preview || !Number.isFinite(speed) ? undefined : speed > J1_MAX_SPEED ? 'press' : 'ok'}>{!preview ? '…' : Number.isFinite(speed) ? `${fmt(speed)}°/s${speed > J1_MAX_SPEED ? ' · 따라갈 수 없음' : ''}` : '—'}</td>
+          </tr>
+          <tr>
+            <td>J1에 필요한 최대 토크 (돌봄 모드 제한 {fmt(limit, 2)})</td>
             <td data-c={!preview || !Number.isFinite(tau) ? undefined : tau > limit ? 'press' : tau > limit * 0.85 ? 'drop' : 'ok'}>
               {!preview ? '…' : Number.isFinite(tau) ? `${fmt(tau, 3)} N·m${tau > limit ? ' · 과부하' : tau > limit * 0.85 ? ' · 아슬아슬' : ''}` : '손이 닿지 않아요'}
             </td>
           </tr>
         </tbody>
       </table>
-      <small className={lg.hmiNote}>3D 화면의 점선 호가 물병이 지나갈 길이에요 (초록: 한계 안, 빨강: 과부하).</small>
+      <small className={lg.hmiNote}>3D 화면의 점선 호가 물병이 지나갈 길이에요 (초록: 제한 안, 빨강: 과부하나 너무 빠름).</small>
     </div>
   );
 }
@@ -761,14 +768,14 @@ function PrincipleFig({ prob }: { prob: CafeProblem }) {
     <svg className={lg.fig} viewBox="0 0 320 110" role="img" aria-label="반지름이 작을수록, 시간이 길수록 토크가 작다">
       <circle cx={70} cy={60} r={8} className={lg.figCup} />
       <path d="M70,60 m-50,0 a50,50 0 0,1 100,0" className={lg.figArrow} fill="none" stroke="#e5484d" />
-      <path d="M70,60 m-30,0 a30,30 0 0,1 60,0" className={lg.figUp} fill="none" />
+      <path d="M70,60 m-39,0 a39,39 0 0,1 78,0" className={lg.figUp} fill="none" />
       <circle cx={20} cy={60} r={5} fill="#f08c2e" />
-      <circle cx={40} cy={60} r={5} fill="#1f9d55" />
-      <text x={6} y={80} className={lg.figTxt}>
+      <circle cx={31} cy={60} r={5} fill="#1f9d55" />
+      <text x={2} y={80} className={lg.figTxt}>
         230
       </text>
-      <text x={34} y={80} className={lg.figTxt}>
-        150
+      <text x={28} y={80} className={lg.figTxt}>
+        180
       </text>
       <text x={150} y={36} className={lg.figStrong}>
         τ = I α

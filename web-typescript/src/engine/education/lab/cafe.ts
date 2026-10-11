@@ -12,11 +12,13 @@
  *    counter and/or the detection distance: the protective distance
  *    S = (v_hand + v_robot) t_react + v_robot² ÷ (2a) + v_hand × v_robot ÷ a must be under it (5-4).
  *  ③ 물병이 무거워졌다 (돌봄) — a care-assist mobile manipulator (the same arm on a myAGV, parked)
- *    hands an elderly resident a full water bottle, three times the cup's weight. The fast turn
- *    from the mini fridge to the resident's low table (J1 only) needs τ = I α, I growing with m r² — the J1
- *    servo cannot give it and the arm stops. The fix: turn with the bottle closer in, and/or take
- *    longer (α ∝ 1/T²) (4-2 관성과 가속 토크). Torques from the arm's inverse dynamics (physics/
- *    dynamics.ts, its estimated masses and torque limits).
+ *    hands an elderly resident a full water bottle, three times the cup's weight. The turn from the
+ *    mini fridge to the resident's low table (J1 only, 1.4 s — about as fast as J1 can go) needs
+ *    τ = I α, I growing with m r² — more than the care mode's J1 torque limit (CARE_J1_LIMIT, a
+ *    safety setting well under the servo's maximum) and the arm stops. The fix: turn with the bottle
+ *    closer in, and/or take longer (α ∝ 1/T²) (4-2 관성과 가속 토크); a shorter time is no way out —
+ *    J1 cannot turn faster than J1_MAX_SPEED. Torques from the arm's inverse dynamics (physics/
+ *    dynamics.ts, its estimated masses).
  *
  * No React, no WebGL: tests/education/cafe-check.mts runs these headless.
  */
@@ -24,7 +26,7 @@
 import { poseContact } from '../../physics/collide';
 import { inverseDynamics, torqueLimits, GRAVITY } from '../../physics/dynamics';
 import { forwardKinematicsFrames, type ChainSegment } from '../../robot/kinematics';
-import { jointTrajectory } from '../../robot/motion';
+import { jointTrajectory, peakJointSpeedDegS, QUINTIC_PEAK_RATE } from '../../robot/motion';
 import { solveToolPose } from '../../robot/tool';
 import { tcpFor } from '../../simulator/effectors';
 import { HOME_Q, type Mm } from './cell';
@@ -59,8 +61,20 @@ export const HAND = { speed: 250, startY: -380, react: 0.1, brake: 2 } as const;
 /** ②: the zone near the counter where the zone speed applies, mm before the pickup spot. */
 export const ZONE_MM = 120;
 
-/** ③: the J1 servo's torque limit (N·m) — the estimated limit the 4단원 screens use. */
+/** The J1 servo's torque limit (N·m) — the estimated limit the 4단원 screens use (its floor is the J4 wrist figure). Not ③'s limit: see CARE_J1_LIMIT. */
 export const j1Limit = (chain: readonly ChainSegment[]) => torqueLimits(chain, TOOL_MM)[0];
+
+/**
+ * ③: 돌봄 모드 J1 토크 제한, N·m. A care robot works right beside people, so its controller holds J1
+ * well under what the servo could give (j1Limit, ~0.285): if the arm swings into a resident it
+ * pushes softly (5-4 힘 제한). This is the care mode's safety setting, not the servo's maximum —
+ * turning faster than it allows trips the overload stop.
+ */
+export const CARE_J1_LIMIT = 0.12;
+/** ③: J1's top speed, °/s — the simulator's joints top out here (robot/motion.ts: speed 100 → 200 °/s). */
+export const J1_MAX_SPEED = peakJointSpeedDegS(100);
+/** ③: the J1 turn's peak speed (°/s) for its angle (°) in T s — a quintic peaks at 1.875 × angle ÷ T. */
+export const turnPeakSpeed = (dqDeg: number, T: number) => (QUINTIC_PEAK_RATE * Math.abs(dqDeg)) / T;
 
 /* --- values ------------------------------------------------------------------------------ */
 
@@ -86,12 +100,12 @@ export type CafeValues = CarryValues | GuardValues | TurnValues;
 export const CAFE_DEFAULTS: Record<CafeProblem, CafeValues> = {
   1: { speed: 250, acc: 4 },
   2: { zoneSpeed: 250, detect: 50 },
-  3: { radius: 230, time: 0.8 },
+  3: { radius: 230, time: 1.4 },
 };
 export const CAFE_FIXES: Record<CafeProblem, CafeValues> = {
   1: { speed: 250, acc: 2 },
   2: { zoneSpeed: 100, detect: 90 },
-  3: { radius: 180, time: 1.0 },
+  3: { radius: 180, time: 1.4 },
 };
 
 /* --- the run ------------------------------------------------------------------------------ */
@@ -115,7 +129,7 @@ export interface CafeFrame {
   alarm: boolean;
 }
 
-export type CafeEventKind = 'grip' | 'serve' | 'spill' | 'detect' | 'stop' | 'touch' | 'handover' | 'overload' | 'unreachable' | 'hit' | 'done';
+export type CafeEventKind = 'grip' | 'serve' | 'spill' | 'detect' | 'stop' | 'touch' | 'handover' | 'overload' | 'overspeed' | 'unreachable' | 'hit' | 'done';
 
 export interface CafeEvent {
   t: number;
@@ -139,9 +153,10 @@ export interface CafeRun {
   /** ②: the gap between cup and hand when the arm came to rest (null: it never stopped for the hand), and the speed at contact (0: none). */
   stopGap: number | null;
   hitSpeed: number;
-  /** ③: the largest J1 torque and the turn's peak angular acceleration (rad/s²). */
+  /** ③: the largest J1 torque, the turn's peak angular acceleration (rad/s²) and peak speed (°/s). */
   maxTau: number;
   peakAlpha: number;
+  peakSpeed: number;
   served: boolean;
 }
 
@@ -497,10 +512,10 @@ function quintic(q0: number, dq: number, T: number, t: number) {
   };
 }
 
-/** ③: the largest J1 torque of the turn for a load (no run), N·m, and its peak angular acceleration (rad/s²). */
-export function turnTorque(chain: readonly ChainSegment[], v: TurnValues, kg: number = BOTTLE.kg): { tau: number; alpha: number; dq: number } {
+/** ③: the largest J1 torque of the turn for a load (no run), N·m, its peak angular acceleration (rad/s²) and peak speed (°/s). */
+export function turnTorque(chain: readonly ChainSegment[], v: TurnValues, kg: number = BOTTLE.kg): { tau: number; alpha: number; dq: number; speed: number } {
   const P = turnPoses(chain, v.radius);
-  if (!P) return { tau: NaN, alpha: NaN, dq: NaN };
+  if (!P) return { tau: NaN, alpha: NaN, dq: NaN, speed: NaN };
   const dq = P.b[0] - P.a[0];
   let tau = 0;
   for (let k = 0; k <= 60; k += 1) {
@@ -510,13 +525,14 @@ export function turnTorque(chain: readonly ChainSegment[], v: TurnValues, kg: nu
     const qdd = [m.qdd, 0, 0, 0, 0, 0];
     tau = Math.max(tau, Math.abs(inverseDynamics(chain, q, qd, qdd, { payloadKg: kg, tcpMm: TOOL_MM })[0]));
   }
-  return { tau, alpha: ((5.7735 * Math.abs(dq)) / (v.time * v.time)) * (Math.PI / 180), dq };
+  return { tau, alpha: ((5.7735 * Math.abs(dq)) / (v.time * v.time)) * (Math.PI / 180), dq, speed: turnPeakSpeed(dq, v.time) };
 }
 
 export function runTurn(chain: readonly ChainSegment[], v: TurnValues): CafeRun {
   const sim = new CafeSim(chain, FRIDGE, 'fridge');
-  const limit = j1Limit(chain);
+  const limit = CARE_J1_LIMIT;
   let peakAlpha = 0;
+  let peakSpeed = 0;
   if (pickUp(sim, FRIDGE, '물병', '물병을')) {
     const P = turnPoses(chain, v.radius);
     if (!P) reach(sim, '도는 자리', [v.radius, 0, CARRY_Z]);
@@ -524,7 +540,10 @@ export function runTurn(chain: readonly ChainSegment[], v: TurnValues): CafeRun 
       const dq = P.b[0] - P.a[0];
       const need = turnTorque(chain, v);
       peakAlpha = need.alpha;
-      const steps = Math.ceil(v.time / DT);
+      peakSpeed = need.speed;
+      // The controller checks the turn before it starts: faster than J1 can go, it does not turn.
+      const steps = need.speed > J1_MAX_SPEED + 1e-9 ? 0 : Math.ceil(v.time / DT);
+      if (!steps) sim.fail('overspeed', `J1이 따라갈 수 없는 빠르기 — 이 돌기는 최고 ${need.speed.toFixed(0)}°/s가 필요한데 서보는 ${J1_MAX_SPEED}°/s까지예요 — 작업 중지`, { at: toolAt(chain, sim.q), value: need.speed });
       for (let k = 1; k <= steps; k += 1) {
         const t = (k / steps) * v.time;
         const m = quintic(P.a[0], dq, v.time, t);
@@ -533,7 +552,7 @@ export function runTurn(chain: readonly ChainSegment[], v: TurnValues): CafeRun 
         sim.maxTau = Math.max(sim.maxTau, sim.tau);
         if (sim.tau > limit) {
           sim.step(v.time / steps);
-          sim.fail('overload', `J1 과부하 — 이 돌기에는 최대 ${need.tau.toFixed(2)} N·m가 필요한데 서보는 ${limit.toFixed(3)} N·m까지예요. 따라가지 못해 멈췄어요 — 작업 중지`, { at: toolAt(chain, sim.q), value: need.tau });
+          sim.fail('overload', `J1 과부하 — 이 돌기에는 최대 ${need.tau.toFixed(3)} N·m가 필요한데 돌봄 모드 제한은 ${limit.toFixed(2)} N·m예요. 제한을 넘어 멈췄어요 — 작업 중지`, { at: toolAt(chain, sim.q), value: need.tau });
           break;
         }
         sim.step(v.time / steps);
@@ -545,7 +564,7 @@ export function runTurn(chain: readonly ChainSegment[], v: TurnValues): CafeRun 
       }
     }
   }
-  return { ...finish(sim, v, {}), peakAlpha };
+  return { ...finish(sim, v, {}), peakAlpha, peakSpeed };
 }
 
 /* --- shared -------------------------------------------------------------------------------- */
@@ -568,6 +587,7 @@ function finish(sim: CafeSim, values: CafeValues, extra: Partial<CafeRun>): Cafe
     hitSpeed: 0,
     maxTau: sim.maxTau,
     peakAlpha: 0,
+    peakSpeed: 0,
     served,
     ...extra,
   };
@@ -618,8 +638,10 @@ export function scoreCafe(p: CafeProblem, run: CafeRun): CafeScore {
     const pass = checks.every((c) => c.ok);
     return { pass, checks, headline: pass ? '손 앞에서 멈춰 안전하게 건넸어요' : f ? strip(f.text) : run.stopGap !== null ? `멈췄지만 손과 ${run.stopGap.toFixed(0)} mm밖에 안 남았어요` : '아직 기준을 못 넘었어요' };
   }
+  const fast = f?.kind === 'overspeed';
   const checks: CafeCheck[] = [
-    { label: 'J1 토크가 한계 안 (과부하 없음)', ok: f?.kind !== 'overload', value: f?.kind === 'overload' ? `${(f.value ?? 0).toFixed(2)} N·m 필요` : `최대 ${run.maxTau.toFixed(2)} N·m` },
+    { label: `J1 최고 속도 ${J1_MAX_SPEED}°/s 안`, ok: !fast, value: `최고 ${run.peakSpeed.toFixed(0)}°/s` },
+    { label: `J1 토크가 돌봄 모드 제한 ${CARE_J1_LIMIT} N·m 안`, ok: f?.kind !== 'overload' && !fast, value: f?.kind === 'overload' ? `${(f.value ?? 0).toFixed(3)} N·m 필요` : fast ? '돌지 못함' : `최대 ${run.maxTau.toFixed(3)} N·m` },
     { label: '어르신 탁자에 놓음', ok: run.served, value: run.served ? '했어요' : '못 했어요' },
     stop,
   ];
