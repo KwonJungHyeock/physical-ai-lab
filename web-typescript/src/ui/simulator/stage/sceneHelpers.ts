@@ -70,16 +70,19 @@ export const SCENE = { sky: '#262d36', desk: '#262d36', spot: '#4a5462', cell: '
 /** Size of the desk plane, m; the spot under the robot fades out within the middle third. */
 export const DESK_M = 6;
 
+/** The desk's colours (SCENE's by default; the 교육 lessons can use a lighter set). */
+export type DeskColors = Pick<typeof SCENE, 'desk' | 'spot'>;
+
 /** The desk's picture: the spot under the robot (dispose it with the desk). */
-export function deskSpot(): CanvasTexture {
+export function deskSpot(colors: DeskColors = SCENE): CanvasTexture {
   const c = document.createElement('canvas');
   c.width = c.height = 512;
   const ctx = c.getContext('2d')!;
   const g = ctx.createRadialGradient(256, 256, 0, 256, 256, 256 / 3);
-  g.addColorStop(0, SCENE.spot);
-  g.addColorStop(0.45, SCENE.spot);
-  g.addColorStop(1, SCENE.desk);
-  ctx.fillStyle = SCENE.desk;
+  g.addColorStop(0, colors.spot);
+  g.addColorStop(0.45, colors.spot);
+  g.addColorStop(1, colors.desk);
+  ctx.fillStyle = colors.desk;
   ctx.fillRect(0, 0, 512, 512);
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, 512, 512);

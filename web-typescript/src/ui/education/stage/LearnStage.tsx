@@ -10,7 +10,7 @@
 
 import { CameraControls, Grid, Html, Line, useGLTF } from '@react-three/drei';
 import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
-import { Suspense, useCallback, useContext, useEffect, useMemo, useRef, type ReactNode, type RefObject } from 'react';
+import { Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { Matrix4, NeutralToneMapping, Quaternion, Vector3, type Group, type PerspectiveCamera } from 'three';
 
 import { forwardKinematicsFrames, type ChainSegment } from '@/engine/robot/kinematics';
@@ -22,7 +22,8 @@ import { createWorld, type WorldState } from '@/engine/simulator/sim';
 import type { EffectorId } from '@/engine/simulator/effectors';
 
 import { buildArm, buildTool, type GlbNodes } from '../../simulator/stage/robotModel';
-import { DESK_M, SCENE, axesTriad, deskSpot, textSprite } from '../../simulator/stage/sceneHelpers';
+import { DESK_M, axesTriad, deskSpot, textSprite } from '../../simulator/stage/sceneHelpers';
+import { MAT, TONES, readTone, type LearnTone } from './tones';
 import StudioLight from '../../simulator/stage/StudioLight';
 import { VIEWS, type ViewName } from '../../simulator/stage/Stage';
 import { GLYPH, ToolGlyph, ViewCube } from '../../simulator/stage/StageTools';
@@ -104,6 +105,7 @@ export default function LearnStage({ robot, chain, gripperRobot, scene, onTableP
   const stageRobot = useMemo(() => ({ robot, chain }), [robot, chain]);
   // Read here: the Canvas is its own React root (실물 연동 is passed in by hand).
   const follow = useContext(FollowContext);
+  const [tone] = useState(readTone);
   return (
     <>
       <Canvas
@@ -118,7 +120,7 @@ export default function LearnStage({ robot, chain, gripperRobot, scene, onTableP
         }}
       >
         {/* The simulator's studio: slate background, its lights, its spot-lit desk and grid. */}
-        <color attach="background" args={[look?.sky ?? SCENE.sky]} />
+        <color attach="background" args={[look?.sky ?? TONES[tone].sky]} />
         {look && <fog attach="fog" args={[look.sky, look.fog?.[0] ?? 2.2, look.fog?.[1] ?? 6.5]} />}
         <StudioLight intensity={0.5} softbox />
         <hemisphereLight args={['#ffffff', '#cfd6de', 0.3]} />
@@ -142,7 +144,7 @@ export default function LearnStage({ robot, chain, gripperRobot, scene, onTableP
             <SiteGround look={look} />
           </group>
         ) : (
-          <Desk onTablePick={onTablePick} />
+          <Desk onTablePick={onTablePick} tone={tone} />
         )}
         <Suspense fallback={null}>
           <StageRobot.Provider value={stageRobot}>
@@ -281,8 +283,9 @@ function ViewTools({ apiRef, ambient }: { apiRef: RefObject<ViewApi | null>; amb
  * The simulator's desk: a plane at the robot's z = 0 lit like a spot under the robot, fading into
  * the background, with the endless 1 cm / 10 cm grid. A click on it (not a drag) picks a point.
  */
-function Desk({ onTablePick }: { onTablePick?: (mm: Mm) => void }) {
-  const spot = useMemo(() => deskSpot(), []);
+function Desk({ onTablePick, tone }: { onTablePick?: (mm: Mm) => void; tone: LearnTone }) {
+  const T = TONES[tone];
+  const spot = useMemo(() => deskSpot(T), [T]);
   useEffect(() => () => spot.dispose(), [spot]);
   const pick = (e: ThreeEvent<MouseEvent>) => {
     if (!onTablePick || e.delta > 4) return;
@@ -296,18 +299,29 @@ function Desk({ onTablePick }: { onTablePick?: (mm: Mm) => void }) {
         <planeGeometry args={[DESK_M, DESK_M]} />
         <meshStandardMaterial map={spot} roughness={0.95} />
       </mesh>
+      {tone === 'mat' ? (
+        // A workbench: wood desk, a green cutting mat with its 1 cm / 10 cm lines under the robot.
+        <>
+          <mesh position={[MAT.x, 0.0002, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow onClick={pick}>
+            <planeGeometry args={[MAT.w, MAT.d]} />
+            <meshStandardMaterial color={MAT.color} roughness={0.9} />
+          </mesh>
+          <Grid position={[MAT.x, 0.0004, 0]} args={[MAT.w, MAT.d]} cellSize={0.01} cellThickness={0.9} cellColor={T.cell} sectionSize={0.1} sectionThickness={1.4} sectionColor={T.section} fadeDistance={30} />
+        </>
+      ) : (
       <Grid
         position={[0.14, 0.0001, 0]}
         infiniteGrid
         cellSize={0.01}
         cellThickness={0.7}
-        cellColor={SCENE.cell}
+        cellColor={T.cell}
         sectionSize={0.1}
         sectionThickness={1}
-        sectionColor={SCENE.section}
+        sectionColor={T.section}
         fadeDistance={2.4}
         fadeStrength={1.4}
       />
+      )}
     </group>
   );
 }
