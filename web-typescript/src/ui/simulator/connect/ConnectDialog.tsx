@@ -141,7 +141,7 @@ export default function ConnectDialog({ current, auto, carry, onClose }: Props) 
   return (
     <div className={css.picker} role="dialog" aria-modal="true" aria-label="로봇 연결" onKeyDown={(e) => e.key === 'Escape' && onClose()}>
       <div className={`${css.pickerBox} ${css.connectBox}`}>
-        <Radar scanning={scan.scanning} found={scan.found} progress={scan.progress} link={link} />
+        <Radar scanning={scan.scanning} found={scan.found} progress={scan.progress} link={link} net={networkPrefix(prefix)} />
         <div className={css.connectMain}>
           <header className={css.pickerHead}>
             <span className={css.connectIcon}>
@@ -279,19 +279,30 @@ function blipAt(r: FoundRobot): { left: string; top: string } {
   return { left: `${50 + Math.cos(a) * d * 46}%`, top: `${50 + Math.sin(a) * d * 46}%` };
 }
 
-function Radar({ scanning, found, progress, link }: { scanning: boolean; found: FoundRobot[]; progress: number; link: Link | null }) {
+function Radar({ scanning, found, progress, link, net }: { scanning: boolean; found: FoundRobot[]; progress: number; link: Link | null; net: string | null }) {
+  const linked = !!link && link.step >= LINK_STEPS.length;
   return (
-    <aside className={css.radarSide} data-scanning={scanning || undefined} data-linked={(link && link.step >= LINK_STEPS.length) || undefined} aria-hidden="true">
+    <aside className={css.radarSide} data-scanning={scanning || undefined} data-linked={linked || undefined} aria-hidden="true">
+      <div className={css.radarBrand}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- the brand mark, also in the static export */}
+        <img src="/brand/robodyne-mark.png" alt="" />
+        <span>
+          <b>ROBOT LINK</b>
+          <small>교실 네트워크 · 로봇 연결</small>
+        </span>
+      </div>
       <div className={css.radar}>
         <i className={css.radarSweep} />
         {found.map((r) => (
-          <span key={r.address} className={css.radarBlip} data-pick={link?.robot?.address === r.address || undefined} style={blipAt(r)} />
+          <span key={r.address} className={css.radarBlip} data-pick={link?.robot?.address === r.address || undefined} data-off={!r.connected || undefined} style={blipAt(r)}>
+            <b>{r.robotId}</b>
+          </span>
         ))}
         <span className={css.radarPc}>
           <Icon name="pc" size={22} />
         </span>
       </div>
-      <p>
+      <p className={css.radarState}>
         {link
           ? link.step >= LINK_STEPS.length
             ? '연결됐어요'
@@ -304,6 +315,26 @@ function Radar({ scanning, found, progress, link }: { scanning: boolean; found: 
               ? `로봇 ${found.length}대를 찾았어요`
               : '같은 Wi-Fi 의 로봇을 찾아요'}
       </p>
+      <dl className={css.radarStats}>
+        <div>
+          <dt>찾은 로봇</dt>
+          <dd>
+            {found.length}
+            <small>대</small>
+          </dd>
+        </div>
+        <div>
+          <dt>준비됨</dt>
+          <dd>
+            {found.filter((r) => r.connected).length}
+            <small>대</small>
+          </dd>
+        </div>
+        <div>
+          <dt>네트워크</dt>
+          <dd className={css.radarNet}>{net ? `${net}x` : '—'}</dd>
+        </div>
+      </dl>
     </aside>
   );
 }
@@ -500,10 +531,14 @@ function FindRobots({
             .map((r) => {
               const mine = r.ips.some((ip) => here.includes(ip));
               return (
-                <li key={r.address} className={css.foundCard}>
-                  <span className={css.foundId}>
-                    <small>로봇</small>
-                    {r.robotId}
+                <li key={r.address} className={css.foundCard} data-state={r.running ? 'busy' : r.connected ? 'ready' : 'off'}>
+                  <span className={css.foundPic}>
+                    {/* eslint-disable-next-line @next/next/no-img-element -- fixed pictures, also in the static export */}
+                    <img src={robotPicture(r)} alt="" />
+                    <b className={css.foundId}>
+                      <small>ID</small>
+                      {r.robotId}
+                    </b>
                   </span>
                   <span className={css.foundInfo}>
                     <b>
@@ -512,7 +547,8 @@ function FindRobots({
                       {mine && <em className={css.foundHere}>지금 이 화면</em>}
                     </b>
                     <span>
-                      <b className={css.foundIp}>IP {r.ip}</b> · {r.model} · {r.running ? '움직이는 중' : r.connected ? '준비됨' : '로봇 연결 안 됨'}
+                      <i className={css.foundDot} aria-hidden="true" />
+                      <b className={css.foundState}>{r.running ? '움직이는 중' : r.connected ? '준비됨' : '로봇팔 신호 없음'}</b> · <b className={css.foundIp}>IP {r.ip}</b> · {r.model}
                     </span>
                     {notes[r.address] && <span className={css.foundNote}>{notes[r.address]}</span>}
                   </span>

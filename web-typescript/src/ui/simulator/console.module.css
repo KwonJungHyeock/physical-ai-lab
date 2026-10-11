@@ -8429,3 +8429,305 @@ button.jpRow:hover {
   color: #fff;
   box-shadow: 0 0 14px rgba(91, 140, 255, 0.35);
 }
+
+/* ===========================================================================
+ * 로봇 연결 (2026-10): a dark "control room" side with the radar (robot IDs on the blips, counts
+ * below, the brand mark), white working side; found robots as cards with the model's picture,
+ * the ID on a pill and a status dot (green 준비됨 · amber 움직이는 중 · grey 로봇팔 신호 없음).
+ * ======================================================================== */
+.app .connectBox {
+  grid-template-columns: 340px minmax(0, 1fr);
+  border-radius: 24px;
+  border: 1px solid rgba(16, 24, 40, 0.08);
+  box-shadow:
+    0 40px 100px rgba(10, 16, 32, 0.35),
+    0 2px 8px rgba(16, 24, 40, 0.08);
+}
+.app .connectBox .radarSide {
+  position: relative;
+  align-content: center;
+  gap: 20px;
+  padding: 26px 24px;
+  border-right: 0;
+  color: #dbe5f7;
+  background:
+    radial-gradient(120% 70% at 50% 42%, rgba(47, 91, 231, 0.28), transparent 62%),
+    radial-gradient(80% 50% at 100% 100%, rgba(14, 165, 183, 0.14), transparent 70%),
+    linear-gradient(170deg, #121b2e, #0a1120);
+}
+.app .connectBox .radarSide::after {
+  /* a hairline where the dark side meets the white one */
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(transparent, rgba(140, 170, 255, 0.35), transparent);
+}
+.radarBrand {
+  justify-self: stretch;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.radarBrand img {
+  width: 30px;
+  height: auto;
+  opacity: 0.95;
+}
+.radarBrand span {
+  display: grid;
+  line-height: 1.25;
+}
+.radarBrand b {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  color: #fff;
+}
+.radarBrand small {
+  font-size: 11.5px;
+  color: #8fa3c7;
+}
+.app .connectBox .radar {
+  width: 256px;
+  height: 256px;
+  overflow: visible;
+  border: 1px solid rgba(140, 170, 255, 0.38);
+  background:
+    radial-gradient(circle, rgba(47, 91, 231, 0.22), transparent 70%),
+    repeating-radial-gradient(circle, transparent 0 41px, rgba(140, 170, 255, 0.16) 41px 42px),
+    linear-gradient(transparent 127.5px, rgba(140, 170, 255, 0.14) 127.5px 128.5px, transparent 128.5px),
+    linear-gradient(90deg, transparent 127.5px, rgba(140, 170, 255, 0.14) 127.5px 128.5px, transparent 128.5px),
+    #0c1424;
+  box-shadow:
+    0 0 0 8px rgba(47, 91, 231, 0.07),
+    0 0 50px rgba(47, 91, 231, 0.25),
+    inset 0 0 40px rgba(0, 0, 0, 0.45);
+}
+/* tick marks round the rim */
+.app .connectBox .radar::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(rgba(160, 190, 255, 0.45) 0 0.6deg, transparent 0.6deg 10deg);
+  -webkit-mask: radial-gradient(circle closest-side, transparent calc(100% - 8px), #000 calc(100% - 7px));
+  mask: radial-gradient(circle closest-side, transparent calc(100% - 8px), #000 calc(100% - 7px));
+  pointer-events: none;
+}
+.app .connectBox .radarSweep {
+  overflow: hidden;
+  background: conic-gradient(from 0deg, rgba(56, 189, 248, 0.5), rgba(56, 189, 248, 0.08) 50deg, transparent 70deg);
+  opacity: 0.35;
+}
+.app .connectBox .radarSide[data-scanning] .radarSweep {
+  opacity: 1;
+}
+.app .connectBox .radarBlip {
+  z-index: 2;
+  width: 12px;
+  height: 12px;
+  margin: -6px;
+  background: #38bdf8;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.8);
+}
+.app .connectBox .radarBlip[data-off] {
+  background: #94a3b8;
+  box-shadow: none;
+  animation: none;
+}
+.app .connectBox .radarBlip[data-pick] {
+  background: #7c9bff;
+  box-shadow: 0 0 14px rgba(124, 155, 255, 0.9);
+}
+.app .connectBox .radarSide[data-linked] .radarBlip[data-pick] {
+  background: #4ade80;
+  box-shadow: 0 0 18px rgba(74, 222, 128, 0.9);
+}
+.radarBlip b {
+  position: absolute;
+  left: 15px;
+  top: -5px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: rgba(10, 17, 32, 0.85);
+  border: 1px solid rgba(140, 170, 255, 0.35);
+  color: #e6eeff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.4;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.app .connectBox .radarPc {
+  z-index: 3;
+  width: 46px;
+  height: 46px;
+  margin: -23px;
+  color: #dbe7ff;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(160, 190, 255, 0.55);
+  box-shadow:
+    0 0 0 6px rgba(47, 91, 231, 0.12),
+    0 0 26px rgba(47, 91, 231, 0.55);
+  backdrop-filter: blur(4px);
+}
+.app .connectBox .radarState {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #cbd8f0;
+  letter-spacing: 0.01em;
+  text-align: center;
+}
+.app .connectBox .radarSide[data-linked] .radarState {
+  color: #4ade80;
+}
+.radarStats {
+  justify-self: stretch;
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.4fr;
+  gap: 8px;
+}
+.radarStats div {
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.radarStats dt {
+  font-size: 11px;
+  font-weight: 700;
+  color: #8fa3c7;
+}
+.radarStats dd {
+  margin: 2px 0 0;
+  font-size: 19px;
+  font-weight: 800;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.radarStats dd small {
+  margin-left: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #8fa3c7;
+}
+.radarStats .radarNet {
+  font-size: 13.5px;
+  line-height: 1.75;
+}
+
+/* the white side */
+.app .connectBox .pickerHead h1 {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.app .connectBox .connectIcon {
+  background: linear-gradient(150deg, #4a6ae0, #2f4cc4);
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(52, 84, 209, 0.32);
+}
+.app .connectBox .foundList {
+  gap: 10px;
+}
+.app .connectBox .foundCard {
+  gap: 16px;
+  padding: 12px 14px 12px 12px;
+  border-radius: 16px;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s,
+    transform 0.15s;
+}
+.app .connectBox .foundCard:hover {
+  border-color: rgba(52, 84, 209, 0.38);
+  box-shadow: 0 8px 22px rgba(16, 24, 40, 0.08);
+  transform: translateY(-1px);
+}
+.foundPic {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 64px;
+  border-radius: 13px;
+  background: radial-gradient(circle at 50% 35%, #ffffff, #e8eefc 70%);
+  border: 1px solid #e1e7f5;
+}
+.foundPic img {
+  width: 58px;
+  height: 52px;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 4px rgba(16, 24, 40, 0.18));
+}
+.app .connectBox .foundId {
+  position: absolute;
+  left: 50%;
+  bottom: -9px;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  width: auto;
+  height: auto;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: #101828;
+  color: #fff;
+  font: 800 13px var(--font-ui), sans-serif;
+  line-height: 1.3;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 2px 6px rgba(16, 24, 40, 0.25);
+}
+.app .connectBox .foundId small {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  opacity: 0.7;
+}
+.app .connectBox .foundInfo > span > b {
+  display: inline;
+  font-size: inherit;
+}
+.foundDot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 5px;
+  border-radius: 50%;
+  vertical-align: 1px;
+  background: #98a2b3;
+}
+.foundState {
+  font-weight: 800;
+  color: #667085;
+}
+.foundCard[data-state='ready'] .foundDot {
+  background: #12a150;
+  box-shadow: 0 0 0 3px rgba(18, 161, 80, 0.16);
+}
+.foundCard[data-state='ready'] .foundState {
+  color: #0f7a3d;
+}
+.foundCard[data-state='busy'] .foundDot {
+  background: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18);
+}
+.foundCard[data-state='busy'] .foundState {
+  color: #b45309;
+}
+.app .connectBox .linkBox {
+  border-radius: 18px;
+  background: linear-gradient(180deg, #f8faff, #fff);
+}
