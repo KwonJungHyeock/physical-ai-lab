@@ -100,7 +100,7 @@ for (const [w, h] of SIZES) {
     await page.waitForFunction(() => !!window.__finalOpen);
     await page.waitForTimeout(1500);
     await look('평가 목록', ['div[class*=hub]']);
-    for (let k = 0; k < 6; k++) {
+    for (let k = 0; k < 7; k++) {
       await page.evaluate((i) => window.__finalOpen(i), k);
       const go = page.getByRole('button', { name: '▶ 지금 프로그램으로 가동' });
       await page.waitForFunction(() => [...document.querySelectorAll('button')].some((x) => x.textContent?.includes('지금 프로그램으로 가동') && !x.disabled), null, { timeout: 240000 });

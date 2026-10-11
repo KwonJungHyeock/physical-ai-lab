@@ -1,11 +1,13 @@
 'use client';
 
 /**
- * 대단원 마무리 평가 · 산업단지 종합 점검 (engine/education/lab/final.ts): a list of six items — one
+ * 대단원 마무리 평가 · 산업단지 종합 점검 (engine/education/lab/final.ts): a list of seven items — one
  * problem from each site again, with new numbers — the score so far and the result sheet to print;
  * and one item at a time: the site's own 3D cell running the program as it is (last time's fix in
- * the new situation), then 원인 → 계산 → 고치기 in one column, hints at a point each. What the student
- * did is kept in the browser (one sheet per computer; the teacher can start it again).
+ * the new situation), then 원인 → 계산 → 고치기 in one column. The fix stays locked until the
+ * calculation is right (or skipped, for no calculation points); hints cost 1 and then 2 points, said
+ * on their buttons. What the student did is kept in the browser (one sheet per computer; the teacher
+ * can start it again).
  */
 
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
@@ -18,18 +20,22 @@ import { FARM_TOMATOES } from '@/engine/education/lab/farm';
 import { partThings, type PartValues } from '@/engine/education/lab/ai';
 import { progFromRef, type PalletPose, type RefValues } from '@/engine/education/lab/pallet';
 import { P3_BOXES } from '@/engine/education/lab/problems';
-import { FINAL_ITEMS, freshRecord, runFinal, scoreFinal, scoreItem, type FinalItem, type FinalOutcome, type FinalRecord, type FinalValues } from '@/engine/education/lab/final';
+import { speedItems } from '@/engine/education/lab/energy';
+import { FINAL_ITEMS, HINT_COST, ITEM_MAX, freshRecord, runFinal, scoreFinal, scoreItem, type FinalItem, type FinalOutcome, type FinalRecord, type FinalValues } from '@/engine/education/lab/final';
 import { SITES } from '@/engine/education/park';
 
 import LearnStage, { type LiveArm, type ViewPose } from '../stage/LearnStage';
 import AiCell, { AiPlayback } from './AiCell';
 import { AI_VIEW } from './AiLab';
-import { AiAround, BioAround, CafeAround, FactoryAround, FarmAround, LOOKS, LogisticsAround } from './ambient/Around';
+import { AiAround, BioAround, CafeAround, ENERGY_LOOK, EnergyAround, FactoryAround, FarmAround, LOOKS, LogisticsAround } from './ambient/Around';
+import type { SiteLook } from './ambient/Ground';
 import BioCell, { BioPlayback } from './BioCell';
 import { BIO_VIEW } from './BioLab';
 import CafeCell, { CafePlayback } from './CafeCell';
 import { CAFE_VIEW } from './CafeLab';
 import ConveyorCell from './ConveyorCell';
+import EnergyCell, { EnergyPlayback } from './EnergyCell';
+import { ENERGY_VIEW } from './EnergyLab';
 import { LAB_VIEW } from './FactoryLab';
 import FarmCell, { FarmPlayback } from './FarmCell';
 import { FARM_VIEW } from './FarmLab';
@@ -82,7 +88,7 @@ const readSaved = (): Saved => {
   return { name: '', records: {} };
 };
 
-/** The playbacks of the six cells share this much. */
+/** The playbacks of the seven cells share this much. */
 interface Player {
   start(run: unknown, at?: number | 'end', rate?: number): void;
   listen(fn: ((t: number, done: boolean) => void) | null): void;
@@ -128,7 +134,7 @@ export default function FinalExam({ robot, chain, gripperRobot, hidden, onBack }
   }, []);
   const setRecord = useCallback((id: string, fn: (r: FinalRecord) => FinalRecord) => save((s) => ({ ...s, records: { ...s.records, [id]: fn(s.records[id] ?? freshRecord()) } })), [save]);
 
-  // For tools/check scripts: open an item by number (0 … 5), or the list.
+  // For tools/check scripts: open an item by number (0 … 6), or the list.
   useEffect(() => {
     window.__finalOpen = (k: number | null) => setOpen(k);
     return () => {
@@ -166,7 +172,7 @@ export default function FinalExam({ robot, chain, gripperRobot, hidden, onBack }
           </header>
           <div className={fx.hubBody}>
             <section className={fx.intro}>
-              <h2>여섯 현장에 다시 문제가 생겼어요</h2>
+              <h2>일곱 현장에 다시 문제가 생겼어요</h2>
               <p>
                 현장마다 지난번에 고친 프로그램 그대로인데, 상황이 조금 바뀌었어요 — 센서를 또 옮기고, 팔레트를 또 옮기고, 로봇을 바꾸고 … 외운 답은 통하지 않아요. 원리로 <b>새 숫자</b>를 다시 계산해 고쳐요.
               </p>
@@ -175,13 +181,13 @@ export default function FinalExam({ robot, chain, gripperRobot, hidden, onBack }
                   <b>원인</b> 처음에 맞히면 4점, 두 번째 2점
                 </li>
                 <li>
-                  <b>계산</b> 처음 확인에 맞으면 3점, 나중에 맞으면 1점
+                  <b>계산</b> 처음 확인에 맞으면 3점, 나중에 맞으면 1점 — 맞혀야 고치기가 열려요 (건너뛰면 0점)
                 </li>
                 <li>
                   <b>고치기</b> 다시 가동해서 통과하면 3점
                 </li>
                 <li>
-                  <b>힌트</b> 하나 볼 때마다 1점 빼기
+                  <b>힌트</b> 첫 힌트 1점, 둘째 힌트 2점 빼기
                 </li>
               </ul>
               <label className={fx.name}>
@@ -201,7 +207,7 @@ export default function FinalExam({ robot, chain, gripperRobot, hidden, onBack }
                       <small>{it.site}</small>
                       <b>{it.title}</b>
                     </div>
-                    <span className={fx.pts}>{sc ? `${sc.total} / 10` : '— / 10'}</span>
+                    <span className={fx.pts}>{sc ? `${sc.total} / ${ITEM_MAX}` : `— / ${ITEM_MAX}`}</span>
                     <button type="button" className={css.primary} onClick={() => setOpen(k)}>
                       {state === 'done' ? '다시 보기' : state === 'going' ? '이어서' : '시작'}
                     </button>
@@ -304,10 +310,11 @@ interface ItemProps {
   onNext: (() => void) | null;
 }
 
-const VIEWS: Record<FinalItem['lab'], ViewPose> = { factory: LAB_VIEW, logistics: LOGI_VIEW, bio: BIO_VIEW, farm: FARM_VIEW, cafe: CAFE_VIEW, ai: AI_VIEW };
+const VIEWS: Record<FinalItem['lab'], ViewPose> = { factory: LAB_VIEW, logistics: LOGI_VIEW, bio: BIO_VIEW, farm: FARM_VIEW, cafe: CAFE_VIEW, ai: AI_VIEW, energy: ENERGY_VIEW };
+const SITE_LOOKS: Record<FinalItem['lab'], SiteLook> = { ...LOOKS, energy: ENERGY_LOOK };
 
 function makePlayer(lab: FinalItem['lab']): Player {
-  const p = lab === 'factory' ? new Playback() : lab === 'logistics' ? new PalletPlayback() : lab === 'bio' ? new BioPlayback() : lab === 'farm' ? new FarmPlayback() : lab === 'cafe' ? new CafePlayback() : new AiPlayback();
+  const p = lab === 'factory' ? new Playback() : lab === 'logistics' ? new PalletPlayback() : lab === 'bio' ? new BioPlayback() : lab === 'farm' ? new FarmPlayback() : lab === 'cafe' ? new CafePlayback() : lab === 'energy' ? new EnergyPlayback() : new AiPlayback();
   return p as unknown as Player;
 }
 
@@ -334,7 +341,10 @@ function ItemScreen({ item, no, robot, chain, gripperRobot, hidden, record, setR
   const [calc, setCalc] = useState<string[]>(() => item.calc.fields.map(() => ''));
   const right = item.causes.findIndex((c) => c.ok);
   const causeFound = record.picks.includes(right);
-  const calcDone = record.calcChecks.includes(true) || record.calcChecks.length >= 2;
+  const calcRight = record.calcChecks.includes(true);
+  const skipped = !!record.calcSkipped && !calcRight;
+  // The fix opens once the calculation is right — or skipped, for no calculation points.
+  const calcDone = calcRight || skipped;
   const ran = record.runs > 0 || before !== null;
   const done = record.done;
 
@@ -414,7 +424,7 @@ function ItemScreen({ item, no, robot, chain, gripperRobot, hidden, record, setR
       </header>
 
       <section className={css.stage} aria-label={`3D ${item.site}`}>
-        <LearnStage robot={robot} chain={chain} gripperRobot={gripperRobot} scene={{ angles: [0, 0, 0, 0, 0, 0] }} paused={hidden} home={VIEWS[item.lab]} live={player.arm} look={LOOKS[item.lab]}>
+        <LearnStage robot={robot} chain={chain} gripperRobot={gripperRobot} scene={{ angles: [0, 0, 0, 0, 0, 0] }} paused={hidden} home={VIEWS[item.lab]} live={player.arm} look={SITE_LOOKS[item.lab]}>
           <ItemCell item={item} player={player} values={values} />
         </LearnStage>
         {showFail && <div className={lg.alarm}>⚠ {shown.headline}</div>}
@@ -510,7 +520,7 @@ function ItemScreen({ item, no, robot, chain, gripperRobot, hidden, record, setR
           )}
 
           {causeFound && (
-            <section className={fx.card} data-done={record.calcChecks.includes(true) || undefined}>
+            <section className={fx.card} data-done={calcRight || undefined}>
               <h3>
                 <span>3</span> 계산 — 새 숫자로
               </h3>
@@ -531,13 +541,13 @@ function ItemScreen({ item, no, robot, chain, gripperRobot, hidden, record, setR
                   <input
                     inputMode="decimal"
                     value={calc[i]}
-                    disabled={record.calcChecks.includes(true) || done}
+                    disabled={calcDone || done}
                     onChange={(e) => setCalc((c) => c.map((x, j) => (j === i ? e.target.value : x)))}
                   />
                   <em>{f.unit}</em>
                 </label>
               ))}
-              {!record.calcChecks.includes(true) && !done && (
+              {!calcDone && !done && (
                 <button
                   type="button"
                   className={css.primary}
@@ -547,15 +557,33 @@ function ItemScreen({ item, no, robot, chain, gripperRobot, hidden, record, setR
                   확인
                 </button>
               )}
-              {record.calcChecks.length > 0 && <p className={record.calcChecks.includes(true) ? fx.yes : fx.no}>{record.calcChecks.includes(true) ? '맞았어요.' : record.calcChecks.length >= 2 ? '아직 달라요 — 고치기로 넘어가도 돼요 (계산 점수는 맞으면 1점).' : '다시 계산해 봐요.'}</p>}
+              {skipped ? (
+                <p className={fx.no}>계산을 건너뛰었어요 (계산 0점).</p>
+              ) : (
+                record.calcChecks.length > 0 && <p className={calcRight ? fx.yes : fx.no}>{calcRight ? '맞았어요.' : record.calcChecks.length >= 2 ? '아직 달라요 — 식에 숫자를 하나씩 넣어 봐요. 힌트도 있어요.' : '다시 계산해 봐요.'}</p>
+              )}
             </section>
           )}
 
-          {causeFound && calcDone && (
-            <section className={fx.card} data-done={record.pass || undefined}>
+          {causeFound && (
+            <section className={fx.card} data-done={record.pass || undefined} data-locked={!calcDone || undefined}>
               <h3>
                 <span>4</span> 고치기 — 값을 바꿔 다시 가동
               </h3>
+              {!calcDone && !done && (
+                <div className={fx.lock}>
+                  <p>🔒 계산을 맞히면 열려요. 먼저 새 숫자로 계산해 봐요.</p>
+                  <button
+                    type="button"
+                    className={fx.reset}
+                    onClick={() => {
+                      if (window.confirm('계산을 건너뛰고 고치기로 갈까요? 이 문항의 계산 점수는 0점이 돼요.')) setRecord((r) => ({ ...r, calcSkipped: true }));
+                    }}
+                  >
+                    계산 건너뛰고 고치기 (계산 0점)
+                  </button>
+                </div>
+              )}
               <div className={fx.fields}>
                 {item.fields.map((f) =>
                   f.kind === 'num' ? (
@@ -567,21 +595,21 @@ function ItemScreen({ item, no, robot, chain, gripperRobot, hidden, record, setR
                         max={f.max}
                         step={f.step}
                         value={Number(values[f.key])}
-                        disabled={done}
+                        disabled={done || !calcDone}
                         onChange={(e) => {
                           const x = Number(e.target.value);
                           if (Number.isFinite(x)) setValues((v) => ({ ...v, [f.key]: Math.min(f.max, Math.max(f.min, x)) }));
                         }}
                       />
                       <em>{f.unit}</em>
-                      <input type="range" min={f.min} max={f.max} step={f.step} value={Number(values[f.key])} disabled={done} onChange={(e) => setValues((v) => ({ ...v, [f.key]: Number(e.target.value) }))} />
+                      <input type="range" min={f.min} max={f.max} step={f.step} value={Number(values[f.key])} disabled={done || !calcDone} onChange={(e) => setValues((v) => ({ ...v, [f.key]: Number(e.target.value) }))} />
                     </label>
                   ) : (
                     <div key={f.key} className={fx.field}>
                       <span>{f.label}</span>
                       <div className={fx.seg}>
                         {f.options.map((o) => (
-                          <button key={String(o.value)} type="button" aria-pressed={values[f.key] === o.value} disabled={done} onClick={() => setValues((v) => ({ ...v, [f.key]: o.value }))}>
+                          <button key={String(o.value)} type="button" aria-pressed={values[f.key] === o.value} disabled={done || !calcDone} onClick={() => setValues((v) => ({ ...v, [f.key]: o.value }))}>
                             {o.label}
                           </button>
                         ))}
@@ -591,7 +619,7 @@ function ItemScreen({ item, no, robot, chain, gripperRobot, hidden, record, setR
                 )}
               </div>
               {!done && (
-                <button type="button" className={css.primary} disabled={busy} onClick={() => void runNow(values, true)}>
+                <button type="button" className={css.primary} disabled={busy || !calcDone} onClick={() => void runNow(values, true)}>
                   {busy ? '계산 중…' : '▶ 다시 가동'}
                 </button>
               )}
@@ -612,7 +640,7 @@ function ItemScreen({ item, no, robot, chain, gripperRobot, hidden, record, setR
               ))}
               {record.hints < item.hints.length && (
                 <button type="button" onClick={() => setRecord((r) => ({ ...r, hints: r.hints + 1 }))}>
-                  힌트 보기 (−1점)
+                  {record.hints === 0 ? '힌트 보기' : '힌트 하나 더'} (−{HINT_COST[record.hints]}점)
                 </button>
               )}
             </section>
@@ -627,7 +655,7 @@ function ItemScreen({ item, no, robot, chain, gripperRobot, hidden, record, setR
 
           <div className={fx.foot}>
             <span className={fx.score}>
-              이 문항 {scoreItem(item, record).total} / 10
+              이 문항 {scoreItem(item, record).total} / {ITEM_MAX}
             </span>
             {!done ? (
               <button
@@ -656,7 +684,7 @@ function ItemScreen({ item, no, robot, chain, gripperRobot, hidden, record, setR
   );
 }
 
-/** The site's cell, its surroundings and the situation drawn in it (the moved pallet, the raised camera, the shorter parts …). */
+/** The site's cell, its surroundings and the situation drawn in it (the moved pallet, the raised camera, the shorter parts, the heavier can …). */
 function ItemCell({ item, player, values }: { item: FinalItem; player: Player; values: FinalValues }) {
   switch (item.lab) {
     case 'factory':
@@ -692,6 +720,13 @@ function ItemCell({ item, player, values }: { item: FinalItem; player: Player; v
         <>
           <CafeAround />
           <CafeCell player={player as unknown as CafePlayback} prob={2} overlay={{ detect: Number(values.detect), zone: true }} />
+        </>
+      );
+    case 'energy':
+      return (
+        <>
+          <EnergyAround />
+          <EnergyCell player={player as unknown as EnergyPlayback} prob={2} things={speedItems(Number(values.canG))} overlay={{}} />
         </>
       );
     default:
@@ -747,10 +782,21 @@ function ResultSheet({ saved, onClose }: { saved: Saved; onClose(): void }) {
                     {k + 1}. {it.site}
                     <small>{it.title}</small>
                   </td>
-                  <td>{s.cause}</td>
-                  <td>{s.calc}</td>
+                  <td>
+                    {s.cause}
+                    {r.picks.includes(it.causes.findIndex((c) => c.ok)) && <small>{r.picks.length}번 만에</small>}
+                  </td>
+                  <td>
+                    {s.calc}
+                    {calcNote(r).map((x) => (
+                      <small key={x}>{x}</small>
+                    ))}
+                  </td>
                   <td>{s.fix}</td>
-                  <td>{r.hints ? `−${r.hints}` : '0'}</td>
+                  <td>
+                    {s.hintOff ? `−${s.hintOff}` : '0'}
+                    {r.hints > 0 && <small>{r.hints}개</small>}
+                  </td>
                   <td>
                     <b>{s.total}</b>
                   </td>
@@ -775,7 +821,9 @@ function ResultSheet({ saved, onClose }: { saved: Saved; onClose(): void }) {
             </tr>
           </tfoot>
         </table>
-        <p className={fx.sheetNote}>성취 수준: A 90 이상 · B 80 이상 · C 70 이상 · D 60 이상 · E 60 미만. 문항마다 원인 · 계산 · 고치기를 따로 봐요 — 어느 단계에서 점수를 잃었는지가 다음 공부의 출발점이에요.</p>
+        <p className={fx.sheetNote}>
+          성취 수준: A 90 이상 · B 80 이상 · C 70 이상 · D 60 이상 · E 60 미만. 힌트는 첫째 1점, 둘째 2점을 빼요. 문항마다 원인 · 계산 · 고치기를 따로 봐요 — 어느 단계에서 점수를 잃었는지가 다음 공부의 출발점이에요. 계산을 건너뛴 문항은 그 단원의 식부터 다시 봐요.
+        </p>
         <div className={lg.recordBtns}>
           <button type="button" className={`${css.primary} ${lg.siteBtn}`} onClick={() => window.print()}>
             인쇄 · PDF로 저장
@@ -790,9 +838,15 @@ function ResultSheet({ saved, onClose }: { saved: Saved; onClose(): void }) {
   );
 }
 
+/** The calculation in words, a line each: how many checks, and whether it was skipped. */
+function calcNote(r: FinalRecord): string[] {
+  const n = r.calcChecks.length;
+  return [...(n ? [`${n}번 확인`] : []), ...(r.calcSkipped && !r.calcChecks.includes(true) ? ['건너뜀'] : [])];
+}
+
 /* --- the class table (teacher) -------------------------------------------------------------- */
 
-const SHORT: Record<string, string> = { factory: '공장', logistics: '물류', bio: '바이오', farm: '스마트팜', cafe: '카페', ai: 'AI' };
+const SHORT: Record<string, string> = { factory: '공장', logistics: '물류', bio: '바이오', farm: '스마트팜', cafe: '시티', ai: 'AI', energy: '자원순환' };
 
 /** The class as rows: name, date, each item's points, the total, the score and the grade. */
 function classRows(list: readonly Submitted[]) {
@@ -802,6 +856,9 @@ function classRows(list: readonly Submitted[]) {
       name: x.name,
       date: new Date(x.date).toLocaleDateString('ko-KR'),
       items: FINAL_ITEMS.map((it) => (x.records[it.id] ? scoreItem(it, x.records[it.id]).total : 0)),
+      /** Hints opened and calculations skipped, over all items. */
+      hints: FINAL_ITEMS.reduce((n, it) => n + (x.records[it.id]?.hints ?? 0), 0),
+      skips: FINAL_ITEMS.filter((it) => x.records[it.id]?.calcSkipped && !x.records[it.id].calcChecks.includes(true)).length,
       ...t,
     };
   });
@@ -811,8 +868,8 @@ function classRows(list: readonly Submitted[]) {
 function downloadCsv(list: readonly Submitted[]) {
   const rows = classRows(list);
   const q = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
-  const head = ['이름', '날짜', ...FINAL_ITEMS.map((it) => `${SHORT[it.id]} (10)`), '합계 (60)', '점수 (100)', '성취 수준'];
-  const body = rows.map((r) => [r.name, r.date, ...r.items, r.points, r.score, r.grade]);
+  const head = ['이름', '날짜', ...FINAL_ITEMS.map((it) => `${SHORT[it.id]} (${ITEM_MAX})`), `합계 (${FINAL_ITEMS.length * ITEM_MAX})`, '점수 (100)', '성취 수준', '힌트 (개)', '계산 건너뜀 (문항)'];
+  const body = rows.map((r) => [r.name, r.date, ...r.items, r.points, r.score, r.grade, r.hints, r.skips]);
   const csv = '\ufeff' + [head, ...body].map((l) => l.map(q).join(',')).join('\r\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
@@ -853,6 +910,7 @@ function ClassSheet({ list, onClear, onClose }: { list: readonly Submitted[]; on
                 ))}
                 <th>점수</th>
                 <th>수준</th>
+                <th>힌트 · 건너뜀</th>
               </tr>
             </thead>
             <tbody>
@@ -867,6 +925,9 @@ function ClassSheet({ list, onClear, onClose }: { list: readonly Submitted[]; on
                     <b>{r.score}</b>
                   </td>
                   <td>{r.grade}</td>
+                  <td>
+                    {r.hints} · {r.skips}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -876,12 +937,12 @@ function ClassSheet({ list, onClear, onClose }: { list: readonly Submitted[]; on
                 {FINAL_ITEMS.map((it, k) => (
                   <td key={it.id}>{fmt(avg(k), 1)}</td>
                 ))}
-                <td colSpan={2}>{fmt(avgScore, 1)}</td>
+                <td colSpan={3}>{fmt(avgScore, 1)}</td>
               </tr>
             </tfoot>
           </table>
         )}
-        <p className={fx.sheetNote}>문항 평균이 낮은 현장이 반 전체가 다시 볼 곳이에요. CSV는 엑셀에서 바로 열려요.</p>
+        <p className={fx.sheetNote}>문항 평균이 낮은 현장이 반 전체가 다시 볼 곳이에요. 힌트 · 건너뜀은 본 힌트 수와 계산을 건너뛴 문항 수예요. CSV는 엑셀에서 바로 열려요.</p>
         <div className={lg.recordBtns}>
           <button type="button" className={`${css.primary} ${lg.siteBtn}`} disabled={!rows.length} onClick={() => downloadCsv(list)}>
             CSV로 저장 (엑셀)

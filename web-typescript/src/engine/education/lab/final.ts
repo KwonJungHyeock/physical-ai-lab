@@ -1,13 +1,15 @@
 /**
- * 대단원 마무리 평가 · 산업단지 종합 점검: one problem from each of the six site labs again, with
+ * 대단원 마무리 평가 · 산업단지 종합 점검: one problem from each of the seven site labs again, with
  * new numbers — the situation changed after the fix the students made (a sensor moved again, the
- * pallet moved again, another robot, the camera raised, a slower sensor, a shorter part), and the
- * program still has last time's fixed values. Remembering last time's answer fails; working the
- * principle out again with the new numbers passes. Each item runs the site's own engine with the
- * situation carried in its values (problems.ts P3Values.sensorY, pallet.ts RefValues.moved, …).
+ * pallet moved again, another robot, the camera raised, a slower sensor, a shorter part, a heavier
+ * can), and the program still has last time's fixed values. Remembering last time's answer fails;
+ * working the principle out again with the new numbers passes. Each item runs the site's own engine
+ * with the situation carried in its values (problems.ts P3Values.sensorY, pallet.ts RefValues.moved,
+ * energy.ts SpeedValues.canG, …).
  *
- * Per item: 원인 (first try 4, second 2), 계산 (right at the first check 3, later 1), 고치기 (the
- * line passes 3), less 1 for each hint opened — 10 points; six items make 60, shown out of 100.
+ * Per item: 원인 (first try 4, second 2), 계산 (right at the first check 3, later 1, skipped 0 — the
+ * fix opens once it is right or skipped), 고치기 (the line passes 3), less 1 for the first hint and 2
+ * for the second (it nearly gives the answer) — 10 points; seven items make 70, shown out of 100.
  * The lesson script is content-markdown/sites/final.md.
  */
 
@@ -17,12 +19,13 @@ import type { LabId } from '../park';
 import { runAi, scoreAi, type AiRun, type PartValues } from './ai';
 import { runBio, scoreBio, type BioRun, type CalibValues } from './bio';
 import { runCafe, scoreCafe, protectiveDistance, type CafeRun, type GuardValues } from './cafe';
+import { ENERGY_FIXES, FULL_CAN, KINDS, KIND_NAME, runSpeed, scoreEnergy, sideLimit, speedItems, type EnergyRun, type SpeedValues } from './energy';
 import { CAM, TRAY, runFarm, scoreFarm, type FarmRun, type RatioValues } from './farm';
 import { PAL, markAt, runStack, scoreStack, setupFor, type PalletRun, type RefValues } from './pallet';
 import { runP3, verdict, type P3Values } from './problems';
 import type { LabRun } from './run';
 
-export type FinalRun = LabRun | PalletRun | BioRun | FarmRun | CafeRun | AiRun;
+export type FinalRun = LabRun | PalletRun | BioRun | FarmRun | CafeRun | AiRun | EnergyRun;
 export type FinalValues = Record<string, unknown>;
 
 /** A value the student sets: a number on a knob, or one of a few choices. */
@@ -37,8 +40,8 @@ export interface FinalCalc {
   unit: string;
 }
 
-/** The six labs the 종합 점검 draws on (the first six theme labs; 에너지·자원순환 came later). */
-export type FinalLab = Exclude<LabId, 'energy'>;
+/** The labs the 종합 점검 draws on: all seven theme labs. */
+export type FinalLab = LabId;
 
 export interface FinalItem {
   id: string;
@@ -77,13 +80,15 @@ export interface FinalOutcome {
 const MOVED = { x: PAL.x + 35, y: PAL.y + 45 };
 const FARM_CAM_Z = 540;
 const PART_H = 45;
+/** The can with drink left in it this time (60 g last time), g. */
+const CAN_G = 75;
 
 export const FINAL_ITEMS: readonly FinalItem[] = [
   {
     id: 'factory',
     lab: 'factory',
     prob: 3,
-    site: '스마트 공장',
+    site: '스마트팩토리',
     title: '센서를 또 옮겼다',
     boss: '김 주임',
     line: '지난번에 고친 타이밍 그대로예요. 센서를 30 mm 옮긴 것뿐인데 괜찮겠죠?',
@@ -172,7 +177,7 @@ export const FINAL_ITEMS: readonly FinalItem[] = [
     id: 'bio',
     lab: 'bio',
     prob: 2,
-    site: '바이오 실험실',
+    site: '바이오·헬스케어',
     title: '로봇을 바꿨더니 또 어긋난다',
     boss: '이 연구원',
     line: '영점 보정 1° 넣는 거 지난번에 배웠어요. 새 로봇에도 그대로 넣었어요.',
@@ -278,7 +283,7 @@ export const FINAL_ITEMS: readonly FinalItem[] = [
     id: 'ai',
     lab: 'ai',
     prob: 3,
-    site: 'AI 연구소',
+    site: '피지컬 AI 연구소',
     title: '또 처음 보는 부품',
     boss: '한 박사',
     line: '지난번엔 60 mm 부품이었죠. 높이 60, 시차 보정 그대로 두면 되겠죠?',
@@ -320,6 +325,42 @@ export const FINAL_ITEMS: readonly FinalItem[] = [
     answer: '물건 높이 45 mm, 시차 보정 켬.',
     units: ['8'],
   },
+  {
+    id: 'energy',
+    lab: 'energy',
+    prob: 2,
+    site: '에너지·자원순환',
+    title: '캔이 더 무거워졌다',
+    boss: '윤 팀장',
+    line: '지난번에 캔 60, 종이팩 40으로 맞췄잖아요. 그 속도 그대로면 되겠죠?',
+    brief: '더운 날이라 음료가 더 많이 남은 캔이 들어와요 — 60 g → 75 g. 프로그램은 지난번에 고친 속도 그대로예요 — 투명 PET 100 · 유색 PET 100 · 캔 60 · 종이팩 40.',
+    spec: ['조각 6개를 모두 제 분류함에', '떨어뜨린 것 없음', '처리량 12개/분 이상'],
+    data: [
+      { k: '음료 남은 캔', v: '75 g (전에는 60 g)' },
+      { k: '캔을 붙잡는 힘 F · 마찰 μ', v: '1.00 N · 0.45' },
+      { k: '속도 100으로 캔을 옮길 때 최대 옆 가속도', v: '6.45 m/s²' },
+      { k: '가속도와 속도', v: '가속도는 속도의 제곱에 비례' },
+    ],
+    causes: [
+      { t: '캔이 너무 무거워 흡착 컵이 들어 올리지도 못한다' },
+      { t: '카메라가 캔을 종이팩으로 잘못 본다' },
+      { t: '종이팩 속도 40이 너무 빨라 종이팩이 떨어진다' },
+      { t: '캔이 무거워져 버틸 수 있는 옆 가속도가 줄었는데, 캔 속도는 지난번 60 그대로다', ok: true },
+    ],
+    calc: {
+      prompt: '버티는 옆 가속도 = μ × (F ÷ m − g), 한계 속도 = 100 × √(버티는 가속도 ÷ 속도 100의 가속도). m은 kg, g = 9.81.',
+      fields: [
+        { label: '캔이 버티는 옆 가속도', answer: 1.59, tol: 0.03, unit: 'm/s²' },
+        { label: '캔의 한계 속도', answer: 49.6, tol: 1, unit: '' },
+      ],
+    },
+    fields: KINDS.map((k) => ({ key: k, label: `${KIND_NAME[k]} 속도`, kind: 'num' as const, unit: '', min: 10, max: 100, step: 5 })),
+    start: { ...ENERGY_FIXES[2], canG: CAN_G },
+    hints: ['75 g = 0.075 kg. F ÷ m = 1.00 ÷ 0.075 ≈ 13.3이에요.', '0.45 × (13.3 − 9.81) ≈ 1.59 m/s², 100 × √(1.59 ÷ 6.45) ≈ 49.6. 여유를 두고 캔 45.'],
+    principle: '흡착 컵은 옆으로는 마찰로만 버텨요. 무거워지면 버틸 수 있는 가속도가 줄고, 가속도는 속도의 제곱에 비례해요 — 바뀐 종류만 다시 계산해 느리게 해요.',
+    answer: '캔 45 (투명 PET 100 · 유색 PET 100 · 종이팩 40 그대로). 캔 30 ~ 45면 통과.',
+    units: ['3', '4'],
+  },
 ];
 
 export const FINAL_ITEM = new Map(FINAL_ITEMS.map((x) => [x.id, x]));
@@ -353,6 +394,11 @@ export async function runFinal(chain: readonly ChainSegment[], item: FinalItem, 
       const s = scoreCafe(2, run);
       return { pass: s.pass, headline: s.headline, run };
     }
+    case 'energy': {
+      const run = runSpeed(chain, values as unknown as SpeedValues);
+      const s = scoreEnergy(2, run);
+      return { pass: s.pass, headline: s.headline, run };
+    }
     default: {
       const run = runAi(chain, 3, values as unknown as PartValues);
       const s = scoreAi(3, run);
@@ -367,7 +413,10 @@ export interface FinalRecord {
   picks: number[];
   /** Calculation checks: whether each was right. */
   calcChecks: boolean[];
+  /** Hints opened (0 … 2). */
   hints: number;
+  /** Went on to the fix without the calculation right ([계산 건너뛰고 고치기]: 계산 0). */
+  calcSkipped?: boolean;
   runs: number;
   pass: boolean;
   /** The values of the last run, in words. */
@@ -375,31 +424,38 @@ export interface FinalRecord {
   done: boolean;
 }
 
-export const freshRecord = (): FinalRecord => ({ picks: [], calcChecks: [], hints: 0, runs: 0, pass: false, last: '', done: false });
+export const freshRecord = (): FinalRecord => ({ picks: [], calcChecks: [], hints: 0, calcSkipped: false, runs: 0, pass: false, last: '', done: false });
+
+/** What each hint costs, in order: the second nearly gives the answer. */
+export const HINT_COST = [1, 2] as const;
+/** Points off for the first `n` hints. */
+export const hintCost = (n: number) => HINT_COST.slice(0, n).reduce<number>((s, x) => s + x, 0);
 
 export interface ItemScore {
   cause: number;
   calc: number;
   fix: number;
-  hints: number;
+  /** Points off for the hints opened. */
+  hintOff: number;
   total: number;
 }
 
-/** 원인 4 / 2 / 0 · 계산 3 / 1 / 0 · 고치기 3 · less 1 a hint; 0 … 10. */
+/** 원인 4 / 2 / 0 · 계산 3 / 1 / 0 (skipped 0) · 고치기 3 · less 1 for the first hint, 2 for the second; 0 … 10. */
 export function scoreItem(item: FinalItem, r: FinalRecord): ItemScore {
   const right = item.causes.findIndex((c) => c.ok);
   const at = r.picks.indexOf(right);
   const cause = at === 0 ? 4 : at === 1 ? 2 : 0;
   const ok = r.calcChecks.indexOf(true);
-  const calc = ok === 0 ? 3 : ok > 0 ? 1 : 0;
+  const calc = r.calcSkipped ? 0 : ok === 0 ? 3 : ok > 0 ? 1 : 0;
   const fix = r.pass ? 3 : 0;
-  const total = Math.max(0, cause + calc + fix - r.hints);
-  return { cause, calc, fix, hints: r.hints, total };
+  const hintOff = hintCost(r.hints);
+  const total = Math.max(0, cause + calc + fix - hintOff);
+  return { cause, calc, fix, hintOff, total };
 }
 
 export const ITEM_MAX = 10;
 
-/** The whole sheet: points out of 60, shown out of 100, and the grade. */
+/** The whole sheet: points out of 70, shown out of 100, and the grade. */
 export function scoreFinal(records: Record<string, FinalRecord>): { points: number; of: number; score: number; grade: string } {
   const of = FINAL_ITEMS.length * ITEM_MAX;
   const points = FINAL_ITEMS.reduce((s, it) => s + (records[it.id] ? scoreItem(it, records[it.id]).total : 0), 0);
@@ -417,4 +473,6 @@ export const FINAL_NUMBERS = {
   cafeS: protectiveDistance({ zoneSpeed: 100, detect: 0, react: 0.2 }).total,
   aiParallax: (67.8 * PART_H) / (368 - PART_H),
   aiK: (368 - PART_H) / 368,
+  /** The full can's sideways limit μ(F ÷ m − g), m/s² (its speed limit needs the arm's acceleration: the check works it). */
+  energyLimit: sideLimit(speedItems(CAN_G)[FULL_CAN]),
 };

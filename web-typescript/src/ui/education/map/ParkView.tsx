@@ -65,16 +65,13 @@ interface Props {
   onLab(lab: LabId, prob?: ProblemNo): void;
   /** The whole course: every 단원 and 차시. */
   onCourse(): void;
-  /** 대단원 마무리 평가 (opens once the first six theme labs are done, or with 모든 현장 열기). */
+  /** 대단원 마무리 평가 (opens once all seven theme labs are done, or with 모든 현장 열기). */
   onFinal(): void;
   /** The 디지털 트윈 관제센터. */
   onData(): void;
   /** Pick a place from outside (a lesson's 이 원리를 쓰는 현장); `n` changes on every request. */
   pick?: { id: SiteId; n: number } | null;
 }
-
-/** The labs the 종합 점검 draws on (the first six; 에너지·자원순환 came later). */
-const FINAL_LABS = THEMES.filter((s) => s.lab !== 'energy');
 
 const tagOf = (content: (typeof SITES)[number]['content']) => (content === 'lessons' ? '이론' : content === 'data' ? '데이터' : '테마');
 
@@ -112,7 +109,8 @@ export default function ParkView({ progress, allOpen, onAllOpen, hidden, onTopic
   }, [states, progress, next]);
   const nDone = SITES.filter((s) => states[s.id] === 'done').length;
   const nAll = SITES.filter((s) => s.content !== 'data').length;
-  const finalOpen = allOpen || FINAL_LABS.every((s) => states[s.id] === 'done');
+  // The 종합 점검 draws one item from every theme lab.
+  const finalOpen = allOpen || THEMES.every((s) => states[s.id] === 'done');
   const select = useCallback((id: SiteId | null) => setSelected(id), []);
 
   return (
@@ -241,8 +239,8 @@ function Overview({
         <b>관제센터</b>
         <span>→</span>
       </button>
-      <button type="button" className={css.go} data-final disabled={!finalOpen} style={{ '--c': '#1d2939' } as CSSProperties} onClick={onFinal} title={finalOpen ? '여섯 현장의 문제를 새 숫자로 다시 풀어요' : '현장 6곳을 모두 마치면 열려요'}>
-        <small>{finalOpen ? '현장 종합 점검' : '🔒 현장 6곳(공장·물류·바이오·팜·시티·AI)을 마치면 열려요'}</small>
+      <button type="button" className={css.go} data-final disabled={!finalOpen} style={{ '--c': '#1d2939' } as CSSProperties} onClick={onFinal} title={finalOpen ? '일곱 현장의 문제를 새 숫자로 다시 풀어요' : '현장 7곳을 모두 마치면 열려요'}>
+        <small>{finalOpen ? '현장 종합 점검' : '🔒 현장 7곳(공장·물류·바이오·팜·시티·AI·자원순환)을 마치면 열려요'}</small>
         <b>대단원 마무리 평가</b>
         <span>→</span>
       </button>

@@ -1,4 +1,4 @@
-/* 대단원 마무리 평가: the list of six items (with the score and the sheet), and the item screen's
+/* 대단원 마무리 평가: the list of seven items (with the score and the sheet), and the item screen's
    panel — one column of cards (상황 · 원인 · 계산 · 고치기), hints, the principle. The item screen's
    layout (bar, 3D stage, panel) is lab.module.css's. */
 
@@ -372,6 +372,24 @@
   color: #fff;
   font-weight: 800;
 }
+/* The fix while the calculation is not right yet: dimmed, and the way past it. */
+.card[data-locked] .fields {
+  opacity: 0.45;
+}
+.lock {
+  display: grid;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #f4f6fa;
+}
+.lock p {
+  color: var(--muted);
+  font-weight: 700;
+}
+.lock button {
+  justify-self: start;
+}
 .hints {
   display: grid;
   gap: 6px;
@@ -451,6 +469,7 @@
 }
 .sheet thead th {
   background: #f2f4f7;
+  white-space: nowrap;
 }
 .sheet tfoot td {
   font-weight: 800;
