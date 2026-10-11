@@ -309,6 +309,8 @@ function SiteCard({ id, progress, allOpen, state, onTopic, onLab, onData, onClos
           ×
         </button>
       </header>
+      {/* Everything above the action scrolls together; the action stays below it, never over the text. */}
+      <div className={css.siteBody}>
       <h2>{s.name}</h2>
       <p className={css.desc}>{s.desc}</p>
       {s.issue && (
@@ -375,6 +377,7 @@ function SiteCard({ id, progress, allOpen, state, onTopic, onLab, onData, onClos
           ))}
         </ol>
       )}
+      </div>
       <div className={css.actions}>
         {locked ? (
           <button type="button" className={css.primary} disabled>

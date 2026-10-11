@@ -421,10 +421,15 @@
   font-size: 13px;
   color: var(--muted);
 }
-.probs {
+.siteBody {
   flex: 1;
   min-height: 0;
-  overflow: auto;
+  overflow-y: auto;
+  margin-inline: -18px;
+  padding-inline: 18px;
+  padding-bottom: 6px;
+}
+.probs {
   display: grid;
   align-content: start;
   gap: 6px;
@@ -482,7 +487,10 @@
   color: var(--muted);
 }
 .actions {
-  padding-top: 12px;
+  margin-inline: -18px;
+  padding: 12px 18px 0;
+  border-top: 1px solid var(--line);
+  box-shadow: 0 -8px 14px -10px rgba(30, 40, 60, 0.18);
 }
 .primary {
   width: 100%;
