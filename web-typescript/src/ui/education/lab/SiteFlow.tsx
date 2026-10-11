@@ -18,6 +18,7 @@ import { TOPIC_BY_ID, type TopicId } from '@/engine/education/catalog';
 import type { LabId, ProblemNo } from '@/engine/education/park';
 import type { StudyLevel } from '@/engine/education/roadmap';
 import type { RunLab } from '@/engine/education/runLog';
+import { EFFORT_KEY } from '@/engine/education/classReport';
 import type { CheckQ, SiteProblem, SiteStepId, SiteText } from '@/engine/education/lab/siteText';
 
 import { useFollowGate } from '../stage/RealFollow';
@@ -546,8 +547,32 @@ export interface SitePanelProps {
   onNext(): void;
 }
 
+/** The stars for a solved problem: one off for leaning on the hints (2+ hints, or opening every worked formula), for many re-runs, and for guessing (3+ wrong causes or calculations). */
+export const starsOf = (st: FlowState) => {
+  const peeks = st.formulas.filter(Boolean).length;
+  return 3 - (st.hints >= 2 || (peeks > 0 && peeks === st.formulas.length) ? 1 : 0) - (st.tries > 2 ? 1 : 0) - (st.tried.length + st.calcMisses >= 3 ? 1 : 0);
+};
+
+/** Keeps a solved problem's hints and stars for the class report (classReport.ts EFFORT_KEY: {lab: {problem: {hints, stars}}}). */
+function keepEffort(lab: RunLab, prob: SiteProblem, hints: number, stars: number) {
+  try {
+    const all = JSON.parse(localStorage.getItem(EFFORT_KEY) ?? '{}') as Record<string, Record<string, unknown>>;
+    const mine = all && typeof all === 'object' && !Array.isArray(all) ? all : {};
+    const labs = mine[lab] && typeof mine[lab] === 'object' ? mine[lab] : {};
+    localStorage.setItem(EFFORT_KEY, JSON.stringify({ ...mine, [lab]: { ...labs, [prob]: { hints, stars } } }));
+  } catch {
+    /* not kept: the class report shows — */
+  }
+}
+
 export function SitePanel(p: SitePanelProps) {
   const lock = lockOf(useContext(LabGateContext), p.lab, p.T.id);
+  // Solved: its effort goes to the class report (the latest finish of the problem counts).
+  const finished = !lock && p.st.step === 'done';
+  const stars = starsOf(p.st);
+  useEffect(() => {
+    if (finished) keepEffort(p.lab, p.T.id, p.st.hints, stars);
+  }, [finished, p.lab, p.T.id, p.st.hints, stars]);
   // 실물 연동: the real arm follows only the fixed program's re-run (and never where the setup differs).
   useFollowGate(p.lab, p.T.id, !lock && p.st.step === 'compare');
   return lock ? <LockedProblem T={p.T} lock={lock} /> : <SiteSteps {...p} />;
@@ -750,8 +775,7 @@ function SiteSteps(p: SitePanelProps) {
     case 'done': {
       const answered = st.shown.filter(Boolean).length;
       const peeks = st.formulas.filter(Boolean).length;
-      // A star off for leaning on the hints (2+ hints, or opening every worked formula), for many re-runs, and for guessing (3+ wrong causes or calculations).
-      const stars = 3 - (st.hints >= 2 || (peeks > 0 && peeks === st.formulas.length) ? 1 : 0) - (st.tries > 2 ? 1 : 0) - (st.tried.length + st.calcMisses >= 3 ? 1 : 0);
+      const stars = starsOf(st);
       const parts = [
         { title: '원리 정리', state: 'done' as const },
         { title: `확인 문제 (${answered}/${T.checks.length})`, state: answered >= T.checks.length ? ('done' as const) : ('now' as const) },

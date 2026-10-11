@@ -43,10 +43,10 @@ export default function MyResult({ theory, solved }: { theory: number; solved: n
   const [name, setName] = useState('');
   const [no, setNo] = useState('');
   const [sent, setSent] = useState<string | null>(null);
-  // The name kept on this computer, read after hydration (the page is a static export).
+  // The name kept on this computer (else the one on the 마무리 평가 sheet), read after hydration (the page is a static export).
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setName(readKey(STUDENT_NAME_KEY) ?? '');
+    setName(readKey(STUDENT_NAME_KEY) ?? buildReport(readKey).name);
     setNo(readKey(STUDENT_NO_KEY) ?? '');
   }, []);
 
