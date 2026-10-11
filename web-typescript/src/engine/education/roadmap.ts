@@ -215,14 +215,14 @@ const cov = (subjects: Cover[], fields: Cover[]): Product['cover'] => ({
 });
 
 export const PRODUCTS: readonly Product[] = [
-  { id: 'arm', name: 'myCobot 280', kind: '6축 로봇팔', chip: '팔', family: 'arm6', variants: ['RDK X5', 'Pi', 'M5', 'Jetson Nano', 'Arduino'], shop: true, img: '/robot/thumbs/mycobot280-rdkx5.png', cover: cov([2, 2, 2, 2, 2, 2, 1, 1], [1, 1, 0, 0, 1]) },
+  { id: 'arm', name: 'myCobot 280', kind: '6축 로봇팔', chip: '팔', family: 'arm6', variants: ['RDK X5', 'Pi', 'M5', 'Jetson Nano', 'Arduino'], shop: true, img: '/robot/thumbs/mycobot280-rdkx5.png', cover: cov([2, 2, 1, 1, 1, 2, 1, 1], [1, 1, 0, 0, 1]) },
   { id: 'aikit', name: 'AI 키트', kind: '카메라·흡착·블록', chip: 'AI키트', family: 'kit', shop: true, img: '/robot/thumbs/aikit.png', cover: cov([0, 0, 0, 0, 0, 2, 2, 2], [0, 0, 0, 0, 0]) },
   { id: 'agv', name: 'myAGV 2023', kind: '이동 로봇', chip: 'AGV', family: 'mobile', variants: ['Pi', 'Jetson Nano'], shop: true, img: '/robot/thumbs/myagv.png', cover: cov([1, 0, 1, 1, 1, 1, 1, 0], [1, 2, 2, 1, 0]) },
-  { id: 'arm320', name: 'myCobot 320', kind: '6축 · 가반 1kg', chip: '320', family: 'arm6', variants: ['Pi', 'M5'], shop: true, img: '/robot/thumbs/mycobot320.png', cover: cov([2, 2, 2, 2, 2, 2, 1, 1], [1, 1, 0, 0, 1]) },
+  { id: 'arm320', name: 'myCobot 320', kind: '6축 · 가반 1kg', chip: '320', family: 'arm6', variants: ['Pi', 'M5'], shop: true, img: '/robot/thumbs/mycobot320.png', cover: cov([2, 2, 1, 1, 1, 2, 1, 1], [1, 1, 0, 0, 1]) },
   { id: 'solar', name: '솔라 트래커', kind: '2축 추적', chip: '트래커', family: 'etc', shop: true, cover: cov([1, 1, 0, 0, 2, 0, 0, 0], [2, 0, 0, 1, 0]) },
   { id: 'rccar', name: '메탈 RC카', kind: '구동·조향', chip: 'RC카', family: 'etc', shop: true, cover: cov([1, 0, 0, 1, 1, 0, 0, 0], [2, 0, 1, 0, 0]) },
   { id: 'mecharm', name: 'mechArm 270', kind: '6축 · 중심 대칭형', chip: '메카암', family: 'arm6', variants: ['Pi', 'M5'], shop: false, img: '/robot/thumbs/mecharm270.png', cover: cov([2, 2, 2, 1, 1, 2, 1, 0], [1, 1, 0, 0, 0]) },
-  { id: 'pro630', name: 'myCobot Pro 630', kind: '산업형 6축 · 2kg', chip: 'Pro', family: 'arm6', variants: ['Pro 630', 'Pro 450'], shop: false, img: '/robot/thumbs/mycobot-pro630.png', cover: cov([2, 2, 2, 2, 2, 2, 1, 1], [1, 2, 0, 0, 2]) },
+  { id: 'pro630', name: 'myCobot Pro 630', kind: '산업형 6축 · 2kg', chip: 'Pro', family: 'arm6', variants: ['Pro 630', 'Pro 450'], shop: false, img: '/robot/thumbs/mycobot-pro630.png', cover: cov([2, 2, 1, 1, 1, 2, 1, 1], [1, 2, 0, 0, 2]) },
   { id: 'palletizer', name: 'myPalletizer 260', kind: '4축 팔레타이저', chip: '팔레타이저', family: 'arm4', variants: ['Pi', 'M5'], shop: false, img: '/robot/thumbs/mypalletizer260.png', cover: cov([2, 2, 1, 0, 1, 1, 1, 0], [1, 1, 0, 0, 0]) },
   { id: 'ultraarm', name: 'ultraArm P340', kind: '4축 · 고정밀', chip: '울트라암', family: 'arm4', shop: false, img: '/robot/thumbs/ultraarm-p340.png', cover: cov([2, 2, 1, 0, 1, 1, 1, 0], [1, 1, 0, 0, 0]) },
   { id: 'myarm', name: 'myArm M&C', kind: '원격 조작 · 데이터 수집', chip: 'myArm', family: 'learn', variants: ['M750', 'C650'], shop: false, img: '/robot/thumbs/myarm-m750.png', cover: cov([2, 2, 1, 1, 1, 1, 0, 2], [1, 2, 0, 0, 1]) },
@@ -270,16 +270,23 @@ export function opensWith(owned: readonly ProductId[]) {
 export type TopicCover = 'full' | 'part' | '';
 
 /**
- * Per topic, from the best owned product in its 학문: a fully covered 학문 lights all its topics,
- * a partly covered one its first half (the basics come first in every 학문).
+ * The 차시 whose activities have a step on the real arm (a [실물 로봇으로] button or a run on it,
+ * ui/education/topics): the rest are the simulator's — torque, profiles and feedback the arm's
+ * position-controlled servos do not show.
+ */
+export const REAL_STEP: ReadonlySet<TopicId> = new Set<TopicId>(['2-2', '2-3', '3-4', '4-1', '5-5', '6-2', '6-4', '7-1', '8-2']);
+
+/**
+ * Per topic, with the owned hardware: '실물' (full) — the 차시 has a real-arm step and the hardware
+ * covers its 학문 fully; '일부 실물' (part) — it has one but the 학문 is only partly covered, or it has
+ * none but the 학문 is fully covered (the teacher shows the same poses on the arm); else the simulator.
  */
 export function topicCover(owned: readonly ProductId[]): Record<TopicId, TopicCover> {
   const hw = owned.filter((p) => p !== 'sim');
   const out = {} as Record<TopicId, TopicCover>;
   for (const c of CATEGORIES) {
     const k = coverWith(hw, c.id);
-    const ts = topicsOf(c.id);
-    ts.forEach((t, i) => (out[t.id] = k === 2 ? 'full' : k === 1 && i < Math.ceil(ts.length / 2) ? 'part' : ''));
+    for (const t of topicsOf(c.id)) out[t.id] = REAL_STEP.has(t.id) ? (k === 2 ? 'full' : k === 1 ? 'part' : '') : k === 2 ? 'part' : '';
   }
   return out;
 }
