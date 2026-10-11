@@ -158,7 +158,7 @@ function measureRows(prob: FarmProblem, run: FarmRun | null): FarmRow[] {
       const pk = run?.picks.find((x) => x.k === k);
       const off = pk?.offset ?? p?.offset ?? NaN;
       const press = run?.failure?.kind === 'press' && run.failure.tomato === k;
-      return { label: `${k + 1}번 (사진 가운데에서 ${fmt(p?.r ?? 0)} mm) 어긋남`, value: `${fmt(off, 1)} mm${press ? ' — 손가락이 토마토를 누름' : ''}`, bad: off > 3, markers: [{ key: `o${k}`, mm: [t.x, t.y, zOf(t.d) + 16], ok: off <= 3, text: `${k + 1}번 · ${fmt(off, 1)} mm` }] };
+      return { label: `${k + 1}번 (사진 가운데에서 ${fmt(p?.r ?? 0)} mm) 어긋남`, value: `${fmt(off, 1)} mm${press ? ' (손가락이 토마토를 누름)' : ''}`, bad: off > 3, markers: [{ key: `o${k}`, mm: [t.x, t.y, zOf(t.d) + 16], ok: off <= 3, text: `${k + 1}번 · ${fmt(off, 1)} mm` }] };
     };
     const [m1, m2] = markerPixels();
     return [
@@ -167,7 +167,7 @@ function measureRows(prob: FarmProblem, run: FarmRun | null): FarmRow[] {
       row(3),
       {
         label: '카메라 높이 (책상에서)',
-        value: `${CAM.z} mm — 어제 ${CAM.zOld} mm에서 올림`,
+        value: `${CAM.z} mm (어제 ${CAM.zOld} mm에서 올림)`,
         bad: true,
         dim: { key: 'cz', a: [CAM.x - 50, CAM.y, TRAY.top], b: [CAM.x - 50, CAM.y, CAM.z], text: `트레이 면에서 ${CAM.z - TRAY.top} mm`, color: DIM_OK, label: 'l' },
       },
@@ -438,7 +438,7 @@ export default function FarmLab({ robot, chain, gripperRobot, hidden, level = 'h
           <FarmAround />
           <FarmCell player={player} prob={prob} tomatoes={FARM_TOMATOES[prob]} overlay={overlay} />
         </LearnStage>
-        {frame?.alarm && fail && <div className={lg.alarm}>⚠ {fail.text.replace(/ — 작업 중지$/, '')}</div>}
+        {frame?.alarm && fail && <div className={lg.alarm}>⚠ {fail.text.replace(/ \(작업 중지\)$/, '')}</div>}
         {!frame?.alarm && prob === 1 && shown && fail && playT >= fail.t && <div className={lg.alarm}>⚠ {fail.text}</div>}
         {shown && !fail && playT >= shown.durationS - 1e-6 && <div className={lg.okPill}>✓ {scoreFarm(prob, shown).headline}</div>}
         {slow && playing && <div className={lg.slowPill}>느린 재생 · 문제가 생기는 순간</div>}
@@ -573,8 +573,8 @@ export default function FarmLab({ robot, chain, gripperRobot, hidden, level = 'h
 }
 
 function programLine(p: FarmProblem): string {
-  if (p === 1) return '사진 → 색상 −10° ~ 40° 마스크 → 덩어리마다 집어 포장 — 지난 시즌 파프리카 프로그램 그대로';
-  if (p === 2) return `x = (v − 240) × ${RATIO_OLD.toFixed(3)} + ${CAM.x} · y = (u − 320) × ${RATIO_OLD.toFixed(3)} + ${CAM.y} — 비율은 카메라 ${CAM.zOld} mm 때 잰 값`;
+  if (p === 1) return '사진 → 색상 −10° ~ 40° 마스크 → 덩어리마다 집어 포장 · 지난 시즌 파프리카 프로그램 그대로';
+  if (p === 2) return `x = (v − 240) × ${RATIO_OLD.toFixed(3)} + ${CAM.x} · y = (u − 320) × ${RATIO_OLD.toFixed(3)} + ${CAM.y} (비율은 카메라 ${CAM.zOld} mm 때 잰 값)`;
   return '닫는 목표 = 카메라 지름 − 3 mm · 그리퍼 속도 100';
 }
 

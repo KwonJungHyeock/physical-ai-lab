@@ -175,7 +175,7 @@ export default function LoginPanel({ ask, onDone }: { ask?: LoginAsk; onDone(s: 
       )}
       {setupNeeded ? (
         <p className={css.formLead}>
-          <b>처음 설정 — 관리자 계정 만들기.</b> 학급 서버를 처음 켰어요. 이 PC 에서 쓸 관리자(운영자) 아이디와 비밀번호를 정해 주세요. 교사 계정과 학급은 이 계정으로 만들어요.
+          <b>처음 설정: 관리자 계정 만들기.</b> 학급 서버를 처음 켰어요. 이 PC 에서 쓸 관리자(운영자) 아이디와 비밀번호를 정해 주세요. 교사 계정과 학급은 이 계정으로 만들어요.
         </p>
       ) : (
         <div className={css.tabs} role="tablist" aria-label="누가 로그인하나요">

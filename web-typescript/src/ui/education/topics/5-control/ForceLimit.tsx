@@ -102,7 +102,7 @@ export default function ForceLimit({ chain, show, step, record }: TopicProps) {
           <p className={css.note}>활동 1 · 2 · 3 을 해 보면 여기 겹쳐 보여요.</p>
         )}
         <p className={css.note}>
-          계속 누르는 토크 ≈ 토크 제한 − 40° 에서 팔 무게를 버티는 토크({fmt(gravity40, 2)} N·m). 제한을 낮추면 덜 누르지만, 60° 에서 버티는 데 {fmt(hold60, 2)} N·m 가 필요하니 너무 낮추면 일을 못 해요 — 안전 여유와 작업 능력의 균형.
+          계속 누르는 토크 ≈ 토크 제한 − 40° 에서 팔 무게를 버티는 토크({fmt(gravity40, 2)} N·m). 제한을 낮추면 덜 누르지만, 60° 에서 버티는 데 {fmt(hold60, 2)} N·m 가 필요하니 너무 낮추면 일을 못 해요. 안전 여유와 작업 능력 사이에서 균형을 잡아야 해요.
         </p>
       </section>
     );
@@ -112,7 +112,7 @@ export default function ForceLimit({ chain, show, step, record }: TopicProps) {
   const done = cur && !cur.playing ? cur.run : null;
   return (
     <section className={css.card}>
-      <h3>손이 있는 길로 올리기 — 토크 제한 {limit} N·m</h3>
+      <h3>손이 있는 길로 올리기: 토크 제한 {limit} N·m</h3>
       <label className={css.slider}>
         <b>토크 제한</b>
         <input type="range" min={0.3} max={3} step={0.1} value={limit} disabled={pb.running} onChange={(e) => setLimit(Number(e.target.value))} aria-label="토크 제한" />
@@ -124,7 +124,7 @@ export default function ForceLimit({ chain, show, step, record }: TopicProps) {
         </button>
       </div>
       <TimeGraph
-        title="어깨 각도 θ (3 초) — 40° 에 손"
+        title="어깨 각도 θ (3 초), 40° 에 손"
         tEnd={T_END}
         lo={0}
         hi={75}

@@ -263,16 +263,16 @@ class BioSim {
       const tb = this.tubes[this.held];
       if (tilt > this.spillDeg && tb.left === 1) {
         tb.left = 0.55;
-        return this.fail('spill', `시료가 쏟아졌어요 — 시험관이 ${tilt.toFixed(1)}° 기울었어요 (쏟아지는 각도 ${this.spillDeg.toFixed(1)}°) — 작업 중지`, { at: tip, value: tilt, tube: this.held });
+        return this.fail('spill', `시료가 쏟아졌어요. 시험관이 ${tilt.toFixed(1)}° 기울어 쏟아지는 각도 ${this.spillDeg.toFixed(1)}°를 넘었어요 (작업 중지)`, { at: tip, value: tilt, tube: this.held });
       }
       for (const b of this.tubeBoxes) {
         const c = tubeClear(tb.top, tb.bottom, b);
         this.minClear = Math.min(this.minClear, c);
-        if (c <= 0) return this.fail('hit', `들고 있던 시험관이 ${b.name}에 부딪혔어요 — 작업 중지`, { at: tb.bottom, tube: this.held });
+        if (c <= 0) return this.fail('hit', `들고 있던 시험관이 ${b.name}에 부딪혔어요 (작업 중지)`, { at: tb.bottom, tube: this.held });
       }
     }
     const c = poseContact(this.chain, this.actual, [...this.boxes, ...this.tubeBoxes], TOOL_MM);
-    if (c) return this.fail('hit', `J${c.joint} 쪽이 ${c.what}에 부딪혔어요 — 작업 중지`, { at: c.at as Mm });
+    if (c) return this.fail('hit', `J${c.joint} 쪽이 ${c.what}에 부딪혔어요 (작업 중지)`, { at: c.at as Mm });
     void tip;
     return true;
   }
@@ -421,7 +421,7 @@ export function runCalib(chain: readonly ChainSegment[], v: CalibValues): BioRun
     const off = Math.hypot(real[0] + sx - h[0], real[1] + sy - h[1]);
     const r = Math.hypot(h[0], h[1]);
     if (off > CATCH_MM) {
-      sim.fail('catch', `${k + 1}번 칸: 시험관이 구멍 가장자리에 걸렸어요 (가운데에서 ${off.toFixed(1)} mm) — 작업 중지`, { at: [h[0], h[1], RACK.top], value: off, tube: k });
+      sim.fail('catch', `${k + 1}번 칸: 시험관이 구멍 가장자리에 걸렸어요. 가운데에서 ${off.toFixed(1)} mm 벗어났어요 (작업 중지)`, { at: [h[0], h[1], RACK.top], value: off, tube: k });
       sim.tubes[k].bottom = [real[0], real[1], RACK.top - 2];
       break;
     }
@@ -430,7 +430,7 @@ export function runCalib(chain: readonly ChainSegment[], v: CalibValues): BioRun
     if (e && !sim.moveJ(e, SPEED.down)) break;
     sim.release();
     offsets[k] = off;
-    sim.log('place', `${k + 1}번 칸 (몸통에서 ${r.toFixed(0)} mm): 가운데에서 ${off.toFixed(1)} mm${off > READ_MM ? ' — 기준(1 mm) 밖' : ''}`, { tube: k, value: off, at: [h[0], h[1], RACK.top] });
+    sim.log('place', `${k + 1}번 칸 (몸통에서 ${r.toFixed(0)} mm): 가운데에서 ${off.toFixed(1)} mm${off > READ_MM ? ' (기준 1 mm 밖)' : ''}`, { tube: k, value: off, at: [h[0], h[1], RACK.top] });
     if (!sim.moveJ(c, SPEED.down)) break;
   }
   if (!sim.failure) sim.moveJ(HOME_Q, SPEED.travel);
@@ -489,14 +489,14 @@ export interface BioScore {
 export function scoreBio(p: BioProblem, run: BioRun): BioScore {
   const placed = run.events.filter((e) => e.kind === 'place').length;
   const f = run.failure;
-  const stop: BioCheck = { label: '작업 중지 없음', ok: !f, value: f ? f.text.replace(/ — 작업 중지$/, '') : '없음' };
+  const stop: BioCheck = { label: '작업 중지 없음', ok: !f, value: f ? f.text.replace(/ \(작업 중지\)$/, '') : '없음' };
   if (p === 1) {
     const checks: BioCheck[] = [
       { label: `옮기는 내내 기울기 ${SPILL_DEG.toFixed(0)}° 아래 (쏟지 않음)`, ok: run.maxTilt < SPILL_DEG, value: `최대 ${run.maxTilt.toFixed(1)}°` },
       { label: '분석 랙에 꽂음', ok: placed === 1, value: placed ? '했어요' : '못 했어요' },
       stop,
     ];
-    return { pass: checks.every((c) => c.ok), checks, headline: f ? f.text.replace(/ — 작업 중지$/, '') : '시료를 쏟지 않고 옮겼어요', placed };
+    return { pass: checks.every((c) => c.ok), checks, headline: f ? f.text.replace(/ \(작업 중지\)$/, '') : '시료를 쏟지 않고 옮겼어요', placed };
   }
   if (p === 2) {
     const offs = run.offsets.filter((x): x is number => x !== null);
@@ -506,14 +506,14 @@ export function scoreBio(p: BioProblem, run: BioRun): BioScore {
       { label: `모두 칸 가운데에서 ${READ_MM} mm 안 (분석기가 읽음)`, ok: placed === ROW.n && worst <= READ_MM, value: offs.length ? `최대 ${worst.toFixed(1)} mm` : '—' },
       stop,
     ];
-    return { pass: checks.every((c) => c.ok), checks, headline: f ? f.text.replace(/ — 작업 중지$/, '') : worst > READ_MM ? `${ROW.n}개를 꽂았지만 ${worst.toFixed(1)} mm 어긋난 칸이 있어요` : `${ROW.n}개 모두 1 mm 안에 꽂았어요`, placed };
+    return { pass: checks.every((c) => c.ok), checks, headline: f ? f.text.replace(/ \(작업 중지\)$/, '') : worst > READ_MM ? `${ROW.n}개를 꽂았지만 ${worst.toFixed(1)} mm 어긋난 칸이 있어요` : `${ROW.n}개 모두 1 mm 안에 꽂았어요`, placed };
   }
   const checks: BioCheck[] = [
     { label: '원심분리기 · 랙에 부딪히지 않음', ok: !f || f.kind !== 'hit', value: f?.kind === 'hit' ? '부딪힘' : `가장 가까이 ${Number.isFinite(run.minClear) ? run.minClear.toFixed(0) : '—'} mm` },
     { label: '분석 랙에 꽂음', ok: placed === 1, value: placed ? '했어요' : '못 했어요' },
     stop,
   ];
-  return { pass: checks.every((c) => c.ok), checks, headline: f ? f.text.replace(/ — 작업 중지$/, '') : '부딪히지 않고 옮겼어요', placed };
+  return { pass: checks.every((c) => c.ok), checks, headline: f ? f.text.replace(/ \(작업 중지\)$/, '') : '부딪히지 않고 옮겼어요', placed };
 }
 
 /** ③: how far the arm reaches out at a grip-point height (tool vertical, towards a direction), mm. */

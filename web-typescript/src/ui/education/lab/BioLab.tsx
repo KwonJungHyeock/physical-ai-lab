@@ -137,7 +137,7 @@ function measureRows(chain: readonly ChainSegment[], prob: BioProblem, run: BioR
       { label: '놓는 자세 (작업 프로그램)', value: poseText(DST[0], DST[1], LIFT_Z, { yawDeg: v.yaw, tiltDeg: v.tilt }), bad: true, marker: { key: 'dst', mm: up(DST), ok: false, text: `놓는 자세 · ry −${v.tilt}` } },
       { label: '옮기는 동안 가장 크게 기운 각도', value: `${fmt(run?.maxTilt ?? 0, 1)}°`, bad: true, tilt: true },
       { label: '시료 위 여유 · 시험관 안지름', value: `${HEADSPACE_MM} mm · ${TUBE.inner} mm` },
-      { label: '쏟아진 때', value: f ? `${fmt(f.t, 1)} s — 옮기는 길의 끝 무렵` : '—', bad: true },
+      { label: '쏟아진 때', value: f ? `${fmt(f.t, 1)} s (옮기는 길의 끝 무렵)` : '—', bad: true },
     ];
   }
   if (prob === 2) {
@@ -152,7 +152,7 @@ function measureRows(chain: readonly ChainSegment[], prob: BioProblem, run: BioR
       row(0),
       row(2),
       row(3),
-      { label: '빗나간 방향', value: '모두 같은 쪽 — 몸통이 시킨 것보다 더 돈 쪽' },
+      { label: '빗나간 방향', value: '모두 같은 쪽 (몸통이 시킨 것보다 더 돈 쪽)' },
       { label: '랙 위치 (자로 잰 값) · 같은 칸에 5번 넣은 흩어짐', value: '설계와 같음 · ±0.2 mm' },
     ];
   }
@@ -564,7 +564,7 @@ export default function BioLab({ robot, chain, gripperRobot, hidden, level = 'hs
 }
 
 function programLine(p: BioProblem): string {
-  if (p === 1) return '놓는 자세 [150, −100, 125, −180, −35, −33.7] — 붓기 프로그램에서 복사';
+  if (p === 1) return '놓는 자세 [150, −100, 125, −180, −35, −33.7] (붓기 프로그램에서 복사)';
   if (p === 2) return `시료 6개를 몸통에서 ${ROW.r0} ~ ${ROW.r0 + (ROW.n - 1) * ROW.pitch} mm 칸에 차례로 · J1 영점 보정 없음`;
   return `시료 랙에서 집어 ${LIFT_Z} mm 높이로 분석 랙까지 한 번에 관절 이동 · 경유점 없음`;
 }
@@ -701,7 +701,7 @@ function HmiCalib({ v, preview, on }: { v: CalibValues; preview: { r: number; of
           ))}
         </tbody>
       </table>
-      <small className={lg.hmiNote}>실제 J1은 시킨 것보다 {J1_ERR_DEG > 0 ? '더' : '덜'} 돌아요 — 얼마나인지는 원인 찾기의 숫자로 계산해요.</small>
+      <small className={lg.hmiNote}>실제 J1은 시킨 것보다 {J1_ERR_DEG > 0 ? '더' : '덜'} 돌아요. 얼마나인지는 원인 찾기의 숫자로 계산해요.</small>
     </div>
   );
 }

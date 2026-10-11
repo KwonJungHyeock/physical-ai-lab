@@ -589,7 +589,7 @@ function programLine(p: LogiProblem): string {
     return `들고 이동 ${v.carry}, 빈손 이동 ${v.empty}, 위아래 이동 ${v.vert} (속도 1 ~ 100)`;
   }
   const v = DEFAULTS[3] as RefValues;
-  return `팔레트 기준점 (${fmt(v.x)}, ${fmt(v.y)}) mm — 처음 설치할 때 잡은 자리`;
+  return `팔레트 기준점 (${fmt(v.x)}, ${fmt(v.y)}) mm (처음 설치할 때 잡은 자리)`;
 }
 
 /** Which prediction the run bears out: all done, stopped (or dropped), or done but not to the standard. */

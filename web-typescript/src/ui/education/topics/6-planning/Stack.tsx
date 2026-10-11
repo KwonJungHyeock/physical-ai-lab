@@ -205,7 +205,7 @@ export function* stackRun(w: PhysicsWorld, chain: readonly ChainSegment[], k: K,
     yield* wait(0.3);
     if (!w.grab(8)) {
       ctl.pump = false;
-      return done(false, `${NAMES[id]} 블록을 못 집었어요 — 팔이 흔들려 블록을 건드렸어요.`);
+      return done(false, `${NAMES[id]} 블록을 못 집었어요. 팔이 흔들려 블록을 건드렸어요.`);
     }
     const kg = w.heldMassKg();
     const stackTop = level * SIZE;
@@ -397,7 +397,7 @@ export default function F3Stack({ chain, show, real, step, record }: TopicProps)
   return (
     <section className={css.card}>
       <h3>
-        {SPEEDS[k].name} — {SPEEDS[k].how}
+        {SPEEDS[k].name}: {SPEEDS[k].how}
       </h3>
       <div className={css.btnRow}>
         <button type="button" className={css.primary} disabled={busy || !ready} onClick={run}>
@@ -416,7 +416,7 @@ export default function F3Stack({ chain, show, real, step, record }: TopicProps)
             {r.note ||
               (r.floors < 3
                 ? `탑이 무너졌어요 (${r.floors}층). 멈출 때 팔이 흔들려 블록을 밀었어요.`
-                : `${fmt(r.timeS, 1)} 초 · 토크 ${fmt(r.peak * 100, 0)}%${r.peak > 1 ? ' — 모터 한계를 넘어요' : ''} · 맨 위 블록이 ${fmt(r.leanMm, 1)} mm 어긋났어요.`)}
+                : `${fmt(r.timeS, 1)} 초 · 토크 ${fmt(r.peak * 100, 0)}%${r.peak > 1 ? ' (모터 한계를 넘어요)' : ''} · 맨 위 블록이 ${fmt(r.leanMm, 1)} mm 어긋났어요.`)}
           </Verdict>
         </>
       )}

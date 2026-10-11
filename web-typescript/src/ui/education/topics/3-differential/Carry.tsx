@@ -33,8 +33,10 @@ const PROFILES: Record<K, { name: string; make(shape: 'trap' | 's'): Profile }> 
   C: { name: '가속도 제한', make: (shape) => (shape === 's' ? quinticProfile(D, 1.0) : trapezoid(D, 300, 3000)) },
 };
 
-/** The move button of each try (the 원고 and tests/education/sim/s3.ts press it by this name + " — 옮기기"). */
+/** Each try's name in the graph legend. */
 const BUTTON: Record<K, string> = { A: '위치만', B: '일정 속도', C: '가속도 제한' };
+/** The move button of each try (the 원고 and tests/education/sim/s3.ts press it by this name). */
+const GO: Record<K, string> = { A: '위치만으로 옮기기', B: '일정 속도로 옮기기', C: '가속도 제한으로 옮기기' };
 
 const along = (p: number): Mm => [FROM[0], FROM[1] + p, FROM[2]];
 
@@ -157,7 +159,7 @@ export default function C1Carry({ chain, show, step, record }: TopicProps) {
   const xs = run ? run.samples.map((s) => s.t) : [];
   return (
     <section className={css.card}>
-      <h3>판 위 블록 나르기 — {PROFILES[k].name}</h3>
+      <h3>판 위 블록 나르기: {PROFILES[k].name}</h3>
       {k === 'C' && (
         <div className={css.seg} role="group" aria-label="속도 모양">
           <button type="button" aria-pressed={shape === 'trap'} onClick={() => setShape('trap')}>
@@ -170,7 +172,7 @@ export default function C1Carry({ chain, show, step, record }: TopicProps) {
       )}
       <div className={css.btnRow}>
         <button type="button" className={css.primary} disabled={anim.running} onClick={go}>
-          {BUTTON[k]} — 옮기기
+          {GO[k]}
         </button>
         <button type="button" disabled={anim.running} onClick={restart}>
           처음으로

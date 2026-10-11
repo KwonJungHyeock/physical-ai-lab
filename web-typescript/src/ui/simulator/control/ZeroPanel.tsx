@@ -25,12 +25,12 @@ import css from '../console.module.css';
 
 /** Where each joint's marks are, for someone standing in front of the robot. */
 const JOINT_HINT = [
-  '받침과 몸통 사이 — 몸통 전체가 좌우로 도는 관절',
-  '어깨 — 팔 윗부분이 앞뒤로 기우는 관절',
-  '팔꿈치 — 팔 아랫부분이 앞뒤로 기우는 관절',
-  '손목 첫 관절 — 손목이 앞뒤로 기우는 관절',
-  '손목 둘째 관절 — 손목이 좌우로 도는 관절',
-  '끝 원판(플랜지) — 원판이 도는 관절',
+  '받침과 몸통 사이: 몸통 전체가 좌우로 도는 관절',
+  '어깨: 팔 윗부분이 앞뒤로 기우는 관절',
+  '팔꿈치: 팔 아랫부분이 앞뒤로 기우는 관절',
+  '손목 첫 관절: 손목이 앞뒤로 기우는 관절',
+  '손목 둘째 관절: 손목이 좌우로 도는 관절',
+  '끝 원판(플랜지): 원판이 도는 관절',
 ];
 
 type Method = 'all' | 'one';
@@ -99,7 +99,7 @@ export default function ZeroPanel(p: Props) {
         <ol className={css.zeroFlow}>
           <li>
             <p>
-              팔을 한 손으로 받치고 서보를 모두 풀어요. <span className={css.zeroNote}>(로봇 전원을 끈 채 펴 두었다가 켜도 돼요 — 그때는 이 단계를 건너뛰어요.)</span>
+              팔을 한 손으로 받치고 서보를 모두 풀어요. <span className={css.zeroNote}>(로봇 전원을 끈 채 펴 두었다가 켜도 돼요. 그때는 이 단계를 건너뛰어요.)</span>
             </p>
             <button type="button" className={css.jogWide} disabled={off || limp.every(Boolean)} onClick={() => void act(() => p.onServos(true))}>
               <Icon name="hand" size={14} /> 모든 서보 풀기

@@ -79,7 +79,7 @@ export default function Feedback({ chain, show, step, record }: TopicProps) {
   return (
     <section className={css.card}>
       <h3>
-        {PLAN[k].open ? '명령만 보내기 (개루프)' : `피드백 — P 제어 (Kp ${KP})`} · 어깨 0° → 60°
+        {PLAN[k].open ? '명령만 보내기 (개루프)' : `피드백: P 제어 (Kp ${KP})`} · 어깨 0° → 60°
       </h3>
       <div className={css.seg} role="group" aria-label="짐 무게">
         {PAYLOADS.map((p) => (
@@ -109,7 +109,7 @@ export default function Feedback({ chain, show, step, record }: TopicProps) {
       <p className={css.note}>
         {PLAN[k].open
           ? `개루프: 짐이 없을 때 60° 에서 버티는 토크 ${fmt(holdTorque, 2)} N·m 를 계산해 두고, 결과를 보지 않고 그대로 내요.`
-          : `P 제어: 토크 = Kp(비례 게인) × 오차 (Kp ${KP}, 오차는 라디안). 목표에서 멀수록 세게 밀고, 가까워지면 약해져요 — 짐의 무게와 균형이 맞는 곳에서 서요.`}
+          : `P 제어: 토크 = Kp(비례 게인) × 오차 (Kp ${KP}, 오차는 라디안). 목표에서 멀수록 세게 밀고, 가까워지면 약해져요. 그래서 짐의 무게와 균형이 맞는 곳에서 서요.`}
       </p>
       <p className={css.note}>단순화한 모델: 팔을 축에 매달린 막대 하나로 보고, 관성 + 마찰 + 중력 토크(m·g·l·sinθ) = 모터 토크 u 로 계산해요. θ = 어깨 각도(아래로 늘어진 자세가 0°). 그래프는 0.5배속으로 그려져요.</p>
     </section>

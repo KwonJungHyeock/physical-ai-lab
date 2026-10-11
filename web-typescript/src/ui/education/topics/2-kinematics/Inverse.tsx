@@ -362,7 +362,7 @@ export default function B1Inverse({ chain, show, onPick, real, workspace, frontD
           {errs.length > 1 && (
             <Graph title="반복할수록 줄어드는 오차 (로그 눈금)" x={errs.map((_, i) => i)} xUnit="회" series={[{ label: '손끝–목표 거리', color: LEARN_COLORS.warn, values: errs }]} unit="mm" log cursor={shown} height={110} />
           )}
-          {solved && !solved.ok && <Verdict tone="bad">답이 없어요 — 목표가 작업 공간 밖이라 가장 가까운 곳에서 멈췄어요.</Verdict>}
+          {solved && !solved.ok && <Verdict tone="bad">답이 없어요. 목표가 작업 공간 밖이라 가장 가까운 곳에서 멈췄어요.</Verdict>}
           {solved?.ok && <RealButton real={real} chain={chain} angles={q} label="실물 로봇으로 이 답" />}
         </>
       )}
@@ -376,7 +376,7 @@ export default function B1Inverse({ chain, show, onPick, real, workspace, frontD
           </div>
           {found && (
             <div className={css.solutions}>
-              <small>{found.angles.length ? `같은 목표의 답 ${found.angles.length}개 (반투명 팔). 눌러서 그 자세로:` : '답이 없어요 — 목표를 작업 공간 안으로 옮겨 보세요.'}</small>
+              <small>{found.angles.length ? `같은 목표의 답 ${found.angles.length}개 (반투명 팔). 눌러서 그 자세로:` : '답이 없어요. 목표를 작업 공간 안으로 옮겨 보세요.'}</small>
               {found.angles.map((s, i) => (
                 <button key={i} type="button" aria-pressed={chosen === i} disabled={running} style={{ borderColor: SOL_COLORS[i], color: SOL_COLORS[i] }} onClick={() => adopt(i)}>
                   답 {i + 1} · J2 {fmt(s[1], 0)}° J3 {fmt(s[2], 0)}°

@@ -88,7 +88,7 @@ export const topView = (cx: number, cy: number, x0: number, y0: number, s: numbe
 const p71 = cols(3);
 export const fig71: FigureDef = {
   label: '고정 카메라 사진의 픽셀 (u, v) 와 1 px = 1 mm 어림의 오차, 마커 4개로 구한 픽셀 → mm 변환, 손 카메라 두 자세에서 픽셀은 달라도 같은 책상 위치',
-  caption: '사진 속 픽셀 (u, v) 를 책상 위 (x, y) mm 로 — 픽셀만 · 마커 4개로 보정(H) · 손 카메라 (고정 카메라 높이 620 mm)',
+  caption: '사진 속 픽셀 (u, v) 를 책상 위 (x, y) mm 로 바꾸기: 픽셀만 · 마커 4개로 보정(H) · 손 카메라 (고정 카메라 높이 620 mm)',
   symbols: ['u', 'v', 'H', 'x', 'y'],
   panels: p71.map((p, i) => ({ ...p, title: ['픽셀만', '마커 보정', '손 카메라'][i] })),
   draw: () => {
@@ -342,7 +342,7 @@ const OBJ_PX = 40;
 const p72 = cols(3);
 export const fig72: FigureDef = {
   label: '색상 범위를 좁혀 빨강 블록만 남기기, 조명 ×0.3 에서 RGB 기준은 놓치고 HSV 기준은 찾음, 팔이 가린 블록의 무게중심이 어긋남',
-  caption: '색으로 빨강 블록 찾기 — 색상 범위 좁히기 · 조명 ×0.3 에서 RGB 기준과 HSV 기준 · 팔이 가린 블록의 가운데',
+  caption: '색으로 빨강 블록 찾기: 색상 범위 좁히기 · 조명 ×0.3 에서 RGB 기준과 HSV 기준 · 팔이 가린 블록의 가운데',
   symbols: ['R', 'H', 'S', 'V'],
   panels: p72.map((p, i) => ({ ...p, title: ['임계값', '조명', '여러 개 · 가림'][i] })),
   draw: () => (
@@ -553,8 +553,8 @@ const ERR_MAX = 70;
 
 const p73 = cols(3);
 export const fig73: FigureDef = {
-  label: '움직이는 블록을 한 번 보고 따라가기, 계속 보며 이득 K = 3 으로 따라가기, K = 9 로 흔들리기 — 위에서 본 자취와 추적 오차 그래프',
-  caption: '움직이는 블록 따라가기 — 한 번 보고 · 계속 보기 이득 3 · 이득 9 (사진 지연 0.2 s): 위에서 본 카메라 가운데의 자취와 추적 오차',
+  label: '움직이는 블록을 한 번 보고 따라가기, 계속 보며 이득 K = 3 으로 따라가기, K = 9 로 흔들리기 (위에서 본 자취와 추적 오차 그래프)',
+  caption: '움직이는 블록 따라가기: 한 번 보고 · 계속 보기 이득 3 · 이득 9 (사진 지연 0.2 s), 위에서 본 카메라 가운데의 자취와 추적 오차',
   symbols: ['e', 'L'],
   panels: p73.map((p, i) => ({ ...p, title: ['한 번 보고', '계속 보기 · 이득 3', '계속 보기 · 이득 9'][i] })),
   draw: () => (

@@ -83,7 +83,7 @@ function SymTable({ syms }: { syms: readonly Sym[] }) {
             <td>{s.read}</td>
             <td>
               <b>{s.name}</b>
-              {s.meaning && <> — {s.meaning}</>}
+              {s.meaning && <>: {s.meaning}</>}
             </td>
             <td>{s.unit}</td>
           </tr>
@@ -164,7 +164,7 @@ function Theory({ material, cat }: { material: Material; cat: Category }) {
           ))}
         </ol>
         <div className={css.howto}>
-          <b>이 교재 쓰는 법 — 한 주제가 한 차시(50분)</b>
+          <b>이 교재 쓰는 법: 한 주제가 한 차시(50분)</b>
           <ol>
             <li>
               <b>도입</b> 학습 목표를 읽고, <b>생각 열기</b> 질문에 내 생각을 적어 본 뒤 그림을 봐요.
@@ -294,7 +294,7 @@ function TopicTheory({ t, n, of, color }: { t: Topic; n: number; of: number; col
       </div>
       <SymTable syms={syms} />
 
-      <h3 className={css.sec}>개념 — 자세히</h3>
+      <h3 className={css.sec}>개념 자세히</h3>
       {theory.map((p) => (
         <p key={p} className={css.para}>
           <Text text={p} syms={syms} />
@@ -377,7 +377,7 @@ function TopicTheory({ t, n, of, color }: { t: Topic; n: number; of: number; col
           })}
         </div>
         <table className={css.record}>
-          <caption>✎ 기록표 — 화면의 결과를 적어요</caption>
+          <caption>✎ 기록표: 화면의 결과를 적어요</caption>
           <thead>
             <tr>
               <th>활동</th>
@@ -400,7 +400,7 @@ function TopicTheory({ t, n, of, color }: { t: Topic; n: number; of: number; col
           </tbody>
         </table>
         <div className={css.box} data-kind="compare">
-          <b>정리 — 세 활동 비교하기</b>
+          <b>정리: 세 활동 비교하기</b>
           <p>
             <Text text={lab[15]} syms={syms} />
           </p>
@@ -430,19 +430,19 @@ function TopicTheory({ t, n, of, color }: { t: Topic; n: number; of: number; col
         <div className={css.teacher}>
           <b>교사용 답</b>
           <span>
-            예상 정답 —{' '}
+            예상 정답:{' '}
             {t.steps.map((s) => `활동 ${s.n}: ${s.choices.answer + 1}. ${s.choices.options[s.choices.answer]}`).join(' · ')}
           </span>
           <span>
-            정리 질문 — <Text text={t.card.wrapAnswer} syms={syms} />
+            정리 질문: <Text text={t.card.wrapAnswer} syms={syms} />
           </span>
           <span>
-            개념 확인 질문 — <Text text={t.card.conceptAsk} syms={syms} />
+            개념 확인 질문: <Text text={t.card.conceptAsk} syms={syms} />
           </span>
         </div>
         {next && (
           <p className={css.nextLesson}>
-            <b>다음 차시 · {lessonNo(next.id)}차시</b> {next.id} {next.title} — <Text text={next.question} />
+            <b>다음 차시 · {lessonNo(next.id)}차시</b> {next.id} {next.title}: <Text text={next.question} />
           </p>
         )}
       </section>

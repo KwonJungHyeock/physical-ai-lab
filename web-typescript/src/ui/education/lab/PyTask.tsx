@@ -217,7 +217,7 @@ function Result({ task, raw, verdicts, passed }: { task: ReturnType<typeof pyTas
                           {typeof c.expected === 'number' || Array.isArray(c.expected) ? <small> ±{c.tol}</small> : null}
                         </>
                       ) : (
-                        <small>숨김 — 식이 맞으면 맞아요</small>
+                        <small>숨김 (식이 맞으면 맞아요)</small>
                       )}
                     </td>
                   </tr>

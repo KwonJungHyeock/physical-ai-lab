@@ -158,7 +158,7 @@ const R51 = [
   { title: 'C P 제어 · 짐 250 g', y: RUN.p250, th: 47, kg: '250 g', closed: true, err: '오차 13°', res: '약 47° 에 섬 · 오차 13°', c: 'orange' as Color },
 ];
 export const fig51: FigureDef = {
-  caption: '개루프와 피드백(P 제어)의 어깨 각도 — 짐 0 g 개루프 · 짐 250 g 개루프 · 짐 250 g P 제어 (목표 60°)',
+  caption: '개루프와 피드백(P 제어)의 어깨 각도: 짐 0 g 개루프 · 짐 250 g 개루프 · 짐 250 g P 제어 (목표 60°)',
   symbols: ['θ', 'Kp'],
   label: '어깨 관절 하나를 0° 에서 60° 로: 짐 없는 개루프는 60° 에 서고, 짐 250 g 의 개루프는 약 24° 에서 멈추고, 같은 짐의 P 제어는 약 47° 까지 올라간다',
   panels: p51.map((p, i) => ({ ...p, title: R51[i].title })),
@@ -269,7 +269,7 @@ const R52 = [
   { title: 'C PID · + Kd 0.4', y: RUN.pid250, term: '+ D · 변하는 빠르기', how: ['빨리 변하면 미리 멈춤', '(브레이크)'], mode: 'D' as const },
 ];
 export const fig52: FigureDef = {
-  caption: '게인을 하나씩 더할 때의 계단 응답 — P 만 · PI · PID (짐 250 g, 목표 60°)',
+  caption: '게인을 하나씩 더할 때의 계단 응답: P 만 · PI · PID (짐 250 g, 목표 60°)',
   symbols: ['Kp', 'Ki', 'Kd'],
   label: '짐 250 g 에서 어깨 0° → 60° 계단 응답: P 만은 25% 넘친 뒤 13° 모자라고, PI 는 47% 넘쳐 3 초가 지나도 출렁이고, PID 는 8% 넘친 뒤 약 1.2 초에 ±2% 띠 안에 든다',
   panels: p52.map((p, i) => ({ ...p, title: R52[i].title })),
@@ -387,7 +387,7 @@ const R53 = [
   { title: 'C 빠르게 1 s + 피드포워드', T: 1, y: RUN.fast1ff, ff: true, tMax: 0, rMax: 0, yMax: 0, gap: '', res: '최대 추종 오차 0.1° 아래', c: 'blue' as Color },
 ];
 export const fig53: FigureDef = {
-  caption: '궤적을 따라가는 어깨 각도와 추종 오차 — 3 s · 1 s · 1 s + 피드포워드 (0° → 60°)',
+  caption: '궤적을 따라가는 어깨 각도와 추종 오차: 3 s · 1 s · 1 s + 피드포워드 (0° → 60°)',
   symbols: ['r', 'θ'],
   label: '어깨를 0° → 60° 명령 궤적으로: 3 초에는 최대 약 3° 뒤처지고, 1 초에는 약 6° 뒤처져 끝난 뒤 0.7 초 더 걸리고, 피드포워드를 더하면 0.1° 아래로 겹친다',
   panels: p53.map((p, i) => ({ ...p, title: R53[i].title })),
@@ -586,7 +586,7 @@ const R54 = [
   { title: 'C 토크 제한 0.6 N·m', lim: 0.6, push: 0.2, pushT: '0.2', arrive: '손 없을 때 60° 도착 약 2.6 s', res: '손을 누르는 토크 약 0.2 N·m', c: 'blue' as Color, w: 4 },
 ];
 export const fig54: FigureDef = {
-  caption: '토크 제한에 따라 손을 누르는 토크 — 3 · 1.5 · 0.6 N·m (손 40° 자리)',
+  caption: '토크 제한에 따라 손을 누르는 토크: 3 · 1.5 · 0.6 N·m (손 40° 자리)',
   label: '어깨가 올라가다 40° 자리의 손에 막힐 때, 토크 제한 3 · 1.5 · 0.6 N·m 에서 손을 계속 누르는 토크는 약 2.6 · 1.1 · 0.2 N·m (= 제한 − 중력 토크 0.40), 60° 에서 버티는 데는 0.54 N·m 가 든다',
   panels: p54.map((p, i) => ({ ...p, title: R54[i].title })),
   draw: () => (
@@ -715,7 +715,7 @@ const R55 = [
   { title: 'C 측정 → 보정', d: 0, off: [0, 0] as [number, number], acc: ['정확도 좋음', 'blue'] as const, bars: [0, 0, 0, 0], res: '평균 오차 0.1 mm 아래', c: 'blue' as Color },
 ];
 export const fig55: FigureDef = {
-  caption: 'J2 영점 오차가 만드는 손끝 오차와 보정 — 이상적 · 영점 2° 어긋남 · 측정 후 보정 (P1~P4)',
+  caption: 'J2 영점 오차가 만드는 손끝 오차와 보정: 이상적 · 영점 2° 어긋남 · 측정 후 보정 (P1~P4)',
   label: '책상 위 P1~P4 로 손끝을 보낼 때: 이상적이면 오차 0 mm, J2 영점이 2° 어긋나면 6.7 · 7.8 · 9.0 · 10.1 mm (평균 8.4 mm) 빗나가고, 측정해 영점 1.99° 를 찾아 빼면 평균 0.1 mm 아래',
   panels: p55.map((p, i) => ({ ...p, title: R55[i].title })),
   draw: () => (

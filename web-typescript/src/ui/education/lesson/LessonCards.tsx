@@ -178,7 +178,7 @@ export default function LessonCards({ topic, page, onPage, results, onChecked, l
                 <b>
                   시연 · {lessonNo(topic.id)}차시 {STEP_NAME[zoom.clip]}
                 </b>{' '}
-                {topic.steps.find((s) => s.key === zoom.clip)?.title} — 원고의 할 일대로 눌렀을 때의 화면이에요. 직접 해 보고 비교해 보세요.
+                {topic.steps.find((s) => s.key === zoom.clip)?.title}: 원고의 할 일대로 눌렀을 때의 화면이에요. 직접 해 보고 비교해 보세요.
               </figcaption>
             </figure>
           ) : (
@@ -438,7 +438,7 @@ function CompareTable({ results, steps }: { results: Partial<Record<StepKey, Res
 /** 다음 차시: the next topic's number, title and question (or the end of the course). */
 function NextLesson({ topic, onTopic }: { topic: Topic; onTopic(id: Topic['id']): void }) {
   const next = nextTopicOf(topic.id);
-  if (!next) return <p className={wb.nextEnd}>마지막 차시예요 — 로봇공학 8개 단원 28차시를 모두 마쳤어요.</p>;
+  if (!next) return <p className={wb.nextEnd}>마지막 차시예요. 로봇공학 8개 단원 28차시를 모두 마쳤어요.</p>;
   return (
     <button type="button" className={wb.next} onClick={() => onTopic(next.id)}>
       <small>다음 차시 · {lessonNo(next.id)}차시</small>

@@ -757,7 +757,7 @@ export default function Console() {
     }
     setPrep({ items: r.items, at: new Date().toISOString() });
     const bad = r.items.filter((i) => i.ok === false);
-    addLog(bad.length ? 'warn' : 'ok', `검수 준비 점검: ${r.items.length - bad.length}/${r.items.length} 준비됨${bad.length ? ` — 확인할 것: ${bad.map((i) => i.name).join(', ')}` : ''}`);
+    addLog(bad.length ? 'warn' : 'ok', `검수 준비 점검: ${r.items.length - bad.length}/${r.items.length} 준비됨${bad.length ? `. 확인할 것: ${bad.map((i) => i.name).join(', ')}` : ''}`);
   };
   const saveReport = () => {
     if (!evidence.current.length) evidence.current = loadEvidence();
@@ -795,7 +795,7 @@ export default function Console() {
   const onRealDone = useEffectEvent(() => {
     if (practice.action === 'api') session.current.apiRuns += 1;
     mark('robot');
-    note(practice.check, `로봇에서 실행 완료 — ${practice.title} (${LEVEL_TAB[level].name}, ${EFFECTOR_BY_ID[effector].name})`, true);
+    note(practice.check, `로봇에서 실행 완료: ${practice.title} (${LEVEL_TAB[level].name}, ${EFFECTOR_BY_ID[effector].name})`, true);
     void (async () => {
       if (!loaded) return;
       const rep = repeatability(await fetchArrivals(), (q) => tcpPositionMm(loaded.chain, q, tcpNow));
@@ -1030,7 +1030,7 @@ export default function Console() {
     setPassed(null);
     setErrorLines([]);
     setBadge(null);
-    addLog('info', `${mode === 'check' && p.check ? `[검수 ${p.check}] ` : ''}${p.title} — ${p.goal}`);
+    addLog('info', `${mode === 'check' && p.check ? `[검수 ${p.check}] ` : ''}${p.title}: ${p.goal}`);
   };
 
   /**
@@ -1061,7 +1061,7 @@ export default function Console() {
     setPassed(null);
     setErrorLines([]);
     setBadge(null);
-    addLog('info', `${to.name} · ${to.board} 를 열었어요 — 관절 범위 · 기본 자세 · 파이썬 클래스(${to.sdk.cls})가 이 로봇팔에 맞춰졌어요.`);
+    addLog('info', `${to.name} · ${to.board} 를 열었어요. 관절 범위 · 기본 자세 · 파이썬 클래스(${to.sdk.cls})가 이 로봇팔에 맞춰졌어요.`);
   };
 
   const changeTool = (next: EffectorId, flange: boolean) => {
@@ -1216,7 +1216,7 @@ export default function Console() {
     try {
       await runProgram(steps, { chain: loaded.chain, world: probe, poses, animate: instantAnimate, see: async (_c, color) => probe.blocks.find((b) => b.color === color) ?? null });
     } catch (err) {
-      addLog('err', `${name} 데모를 이 로봇팔로는 끝까지 할 수 없어요 — ${err instanceof Error ? err.message : String(err)}`, mount.on ? '받침대(G 베이스)를 떼고 다시 해 보세요.' : undefined);
+      addLog('err', `${name} 데모를 이 로봇팔로는 끝까지 할 수 없어요. ${err instanceof Error ? err.message : String(err)}`, mount.on ? '받침대(G 베이스)를 떼고 다시 해 보세요.' : undefined);
       return;
     }
     setDemo({ scene, step: 0, playing: true });
@@ -1493,7 +1493,7 @@ export default function Console() {
 
   /** The planned path folds the arm into itself: nothing moves; the notice names the joint to change. */
   const refuseRun = (err: SelfCollision) => {
-    addLog('err', `실행하지 않았어요 — ${err.line ? `${err.line}번째 줄: ` : ''}${err.message}`, err.fix);
+    addLog('err', `실행하지 않았어요. ${err.line ? `${err.line}번째 줄: ` : ''}${err.message}`, err.fix);
     setBadge({ kind: 'stop', text: '팔이 부딪혀서 실행 안 함' });
     if (err.line) setErrorLines([err.line]);
     setPassed(null);
@@ -1634,7 +1634,7 @@ export default function Console() {
     } catch {
       /* this session only */
     }
-    if (m.on !== mount.on) addLog('info', m.on ? `받침대(G 베이스)를 달았어요. 로봇이 책상보다 ${m.mm}mm 높아요 — 그만큼 더 아래까지 닿아요.` : '받침대를 뗐어요. 로봇이 책상 바로 위에 있어요.');
+    if (m.on !== mount.on) addLog('info', m.on ? `받침대(G 베이스)를 달았어요. 로봇이 책상보다 ${m.mm}mm 높아요. 그만큼 더 아래까지 닿아요.` : '받침대를 뗐어요. 로봇이 책상 바로 위에 있어요.');
   };
   const chooseSide = (s: 'right' | 'left') => {
     setSide(s);
@@ -2128,7 +2128,7 @@ export default function Console() {
     const note = (text: string) => t.alive && setTracking({ color, note: text });
     let failure: string | null = null;
     try {
-      note('방향 맞추는 중 — 물체를 그대로 두세요');
+      note('방향 맞추는 중이에요. 물체를 그대로 두세요');
       const look = async () => {
         const img = await grabHand();
         return img ? findColor(img, color) : null;
@@ -2168,7 +2168,7 @@ export default function Console() {
         if (!t.alive) break;
         if (!s) {
           missing += 1;
-          note(missing > 3 ? `${color}을 찾는 중 — 카메라 앞에 놓아 주세요` : `${color} 따라가는 중`);
+          note(missing > 3 ? `${color}을 찾는 중이에요. 카메라 앞에 놓아 주세요` : `${color} 따라가는 중`);
           await new Promise((r) => setTimeout(r, 150));
           continue;
         }
@@ -2257,7 +2257,7 @@ export default function Console() {
     session.current.visionRuns += 1;
     const names = r.detections.map((d) => `${d.label} ${Math.round(d.score * 100)}%`).join(', ') || '찾은 물체 없음';
     addLog('ok', `로봇에서 AI 처리 ${r.ms}ms${r.loadMs ? ` (모델 읽기 ${r.loadMs}ms)` : ''} · ${r.engine} · ${names}`);
-    note(6, `AI 샘플 로봇 실행 — YOLOv5s ${r.ms}ms, 찾은 물체: ${names}`, true);
+    note(6, `AI 샘플 로봇 실행: YOLOv5s ${r.ms}ms, 찾은 물체: ${names}`, true);
     setAiResult(r);
   };
 
@@ -2271,7 +2271,7 @@ export default function Console() {
       session.current.visionRuns += 1;
       const found = r.detections.map((d) => `${d.color}${d.x !== undefined ? ` (x ${Math.round(d.x)}, y ${Math.round(d.y!)})` : ''}`).join(', ');
       addLog('ok', `로봇에서 처리 ${r.ms}ms · ${r.engine} · 마커 ${r.markers.join('·') || '없음'} · 블록 ${r.detections.length}개${found ? `: ${found}` : ''}`);
-      note(practice.check === 6 ? 6 : 4, `로봇 안 색 인식 ${r.ms}ms — 블록 ${r.detections.length}개${found ? `: ${found}` : ''}`, true);
+      note(practice.check === 6 ? 6 : 4, `로봇 안 색 인식 ${r.ms}ms: 블록 ${r.detections.length}개${found ? `: ${found}` : ''}`, true);
       return;
     }
     const cam: CameraId = theme === 'kit' ? 'top' : 'hand';
@@ -2742,7 +2742,7 @@ export default function Console() {
           <div className={`${css.pickerBox} ${css.aiBox}`}>
             <header className={css.pickerHead}>
               <div>
-                <h1>AI 샘플 결과 — 로봇 안에서 실행</h1>
+                <h1>AI 샘플 결과 (로봇 안에서 실행)</h1>
                 <p>{aiResult.engine}</p>
               </div>
               <button type="button" className={css.pickerClose} onClick={() => setAiResult(null)} aria-label="닫기" autoFocus>
@@ -2795,7 +2795,7 @@ export default function Console() {
                   // A demo is shown, not done by the student.
                   if (demo) return;
                   mark('sim');
-                  note(practice.check, `시뮬레이션 목표 달성 — ${practice.title} (${LEVEL_TAB[level].name})`, false);
+                  note(practice.check, `시뮬레이션 목표 달성: ${practice.title} (${LEVEL_TAB[level].name})`, false);
                   const m = practice.progress(world.current, session.current);
                   // Reached during a run: the card comes when the run ends (with its time and [다시 보기]).
                   if (token.current) goalPending.current = { goal: m.title, done: m.done, total: m.total };
@@ -2857,7 +2857,7 @@ export default function Console() {
                 <b>
                   <Icon name="check" size={15} /> {mode === 'check' ? '검수 시연 끝내기' : '검수 시연 (교사용)'}
                 </b>
-                <small>{mode === 'check' ? '학생 실습 화면으로 돌아가요' : '납품 검수 7종 · 검수 서류 — 학생 화면에는 보이지 않아요'}</small>
+                <small>{mode === 'check' ? '학생 실습 화면으로 돌아가요' : '납품 검수 7종 · 검수 서류 (학생 화면에는 보이지 않아요)'}</small>
               </button>
               )}
               {!account.session && (
@@ -3053,7 +3053,7 @@ export default function Console() {
                     <Icon name="install" size={24} />
                   </span>
                   <div className={css.pcOfferText}>
-                    <b>다음부터 주소 없이 열기 — PC 프로그램 받기</b>
+                    <b>다음부터 주소 없이 열기: PC 프로그램 받기</b>
                     <small>
                       지금 주소 <code>{typeof window !== 'undefined' ? `${window.location.host}/console` : ''}</code>
                       {robot?.robotId ? ` · 로봇 ID ${robot.robotId}` : ''}. &lsquo;Physical AI Tool&rsquo; 파일을 받아 바탕화면에 두고 더블클릭하면 같은 Wi-Fi 의 로봇을 찾아 바로 열어요.
@@ -3504,16 +3504,16 @@ ros2 topic echo /joint_states`;
  * angles to the arm). Not the launch file — its joint_state_publisher_gui would
  * publish /joint_states too and fight the student's node.
  */
-const ROS2_NODE_STEPS = (a: ArmSpec) => `# 터미널 1 — 로봇 드라이버 노드 (/joint_states 를 받아 팔을 움직여요)
+const ROS2_NODE_STEPS = (a: ArmSpec) => `# 터미널 1: 로봇 드라이버 노드 (/joint_states 를 받아 팔을 움직여요)
 source /opt/ros/humble/setup.bash
 source ~/colcon_ws/install/setup.bash      # mycobot_ros2 를 빌드한 작업공간
 ros2 run ${a.ros.pkg} slider_control
 
-# 터미널 2 — 내 노드
+# 터미널 2: 내 노드
 source /opt/ros/humble/setup.bash
 python3 my_node.py
 
-# 터미널 3 — 확인
+# 터미널 3: 확인
 ros2 node list
 ros2 topic echo /joint_states`;
 
@@ -3531,7 +3531,7 @@ function ExportDialog({ text, level, ros, onClose, onCopied }: { text: string; l
       <div className={css.dialogInner}>
         <h2>{level === 'ros' ? 'ROS 2 노드를 로봇에서 실행하기' : '파이썬 API(pymycobot)로 로봇에서 실행하기'}</h2>
         <ol>
-          <li>로봇 OS(RDK X5)에 접속해요. 콘솔 서버(server.py)가 켜져 있으면 먼저 Ctrl+C 로 꺼요 — 로봇 연결을 함께 쓸 수 없어요.</li>
+          <li>로봇 OS(RDK X5)에 접속해요. 콘솔 서버(server.py)가 켜져 있으면 먼저 Ctrl+C 로 꺼요. 로봇 연결을 함께 쓸 수 없어요.</li>
           <li>
             아래 코드를 복사해 파일로 저장해요 (예: {file}).
             {level === 'python' && ' 시뮬레이션을 통과한 코드 그대로예요.'}

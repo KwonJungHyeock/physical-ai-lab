@@ -24,7 +24,7 @@ export default function LoginCards({ cards, title, onClose }: { cards: readonly 
           <div>
             <h2 id="cards-title">{title}</h2>
             <p className={css.warn}>
-              <b>PIN 은 지금만 볼 수 있어요.</b> 창을 닫으면 다시 볼 수 없어요 — 지금 인쇄하거나 적어 두세요. 잊어버린 PIN 은 [PIN 다시 발급]으로 새로 만들어요.
+              <b>PIN 은 지금만 볼 수 있어요.</b> 창을 닫으면 다시 볼 수 없어요. 지금 인쇄하거나 적어 두세요. 잊어버린 PIN 은 [PIN 다시 발급]으로 새로 만들어요.
             </p>
           </div>
           <div className={css.formBtns}>

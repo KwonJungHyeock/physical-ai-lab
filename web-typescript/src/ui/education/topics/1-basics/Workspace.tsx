@@ -155,11 +155,11 @@ export default function A4Workspace({ chain, show, step, record, workspace, fron
       </div>
       <p className={css.note}>
         {step === 'A'
-          ? 'J1 은 ±168° 라서 뒤쪽 24° 는 못 가요 — 원이 조금 끊겨 있어요.'
+          ? 'J1 은 ±168° 라서 뒤쪽 24° 는 못 가요. 그래서 원이 조금 끊겨 있어요.'
           : step === 'B'
             ? '파란 면 = 이 평면에서 손끝이 닿는 곳. 몸 가까이와 바로 아래는 비어 있어요. 슬라이더로 면 끝까지 가 보세요.'
             : prof
-              ? `한계 ${Math.round(scale * 100)}%: J1 이 ${fmt(spanDeg(prof), 0)}° 만 돌아 껍질이 그만큼 잘리고, 부피 ${fmt(volumeL(prof), 0)} L, 가장 멀리 ${fmt(prof.reachMm, 0)} mm, 가장 낮은 곳 ${fmt(Math.max(0, prof.rows[0].z - 3), 0)} mm${prof.rows[0].z > 20 ? ' — 책상 면까지 못 내려가요' : ''}. 뻗는 거리는 링크 길이가 정해서 잘 줄지 않아요.`
+              ? `한계 ${Math.round(scale * 100)}%: J1 이 ${fmt(spanDeg(prof), 0)}° 만 돌아 껍질이 그만큼 잘리고, 부피 ${fmt(volumeL(prof), 0)} L, 가장 멀리 ${fmt(prof.reachMm, 0)} mm, 가장 낮은 곳 ${fmt(Math.max(0, prof.rows[0].z - 3), 0)} mm${prof.rows[0].z > 20 ? ' (책상 면까지 못 내려가요)' : ''}. 뻗는 거리는 링크 길이가 정해서 잘 줄지 않아요.`
               : '작업 공간을 계산하는 중…'}
       </p>
     </section>

@@ -228,7 +228,7 @@ export default function E1Collision({ chain, show, step, record }: TopicProps) {
   const found = cur ? cur.hits.filter(Boolean).length : 0;
   return (
     <section className={css.card}>
-      <h3>{GAP_NAME[k]} — 얇은 벽 (6 mm)</h3>
+      <h3>{GAP_NAME[k]}: 얇은 벽 (6 mm)</h3>
       <div className={css.btnRow}>
         <button type="button" className={css.primary} disabled={anim.running} onClick={checkMove}>
           {GAP_NAME[k]}
@@ -239,7 +239,7 @@ export default function E1Collision({ chain, show, step, record }: TopicProps) {
         <Readout label="찾은 충돌" value={cur ? (found ? `${found} 자세` : '없음') : '–'} tone={cur && done ? (found ? 'ok' : 'warn') : undefined} />
         <Readout label="판정" value={done ? (found ? '맞음' : cur.real ? '놓침' : '맞음') : '–'} tone={done ? (found || !cur.real ? 'ok' : 'bad') : undefined} />
       </div>
-      {done && found > 0 && <Verdict tone="ok">검사에서 벽을 찾았어요 — 움직이지 않아요.</Verdict>}
+      {done && found > 0 && <Verdict tone="ok">검사에서 벽을 찾았어요. 그래서 움직이지 않아요.</Verdict>}
       {done && !found && cur.real && <Verdict tone="bad">검사는 &quot;충돌 없음&quot; 이라고 했는데, 실제로 움직이니 J{cur.real.joint} 가 벽에 닿았어요.</Verdict>}
       <p className={css.note}>
         J1 을 {fmt(Math.abs(GOAL[0] - START[0]), 1)}° 돌려 벽 너머로 가요. 점 = 검사한 자세의 손끝(초록 비어 있음 · 빨강 겹침), 반투명 팔 = 검사한 자세. 파란 철망 = 충돌 검사에 쓰는 캡슐(링크를 감싼 원통 + 양끝 반구).

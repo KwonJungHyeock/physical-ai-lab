@@ -60,3 +60,47 @@ export function savedServerAddress(store: KVStore | null): string | null {
   const v = store?.getItem(SERVER_ADDRESS_KEY) ?? null;
   return v ? normalizeServerAddress(v) : null;
 }
+
+/**
+ * Handing the login over to a robot's page. Connecting to a robot opens that robot's own console
+ * (another address, so another browser store); the login goes along in the address's fragment
+ * (`#class=…`: never sent to any server) and the robot's page takes it in and removes it at once.
+ */
+const HANDOFF = 'class=';
+
+export function sessionHandoff(s: Session): string {
+  const bytes = new TextEncoder().encode(JSON.stringify(s));
+  let bin = '';
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return `${HANDOFF}${encodeURIComponent(btoa(bin))}`;
+}
+
+/** The login handed over in this fragment (`#class=…`, up to the next `&`), checked like a saved one. */
+export function readHandoff(hash: string, now: number): Session | null {
+  const m = /(?:^#?|&)class=([^&]*)/.exec(hash);
+  if (!m) return null;
+  try {
+    const bin = atob(decodeURIComponent(m[1]));
+    const text = new TextDecoder().decode(Uint8Array.from(bin, (ch) => ch.charCodeAt(0)));
+    const probe: KVStore & { v: string | null } = {
+      v: text,
+      getItem() {
+        return this.v;
+      },
+      setItem() {},
+      removeItem() {},
+    };
+    return loadSession(probe, now);
+  } catch {
+    return null;
+  }
+}
+
+/** The fragment without the handed-over login (what else it carries stays). */
+export function withoutHandoff(hash: string): string {
+  const rest = hash
+    .replace(/^#/, '')
+    .split('&')
+    .filter((p) => p && !p.startsWith(HANDOFF));
+  return rest.length ? `#${rest.join('&')}` : '';
+}

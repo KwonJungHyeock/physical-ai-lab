@@ -29,7 +29,7 @@ export function toPymycobot(actions: readonly RobotAction[], effector: EffectorI
   const found = actions.filter((a): a is Extract<RobotAction, { type: 'found' }> => a.type === 'found');
   const usesPump = actions.some((a) => a.type === 'pump');
   const out: string[] = [
-    '# 로봇팔 실습에서 만든 프로그램 — myCobot 280 RDK X5',
+    '# 로봇팔 실습에서 만든 프로그램 (myCobot 280 RDK X5)',
     '# 시뮬레이션에서 계산하고 충돌 검사를 마친 관절 각도를 그대로 보냅니다.',
     `# 도구: ${e.name}`,
     ...(theme === 'kit'

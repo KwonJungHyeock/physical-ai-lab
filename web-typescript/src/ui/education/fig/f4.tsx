@@ -86,7 +86,7 @@ function Arm41({ p, pose, load, dist, ghost }: { p: Panel; pose: number[]; load?
 const p41 = cols(3, 0, 830);
 export const fig41: FigureDef = {
   label: '어깨(J2) 토크: 세움 0.01 → 반쯤 숙임 0.52 N·m(33%), 숙임 + 250 g 1.12 N·m(71%, 수평 거리 247 mm), 뻗음 + 250 g 1.31 N·m(83%, 280 mm), 한계 1.57 N·m',
-  caption: '어깨(J2)의 중력 토크 — 세움 → 반쯤 숙임 · 숙임 + 250 g · 뻗음 + 250 g (J2 모터 한계 1.57 N·m 대비 %)',
+  caption: '어깨(J2)의 중력 토크: 세움 → 반쯤 숙임 · 숙임 + 250 g · 뻗음 + 250 g (J2 모터 한계 1.57 N·m 대비 %)',
   symbols: [],
   panels: p41.map((p, i) => ({ ...p, title: ['버티는 자세', '무게 들기', '팔 뻗기'][i] })),
   draw: () => {
@@ -152,7 +152,7 @@ const plot42 = (s: { sx(v: number): number; sy(v: number): number }, f: (t: numb
 const p42 = cols(3, 0, 830);
 export const fig42: FigureDef = {
   label: 'J1 120° 회전: 느리게 2.5 s(최대 0.02 N·m) · 빠르게 0.8 s(0.23 N·m) · 빠르고 급하게 0.8 s(0.38 N·m, 한계 0.28 N·m 넘음)의 속도와 토크 그래프',
-  caption: 'J1 을 120° 돌릴 때의 속도와 토크 — 느리게 2.5 s · 빠르게 0.8 s · 빠르고 급하게 0.8 s (J1 한계 0.28 N·m)',
+  caption: 'J1 을 120° 돌릴 때의 속도와 토크: 느리게 2.5 s · 빠르게 0.8 s · 빠르고 급하게 0.8 s (J1 한계 0.28 N·m)',
   symbols: [],
   panels: p42.map((p, i) => ({ ...p, title: ['느리게', '빠르게', '빠르고 급하게'][i] })),
   draw: () => (
@@ -213,7 +213,7 @@ const K43 = 1.25;
 const p43 = cols(3, 0, 830);
 export const fig43: FigureDef = {
   label: '같은 밀기(200 mm/s · 1 s)로 20 g 블록 약 160 mm, 200 g 블록 약 40 mm, 마찰 0.05 인 20 g 블록 약 210 mm 밀림',
-  caption: '같은 밀기(200 mm/s · 1 s)로 민 세 블록 — 가벼운 20 g · 무거운 200 g · 미끄러운 20 g (마찰 계수 0.75 · 0.75 · 0.05)',
+  caption: '같은 밀기(200 mm/s · 1 s)로 민 세 블록: 가벼운 20 g · 무거운 200 g · 미끄러운 20 g (마찰 계수 0.75 · 0.75 · 0.05)',
   symbols: ['μ', 'm', 'g'],
   panels: p43.map((p, i) => ({ ...p, title: ['가벼운 블록', '무거운 블록', '미끄러운 블록'][i] })),
   draw: () => (

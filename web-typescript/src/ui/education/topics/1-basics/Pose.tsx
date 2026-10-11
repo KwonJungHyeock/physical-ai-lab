@@ -144,7 +144,7 @@ export default function A2Pose({ chain, show, onPick, step, record }: TopicProps
 
   return (
     <section className={css.card}>
-      <h3>{step === 'A' ? '책상 격자에서 목표 칸 고르기' : step === 'B' ? `높이 z — 블록 위 ${ABOVE} mm 에 멈추기` : '같은 위치에서 피치 바꾸기'}</h3>
+      <h3>{step === 'A' ? '책상 격자에서 목표 칸 고르기' : step === 'B' ? `높이 z: 블록 위 ${ABOVE} mm 에 멈추기` : '같은 위치에서 피치 바꾸기'}</h3>
       {step === 'A' && (
         <div className={css.btnRow}>
           <button type="button" className={css.primary} disabled={running} onClick={() => pickCell(EXAMPLE[0], EXAMPLE[1])}>
@@ -207,7 +207,7 @@ export default function A2Pose({ chain, show, onPick, step, record }: TopicProps
         {step === 'A'
           ? '책상 격자의 칸을 클릭하거나 [예시 칸] 을 누르세요. 빨강 = +x(앞), 초록 = +y(왼쪽). 점선이 x·y 를 읽는 법이에요. 손끝은 그 칸 40 mm 위로 가요.'
           : step === 'B'
-            ? '활동 1에서 고른 칸(또는 책상을 클릭한 곳)에 블록이 있어요. 높이 슬라이더로 z 만 바꿔 보세요 — x·y 는 그대로예요.'
+            ? '활동 1에서 고른 칸(또는 책상을 클릭한 곳)에 블록이 있어요. 높이 슬라이더로 z 만 바꿔 보세요. x·y 는 그대로예요.'
             : '위치(x·y·z)는 그대로, 피치(아래를 보는 자세에서 앞으로 숙인 각)와 팔 모양이 바뀌어요. 롤·피치·요는 피치 0°(아래를 봄) 자세를 0 으로 재요. 세 버튼을 모두 눌러 보세요.'}
       </p>
     </section>

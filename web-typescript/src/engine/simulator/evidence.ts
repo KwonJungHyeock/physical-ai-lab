@@ -76,7 +76,7 @@ export function reportHtml(opts: { robot: string; model: string; evidence: reado
     : '';
   const done = CHECKS.filter((c) => opts.evidence.some((e) => e.check === c.check && e.robot)).length;
   return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>검수 결과표 — ${esc(opts.robot)}</title>
+<title>검수 결과표 (${esc(opts.robot)})</title>
 <style>
 body{font-family:"Pretendard","Noto Sans KR",system-ui,sans-serif;color:#101828;background:#fff;margin:0;padding:32px;max-width:960px}
 h1{font-size:22px;margin:0 0 4px}h2{font-size:16px;margin:28px 0 8px}h2 small,td small{display:block;font-weight:400;color:#667085;font-size:12px}
@@ -87,7 +87,7 @@ time{color:#667085;font-variant-numeric:tabular-nums}i{font-style:normal;font-si
 i.s{background:#eef1f7;color:#475467}.ok{color:#16955a}.sim{color:#b54708}.no{color:#b42318}
 .prep td:first-child{width:20px;font-weight:800}@media print{body{padding:0}}
 </style></head><body>
-<h1>검수 결과표 — myCobot 280 RDK X5</h1>
+<h1>검수 결과표 (myCobot 280 RDK X5)</h1>
 <p class="meta">${esc(opts.robot)} · ${esc(opts.model)} · 만든 때 ${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} · ROBODYNE SYSTEMS Physical AI 학습 프로그램</p>
 <p class="sum">실제 로봇으로 확인한 검수 <b>${done} / ${CHECKS.length}</b></p>
 <table>${rows}</table>

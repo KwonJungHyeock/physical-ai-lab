@@ -24,6 +24,9 @@ import { useEffect, useRef, useState } from 'react';
 
 import { identifyRobot, networkPrefix, pcNetworks, probeRobot, ROBOT_PORT, sameRobot, scanNetwork, type FoundRobot } from '@/engine/simulator/discover';
 
+import { sessionHandoff } from '@/engine/account';
+
+import { useAccount } from '../../account/AccountProvider';
 import Icon from '../Icon';
 import WifiPanel from './WifiPanel';
 import css from '../console.module.css';
@@ -97,8 +100,11 @@ export default function ConnectDialog({ current, auto, carry, onClose }: Props) 
   };
   // The latest program at the moment of leaving (the console redraws while the dialog is open).
   const carryNow = useRef(carry);
+  const session = useAccount().session;
+  const sessionNow = useRef(session);
   useEffect(() => {
     carryNow.current = carry;
+    sessionNow.current = session;
   });
   // The first step asks the robot itself (its address may be a typed ID, a recent one, or a robot
   // switched off since the search): the console opens only after it answered — never onto a
@@ -125,7 +131,13 @@ export default function ConnectDialog({ current, auto, carry, onClose }: Props) 
     if (!link || !link.checked || link.error) return;
     const quick = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     if (link.step >= LINK_STEPS.length) {
-      const t = window.setTimeout(() => (window.location.href = `http://${link.addr}/console${carryNow.current?.() ?? ''}`), quick ? 0 : 450);
+      const t = window.setTimeout(() => {
+        // The class login goes along (a robot's page is another address with its own store).
+        const program = (carryNow.current?.() ?? '').replace(/^#/, '');
+        const login = sessionNow.current ? sessionHandoff(sessionNow.current) : '';
+        const hash = [login, program].filter(Boolean).join('&');
+        window.location.href = `http://${link.addr}/console${hash ? `#${hash}` : ''}`;
+      }, quick ? 0 : 450);
       return () => window.clearTimeout(t);
     }
     const t = window.setTimeout(() => setLink((l) => (l ? { ...l, step: l.step + 1 } : l)), quick ? 0 : 380);
@@ -220,14 +232,14 @@ export default function ConnectDialog({ current, auto, carry, onClose }: Props) 
 
               <ol className={css.connectSteps}>
                 <li>
-                  <b>로봇 ID 찾기</b> — 로봇을 켜고 서버가 켜지면 터미널에 <code>★ 로봇 ID: 252</code> 가 나와요. 연결한 뒤에는 이 화면 오른쪽 위에도 보여요. (IP 주소의 마지막 숫자예요. 로봇마다 번호
+                  <b>로봇 ID 찾기</b>: 로봇을 켜고 서버가 켜지면 터미널에 <code>★ 로봇 ID: 252</code> 가 나와요. 연결한 뒤에는 이 화면 오른쪽 위에도 보여요. (IP 주소의 마지막 숫자예요. 로봇마다 번호
                   스티커를 붙여 두면 편해요)
                 </li>
                 <li>
-                  <b>같은 공유기</b> — PC 와 로봇이 같은 와이파이(공유기)에 있어야 해요. 앞부분(192.168.0.)은 교실 공유기에 맞게 한 번만 고치면 기억해요.
+                  <b>같은 공유기</b>: PC 와 로봇이 같은 와이파이(공유기)에 있어야 해요. 앞부분(192.168.0.)은 교실 공유기에 맞게 한 번만 고치면 기억해요.
                 </li>
                 <li>
-                  <b>안 열리면</b> — 로봇 전원, 서버가 켜져 있는지(자동 시작), ID 가 맞는지 확인해요.
+                  <b>안 열리면</b> 로봇 전원, 서버가 켜져 있는지(자동 시작), ID 가 맞는지 확인해요.
                 </li>
               </ol>
             </>
@@ -570,16 +582,16 @@ function FindRobots({
       {scanned && !scanning && found.length === 0 && (
         <ol className={css.connectSteps}>
           <li>
-            <b>같은 Wi-Fi 인가요?</b> — PC 와 로봇이 같은 공유기(예: ROBOT-LAB)에 붙어 있어야 해요.
+            <b>같은 Wi-Fi 인가요?</b> PC 와 로봇이 같은 공유기(예: ROBOT-LAB)에 붙어 있어야 해요.
           </li>
           <li>
-            <b>주소 앞부분</b> — PC 의 주소 앞 세 숫자와 같아야 해요 (Windows: <code>ipconfig</code>). 교실 공유기는 보통 <code>192.168.0.</code>, 로봇 핫스팟은 <code>10.42.0.</code> 이에요.
+            <b>주소 앞부분</b>: PC 의 주소 앞 세 숫자와 같아야 해요 (Windows: <code>ipconfig</code>). 교실 공유기는 보통 <code>192.168.0.</code>, 로봇 핫스팟은 <code>10.42.0.</code> 이에요.
           </li>
           <li>
-            <b>로봇 서버</b> — 로봇 전원을 켜고 1분쯤 기다려요 (자동 시작). 그래도 없으면 [ID 로 연결] 에 로봇 ID 를 넣어 봐요.
+            <b>로봇 서버</b>: 로봇 전원을 켜고 1분쯤 기다려요 (자동 시작). 그래도 없으면 [ID 로 연결] 에 로봇 ID 를 넣어 봐요.
           </li>
           <li>
-            <b>학교 · 손님용 Wi-Fi</b> — 기기끼리 서로 못 보게 막아 둔 망(AP 격리)이 많아요. 실습실 공유기에 PC 와 로봇을 함께 붙여요.
+            <b>학교 · 손님용 Wi-Fi</b>: 기기끼리 서로 못 보게 막아 둔 망(AP 격리)이 많아요. 실습실 공유기에 PC 와 로봇을 함께 붙여요.
           </li>
         </ol>
       )}

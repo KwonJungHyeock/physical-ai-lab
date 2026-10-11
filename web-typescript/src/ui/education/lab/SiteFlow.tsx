@@ -76,7 +76,7 @@ function LockedProblem({ T, lock }: { T: SiteText; lock: readonly TopicId[] }) {
             {lock.map((t) => (
               <li key={t}>
                 <button type="button" onClick={() => g?.onLearn(t)}>
-                  <b>{t}</b> {TOPIC_BY_ID.get(t)?.title} — 배우러 가기 →
+                  <b>{t}</b> {TOPIC_BY_ID.get(t)?.title} · 배우러 가기 →
                 </button>
               </li>
             ))}
@@ -258,7 +258,7 @@ export function Measure({ rows, meas, onMeasure, reveal = true }: { rows: readon
       </dl>
       {meas < rows.length && (
         <button type="button" className={lg.measureBtn} onClick={onMeasure}>
-          📏 재기 — {rows[meas].label}
+          📏 재기: {rows[meas].label}
         </button>
       )}
     </div>
@@ -347,7 +347,7 @@ function Calc({ T, st, patch }: { T: SiteText; st: FlowState; patch: FlowPatch }
   return (
     <div className={lg.calc} data-ok={ok || undefined}>
       <p>{C.prompt}</p>
-      {anyFormula && !ok && <small className={lg.calcTip}>먼저 식을 스스로 세워 봐요. 막히면 칸마다 [식 보기]를 눌러요 — 본 식은 기록지에 남아요.</small>}
+      {anyFormula && !ok && <small className={lg.calcTip}>먼저 식을 스스로 세워 봐요. 막히면 칸마다 [식 보기]를 눌러요. 본 식은 기록지에 남아요.</small>}
       {C.fields.map((f, i) => {
         const r = st.calcChecked && st.calc[i] !== '' ? near(st.calc[i], f.answer, f.tol) : null;
         const [name, formula] = splitFormula(f.label);
@@ -478,13 +478,21 @@ function PrincipleCard({ T, fig }: { T: SiteText; fig: ReactNode }) {
 /* --- the panel: every step as a short manual ------------------------------------------- */
 
 type SecState = 'now' | 'done' | 'todo' | 'info';
+/**
+ * What a part asks of the student, shown the same way as the theory lessons' rail
+ * (lesson/LessonRail): 개념 (read, white) · 질문 (pick or write, amber) · 해 보기 (operate, blue) ·
+ * 결과 (what came out, green).
+ */
+type SecKind = 'read' | 'ask' | 'do' | 'result';
+const SEC_TAG: Record<SecKind, string> = { read: '개념', ask: '질문', do: '해 보기', result: '결과' };
 
-/** A numbered part of a step: what to do (title), whose turn it is, and — while it waits — why. */
-function Sec({ n, title, state, wait, children }: { n: number; title: string; state: SecState; wait?: string; children?: ReactNode }) {
+/** A numbered part of a step: what to do (title), whose turn it is, and, while it waits, why. */
+function Sec({ n, title, state, kind, wait, children }: { n: number; title: string; state: SecState; kind: SecKind; wait?: string; children?: ReactNode }) {
   return (
-    <section className={lg.sec} data-s={state}>
+    <section className={lg.sec} data-s={state} data-kind={kind}>
       <header>
         <i>{state === 'done' ? '✓' : n}</i>
+        <span className={lg.secTag}>{SEC_TAG[kind]}</span>
         <b>{title}</b>
         {state === 'now' && <em>지금 할 일</em>}
       </header>
@@ -605,20 +613,20 @@ function SiteSteps(p: SitePanelProps) {
           <div className={bodyClass}>
             {guide}
             <Roadmap parts={parts} />
-            <Sec n={1} title="상황 읽기" state="info">
+            <Sec n={1} title="상황 읽기" kind="read" state="info">
               <p className={css.story}>{T.brief}</p>
               <Boss name={p.boss} line={T.boss} />
               <Goals goals={T.goals} />
             </Sec>
-            <Sec n={2} title="작업 기준 확인" state="info">
+            <Sec n={2} title="작업 기준 확인" kind="read" state="info">
               {p.order}
               <p className={lg.note}>
                 <b>지금 작업 프로그램</b> · {p.program}
               </p>
             </Sec>
-            <Sec n={3} title="라인 가동" state="now">
+            <Sec n={3} title="라인 가동" kind="do" state="now">
               <p className={lg.secText}>
-                아래 <b>[▶ 라인 가동]</b>을 눌러요. 값은 아직 바꾸지 않아요 — 무엇이 문제인지는 다음 단계에서 찾아요.
+                아래 <b>[▶ 라인 가동]</b>을 눌러요. 값은 아직 바꾸지 않아요. 무엇이 문제인지는 다음 단계에서 찾아요.
               </p>
             </Sec>
           </div>
@@ -650,14 +658,14 @@ function SiteSteps(p: SitePanelProps) {
           <div className={bodyClass}>
             {guide}
             <Roadmap parts={parts} />
-            <Sec n={1} title="문제 장면 보기" state={parts[0].state}>
+            <Sec n={1} title="문제 장면 보기" kind="read" state={parts[0].state}>
               <p className={css.story}>{T.happened}</p>
               <p className={lg.secText}>3D 화면에서 다시 보려면 오른쪽 위 <b>[▶ 재생]</b>. 끌면 돌려 보고, 휠로 확대돼요.</p>
             </Sec>
-            <Sec n={2} title="생각해 보기" state={parts[1].state} wait="장면이 끝나면 열려요.">
+            <Sec n={2} title="생각해 보기" kind="ask" state={parts[1].state} wait="장면이 끝나면 열려요.">
               <Ask ask={T.ask} />
             </Sec>
-            <Sec n={3} title="결과 · 기록 확인" state={parts[2].state} wait="장면이 끝나면 열려요.">
+            <Sec n={3} title="결과 · 기록 확인" kind="result" state={parts[2].state} wait="장면이 끝나면 열려요.">
               {p.runResult}
             </Sec>
           </div>
@@ -685,19 +693,19 @@ function SiteSteps(p: SitePanelProps) {
           <div className={bodyClass}>
             {guide}
             <Roadmap parts={parts} />
-            <Sec n={1} title={parts[0].title} state={parts[0].state}>
+            <Sec n={1} title={parts[0].title} kind="do" state={parts[0].state}>
               <p className={lg.secText}>{T.look}</p>
               <Measure rows={p.rows} meas={st.meas} reveal={found} onMeasure={() => p.patch((x) => ({ meas: Math.min(n, x.meas + 1) }))} />
-              {measured && !found && <small className={lg.calcTip}>어느 값이 작업 기준과 맞지 않는지 직접 견줘 봐요 — 원인을 맞히면 문제 값이 빨갛게 표시돼요.</small>}
+              {measured && !found && <small className={lg.calcTip}>어느 값이 작업 기준과 맞지 않는지 직접 견줘 봐요. 원인을 맞히면 문제 값이 빨갛게 표시돼요.</small>}
               {p.measureExtra}
             </Sec>
-            <Sec n={2} title="원인 고르기" state={parts[1].state} wait={`위에서 ${n}가지를 모두 재면 열려요.`}>
+            <Sec n={2} title="원인 고르기" kind="ask" state={parts[1].state} wait={`위에서 ${n}가지를 모두 재면 열려요.`}>
               <p className={lg.secText}>
-                <b>{T.question}</b> 잰 값을 보고 골라요. 틀려도 괜찮아요 — 고를 때마다 이유를 알려 줘요.
+                <b>{T.question}</b> 잰 값을 보고 골라요. 틀려도 괜찮아요. 고를 때마다 이유를 알려 줘요.
               </p>
               <ChoicePick T={T} st={st} patch={p.patch} />
             </Sec>
-            <Sec n={3} title="설명 완성" state={parts[2].state} wait="원인을 맞히면 열려요.">
+            <Sec n={3} title="설명 완성" kind="ask" state={parts[2].state} wait="원인을 맞히면 열려요.">
               <p className={lg.secText}>빈칸마다 알맞은 말을 골라 설명을 완성해요.</p>
               <Blanks T={T} value={st.blanks} on={(blanks) => p.patch({ blanks })} />
             </Sec>
@@ -724,15 +732,15 @@ function SiteSteps(p: SitePanelProps) {
           <div className={bodyClass}>
             {guide}
             <Roadmap parts={parts} />
-            <Sec n={1} title="계산하기" state={parts[0].state}>
+            <Sec n={1} title="계산하기" kind="do" state={parts[0].state}>
               <Calc T={T} st={st} patch={p.patch} />
             </Sec>
-            <Sec n={2} title="조작반에서 값 바꾸기" state={parts[1].state} wait="계산이 맞으면 조작반이 열려요.">
+            <Sec n={2} title="조작반에서 값 바꾸기" kind="do" state={parts[1].state} wait="계산이 맞으면 조작반이 열려요.">
               <p className={lg.secText}>{T.calc.after}</p>
               {p.hmi}
               <Hints T={T} st={st} patch={p.patch} lab={p.lab} />
             </Sec>
-            <Sec n={3} title="결과 예상하기" state={parts[2].state} wait="조작반이 열리면 함께 열려요.">
+            <Sec n={3} title="결과 예상하기" kind="ask" state={parts[2].state} wait="조작반이 열리면 함께 열려요.">
               <p className={lg.secText}>가동하기 전에, 이 값이면 어떻게 될지 하나 골라요.</p>
               <Predict T={T} st={st} patch={p.patch} />
             </Sec>
@@ -760,13 +768,13 @@ function SiteSteps(p: SitePanelProps) {
           <div className={bodyClass}>
             {guide}
             <Roadmap parts={parts} />
-            <Sec n={1} title="전과 후 비교" state={parts[0].state}>
+            <Sec n={1} title="전과 후 비교" kind="result" state={parts[0].state}>
               {p.compare}
             </Sec>
-            <Sec n={2} title="내 예상 확인" state={parts[1].state} wait="가동이 끝나면 열려요.">
+            <Sec n={2} title="내 예상 확인" kind="result" state={parts[1].state} wait="가동이 끝나면 열려요.">
               <PredictionCheck T={T} st={st} hit={p.hit} patch={p.patch} />
             </Sec>
-            <Sec n={3} title={parts[2].title} state={parts[2].state} wait="가동이 끝나면 열려요.">
+            <Sec n={3} title={parts[2].title} kind="result" state={parts[2].state} wait="가동이 끝나면 열려요.">
               {p.pass ? (
                 <p className={lg.secText}>
                   모든 기준을 넘었어요. 아래 <b>[해결 확인 →]</b>으로 원리를 정리해요.
@@ -801,7 +809,7 @@ function SiteSteps(p: SitePanelProps) {
       ];
       return (
         <>
-          <Head eyebrow="해결 · 원리" title={`${T.title} — 해결했어요`} solved={p.solved} />
+          <Head eyebrow="해결 · 원리" title={`${T.title}: 해결했어요`} solved={p.solved} />
           <div className={bodyClass}>
             <div className={lg.stars}>
               {'★'.repeat(stars)}
@@ -812,14 +820,14 @@ function SiteSteps(p: SitePanelProps) {
             </div>
             {guide}
             <Roadmap parts={parts} />
-            <Sec n={1} title="원리 정리" state="info">
+            <Sec n={1} title="원리 정리" kind="read" state="info">
               <PrincipleCard T={T} fig={p.fig} />
             </Sec>
-            <Sec n={2} title={parts[1].title} state={parts[1].state}>
+            <Sec n={2} title={parts[1].title} kind="ask" state={parts[1].state}>
               <Checks T={T} st={st} patch={p.patch} />
             </Sec>
             {p.level === 'uni' && (
-              <Sec n={2} title="대학 · 더 깊이" state="info">
+              <Sec n={2} title="대학 · 더 깊이" kind="read" state="info">
                 <div className={lg.uni}>
                   <b>{T.uni.title}</b>
                   {T.uni.lines.map((l) => (
@@ -830,7 +838,7 @@ function SiteSteps(p: SitePanelProps) {
                 </div>
               </Sec>
             )}
-            <Sec n={3} title="실제 로봇으로" state="info">
+            <Sec n={3} title="실제 로봇으로" kind="read" state="info">
               <div className={lg.real}>
                 <p>{T.real}</p>
                 <p className={lg.safety}>
@@ -839,7 +847,7 @@ function SiteSteps(p: SitePanelProps) {
                 <RobotRecord lab={p.lab} problem={T.id} />
               </div>
             </Sec>
-            <Sec n={4} title="기록지 내기" state="info">
+            <Sec n={4} title="기록지 내기" kind="read" state="info">
               <p className={lg.secText}>
                 아래 <b>[실습 기록 · 인쇄]</b>로 이 현장에서 한 일을 한 장으로 인쇄하거나 PDF로 저장해요.
               </p>

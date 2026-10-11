@@ -109,7 +109,7 @@ const Place = memo(function Place({ id, view, selected, onSelect }: { id: SiteId
           onClick={() => onSelect(id)}
           onPointerEnter={() => setHover(true)}
           onPointerLeave={() => setHover(false)}
-          aria-label={`${site.name} — ${view.line}`}
+          aria-label={`${site.name}: ${view.line}`}
         >
           <i>{view.state === 'done' ? '✓' : view.state === 'locked' ? LOCK_ICON : view.tag}</i>
           <span>

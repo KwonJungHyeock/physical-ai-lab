@@ -192,10 +192,10 @@ export default function B2JointLinear({ chain, show, real, step, record, results
       {fail && <Verdict tone="bad">{fail}</Verdict>}
       <p className={css.note}>
         {step === 'A'
-          ? '각 관절이 시작 각도에서 끝 각도로 고르게 돌아요 — 그래프는 곧은 선, 펜 자취(주황)는 바깥으로 휘어요.'
+          ? '각 관절이 시작 각도에서 끝 각도로 고르게 돌아요. 그래프는 곧은 선이고, 펜 자취(주황)는 바깥으로 휘어요.'
           : step === 'B'
-            ? '점마다 펜 끝 "위치만" 맞추도록 역기구학을 풀어요 — 자취(파랑)는 곧지만, 방향은 정하지 않아 펜이 점점 기울어요.'
-            : '점마다 위치와 함께 "펜은 아래로" 라는 방향까지 맞춰요 — 자취(초록)도 곧고 펜도 끝까지 서 있어요.'}
+            ? '점마다 펜 끝 "위치만" 맞추도록 역기구학을 풀어요. 자취(파랑)는 곧지만, 방향은 정하지 않아 펜이 점점 기울어요.'
+            : '점마다 위치와 함께 "펜은 아래로" 라는 방향까지 맞춰요. 자취(초록)도 곧고 펜도 끝까지 서 있어요.'}
       </p>
       {plan && <RealButton real={real} chain={chain} angles={plan.qA} label="실물 로봇을 A 자세로" />}
     </section>

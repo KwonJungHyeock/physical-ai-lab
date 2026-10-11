@@ -69,7 +69,7 @@ export default function PartsPanel({ effector, cameraFlange, busy, onTool, mount
             className={css.toolCard}
             aria-pressed={effector === e.id}
             disabled={busy}
-            title={e.kind === 'none' ? '도구를 달지 않은 상태 (끝 플랜지만)' : `${e.name} — ${KIND[e.kind] ?? ''}${e.official ? ' (공식 구성품)' : ''}`}
+            title={e.kind === 'none' ? '도구를 달지 않은 상태 (끝 플랜지만)' : `${e.name}: ${KIND[e.kind] ?? ''}${e.official ? ' (공식 구성품)' : ''}`}
             onClick={() => onTool(e.id, cameraFlange)}
           >
             {/* eslint-disable-next-line @next/next/no-img-element -- fixed pictures, also in the static export */}

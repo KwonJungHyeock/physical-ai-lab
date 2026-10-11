@@ -381,7 +381,7 @@ class PalletSim {
     this.mode[k] = 'free';
     this.held = -1;
     this.pump = true;
-    this.fail('slip', `${k + 1}번 상자가 흡착 컵에서 떨어졌어요 (가속도 ${this.acc.toFixed(1)} m/s²) — 라인 정지`, { box: k, at: tipOf(this.chain, this.q), mm: this.acc });
+    this.fail('slip', `${k + 1}번 상자가 흡착 컵에서 떨어졌어요. 가속도는 ${this.acc.toFixed(1)} m/s²였어요 (라인 정지)`, { box: k, at: tipOf(this.chain, this.q), mm: this.acc });
   }
 
   /** The held box going below the top of a placed box under it: it presses into it (the deepest is kept). */
@@ -409,7 +409,7 @@ class PalletSim {
     const p = this.press;
     this.press = null;
     if (!p || p.mm <= PRESS_OK_MM) return true;
-    return this.fail('press', `${k + 1}번 상자가 아래 ${p.under + 1}번 상자를 ${p.mm.toFixed(0)} mm 눌러 찌그러뜨렸어요 — 라인 정지`, { box: k, at: p.at, mm: p.mm });
+    return this.fail('press', `${k + 1}번 상자가 아래 ${p.under + 1}번 상자를 ${p.mm.toFixed(0)} mm 눌러 찌그러뜨렸어요 (라인 정지)`, { box: k, at: p.at, mm: p.mm });
   }
 
   follow(traj: Trajectory): boolean {
@@ -496,7 +496,7 @@ class PalletSim {
       const moved = b.at.distanceTo(p0);
       const tilt = tiltOf(b.q);
       if (moved > CHECK.moveMm || tilt > CHECK.tiltDeg) {
-        return this.fail('moved', `팔레트 감지: ${k + 1}번 상자가 ${tilt > CHECK.tiltDeg ? `${tilt.toFixed(0)}° 기울었어요` : `${moved.toFixed(0)} mm 밀렸어요`} — 라인 정지`, {
+        return this.fail('moved', `팔레트 감지: ${k + 1}번 상자가 ${tilt > CHECK.tiltDeg ? `${tilt.toFixed(0)}° 기울었어요` : `${moved.toFixed(0)} mm 밀렸어요`} (라인 정지)`, {
           box: k,
           at: [b.at.x, b.at.y, b.at.z],
           mm: moved,

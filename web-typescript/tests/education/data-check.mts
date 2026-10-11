@@ -261,7 +261,7 @@ assert.ok(
 );
 const col = (name: string) => back[0].indexOf(name);
 assert.equal(back[2][col('값: note')], 'a, "b"\nc', 'the tricky value reads back as it was');
-assert.equal(back[2][col('손님에게 건넴 — 값')], '했어요, 바로');
+assert.equal(back[2][col('손님에게 건넴 (값)')], '했어요, 바로');
 assert.equal(back[2][col('성공')], 'O');
 assert.equal(back[1][col('작업 시간 (s)')], '2');
 assert.equal(back[1][col('학생')], 'A');

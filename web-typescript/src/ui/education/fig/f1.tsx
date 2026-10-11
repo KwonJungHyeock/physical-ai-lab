@@ -63,10 +63,10 @@ const ARM11: Pt[] = [
   [160, 205],
 ];
 export const fig11: FigureDef = {
-  label: '관절 1개면 손끝 자취가 원, 관절 2개면 세로 면, 관절 6개면 공간을 채우고 같은 점에서도 방향이 여러 개 — 자유도 1 / 2 / 6',
-  caption: '관절 수에 따른 손끝 자취 — 관절 1개 원 · 2개 면 · 6개 공간 (자유도 1 / 2 / 6)',
+  label: '관절 1개면 손끝 자취가 원, 관절 2개면 세로 면, 관절 6개면 공간을 채우고 같은 점에서도 방향이 여러 개 (자유도 1 / 2 / 6)',
+  caption: '관절 수에 따른 손끝 자취: 관절 1개 원 · 2개 면 · 6개 공간 (자유도 1 / 2 / 6)',
   symbols: [],
-  panels: p11.map((p, i) => ({ ...p, title: ['관절 1개 — 원', '관절 2개 — 면', '관절 6개 — 공간'][i] })),
+  panels: p11.map((p, i) => ({ ...p, title: ['관절 1개: 원', '관절 2개: 면', '관절 6개: 공간'][i] })),
   draw: () => {
     const [pa, pb, pc] = p11;
     // A: J1 only — the tip goes round a level circle (J1 ±168°).
@@ -203,10 +203,10 @@ const POSE_SLOTS: { t: string; c: Color }[] = [
   { t: '요', c: 'orange' },
 ];
 export const fig12: FigureDef = {
-  label: '책상 격자에서 손끝의 x·y, 높이 z 를 더한 (x, y, z), 같은 점에서 위에서 내려다본 손끝과 옆에서 본 손끝 — 정해진 숫자 2개 · 3개 · 6개',
-  caption: '손끝 포즈를 정하는 숫자 — 책상 위 (x, y) · 높이를 더한 (x, y, z) · 같은 점에서 자세만 다름 (3 + 3 = 6)',
+  label: '책상 격자에서 손끝의 x·y, 높이 z 를 더한 (x, y, z), 같은 점에서 위에서 내려다본 손끝과 옆에서 본 손끝. 정해진 숫자는 2개 · 3개 · 6개',
+  caption: '손끝 포즈를 정하는 숫자: 책상 위 (x, y) · 높이를 더한 (x, y, z) · 같은 점에서 자세만 다름 (3 + 3 = 6)',
   symbols: ['x', 'y', 'z'],
-  panels: p12.map((p, i) => ({ ...p, title: ['x·y — 책상 위 한 점', '+ z — 공간의 한 점', '위치 같음, 자세 다름'][i] })),
+  panels: p12.map((p, i) => ({ ...p, title: ['x·y: 책상 위 한 점', '+ z: 공간의 한 점', '위치 같음, 자세 다름'][i] })),
   draw: () => (
     <g>
       <Dividers panels={p12} />
@@ -403,11 +403,11 @@ function Axis3({ pr, d, len, c, dash = '14 12', off = 0 }: { pr: (v: V3) => [num
 const p13: Panel[] = [
   { x: 0, y: 0, w: 1600, h: 450, step: 'A', title: '롤 · 피치 · 요 하나씩' },
   { x: 0, y: 450, w: 800, h: 450, step: 'B', title: '같은 두 회전, 순서만 바꾸기' },
-  { x: 800, y: 450, w: 800, h: 450, step: 'C', title: '피치 90° — 롤 축 = 요 축' },
+  { x: 800, y: 450, w: 800, h: 450, step: 'C', title: '피치 90°: 롤 축 = 요 축' },
 ];
 export const fig13: FigureDef = {
   label: '그리퍼의 롤(비틀기)·피치(숙이기)·요(좌우 돌리기), 롤 90°와 피치 90°를 순서만 바꾸면 손끝이 아래와 왼쪽으로 달라짐, 피치 90°에서 롤 축과 요 축이 한 줄에 겹침',
-  caption: '회전의 순서와 짐벌락 — 롤 · 피치 · 요 하나씩, 같은 두 90° 회전을 순서만 바꾸기, 피치 90° 에서 겹친 두 축',
+  caption: '회전의 순서와 짐벌락: 롤 · 피치 · 요 하나씩, 같은 두 90° 회전을 순서만 바꾸기, 피치 90° 에서 겹친 두 축',
   symbols: [],
   panels: p13,
   draw: () => {
@@ -433,7 +433,7 @@ export const fig13: FigureDef = {
     return (
       <g>
         <Dividers panels={p13} />
-        <Title p={pa}>A 축 하나씩 (0° → 45°) — 독립 회전축 3개</Title>
+        <Title p={pa}>A 축 하나씩 (0° → 45°): 독립 회전축 3개</Title>
         {ONE.map((o, i) => {
           const x = 267 + i * 533;
           const y = 248;
@@ -512,9 +512,9 @@ export const fig13: FigureDef = {
 const p14 = cols(3);
 export const fig14: FigureDef = {
   label: '위에서 본 J1 원은 336° 호와 뒤쪽 24° 빈 부채꼴, 옆에서 본 세로 단면은 가장 멀리 339 mm 인 바깥 호와 몸통 쪽 빈 구멍, 관절 한계 100 · 70 · 40 % 에서 J1 이 도는 범위 336° · 235° · 134° 로 껍질이 잘리고 부피 116 · 80 · 34 L',
-  caption: '작업 공간 — J1 원 (뒤쪽 24° 빔) · 세로 단면 (가장 멀리 339 mm, 그리퍼 끝) · 관절 한계 100 · 70 · 40 % 의 껍질 (위에서 봄)',
+  caption: '작업 공간: J1 원 (뒤쪽 24° 빔) · 세로 단면 (가장 멀리 339 mm, 그리퍼 끝) · 관절 한계 100 · 70 · 40 % 의 껍질 (위에서 봄)',
   symbols: [],
-  panels: p14.map((p, i) => ({ ...p, title: ['J1 만 — 위에서 본 원', '세로 단면', '관절 한계 — 위에서 본 껍질'][i] })),
+  panels: p14.map((p, i) => ({ ...p, title: ['J1 만: 위에서 본 원', '세로 단면', '관절 한계: 위에서 본 껍질'][i] })),
   draw: () => {
     const [pa, pb, pc] = p14;
     // A: top view, x (앞) to the right, y (왼쪽) up.
@@ -587,7 +587,7 @@ export const fig14: FigureDef = {
         <T x={pa.x + 66} y={pa.y + 680} s={28} b c="axisY" a="start">
           y 왼쪽
         </T>
-        <Foot p={pa} sum="원 — 뒤쪽 24° 빔" sumC="blue" />
+        <Foot p={pa} sum="원 (뒤쪽 24° 빔)" sumC="blue" />
 
         {/* ── B */}
         <Title p={pb}>B 세로 단면 (옆에서 봄)</Title>

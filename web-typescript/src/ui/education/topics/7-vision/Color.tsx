@@ -158,7 +158,7 @@ export default function G2Color({ chain, show, step, record }: TopicProps) {
         <h3>세 조건의 마스크</h3>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
           {thumbs?.map((t) => (
-            <CamImage key={t.key} rgba={t.l.maskRgba} caption={`${t.title} — 덩어리 ${t.l.blobs.length}개`}>
+            <CamImage key={t.key} rgba={t.l.maskRgba} caption={`${t.title}: 덩어리 ${t.l.blobs.length}개`}>
               {t.l.blobs.map((b, i) => (
                 <Cross key={i} u={b.u} v={b.v} color={LEARN_COLORS.bad} />
               ))}

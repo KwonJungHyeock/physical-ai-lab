@@ -110,7 +110,7 @@ export default function ClassPanel({ cls, client, server, addresses, onChanged, 
   const exportCsv = () =>
     run(async () => {
       saveFile(`class-${cls.code}-${today()}.csv`, await client.exportClass(cls.id, 'csv'), 'text/csv;charset=utf-8');
-      return '기록을 CSV 파일로 받았어요 (엑셀에서 열려요). 이름은 들어가지 않아요 — 번호로 봐요.';
+      return '기록을 CSV 파일로 받았어요 (엑셀에서 열려요). 이름은 들어가지 않아요. 번호로 봐요.';
     });
 
   return (
@@ -414,7 +414,7 @@ function LiveGrid({ cls, client, roster, onError, onReset }: { cls: ClassInfo; c
                 </p>
                 {r.stuckOn.slice(0, 2).map((x) => (
                   <p key={x.object} className={css.stuck}>
-                    {placeText(x.place)} — {x.fails}번 실패
+                    {placeText(x.place)}: {x.fails}번 실패
                   </p>
                 ))}
                 {r.flags.includes('locked') && (
@@ -474,7 +474,7 @@ function StudentsTab({
             {busy ? '만드는 중…' : '계정 만들고 카드 보기'}
           </button>
           <small>
-            번호는 {next}번부터 이어서 매겨요 (한 번에 60명, 번호는 99번까지). PIN 은 만든 직후 한 번만 보여요 — 카드를 바로 인쇄해요.
+            번호는 {next}번부터 이어서 매겨요 (한 번에 60명, 번호는 99번까지). PIN 은 만든 직후 한 번만 보여요. 카드를 바로 인쇄해요.
           </small>
         </form>
       )}

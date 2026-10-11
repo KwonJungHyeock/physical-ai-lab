@@ -56,14 +56,14 @@ export default function EnvDock({ scene, kitAvailable, demoOk, onDemo, busy, mat
   return (
     <div className={css.envDock} data-panel="envdock">
       {children}
-      <button type="button" className={css.envLabel} aria-expanded={open} onClick={() => onOpen('scene')} title="실습 환경 자세히 — 환경 · 물건 · 물리">
+      <button type="button" className={css.envLabel} aria-expanded={open} onClick={() => onOpen('scene')} title="실습 환경 자세히: 환경 · 물건 · 물리">
         <b>실습 환경</b>
         <small>{open ? '닫기 ▾' : '자세히 ▴'}</small>
       </button>
       <span className={css.envList} role="group" aria-label="실습 환경 고르기">
         {SCENES.filter((s) => s.id !== 'kit' || kitAvailable).map((s) => (
           <span key={s.id} className={css.envItem}>
-            <button type="button" className={css.envChip} aria-pressed={scene === s.id} disabled={busy} onClick={() => onScene(s.id)} title={`${s.name} — ${s.note}`}>
+            <button type="button" className={css.envChip} aria-pressed={scene === s.id} disabled={busy} onClick={() => onScene(s.id)} title={`${s.name}: ${s.note}`}>
               <i data-scene={s.id} style={THUMB[s.id] ? { backgroundImage: `url(${THUMB[s.id]})` } : undefined}>
                 {s.id === 'kit' && 'AI 키트'}
               </i>

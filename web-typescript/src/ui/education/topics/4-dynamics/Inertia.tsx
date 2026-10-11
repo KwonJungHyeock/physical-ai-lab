@@ -116,7 +116,7 @@ export default function D2Inertia({ chain, show, step, record }: TopicProps) {
       labels:
         step === 'cmp'
           ? []
-          : [{ key: 'tau', mm: [tip[0], tip[1], tip[2] + 40] as Mm, text: `J1 ${fmt(Math.abs(tauNow), 2)} N·m${overNow ? ' — 한계 넘음' : ''}`, color: overNow ? LEARN_COLORS.bad : STEP_COLORS[k] }],
+          : [{ key: 'tau', mm: [tip[0], tip[1], tip[2] + 40] as Mm, text: `J1 ${fmt(Math.abs(tauNow), 2)} N·m${overNow ? ' (한계 넘음)' : ''}`, color: overNow ? LEARN_COLORS.bad : STEP_COLORS[k] }],
     });
   }, [q, step, k, tip, tauNow, overNow, path, show]);
 
@@ -139,7 +139,7 @@ export default function D2Inertia({ chain, show, step, record }: TopicProps) {
             <Readout key={key} label={`${NUM[key]} 최대 토크`} value={fmt(motions[key].peak[J], 2)} unit="N·m" tone={motions[key].over ? 'bad' : 'ok'} />
           ))}
         </div>
-        <p className={css.note}>시간을 1/3 로 줄이면 가속도는 약 9 배 — 토크도 그만큼 튀어요. 급한 사다리꼴은 출발·정지 순간 가속도가 더 커서 한계를 넘어요.</p>
+        <p className={css.note}>시간을 1/3 로 줄이면 가속도는 약 9 배가 되고, 토크도 그만큼 튀어요. 급한 사다리꼴은 출발·정지 순간 가속도가 더 커서 한계를 넘어요.</p>
       </section>
     );
   }
@@ -160,7 +160,7 @@ export default function D2Inertia({ chain, show, step, record }: TopicProps) {
       </div>
       {(done[k] || playing !== null) && (
         <>
-          {done[k] && (m.over ? <Verdict tone="bad">토크가 한계(점선)를 넘어요 — 실제 로봇이면 따라가지 못해요.</Verdict> : <Verdict tone="ok">한계 안이에요.</Verdict>)}
+          {done[k] && (m.over ? <Verdict tone="bad">토크가 한계(점선)를 넘어요. 실제 로봇이면 따라가지 못해요.</Verdict> : <Verdict tone="ok">한계 안이에요.</Verdict>)}
           <div className={css.graphs}>
             <Graph title="J1 각도" x={m.t} series={[{ label: '각도', color: LEARN_COLORS.accent, values: pick(m.q) }]} unit="°" cursor={m.t[i]} height={80} />
             <Graph title="J1 속도" x={m.t} series={[{ label: '속도', color: LEARN_COLORS.ok, values: pick(m.qd) }]} unit="°/s" cursor={m.t[i]} height={80} />
@@ -170,7 +170,7 @@ export default function D2Inertia({ chain, show, step, record }: TopicProps) {
       )}
       <p className={css.note}>
         {k === 'A'
-          ? '팔을 옆으로 뻗은 채 J1 로 120° 돌려요. J1 은 세로축이라 중력 토크가 0 — 느리면 토크도 거의 0 이에요. (J2 는 팔 무게를 버티느라 늘 비슷한 토크를 써요.)'
+          ? '팔을 옆으로 뻗은 채 J1 로 120° 돌려요. J1 은 세로축이라 중력 토크가 0 이에요. 그래서 느리면 토크도 거의 0 이에요. (J2 는 팔 무게를 버티느라 늘 비슷한 토크를 써요.)'
           : k === 'B'
             ? '같은 길을 약 3 배 빨리. 출발할 때 밀고(+), 설 때 잡아요(−).'
             : '같은 0.8 초지만 가속을 짧게 몰아서 해요. 출발·정지 순간 가속도가 더 커요.'}

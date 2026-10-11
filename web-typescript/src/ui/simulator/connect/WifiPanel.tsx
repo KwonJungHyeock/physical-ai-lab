@@ -137,7 +137,7 @@ export default function WifiPanel({ onFind }: { onFind(): void }) {
           <li>
             20초쯤 뒤 [로봇 찾기] 를 눌러요. 새 네트워크에서는 <b>로봇 ID 가 바뀌어요</b> (주소 끝 숫자).
           </li>
-          <li>1분이 지나도 안 보이면 연결에 실패한 거예요. 로봇은 원래 연결로 돌아가요 — PC 도 원래 Wi-Fi 로 돌아와 다시 해 봐요.</li>
+          <li>1분이 지나도 안 보이면 연결에 실패한 거예요. 로봇은 원래 연결로 돌아가요. PC 도 원래 Wi-Fi 로 돌아와 다시 해 봐요.</li>
         </ol>
         <button type="button" className={css.connectGo} onClick={onFind}>
           <Icon name="search" size={18} />
@@ -189,7 +189,7 @@ export default function WifiPanel({ onFind }: { onFind(): void }) {
         {nets.length === 0 && <li className={css.wifiEmpty}>{scanning
               ? '주변 Wi-Fi 를 찾는 중…'
               : status?.mode === 'hotspot'
-                ? '핫스팟이 켜져 있는 동안에는 주변 Wi-Fi 가 안 보여요. 괜찮아요 — 아래에 Wi-Fi 이름과 비밀번호만 넣으면 연결돼요.'
+                ? '핫스팟이 켜져 있는 동안에는 주변 Wi-Fi 가 안 보여요. 괜찮아요. 아래에 Wi-Fi 이름과 비밀번호만 넣으면 연결돼요.'
                 : '보이는 Wi-Fi 가 없어요. 아래에 Wi-Fi 이름과 비밀번호를 직접 넣으면 돼요.'}</li>}
         {nets.map((n) => (
           <li key={n.ssid}>

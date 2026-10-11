@@ -41,8 +41,8 @@ export default function RobotStatus({ robotMode, live: store, lights, reason, bu
   const robot = useLive(store, (v) => v.robot);
   const live = robotMode && !!robot?.connected && robot.age !== null && robot.age < 2;
   const text: Record<keyof Lights, string> = {
-    sim: lights.sim ? '켜짐 — 화면 속 로봇으로 해요' : '꺼짐 — 실제 로봇과 함께 움직여요',
-    robot: lights.robot ? `${robot?.demo ? '데모 ' : ''}로봇 ${robot?.robotId ?? ''} 연결됨` : '안 됨 — [로봇 연결] 로 붙일 수 있어요',
+    sim: lights.sim ? '켜짐 (화면 속 로봇으로 해요)' : '꺼짐 (실제 로봇과 함께 움직여요)',
+    robot: lights.robot ? `${robot?.demo ? '데모 ' : ''}로봇 ${robot?.robotId ?? ''} 연결됨` : '안 됨 ([로봇 연결] 로 붙일 수 있어요)',
     running: lights.running ? '움직이는 중' : '쉬는 중',
     error: lights.error ? reason : '없음',
   };
@@ -60,7 +60,7 @@ export default function RobotStatus({ robotMode, live: store, lights, reason, bu
           <li className={css.statusRow} data-on data-tone={robot?.released ? 'warn' : 'servo'}>
             <i />
             <b>서보</b>
-            <span>{robot?.released ? '풀림 — 손으로 움직일 수 있어요' : '켜짐 — 팔이 자세를 지켜요'}</span>
+            <span>{robot?.released ? '풀림 (손으로 움직일 수 있어요)' : '켜짐 (팔이 자세를 지켜요)'}</span>
           </li>
         )}
       </ul>

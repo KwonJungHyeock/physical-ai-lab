@@ -4,7 +4,8 @@
 
 .lab {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(400px, 33vw, 600px);
+  /* The panel on the left and the 3D cell on the right, as the theory lessons (lesson/LessonRail). */
+  grid-template-columns: clamp(400px, 32vw, 560px) minmax(0, 1fr);
   grid-template-rows: 48px minmax(0, 1fr);
   gap: 10px;
   /* Below the floating top bar on a PC window (--top, set by the console), as the lessons. */
@@ -855,4 +856,22 @@
 .log li[data-kind='grip'] {
   color: #1f7a45;
   font-weight: 700;
+}
+
+/* Panel left, 3D right (the same order as the lesson screens). */
+.lab > .panel {
+  grid-column: 1;
+  grid-row: 2;
+}
+.lab > .stage {
+  grid-column: 2;
+  grid-row: 2;
+}
+/* The panel reads like the lesson rail: a soft grey ground, white head and foot. */
+.lab > .panel {
+  background: #f4f6fa;
+}
+.lab > .panel > .head,
+.lab > .panel > .foot {
+  background: #fff;
 }

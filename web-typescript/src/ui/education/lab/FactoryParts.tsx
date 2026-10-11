@@ -256,7 +256,7 @@ export function Fix1({ chain, v1, onV1 }: { chain: readonly ChainSegment[]; v1: 
         {j('j2', 'J2')}
         {j('j3', 'J3')}
         <p className={css.cap} data-bad={!live.j4Ok || undefined}>
-          자동 · J4 {live.q[3].toFixed(1)}° · J5 0° · J6 {live.q[5].toFixed(1)}°{!live.j4Ok ? ` — J4가 범위(${jointMin()[3]}° ~ ${jointMax()[3]}°)를 넘어요` : ' (컵이 늘 아래를 봐요)'}
+          자동 · J4 {live.q[3].toFixed(1)}° · J5 0° · J6 {live.q[5].toFixed(1)}°{!live.j4Ok ? `. J4가 범위(${jointMin()[3]}° ~ ${jointMax()[3]}°)를 넘어요` : ' (컵이 늘 아래를 봐요)'}
         </p>
         <div className={css.rowBtns}>
           <button type="button" className={css.small} onClick={() => onV1(P1_DEFAULT)}>

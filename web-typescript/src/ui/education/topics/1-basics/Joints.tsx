@@ -152,7 +152,7 @@ export default function A1Joints({ chain, show, step, record }: TopicProps) {
   return (
     <section className={css.card}>
       <h3>
-        관절 {JOINTS[k].length}개 — 자유도 {JOINTS[k].length}
+        관절 {JOINTS[k].length}개 · 자유도 {JOINTS[k].length}
       </h3>
       <JointSliders angles={q} onChange={move} joints={JOINTS[k]} disabled={anim.running} />
       <div className={css.btnRow}>

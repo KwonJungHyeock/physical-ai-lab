@@ -157,7 +157,7 @@ def catch_plan(belt_mm_s, wait_y, down_s):
     belt_mm_s : 벨트 속도, mm/s
     wait_y    : 팔이 기다리는 자리 y, mm
     down_s    : 대기 자리에서 상자 윗면까지 내려가는 시간, s
-    돌려줄 값 : (출발 지연 s, 상자 간격 s)  — 지연이 음수면 팔이 늦어요
+    돌려줄 값 : (출발 지연 s, 상자 간격 s). 지연이 음수면 팔이 늦어요
     """
     # TODO
     ...
@@ -365,8 +365,8 @@ def tilt_deg(rx, ry, rz):
 def fit_j1_error(radii, misses):
     """여러 칸의 빗나감으로 J1 영점 오차를 구해요.
 
-    radii    : 칸마다 몸통(J1 축)에서의 거리, mm  — 리스트
-    misses   : 칸마다 빗나간 거리, mm           — 리스트 (같은 순서)
+    radii    : 칸마다 몸통(J1 축)에서의 거리, mm (리스트)
+    misses   : 칸마다 빗나간 거리, mm (리스트, 같은 순서)
     돌려줄 값: δθ, °
     """
     # TODO
@@ -555,7 +555,7 @@ const CAFE: Record<SiteProblem, PyTask> = {
     prob: 1,
     title: '사다리꼴 속도로 옮기는 시간',
     statement: [
-      '컵은 가속 → 일정 속도 → 감속(사다리꼴)으로 옮겨요. 가속도를 낮추면 커피는 안 넘치지만 시간이 늘어요 — 얼마나 늘까요?',
+      '컵은 가속 → 일정 속도 → 감속(사다리꼴)으로 옮겨요. 가속도를 낮추면 커피는 안 넘치지만 시간이 늘어요. 얼마나 늘까요?',
       '거리 D, 최고 속도 v, 가속도 a로 걸리는 시간을 돌려주세요. 가속 · 감속만으로 D를 다 가면(v²/a ≥ D) 최고 속도에 닿지 못하는 삼각형이에요.',
     ],
     fn: 'carry_time',
@@ -567,7 +567,7 @@ def carry_time(dist_mm, vmax_mm_s, acc_m_s2):
 
     dist_mm   : 옮기는 거리, mm
     vmax_mm_s : 최고 속도, mm/s
-    acc_m_s2  : 가속도(= 감속도), m/s²  — mm/s²로 바꿔 써요
+    acc_m_s2  : 가속도(= 감속도), m/s². mm/s²로 바꿔 써요
     돌려줄 값 : 걸리는 시간, s
     """
     # TODO
@@ -687,7 +687,7 @@ const AI: Record<SiteProblem, PyTask> = {
     green_lo  : 초록 범위의 아래 끝 H
     돌려줄 값 : "yellow", "red", "green", "blue", "cyan" 중 하나, 없으면 None
     """
-    ranges = [   # (이름, (H, S, V) 아래 끝, (H, S, V) 위 끝) — 이 순서로 검사해요
+    ranges = [   # (이름, (H, S, V) 아래 끝, (H, S, V) 위 끝), 이 순서로 검사해요
 ${RANGE_TABLE}
     ]
     # TODO
@@ -706,7 +706,7 @@ ${RANGE_TABLE}
     title: '가까운 시연일수록 크게 섞기',
     statement: [
       '시연 10개를 섞을 때 블록 자리 (x, y)에서 각 시연까지 거리 d로 가중치 w = 1 ÷ dᵖ를 주고, 합이 1이 되게 나눠요.',
-      '시연 자리들을 이 가중치로 섞은 (x, y)를 돌려주세요 — 손끝 좌표(작업 공간)에서 섞기. 화면의 [섞기]는 관절 각도를 섞어 결과가 조금 달라요.',
+      '시연 자리들을 이 가중치로 섞은 (x, y)를 돌려주세요. 손끝 좌표(작업 공간)에서 섞어요. 화면의 [섞기]는 관절 각도를 섞어 결과가 조금 달라요.',
     ],
     fn: 'blend_xy',
     starter: `import math
@@ -869,8 +869,8 @@ ${SIZE_TABLE}
 def pick_order(kinds, areas):
     """집는 순서를 조각 번호 리스트로 돌려줘요.
 
-    kinds    : 조각마다 종류 ("can", "clear", "color", "pack") — 리스트
-    areas    : 조각마다 사진에서 보이는 넓이, mm² — 리스트 (같은 순서)
+    kinds    : 조각마다 종류 ("can", "clear", "color", "pack") (리스트)
+    areas    : 조각마다 사진에서 보이는 넓이, mm² (리스트, 같은 순서)
     돌려줄 값: 조각 번호(0부터)를 집는 순서대로 담은 리스트
     """
     # TODO: sorted(..., key=...) 를 쓰면 편해요.
@@ -916,7 +916,7 @@ export function checkCall(c: PyCase, call: GradeCall): CaseVerdict {
   const v = call.value ?? null;
   const got = fmtValue(v);
   const e = c.expected;
-  if (v === null && e !== null) return { ok: false, got, why: '값을 돌려주지 않았어요 — return 을 빠뜨렸나요?' };
+  if (v === null && e !== null) return { ok: false, got, why: '값을 돌려주지 않았어요. return 을 빠뜨렸나요?' };
   if (e === null) return { ok: v === null, got, why: v === null ? undefined : '해당하는 것이 없으면 None 을 돌려줘요.' };
   if (typeof e === 'string') return { ok: v === e, got, why: typeof v === 'string' ? undefined : '글자(문자열)를 돌려줘요.' };
   if (typeof e === 'number') {

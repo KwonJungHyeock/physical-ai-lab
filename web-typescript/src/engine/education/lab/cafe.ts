@@ -266,7 +266,7 @@ class CafeSim {
       const c = poseContact(this.chain, this.q, [], TOOL_MM);
       if (c) {
         this.step(tr.durationS / steps);
-        return this.fail('hit', `J${c.joint} 쪽이 ${c.what}에 닿았어요 — 작업 중지`, { at: c.at as Mm });
+        return this.fail('hit', `J${c.joint} 쪽이 ${c.what}에 닿았어요 (작업 중지)`, { at: c.at as Mm });
       }
       this.step(tr.durationS / steps);
     }
@@ -288,7 +288,7 @@ class CafeSim {
   }
 }
 
-const reach = (sim: CafeSim, what: string, p: Mm) => sim.fail('unreachable', `${what} (${p[0].toFixed(0)}, ${p[1].toFixed(0)}, ${p[2].toFixed(0)})에 손이 닿지 않아요 — 작업 중지`, { at: p });
+const reach = (sim: CafeSim, what: string, p: Mm) => sim.fail('unreachable', `${what} (${p[0].toFixed(0)}, ${p[1].toFixed(0)}, ${p[2].toFixed(0)})에 손이 닿지 않아요 (작업 중지)`, { at: p });
 
 /** Down to the drink, close, lift to carry height. */
 function pickUp(sim: CafeSim, at: readonly number[], what: string, obj: string): boolean {
@@ -378,7 +378,7 @@ function carry(sim: CafeSim, vmax: number, accMs2: number, guard?: GuardValues):
     sim.maxSlope = Math.max(sim.maxSlope, slope);
     if (!guard && slope > SPILL_SLOPE && sim.left === 1) {
       sim.left = 0.7;
-      sim.fail('spill', `커피가 넘쳤어요 — 가속도 ${Math.abs(aMs2).toFixed(1)} m/s²에 수면이 ${(slope * 100).toFixed(0)}% 기울었어요 (넘치는 기울기 ${(SPILL_SLOPE * 100).toFixed(0)}%)`, { at: [p[0], p[1], p[2] - GRIP_Z + CUP.h], value: Math.abs(aMs2) });
+      sim.fail('spill', `커피가 넘쳤어요. 가속도 ${Math.abs(aMs2).toFixed(1)} m/s²에 수면이 ${(slope * 100).toFixed(0)}% 기울었어요 (넘치는 기울기 ${(SPILL_SLOPE * 100).toFixed(0)}%)`, { at: [p[0], p[1], p[2] - GRIP_Z + CUP.h], value: Math.abs(aMs2) });
     }
     // ②: the customer's hand, the counter sensor and the arm's braking.
     if (guard) {
@@ -389,13 +389,13 @@ function carry(sim: CafeSim, vmax: number, accMs2: number, guard?: GuardValues):
         const gapMm = p[1] - CUP.d / 2 - y;
         if (detectAt < 0 && gapMm <= guard.detect) {
           detectAt = sim.t;
-          sim.log('detect', `센서가 손을 감지했어요 — 컵과 손 사이 ${gapMm.toFixed(0)} mm, 로봇 속도 ${v.toFixed(0)} mm/s`, { at: [p[0], p[1] - CUP.d / 2, p[2]], value: gapMm });
+          sim.log('detect', `센서가 손을 감지했어요 (컵과 손 사이 ${gapMm.toFixed(0)} mm, 로봇 속도 ${v.toFixed(0)} mm/s)`, { at: [p[0], p[1] - CUP.d / 2, p[2]], value: gapMm });
         }
         if (detectAt >= 0 && !stopping && sim.t >= detectAt + (guard.react ?? HAND.react)) stopping = true;
         if (gapMm <= 0) {
           if (v > 1) {
             sim.step(DT);
-            sim.fail('touch', `움직이는 컵이 손님 손에 부딪혔어요 (${v.toFixed(0)} mm/s) — 작업 중지`, { at: [p[0], p[1] - CUP.d / 2, p[2]], value: v });
+            sim.fail('touch', `움직이는 컵이 손님 손에 ${v.toFixed(0)} mm/s로 부딪혔어요 (작업 중지)`, { at: [p[0], p[1] - CUP.d / 2, p[2]], value: v });
             return { T: sim.t - t0, halted: false };
           }
           sim.step(DT);
@@ -456,7 +456,7 @@ export function runGuard(chain: readonly ChainSegment[], v: GuardValues): CafeRu
     else if (halted && sim.hand) {
       const tip = toolAt(chain, sim.q);
       stopGap = tip[1] - CUP.d / 2 - sim.hand[1];
-      sim.log('stop', `손 앞에서 멈췄어요 — 컵과 손 사이 ${stopGap.toFixed(0)} mm`, { at: [tip[0], tip[1] - CUP.d / 2, tip[2]], value: stopGap });
+      sim.log('stop', `손 앞에서 멈췄어요 (컵과 손 사이 ${stopGap.toFixed(0)} mm)`, { at: [tip[0], tip[1] - CUP.d / 2, tip[2]], value: stopGap });
       // The customer takes the cup from the gripper.
       const hand = sim.hand;
       const target = tip[1] - CUP.d / 2;
@@ -543,7 +543,7 @@ export function runTurn(chain: readonly ChainSegment[], v: TurnValues): CafeRun 
       peakSpeed = need.speed;
       // The controller checks the turn before it starts: faster than J1 can go, it does not turn.
       const steps = need.speed > J1_MAX_SPEED + 1e-9 ? 0 : Math.ceil(v.time / DT);
-      if (!steps) sim.fail('overspeed', `J1이 따라갈 수 없는 빠르기 — 이 돌기는 최고 ${need.speed.toFixed(0)}°/s가 필요한데 서보는 ${J1_MAX_SPEED}°/s까지예요 — 작업 중지`, { at: toolAt(chain, sim.q), value: need.speed });
+      if (!steps) sim.fail('overspeed', `J1이 따라갈 수 없는 빠르기: 이 돌기는 최고 ${need.speed.toFixed(0)}°/s가 필요한데 서보는 ${J1_MAX_SPEED}°/s까지예요 (작업 중지)`, { at: toolAt(chain, sim.q), value: need.speed });
       for (let k = 1; k <= steps; k += 1) {
         const t = (k / steps) * v.time;
         const m = quintic(P.a[0], dq, v.time, t);
@@ -552,7 +552,7 @@ export function runTurn(chain: readonly ChainSegment[], v: TurnValues): CafeRun 
         sim.maxTau = Math.max(sim.maxTau, sim.tau);
         if (sim.tau > limit) {
           sim.step(v.time / steps);
-          sim.fail('overload', `J1 과부하 — 이 돌기에는 최대 ${need.tau.toFixed(3)} N·m가 필요한데 돌봄 모드 제한은 ${limit.toFixed(2)} N·m예요. 제한을 넘어 멈췄어요 — 작업 중지`, { at: toolAt(chain, sim.q), value: need.tau });
+          sim.fail('overload', `J1 과부하: 이 돌기에는 최대 ${need.tau.toFixed(3)} N·m가 필요한데 돌봄 모드 제한은 ${limit.toFixed(2)} N·m예요. 제한을 넘어 멈췄어요 (작업 중지)`, { at: toolAt(chain, sim.q), value: need.tau });
           break;
         }
         sim.step(v.time / steps);
@@ -615,7 +615,7 @@ export const CARRY_MAX_S = 2.5;
 /** ②: the cup must stop at least this far from the hand, mm. */
 export const STOP_MARGIN_MM = 20;
 
-const strip = (s: string) => s.replace(/ — 작업 중지$/, '');
+const strip = (s: string) => s.replace(/ \(작업 중지\)$/, '');
 
 export function scoreCafe(p: CafeProblem, run: CafeRun): CafeScore {
   const f = run.failure;

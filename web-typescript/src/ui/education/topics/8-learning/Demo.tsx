@@ -366,7 +366,7 @@ export default function G4Demo({ chain, show, onPick, step, record }: TopicProps
       {msg && <p className={css.warnNote}>{msg}</p>}
       {o && (
         <Verdict tone={o.hit ? 'ok' : 'bad'}>
-          {o.hit ? `블록을 집었어요 (컵 중심이 ${fmt(o.dist)} mm 차이).` : `허공을 집었어요 — 블록에서 ${fmt(o.dist, 0)} mm 빗나감.`}
+          {o.hit ? `블록을 집었어요 (컵 중심이 ${fmt(o.dist)} mm 차이).` : `허공을 집었어요. 블록에서 ${fmt(o.dist, 0)} mm 빗나갔어요.`}
         </Verdict>
       )}
       <p className={css.note}>

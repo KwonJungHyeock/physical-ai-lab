@@ -99,8 +99,8 @@ export function TaskChip({ mode, practice, level, theme, progress, busy, world, 
         data-cat={mode === 'check' && practice.check ? 'check' : catOf(practice.id)}
         disabled={busy}
         onClick={onGallery}
-        title={`${LEVEL_TAB[level].name} 과제 · ${categoryOf(practice.id)} — 누르면 라이브러리에서 다른 과제 고르기`}
-        aria-label={`${LEVEL_TAB[level].name} 과제: ${practice.title} — 라이브러리 열기`}
+        title={`${LEVEL_TAB[level].name} 과제 · ${categoryOf(practice.id)} (누르면 라이브러리에서 다른 과제 고르기)`}
+        aria-label={`${LEVEL_TAB[level].name} 과제: ${practice.title} (라이브러리 열기)`}
       >
         <span className={css.taskGlyph}>
           <TaskIcon id={practice.id} size={20} />
@@ -122,7 +122,7 @@ export function TaskChip({ mode, practice, level, theme, progress, busy, world, 
                 className={state === 2 ? css.chipRobot : state === 1 ? css.chipSim : undefined}
                 aria-current={practice.check === c.check ? 'true' : undefined}
                 disabled={busy}
-                title={`검수 ${c.check} · ${c.title} — ${c.spec}`}
+                title={`검수 ${c.check} · ${c.title}: ${c.spec}`}
                 onClick={() => {
                   const w = openCheck(c.check, level, theme);
                   if (w) onOpen(w);

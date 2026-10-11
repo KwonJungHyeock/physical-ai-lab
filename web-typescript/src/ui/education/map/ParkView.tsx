@@ -339,7 +339,7 @@ function SiteCard({ id, progress, allOpen, state, onTopic, onLab, onData, onClos
         ) : s.content === 'data' ? (
           <>모든 현장의 실습 기록이 여기로 모여요</>
         ) : !sc ? (
-          <>준비 중 — 이 현장의 문제는 곧 열려요</>
+          <>준비 중이에요. 이 현장의 문제는 곧 열려요</>
         ) : state === 'done' ? (
           <>✓ 완료 · {sc.of}개 모두 해결</>
         ) : (
@@ -348,11 +348,11 @@ function SiteCard({ id, progress, allOpen, state, onTopic, onLab, onData, onClos
           </>
         )}
       </div>
-      {s.content !== 'data' && <h3>{s.content === 'lessons' ? `${unit}단원 ${unitName(unit)}의 차시` : '이 현장의 문제 — 차시를 누르면 그 이론으로 가요'}</h3>}
+      {s.content !== 'data' && <h3>{s.content === 'lessons' ? `${unit}단원 ${unitName(unit)}의 차시` : '이 현장의 문제 (차시를 누르면 그 이론으로 가요)'}</h3>}
       {s.content === 'data' ? (
         <ul className={css.dataList}>
           <li>현장별 성공률 · 작업 시간 비교, 병목 찾기</li>
-          <li>바꾼 값과 결과의 관계 — 산점도와 회귀선</li>
+          <li>바꾼 값과 결과의 관계: 산점도와 회귀선</li>
           <li>시뮬레이션 ↔ 실제 로봇 오차 (디지털 트윈)</li>
         </ul>
       ) : (
@@ -369,7 +369,7 @@ function SiteCard({ id, progress, allOpen, state, onTopic, onLab, onData, onClos
               {r.needs.length > 0 && (
                 <span className={css.tags}>
                   {r.needs.map((t) => (
-                    <button key={t} type="button" data-missing={r.missing.includes(t) || undefined} onClick={() => onTopic(t)} title={`${topicName(t)} — 이론 차시 열기`}>
+                    <button key={t} type="button" data-missing={r.missing.includes(t) || undefined} onClick={() => onTopic(t)} title={`${topicName(t)}: 이론 차시 열기`}>
                       {r.missing.includes(t) ? '먼저 ' : '배운 '}
                       {topicName(t)} →
                     </button>

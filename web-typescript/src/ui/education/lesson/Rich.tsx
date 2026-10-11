@@ -142,7 +142,7 @@ export function SymWord({ sym, gloss }: { sym: string; gloss?: boolean }) {
 export function Sym({ s, name = true }: { s: string; name?: boolean }) {
   const d = useContext(Symbols).find((x) => x.sym === s);
   return (
-    <span className={css.symLabel} title={d ? `${d.name}${d.meaning ? ` — ${d.meaning}` : ''} (단위: ${d.unit})` : undefined}>
+    <span className={css.symLabel} title={d ? `${d.name}${d.meaning ? `: ${d.meaning}` : ''} (단위: ${d.unit})` : undefined}>
       <SymGlyph sym={s} />
       {name && d && <small>{d.name}</small>}
     </span>
@@ -175,7 +175,7 @@ export function SymbolTable({ symbols }: { symbols: readonly Sym[] }) {
               <td>{s.read}</td>
               <td>
                 <b>{s.name}</b>
-                {s.meaning && <span> — {s.meaning}</span>}
+                {s.meaning && <span>: {s.meaning}</span>}
               </td>
               <td>{s.unit}</td>
             </tr>

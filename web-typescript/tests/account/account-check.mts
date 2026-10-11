@@ -505,4 +505,24 @@ const mk = (i: number) => A.events.pageOpened('1-1', i, { now: () => T0, uuid: (
   console.log('  ✓ progress per student on a shared PC (profiles swap, settings stay)');
 }
 
+{
+  // Handing the login over to a robot's page (session.ts).
+  const s = {
+    role: 'teacher',
+    token: 't'.repeat(43),
+    baseUrl: 'http://192.168.0.10:47290',
+    expiresAt: Date.now() + 3600_000,
+    user: { id: 'u1', username: '김선생', role: 'teacher' },
+  } as unknown as Parameters<typeof A.sessionHandoff>[0];
+  const h = A.sessionHandoff(s);
+  const hash = `#${h}&carry=abc`;
+  const back = A.readHandoff(hash, Date.now());
+  assert.ok(back && back.token === s.token && back.baseUrl === s.baseUrl, 'the login comes through');
+  assert.equal(A.withoutHandoff(hash), '#carry=abc', 'the rest of the fragment stays');
+  assert.equal(A.readHandoff('#carry=abc', Date.now()), null);
+  assert.equal(A.readHandoff('#class=%%%', Date.now()), null, 'garbage is ignored');
+  assert.equal(A.readHandoff(hash, Date.now() + 7200_000), null, 'an expired login is not taken');
+  console.log('  ✓ login handed over to a robot page in the fragment, checked, then removed');
+}
+
 console.log('account check: ok');

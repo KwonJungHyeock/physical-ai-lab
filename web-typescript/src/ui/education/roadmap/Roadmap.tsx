@@ -199,7 +199,7 @@ export default function Roadmap({ done, cover, now, replay, onStop }: Props) {
                   data-sim={real ? undefined : true}
                   tabIndex={0}
                   role="button"
-                  aria-label={`${c.id}단원 ${c.title}${fin ? ' (마침)' : here ? ' (지금 여기)' : ''}${real ? '' : ' · 시뮬레이터로'} — 단원 카드로 가기`}
+                  aria-label={`${c.id}단원 ${c.title}${fin ? ' (마침)' : here ? ' (지금 여기)' : ''}${real ? '' : ' · 시뮬레이터로'}: 단원 카드로 가기`}
                   onClick={() => onStop(c.id)}
                   onKeyDown={(e) => key(e, c.id)}
                 >
@@ -233,7 +233,7 @@ export default function Roadmap({ done, cover, now, replay, onStop }: Props) {
             );
           })}
           <g transform={`translate(${CAP[0]} ${CAP[1]})`}>
-            <g className={css.st} tabIndex={0} role="button" aria-label="캡스톤 8-2 보고 판단해 집어 놓기 — 8단원 카드로 가기" onClick={() => onStop('8')} onKeyDown={(e) => key(e, '8')}>
+            <g className={css.st} tabIndex={0} role="button" aria-label="캡스톤 8-2 보고 판단해 집어 놓기: 8단원 카드로 가기" onClick={() => onStop('8')} onKeyDown={(e) => key(e, '8')}>
               <g className={css.pop} style={{ animationDelay: `${0.5 + 8 * 0.13}s` }}>
                 <g className={css.shine}>
                   <path d="M0 -50 L4 -40 L0 -30 L-4 -40 Z M50 0 L40 4 L30 0 L40 -4 Z M0 50 L-4 40 L0 30 L4 40 Z M-50 0 L-40 -4 L-30 0 L-40 4 Z" fill="#f5b82e" opacity="0.7" />

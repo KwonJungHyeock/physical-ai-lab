@@ -308,7 +308,7 @@ export default function F1MassFriction({ chain, show, step, record }: TopicProps
           <Graph title="밀린 거리" x={r.trace.map((_, i) => (i + 1) * DT)} series={[{ label: KINDS[k].name, color: STEP_COLORS[k], values: r.trace }]} unit="mm" cursor={PUSH_S} height={90} />
           <Verdict tone={k === 'B' ? 'warn' : 'ok'}>
             {k === 'A'
-              ? `밀 때 팔 속도 ${fmt(r.armMmS, 0)} mm/s — 가볍게 밀려 ${fmt(r.movedMm, 0)} mm 갔어요.`
+              ? `밀 때 팔 속도 ${fmt(r.armMmS, 0)} mm/s 예요. 가볍게 밀려 ${fmt(r.movedMm, 0)} mm 갔어요.`
               : k === 'B'
                 ? `힘이 ${fmt(F / pushForce('A'), 0)} 배 들어 팔이 ${fmt(r.armMmS, 0)} mm/s 로 느려졌어요. 팔이 서자 블록도 바로 섰어요.`
                 : `마찰이 작아 팔이 멈춘 뒤에도 ${fmt(r.stopS, 2)} 초 더 미끄러졌어요.`}

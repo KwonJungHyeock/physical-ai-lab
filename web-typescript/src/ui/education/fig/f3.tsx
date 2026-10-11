@@ -114,7 +114,7 @@ function Robot31({ arm, ghost }: { arm: { pts: Pt[]; base: Pt; floor: number }; 
 const p31 = cols(3);
 export const fig31: FigureDef = {
   label: '관절 하나만 30°/s 로 돌 때 손끝 속도 화살표(축에서 멀수록 김), J2·J3 몫을 더해 앞으로 40 mm/s, 팔을 쭉 펴면 앞쪽 화살표가 없어 관절 속도가 한계 200°/s 에 걸림',
-  caption: '관절 속도에서 손끝 속도로 — 관절 하나의 화살표 (30°/s) · 두 관절을 섞어 앞으로 40 mm/s · 팔을 쭉 편 특이점 (관절 한계 200°/s)',
+  caption: '관절 속도에서 손끝 속도로: 관절 하나의 화살표 (30°/s) · 두 관절을 섞어 앞으로 40 mm/s · 팔을 쭉 편 특이점 (관절 한계 200°/s)',
   symbols: ['v', 'r', 'ω'],
   panels: p31.map((p, i) => ({ ...p, title: ['관절 하나', '섞어서 한 방향', '특이점 근처'][i] })),
   draw: () => {
@@ -232,7 +232,7 @@ export const fig31: FigureDef = {
         </T>
 
         {/* C */}
-        <Title p={pc}>C 쭉 편 자세 — 특이점</Title>
+        <Title p={pc}>C 쭉 편 자세: 특이점</Title>
         <ellipse cx={tipC[0]} cy={tipC[1]} rx={10} ry={96} fill="none" stroke={C.orange} strokeWidth={4} />
         <T x={tipC[0] - 22} y={tipC[1] + 96} a="end" s={28} c="orange" b>
           납작하다
@@ -310,7 +310,7 @@ function Tray({ cx, y, block, c }: { cx: number; y: number; block: 'fall' | 'sli
 const p32 = cols(3, 0, 830);
 export const fig32: FigureDef = {
   label: '같은 220 mm 를 위치만(0.12 s, 떨어짐) · 일정 속도(0.79 s, 약 9 mm 밀림) · 가속도 제한(0.83 s, 그대로)으로 옮길 때 판의 속도 그래프와 블록',
-  caption: '판 위 블록을 220 mm 옮기는 세 시간 계획 — 위치만 0.12 s · 일정 속도 0.79 s · 가속도 제한 0.83 s (미끄러지는 경계 μg ≈ 4.9 m/s²)',
+  caption: '판 위 블록을 220 mm 옮기는 세 시간 계획: 위치만 0.12 s · 일정 속도 0.79 s · 가속도 제한 0.83 s (미끄러지는 경계 μg ≈ 4.9 m/s²)',
   symbols: ['μ', 'g'],
   panels: p32.map((p, i) => ({ ...p, title: ['위치만', '일정 속도', '가속도 제한'][i] })),
   draw: () => {
@@ -430,7 +430,7 @@ const Bolt = ({ x, y, an }: { x: number; y: number; an?: number }) => (
 const p33 = cols(3);
 export const fig33: FigureDef = {
   label: '80 × 140 mm 네모의 경유점 1~4 를 멈추며(3.9 s) · 꺾어서(3.2 s, 가속도 12.7 m/s²) · 둥글게(3.0 s, 1.1 m/s², 8.3 mm 비켜 감) 지날 때 길과 속도·가속도 그래프',
-  caption: '네모 길의 경유점 잇기 — 점마다 멈춤 3.9 s · 꺾어 가기 3.2 s (가속도 12.7 m/s²) · 둥글기 20 mm 로 잇기 3.0 s (1.1 m/s², 8.3 mm 비켜 감)',
+  caption: '네모 길의 경유점 잇기: 점마다 멈춤 3.9 s · 꺾어 가기 3.2 s (가속도 12.7 m/s²) · 둥글기 20 mm 로 잇기 3.0 s (1.1 m/s², 8.3 mm 비켜 감)',
   symbols: [],
   panels: p33.map((p, i) => ({ ...p, title: ['점마다 멈춤', '꺾어 가기', '둥글게 잇기'][i] })),
   draw: () => (
@@ -561,7 +561,7 @@ const TRACE = (() => {
 const p34 = cols(3);
 export const fig34: FigureDef = {
   label: 'J1 90° · J3 60° · J2 30° 를 따로(관절마다 다른 때 멈춤, 1.30 s, 꺾인 자취) · 모두 2 s(2.00 s, 매끄러움) · J1 에 맞춰(1.30 s, 매끄러움) 돌릴 때 관절 각 그래프와 손끝 자취',
-  caption: '관절 동기화 — 따로 (관절마다 다른 때 멈춤) · 모두 2 s · 가장 오래 걸리는 J1 에 맞춤 1.30 s',
+  caption: '관절 동기화: 따로 (관절마다 다른 때 멈춤) · 모두 2 s · 가장 오래 걸리는 J1 에 맞춤 1.30 s',
   symbols: [],
   panels: p34.map((p, i) => ({ ...p, title: ['따로', '모두 2 s', 'J1 에 맞춤'][i] })),
   draw: () => (

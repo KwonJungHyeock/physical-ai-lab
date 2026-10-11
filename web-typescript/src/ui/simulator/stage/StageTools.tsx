@@ -46,7 +46,7 @@ function DisplayMenu({ display, onDisplay }: { display: DisplayOpts; onDisplay(d
   const on = DISPLAY_ITEMS.filter((i) => display[i.key]).length;
   return (
     <span className={css.displayWrap} ref={box}>
-      <button type="button" aria-expanded={open} aria-haspopup="true" aria-label="표시 옵션" title={`표시 옵션 — 좌표축·관절축·궤적 등 (${on}개 켜짐)`} onClick={() => setOpen((o) => !o)}>
+      <button type="button" aria-expanded={open} aria-haspopup="true" aria-label="표시 옵션" title={`표시 옵션: 좌표축·관절축·궤적 등 (${on}개 켜짐)`} onClick={() => setOpen((o) => !o)}>
         <ToolGlyph d={GLYPH.layers} />
         <i className={css.displayCount}>{on}</i>
       </button>
@@ -189,7 +189,7 @@ export function ViewTools({
         <button type="button" title="처음 시점" aria-label="처음 시점" onClick={() => api()?.view('home')}>
           <ToolGlyph d={GLYPH.home} />
         </button>
-        <button type="button" title="전체 맞춤 — 지금 방향에서 로봇과 작업 공간이 꽉 차게" aria-label="전체 맞춤" onClick={() => api()?.fit()}>
+        <button type="button" title="전체 맞춤: 지금 방향에서 로봇과 작업 공간이 꽉 차게" aria-label="전체 맞춤" onClick={() => api()?.fit()}>
           <ToolGlyph d={GLYPH.fit} />
         </button>
         <i className={css.railSep} />
@@ -216,7 +216,7 @@ export function ViewTools({
           type="button"
           aria-pressed={flat}
           aria-label={flat ? '평면 투영 (누르면 원근)' : '원근 투영 (누르면 평면)'}
-          title={flat ? '지금: 평면 투영 — 멀어도 크기가 같아요 (도면처럼) · 누르면 원근으로' : '지금: 원근 투영 — 눈으로 보듯 멀면 작게 · 누르면 평면으로'}
+          title={flat ? '지금은 평면 투영이에요. 멀어도 크기가 같아요 (도면처럼) · 누르면 원근으로' : '지금은 원근 투영이에요. 눈으로 보듯 멀면 작게 · 누르면 평면으로'}
           onClick={() => {
             api()?.setFlat(!flat);
             setFlat(!flat);
@@ -226,7 +226,7 @@ export function ViewTools({
         </button>
         <i className={css.railSep} />
         <DisplayMenu display={display} onDisplay={onDisplay} />
-        <button type="button" title="화면 저장 — 지금 3D 화면을 그림 파일(PNG)로" aria-label="화면 저장" onClick={save}>
+        <button type="button" title="화면 저장: 지금 3D 화면을 그림 파일(PNG)로" aria-label="화면 저장" onClick={save}>
           <ToolGlyph d={GLYPH.shot} />
         </button>
         {camera && (

@@ -710,7 +710,7 @@ function pickPlace(sim: EnergySim, f: Found, plan: Plan): EnergyPick | null {
   const above: Mm = [x, y, APPROACH_Z];
   const a = poseAt(sim.chain, above, sim.q);
   if (!a) {
-    sim.fail('unreachable', `${name} 위 (${x.toFixed(0)}, ${y.toFixed(0)})에 손이 닿지 않아요 — 작업 중지`, { at: above });
+    sim.fail('unreachable', `${name} 위 (${x.toFixed(0)}, ${y.toFixed(0)})에 손이 닿지 않아요 (작업 중지)`, { at: above });
     return null;
   }
   if (!sim.moveJ(a, plan.empty)) return null;
@@ -720,7 +720,7 @@ function pickPlace(sim: EnergySim, f: Found, plan: Plan): EnergyPick | null {
   const contact = t && s ? s.c[2] + dims(t).h : 0;
   const b = poseAt(sim.chain, [x, y, contact - (t ? PRESS_MM : 0)], a);
   if (!b) {
-    sim.fail('unreachable', `${name}까지 내려가지 못해요 — 작업 중지`, { at: above });
+    sim.fail('unreachable', `${name}까지 내려가지 못해요 (작업 중지)`, { at: above });
     return null;
   }
   sim.moveJ(b, SPEED.down);
@@ -730,7 +730,7 @@ function pickPlace(sim: EnergySim, f: Found, plan: Plan): EnergyPick | null {
   if (!t || !s || !onPiece(t, s.c[0], s.c[1], x, y, CUP_R - 1)) {
     sim.pump = false;
     sim.moveJ(a, SPEED.down);
-    sim.fail('miss', t ? `${name}: 흡착 컵이 ${t.name} 가장자리에 걸쳐 공기가 새요 — 들지 못했어요` : `${name}: 그 자리에 아무것도 없어요 — 판을 집었어요`, { at: [x, y, contact], thing: k }, false);
+    sim.fail('miss', t ? `${name}: 흡착 컵이 ${t.name} 가장자리에 걸쳐 공기가 새요. 들지 못했어요` : `${name}: 그 자리에 아무것도 없어 판을 집었어요`, { at: [x, y, contact], thing: k }, false);
     return { meant: f.k, k, speed: 0, aXY: 0, aZ: 0, needN: 0, holdN: t?.holdN ?? 0, dropped: false, riders: [], carryS: 0 };
   }
   sim.held = k;
@@ -748,7 +748,7 @@ function pickPlace(sim: EnergySim, f: Found, plan: Plan): EnergyPick | null {
     } else sim.things[j].c = [c[0], c[1], 0];
   });
   const what = t.name + (f.k === k ? '' : ` (프로그램은 ${name}로 알아요)`);
-  sim.log('pick', `${what} — 집었어요${riders.length ? ` · 위에 ${riders.map((j) => sim.list[j].name).join(', ')}이(가) 얹혀 있어요` : ''}`, { at: [x, y, contact], thing: k });
+  sim.log('pick', `${what}: 집었어요${riders.length ? ` · 위에 ${riders.map((j) => sim.list[j].name).join(', ')}이(가) 얹혀 있어요` : ''}`, { at: [x, y, contact], thing: k });
   if (riders.length) sim.log('ride', `${riders.map((j) => sim.list[j].name).join(', ')}이(가) ${t.name} 위에 얹혀 함께 올라가요`, { at: [x, y, contact + 10], thing: riders[0] });
 
   const pk: EnergyPick = { meant: f.k, k, speed: plan.carry(kind), aXY: 0, aZ: 0, needN: 0, holdN: t.holdN, dropped: false, riders, carryS: 0 };
@@ -776,7 +776,7 @@ function pickPlace(sim: EnergySim, f: Found, plan: Plan): EnergyPick | null {
       const fl = sim.letGo(k, vel);
       for (const r of sim.riders) sim.letGo(r.k, vel);
       sim.riders = [];
-      sim.fail('drop', `${t.name}이(가) 흡착 컵에서 떨어졌어요 — 가속도 ${axy.toFixed(1)} m/s²에 필요한 힘 ${need.toFixed(2)} N > 붙잡는 힘 ${t.holdN.toFixed(2)} N · ${fl.where}에 떨어짐`, { at: fl.land.c, thing: k, value: axy }, false);
+      sim.fail('drop', `${t.name}이(가) 흡착 컵에서 떨어졌어요. 가속도 ${axy.toFixed(1)} m/s²에 필요한 힘 ${need.toFixed(2)} N > 붙잡는 힘 ${t.holdN.toFixed(2)} N · ${fl.where}에 떨어짐`, { at: fl.land.c, thing: k, value: axy }, false);
     }
   };
   sim.moveJ(a, SPEED.down, hold);
@@ -786,7 +786,7 @@ function pickPlace(sim: EnergySim, f: Found, plan: Plan): EnergyPick | null {
   const d = dropAt(bin, hang);
   const q = poseAt(sim.chain, d, sim.q);
   if (!q) {
-    sim.fail('unreachable', `분류함 ${bin} 위에 손이 닿지 않아요 — 작업 중지`, { at: d });
+    sim.fail('unreachable', `분류함 ${bin} 위에 손이 닿지 않아요 (작업 중지)`, { at: d });
     return pk;
   }
   pk.carryS = sim.moveJ(q, pk.speed, hold);
@@ -803,7 +803,7 @@ function pickPlace(sim: EnergySim, f: Found, plan: Plan): EnergyPick | null {
     const c = sim.things[j].c;
     sim.things[j] = { c: [B.x + (c[0] - d[0]) * 0.3, B.y + (c[1] - d[1]) * 0.3, B.floorZ], mode: 'binned', bin };
     const own = BIN_OF[sim.list[j].kind] === bin;
-    const e = sim.log(own ? 'place' : 'wrong', own ? `${sim.list[j].name} → 분류함 ${bin} (${KIND_NAME[KIND_OF_BIN[bin]]})` : `${sim.list[j].name}이(가) 분류함 ${bin} (${KIND_NAME[KIND_OF_BIN[bin]]})에 섞여 들어갔어요 — 제자리는 ${BIN_OF[sim.list[j].kind]}`, {
+    const e = sim.log(own ? 'place' : 'wrong', own ? `${sim.list[j].name} → 분류함 ${bin} (${KIND_NAME[KIND_OF_BIN[bin]]})` : `${sim.list[j].name}이(가) 분류함 ${bin} (${KIND_NAME[KIND_OF_BIN[bin]]})에 섞여 들어갔어요 (제자리는 ${BIN_OF[sim.list[j].kind]})`, {
       at: [B.x, B.y, B.rimZ],
       thing: j,
     });
@@ -843,7 +843,7 @@ function runJob(chain: readonly ChainSegment[], list: readonly Item[], vision: V
   const seen = findItems(sortPicture(list), vision, list);
   const sim = new EnergySim(chain, list);
   sim.wait(SEE_S);
-  sim.log('see', `사진에서 ${seen.found.length}개를 찾았어요 — ${seen.found.map((f) => KIND_NAME[f.kind]).join(' · ') || '없음'}${seen.tooBig ? ` (판만 한 덩어리 ${seen.tooBig}개는 버렸어요)` : ''}`);
+  sim.log('see', `사진에서 ${seen.found.length}개를 찾았어요: ${seen.found.map((f) => KIND_NAME[f.kind]).join(' · ') || '없음'}${seen.tooBig ? ` (판만 한 덩어리 ${seen.tooBig}개는 버렸어요)` : ''}`);
   const picks: EnergyPick[] = [];
   for (const f of pickOrder(seen.found, order)) {
     if (sim.stopped) break;
@@ -852,7 +852,7 @@ function runJob(chain: readonly ChainSegment[], list: readonly Item[], vision: V
   }
   // What the camera never saw stays on the board.
   list.forEach((t, k) => {
-    if (sim.things[k].mode === 'board' && !seen.found.some((f) => f.k === k)) sim.fail('left', `${t.name}을(를) 찾지 못해 판에 남겼어요 — 재활용되지 못해요`, { thing: k, at: [t.x, t.y, topOf(list, k)] }, false);
+    if (sim.things[k].mode === 'board' && !seen.found.some((f) => f.k === k)) sim.fail('left', `${t.name}을(를) 찾지 못해 판에 남겼어요. 재활용되지 못해요`, { thing: k, at: [t.x, t.y, topOf(list, k)] }, false);
   });
   return finish(sim, values, seen.found, seen.tooBig, picks);
 }
@@ -915,7 +915,7 @@ export interface EnergyScore {
   headline: string;
 }
 
-const strip = (s: string) => s.replace(/ — 작업 중지$/, '');
+const strip = (s: string) => s.replace(/ \(작업 중지\)$/, '');
 /** Sorted right per minute, as shown. */
 export const perMinText = (r: EnergyRun) => `${r.perMin.toFixed(1)}개/분`;
 
@@ -943,7 +943,7 @@ export function scoreEnergy(p: EnergyProblem, run: EnergyRun): EnergyScore {
     return {
       pass,
       checks,
-      headline: pass ? `떨어뜨리지 않고 처리량 ${perMinText(run)} — 기준 ${TARGET_PM}개/분을 넘었어요` : run.dropped ? `${run.dropped}개를 떨어뜨렸어요 — 처리량 ${perMinText(run)}` : `떨어뜨리지는 않았지만 처리량이 ${perMinText(run)}예요 (기준 ${TARGET_PM})`,
+      headline: pass ? `떨어뜨리지 않고 처리량 ${perMinText(run)}, 기준 ${TARGET_PM}개/분을 넘었어요` : run.dropped ? `${run.dropped}개를 떨어뜨렸어요 (처리량 ${perMinText(run)})` : `떨어뜨리지는 않았지만 처리량이 ${perMinText(run)}예요 (기준 ${TARGET_PM})`,
     };
   }
   const missed = run.events.filter((e) => e.kind === 'miss').length;

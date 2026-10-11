@@ -65,7 +65,7 @@ const pdf = (m: Material): ArcFile => ({ key: m.id, name: pdfName(m), type: 'pdf
 function fromItem(it: ArchiveItem): ArcFile {
   const ext = it.file?.split('.').pop()?.toLowerCase();
   const type: FileType = ext === 'pdf' || ext === 'gif' || ext === 'html' || ext === 'zip' || ext === 'exe' ? ext : 'app';
-  return { key: it.title, name: it.file ?? it.title, type, note: `${it.title} — ${it.note}`, action: { label: it.action, run: it.run, disabled: it.disabled }, sizeFrom: it.sizeFrom };
+  return { key: it.title, name: it.file ?? it.title, type, note: `${it.title}: ${it.note}`, action: { label: it.action, run: it.run, disabled: it.disabled }, sizeFrom: it.sizeFrom };
 }
 
 export function buildTree(programs: ArchiveItem[], checks: ArchiveItem[]): ArcFolder {
@@ -99,7 +99,7 @@ export function buildTree(programs: ArchiveItem[], checks: ArchiveItem[]): ArcFo
             key: 'simulator-guide',
             name: '시뮬레이터 사용 매뉴얼.pdf',
             type: 'pdf',
-            note: 'PC 에서 로봇팔을 움직이고 블록 · 파이썬 · ROS 2 로 프로그램을 만들어 실제 로봇까지 — 그림으로 안내',
+            note: 'PC 에서 로봇팔을 움직이고 블록 · 파이썬 · ROS 2 로 프로그램을 만들어 실제 로봇까지 그림으로 안내',
             href: '/guides/simulator-guide.pdf',
             download: '시뮬레이터 사용 매뉴얼.pdf',
             thumb: '/guides/thumbs/simulator-guide.jpg',
@@ -108,7 +108,7 @@ export function buildTree(programs: ArchiveItem[], checks: ArchiveItem[]): ArcFo
             key: 'teacher-guide',
             name: '교사용 교육 가이드라인.pdf',
             type: 'pdf',
-            note: '로봇공학 8개 단원 · 28차시 — 수업 준비, 한 차시 운영, 평가, 자료실 활용',
+            note: '로봇공학 8개 단원 · 28차시 (수업 준비, 한 차시 운영, 평가, 자료실 활용)',
             href: '/guides/teacher-guide.pdf',
             download: '교사용 교육 가이드라인.pdf',
             thumb: '/guides/thumbs/teacher-guide.jpg',

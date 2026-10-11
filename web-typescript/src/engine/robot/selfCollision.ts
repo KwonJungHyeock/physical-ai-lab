@@ -213,10 +213,10 @@ const subj = (w: string) => {
 export function selfMessage(hit: SelfHit, fix: SelfFix | null, anglesDeg: readonly number[]): string {
   const what =
     hit.kind === 'self'
-      ? `팔끼리 부딪혀요 — ${subj(hit.a)} ${hit.b}에 닿아요.`
+      ? `팔끼리 부딪혀요. ${subj(hit.a)} ${hit.b}에 닿아요.`
       : hit.kind === 'base'
-        ? `팔이 로봇 받침에 부딪혀요 — ${subj(hit.a)} 받침 속으로 들어가요.`
-        : `팔이 책상을 뚫고 내려가요 — ${subj(hit.a)} 책상에 닿아요.`;
+        ? `팔이 로봇 받침에 부딪혀요. ${subj(hit.a)} 받침 속으로 들어가요.`
+        : `팔이 책상을 뚫고 내려가요. ${subj(hit.a)} 책상에 닿아요.`;
   return fix ? `${what} ${fixPhrase(fix, anglesDeg[fix.joint])}.` : `${what} 팔을 덜 접히게 해 주세요.`;
 }
 

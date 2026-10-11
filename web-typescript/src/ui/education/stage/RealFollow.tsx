@@ -197,7 +197,7 @@ export function FollowBar(p: ReturnType<typeof useRealFollow> & { hidden?: boole
         ) : p.following ? (
           <>실물이 따라오는 중 · 화면과 차이 {lag}</>
         ) : (
-          <>지금은 따라가지 않아요 — {p.reason}</>
+          <>지금은 따라가지 않아요. {p.reason}</>
         )}
       </span>
       {p.on && (

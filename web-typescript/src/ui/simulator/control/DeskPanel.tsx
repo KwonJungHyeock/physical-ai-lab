@@ -237,7 +237,7 @@ export default function DeskPanel(p: Props) {
                 ))}
               </div>
             ) : (
-              <p className={css.note}>아직 없어요 — 위에서 골라 놓아 보세요.</p>
+              <p className={css.note}>아직 없어요. 위에서 골라 놓아 보세요.</p>
             )}
           </div>
           {sel && (

@@ -34,7 +34,7 @@ export function Figure({
       key={replay}
       viewBox={`${x} ${y} ${w} ${h}`}
       role="img"
-      aria-label={p?.title ? `${def.label} — ${p.title}` : def.label}
+      aria-label={p?.title ? `${def.label}: ${p.title}` : def.label}
       className={[css.fig, animate ? css.anim : '', className ?? ''].join(' ')}
     >
       <rect x={x} y={y} width={w} height={h} fill="#ffffff" />

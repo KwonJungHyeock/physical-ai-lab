@@ -371,7 +371,7 @@ export default function ControlPanel(p: Props) {
             );
             if (i !== p.selected) {
               return (
-                <button key={i} type="button" className={css.jpRow} onClick={() => p.onSelect(i)} title={`${jointLabels()[i].name} (J${i + 1}) 고르기 — 3D 의 관절 점 ${i + 1} 을 눌러도 돼요`}>
+                <button key={i} type="button" className={css.jpRow} onClick={() => p.onSelect(i)} title={`${jointLabels()[i].name} (J${i + 1}) 고르기. 3D 의 관절 점 ${i + 1} 을 눌러도 돼요`}>
                   <span className={css.jpGlyph}>
                     <JointGlyph joint={i} active={false} />
                   </span>

@@ -49,7 +49,7 @@ export default function HelpSheet({ onClose, onGuide }: { onClose(): void; onGui
           </span>
           <div>
             <h2>도움말</h2>
-            <p>로봇 학습 시뮬레이터 — myCobot 280 RDK X5</p>
+            <p>로봇 학습 시뮬레이터 (myCobot 280 RDK X5)</p>
           </div>
           <button type="button" className={css.close} onClick={onClose} aria-label="닫기">
             ×

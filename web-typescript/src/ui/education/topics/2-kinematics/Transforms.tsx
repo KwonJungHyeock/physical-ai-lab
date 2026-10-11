@@ -63,7 +63,7 @@ export default function A3Transforms({ chain, show, step, record }: TopicProps) 
       <section className={css.card}>
         <h3>곱하는 순서</h3>
         <p className={css.live}>
-          T₀¹·T₁² 의 위치 = ({p(frames[2]).map((v) => fmt(v, 0)).join(', ')}) mm, 순서를 바꾼 T₁²·T₀¹ = ({p(wrong).map((v) => fmt(v, 0)).join(', ')}) mm — {fmt(d, 0)} mm 차이. 행렬 곱은 순서를 바꾸면 결과가 달라요.
+          T₀¹·T₁² 의 위치 = ({p(frames[2]).map((v) => fmt(v, 0)).join(', ')}) mm, 순서를 바꾼 T₁²·T₀¹ = ({p(wrong).map((v) => fmt(v, 0)).join(', ')}) mm 로, {fmt(d, 0)} mm 차이가 나요. 행렬 곱은 순서를 바꾸면 결과가 달라요.
         </p>
       </section>
     );
@@ -71,7 +71,7 @@ export default function A3Transforms({ chain, show, step, record }: TopicProps) 
 
   return (
     <section className={css.card}>
-      <h3>{step === 'A' ? 'J1 하나 돌리기 — T₀¹' : step === 'B' ? '두 좌표계 곱하기 — T₀² = T₀¹ · T₁²' : '바닥부터 손끝까지 — T₀⁶'}</h3>
+      <h3>{step === 'A' ? 'J1 하나 돌리기: T₀¹' : step === 'B' ? '두 좌표계 곱하기: T₀² = T₀¹ · T₁²' : '바닥부터 손끝까지: T₀⁶'}</h3>
       <JointSliders angles={q} onChange={moved} joints={step === 'A' ? [0] : step === 'B' ? [0, 1] : undefined} highlight={step === 'C' ? upTo - 1 : null} />
       {step === 'C' && (
         <div className={css.seg} role="group" aria-label="좌표계 단계">
@@ -133,7 +133,7 @@ export default function A3Transforms({ chain, show, step, record }: TopicProps) 
         {step === 'A'
           ? '왼쪽 3×3 = 방향(회전), 오른쪽 열 = 위치(mm). J1 을 돌리면 3×3 만 바뀌고, 위치 열은 그대로예요(J1 축 위에 있어서).'
           : step === 'B'
-            ? 'J2 를 돌리면 {2} 뒤에 붙은 모든 것이 따라 돌아요. J1 을 돌리면 {1}·{2} 가 함께 돌아요 — 앞 관절이 뒤 관절을 싣고 다녀요.'
+            ? 'J2 를 돌리면 {2} 뒤에 붙은 모든 것이 따라 돌아요. J1 을 돌리면 {1}·{2} 가 함께 돌아요. 앞 관절이 뒤 관절을 싣고 다녀요.'
             : '{0} 부터 하나씩 눌러 곱해 보세요. ×T₅⁶ 까지 곱한 행렬의 위치 열 = 플랜지(그리퍼를 다는 면) 좌표. 그리퍼 끝은 여기서 도구 축으로 58 mm 더 나가요.'}
       </p>
     </section>

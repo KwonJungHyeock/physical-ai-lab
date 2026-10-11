@@ -268,7 +268,7 @@ export default function G1Camera({ chain, show, real, step, record }: TopicProps
 
       {step === 'A' && cur && cur.err != null && (
         <Verdict tone="warn">
-          픽셀만으로는 mm 를 몰라요. &quot;1 px = 1 mm, 가운데 = 앞 200 mm&quot; 로 어림하면 ({fmt(cur.mm![0], 0)}, {fmt(cur.mm![1], 0)}) — 실제와 {fmt(cur.err, 0)} mm 차이.
+          픽셀만으로는 mm 를 몰라요. &quot;1 px = 1 mm, 가운데 = 앞 200 mm&quot; 로 어림하면 ({fmt(cur.mm![0], 0)}, {fmt(cur.mm![1], 0)}) 이고, 실제와 {fmt(cur.err, 0)} mm 차이가 나요.
         </Verdict>
       )}
       {step === 'B' && cur?.err != null && (

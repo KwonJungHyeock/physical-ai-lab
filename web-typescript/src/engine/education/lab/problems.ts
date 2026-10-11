@@ -399,7 +399,7 @@ export function verdict(p: ProblemId, run: LabRun): Verdict {
       : grip
         ? `상자를 집어 팔레트에 놓았어요 (가운데에서 ${d!.toFixed(1)} mm)`
         : miss
-          ? `흡착 컵이 상자 옆 허공에 내려왔어요 — ${d!.toFixed(1)} mm 빗나감`
+          ? `흡착 컵이 상자 옆 허공에 내려왔어요 (${d!.toFixed(1)} mm 빗나감)`
           : '상자에 내려가지 못했어요';
     return { pass: checks.every((c) => c.ok), checks, headline, placed };
   }
@@ -424,7 +424,7 @@ export function verdict(p: ProblemId, run: LabRun): Verdict {
     noHit,
     { label: '잡은 상자를 팔레트에 놓음', ok: placed === P3_COUNT, value: `${placed} / ${P3_COUNT}개` },
   ];
-  const headline = hit ? hit.text : caught === P3_COUNT ? `상자 ${P3_COUNT}개를 모두 잡았어요` : `${P3_COUNT}개 중 ${caught}개만 잡았어요 — ${P3_COUNT - caught}개는 지나갔어요`;
+  const headline = hit ? hit.text : caught === P3_COUNT ? `상자 ${P3_COUNT}개를 모두 잡았어요` : `${P3_COUNT}개 중 ${caught}개만 잡았어요. ${P3_COUNT - caught}개는 지나갔어요`;
   return { pass: checks.every((c) => c.ok), checks, headline, placed };
 }
 

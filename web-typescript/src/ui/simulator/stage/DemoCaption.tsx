@@ -35,7 +35,7 @@ export default function DemoCaption({ demo, step, playing, onBlocks, onStop }: P
           <i key={k} data-done={k < step || (!playing && k === step) || undefined} data-now={(playing && k === step) || undefined} />
         ))}
       </span>
-      <button type="button" className={css.demoBlocks} onClick={onBlocks} title="이 움직임을 블록 프로그램으로 열어요 — 그대로 돌리거나 바꿔 봐요">
+      <button type="button" className={css.demoBlocks} onClick={onBlocks} title="이 움직임을 블록 프로그램으로 열어요. 그대로 돌리거나 바꿔 봐요">
         블록으로 보기
       </button>
       <button type="button" className={css.demoStop} onClick={onStop} title={playing ? '데모를 멈춰요' : '자막을 닫아요'}>

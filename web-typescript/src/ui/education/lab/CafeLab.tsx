@@ -127,7 +127,7 @@ function measureRows(chain: readonly ChainSegment[], prob: CafeProblem, run: Caf
       { label: '그때 수면 기울기 (a ÷ g)', value: `${fmt(v.acc / 9.81, 2)} (${fmt((v.acc / 9.81) * 100)}%)`, bad: true },
       { label: '컵 안지름 · 위 여유', value: `${CUP.inner} mm · ${CUP.headspace} mm` },
       { label: '최고 속도 · 옮기는 시간', value: `${v.speed} mm/s · ${fmt(run?.carryS ?? 0, 2)} s` },
-      { label: '넘친 때', value: f ? `${fmt(f.t, 2)} s — 바를 떠나는 출발 순간` : '—', bad: true, markers: f?.at ? [{ key: 'sp', mm: f.at, ok: false, text: '넘친 곳' }] : [] },
+      { label: '넘친 때', value: f ? `${fmt(f.t, 2)} s (바를 떠나는 출발 순간)` : '—', bad: true, markers: f?.at ? [{ key: 'sp', mm: f.at, ok: false, text: '넘친 곳' }] : [] },
     ];
   }
   if (prob === 2) {
@@ -396,7 +396,7 @@ export default function CafeLab({ robot, chain, gripperRobot, hidden, level = 'h
           {prob === 3 ? <CareAround /> : <CafeAround />}
           <CafeCell player={player} prob={prob} overlay={overlay} />
         </LearnStage>
-        {fail && playT >= fail.t && <div className={lg.alarm}>⚠ {fail.text.replace(/ — 작업 중지$/, '')}</div>}
+        {fail && playT >= fail.t && <div className={lg.alarm}>⚠ {fail.text.replace(/ \(작업 중지\)$/, '')}</div>}
         {shown && !fail && playT >= shown.durationS - 1e-6 && <div className={lg.okPill}>✓ {scoreCafe(prob, shown).headline}</div>}
         {slow && playing && <div className={lg.slowPill}>느린 재생 · 문제가 생기는 순간</div>}
         {shown && (
@@ -525,9 +525,9 @@ export default function CafeLab({ robot, chain, gripperRobot, hidden, level = 'h
 }
 
 function programLine(p: CafeProblem): string {
-  if (p === 1) return '바 → 픽업대 직선 이동 · 최고 속도 250 mm/s · 가속도 4 m/s² — 빈 컵 회수 프로그램 그대로';
+  if (p === 1) return '바 → 픽업대 직선 이동 · 최고 속도 250 mm/s · 가속도 4 m/s² · 빈 컵 회수 프로그램 그대로';
   if (p === 2) return `직선 이동 2 m/s² · 픽업대 구역(마지막 ${ZONE_MM} mm)에서도 250 mm/s · 센서 감지 50 mm → 정지`;
-  return `냉장고에서 물병을 집어 팔을 230 mm 뻗은 채 J1만 1.4 s에 143° 돌기 · 돌봄 모드 J1 토크 제한 ${CARE_J1_LIMIT} N·m — 아침 컵 때 그대로`;
+  return `냉장고에서 물병을 집어 팔을 230 mm 뻗은 채 J1만 1.4 s에 143° 돌기 · 돌봄 모드 J1 토크 제한 ${CARE_J1_LIMIT} N·m (아침 컵 때 그대로)`;
 }
 
 /* --- pieces ---------------------------------------------------------------------------------- */
@@ -602,7 +602,7 @@ function HmiCarry({ v, on }: { v: CarryValues; on(v: CarryValues): void }) {
           </tr>
         </tbody>
       </table>
-      <small className={lg.hmiNote}>그래프: 속도 — 가속 · 등속 · 감속 (기울기가 가속도예요)</small>
+      <small className={lg.hmiNote}>그래프: 속도 (가속 · 등속 · 감속, 기울기가 가속도예요)</small>
       <ProfileGraph speed={v.speed} acc={v.acc} />
     </div>
   );
@@ -679,7 +679,7 @@ function HmiTurn({ v, preview, limit, on }: { v: TurnValues; preview: ReturnType
         <i>● 물병 {fmt(BOTTLE.kg * 1000)} g · 143°</i>
       </header>
       <Knob id="cafe-r" label="도는 동안 물병까지 반지름" unit="mm" v={v.radius} min={130} max={240} step={5} note="팔을 접을수록 작아져요" on={(radius) => on({ ...v, radius })} />
-      <Knob id="cafe-t" label="도는 시간" unit="s" v={v.time} min={1} max={2.5} step={0.05} note="5차 궤적 — 최대 각가속도 = 5.77 × 각도 ÷ 시간², 최고 속도 = 1.875 × 각도 ÷ 시간" on={(time) => on({ ...v, time: Math.round(time * 100) / 100 })} />
+      <Knob id="cafe-t" label="도는 시간" unit="s" v={v.time} min={1} max={2.5} step={0.05} note="5차 궤적: 최대 각가속도 = 5.77 × 각도 ÷ 시간², 최고 속도 = 1.875 × 각도 ÷ 시간" on={(time) => on({ ...v, time: Math.round(time * 100) / 100 })} />
       <table className={lg.layers}>
         <tbody>
           <tr>
@@ -757,7 +757,7 @@ function PrincipleFig({ prob }: { prob: CafeProblem }) {
           + v² ÷ 2a + v손 v ÷ a
         </text>
         <text x={20} y={96} className={lg.figTxt}>
-          감지 거리 &gt; S + 여유 — 사람 근처는 느리게
+          감지 거리 &gt; S + 여유 · 사람 근처는 느리게
         </text>
         <ArrowDef />
       </svg>

@@ -88,7 +88,7 @@ export default function Pid({ chain, show, step, record }: TopicProps) {
   return (
     <section className={css.card}>
       <h3>
-        {PLAN[k].name} — 어깨 0° → 60° · 짐 {grams(KG)}
+        {PLAN[k].name}: 어깨 0° → 60° · 짐 {grams(KG)}
       </h3>
       {(Object.keys(RANGE) as (keyof Gains)[]).map((g) => {
         const locked = g !== PLAN[k].free;
@@ -146,7 +146,7 @@ export default function Pid({ chain, show, step, record }: TopicProps) {
       )}
       <p className={css.note}>
         {k === 'A'
-          ? 'P: 토크 = Kp(비례 게인) × 오차. Kp 를 2 · 4 · 10 으로 바꿔 [실행] 해 보세요 — 남은 오차와 오버슈트가 어떻게 바뀌나요?'
+          ? 'P: 토크 = Kp(비례 게인) × 오차. Kp 를 2 · 4 · 10 으로 바꿔 [실행] 해 보세요. 남은 오차와 오버슈트가 어떻게 바뀌나요?'
           : k === 'B'
             ? 'I: 오차를 쌓아(적분) Ki(적분 게인)를 곱한 만큼 더 밀어요. 남은 오차는 줄지만 넘침이 커져요. Ki 만 움직일 수 있어요.'
             : 'D: 각도가 바뀌는 빠르기에 Kd(미분 게인)를 곱해 제동을 걸어 넘침을 잡아요. Kd 만 움직일 수 있어요.'}

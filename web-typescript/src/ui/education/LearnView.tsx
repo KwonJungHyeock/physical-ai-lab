@@ -592,7 +592,7 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
           </section>
         </div>
       </SymbolsProvider>
-      <FollowBar {...follow} hidden={hidden} stage={screen === 'topic' ? 'right' : 'left'} />
+      <FollowBar {...follow} hidden={hidden} stage="right" />
       {locked && !hidden && (
         <LessonLocked
           topic={locked}

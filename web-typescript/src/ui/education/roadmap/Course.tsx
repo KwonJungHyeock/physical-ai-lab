@@ -353,7 +353,7 @@ function Hero({
           <small>/ {TOPICS.length}차시</small>
         </div>
       </div>
-      <button type="button" className={css.goalPic} onClick={onGoal} aria-label={`최종 목표 ${GOAL.topic} ${GOAL.short} — 8단원 자세히 보기`}>
+      <button type="button" className={css.goalPic} onClick={onGoal} aria-label={`최종 목표 ${GOAL.topic} ${GOAL.short}: 8단원 자세히 보기`}>
         {/* eslint-disable-next-line @next/next/no-img-element -- the 3D view in the 8-2 capstone, also in the static export */}
         <img src={unitPicture('8')} alt="" />
         <span>
@@ -647,7 +647,7 @@ function RetryChip({ onTopic }: { onTopic(t: TopicId): void }) {
                   </button>
                 </li>
               ))}
-              {list.length > 6 && <li className={css.retryMore}>그 밖에 {list.length - 6}문제 — 위 문제를 맞히면 다음 문제가 올라와요.</li>}
+              {list.length > 6 && <li className={css.retryMore}>그 밖에 {list.length - 6}문제가 더 있어요. 위 문제를 맞히면 다음 문제가 올라와요.</li>}
             </ul>
           ) : (
             <p className={css.retryEmpty}>아직 틀린 문제가 없어요. 차시 끝 평가에서 틀린 문제가 여기에 모이고, 다시 맞히면 빠져요.</p>

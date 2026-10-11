@@ -127,9 +127,9 @@ function TopArm({ pts, c, w = 14, dash, opacity }: { pts: Pt[]; c: Color; w?: nu
 }
 
 export const fig61: FigureDef = {
-  caption: '검사 간격에 따른 충돌 검사 — 출발·도착만 · 30° 간격 · 5° 간격 (J1 71.6°, 벽 6 mm)',
+  caption: '검사 간격에 따른 충돌 검사: 출발·도착만 · 30° 간격 · 5° 간격 (J1 71.6°, 벽 6 mm)',
   label: '위에서 본 J1 71.6° 이동과 6 mm 벽: 출발·도착만 검사(2 번) · 30° 간격(4 번)은 벽을 놓치고, 5° 간격(16 번)은 벽과 겹친 자세 2 개를 찾음',
-  panels: p61.map((p, i) => ({ ...p, title: ['출발·도착만 — 검사 2 번, 놓침', '30° 간격 — 검사 4 번, 놓침', '5° 간격 — 검사 16 번, 찾음'][i] })),
+  panels: p61.map((p, i) => ({ ...p, title: ['출발·도착만: 검사 2 번, 놓침', '30° 간격: 검사 4 번, 놓침', '5° 간격: 검사 16 번, 찾음'][i] })),
   draw: () => (
     <g>
       <Dividers panels={p61} />
@@ -264,9 +264,9 @@ const RAW62: Pt[] = [START62, [-160, 105], [-125, 180], [-85, 245], [-30, 290], 
 const SMOOTH62: Pt[] = [START62, [-85, 245], [75, 235], GOAL62];
 
 export const fig62: FigureDef = {
-  caption: '벽 너머로 가는 세 가지 길 — 그냥 직선 · 사람이 찍은 경유점 · RRT 자동 탐색 (벽 170 mm)',
+  caption: '벽 너머로 가는 세 가지 길: 그냥 직선 · 사람이 찍은 경유점 · RRT 자동 탐색 (벽 170 mm)',
   label: '170 mm 벽을 사이에 둔 출발과 도착: 그냥 직선은 벽에 부딪히고, 사람이 찍은 경유점 1·2(220 mm)로 넘어가고, RRT-Connect 두 나무가 만나 찾은 길을 다듬음',
-  panels: p62.map((p, i) => ({ ...p, title: ['그냥 직선 — 충돌', '경유점 직접 — 사람이 찍음', '자동 탐색 RRT — RRT-Connect + 다듬기'][i] })),
+  panels: p62.map((p, i) => ({ ...p, title: ['그냥 직선: 충돌', '경유점 직접: 사람이 찍음', '자동 탐색 RRT: RRT-Connect + 다듬기'][i] })),
   draw: () => (
     <g>
       <Dividers panels={p62} />
@@ -282,7 +282,7 @@ export const fig62: FigureDef = {
           <g key={i}>
             <Title p={p}>{['A  그냥 직선', 'B  경유점 직접', 'C  자동 탐색 RRT'][i]}</Title>
             <T x={cx} y={108} s={30} b c={(['ink', 'orange', 'blue'] as const)[i]} delay={0.2}>
-              {['관절 보간 — 장애물을 모름', '사람이 경유점을 찍음', 'RRT-Connect + 다듬기'][i]}
+              {['관절 보간: 장애물을 모름', '사람이 경유점을 찍음', 'RRT-Connect + 다듬기'][i]}
             </T>
             <Ln x1={p.x + 40} y1={floor} x2={p.x + p.w - 40} y2={floor} w={7} />
             <rect x={wTop[0]} y={wTop[1]} width={wBot[0] - wTop[0]} height={wBot[1] - wTop[1]} fill={C.light} stroke={C.ink} strokeWidth={4} />
@@ -399,9 +399,9 @@ const STEPS63 = [
 ];
 
 export const fig63: FigureDef = {
-  caption: '블록을 집고 놓는 순서와 놓는 높이 — 바로 집기 · 4단계로 집기 · 놓는 높이 0 · 10 · 40 mm',
+  caption: '블록을 집고 놓는 순서와 놓는 높이: 바로 집기 · 4단계로 집기 · 놓는 높이 0 · 10 · 40 mm',
   label: '흡착 펌프로 25 mm 블록 집기: 바로 집기는 낮게 다가가 블록을 밀어 실패, 4단계(위 30 mm 접근 → 수직 내리기 → 펌프 켜기 → 수직 50 mm 들기)는 성공, 놓는 높이 0 · 10 · 40 mm 의 부딪는 속도',
-  panels: p63.map((p, i) => ({ ...p, title: ['바로 집기 — 밀림, 실패', '4단계로 집기 — 성공', '놓는 높이 0 · 10 · 40 mm'][i] })),
+  panels: p63.map((p, i) => ({ ...p, title: ['바로 집기: 밀림, 실패', '4단계로 집기: 성공', '놓는 높이 0 · 10 · 40 mm'][i] })),
   draw: () => {
     const floor = 570;
     return (
@@ -570,9 +570,9 @@ function torque(t: number, end: number, peak: number, trap: boolean): number {
 }
 
 export const fig64: FigureDef = {
-  caption: '빠르기에 따른 블록 세 개 쌓기 — 느리게 · 빠르게 · 너무 빠르게의 탑, 걸린 시간과 토크(한계 100%)',
-  label: '블록 세 개 탑을 느리게 · 빠르게 · 너무 빠르게 쌓은 결과: 걸린 시간 18.8 · 10.3 · 5.3 s, 가장 힘든 관절의 최대 토크 37 · 63 · 239 %(한계 100%), 탑 기울기 0.5 · 1.8 · 8 mm — 너무 빠르게만 한계를 넘고 맨 위 블록이 어긋남',
-  panels: p64.map((p, i) => ({ ...p, title: ['느리게 — 반듯, 한계 안', '빠르게 — 거의 반듯, 한계 안', '너무 빠르게 — 한계 넘음, 어긋남'][i] })),
+  caption: '빠르기에 따른 블록 세 개 쌓기: 느리게 · 빠르게 · 너무 빠르게의 탑, 걸린 시간과 토크(한계 100%)',
+  label: '블록 세 개 탑을 느리게 · 빠르게 · 너무 빠르게 쌓은 결과: 걸린 시간 18.8 · 10.3 · 5.3 s, 가장 힘든 관절의 최대 토크 37 · 63 · 239 %(한계 100%), 탑 기울기 0.5 · 1.8 · 8 mm. 너무 빠르게만 한계를 넘고 맨 위 블록이 어긋남',
+  panels: p64.map((p, i) => ({ ...p, title: ['느리게: 반듯, 한계 안', '빠르게: 거의 반듯, 한계 안', '너무 빠르게: 한계 넘음, 어긋남'][i] })),
   draw: () => (
     <g>
       <Dividers panels={p64} />

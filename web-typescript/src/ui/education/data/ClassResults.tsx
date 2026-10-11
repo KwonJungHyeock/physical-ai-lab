@@ -182,7 +182,7 @@ export default function ClassResults({ load, setLoad }: { load: ClassLoad; setLo
       {load.errors.length > 0 && (
         <article className={css.card}>
           <h2>
-            읽지 못한 파일 <small>{load.errors.length}개 — 나머지는 그대로 모았어요</small>
+            읽지 못한 파일 <small>{load.errors.length}개 (나머지는 그대로 모았어요)</small>
           </h2>
           <ul className={css.badFiles}>
             {load.errors.map((e, i) => (
@@ -274,7 +274,7 @@ function ClassRow({ r, row, open, onToggle }: { r: StudentReport; row: StudentRo
                         <span
                           key={p.problem}
                           data-st={p.solved ? 'done' : p.runs ? 'try' : undefined}
-                          title={`${s.name} ${p.problem}. ${s.problems[p.problem - 1]?.title ?? ''} — ${p.solved ? '해결' : p.runs ? '진행 중' : '아직'} · 실행 ${p.runs}번 (성공 ${p.passes})${p.hints !== null ? ` · 힌트 ${p.hints}` : ''}${p.stars !== null ? ` · 별 ${p.stars}` : ''}`}
+                          title={`${s.name} ${p.problem}. ${s.problems[p.problem - 1]?.title ?? ''}: ${p.solved ? '해결' : p.runs ? '진행 중' : '아직'} · 실행 ${p.runs}번 (성공 ${p.passes})${p.hints !== null ? ` · 힌트 ${p.hints}` : ''}${p.stars !== null ? ` · 별 ${p.stars}` : ''}`}
                         >
                           {p.problem}
                           <small>{p.solved ? `✓${p.stars !== null ? ` ${'★'.repeat(p.stars)}` : ''}` : p.runs ? `${p.runs}회` : ''}</small>

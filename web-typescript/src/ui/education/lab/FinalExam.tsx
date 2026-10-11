@@ -176,14 +176,14 @@ export default function FinalExam({ robot, chain, gripperRobot, hidden, onBack }
             <section className={fx.intro}>
               <h2>일곱 현장에 다시 문제가 생겼어요</h2>
               <p>
-                현장마다 지난번에 고친 프로그램 그대로인데, 상황이 조금 바뀌었어요 — 센서를 또 옮기고, 팔레트를 또 옮기고, 로봇을 바꾸고 … 외운 답은 통하지 않아요. 원리로 <b>새 숫자</b>를 다시 계산해 고쳐요.
+                현장마다 지난번에 고친 프로그램 그대로인데, 상황이 조금 바뀌었어요. 센서를 또 옮기고, 팔레트를 또 옮기고, 로봇을 바꾸고 … 외운 답은 통하지 않아요. 원리로 <b>새 숫자</b>를 다시 계산해 고쳐요.
               </p>
               <ul className={fx.rules}>
                 <li>
                   <b>원인</b> 처음에 맞히면 4점, 두 번째 2점
                 </li>
                 <li>
-                  <b>계산</b> 처음 확인에 맞으면 3점, 나중에 맞으면 1점 — 맞혀야 고치기가 열려요 (건너뛰면 0점)
+                  <b>계산</b> 처음 확인에 맞으면 3점, 나중에 맞으면 1점이에요. 맞혀야 고치기가 열려요 (건너뛰면 0점).
                 </li>
                 <li>
                   <b>고치기</b> 다시 가동해서 통과하면 3점
@@ -504,7 +504,7 @@ function ItemScreen({ item, no, robot, chain, gripperRobot, hidden, record, setR
           {ran && (
             <section className={fx.card} data-done={causeFound || undefined}>
               <h3>
-                <span>2</span> 원인 — 무엇이 문제일까요?
+                <span>2</span> 원인: 무엇이 문제일까요?
               </h3>
               <div className={fx.choices}>
                 {item.causes.map((c, k) => {
@@ -522,14 +522,14 @@ function ItemScreen({ item, no, robot, chain, gripperRobot, hidden, record, setR
                   );
                 })}
               </div>
-              {record.picks.length > 0 && !causeFound && <p className={fx.no}>아니에요 — 바뀐 상황(숫자)을 다시 읽어 봐요.</p>}
+              {record.picks.length > 0 && !causeFound && <p className={fx.no}>아니에요. 바뀐 상황(숫자)을 다시 읽어 봐요.</p>}
             </section>
           )}
 
           {causeFound && (
             <section className={fx.card} data-done={calcRight || undefined}>
               <h3>
-                <span>3</span> 계산 — 새 숫자로
+                <span>3</span> 계산: 새 숫자로
               </h3>
               <table className={fx.data}>
                 <tbody>
@@ -567,7 +567,7 @@ function ItemScreen({ item, no, robot, chain, gripperRobot, hidden, record, setR
               {skipped ? (
                 <p className={fx.no}>계산을 건너뛰었어요 (계산 0점).</p>
               ) : (
-                record.calcChecks.length > 0 && <p className={calcRight ? fx.yes : fx.no}>{calcRight ? '맞았어요.' : record.calcChecks.length >= 2 ? '아직 달라요 — 식에 숫자를 하나씩 넣어 봐요. 힌트도 있어요.' : '다시 계산해 봐요.'}</p>
+                record.calcChecks.length > 0 && <p className={calcRight ? fx.yes : fx.no}>{calcRight ? '맞았어요.' : record.calcChecks.length >= 2 ? '아직 달라요. 식에 숫자를 하나씩 넣어 봐요. 힌트도 있어요.' : '다시 계산해 봐요.'}</p>
               )}
             </section>
           )}
@@ -575,7 +575,7 @@ function ItemScreen({ item, no, robot, chain, gripperRobot, hidden, record, setR
           {causeFound && (
             <section className={fx.card} data-done={record.pass || undefined} data-locked={!calcDone || undefined}>
               <h3>
-                <span>4</span> 고치기 — 값을 바꿔 다시 가동
+                <span>4</span> 고치기: 값을 바꿔 다시 가동
               </h3>
               {!calcDone && !done && (
                 <div className={fx.lock}>
@@ -829,7 +829,7 @@ function ResultSheet({ saved, onClose }: { saved: Saved; onClose(): void }) {
           </tfoot>
         </table>
         <p className={fx.sheetNote}>
-          성취 수준: A 90 이상 · B 80 이상 · C 70 이상 · D 60 이상 · E 60 미만. 힌트는 첫째 1점, 둘째 2점을 빼요. 문항마다 원인 · 계산 · 고치기를 따로 봐요 — 어느 단계에서 점수를 잃었는지가 다음 공부의 출발점이에요. 계산을 건너뛴 문항은 그 단원의 식부터 다시 봐요.
+          성취 수준: A 90 이상 · B 80 이상 · C 70 이상 · D 60 이상 · E 60 미만. 힌트는 첫째 1점, 둘째 2점을 빼요. 문항마다 원인 · 계산 · 고치기를 따로 봐요. 어느 단계에서 점수를 잃었는지가 다음 공부의 출발점이에요. 계산을 건너뛴 문항은 그 단원의 식부터 다시 봐요.
         </p>
         <div className={lg.recordBtns}>
           <button type="button" className={`${css.primary} ${lg.siteBtn}`} onClick={() => window.print()}>

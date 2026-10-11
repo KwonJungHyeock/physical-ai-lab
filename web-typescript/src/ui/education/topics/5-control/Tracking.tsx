@@ -88,7 +88,7 @@ export default function Tracking({ chain, show, step, record }: TopicProps) {
   return (
     <section className={css.card}>
       <h3>
-        명령 궤적 따라가기 — 0° → 60° 를 {PLAN[k].rampS} 초에
+        명령 궤적 따라가기: 0° → 60° 를 {PLAN[k].rampS} 초에
       </h3>
       {k === 'C' && (
         <label className={css.check}>
@@ -101,7 +101,7 @@ export default function Tracking({ chain, show, step, record }: TopicProps) {
         </button>
       </div>
       <TimeGraph
-        title="어깨 각도 — 명령(점선) · 실제(실선)"
+        title="어깨 각도: 명령(점선) · 실제(실선)"
         tEnd={tEnd}
         lo={0}
         hi={75}

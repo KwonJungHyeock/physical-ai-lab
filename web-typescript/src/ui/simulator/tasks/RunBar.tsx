@@ -95,7 +95,7 @@ export default function RunBar(p: Props) {
         data-rate={p.simRate}
         onClick={() => p.onSimRate(p.simRate === 1 ? 2 : p.simRate === 2 ? 4 : 1)}
         aria-label={`시뮬레이션 빠르기: ${RATE_NAME[p.simRate] ?? '보통'} (누르면 바뀜)`}
-        title="시뮬레이션 빠르기 — 한 번: 2배 (세모 하나), 두 번: 4배 (세모 둘), 세 번: 보통. 실제 로봇은 늘 제 속도"
+        title="시뮬레이션 빠르기. 한 번: 2배 (세모 하나), 두 번: 4배 (세모 둘), 세 번: 보통. 실제 로봇은 늘 제 속도"
       >
         <Speed rate={p.simRate} />
       </button>

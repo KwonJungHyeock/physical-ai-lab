@@ -716,7 +716,7 @@ export function quizzes(rs: readonly DataRecord[], twinRs: readonly DataRecord[]
   out.push({
     id: 'bottleneck',
     q: '어느 현장이 병목인가요? (로봇 한 번의 작업이 가장 오래 걸리는 곳)',
-    look: '한눈에 보기의 ‘병목 찾기’ 막대 — 현장마다 평균 작업 시간',
+    look: '한눈에 보기의 ‘병목 찾기’ 막대 (현장마다 평균 작업 시간)',
     view: { tab: 'overview' },
     choices: labs.map((l) => l.name),
     answer: labs.length >= 2 && b.slowest ? labs.indexOf(b.slowest) : null,
@@ -737,8 +737,8 @@ export function quizzes(rs: readonly DataRecord[], twinRs: readonly DataRecord[]
     const xCol: Column = { key: `v:${key}`, name, unit: '', kind: 'value' };
     speed = {
       id: 'speed',
-      q: `${labInfo(lab).name} 문제 ${problem} ‘${problemTitle(lab, problem)}’ — ${josa(name, '과', '와')} 성공의 관계는?`,
-      look: `현장 분석의 산점도 — X: ${name}, Y: 성공 (기울기와 r을 봐요)`,
+      q: `${labInfo(lab).name} 문제 ${problem} ‘${problemTitle(lab, problem)}’에서 ${josa(name, '과', '와')} 성공의 관계는?`,
+      look: `현장 분석의 산점도 (X: ${name}, Y: 성공). 기울기와 r을 봐요.`,
       view: { tab: 'lab', lab, problem, x: `v:${key}`, y: 'pass' },
       choices: ['빠를수록 성공이 늘어요', '빠를수록 실패가 늘어요', '거의 관계가 없어요'],
       answer: Math.abs(r) < 0.2 ? 2 : r > 0 ? 0 : 1,
@@ -750,7 +750,7 @@ export function quizzes(rs: readonly DataRecord[], twinRs: readonly DataRecord[]
     speed ?? {
       id: 'speed',
       q: '속도와 성공의 관계는?',
-      look: '현장 분석의 산점도 — X: 속도, Y: 성공',
+      look: '현장 분석의 산점도 (X: 속도, Y: 성공)',
       view: null,
       choices: ['빠를수록 성공이 늘어요', '빠를수록 실패가 늘어요', '거의 관계가 없어요'],
       answer: null,
@@ -762,7 +762,7 @@ export function quizzes(rs: readonly DataRecord[], twinRs: readonly DataRecord[]
   out.push({
     id: 'twin',
     q: '시뮬레이션과 실제 로봇의 위치 오차는 평균 몇 mm인가요?',
-    look: '디지털 트윈의 ‘시뮬 ↔ 실제’ 그래프와 오차 표 — mm 항목의 평균 오차',
+    look: '디지털 트윈의 ‘시뮬 ↔ 실제’ 그래프와 오차 표 (mm 항목의 평균 오차)',
     view: { tab: 'twin' },
     choices: [...MM_BANDS],
     answer: t.mmMae === null ? null : mmBand(t.mmMae),
@@ -803,7 +803,7 @@ export function toCsv(rs: readonly DataRecord[]): string {
     '성공',
     '작업 시간 (s)',
     ...vk.map((k) => `값: ${k}`),
-    ...ck.flatMap((c) => [`${c} — 통과`, `${c} — 값`]),
+    ...ck.flatMap((c) => [`${c} (통과)`, `${c} (값)`]),
   ];
   const rows = [...rs]
     .sort((a, b) => a.t - b.t)

@@ -136,7 +136,7 @@ function measureRows(chain: readonly ChainSegment[], prob: AiProblem, run: AiRun
     return [
       { label: '블록 색상 H (빨강 · 노랑 · 파랑)', value: `${hue[0]} · ${hue[1]} · ${hue[3]}`, markers: [mk(0, true), mk(1, true), mk(3, true)] },
       { label: '연두색 초록 블록의 색상 H', value: `${hue[2]}`, bad: true, markers: [mk(2, false)] },
-      { label: '노랑 범위 · 초록 범위 (H)', value: '11 ~ 59 · 35 ~ 90 — 35 ~ 59 겹침', bad: true },
+      { label: '노랑 범위 · 초록 범위 (H)', value: '11 ~ 59 · 35 ~ 90 (35 ~ 59 겹침)', bad: true },
       { label: '검사 순서', value: '노랑 → 빨강 → 초록 → 파랑' },
       { label: '프로그램이 정한 초록 블록의 색 → 분류함', value: g ? `${g.color} → ${BIN_OF[g.color]}` : '—', bad: true },
     ];
@@ -159,7 +159,7 @@ function measureRows(chain: readonly ChainSegment[], prob: AiProblem, run: AiRun
   const press = run?.events.find((e) => e.kind === 'press');
   return [
     { label: '부품 높이 · 프로그램이 아는 높이', value: `${POST.h} mm · ${BLOCK_MM} mm`, bad: true, dim: { key: 'h', a: [list[0].x - 26, list[0].y, 0], b: [list[0].x - 26, list[0].y, POST.h], text: `${POST.h} mm`, color: '#3454d1', label: 'l' } },
-    { label: '컵이 누른 깊이', value: press ? `${fmt((press.value ?? 0) + 3)} mm — 작업 중지` : '—', bad: true, markers: press?.at ? [{ key: 'press', mm: press.at, ok: false, text: '누른 곳' }] : [] },
+    { label: '컵이 누른 깊이', value: press ? `${fmt((press.value ?? 0) + 3)} mm (작업 중지)` : '—', bad: true, markers: press?.at ? [{ key: 'press', mm: press.at, ok: false, text: '누른 곳' }] : [] },
     { label: '카메라 높이 (판에서)', value: `${CAMERA.z} mm` },
     {
       label: '빨강 부품: 카메라 아래에서 · 빗나간 거리',
@@ -412,7 +412,7 @@ export default function AiLab({ robot, chain, gripperRobot, hidden, level = 'hs'
           <AiAround />
           <AiCell player={player} prob={prob} things={list} overlay={overlay} />
         </LearnStage>
-        {fail && playT >= fail.t && <div className={lg.alarm}>⚠ {fail.text.replace(/ — 작업 중지$/, '')}</div>}
+        {fail && playT >= fail.t && <div className={lg.alarm}>⚠ {fail.text.replace(/ \(작업 중지\)$/, '')}</div>}
         {shown && !fail && playT >= shown.durationS - 1e-6 && <div className={lg.okPill}>✓ {scoreAi(prob, shown).headline}</div>}
         {slow && playing && <div className={lg.slowPill}>느린 재생 · 문제가 생기는 순간</div>}
         {prob !== 2 && <KitCam prob={prob as 1 | 3} ranges={camRanges} part={camPart} />}
@@ -481,7 +481,7 @@ export default function AiLab({ robot, chain, gripperRobot, hidden, level = 'hs'
                 <dt>기준</dt>
                 <dd>{prob === 1 ? '모두 제 색 분류함에' : `흡착 컵이 윗면 가운데에서 ${SEAL_MM} mm 안 · 제 분류함에`}</dd>
                 <dt>장비</dt>
-                <dd>공식 AI 키트 — 위 카메라 · 흡착 펌프 · 분류함 4개</dd>
+                <dd>공식 AI 키트 (위 카메라 · 흡착 펌프 · 분류함 4개)</dd>
               </dl>
             </div>
           }
@@ -530,7 +530,7 @@ export default function AiLab({ robot, chain, gripperRobot, hidden, level = 'hs'
 }
 
 function programLine(p: AiProblem): string {
-  if (p === 1) return 'aikit_color.py 그대로 — 노랑 11 ~ 59 · 빨강 0 ~ 8 · 초록 35 ~ 90 · 파랑 100 ~ 124 순서로 검사';
+  if (p === 1) return 'aikit_color.py 그대로: 노랑 11 ~ 59 · 빨강 0 ~ 8 · 초록 35 ~ 90 · 파랑 100 ~ 124 순서로 검사';
   if (p === 2) return '시연 1 (135, −25)에서 기록한 관절 각을 그대로 재생 → D 분류함';
   return `물체 윗면 = ${BLOCK_MM} mm (블록용) · 픽셀 → mm는 보정판(높이 0) 기준 비율 그대로`;
 }
@@ -628,7 +628,7 @@ function KitCam({ prob, ranges, part }: { prob: 1 | 3; ranges: Range[]; part: Pa
         <>
           <canvas ref={ref} width={ROI.u1 - ROI.u0} height={ROI.v1 - ROI.v0} aria-label="키트 카메라 사진과 색 판정" />
           <footer>
-            보정판 부분 · 찾은 덩어리 {found.length}개 — 상자 위 글자: 프로그램이 정한 색 → 분류함{part ? ' · 흰 원: 윗면 가운데, 빨간 +: 프로그램이 보내는 곳' : ''}
+            보정판 부분 · 찾은 덩어리 {found.length}개 · 상자 위 글자: 프로그램이 정한 색 → 분류함{part ? ' · 흰 원: 윗면 가운데, 빨간 +: 프로그램이 보내는 곳' : ''}
           </footer>
         </>
       )}
@@ -711,7 +711,7 @@ function HmiHsv({ v, on }: { v: HsvValues; on(v: HsvValues): void }) {
           </span>
         ))}
       </div>
-      <Knob id="ai-yh" label="노랑 범위 위 끝" unit="" v={v.yellowHi} min={20} max={70} note="공식 값 59 — 초록 범위(35부터)와 겹치는지 보세요" on={(yellowHi) => on({ ...v, yellowHi })} />
+      <Knob id="ai-yh" label="노랑 범위 위 끝" unit="" v={v.yellowHi} min={20} max={70} note="공식 값 59. 초록 범위(35부터)와 겹치는지 보세요" on={(yellowHi) => on({ ...v, yellowHi })} />
       <Knob id="ai-gl" label="초록 범위 아래 끝" unit="" v={v.greenLo} min={25} max={60} note="공식 값 35" on={(greenLo) => on({ ...v, greenLo })} />
       <table className={lg.layers}>
         <thead>
@@ -830,7 +830,7 @@ function HmiPart({ v, preview, on }: { v: PartValues; preview: ReturnType<typeof
       <Knob id="ai-h" label="물체 윗면 높이 (프로그램이 쓰는 값)" unit="mm" v={v.height} min={20} max={80} step={5} note="집는 높이 = 이 값 · 시차 보정에도 써요" on={(height) => on({ ...v, height })} />
       <div className={lg.jog}>
         <button type="button" aria-pressed={v.parallax} onClick={() => on({ ...v, parallax: !v.parallax })} style={v.parallax ? { borderColor: '#6fe3a5', color: '#6fe3a5' } : undefined}>
-          {v.parallax ? '✓ 시차 보정 켬 — 카메라 축 쪽으로 (Z − h) ÷ Z배' : '시차 보정 꺼짐 (누르면 켜기)'}
+          {v.parallax ? '✓ 시차 보정 켬: 카메라 축 쪽으로 (Z − h) ÷ Z배' : '시차 보정 꺼짐 (누르면 켜기)'}
         </button>
       </div>
       <table className={lg.layers}>

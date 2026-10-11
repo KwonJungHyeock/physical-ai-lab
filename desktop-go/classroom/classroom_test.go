@@ -788,3 +788,28 @@ func TestDevOrigin(t *testing.T) {
 		t.Fatalf("another port: %d", w.Code)
 	}
 }
+
+func TestRobotOrigin(t *testing.T) {
+	for _, ok := range []string{"http://192.168.0.7:8080", "http://10.42.0.1:8080", "http://172.16.3.4:8080", "http://169.254.1.2:8080"} {
+		if !robotOrigin(ok) {
+			t.Fatalf("robot origin refused: %s", ok)
+		}
+	}
+	for _, bad := range []string{"http://8.8.8.8:8080", "https://192.168.0.7:8080", "http://192.168.0.7:3000", "http://robot.local:8080", "http://192.168.0.7", "http://u@192.168.0.7:8080", "http://[fd00::1]:8080", "http://192.168.0.7:8080/x"} {
+		if robotOrigin(bad) {
+			t.Fatalf("robot origin accepted: %s", bad)
+		}
+	}
+	// End to end: a preflight from a robot's page on the LAN is answered for that origin.
+	e := newEnv(t)
+	req := httptest.NewRequest("OPTIONS", APIPrefix+"/events", nil)
+	req.Host = "192.168.0.10:47290"
+	req.RemoteAddr = "192.168.0.23:5000"
+	req.Header.Set("Origin", "http://192.168.0.7:8080")
+	req.Header.Set("Access-Control-Request-Method", "POST")
+	w := httptest.NewRecorder()
+	e.h.ServeHTTP(w, req)
+	if w.Code != 204 || w.Header().Get("Access-Control-Allow-Origin") != "http://192.168.0.7:8080" {
+		t.Fatalf("robot page preflight: %d %v", w.Code, w.Header())
+	}
+}

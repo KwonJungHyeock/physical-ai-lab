@@ -98,7 +98,7 @@ function Form({ sim, robots }: { sim: RunRecord; robots: number }) {
                 <td>{c.value}</td>
                 <td>
                   <input
-                    aria-label={`${c.label} — 실제 로봇에서 잰 값`}
+                    aria-label={`${c.label}: 실제 로봇에서 잰 값`}
                     value={vals[i]}
                     placeholder="잰 값"
                     onChange={(e) => {
@@ -110,7 +110,7 @@ function Form({ sim, robots }: { sim: RunRecord; robots: number }) {
                 <td>
                   <input
                     type="checkbox"
-                    aria-label={`${c.label} — 기준 통과`}
+                    aria-label={`${c.label}: 기준 통과`}
                     checked={oks[i]}
                     onChange={(e) => {
                       setSaved(false);
@@ -151,7 +151,7 @@ function Form({ sim, robots }: { sim: RunRecord; robots: number }) {
       </div>
       <small>
         {saved || robots > 0
-          ? `이 문제의 실제 로봇 기록 ${robots}개 — 관제센터의 [디지털 트윈]에서 시뮬레이터와 비교해요.`
+          ? `이 문제의 실제 로봇 기록이 ${robots}개 있어요. 관제센터의 [디지털 트윈]에서 시뮬레이터와 비교해요.`
           : '저장하면 관제센터의 [디지털 트윈]에서 시뮬레이터 결과와 나란히 비교해요.'}
       </small>
     </>

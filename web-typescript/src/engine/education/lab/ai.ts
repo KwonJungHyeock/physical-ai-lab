@@ -530,7 +530,7 @@ function pickPlace(sim: AiSim, x: number, y: number, topZ: number, bin: BinName,
   const a = poseAt(sim.chain, above, sim.q);
   const b = a && poseAt(sim.chain, at, a);
   if (!a || !b) {
-    sim.fail('unreachable', `${what} 위 (${x.toFixed(0)}, ${y.toFixed(0)})에 손이 닿지 않아요 — 작업 중지`, { at: above });
+    sim.fail('unreachable', `${what} 위 (${x.toFixed(0)}, ${y.toFixed(0)})에 손이 닿지 않아요 (작업 중지)`, { at: above });
     return null;
   }
   if (!sim.moveJ(a, SPEED.travel)) return null;
@@ -543,7 +543,7 @@ function pickPlace(sim: AiSim, x: number, y: number, topZ: number, bin: BinName,
     // The cup lands on the top before reaching where it was sent: it presses into the part.
     const stopAt = poseAt(sim.chain, [x, y, t.h], a);
     if (stopAt) sim.moveJ(stopAt, SPEED.down);
-    sim.fail('press', `${what}: 흡착 컵이 윗면을 ${(t.h - topZ + PRESS_MM).toFixed(0)} mm 눌렀어요 — 프로그램은 윗면을 ${topZ.toFixed(0)} mm로 알고 있어요 — 작업 중지`, { at: [x, y, t.h], value: t.h - topZ, thing: target });
+    sim.fail('press', `${what}: 흡착 컵이 윗면을 ${(t.h - topZ + PRESS_MM).toFixed(0)} mm 눌렀어요. 프로그램은 윗면을 ${topZ.toFixed(0)} mm로 알고 있어요 (작업 중지)`, { at: [x, y, t.h], value: t.h - topZ, thing: target });
     return { k: target, offset: real, ok: false };
   }
   if (!sim.moveJ(b, SPEED.down)) return null;
@@ -553,18 +553,18 @@ function pickPlace(sim: AiSim, x: number, y: number, topZ: number, bin: BinName,
     sim.pump = false;
     const left = poseAt(sim.chain, above, sim.q);
     if (left) sim.moveJ(left, SPEED.down);
-    sim.fail('miss', t ? `${what}: 흡착 컵이 윗면 가운데에서 ${real.toFixed(1)} mm 벗어나 공기가 새요 — 들지 못했어요` : `${what}: 그 자리에 아무것도 없어요 — 허공을 집었어요`, { at: at, value: real, thing: target }, false);
+    sim.fail('miss', t ? `${what}: 흡착 컵이 윗면 가운데에서 ${real.toFixed(1)} mm 벗어나 공기가 새요. 들지 못했어요` : `${what}: 그 자리에 아무것도 없어 허공을 집었어요`, { at: at, value: real, thing: target }, false);
     return { k: target, offset: real, ok: false };
   }
   sim.held = target;
   sim.heldDz = t.h;
   sim.things[target].mode = 'held';
-  sim.log('pick', `${what} — 집었어요 (가운데에서 ${real.toFixed(1)} mm)`, { at: [t.x, t.y, t.h], value: real, thing: target });
+  sim.log('pick', `${what}: 집었어요 (가운데에서 ${real.toFixed(1)} mm)`, { at: [t.x, t.y, t.h], value: real, thing: target });
   sim.moveJ(a, SPEED.down);
   const d = dropAt(bin, t.h);
   const q = poseAt(sim.chain, d, sim.q);
   if (!q) {
-    sim.fail('unreachable', `분류함 ${bin} 위에 손이 닿지 않아요 — 작업 중지`, { at: d });
+    sim.fail('unreachable', `분류함 ${bin} 위에 손이 닿지 않아요 (작업 중지)`, { at: d });
     return { k: target, offset: real, ok: false };
   }
   sim.moveJ(q, SPEED.travel);
@@ -595,7 +595,7 @@ export function runHsv(chain: readonly ChainSegment[], v: HsvValues): AiRun {
   const pic = kitPicture(list);
   const found = findThings(pic, officialRanges(v.yellowHi, v.greenLo), list);
   const sim = new AiSim(chain, list);
-  sim.log('see', `사진에서 ${found.length}개를 찾았어요 — ${found.map((f) => f.color).join(' · ')}`);
+  sim.log('see', `사진에서 ${found.length}개를 찾았어요: ${found.map((f) => f.color).join(' · ')}`);
   const picks: AiPick[] = [];
   for (const f of found) {
     if (sim.stopped) break;
@@ -651,7 +651,7 @@ export function runDemo(chain: readonly ChainSegment[], v: DemoValues): AiRun {
     sim.wait(0.3);
     if (off > SEAL_MM) {
       sim.pump = false;
-      sim.fail('miss', `${k + 1}회: 블록에서 ${off.toFixed(1)} mm 떨어진 곳을 집었어요${off > BLOCK_MM ? ' (허공)' : ' (가장자리 — 공기가 새요)'}`, { at: pol.at, value: off, thing: k }, false);
+      sim.fail('miss', `${k + 1}회: 블록에서 ${off.toFixed(1)} mm 떨어진 곳을 집었어요${off > BLOCK_MM ? ' (허공)' : ' (가장자리라 공기가 새요)'}`, { at: pol.at, value: off, thing: k }, false);
       picks.push({ k, offset: off, ok: false });
       sim.moveJ(above, SPEED.down);
       sim.things[k].c = [t.x, t.y, -999];
@@ -731,7 +731,7 @@ export interface AiScore {
   headline: string;
 }
 
-const strip = (s: string) => s.replace(/ — 작업 중지$/, '');
+const strip = (s: string) => s.replace(/ \(작업 중지\)$/, '');
 
 export function scoreAi(p: AiProblem, run: AiRun): AiScore {
   const stopEv = run.events.find((e) => e.kind === 'press' || e.kind === 'unreachable');

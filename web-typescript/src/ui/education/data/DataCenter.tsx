@@ -319,7 +319,7 @@ export default function DataCenter({ hidden, onBack, onOpenLab }: { hidden?: boo
                 <div className={css.row2}>
                   <div className={css.side}>
                     <article className={css.card} data-flash={fromQuiz?.id === 'bottleneck' || undefined}>
-                      <h2>병목 찾기 — 현장마다 평균 작업 시간</h2>
+                      <h2>병목 찾기: 현장마다 평균 작업 시간</h2>
                       <p className={css.lead}>로봇 한 번의 작업이 가장 오래 걸리는 곳이 줄 전체를 늦춰요. 그곳이 병목이에요.</p>
                       {neck.labs.length ? (
                         <>
@@ -479,7 +479,7 @@ export default function DataCenter({ hidden, onBack, onOpenLab }: { hidden?: boo
                     <div className={css.row3}>
                       <article className={css.card} data-flash={fromQuiz?.id === 'speed' || undefined}>
                         <div className={css.cardHead}>
-                          <h2>산점도 — 두 값의 관계</h2>
+                          <h2>산점도: 두 값의 관계</h2>
                           {xCol && yCol && (
                             <div className={css.selects}>
                               <label>
@@ -548,7 +548,7 @@ export default function DataCenter({ hidden, onBack, onOpenLab }: { hidden?: boo
                           <h2>작업 시간 분포</h2>
                           <HistogramChart h={hist} unit="s" mean={sum.duration.mean} height={210} />
                           <p className={css.small}>
-                            막대 높이는 그 시간대에 끝난 실행 수예요. 평균 {fmtNum(sum.duration.mean, 1)} s, 표준편차 {fmtNum(sum.duration.std, 2)} s — 작을수록
+                            막대 높이는 그 시간대에 끝난 실행 수예요. 평균 {fmtNum(sum.duration.mean, 1)} s, 표준편차 {fmtNum(sum.duration.std, 2)} s 예요. 표준편차가 작을수록
                             매번 비슷하게 움직여요.
                           </p>
                         </article>
@@ -650,7 +650,7 @@ export default function DataCenter({ hidden, onBack, onOpenLab }: { hidden?: boo
                   );
                 })}
                 <p className={css.quizNote}>
-                  답은 지금 보고 있는 {isDemo ? '예시 데이터' : '실제 기록'}에서 계산해요. 기록이 바뀌면 답도 바뀔 수 있어요 — 데이터가 말하는 것을 읽는
+                  답은 지금 보고 있는 {isDemo ? '예시 데이터' : '실제 기록'}에서 계산해요. 기록이 바뀌면 답도 바뀔 수 있어요. 데이터가 말하는 것을 읽는
                   연습이에요.
                 </p>
               </div>
@@ -749,7 +749,7 @@ function RunsTable({ runs, showWho }: { runs: readonly DataRecord[]; showWho: bo
       <h2>
         실행 기록{' '}
         <small>
-          최근 {latest.length}개{runs.length > RUN_ROWS ? ` / 전체 ${runs.length}개 — 전체는 CSV로 받아요` : ''}
+          최근 {latest.length}개{runs.length > RUN_ROWS ? ` / 전체 ${runs.length}개 (전체는 CSV로 받아요)` : ''}
         </small>
       </h2>
       <div className={css.tableWrap}>
@@ -829,7 +829,7 @@ function TwinTab({
   return (
     <>
       <article className={css.card}>
-        <h2>디지털 트윈 — 시뮬레이터와 실제 로봇 비교</h2>
+        <h2>디지털 트윈: 시뮬레이터와 실제 로봇 비교</h2>
         <p className={css.lead}>
           디지털 트윈은 실제 로봇과 똑같이 움직이는 가상의 로봇이에요. 같은 문제를 같은 값으로 시뮬레이터와 실제 로봇에서 돌려, 결과가 얼마나 같은지 봐요.
           차이가 작을수록 시뮬레이터를 믿고 미리 시험할 수 있어요.
@@ -857,7 +857,7 @@ function TwinTab({
               <span>
                 {twin.mmMae === null
                   ? 'mm로 재는 항목이 없어요'
-                  : `${MM_BANDS[twin.mmMae < 1 ? 0 : twin.mmMae < 3 ? 1 : twin.mmMae < 10 ? 2 : 3]} — |실제 − 시뮬|의 평균`}
+                  : `${MM_BANDS[twin.mmMae < 1 ? 0 : twin.mmMae < 3 ? 1 : twin.mmMae < 10 ? 2 : 3]} (|실제 − 시뮬|의 평균)`}
               </span>
             </div>
             <div>

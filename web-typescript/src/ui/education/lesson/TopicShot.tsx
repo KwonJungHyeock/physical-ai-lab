@@ -37,13 +37,13 @@ export function TopicShot({
   if (!topic || !hasShot(id, focus)) return <TopicArt id={id} focus={focus} className={className} />;
   const keys = focus ? [focus] : KEYS;
   return (
-    <div className={[css.frame, className ?? ''].join(' ')} data-one={focus ? true : undefined} role="group" aria-label={`${topic.title} — 3D 실습 화면`}>
+    <div className={[css.frame, className ?? ''].join(' ')} data-one={focus ? true : undefined} role="group" aria-label={`${topic.title}: 3D 실습 화면`}>
       {keys.map((k) => {
         const s = topic.steps.find((x) => x.key === k)!;
         return (
           <figure key={k} className={css.shot}>
             {/* eslint-disable-next-line @next/next/no-img-element -- a still of the 3D view, also in the static export */}
-            <img src={tryShot(id, k)} alt={`${STEP_NAME[k]} ${plain(s.title)} — 결과를 3D 화면으로`} width={960} height={600} loading="lazy" decoding="async" />
+            <img src={tryShot(id, k)} alt={`${STEP_NAME[k]} ${plain(s.title)}: 결과를 3D 화면으로`} width={960} height={600} loading="lazy" decoding="async" />
             <figcaption style={{ ['--c' as string]: TRY_COLOR[k] }}>
               <b>{STEP_NAME[k]}</b>
               <span>{plain(s.title)}</span>

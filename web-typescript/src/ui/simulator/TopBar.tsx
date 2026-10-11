@@ -74,7 +74,7 @@ export function MenuChip({ label, title, className, children }: { label: ReactNo
 export default function TopBar({ view, onView, busy, context, settings, status, robotStop, onStop, onHelp }: Props) {
   return (
     <header className={css.topBar} data-panel="topbar">
-      <button type="button" className={css.lockup} onClick={() => onView('sim')} title="ROBODYNE SYSTEMS · Physical AI 로봇 학습 시뮬레이터 — 시뮬레이터로">
+      <button type="button" className={css.lockup} onClick={() => onView('sim')} title="ROBODYNE SYSTEMS · Physical AI 로봇 학습 시뮬레이터 (시뮬레이터로)">
         {/* eslint-disable-next-line @next/next/no-img-element -- a small fixed logo, also in the static export for the robot */}
         <img src="/brand/robodyne-logo-ink.png" alt="ROBODYNE SYSTEMS" width={83} height={22} />
         <i aria-hidden="true" />
@@ -98,7 +98,7 @@ export default function TopBar({ view, onView, busy, context, settings, status, 
       <div className={css.topStatus}>
         {status}
         <div className={`${css.menuChip} ${css.settingsChip}`}>
-          <button type="button" className={css.menuChipBtn} onClick={onHelp} title="도움말 — 화면 · 순서 · 단축키 · 매뉴얼" aria-label="도움말">
+          <button type="button" className={css.menuChipBtn} onClick={onHelp} title="도움말: 화면 · 순서 · 단축키 · 매뉴얼" aria-label="도움말">
             <Icon name="help" size={18} />
           </button>
         </div>

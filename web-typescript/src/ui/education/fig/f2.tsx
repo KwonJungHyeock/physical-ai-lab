@@ -65,9 +65,9 @@ function Bend({ a, b, bend = 30, c = 'ink' }: { a: Pt; b: Pt; bend?: number; c?:
 const p21 = cols(3);
 export const fig21: FigureDef = {
   label: 'J1 을 돌리면 T₀¹ 의 회전 3×3 만 바뀌고 위치 열은 그대로, T₀¹·T₁² 와 순서를 바꾼 T₁²·T₀¹ 은 다른 위치, 바닥 {0} 부터 플랜지 {6} 까지 6개를 곱하고 그리퍼 끝은 58 mm 더',
-  caption: '순기구학 — 관절 행렬을 바닥부터 차례로 곱하기: T₀¹ 하나 · T₀¹·T₁² · T₀¹ … T₅⁶ (그리퍼 끝 = 플랜지 + 58 mm)',
+  caption: '순기구학: 관절 행렬을 바닥부터 차례로 곱하기 (T₀¹ 하나 · T₀¹·T₁² · T₀¹ … T₅⁶, 그리퍼 끝 = 플랜지 + 58 mm)',
   symbols: ['T₀¹', 'T₁²', 'T₀²', 'T₀⁶', 'T₅⁶', 'θ₁'],
-  panels: p21.map((p, i) => ({ ...p, title: ['행렬 1개 — T₀¹', '행렬 2개 — 곱하는 순서', '행렬 6개 — T₀⁶'][i] })),
+  panels: p21.map((p, i) => ({ ...p, title: ['행렬 1개: T₀¹', '행렬 2개: 곱하는 순서', '행렬 6개: T₀⁶'][i] })),
   draw: () => {
     const [pa, pb, pc] = p21;
     // A: {0} on the base, {1} on the J1 axis turned by θ₁.
@@ -126,7 +126,7 @@ export const fig21: FigureDef = {
       <g>
         <Dividers panels={p21} />
         {/* ── A */}
-        <Title p={pa}>A 행렬 1개 — T₀¹</Title>
+        <Title p={pa}>A 행렬 1개: T₀¹</Title>
         <Ln x1={o(0, 0, 0)[0]} y1={o(0, 0, 0)[1]} x2={at1[0]} y2={at1[1]} w={18} />
         <Base x={o(0, 0, 0)[0]} y={o(0, 0, 0)[1]} s={0.9} />
         <Axes3 x={o(0, 0, 0)[0] - 130} y={o(0, 0, 0)[1] + 30} len={70} />
@@ -177,7 +177,7 @@ export const fig21: FigureDef = {
         <Foot p={pa} sum="J1 → 3×3 만 바뀜" />
 
         {/* ── B */}
-        <Title p={pb}>B 행렬 2개 — T₀² = T₀¹ · T₁²</Title>
+        <Title p={pb}>B 행렬 2개: T₀² = T₀¹ · T₁²</Title>
         <Floor x1={pb.x + 30} x2={pb.x + pb.w - 30} y={fb} />
         <Arm pts={armB(105)} c="gray" w={16} />
         <Arm pts={armB(55)} w={18} an={0.3} />
@@ -217,7 +217,7 @@ export const fig21: FigureDef = {
         <Foot p={pb} result="순서 바꾸면 → 다른 위치" c="red" sum="곱하는 순서 = 바닥부터" />
 
         {/* ── C */}
-        <Title p={pc}>C 행렬 6개 — T₀⁶</Title>
+        <Title p={pc}>C 행렬 6개: T₀⁶</Title>
         <Floor x1={pc.x + 30} x2={pc.x + pc.w - 30} y={Fs[0].p[1]} />
         <Arm pts={Fs.slice(1).map((f) => f.p)} w={14} gripper={false} />
         <Ln x1={Fs[0].p[0]} y1={Fs[0].p[1] - 26} x2={Fs[1].p[0]} y2={Fs[1].p[1]} w={14} />
@@ -285,9 +285,9 @@ const ik = (target: Pt, tool: number, up: boolean): [number, number, number] => 
 };
 export const fig22: FigureDef = {
   label: '관절 슬라이더 6개로 손끝을 목표 공 12 mm 안에 넣기는 오래 걸리고, 반복 풀이는 손끝이 공에 다가가며 오차가 197 mm 에서 6 번 만에 0.1 mm 아래로 떨어져 멈추고, 같은 공에 닿는 팔 모양이 답 1~4 로 여러 개',
-  caption: '역기구학 세 가지 — 손으로 · 반복 풀이 (오차 197 → 0.01 mm, 6 번) · 출발 자세를 바꿔 찾은 답 4개 (목표 180, 80, 100 mm)',
+  caption: '역기구학 세 가지: 손으로 · 반복 풀이 (오차 197 → 0.01 mm, 6 번) · 출발 자세를 바꿔 찾은 답 4개 (목표 180, 80, 100 mm)',
   symbols: ['L₁', 'L₂', 'r'],
-  panels: p22.map((p, i) => ({ ...p, title: ['손으로 — 슬라이더 6개', '반복 풀이', '같은 목표, 다른 자세'][i] })),
+  panels: p22.map((p, i) => ({ ...p, title: ['손으로: 슬라이더 6개', '반복 풀이', '같은 목표, 다른 자세'][i] })),
   draw: () => {
     const [pa, pb, pc] = p22;
     const BALL: Pt = [220, 40];
@@ -443,7 +443,7 @@ export const fig22: FigureDef = {
             </G>
           );
         })}
-        <Foot p={pc} result="손끝 같음, 팔 모양 다름" sum="답 4개 — 덜 움직이는 답" />
+        <Foot p={pc} result="손끝 같음, 팔 모양 다름" sum="답 4개: 덜 움직이는 답" />
       </g>
     );
   },
@@ -456,7 +456,7 @@ const PA: Pt = [180, -120];
 const PB: Pt = [180, 120];
 export const fig23: FigureDef = {
   label: '펜을 단 채 위에서 본 A→B 세 번: 관절 이동은 펜 자취가 바깥으로 약 35 mm 휘고 펜은 0°, 직선 이동(위치만)은 자취가 곧지만 펜이 약 13° 기울고, 직선 + 자세 유지는 자취도 곧고 펜도 0°',
-  caption: '같은 펜, 같은 A → B (240 mm) — 관절 이동 · 직선 이동(위치만) · 직선 + 자세 유지의 자취, 펜 기울기, 관절 각도',
+  caption: '같은 펜, 같은 A → B (240 mm): 관절 이동 · 직선 이동(위치만) · 직선 + 자세 유지의 자취, 펜 기울기, 관절 각도',
   symbols: ['s'],
   panels: p23.map((p, i) => ({ ...p, title: ['관절 이동 (MOVJ)', '직선 이동 (MOVL)', '직선 + 자세 유지'][i] })),
   draw: () => {

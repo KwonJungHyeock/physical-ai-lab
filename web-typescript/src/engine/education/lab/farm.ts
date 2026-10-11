@@ -516,7 +516,7 @@ class FarmSim {
       const c = poseContact(this.chain, this.q, OBSTACLES, TOOL_MM);
       if (c) {
         this.snap();
-        return this.fail('hit', `J${c.joint} 쪽이 ${c.what}에 닿았어요 — 작업 중지`, { at: c.at as Mm });
+        return this.fail('hit', `J${c.joint} 쪽이 ${c.what}에 닿았어요 (작업 중지)`, { at: c.at as Mm });
       }
       this.snap();
     }
@@ -544,7 +544,7 @@ class FarmSim {
   }
 }
 
-const reachFail = (sim: FarmSim, what: string, p: Mm) => sim.fail('unreachable', `${what} (${p[0].toFixed(0)}, ${p[1].toFixed(0)})에 손이 닿지 않아요 — 작업 중지`, { at: p });
+const reachFail = (sim: FarmSim, what: string, p: Mm) => sim.fail('unreachable', `${what} (${p[0].toFixed(0)}, ${p[1].toFixed(0)})에 손이 닿지 않아요 (작업 중지)`, { at: p });
 
 /**
  * One tomato: down over where the program thinks it is, close, lift, into the punnet. The gripper
@@ -560,7 +560,7 @@ function pickAndPack(sim: FarmSim, f: Found, slot: number, grip: (sim: FarmSim, 
   if (!a || !b) return reachFail(sim, '토마토 위', above), null;
   if (!sim.moveJ(a, SPEED.travel) || !sim.moveJ(b, SPEED.down)) return null;
   if (!t) {
-    sim.fail('press', '찾은 자리에 토마토가 없어요 — 작업 중지', { at });
+    sim.fail('press', '찾은 자리에 토마토가 없어요 (작업 중지)', { at });
     return null;
   }
   const pick = grip(sim, f, t);
@@ -575,7 +575,7 @@ function pickAndPack(sim: FarmSim, f: Found, slot: number, grip: (sim: FarmSim, 
     sim.tomatoes[f.k].c = [f.x, f.y, zc];
     sim.force = 0;
     sim.snap();
-    sim.fail('slip', `${f.k + 1}번 토마토가 미끄러져 떨어졌어요 (잡는 힘 ${pick.hold.toFixed(2)} N < 필요한 힘 ${needForce(t).toFixed(2)} N) — 작업 중지`, { at: above, tomato: f.k, value: pick.hold });
+    sim.fail('slip', `${f.k + 1}번 토마토가 미끄러져 떨어졌어요. 잡는 힘 ${pick.hold.toFixed(2)} N이 필요한 힘 ${needForce(t).toFixed(2)} N보다 작아요 (작업 중지)`, { at: above, tomato: f.k, value: pick.hold });
     return pick;
   }
   const [px, py] = punnetSlot(slot);
@@ -610,7 +610,7 @@ function gentleGrip(sim: FarmSim, f: Found, t: Tomato): FarmPick | null {
   const off = Math.hypot(f.x - t.x, f.y - t.y);
   if (off > (GAP_OPEN - t.d) / 2) {
     sim.fingers(GAP_OPEN - 6, 40);
-    sim.fail('press', `${f.k + 1}번 토마토: 손가락이 토마토 위를 눌렀어요 (어긋남 ${off.toFixed(1)} mm) — 작업 중지`, { at: [t.x, t.y, TRAY.top + t.d], tomato: f.k, value: off });
+    sim.fail('press', `${f.k + 1}번 토마토: 손가락이 토마토 위를 눌렀어요. ${off.toFixed(1)} mm 어긋났어요 (작업 중지)`, { at: [t.x, t.y, TRAY.top + t.d], tomato: f.k, value: off });
     return { k: f.k, offset: off, dSeen: f.dSeen, peak: 0, hold: 0, packed: false };
   }
   const target = t.d - 1.5;
@@ -702,7 +702,7 @@ export function runGrip(chain: readonly ChainSegment[], v: GripValues): FarmRun 
           s.tomatoes[ff.k].mode = 'burst';
           s.force = 0;
           s.snap();
-          s.fail('burst', `${ff.k + 1}번 토마토가 터졌어요 — 잡는 힘이 ${g.peak.toFixed(1)} N까지 올라갔어요 (터지는 힘 ${TOMATO.burst} N) — 작업 중지`, { tomato: ff.k, value: g.peak, at: [t.x, t.y, TRAY.top + t.d / 2] });
+          s.fail('burst', `${ff.k + 1}번 토마토가 터졌어요. 잡는 힘이 ${g.peak.toFixed(1)} N까지 올라 터지는 힘 ${TOMATO.burst} N을 넘었어요 (작업 중지)`, { tomato: ff.k, value: g.peak, at: [t.x, t.y, TRAY.top + t.d / 2] });
           return pk;
         }
         s.fingers(t.d - g.still, 40, (gap) => (t.d - gap) * TOMATO.k);
@@ -749,7 +749,7 @@ export interface FarmScore {
   packed: number;
 }
 
-const strip = (s: string) => s.replace(/ — 작업 중지$/, '');
+const strip = (s: string) => s.replace(/ \(작업 중지\)$/, '');
 
 export function scoreFarm(p: FarmProblem, run: FarmRun): FarmScore {
   const list = FARM_TOMATOES[p];

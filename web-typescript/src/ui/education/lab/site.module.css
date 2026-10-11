@@ -1509,3 +1509,60 @@
   color: var(--muted, #667085);
   cursor: pointer;
 }
+
+/* Parts by what they ask (SiteFlow Sec kind), the same colours as the lesson rail:
+   개념 white · 질문 amber · 해 보기 blue · 결과 green, a stripe down the left and a tag. */
+.sec {
+  --k: #475467;
+  --k-bg: #fff;
+  --k-line: #e4e7ec;
+  flex: none;
+  padding-left: 12px;
+  background: var(--k-bg);
+  border-color: var(--k-line);
+  border-left: 4px solid var(--k);
+}
+.sec[data-kind='ask'] {
+  --k: #b54708;
+  --k-bg: #fff8ec;
+  --k-line: #f5d9a8;
+}
+.sec[data-kind='do'] {
+  --k: #2f5be7;
+  --k-bg: #eef4ff;
+  --k-line: #c7d7fe;
+}
+.sec[data-kind='result'] {
+  --k: #067647;
+  --k-bg: #ecfdf3;
+  --k-line: #abefc6;
+}
+.sec[data-s='now'] {
+  border-color: var(--k);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--k) 16%, transparent),
+    0 4px 14px rgba(16, 24, 40, 0.07);
+}
+.sec[data-s='now'] > header i {
+  background: var(--k);
+}
+.sec[data-s='now'] > header em {
+  background: var(--k);
+}
+.sec[data-s='todo'] {
+  background: #fff;
+  border-color: #d0d5dd;
+}
+.sec[data-s='todo'] {
+  border-left-color: #d0d5dd;
+}
+.secTag {
+  flex: none;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--k);
+}
+.sec[data-s='todo'] .secTag {
+  color: var(--faint);
+}

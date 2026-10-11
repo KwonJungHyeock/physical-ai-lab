@@ -157,7 +157,7 @@ function measureRows(prob: EnergyProblem, run: EnergyRun | null): EnergyRow[] {
       { label: '투명 PET: 채도 S · 밝기 V', value: `S ${m[1].s} · V ${m[1].vMin} ~ ${m[1].vMax}`, bad: true, markers: clears.map(({ k }) => mk(k, false, `투명 PET V ${m[k].v}`)) },
       { label: '빈 보정판의 밝기 V', value: `${b.min} ~ ${b.max}` },
       { label: '지금 규칙 (회색 픽셀, S < 43)', value: 'V < 200 캔 · ~ 210 PET · 그 위 판', bad: true },
-      { label: '프로그램이 찾은 것', value: `${found} / ${list.length} — 투명 PET ${list.length - found}개 없음`, bad: true },
+      { label: '프로그램이 찾은 것', value: `${found} / ${list.length} (투명 PET ${list.length - found}개 없음)`, bad: true },
     ];
   }
   if (prob === 2) {
@@ -450,7 +450,7 @@ export default function EnergyLab({ robot, chain, gripperRobot, hidden, level = 
           <EnergyAround />
           <EnergyCell player={player} prob={prob} things={list} overlay={overlay} />
         </LearnStage>
-        {fail && playT >= fail.t && <div className={lg.alarm}>⚠ {fail.text.replace(/ — 작업 중지$/, '')}</div>}
+        {fail && playT >= fail.t && <div className={lg.alarm}>⚠ {fail.text.replace(/ \(작업 중지\)$/, '')}</div>}
         {shown && !fail && playT >= shown.durationS - 1e-6 && <div className={lg.okPill}>✓ {scoreEnergy(prob, shown).headline}</div>}
         {slow && playing && <div className={lg.slowPill}>느린 재생 · 문제가 생기는 순간</div>}
         {prob !== 2 && <SortCam prob={prob as 1 | 3} vision={camVision} order={camOrder} />}
@@ -515,17 +515,17 @@ export default function EnergyLab({ robot, chain, gripperRobot, hidden, level = 
                 <dt>물건</dt>
                 <dd>
                   {prob === 1
-                    ? '납작한 재활용 조각 6개 — 캔 2 · 투명 PET 2 · 유색 PET 1 · 종이팩 1'
+                    ? '납작한 재활용 조각 6개 (캔 2 · 투명 PET 2 · 유색 PET 1 · 종이팩 1)'
                     : prob === 2
-                      ? '6개 — 빈 캔 · 음료 남은 캔(60 g) · 투명 PET · 유색 PET · 마른 종이팩 · 젖은 종이팩(30 g)'
-                      : '4개, 두 더미 — 종이팩 위에 캔 · 투명 PET 위에 유색 PET'}
+                      ? '6개: 빈 캔 · 음료 남은 캔(60 g) · 투명 PET · 유색 PET · 마른 종이팩 · 젖은 종이팩(30 g)'
+                      : '4개, 두 더미 (종이팩 위에 캔 · 투명 PET 위에 유색 PET)'}
                 </dd>
                 <dt>옮기기</dt>
                 <dd>보정판 → 분류함 (투명 PET A · 유색 PET B · 종이팩 C · 캔 D)</dd>
                 <dt>기준</dt>
                 <dd>{prob === 1 ? '모두 제 칸에 · 판에 남은 것 없음' : prob === 2 ? `모두 제 칸에 · 떨어뜨림 0 · 처리량 ${TARGET_PM}개/분 이상` : '모두 제 칸에 · 다른 칸에 섞인 것 0'}</dd>
                 <dt>장비</dt>
-                <dd>공식 AI 키트 — 위 카메라 · 흡착 펌프(컵 Ø20) · 분류함 4개</dd>
+                <dd>공식 AI 키트 (위 카메라 · 흡착 펌프(컵 Ø20) · 분류함 4개)</dd>
               </dl>
             </div>
           }
@@ -584,7 +584,7 @@ export default function EnergyLab({ robot, chain, gripperRobot, hidden, level = 
 
 function programLine(p: EnergyProblem): string {
   if (p === 1) return '색 있는 픽셀(S ≥ 43)은 색상으로 · 회색 픽셀은 밝기로: V < 200 캔 · 200 ~ 210 투명 PET · 그 위는 판';
-  if (p === 2) return '들고 옮기는 속도 — 모든 종류 100 (빈손 이동 100) · 찾기는 1번 문제에서 고친 그대로';
+  if (p === 2) return '들고 옮기는 속도: 모든 종류 100 (빈손 이동 100) · 찾기는 1번 문제에서 고친 그대로';
   return '큰 덩어리부터 집기 · 사진은 처음에 한 번 · 컵은 닿을 때까지 내려감 · 찾기는 1번 문제에서 고친 그대로';
 }
 
@@ -683,7 +683,7 @@ function SortCam({ prob, vision, order }: { prob: 1 | 3; vision: VisionValues; o
         <>
           <canvas ref={ref} width={(ROI.u1 - ROI.u0 + 1) * CAM_K} height={(ROI.v1 - ROI.v0 + 1) * CAM_K} aria-label="키트 카메라 사진과 판정" />
           <footer>
-            보정판 · 찾은 덩어리 {seen.found.length}개{seen.tooBig ? ` (판만 한 덩어리 ${seen.tooBig}개 버림)` : ''} — {ranked ? '글자: 집는 순서 · 보이는 비율' : '글자: 프로그램이 정한 종류 → 분류함'}
+            보정판 · 찾은 덩어리 {seen.found.length}개{seen.tooBig ? ` (판만 한 덩어리 ${seen.tooBig}개 버림)` : ''} · {ranked ? '글자: 집는 순서 · 보이는 비율' : '글자: 프로그램이 정한 종류 → 분류함'}
             {mode === 'mask' ? ' · 색: 캔 회색, 투명 PET 하늘, 유색 PET 초록, 종이팩 주황, 어두운 곳은 판' : ''}
           </footer>
         </>
@@ -883,7 +883,7 @@ function HmiVision({ v, on }: { v: VisionValues; on(v: VisionValues): void }) {
           </g>
         ))}
       </svg>
-      <Knob id="en-cv" label="투명 PET 띠의 위 끝 (이보다 밝으면 판)" unit="" v={v.clearV} min={200} max={250} note="지금 프로그램 210 — 투명 PET와 판의 밝기를 보세요" on={(clearV) => on({ ...v, clearV: Math.max(clearV, v.canV) })} />
+      <Knob id="en-cv" label="투명 PET 띠의 위 끝 (이보다 밝으면 판)" unit="" v={v.clearV} min={200} max={250} note="지금 프로그램 210. 투명 PET와 판의 밝기를 보세요" on={(clearV) => on({ ...v, clearV: Math.max(clearV, v.canV) })} />
       <Knob id="en-kv" label="캔 경계 (이보다 어두우면 캔)" unit="" v={v.canV} min={150} max={230} note="지금 프로그램 200" on={(canV) => on({ ...v, canV: Math.min(canV, v.clearV) })} />
       <table className={lg.layers}>
         <thead>
@@ -901,13 +901,13 @@ function HmiVision({ v, on }: { v: VisionValues; on(v: VisionValues): void }) {
                 <td>
                   {t.name} (V {m[k].v})
                 </td>
-                <td data-c={ok ? 'ok' : 'press'}>{f ? `${KIND_NAME[f.kind]} → ${BIN_OF[f.kind]}${ok ? '' : ` (제자리 ${BIN_OF[t.kind]})`}` : '못 찾음 — 판에 남음'}</td>
+                <td data-c={ok ? 'ok' : 'press'}>{f ? `${KIND_NAME[f.kind]} → ${BIN_OF[f.kind]}${ok ? '' : ` (제자리 ${BIN_OF[t.kind]})`}` : '못 찾음 (판에 남음)'}</td>
               </tr>
             );
           })}
         </tbody>
       </table>
-      {found.tooBig > 0 && <small className={lg.hmiNote}>⚠ 판만 한 덩어리 {found.tooBig}개 — 판의 어두운 픽셀까지 투명 PET로 봐서 버렸어요.</small>}
+      {found.tooBig > 0 && <small className={lg.hmiNote}>⚠ 판만 한 덩어리 {found.tooBig}개. 판의 어두운 픽셀까지 투명 PET로 봐서 버렸어요.</small>}
     </div>
   );
 }
@@ -949,7 +949,7 @@ function HmiSpeed({ v, preview, run, curve, on }: { v: SpeedValues; preview: Ret
         </tbody>
       </table>
       {curve && <RateCurve curve={curve} mark={run && !run.dropped ? run.perMin : null} />}
-      <small className={lg.hmiNote}>필요한 힘 = m(g + a_z) + m·a ÷ μ — 붙잡는 힘 F보다 크면 떨어져요. 기준: 떨어뜨림 0 · {TARGET_PM}개/분 이상.</small>
+      <small className={lg.hmiNote}>필요한 힘 = m(g + a_z) + m·a ÷ μ. 이 힘이 붙잡는 힘 F보다 크면 떨어져요. 기준: 떨어뜨림 0 · {TARGET_PM}개/분 이상.</small>
     </div>
   );
 }

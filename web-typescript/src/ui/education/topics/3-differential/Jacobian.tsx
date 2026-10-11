@@ -259,7 +259,7 @@ export default function B3Jacobian({ chain, show, step, record, results }: Topic
       arrows,
       ellipsoid: step === 'A' ? null : ell(man, tip),
       lines: step !== 'A' && trail.length > 1 ? [{ key: 'trail', points: trail, color: LEARN_COLORS.path, width: 3 }] : [],
-      labels: step !== 'A' && near ? [{ key: 'sing', mm: [tip[0], tip[1], tip[2] + 60], text: '특이점 가까움 — 타원체가 납작해요', color: LEARN_COLORS.bad }] : [],
+      labels: step !== 'A' && near ? [{ key: 'sing', mm: [tip[0], tip[1], tip[2] + 60], text: '특이점 가까움: 타원체가 납작해요', color: LEARN_COLORS.bad }] : [],
     });
   }, [q, step, joint, cols, lens, man, tip, trail, near, held, chain, show]);
 
@@ -294,7 +294,7 @@ export default function B3Jacobian({ chain, show, step, record, results }: Topic
           </div>
           <p className={css.live}>관절 하나만 {JOINT_DEG_S}°/s 로 돌 때 손끝 속도 (= 자코비안의 열):</p>
           <Bars values={lens} limits={lens.map(() => Math.max(...lens) || 1)} unit="mm/s" digits={0} />
-          <p className={css.note}>J6 은 손끝(플랜지) 축 자체를 돌려서 손끝 위치는 그대로예요 — 화살표 0.</p>
+          <p className={css.note}>J6 은 손끝(플랜지) 축 자체를 돌려서 손끝 위치는 그대로예요. 그래서 화살표가 0 이에요.</p>
         </>
       )}
 
@@ -311,7 +311,7 @@ export default function B3Jacobian({ chain, show, step, record, results }: Topic
             </div>
           )}
           <p className={css.note}>
-            {step === 'C' && !near ? '먼저 [앞으로 쭉 뻗기] 로 팔을 펴세요. 그다음 ' : ''}버튼을 누르고 있는 동안 손끝이 {DRIVE_MM_S} mm/s 로 그 방향으로 가요{step === 'C' ? ' — [+x 앞] 을 눌러 보세요.' : '.'}
+            {step === 'C' && !near ? '먼저 [앞으로 쭉 뻗기] 로 팔을 펴세요. 그다음 ' : ''}버튼을 누르고 있는 동안 손끝이 {DRIVE_MM_S} mm/s 로 그 방향으로 가요{step === 'C' ? '. [+x 앞] 을 눌러 보세요.' : '.'}
           </p>
           <div className={css.dpad}>
             {DIRS.map((d) => (

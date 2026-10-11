@@ -125,7 +125,7 @@ export function* pickTry(w: PhysicsWorld, chain: readonly ChainSegment[], start:
   const knockedMm = Math.hypot(before.x - b0.x, before.y - b0.y);
   const got = w.grab(8) !== null;
   if (!got) {
-    ctl.phase = '못 집음 — 블록이 밀려났어요';
+    ctl.phase = '못 집음: 블록이 밀려났어요';
     ctl.pump = false;
     yield* hold(ctl, 0.8);
     const f = w.blocks()[0];
@@ -149,7 +149,7 @@ export function* pickTry(w: PhysicsWorld, chain: readonly ChainSegment[], start:
   const hit = Math.sqrt(2 * 9.81 * (h / 1000));
   w.release();
   ctl.pump = false;
-  ctl.phase = '펌프 끄기 — 놓기';
+  ctl.phase = '펌프 끄기 (놓기)';
   const drop: number[] = [h];
   for (let k = 0; k < 45; k += 1) {
     yield;
@@ -378,10 +378,10 @@ export default function F2PickPlace({ chain, show, step, record }: TopicProps) {
       )}
       <p className={css.note}>
         {k === 'A'
-          ? '책상 가까이 있던 팔이 관절을 한꺼번에 돌려 블록 위로 곧장 가요 — 가는 길이 낮아요.'
+          ? '책상 가까이 있던 팔이 관절을 한꺼번에 돌려 블록 위로 곧장 가요. 가는 길이 낮아요.'
           : k === 'B'
             ? `먼저 블록 ${APPROACH} mm 위로 가서, 손끝을 수직으로 내려 집고 수직으로 올려요.`
-            : '흡착을 끄면 블록은 그 높이에서 자유 낙하해요. 시뮬레이션의 블록은 거의 튕기지 않게(반발 0.05) 되어 있어, 실물보다 얌전해요 — 부딪는 속도를 보세요.'}
+            : '흡착을 끄면 블록은 그 높이에서 자유 낙하해요. 시뮬레이션의 블록은 거의 튕기지 않게(반발 0.05) 되어 있어, 실물보다 얌전해요. 부딪는 속도를 보세요.'}
       </p>
     </section>
   );

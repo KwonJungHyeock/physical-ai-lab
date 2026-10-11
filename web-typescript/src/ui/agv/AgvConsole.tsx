@@ -224,7 +224,7 @@ function CameraFinds({ live, spec }: { live: LiveStore; spec: string }) {
 
 function CameraFoot({ live }: { live: LiveStore }) {
   const { found } = useLive(live);
-  if (!found.length) return <span>찾은 것 없음 — 돌면서 찾아 보세요</span>;
+  if (!found.length) return <span>찾은 것이 없어요. 돌면서 찾아 보세요</span>;
   return (
     <>
       {found.slice(0, 2).map((f) => (
@@ -403,7 +403,7 @@ export default function AgvConsole() {
         i.turn = 0;
         joy.current?.reset();
         turn.current?.reset();
-        setLog('err', r.blocked === 'wall' ? '벽이에요 — 부딪히기 전에 멈췄어요. 다른 방향으로 움직여 보세요.' : '앞에 물건이 있어요 — 부딪히기 전에 멈췄어요. 다른 방향으로 움직여 보세요.');
+        setLog('err', r.blocked === 'wall' ? '벽이에요. 부딪히기 전에 멈췄어요. 다른 방향으로 움직여 보세요.' : '앞에 물건이 있어요. 부딪히기 전에 멈췄어요. 다른 방향으로 움직여 보세요.');
       }
       if (r.scriptDone && !robotModeRef.current) window.setTimeout(() => calDone.current(), 700);
       lidarT.current += dt;
@@ -478,7 +478,7 @@ export default function AgvConsole() {
           setCamSource(s.camera ? 'robot' : 'sim');
           // Mirror the commands, not motors: the real motors are the real robot's.
           sim.current.gains = { fl: 1, fr: 1, rl: 1, rr: 1 };
-          setLog('', `로봇 ${s.robotId ?? ''} 에 연결됐어요. 조이스틱이나 W A S D 로 움직이면 실제 로봇이 움직여요 — 주변을 비워 두세요.`);
+          setLog('', `로봇 ${s.robotId ?? ''} 에 연결됐어요. 조이스틱이나 W A S D 로 움직이면 실제 로봇이 움직여요. 주변을 비워 두세요.`);
         }
         robotRef.current = s;
         sim.current.trim = s.trim;
@@ -542,7 +542,7 @@ export default function AgvConsole() {
     setCal((c) => ({ ...c, phase: 'running', result: null }));
     setView('lane');
     setSideCm('');
-    setLog('', robotMode ? '1m 직진 테스트 중 — 로봇이 보정 줄(테이프)을 따라가는지 보세요.' : '1m 직진 테스트 중 — 보정 줄을 따라가는지 보세요.');
+    setLog('', robotMode ? '1m 직진 테스트 중이에요. 로봇이 보정 줄(테이프)을 따라가는지 보세요.' : '1m 직진 테스트 중이에요. 보정 줄을 따라가는지 보세요.');
   };
   const finishStraight = () => {
     const s = sim.current;
@@ -560,7 +560,7 @@ export default function AgvConsole() {
       ok
         ? calibrated
           ? '직진 보정이 잘 되었어요. 이 값으로 곧게 가요.'
-          : '처음부터 곧게 가요 — 보정할 필요가 없어요.'
+          : '처음부터 곧게 가요. 보정할 필요가 없어요.'
         : `1m 에 ${Math.abs(deg(res.dth)).toFixed(1)}° 틀어지고 ${Math.abs(res.side * 100).toFixed(1)}cm 밀렸어요. [보정 저장]을 눌러 보세요.`,
     );
   };

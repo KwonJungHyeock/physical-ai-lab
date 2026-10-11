@@ -98,7 +98,7 @@ export default function AccountChip() {
               }}
             >
               <b>다시 로그인</b>
-              <small>로그인이 끝났어요 — 기록을 이어서 보내요</small>
+              <small>로그인이 끝났어요. 기록을 이어서 보내요</small>
             </button>
           )}
           <button

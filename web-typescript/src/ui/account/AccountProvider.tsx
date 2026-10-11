@@ -34,12 +34,14 @@ import {
   lessonOpen as lessonOpenFor,
   loadSession,
   profileOf,
+  readHandoff,
   queueKeyFor,
   resolveServer,
   robotObject,
   saveSession,
   savedServerAddress,
   switchProfile,
+  withoutHandoff,
   siteObject,
   type Action,
   type Role,
@@ -206,6 +208,20 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     const store = browserStore();
     const q = new URLSearchParams(window.location.search);
     const join = joinParams(window.location.search);
+    // A login handed over by the page this one came from (connecting to a robot opens its own page):
+    // keep it here and take it out of the address straight away.
+    const handed = readHandoff(window.location.hash, Date.now());
+    if (window.location.hash.includes('class=')) {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search + withoutHandoff(window.location.hash));
+    }
+    if (handed) {
+      saveSession(store, handed);
+      try {
+        store?.setItem(CLASS_MODE_KEY, '1');
+      } catch {
+        /* this tab only */
+      }
+    }
     const saved = loadSession(store, Date.now());
     const servedHere = q.get('from') === 'class' || window.location.port === String(CLASS_PORT);
     const wanted = store?.getItem(CLASS_MODE_KEY) === '1';

@@ -260,7 +260,7 @@ export default function E2Planning({ chain, show, onPick, real, step, record }: 
       lines,
       spots,
       labels,
-      contact: contact && lastRun === k && step !== 'cmp' ? { mm: contact.at, text: `J${contact.joint} 가 벽에 부딪힘 — 멈춤` } : null,
+      contact: contact && lastRun === k && step !== 'cmp' ? { mm: contact.at, text: `J${contact.joint} 가 벽에 부딪혀 멈춤` } : null,
     });
   }, [step, k, q, trail, contact, lastRun, vias, viaLine, trees, grown, planLines, runs, tips, anim.running, show]);
 
@@ -283,7 +283,7 @@ export default function E2Planning({ chain, show, onPick, real, step, record }: 
 
   return (
     <section className={css.card}>
-      <h3>{k === 'A' ? '그냥 직선 (관절 보간)' : k === 'B' ? '경유점을 직접 찍기' : '자동 탐색 — RRT-Connect'}</h3>
+      <h3>{k === 'A' ? '그냥 직선 (관절 보간)' : k === 'B' ? '경유점을 직접 찍기' : '자동 탐색: RRT-Connect'}</h3>
       {k === 'B' && (
         <p className={css.live}>
           책상을 클릭하면 그 위 {VIA_Z} mm 에 경유점이 생겨요 (최대 {MAX_VIAS} 개, 지금 {vias.length} 개). 벽 높이는 170 mm.
@@ -338,7 +338,7 @@ export default function E2Planning({ chain, show, onPick, real, step, record }: 
         <Readout label="손끝 이동 거리" value={done ? fmt(run.lengthMm, 0) : '–'} unit="mm" />
         <Readout label="계획 · 이동 시간" value={done ? `${run.plan} · ${fmt(run.moveS, 1)} s` : '–'} />
       </div>
-      {done && !run.ok && <Verdict tone="bad">{k === 'A' ? '관절을 똑바로 돌리면 손이 벽을 지나가요 — 부딪혀 멈췄어요.' : '경유점 사이 어딘가에서 벽에 닿았어요. 벽 바로 위를 지나도록 다시 찍어 보세요.'}</Verdict>}
+      {done && !run.ok && <Verdict tone="bad">{k === 'A' ? '관절을 똑바로 돌리면 손이 벽을 지나가요. 그래서 부딪혀 멈췄어요.' : '경유점 사이 어딘가에서 벽에 닿았어요. 벽 바로 위를 지나도록 다시 찍어 보세요.'}</Verdict>}
       {done && run.ok && <Verdict tone="ok">{k === 'B' ? '벽을 넘어 도착했어요. 찍는 데 걸린 시간도 계획 시간이에요.' : '벽을 피해 도착했어요.'}</Verdict>}
       {k === 'C' && (
         <>
@@ -347,7 +347,7 @@ export default function E2Planning({ chain, show, onPick, real, step, record }: 
             <button type="button" className={css.realBtn} disabled={!real.online || !plan?.r.ok || anim.running} onClick={() => void runReal()}>
               찾은 길을 실물 로봇으로
             </button>
-            <small>{real.online ? '벽은 화면에만 있어요 — 실물 주변을 비워 두세요.' : '로봇에 연결된 콘솔에서 쓸 수 있어요 (지금: 시뮬레이션).'}</small>
+            <small>{real.online ? '벽은 화면에만 있어요. 실물 주변을 비워 두세요.' : '로봇에 연결된 콘솔에서 쓸 수 있어요 (지금: 시뮬레이션).'}</small>
           </div>
         </>
       )}

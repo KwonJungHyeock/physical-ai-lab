@@ -17,11 +17,11 @@ export const S3: TopicScenario[] = [
   },
   {
     topic: '3-2',
-    A: { do: [{ click: '위치만 — 옮기기' }], expect: { '걸린 시간': '0.12 s', '최대 가속도': '88.2 m/s²', 블록: '떨어짐' } },
-    B: { do: [{ click: '일정 속도 — 옮기기' }], expect: { '걸린 시간': '0.79 s', '최대 가속도': '30.0 m/s²', 블록: '밀림 (최대 9 mm)' } },
+    A: { do: [{ click: '위치만으로 옮기기' }], expect: { '걸린 시간': '0.12 s', '최대 가속도': '88.2 m/s²', 블록: '떨어짐' } },
+    B: { do: [{ click: '일정 속도로 옮기기' }], expect: { '걸린 시간': '0.79 s', '최대 가속도': '30.0 m/s²', 블록: '밀림 (최대 9 mm)' } },
     // C: the trapezoid (0.83 s, 3 m/s²), then once more with the S-curve — the result shown is the S-curve's.
     C: {
-      do: [{ click: '사다리꼴' }, { click: '가속도 제한 — 옮기기' }, { wait: 5000 }, { click: 'S자 (5차)' }, { click: '가속도 제한 — 옮기기' }, { wait: 5000 }],
+      do: [{ click: '사다리꼴' }, { click: '가속도 제한으로 옮기기' }, { wait: 5000 }, { click: 'S자 (5차)' }, { click: '가속도 제한으로 옮기기' }, { wait: 5000 }],
       expect: { '걸린 시간': '1.00 s', '최대 가속도': '1.3 m/s²', 블록: '그대로' },
     },
   },

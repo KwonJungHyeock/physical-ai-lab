@@ -190,7 +190,23 @@ func (srv *Server) originAllowed(origin, host string, fromHere bool) bool {
 			return true
 		}
 	}
-	return false
+	return robotOrigin(origin)
+}
+
+// RobotPort: the port a robot serves its console on (robot-python/server). A student who connects
+// to a robot moves to that robot's page (http://<robot IP>:8080/console), which keeps sending the
+// lesson's events here with the same login.
+const RobotPort = "8080"
+
+// robotOrigin: a robot's console page on the classroom network: plain http on the robot port, an
+// IPv4 address in a private or link-local range (no names, no public addresses).
+func robotOrigin(origin string) bool {
+	u, err := url.Parse(origin)
+	if err != nil || u.Scheme != "http" || u.User != nil || u.Port() != RobotPort || (u.Path != "" && u.Path != "/") || u.RawQuery != "" {
+		return false
+	}
+	ip := net.ParseIP(u.Hostname())
+	return ip != nil && ip.To4() != nil && (ip.IsPrivate() || ip.IsLinkLocalUnicast())
 }
 
 // LANOnly lets through only requests from this PC or the local network (private, link-local or

@@ -262,7 +262,7 @@ const CameraViews = forwardRef<CameraViewsHandle, Props>(function CameraViews(
           ? '손 카메라: 카메라 위치로 광선을 쏴서 블록 윗면 높이에서 좌표 계산'
           : cal
             ? `마커 id ${cal.markers[0].id}·${cal.markers[1].id} → 중심 (${Math.round(cal.cu)}, ${Math.round(cal.cv)})px, 1px = ${cal.ratio.toFixed(3)}mm (220 ÷ ${(220 / cal.ratio).toFixed(0)}px)`
-            : '마커 2개가 보이지 않아요 — 보정을 할 수 없어요';
+            : '마커 2개가 보이지 않아요. 보정을 할 수 없어요';
       const key = `${text}|${a.detections.map((d) => `${d.color}${Math.round(d.u)}${Math.round(d.v)}`).join('|')}`;
       if (key !== lastKey.current) {
         lastKey.current = key;

@@ -268,7 +268,7 @@ export default function LessonRail({ topic, page, onPage, results, onChecked, le
               return (
                 <div className={`${lc.resultBox} ${css.result}`} data-state="done">
                   <p className={css.verdict} data-ok={g === undefined ? undefined : g === act.choices.answer}>
-                    {g === undefined ? '정답' : g === act.choices.answer ? '✓ 예상이 맞았어요' : '예상과 달라요 — 정답은'} <b>{act.choices.options[act.choices.answer]}</b>
+                    {g === undefined ? '정답' : g === act.choices.answer ? '✓ 예상이 맞았어요' : '예상과 달라요. 정답은'} <b>{act.choices.options[act.choices.answer]}</b>
                   </p>
                   <p className={css.point}>
                     <Rich text={act.point} />
@@ -321,7 +321,7 @@ export default function LessonRail({ topic, page, onPage, results, onChecked, le
               </dd>
               <dt>정답</dt>
               <dd>
-                {act.choices.answer + 1}번 {act.choices.options[act.choices.answer]} — <Rich text={act.point} />
+                {act.choices.answer + 1}번 {act.choices.options[act.choices.answer]}. <Rich text={act.point} />
               </dd>
             </dl>
           </Block>
@@ -365,7 +365,7 @@ export default function LessonRail({ topic, page, onPage, results, onChecked, le
                 <b>
                   시연 · {lessonNo(topic.id)}차시 {STEP_NAME[zoom.clip]}
                 </b>{' '}
-                {topic.steps.find((s) => s.key === zoom.clip)?.title} — 원고의 할 일대로 눌렀을 때의 화면이에요. 직접 해 보고 비교해 보세요.
+                {topic.steps.find((s) => s.key === zoom.clip)?.title}: 원고의 할 일대로 눌렀을 때의 화면이에요. 직접 해 보고 비교해 보세요.
               </figcaption>
             </figure>
           ) : (
@@ -579,7 +579,7 @@ function WrapPage({ topic, results, teacher, onSite, onShots }: { topic: Topic; 
             <TopicShot id={topic.id} />
           </button>
           <figcaption>
-            <span>세 활동이 끝난 3D 화면 — 내 화면과 비교해 보세요</span>
+            <span>세 활동이 끝난 3D 화면이에요. 내 화면과 비교해 보세요</span>
             <button type="button" onClick={onShots}>
               ⤢ 크게
             </button>
@@ -637,7 +637,7 @@ function CheckPage({ topic, level, onChecked, onward, onTopic }: { topic: Topic;
   const next = nextTopicOf(topic.id);
   return (
     <>
-      <Block kind="ask" title="확인 문제 — 하나씩 골라요">
+      <Block kind="ask" title="확인 문제: 하나씩 골라요">
         <QuickCheck topic={topic.id} level={level} onAllRight={onChecked} />
       </Block>
       {onward ? (
@@ -654,7 +654,7 @@ function CheckPage({ topic, level, onChecked, onward, onTopic }: { topic: Topic;
           </b>
         </button>
       ) : (
-        <p className={css.wait}>마지막 차시예요 — 로봇공학 8개 단원 28차시를 모두 마쳤어요.</p>
+        <p className={css.wait}>마지막 차시예요. 로봇공학 8개 단원 28차시를 모두 마쳤어요.</p>
       )}
     </>
   );
