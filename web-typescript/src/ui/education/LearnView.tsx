@@ -393,10 +393,18 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
     const id = window.setTimeout(() => setWorkspace(workspaceProfile(chain, TCP)), 60);
     return () => window.clearTimeout(id);
   }, [chain]);
+  // The arm's plane at J1 = 0: the way the tool moves when J2 turns (not the home tool's bearing —
+  // the arm sits ~65 mm beside the base axis, which put the folded home pose ~45° off the plane),
+  // pointed to the side the home tool is on.
   const frontDeg = useMemo(() => {
-    const f = forwardKinematicsFrames(chain, [0, HOME_POSE[1], HOME_POSE[2], HOME_POSE[3], 0, 0]);
-    const e = f[f.length - 1].elements;
-    return (Math.atan2(e[13], e[12]) * 180) / Math.PI;
+    const tip = (j2: number) => {
+      const e = forwardKinematicsFrames(chain, [0, j2, HOME_POSE[2], HOME_POSE[3], 0, 0]).at(-1)!.elements;
+      return [e[12], e[13]];
+    };
+    const [a, b, home] = [tip(HOME_POSE[1] - 15), tip(HOME_POSE[1] + 15), tip(HOME_POSE[1])];
+    let [dx, dy] = [b[0] - a[0], b[1] - a[1]];
+    if (dx * home[0] + dy * home[1] < 0) [dx, dy] = [-dx, -dy];
+    return (Math.atan2(dy, dx) * 180) / Math.PI;
   }, [chain]);
 
   const [scene, setScene] = useState<LearnScene>({ angles: HOME_POSE });

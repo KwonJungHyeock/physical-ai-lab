@@ -467,4 +467,42 @@ const mk = (i: number) => A.events.pageOpened('1-1', i, { now: () => T0, uuid: (
   assert.ok(A.can(null, 'learn') && !A.can(null, 'sendEvents'));
 }
 
+{
+  // One learner's progress per student on a shared PC (profile.ts).
+  const data = new Map<string, string>();
+  const st = {
+    get length() {
+      return data.size;
+    },
+    key: (i: number) => [...data.keys()][i] ?? null,
+    getItem: (k: string) => data.get(k) ?? null,
+    setItem: (k: string, v: string) => void data.set(k, v),
+    removeItem: (k: string) => void data.delete(k),
+  };
+  st.setItem('learn-done', '{"1-1":true}');
+  st.setItem('lab-solved', '{"1":true}');
+  st.setItem('learn-tone', 'mat');
+  st.setItem('class-session', 'x');
+  const kim = A.profileOf({ role: 'student', student: { classId: 'c1', no: 1 } });
+  const lee = A.profileOf({ role: 'student', student: { classId: 'c1', no: 2 } });
+  assert.equal(A.profileOf({ role: 'teacher' }), A.FREE_PROFILE);
+  assert.ok(A.switchProfile(st, kim));
+  assert.equal(st.getItem('learn-done'), null, 'a new student starts empty');
+  assert.equal(st.getItem('learn-tone'), 'mat', 'settings stay');
+  assert.equal(st.getItem('class-session'), 'x', 'the login stays');
+  st.setItem('learn-done', '{"2-1":true}');
+  assert.ok(A.switchProfile(st, lee));
+  assert.equal(st.getItem('learn-done'), null, 'the next student does not see the last one');
+  st.setItem('learn-done', '{"3-1":true}');
+  assert.ok(!A.switchProfile(st, lee), 'already in use: nothing moves');
+  A.switchProfile(st, kim);
+  assert.equal(st.getItem('learn-done'), '{"2-1":true}', 'back to my own');
+  A.switchProfile(st, A.FREE_PROFILE);
+  assert.equal(st.getItem('learn-done'), '{"1-1":true}');
+  assert.equal(st.getItem('lab-solved'), '{"1":true}', "the PC's own progress comes back");
+  A.switchProfile(st, lee);
+  assert.equal(st.getItem('learn-done'), '{"3-1":true}');
+  console.log('  ✓ progress per student on a shared PC (profiles swap, settings stay)');
+}
+
 console.log('account check: ok');

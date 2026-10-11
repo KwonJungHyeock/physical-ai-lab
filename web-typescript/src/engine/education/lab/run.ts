@@ -443,7 +443,7 @@ function overlap(a: Box, b: Box): boolean {
 }
 
 /** The frame at time t (the one at or just before it; the screen blends nothing, frames are 20 ms apart). */
-export function frameAt(run: LabRun, t: number): Frame {
+export function frameAt(run: LabRun, t: number): Frame | undefined {
   const i = Math.min(run.frames.length - 1, Math.max(0, Math.round(t / FRAME_DT)));
   return run.frames[i];
 }

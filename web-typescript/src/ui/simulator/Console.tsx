@@ -3447,7 +3447,10 @@ export default function Console() {
         </div>
         {learnArm && learnSeen && (
           <LearnGate hidden={view !== 'learn' || account.dashboard}>
-            <LearnView robot={learnArm.robot} chain={learnArm.chain} gripperRobot={learnArm.gripper} real={realArm} hidden={view !== 'learn' || account.dashboard} />
+            {/* Mounted per learner (a student's own progress on a shared PC: engine/account/profile.ts). */}
+            {account.learner && (
+              <LearnView key={account.learner} robot={learnArm.robot} chain={learnArm.chain} gripperRobot={learnArm.gripper} real={realArm} hidden={view !== 'learn' || account.dashboard} />
+            )}
           </LearnGate>
         )}
         {account.dashboard && <ClassDashboard onClose={account.closeDashboard} />}

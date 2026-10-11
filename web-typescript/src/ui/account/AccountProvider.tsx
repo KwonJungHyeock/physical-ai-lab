@@ -33,11 +33,13 @@ import {
   lessonObject,
   lessonOpen as lessonOpenFor,
   loadSession,
+  profileOf,
   queueKeyFor,
   resolveServer,
   robotObject,
   saveSession,
   savedServerAddress,
+  switchProfile,
   siteObject,
   type Action,
   type Role,
@@ -83,6 +85,11 @@ export interface Account {
   can(action: Action): boolean;
   /** May the 차시 be opened (students: only those the teacher opened)? */
   lessonOpen(id: string): boolean;
+  /**
+   * Whose progress the 교육 screens show (a student's own, or the PC's: profile.ts); null while it is
+   * being switched. The 교육 screens are mounted per learner (keyed on this), so they re-read it.
+   */
+  learner: string | null;
   /** Record a learning event (students only; anything else is a no-op). Builders that throw are ignored. */
   track(make: () => Statement): void;
   /** The server refused the login (expired, or the teacher ended the class's sessions). */
@@ -120,6 +127,7 @@ const FREE: Account = {
   role: null,
   can: (a) => canDo(null, a),
   lessonOpen: () => true,
+  learner: 'free',
   track: noop,
   authLost: false,
   joinCode: null,
@@ -379,6 +387,20 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   }, [session]);
 
   const role = session?.role ?? null;
+  // A student's own progress on a shared PC: switch the learner keys when the student changes.
+  const profile = boot ? profileOf(session) : null;
+  const [learnerNow, setLearnerNow] = useState<string | null>(null);
+  useEffect(() => {
+    if (!profile) return;
+    try {
+      if (typeof localStorage !== 'undefined') switchProfile(localStorage, profile);
+    } catch {
+      /* storage blocked: nothing kept anyway */
+    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLearnerNow(profile);
+  }, [profile]);
+  const learner = learnerNow !== null && learnerNow === profile ? learnerNow : null;
   const classMode = !!boot?.classMode || !!session || loggedHere;
   // Stable functions: the 교육 screens depend on them (a new one each render would re-render the lessons).
   const can = useCallback((a: Action) => canDo(role, a), [role]);
@@ -403,6 +425,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
       role,
       can,
       lessonOpen,
+      learner,
       track,
       authLost,
       joinCode: boot?.joinCode ?? null,
@@ -420,7 +443,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
       openDashboard,
       closeDashboard,
     }),
-    [classMode, server, serverState, status, session, role, can, lessonOpen, track, authLost, boot, findServerHere, signedIn, logout, refreshClass, loginLost, client, login, openLogin, closeLogin, dashboard, openDashboard, closeDashboard],
+    [classMode, server, serverState, status, session, role, can, lessonOpen, learner, track, authLost, boot, findServerHere, signedIn, logout, refreshClass, loginLost, client, login, openLogin, closeLogin, dashboard, openDashboard, closeDashboard],
   );
   // The queue's state changes often: its own context, read by the top bar only.
   const syncValue = useMemo(() => (sync ? { ...sync, offline: sync.offline || (!reachable && sync.pending > 0) } : null), [sync, reachable]);

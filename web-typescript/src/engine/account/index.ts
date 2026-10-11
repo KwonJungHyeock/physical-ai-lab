@@ -21,3 +21,4 @@ export * from './queue';
 export * from './live';
 export * from './roster';
 export * from './pin';
+export * from './profile';

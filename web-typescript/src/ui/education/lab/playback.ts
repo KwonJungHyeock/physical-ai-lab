@@ -73,7 +73,12 @@ export class Playback {
         this.onTick?.(this.t, done);
       }
     }
-    const f = frameAt(run, this.t);
+    const f = frameAt(run, Number.isFinite(this.t) ? this.t : 0);
+    // A run with no frames (stopped before its first step): nothing to show, the scene's own pose.
+    if (!f) {
+      this.arm.current = null;
+      return null;
+    }
     this.arm.current = { angles: f.q, pump: f.pump };
     return f;
   }

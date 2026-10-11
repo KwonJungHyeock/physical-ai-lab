@@ -18,6 +18,8 @@
 
 import { useMemo, useState, useSyncExternalStore } from 'react';
 
+import { useAccount } from '../../account/AccountProvider';
+
 import {
   MM_BANDS,
   RUN_LABS,
@@ -108,6 +110,9 @@ function download(name: string, text: string) {
 
 export default function DataCenter({ hidden, onBack, onOpenLab }: { hidden?: boolean; onBack(): void; onOpenLab(lab: RunLab): void }) {
   const raw = useSyncExternalStore(subscribe, rawLog, noLog);
+  // A student in class mode: no 반 결과 tab and no 기록 지우기 (the teacher's, on the class server).
+  const student = useAccount().role === 'student';
+  const tabs = student ? TABS.filter(([id]) => id !== 'class') : TABS;
   const real = useMemo<DataRecord[]>(() => (raw ? loadRuns() : []), [raw]);
   const demo = useMemo(() => demoRuns(DEMO_SEED), []);
   const [mode, setMode] = useState<'real' | 'demo'>('real');
@@ -191,7 +196,7 @@ export default function DataCenter({ hidden, onBack, onOpenLab }: { hidden?: boo
           <small>실습 기록으로 하는 데이터 과학</small>
         </h1>
         <nav className={css.tabs} aria-label="화면">
-          {TABS.map(([id, name]) => (
+          {tabs.map(([id, name]) => (
             <button
               key={id}
               type="button"
@@ -219,7 +224,7 @@ export default function DataCenter({ hidden, onBack, onOpenLab }: { hidden?: boo
           <button type="button" className={css.tool} onClick={exportCsv} disabled={!data.length}>
             CSV 내보내기
           </button>
-          {askClear ? (
+          {student ? null : askClear ? (
             <span className={css.confirm}>
               기록 {real.length}개를 지울까요?
               <button
@@ -255,7 +260,7 @@ export default function DataCenter({ hidden, onBack, onOpenLab }: { hidden?: boo
         {raw === null ? null : tab === 'class' ? (
           <ClassResults load={klass} setLoad={setKlass} />
         ) : empty ? (
-          <Empty onDemo={() => switchMode('demo')} onOpenLab={onOpenLab} onClass={() => setTab('class')} />
+          <Empty onDemo={() => switchMode('demo')} onOpenLab={onOpenLab} onClass={student ? undefined : () => setTab('class')} />
         ) : (
           <>
             {isDemo && (
@@ -694,7 +699,7 @@ function Recent({ rs, onOpen }: { rs: readonly DataRecord[]; onOpen(lab: string,
   );
 }
 
-function Empty({ onDemo, onOpenLab, onClass }: { onDemo(): void; onOpenLab(lab: RunLab): void; onClass(): void }) {
+function Empty({ onDemo, onOpenLab, onClass }: { onDemo(): void; onOpenLab(lab: RunLab): void; onClass?: () => void }) {
   return (
     <div className={css.empty}>
       <div className={css.emptyCard}>
@@ -719,13 +724,15 @@ function Empty({ onDemo, onOpenLab, onClass }: { onDemo(): void; onOpenLab(lab: 
             );
           })}
         </div>
-        <p className={css.small}>
-          선생님이라면: 학생들이 낸 결과 파일을
-          <button type="button" className={css.link} onClick={onClass}>
-            반 결과
-          </button>
-          에서 모아 볼 수 있어요.
-        </p>
+        {onClass && (
+          <p className={css.small}>
+            선생님이라면: 학생들이 낸 결과 파일을
+            <button type="button" className={css.link} onClick={onClass}>
+              반 결과
+            </button>
+            에서 모아 볼 수 있어요.
+          </p>
+        )}
       </div>
     </div>
   );
