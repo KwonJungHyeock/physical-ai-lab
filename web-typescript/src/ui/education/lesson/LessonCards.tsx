@@ -54,6 +54,13 @@ const usedBy = (t: Topic) => {
   return ps.length ? ps.map(({ site, k }) => ({ id: site.id, color: site.color, label: `${site.name} ${k}. ${site.problems[k - 1].title}` })) : sitesOf(t.cat).map((s) => ({ id: s.id, color: s.color, label: s.name }));
 };
 
+/** Where the course goes after this 차시's 평가 (the site problem it opens, or the next 차시). */
+export interface Onward {
+  kicker: string;
+  title: string;
+  go(): void;
+}
+
 interface Props {
   topic: Topic;
   page: PageId;
@@ -65,9 +72,11 @@ interface Props {
   onTopic(id: Topic['id']): void;
   /** Go to a theme place on the map (the 정리 card's 이 원리를 쓰는 현장). */
   onSite?(id: SiteId): void;
+  /** The next step after the 평가 (the footer's main button there). */
+  onward?: Onward | null;
 }
 
-export default function LessonCards({ topic, page, onPage, results, onChecked, level, onTopic, onSite }: Props) {
+export default function LessonCards({ topic, page, onPage, results, onChecked, level, onTopic, onSite, onward }: Props) {
   const i = PAGES.indexOf(page);
   /** The figure or an activity's demo shown large over the screen. */
   const [zoom, setZoom] = useState<null | { focus?: StepKey; clip?: StepKey }>(null);
@@ -125,7 +134,15 @@ export default function LessonCards({ topic, page, onPage, results, onChecked, l
           <>
             <p className={css.key}>배운 것을 문제로 확인해요</p>
             <QuickCheck topic={topic.id} level={level} onAllRight={onChecked} />
-            <NextLesson topic={topic} onTopic={onTopic} />
+            {onward ? (
+              <button type="button" className={wb.next} onClick={onward.go}>
+                <small>{onward.kicker}</small>
+                <b>{onward.title}</b>
+                <span>아래 초록 버튼으로도 갈 수 있어요.</span>
+              </button>
+            ) : (
+              <NextLesson topic={topic} onTopic={onTopic} />
+            )}
           </>
         )}
       </article>
@@ -134,9 +151,21 @@ export default function LessonCards({ topic, page, onPage, results, onChecked, l
         <button type="button" disabled={i === 0} onClick={() => onPage(PAGES[i - 1])}>
           ← {i > 0 ? PAGE_LABEL[PAGES[i - 1]] : '이전'}
         </button>
-        <button type="button" data-main disabled={i === PAGES.length - 1} onClick={() => onPage(PAGES[i + 1])}>
-          {i < PAGES.length - 1 ? PAGE_LABEL[PAGES[i + 1]] : '다음'} →
-        </button>
+        {i < PAGES.length - 1 ? (
+          <button type="button" data-main onClick={() => onPage(PAGES[i + 1])}>
+            {PAGE_LABEL[PAGES[i + 1]]} →
+          </button>
+        ) : onward ? (
+          // The last page: the main button goes on to the course's next step, named, not a dead 다음.
+          <button type="button" data-main data-onward onClick={onward.go} title={`${onward.kicker}: ${onward.title}`}>
+            <small>{onward.kicker}</small>
+            <span>{onward.title} →</span>
+          </button>
+        ) : (
+          <button type="button" data-main onClick={() => onTopic(topic.id)} disabled>
+            마지막 차시예요
+          </button>
+        )}
       </footer>
 
       {zoom && (

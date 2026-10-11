@@ -15,7 +15,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { TOPIC_BY_ID, TOPICS, type StepKey, type TopicId } from '@/engine/education/catalog';
 import { DEFAULT_OWNED, PRODUCTS, type ProductId, type StudyLevel } from '@/engine/education/roadmap';
-import { labLocks, type LabId, type ProblemNo, type SiteId } from '@/engine/education/park';
+import { SITE_BY_ID, labLocks, nextStep, type LabId, type ProblemNo, type SiteId } from '@/engine/education/park';
 import { forwardKinematicsFrames, type ChainSegment } from '@/engine/robot/kinematics';
 import type { UrdfRobot } from '@/engine/robot/urdf';
 import { workspaceProfile, type WorkspaceProfile } from '@/engine/physics/workspace';
@@ -38,7 +38,7 @@ import { LabGateContext, type LabGate } from './lab/SiteFlow';
 import ParkView from './map/ParkView';
 import { FollowBar, FollowContext, useRealFollow } from './stage/RealFollow';
 import LessonBar from './lesson/LessonBar';
-import LessonCards, { PAGES, isActivity, type PageId, type ResumeSpot } from './lesson/LessonCards';
+import LessonCards, { PAGES, isActivity, type Onward, type PageId, type ResumeSpot } from './lesson/LessonCards';
 import { TOPIC_PANELS } from './topics';
 import { TCP } from './topics/kit';
 import type { ResultRow, StepView } from './topics/types';
@@ -414,6 +414,20 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
 
   const topic = TOPIC_BY_ID.get(topicId)!;
   const Panel = PANELS[topicId];
+  // After the 평가: where the course goes next once this 차시 counts as learnt — the site problem it opens, or the next 차시.
+  const onward = useMemo<Onward | null>(() => {
+    const n = nextStep({ ...progress, done: { ...progress.done, [topicId]: true } });
+    if (n.kind === 'topic') {
+      if (n.topic === topicId) return null;
+      const t = TOPIC_BY_ID.get(n.topic)!;
+      return { kicker: '다음 차시', title: `${t.id} ${t.title}`, go: () => choose(n.topic) };
+    }
+    if (n.kind === 'lab') {
+      const site = SITE_BY_ID.get(n.site)!;
+      return { kicker: '배운 것을 현장에서', title: `${site.name} ${'①②③'[n.prob - 1]} ${site.problems[n.prob - 1].title}`, go: () => openSiteLab(n.lab, n.prob) };
+    }
+    return { kicker: '다음', title: '디지털 트윈 관제센터', go: openData };
+  }, [progress, topicId, choose, openSiteLab, openData]);
   const inLesson = !hidden && screen === 'topic';
   // 실물 연동: a lesson, or the site lab on screen (it says itself when the arm may follow).
   const follow = useRealFollow(real, chain, hidden ? null : screen === 'topic' ? 'topic' : (FOLLOW_LAB[screen] ?? null));
@@ -504,7 +518,7 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
             </div>
           </section>
           <aside className={css.panel} aria-label={`${topic.title} 수업 카드`}>
-            <LessonCards key={topicId} topic={topic} page={page} onPage={setPage} results={results[topicId] ?? NO_RESULTS} onChecked={() => markDone(topicId)} level={level} onTopic={(t) => choose(t)} onSite={toSite} />
+            <LessonCards key={topicId} topic={topic} page={page} onPage={setPage} results={results[topicId] ?? NO_RESULTS} onChecked={() => markDone(topicId)} level={level} onTopic={(t) => choose(t)} onSite={toSite} onward={onward} />
           </aside>
         </div>
       </SymbolsProvider>
