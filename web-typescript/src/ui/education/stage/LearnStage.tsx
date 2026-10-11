@@ -11,7 +11,7 @@
 import { CameraControls, Grid, Html, Line, useGLTF } from '@react-three/drei';
 import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
-import { Matrix4, NeutralToneMapping, Quaternion, Vector3, type Group, type PerspectiveCamera } from 'three';
+import { BackSide, Color, Matrix4, NeutralToneMapping, Quaternion, ShaderMaterial, Vector3, type Group, type PerspectiveCamera } from 'three';
 
 import { forwardKinematicsFrames, type ChainSegment } from '@/engine/robot/kinematics';
 import type { UrdfRobot } from '@/engine/robot/urdf';
@@ -122,6 +122,13 @@ export default function LearnStage({ robot, chain, gripperRobot, scene, onTableP
         {/* The simulator's studio: slate background, its lights, its spot-lit desk and grid. */}
         <color attach="background" args={[look?.sky ?? TONES[tone].sky]} />
         {look && <fog attach="fog" args={[look.sky, look.fog?.[0] ?? 2.2, look.fog?.[1] ?? 6.5]} />}
+        {/* A bright lesson tone: a soft sky to the horizon, the desk fading into it far off. */}
+        {!look && TONES[tone].horizon && (
+          <>
+            <fog attach="fog" args={[TONES[tone].horizon!, 1.5, 3.6]} />
+            <Backdrop top={TONES[tone].top!} horizon={TONES[tone].horizon!} />
+          </>
+        )}
         <StudioLight intensity={0.5} softbox />
         <hemisphereLight args={['#ffffff', '#cfd6de', 0.3]} />
         <directionalLight
@@ -279,6 +286,44 @@ function ViewTools({ apiRef, ambient }: { apiRef: RefObject<ViewApi | null>; amb
   );
 }
 
+/** A bright tone's sky: a large dome shading from `top` overhead to `horizon` at eye level (not fogged). */
+function Backdrop({ top, horizon }: { top: string; horizon: string }) {
+  const mat = useMemo(
+    () =>
+      new ShaderMaterial({
+        side: BackSide,
+        depthWrite: false,
+        uniforms: { top: { value: new Color(top) }, horizon: { value: new Color(horizon) } },
+        vertexShader: 'varying vec3 vDir; void main() { vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+        fragmentShader:
+          'uniform vec3 top; uniform vec3 horizon; varying vec3 vDir; void main() { float h = clamp(vDir.y * 1.6, 0.0, 1.0); gl_FragColor = vec4(mix(horizon, top, smoothstep(0.0, 1.0, h)), 1.0);\n#include <colorspace_fragment>\n}',
+      }),
+    [top, horizon],
+  );
+  useEffect(() => () => mat.dispose(), [mat]);
+  return (
+    <mesh material={mat} renderOrder={-1} raycast={() => null}>
+      <sphereGeometry args={[14, 32, 16]} />
+    </mesh>
+  );
+}
+
+/** Under a bright tone's robot: a round base plate with a thin rim, like the slab a real arm is bolted to. */
+function BasePlate() {
+  return (
+    <group raycast={() => null}>
+      <mesh position={[0, 0.0003, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <circleGeometry args={[0.105, 64]} />
+        <meshStandardMaterial color="#f4f7fb" roughness={0.7} />
+      </mesh>
+      <mesh position={[0, 0.0006, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.103, 0.108, 64]} />
+        <meshBasicMaterial color="#b7c4d6" transparent opacity={0.8} />
+      </mesh>
+    </group>
+  );
+}
+
 /**
  * The simulator's desk: a plane at the robot's z = 0 lit like a spot under the robot, fading into
  * the background, with the endless 1 cm / 10 cm grid. A click on it (not a drag) picks a point.
@@ -299,6 +344,7 @@ function Desk({ onTablePick, tone }: { onTablePick?: (mm: Mm) => void; tone: Lea
         <planeGeometry args={[DESK_M, DESK_M]} />
         <meshStandardMaterial map={spot} roughness={0.95} />
       </mesh>
+      {tone === 'light' && <BasePlate />}
       {tone === 'mat' ? (
         // A workbench: wood desk, a green cutting mat with its 1 cm / 10 cm lines under the robot.
         <>
