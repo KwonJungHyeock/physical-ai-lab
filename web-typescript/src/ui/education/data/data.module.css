@@ -124,6 +124,9 @@
   gap: 6px;
   min-width: 0;
 }
+.tools[hidden] {
+  display: none;
+}
 .seg {
   display: inline-flex;
   padding: 2px;
@@ -1101,4 +1104,162 @@
   .stats {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
+}
+
+/* 반 결과 (ClassResults): the drop zone, files refused, the class table, a student's 21 problems. */
+.drop {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding: 16px 18px;
+  border: 2px dashed #b5e3ea;
+  border-radius: 14px;
+  background: var(--page);
+}
+.drop[data-over] {
+  border-color: var(--dc);
+  background: var(--dc-soft);
+}
+.drop > div:first-child {
+  flex: 1 1 360px;
+  min-width: 0;
+}
+.drop h2 {
+  margin: 0 0 4px;
+  font-size: 14.5px;
+  font-weight: 800;
+}
+.drop .lead,
+.drop .small {
+  margin: 0;
+}
+.drop .small {
+  margin-top: 4px;
+}
+.dropTools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.badFiles {
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12.5px;
+}
+.badFiles li {
+  padding: 4px 0;
+  color: var(--bad);
+}
+.badFiles li + li {
+  border-top: 1px solid var(--line);
+}
+.badFiles b {
+  margin-right: 6px;
+  color: var(--ink);
+  word-break: break-all;
+}
+.klass th {
+  padding: 0;
+}
+.klass th button {
+  width: 100%;
+  border: 0;
+  background: none;
+  padding: 6px 9px;
+  text-align: left;
+  font-weight: 700;
+  color: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.klass th button:hover {
+  color: var(--dc-ink);
+}
+.klass th[aria-sort] button {
+  color: var(--dc-ink);
+}
+.klass th i {
+  margin-left: 4px;
+  font-style: normal;
+  font-size: 9px;
+}
+.klassRow {
+  cursor: pointer;
+}
+.klassRow:hover td {
+  background: #fafbfc;
+}
+.klassRow[data-flag] td {
+  background: #fff8ec;
+}
+.klassRow[data-flag]:hover td {
+  background: #fff2da;
+}
+.who {
+  border: 0;
+  padding: 0;
+  background: none;
+  font-weight: 800;
+  color: var(--ink);
+  cursor: pointer;
+}
+.who:hover {
+  color: var(--dc-ink);
+  text-decoration: underline;
+}
+.flagCell {
+  white-space: normal !important;
+  min-width: 180px;
+}
+.flagCell span {
+  display: block;
+  color: #b54708;
+  font-weight: 700;
+}
+.klassMore td {
+  padding: 8px 9px 10px;
+  background: #fbfcfd;
+}
+.klassMore .small {
+  margin: 6px 0 0;
+}
+.probGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+}
+.probGrid > div {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.probGrid b {
+  min-width: 52px;
+  font-size: 12px;
+}
+.probGrid span {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  min-width: 34px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--soft);
+  color: var(--faint);
+  font-weight: 800;
+}
+.probGrid span small {
+  font-size: 10.5px;
+  font-weight: 700;
+}
+.probGrid span[data-st='try'] {
+  background: #fff0e1;
+  color: #b25e00;
+}
+.probGrid span[data-st='done'] {
+  background: #e4f6ec;
+  color: #157a42;
 }

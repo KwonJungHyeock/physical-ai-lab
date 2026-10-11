@@ -597,3 +597,84 @@
   background: #fff4e5;
   color: #9a5b00;
 }
+
+/* 내 결과 내보내기 (MyResult): folded at the foot of the overview; the card scrolls when it is opened. */
+.card:has(.over) {
+  max-height: calc(100% - 24px);
+}
+.over {
+  min-height: 0;
+  overflow-y: auto;
+}
+.mine {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+}
+.mine summary {
+  padding: 9px 12px;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+.mine[open] summary {
+  border-bottom: 1px solid var(--line);
+}
+.mine > p,
+.mine > small,
+.mine > button,
+.mineFields {
+  margin: 10px 12px 0;
+}
+.mine > small {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.mine > small b {
+  color: var(--ink);
+  word-break: break-all;
+}
+.mineFields {
+  display: grid;
+  grid-template-columns: 1fr 76px;
+  gap: 8px;
+}
+.mineFields label {
+  display: grid;
+  gap: 3px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.mineFields input {
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--ink);
+  background: #fff;
+}
+.mineFields input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+.mineBtn {
+  width: calc(100% - 24px);
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 9px;
+  background: #0fa3b8;
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.mineBtn:disabled {
+  background: #c9d2dc;
+  cursor: default;
+}

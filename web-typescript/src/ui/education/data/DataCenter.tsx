@@ -9,7 +9,8 @@
  *  - 현장 분석: one lab problem — its numbers, a scatter of any two columns with the least-squares line and
  *    r read out in plain Korean, the job-time histogram, the runs themselves;
  *  - 디지털 트윈: the same program on the simulator and on the real robot, paired, and how far apart;
- *  - 데이터 탐구: three questions answered by looking at the right chart (checked from the data shown).
+ *  - 데이터 탐구: three questions answered by looking at the right chart (checked from the data shown);
+ *  - 반 결과 (teacher): the students' exported result files gathered into one class table (ClassResults).
  *
  * 실제 기록 (this browser's log) or 예시 데이터 (demoRuns: a made-up class, only in memory — never written to
  * the log). CSV download; the teacher can clear the log. Light, like the labs (Pretendard; place colour teal).
@@ -50,17 +51,19 @@ import {
 import { RUN_LOG_KEY, clearRuns, loadRuns, type RunLab } from '@/engine/education/runLog';
 
 import { Bars, HistogramChart, Scatter, Sparkline, TwinPlot, type BarRow } from './charts';
+import ClassResults, { NO_CLASS, type ClassLoad } from './ClassResults';
 import css from './data.module.css';
 
 /** The example class's seed (the same class every time). */
 const DEMO_SEED = 7;
 
-type Tab = 'overview' | 'lab' | 'twin' | 'quiz';
+type Tab = 'overview' | 'lab' | 'twin' | 'quiz' | 'class';
 const TABS: readonly [Tab, string][] = [
   ['overview', '한눈에 보기'],
   ['lab', '현장 분석'],
   ['twin', '디지털 트윈'],
   ['quiz', '데이터 탐구'],
+  ['class', '반 결과'],
 ];
 
 /* The log, read straight from localStorage (the raw text is the snapshot: equal text, same records). */
@@ -116,6 +119,8 @@ export default function DataCenter({ hidden, onBack, onOpenLab }: { hidden?: boo
   const [fromQuiz, setFromQuiz] = useState<Quiz | null>(null);
   const [chosen, setChosen] = useState<Partial<Record<Quiz['id'], number>>>({});
   const [checked, setChecked] = useState<Partial<Record<Quiz['id'], boolean>>>({});
+  /** 반 결과: the students' files loaded so far (kept across tabs, in memory only). */
+  const [klass, setKlass] = useState<ClassLoad>(NO_CLASS);
 
   const isDemo = mode === 'demo';
   const data = isDemo ? demo : real;
@@ -191,7 +196,8 @@ export default function DataCenter({ hidden, onBack, onOpenLab }: { hidden?: boo
               key={id}
               type="button"
               aria-current={tab === id ? 'page' : undefined}
-              disabled={empty}
+              disabled={empty && id !== 'class'}
+              title={id === 'class' ? '교사용: 학생들이 낸 결과 파일을 모아 반 전체를 봐요' : undefined}
               onClick={() => {
                 setFromQuiz(null);
                 setTab(id);
@@ -201,7 +207,7 @@ export default function DataCenter({ hidden, onBack, onOpenLab }: { hidden?: boo
             </button>
           ))}
         </nav>
-        <div className={css.tools}>
+        <div className={css.tools} hidden={tab === 'class'}>
           <div className={css.seg} role="group" aria-label="데이터">
             <button type="button" aria-pressed={!isDemo} onClick={() => switchMode('real')}>
               실제 기록 <b>{real.length}</b>
@@ -246,8 +252,10 @@ export default function DataCenter({ hidden, onBack, onOpenLab }: { hidden?: boo
       </header>
 
       <div className={css.body} key={tab}>
-        {raw === null ? null : empty ? (
-          <Empty onDemo={() => switchMode('demo')} onOpenLab={onOpenLab} />
+        {raw === null ? null : tab === 'class' ? (
+          <ClassResults load={klass} setLoad={setKlass} />
+        ) : empty ? (
+          <Empty onDemo={() => switchMode('demo')} onOpenLab={onOpenLab} onClass={() => setTab('class')} />
         ) : (
           <>
             {isDemo && (
@@ -686,7 +694,7 @@ function Recent({ rs, onOpen }: { rs: readonly DataRecord[]; onOpen(lab: string,
   );
 }
 
-function Empty({ onDemo, onOpenLab }: { onDemo(): void; onOpenLab(lab: RunLab): void }) {
+function Empty({ onDemo, onOpenLab, onClass }: { onDemo(): void; onOpenLab(lab: RunLab): void; onClass(): void }) {
   return (
     <div className={css.empty}>
       <div className={css.emptyCard}>
@@ -711,6 +719,13 @@ function Empty({ onDemo, onOpenLab }: { onDemo(): void; onOpenLab(lab: RunLab): 
             );
           })}
         </div>
+        <p className={css.small}>
+          선생님이라면: 학생들이 낸 결과 파일을
+          <button type="button" className={css.link} onClick={onClass}>
+            반 결과
+          </button>
+          에서 모아 볼 수 있어요.
+        </p>
       </div>
     </div>
   );

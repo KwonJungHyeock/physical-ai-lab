@@ -33,6 +33,7 @@ import {
   type SiteState,
 } from '@/engine/education/park';
 
+import MyResult from './MyResult';
 import css from './park.module.css';
 import type { SiteView } from './world/WorldScene';
 
@@ -158,7 +159,7 @@ export default function ParkView({ progress, allOpen, onAllOpen, hidden, onTopic
           {selected ? (
             <SiteCard id={selected} progress={progress} allOpen={allOpen} state={states[selected]} onTopic={onTopic} onLab={onLab} onData={onData} onClose={() => select(null)} />
           ) : (
-            <Overview states={states} nDone={nDone} nAll={nAll} step={step} onTopic={onTopic} onLab={onLab} onGo={select} finalOpen={finalOpen} onFinal={onFinal} />
+            <Overview states={states} progress={progress} nDone={nDone} nAll={nAll} step={step} onTopic={onTopic} onLab={onLab} onGo={select} finalOpen={finalOpen} onFinal={onFinal} />
           )}
         </aside>
       </section>
@@ -195,6 +196,7 @@ function NextGo({ step, onTopic, onLab }: { step: NextStep; onTopic(id: TopicId)
 
 function Overview({
   states,
+  progress,
   nDone,
   nAll,
   step,
@@ -205,6 +207,7 @@ function Overview({
   onFinal,
 }: {
   states: Record<SiteId, SiteState>;
+  progress: ParkProgress;
   nDone: number;
   nAll: number;
   step: NextStep;
@@ -215,6 +218,7 @@ function Overview({
   onFinal(): void;
 }) {
   const counted = SITES.filter((s) => s.content !== 'data');
+  const solved = THEMES.reduce((n, s) => n + (siteScore(s.id, progress)?.done ?? 0), 0);
   return (
     <div className={css.over}>
       <h2>로봇이 일하는 도시에서 배워요</h2>
@@ -255,6 +259,7 @@ function Overview({
           <i data-k="locked">🔒</i> 먼저 배울 차시가 있어요 (현장을 누르면 어떤 차시인지 보여요)
         </li>
       </ul>
+      <MyResult theory={siteScore('center', progress)!.done} solved={solved} />
     </div>
   );
 }
