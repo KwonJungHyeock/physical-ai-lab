@@ -20,6 +20,7 @@ import type { StudyLevel } from '@/engine/education/roadmap';
 import type { RunLab } from '@/engine/education/runLog';
 import type { CheckQ, SiteProblem, SiteStepId, SiteText } from '@/engine/education/lab/siteText';
 
+import { useFollowGate } from '../stage/RealFollow';
 import css from './lab.module.css';
 import lg from './site.module.css';
 import RobotRecord from './RobotRecord';
@@ -113,9 +114,11 @@ export interface FlowState {
   pick: number | null;
   tried: number[];
   blanks: (number | null)[];
-  /** 값 고치기: the numbers typed, and whether they have been checked. */
+  /** 값 고치기: the numbers typed, whether they have been checked, how many checks found a wrong one, and which fields' worked formula has been opened. */
   calc: string[];
   calcChecked: boolean;
+  calcMisses: number;
+  formulas: boolean[];
   pred: number | null;
   hints: number;
   tries: number;
@@ -136,6 +139,8 @@ export const freshFlow = (T: SiteText): FlowState => ({
   blanks: T.blanks.answer.map(() => null),
   calc: T.calc.fields.map(() => ''),
   calcChecked: false,
+  calcMisses: 0,
+  formulas: T.calc.fields.map(() => false),
   pred: null,
   hints: 0,
   tries: 0,
@@ -232,15 +237,18 @@ export interface MeasureRow {
   bad?: boolean;
 }
 
-/** The measurements, taken one at a time (each 재기 shows the next value; the lab draws it in 3D). */
-export function Measure({ rows, meas, onMeasure }: { rows: readonly MeasureRow[]; meas: number; onMeasure(): void }) {
+/**
+ * The measurements, taken one at a time (each 재기 shows the next value; the lab draws it in 3D).
+ * The bad values are marked only once the cause is found (reveal) — before that the student compares them to the standard.
+ */
+export function Measure({ rows, meas, onMeasure, reveal = true }: { rows: readonly MeasureRow[]; meas: number; onMeasure(): void; reveal?: boolean }) {
   return (
     <div className={lg.measureBox}>
       <dl className={lg.measure}>
         {rows.map((r, i) => (
           <div key={r.label} data-on={i < meas || undefined}>
             <dt>{r.label}</dt>
-            <dd data-c={i < meas && r.bad ? 'bad' : undefined}>{i < meas ? r.value : '?'}</dd>
+            <dd data-c={reveal && i < meas && r.bad ? 'bad' : undefined}>{i < meas ? r.value : '?'}</dd>
           </div>
         ))}
       </dl>
@@ -315,18 +323,42 @@ function Blanks({ T, value, on }: { T: SiteText; value: readonly (number | null)
 
 /* --- 값 고치기 --------------------------------------------------------------------------- */
 
+/**
+ * A calculation field's label split into what to work out and its worked formula (the numbers put
+ * in), when it reads "name = formula": "1층 = 58 + 0 × 40 + 2" → ["1층", "58 + 0 × 40 + 2"]. The
+ * formula stays hidden until the student opens it, so they first try to set it up themselves.
+ */
+export function splitFormula(label: string): [string, string | null] {
+  const at = label.lastIndexOf(' = ');
+  if (at < 0) return [label, null];
+  const f = label.slice(at + 3);
+  return /\d/.test(f) && !/[가-힣]/.test(f) ? [label.slice(0, at), f] : [label, null];
+}
+
 /** The numbers to work out before the operator panel opens. */
 function Calc({ T, st, patch }: { T: SiteText; st: FlowState; patch: FlowPatch }) {
   const C = T.calc;
   const ok = st.calcChecked && calcOk(T, st.calc);
+  const anyFormula = C.fields.some((f) => splitFormula(f.label)[1]);
   return (
     <div className={lg.calc} data-ok={ok || undefined}>
       <p>{C.prompt}</p>
+      {anyFormula && !ok && <small className={lg.calcTip}>먼저 식을 스스로 세워 봐요. 막히면 칸마다 [식 보기]를 눌러요 — 본 식은 기록지에 남아요.</small>}
       {C.fields.map((f, i) => {
         const r = st.calcChecked && st.calc[i] !== '' ? near(st.calc[i], f.answer, f.tol) : null;
+        const [name, formula] = splitFormula(f.label);
+        const open = !formula || st.formulas[i] || ok;
         return (
           <label key={f.label} data-r={r === null ? undefined : r ? 'ok' : 'no'}>
-            <span>{f.label} =</span>
+            <span>
+              {name}
+              {formula && open && <b className={lg.formula}> = {formula}</b>} =
+            </span>
+            {formula && !open && (
+              <button type="button" className={lg.formulaBtn} onClick={() => patch((x) => ({ formulas: x.formulas.map((v, j) => v || j === i) }))}>
+                식 보기
+              </button>
+            )}
             <input
               inputMode="decimal"
               value={st.calc[i]}
@@ -339,7 +371,7 @@ function Calc({ T, st, patch }: { T: SiteText; st: FlowState; patch: FlowPatch }
         );
       })}
       {!ok && (
-        <button type="button" className={css.small} disabled={st.calc.some((c) => c.trim() === '')} onClick={() => patch({ calcChecked: true })}>
+        <button type="button" className={css.small} disabled={st.calc.some((c) => c.trim() === '')} onClick={() => patch((x) => ({ calcChecked: true, calcMisses: x.calcMisses + (calcOk(T, x.calc) ? 0 : 1) }))}>
           확인
         </button>
       )}
@@ -515,6 +547,8 @@ export interface SitePanelProps {
 
 export function SitePanel(p: SitePanelProps) {
   const lock = lockOf(useContext(LabGateContext), p.lab, p.T.id);
+  // 실물 연동: the real arm follows only the fixed program's re-run (and never where the setup differs).
+  useFollowGate(p.lab, p.T.id, !lock && p.st.step === 'compare');
   return lock ? <LockedProblem T={p.T} lock={lock} /> : <SiteSteps {...p} />;
 }
 
@@ -610,7 +644,8 @@ function SiteSteps(p: SitePanelProps) {
             <Roadmap parts={parts} />
             <Sec n={1} title={parts[0].title} state={parts[0].state}>
               <p className={lg.secText}>{T.look}</p>
-              <Measure rows={p.rows} meas={st.meas} onMeasure={() => p.patch((x) => ({ meas: Math.min(n, x.meas + 1) }))} />
+              <Measure rows={p.rows} meas={st.meas} reveal={found} onMeasure={() => p.patch((x) => ({ meas: Math.min(n, x.meas + 1) }))} />
+              {measured && !found && <small className={lg.calcTip}>어느 값이 작업 기준과 맞지 않는지 직접 견줘 봐요 — 원인을 맞히면 문제 값이 빨갛게 표시돼요.</small>}
               {p.measureExtra}
             </Sec>
             <Sec n={2} title="원인 고르기" state={parts[1].state} wait={`위에서 ${n}가지를 모두 재면 열려요.`}>
@@ -713,7 +748,9 @@ function SiteSteps(p: SitePanelProps) {
     }
     case 'done': {
       const answered = st.shown.filter(Boolean).length;
-      const stars = 3 - (st.hints >= 2 ? 1 : 0) - (st.tries > 2 ? 1 : 0);
+      const peeks = st.formulas.filter(Boolean).length;
+      // A star off for leaning on the hints (2+ hints, or opening every worked formula), for many re-runs, and for guessing (3+ wrong causes or calculations).
+      const stars = 3 - (st.hints >= 2 || (peeks > 0 && peeks === st.formulas.length) ? 1 : 0) - (st.tries > 2 ? 1 : 0) - (st.tried.length + st.calcMisses >= 3 ? 1 : 0);
       const parts = [
         { title: '원리 정리', state: 'done' as const },
         { title: `확인 문제 (${answered}/${T.checks.length})`, state: answered >= T.checks.length ? ('done' as const) : ('now' as const) },
@@ -728,7 +765,7 @@ function SiteSteps(p: SitePanelProps) {
               {'★'.repeat(stars)}
               {'☆'.repeat(3 - stars)}
               <small>
-                다시 가동 {st.tries}번 · 힌트 {st.hints}번
+                원인 {st.tried.length + 1}번째에 찾음 · 계산 다시 {st.calcMisses}번 · 식 보기 {peeks}번 · 힌트 {st.hints}번 · 다시 가동 {st.tries}번
               </small>
             </div>
             {guide}
@@ -918,7 +955,10 @@ export function RecordSheet({
                 <dt>원인 고르기</dt>
                 <dd>{s.pick === right ? `${s.tried.length + 1}번 만에 찾음` : '—'}</dd>
                 <dt>계산</dt>
-                <dd>{s.calcChecked ? T.calc.fields.map((f, i) => `${f.label} = ${s.calc[i] || '—'} ${f.unit}`).join(' / ') : '—'}</dd>
+                <dd>
+                  {s.calcChecked ? T.calc.fields.map((f, i) => `${splitFormula(f.label)[0]} = ${s.calc[i] || '—'} ${f.unit}`).join(' / ') : '—'}
+                  {s.calcChecked && ` (다시 계산 ${s.calcMisses}번, 식 보기 ${s.formulas.filter(Boolean).length}번)`}
+                </dd>
                 <dt>예상</dt>
                 <dd>
                   {s.pred === null ? '—' : T.predictions[s.pred]}

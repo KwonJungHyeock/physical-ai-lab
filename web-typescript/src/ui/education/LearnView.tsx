@@ -36,11 +36,13 @@ import FinalExam from './lab/FinalExam';
 import LogisticsLab from './lab/LogisticsLab';
 import { LabGateContext, type LabGate } from './lab/SiteFlow';
 import ParkView from './map/ParkView';
+import { FollowBar, FollowContext, useRealFollow } from './stage/RealFollow';
 import LessonBar from './lesson/LessonBar';
 import LessonCards, { PAGES, isActivity, type PageId, type ResumeSpot } from './lesson/LessonCards';
 import { TOPIC_PANELS } from './topics';
 import { TCP } from './topics/kit';
 import type { ResultRow, StepView } from './topics/types';
+import type { RunLab } from '@/engine/education/runLog';
 import css from './learn.module.css';
 
 const TOPIC_KEY = 'learn-topic';
@@ -109,6 +111,9 @@ declare global {
 
 /** The controls' activity for a lesson step (도입 · 개념 show activity 1's scene; 평가 keeps the last one). */
 const stepFor = (p: PageId, cur: StepView): StepView => (isActivity(p) || p === 'cmp' ? p : p === 'check' ? cur : 'A');
+
+/** The site-lab screens, by the lab each shows (실물 연동 asks that lab whether to follow). */
+const FOLLOW_LAB: Partial<Record<string, RunLab>> = { lab: 'factory', logistics: 'logistics', bio: 'bio', farm: 'farm', cafe: 'cafe', ai: 'ai', energy: 'energy' };
 
 export default function LearnView({ robot, chain, gripperRobot, real, hidden }: Props) {
   const [topicId, setTopicId] = useState<TopicId>(FIRST);
@@ -410,9 +415,12 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
   const topic = TOPIC_BY_ID.get(topicId)!;
   const Panel = PANELS[topicId];
   const inLesson = !hidden && screen === 'topic';
+  // 실물 연동: a lesson, or the site lab on screen (it says itself when the arm may follow).
+  const follow = useRealFollow(real, chain, hidden ? null : screen === 'topic' ? 'topic' : (FOLLOW_LAB[screen] ?? null));
 
   return (
     <LabGateContext.Provider value={gate}>
+      <FollowContext.Provider value={follow.link}>
       <ParkView
         progress={progress}
         allOpen={allOpen}
@@ -500,6 +508,8 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
           </aside>
         </div>
       </SymbolsProvider>
+      <FollowBar {...follow} hidden={hidden} />
+      </FollowContext.Provider>
     </LabGateContext.Provider>
   );
 }

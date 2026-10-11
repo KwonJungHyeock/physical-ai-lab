@@ -14,6 +14,13 @@ export interface RealArm {
   angles: number[] | null;
   move(angles: number[], speed: number): Promise<PostResult>;
   run(actions: RobotAction[]): Promise<PostResult>;
+  /** The measured angles right now (the latest 10-a-second reading; `angles` above is refreshed less often). */
+  now(): number[] | null;
+  /** 실물 연동: the next real-time target (the held-jog stream), stop, the pump and the gripper. */
+  target(angles: number[], speed: number): Promise<PostResult>;
+  stop(): Promise<PostResult>;
+  pump(on: boolean): Promise<PostResult>;
+  grip(open: boolean): Promise<PostResult>;
 }
 
 export type Mm = [number, number, number];

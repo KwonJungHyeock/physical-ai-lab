@@ -2636,8 +2636,13 @@ export default function Console() {
       angles: robot?.angles ?? null,
       move: (angles, speed) => moveRobot(angles, speed),
       run: (actions) => runOnRobot(actions),
+      now: () => robotNow.current?.angles ?? null,
+      target: (angles, speed) => targetRobot(angles, speed),
+      stop: () => stopRobot(),
+      pump: (on) => pumpRobot(on),
+      grip: (open) => gripRobot(open, EFFECTOR_BY_ID[effector].gripperType ?? 1),
     }),
-    [robotMode, robot?.connected, robot?.angles],
+    [robotMode, robot?.connected, robot?.angles, effector],
   );
 
   return (

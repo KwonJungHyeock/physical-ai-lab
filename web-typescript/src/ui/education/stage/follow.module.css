@@ -1,0 +1,76 @@
+/* 실물 연동 bar (RealFollow.tsx): bottom, over the 3D side of the 교육 screens (clear of the panel on the right). Console colour tokens. */
+.bar {
+  position: fixed;
+  left: 36vw;
+  bottom: 14px;
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: min(680px, calc(64vw - 40px));
+  padding: 8px 10px 8px 8px;
+  background: var(--page);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+  font-size: 13px;
+  color: var(--ink);
+}
+.bar[data-on] {
+  border-color: var(--real);
+  box-shadow: 0 0 0 3px var(--real-soft), var(--shadow-sm);
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--soft);
+  font-weight: 700;
+  cursor: pointer;
+}
+.toggle i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--faint);
+}
+.bar[data-on] .toggle {
+  background: var(--real-soft);
+  border-color: var(--real);
+  color: var(--real);
+}
+.bar[data-on] .toggle i {
+  background: var(--real);
+}
+
+.state {
+  min-width: 0;
+  color: var(--muted);
+  line-height: 1.35;
+}
+.err {
+  color: var(--stop);
+}
+
+.stop {
+  flex: none;
+  padding: 9px 18px;
+  border: none;
+  border-radius: 9px;
+  background: var(--stop);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.stop small {
+  margin-left: 6px;
+  font-weight: 600;
+  opacity: 0.75;
+}

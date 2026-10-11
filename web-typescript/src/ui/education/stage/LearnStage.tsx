@@ -10,7 +10,7 @@
 
 import { CameraControls, Grid, Html, Line, useGLTF } from '@react-three/drei';
 import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
-import { Suspense, useCallback, useEffect, useMemo, useRef, type ReactNode, type RefObject } from 'react';
+import { Suspense, useCallback, useContext, useEffect, useMemo, useRef, type ReactNode, type RefObject } from 'react';
 import { Matrix4, NeutralToneMapping, Quaternion, Vector3, type Group, type PerspectiveCamera } from 'three';
 
 import { forwardKinematicsFrames, type ChainSegment } from '@/engine/robot/kinematics';
@@ -31,6 +31,7 @@ import { LEARN_COLORS, ellipsoid, ghostify, workspaceEnvelope, workspaceSection 
 import { StageRobot, setAmbient, useAmbient } from '../lab/ambient/ambient';
 import { SiteGround, type SiteLook } from '../lab/ambient/Ground';
 import css from '../learn.module.css';
+import { FollowContext, toolOf, type FollowLink } from './RealFollow';
 
 const MODEL_URL = '/robot/rdkx5/rdkx5.glb';
 const DRACO_PATH = '/draco/';
@@ -101,6 +102,8 @@ const v = (p: readonly number[]) => new Vector3(p[0] / 1000, p[1] / 1000, p[2] /
 export default function LearnStage({ robot, chain, gripperRobot, scene, onTablePick, paused, shift = 0, home = HOME_VIEW, focus = null, live, children, look }: Props) {
   const api = useRef<ViewApi | null>(null);
   const stageRobot = useMemo(() => ({ robot, chain }), [robot, chain]);
+  // Read here: the Canvas is its own React root (실물 연동 is passed in by hand).
+  const follow = useContext(FollowContext);
   return (
     <>
       <Canvas
@@ -143,7 +146,7 @@ export default function LearnStage({ robot, chain, gripperRobot, scene, onTableP
         )}
         <Suspense fallback={null}>
           <StageRobot.Provider value={stageRobot}>
-            <SceneContent robot={robot} chain={chain} gripperRobot={gripperRobot} scene={scene} live={live}>
+            <SceneContent robot={robot} chain={chain} gripperRobot={gripperRobot} scene={scene} live={live} follow={follow}>
               {children}
             </SceneContent>
           </StageRobot.Provider>
@@ -309,7 +312,7 @@ function Desk({ onTablePick }: { onTablePick?: (mm: Mm) => void }) {
   );
 }
 
-function SceneContent({ robot, chain, gripperRobot, scene, live, children }: Omit<Props, 'onTablePick' | 'paused'>) {
+function SceneContent({ robot, chain, gripperRobot, scene, live, children, follow }: Omit<Props, 'onTablePick' | 'paused'> & { follow: FollowLink | null }) {
   const { nodes } = useGLTF(MODEL_URL, DRACO_PATH) as unknown as { nodes: GlbNodes };
   const arm = useMemo(() => buildArm(robot, chain, nodes), [robot, chain, nodes]);
   // A small gripper unless the lesson fits another tool (its tool point is the topics' 손끝).
@@ -341,6 +344,7 @@ function SceneContent({ robot, chain, gripperRobot, scene, live, children }: Omi
     w.pump = drive ? drive.pump : pumpOn.current;
     if (drive?.gap !== undefined) w.gapMm = drive.gap;
     tool.update(w);
+    follow?.feed(w.angles, toolOf(toolId, w.pump, drive?.gap), toolId);
   });
 
   return (
