@@ -367,7 +367,8 @@ export function runPose(chain: readonly ChainSegment[], v: PoseValues): BioRun {
 
 /* --- ② 먼 칸일수록 어긋난다 ------------------------------------------------------------------------ */
 
-/** The reader's small scatter of a placed tube (the arm's ±0.5 mm repeatability), mm, the same for the same hole. */
+/** The reader's small scatter of a placed tube, ±0.2 mm per axis (this arm's spread; the datasheet's repeatability allows up to ±0.5 mm, but that much would
+ * blur the r × δθ pattern the problem is about), mm, the same for the same hole. */
 const scatter = (k: number): [number, number] => {
   const s = Math.sin(k * 12.9898 + 4.1) * 43758.5453;
   const u = s - Math.floor(s);
