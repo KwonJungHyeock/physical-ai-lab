@@ -8,6 +8,9 @@
 // 로봇 찾기 on this PC's own networks (/__physical-ai-simulator/lan): robots on
 // the same Wi-Fi are listed with their names and addresses, one click opens one.
 //
+// Started with -class it is the teacher's class server instead (classmode.go, classroom/): the app on
+// the local network, class accounts and learning records on this PC.
+//
 // Build with build.sh (it copies the app into site/ first).
 package main
 
@@ -50,6 +53,10 @@ func main() {
 		".txt":         "text/plain; charset=utf-8",
 	} {
 		_ = mime.AddExtensionType(ext, typ)
+	}
+	if classModeWanted(os.Args[1:]) {
+		runClassServer(root, classDataDir(os.Args[1:]))
+		return
 	}
 
 	addr := fmt.Sprintf("127.0.0.1:%d", port)
