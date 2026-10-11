@@ -11,7 +11,7 @@
  * setup differs from the screen (the care robot on its AGV, the AI kit).
  */
 
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Follower, FOLLOW_CAP, type FollowStatus, type FollowTool } from '@/engine/education/follow';
 import type { RunLab } from '@/engine/education/runLog';
@@ -27,8 +27,8 @@ import css from './follow.module.css';
 export interface FollowLink {
   /** The arm on screen, every frame: its angles, the tool as drawn, and which tool it is. */
   feed(angles: readonly number[], tool: FollowTool, toolId: EffectorId): void;
-  /** A site lab says whether the real arm may follow now (null) or why not. */
-  allow(key: string, why: string | null): void;
+  /** A site lab says whether the real arm may follow now (null) or why not, and which problem is open. */
+  allow(key: string, why: string | null, prob?: number): void;
 }
 
 export const FollowContext = createContext<FollowLink | null>(null);
@@ -54,7 +54,7 @@ export function useFollowGate(lab: RunLab, prob: 1 | 2 | 3, rerun: boolean) {
         : rerun
           ? null
           : LAB_WAIT;
-  useEffect(() => link?.allow(lab, why), [link, lab, why]);
+  useEffect(() => link?.allow(lab, why, prob), [link, lab, why, prob]);
 }
 
 /** What the follower talks to: the real arm and the chain as of the last render, the tool on screen. */
@@ -110,9 +110,11 @@ class FollowRig {
 /**
  * The follower behind LearnView. `place`: what is on screen — 'topic' (a lesson), a site lab's id,
  * or null (the map, the course, the data centre, the final assessment: nothing follows there).
+ * `onFollow`: the real arm starts following on a place (with the site lab's open problem) — a learning event.
  */
-export function useRealFollow(real: RealArm, chain: readonly ChainSegment[], place: string | null) {
+export function useRealFollow(real: RealArm, chain: readonly ChainSegment[], place: string | null, onFollow?: (place: string, prob: number | null) => void) {
   const [rig] = useState(() => new FollowRig());
+  const probs = useRef<Record<string, number>>({});
   const [on, setOn] = useState(false);
   const [gates, setGates] = useState<Record<string, string | null>>({});
   const [status, setStatus] = useState<FollowStatus>(() => rig.follower.status);
@@ -122,6 +124,13 @@ export function useRealFollow(real: RealArm, chain: readonly ChainSegment[], pla
   const following = on && reason === null;
   useEffect(() => rig.update(real, chain), [rig, real, chain]);
   useEffect(() => rig.follow(following), [rig, following]);
+  const followCb = useRef(onFollow);
+  useEffect(() => {
+    followCb.current = onFollow;
+  });
+  useEffect(() => {
+    if (following && place) followCb.current?.(place, probs.current[place] ?? null);
+  }, [following, place]);
   // The arm stops when the 교육 screen goes away.
   useEffect(() => () => rig.follower.stop(), [rig]);
 
@@ -142,7 +151,10 @@ export function useRealFollow(real: RealArm, chain: readonly ChainSegment[], pla
   const link = useMemo<FollowLink>(
     () => ({
       feed: (angles, tool, toolId) => rig.feed(angles, tool, toolId),
-      allow: (key, why) => setGates((g) => (g[key] === why ? g : { ...g, [key]: why })),
+      allow: (key, why, prob) => {
+        if (prob !== undefined) probs.current[key] = prob;
+        setGates((g) => (g[key] === why ? g : { ...g, [key]: why }));
+      },
     }),
     [rig],
   );

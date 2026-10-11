@@ -100,6 +100,10 @@ import { CameraPip, ViewTools, type CameraPipHandle } from './stage/StageTools';
 import Notices, { type LogEntry, type LogKind } from './stage/Notices';
 import TopBar, { type ConsoleView } from './TopBar';
 import LearnView from '../education/LearnView';
+import { useAccount } from '../account/AccountProvider';
+import AccountChip from '../account/AccountChip';
+import ClassDashboard from '../account/ClassDashboard';
+import LearnGate from '../account/LearnGate';
 import type { RealArm } from '../education/lessons';
 import { LEVEL_TAB, TaskChip } from './tasks/TaskChip';
 import Library, { type LibrarySection } from './pages/Library';
@@ -400,6 +404,15 @@ export default function Console() {
     setView(v);
     if (v === 'learn') setLearnSeen(true);
   };
+  /** Class accounts (ui/account): in class mode the console opens on 교육, where the login is. */
+  const account = useAccount();
+  const classOpened = useRef(false);
+  useEffect(() => {
+    if (!account.classMode || classOpened.current) return;
+    classOpened.current = true;
+    setView('learn');
+    setLearnSeen(true);
+  }, [account.classMode]);
   /** Opened by the desktop simulator program (desktop-go/, `?from=sim`): nothing to install; robots are found on the PC's own networks. */
   const [desktop, setDesktop] = useState(false);
   useEffect(() => {
@@ -2758,7 +2771,10 @@ export default function Console() {
       <div className={css.inner}>
         <TopBar
           view={view}
-          onView={chooseView}
+          onView={(v) => {
+            account.closeDashboard();
+            chooseView(v);
+          }}
           busy={busy}
           robotStop={robotMode && !!robot?.connected}
           onStop={stop}
@@ -2824,6 +2840,7 @@ export default function Console() {
                 </b>
                 <small>같은 Wi-Fi 의 로봇 찾기 · 로봇의 Wi-Fi 바꾸기</small>
               </button>
+              {account.role !== 'student' && (
               <button
                 type="button"
                 role="menuitem"
@@ -2842,6 +2859,22 @@ export default function Console() {
                 </b>
                 <small>{mode === 'check' ? '학생 실습 화면으로 돌아가요' : '납품 검수 7종 · 검수 서류 — 학생 화면에는 보이지 않아요'}</small>
               </button>
+              )}
+              {!account.session && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    account.openLogin({ reason: 'menu' });
+                    close();
+                  }}
+                >
+                  <b>
+                    <Icon name="lock" size={15} /> 학급 로그인
+                  </b>
+                  <small>교실 학급 서버에 선생님 · 학생 계정으로 들어가요</small>
+                </button>
+              )}
               <small className={css.menuHead}>패널 위치</small>
               <span className={css.menuSeg} role="group" aria-label="패널 위치">
                 {(['left', 'right'] as const).map((s) => (
@@ -2853,6 +2886,8 @@ export default function Console() {
             </>
           )}
           status={
+            <>
+            <AccountChip />
             <button
               type="button"
               className={css.connPill}
@@ -2872,6 +2907,7 @@ export default function Console() {
                 <small>{!robotMode ? (pcApp.offline ? '지금은 시뮬레이션 · 오프라인 가능' : '지금은 시뮬레이션') : robot?.ips?.[0] ?? '로봇 콘솔'}</small>
               </span>
             </button>
+            </>
           }
         />
         {view === 'library' && (
@@ -3410,8 +3446,11 @@ export default function Console() {
           </aside>
         </div>
         {learnArm && learnSeen && (
-          <LearnView robot={learnArm.robot} chain={learnArm.chain} gripperRobot={learnArm.gripper} real={realArm} hidden={view !== 'learn'} />
+          <LearnGate hidden={view !== 'learn' || account.dashboard}>
+            <LearnView robot={learnArm.robot} chain={learnArm.chain} gripperRobot={learnArm.gripper} real={realArm} hidden={view !== 'learn' || account.dashboard} />
+          </LearnGate>
         )}
+        {account.dashboard && <ClassDashboard onClose={account.closeDashboard} />}
       </div>
 
       {exportText !== null && (

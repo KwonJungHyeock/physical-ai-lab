@@ -117,6 +117,8 @@ export interface ServerStatus {
   setupHere: boolean;
   server: string;
   time: number;
+  /** The addresses students open (http://<LAN IP>:47290), when the server knows them (older servers: absent). */
+  addresses?: string[];
 }
 
 export interface PurposeList {

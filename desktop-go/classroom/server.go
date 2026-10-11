@@ -9,6 +9,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -40,6 +41,12 @@ type Server struct {
 	flood   *budget  // statements per student per window
 	now     func() time.Time
 	Logf    func(format string, args ...any)
+	// devOrigins: loopback web origins allowed by AllowDevOrigin (off unless the program is started
+	// with -dev-origin, for working on the app with `npm run dev` on the class server PC).
+	devOrigins []string
+	// Addresses: the addresses students open (http://<LAN IP>:47290), shown on the teacher's screen and
+	// the login cards; set by the program (classmode.go). nil: none known.
+	Addresses func() []string
 }
 
 func NewServer(store *Store, syncer *Syncer) *Server {
@@ -120,7 +127,7 @@ func (srv *Server) wrap(next http.Handler) http.Handler {
 		h.Set("X-Content-Type-Options", "nosniff")
 		h.Set("Referrer-Policy", "no-referrer")
 		if origin := r.Header.Get("Origin"); origin != "" {
-			if !srv.originAllowed(origin, r.Host) {
+			if !srv.originAllowed(origin, r.Host, isLoopback(r)) {
 				writeErr(w, http.StatusForbidden, "origin", "허용되지 않은 출처에서 온 요청이에요.")
 				return
 			}
@@ -146,9 +153,32 @@ func (srv *Server) wrap(next http.Handler) http.Handler {
 	})
 }
 
-func (srv *Server) originAllowed(origin, host string) bool {
+// AllowDevOrigin lets a development copy of the app on this PC (e.g. http://localhost:3000, the Next
+// dev server) call the API. Only http loopback origins with a port are taken, and they are honoured
+// only for requests that come from this PC itself (originAllowed). Off by default.
+func (srv *Server) AllowDevOrigin(origin string) error {
+	u, err := url.Parse(origin)
+	if err != nil || u.Scheme != "http" || u.User != nil || u.Port() == "" || (u.Path != "" && u.Path != "/") || u.RawQuery != "" || u.Fragment != "" {
+		return fmt.Errorf("%w: 개발용 출처는 http://localhost:<포트> 또는 http://127.0.0.1:<포트> 만 돼요", errBadInput)
+	}
+	host := u.Hostname()
+	if ip := net.ParseIP(host); host != "localhost" && (ip == nil || !ip.IsLoopback()) {
+		return fmt.Errorf("%w: 개발용 출처는 이 PC(루프백) 주소만 돼요", errBadInput)
+	}
+	srv.devOrigins = append(srv.devOrigins, u.Scheme+"://"+u.Host)
+	return nil
+}
+
+func (srv *Server) originAllowed(origin, host string, fromHere bool) bool {
 	if origin == "http://"+host || origin == "https://"+host {
 		return true
+	}
+	if fromHere {
+		for _, o := range srv.devOrigins {
+			if origin == o {
+				return true
+			}
+		}
 	}
 	for _, o := range SimulatorOrigins {
 		if origin == o {
@@ -298,9 +328,14 @@ func tooMany(w http.ResponseWriter, d time.Duration) {
 /* --- public -------------------------------------------------------------------------------------- */
 
 func (srv *Server) status(w http.ResponseWriter, r *http.Request) {
+	addrs := []string{}
+	if srv.Addresses != nil {
+		addrs = append(addrs, srv.Addresses()...)
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"kind": "robocity-class-server", "version": 1, "needsSetup": srv.store.NeedsSetup(),
 		"server": srv.store.ServerID(), "time": srv.now().UnixMilli(), "setupHere": isLoopback(r),
+		"addresses": addrs,
 	})
 }
 

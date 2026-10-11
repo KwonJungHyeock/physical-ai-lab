@@ -29,3 +29,10 @@ body {
     display: none !important;
   }
 }
+
+/* 학급 로그인 카드 (ui/account/LoginCards): while they are open, print only the cards. */
+@media print {
+  body:has(> .class-cards) > :not(.class-cards) {
+    display: none !important;
+  }
+}

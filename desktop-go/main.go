@@ -55,7 +55,7 @@ func main() {
 		_ = mime.AddExtensionType(ext, typ)
 	}
 	if classModeWanted(os.Args[1:]) {
-		runClassServer(root, classDataDir(os.Args[1:]))
+		runClassServer(root, classDataDir(os.Args[1:]), classDevOrigins(os.Args[1:]))
 		return
 	}
 

@@ -23,7 +23,7 @@ Keep code sorted by language (TypeScript only under `web-typescript/`, Python on
 Go only under `desktop-go/`), then by part — don't drop new files into one flat folder:
 - `web-typescript/src/ui/simulator/{stage,editors,control,connect,tasks,pages}/`,
   `web-typescript/src/ui/education/{map,roadmap,lesson,stage,topics,fig,print,lab,data}/` (the 교육 home = the 산업단지 map in `map/`, lesson screens in `topics/<N-학문>/`, problem-solving labs in `lab/`, the 디지털 트윈 관제센터 in `data/`),
-  `web-typescript/src/ui/agv/`.
+  `web-typescript/src/ui/agv/`, `web-typescript/src/ui/account/` (class accounts: the login, the top bar's account chip, 학급 관리 = the teacher dashboard, login cards; engine in `src/engine/account/`).
 - `web-typescript/src/engine/{robot,physics,simulator,python,vision,education,agv,serial,account}/` — no React or DOM UI here.
 - `web-typescript/tests/{robot,simulator,agv,education,account}/`, `web-typescript/tools/{build,check}/`.
 - `web-typescript/public/education/` = 교육 tab pictures (served at `/education/...`); `park/kit/` = the map's Kenney Factory Kit models (CC0, recoloured atlas, see its ATTRIBUTION.md).

@@ -58,7 +58,8 @@ interface Props {
   progress: ParkProgress;
   /** 모든 현장 열기 (the teacher's switch): every site and problem open. */
   allOpen: boolean;
-  onAllOpen(on: boolean): void;
+  /** The switch changed; none for a student in class mode (the switch is hidden). */
+  onAllOpen?(on: boolean): void;
   hidden?: boolean;
   /** Open a 차시 (the 교육센터's lessons). */
   onTopic(id: TopicId): void;
@@ -142,10 +143,12 @@ export default function ParkView({ progress, allOpen, onAllOpen, hidden, onTopic
           <button type="button" className={css.line} onClick={onCourse} title="8단원 28차시 이론 수업 목록">
             전체 차시
           </button>
-          <label className={css.teacher} title="교사용: 먼저 배울 차시를 마치지 않아도 모든 현장과 문제를 열어요">
-            <input type="checkbox" checked={allOpen} onChange={(e) => onAllOpen(e.target.checked)} />
-            모든 현장 열기
-          </label>
+          {onAllOpen && (
+            <label className={css.teacher} title="교사용: 먼저 배울 차시를 마치지 않아도 모든 현장과 문제를 열어요">
+              <input type="checkbox" checked={allOpen} onChange={(e) => onAllOpen(e.target.checked)} />
+              모든 현장 열기
+            </label>
+          )}
         </div>
       </header>
       <section className={css.stage} aria-label="로봇 시티 3D 지도">

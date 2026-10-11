@@ -50,7 +50,19 @@ func classDataDir(args []string) string {
 	return filepath.Join(base, "PhysicalAI", "class-server")
 }
 
-func runClassServer(root fs.FS, dataDir string) {
+// classDevOrigins: -dev-origin <origin> (repeatable), for working on the app with its dev server on
+// this PC (e.g. -dev-origin http://localhost:3000). Never needed in a classroom.
+func classDevOrigins(args []string) []string {
+	var out []string
+	for i, a := range args {
+		if (a == "-dev-origin" || a == "--dev-origin") && i+1 < len(args) {
+			out = append(out, args[i+1])
+		}
+	}
+	return out
+}
+
+func runClassServer(root fs.FS, dataDir string, devOrigins []string) {
 	store, err := classroom.Open(dataDir, nil)
 	if err != nil {
 		fail(err)
@@ -59,6 +71,18 @@ func runClassServer(root fs.FS, dataDir string) {
 	syncer := classroom.NewSyncer(store, nil)
 	go syncer.Run(ctx)
 	api := classroom.NewServer(store, syncer)
+	api.Addresses = func() []string {
+		out := []string{}
+		for _, a := range lanAddresses() {
+			out = append(out, fmt.Sprintf("http://%s:%d", a, classroom.Port))
+		}
+		return out
+	}
+	for _, o := range devOrigins {
+		if err := api.AllowDevOrigin(o); err != nil {
+			fail(err)
+		}
+	}
 
 	mux := http.NewServeMux()
 	mux.Handle(classroom.APIPrefix+"/", api.Handler())
@@ -95,6 +119,9 @@ func runClassServer(root fs.FS, dataDir string) {
 		fmt.Println("  처음 켰어요: 열린 창에서 관리자 계정을 만드세요 (이 PC 에서만 할 수 있어요).")
 	}
 	fmt.Println("  기록 저장 폴더: " + dataDir)
+	for _, o := range devOrigins {
+		fmt.Println("  (개발용) 이 PC 의 " + o + " 에서 오는 요청도 받아요.")
+	}
 	fmt.Println("  Windows 방화벽이 물으면 [개인 네트워크] 만 허용하세요.")
 	fmt.Println("  이 검은 창을 닫으면 학급 서버가 꺼져요 (학생 기록은 저장돼 있어요).")
 	fmt.Println()

@@ -64,7 +64,7 @@ export function flatValues(v: unknown, prefix = '', out: Record<string, number |
   return out;
 }
 
-/** Adds one run (time defaults to now). Listeners on 'lab-runs' (window event) hear of it. */
+/** Adds one run (time defaults to now). Listeners on 'lab-runs' (window event) hear of it; the event's `detail` is the record (RunLogEvent). */
 export function logRun(r: Omit<RunRecord, 't' | 'source' | 'values'> & { t?: number; source?: RunRecord['source']; values: unknown }): RunRecord {
   const rec: RunRecord = {
     t: r.t ?? Date.now(),
@@ -85,9 +85,12 @@ export function logRun(r: Omit<RunRecord, 't' | 'source' | 'values'> & { t?: num
       /* full or private: not kept */
     }
   }
-  if (typeof window !== 'undefined') window.dispatchEvent(new Event(RUN_LOG_KEY));
+  if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent<RunRecord>(RUN_LOG_KEY, { detail: rec }));
   return rec;
 }
+
+/** The 'lab-runs' window event of a new run (clearRuns sends a plain Event, with no record). */
+export type RunLogEvent = CustomEvent<RunRecord>;
 
 export function clearRuns() {
   try {

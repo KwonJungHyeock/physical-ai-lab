@@ -228,8 +228,12 @@ func wrongPIN(p string) string {
 
 func TestSetupOnlyHereAndOnce(t *testing.T) {
 	e := newEnv(t)
-	if r := e.do("GET", "/status", "", nil); r.body["needsSetup"] != true {
+	if r := e.do("GET", "/status", "", nil); r.body["needsSetup"] != true || fmt.Sprint(r.body["addresses"]) != "[]" {
 		t.Fatalf("fresh server: %s", r.raw)
+	}
+	e.srv.Addresses = func() []string { return []string{"http://192.168.0.10:47290"} }
+	if r := e.do("GET", "/status", "", nil); fmt.Sprint(r.body["addresses"]) != "[http://192.168.0.10:47290]" {
+		t.Fatalf("addresses: %s", r.raw)
 	}
 	e.must(e.do("POST", "/setup", "", map[string]string{"username": "admin", "password": "operator-pass-1"}), 403)
 	e.must(e.do("POST", "/setup", "", map[string]string{"username": "admin", "password": "short"}, local), 400)
@@ -747,4 +751,40 @@ func TestIngestBudget(t *testing.T) {
 	}
 	e.clk.add(5 * time.Minute)
 	e.must(e.do("POST", "/events", s, map[string]any{"statements": mk(10, 2)}), 200)
+}
+
+func TestDevOrigin(t *testing.T) {
+	e := newEnv(t)
+	call := func(origin, remote string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest("OPTIONS", APIPrefix+"/status", nil)
+		req.Host = "127.0.0.1:47290"
+		req.RemoteAddr = remote
+		req.Header.Set("Origin", origin)
+		req.Header.Set("Access-Control-Request-Method", "POST")
+		w := httptest.NewRecorder()
+		e.h.ServeHTTP(w, req)
+		return w
+	}
+	// Off by default: the dev server's page is refused.
+	if w := call("http://localhost:3000", local); w.Code != 403 {
+		t.Fatalf("dev origin before opt-in: %d", w.Code)
+	}
+	for _, bad := range []string{"http://192.168.0.5:3000", "https://localhost:3000", "http://localhost", "http://evil.example:3000", "http://localhost:3000/x", "http://u@localhost:3000", "localhost:3000"} {
+		if err := e.srv.AllowDevOrigin(bad); err == nil {
+			t.Fatalf("AllowDevOrigin(%q) accepted", bad)
+		}
+	}
+	if err := e.srv.AllowDevOrigin("http://localhost:3000"); err != nil {
+		t.Fatal(err)
+	}
+	if w := call("http://localhost:3000", local); w.Code != 204 || w.Header().Get("Access-Control-Allow-Origin") != "http://localhost:3000" {
+		t.Fatalf("dev origin from this PC: %d %v", w.Code, w.Header())
+	}
+	// Only for requests from this PC: a LAN machine's localhost page is not the dev server here.
+	if w := call("http://localhost:3000", "192.168.0.23:1"); w.Code != 403 {
+		t.Fatalf("dev origin from the LAN: %d", w.Code)
+	}
+	if w := call("http://localhost:3001", local); w.Code != 403 {
+		t.Fatalf("another port: %d", w.Code)
+	}
 }

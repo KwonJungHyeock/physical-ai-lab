@@ -18,10 +18,12 @@ import { TOPIC_BY_ID, type TopicId } from '@/engine/education/catalog';
 import type { LabId, ProblemNo } from '@/engine/education/park';
 import type { StudyLevel } from '@/engine/education/roadmap';
 import type { RunLab } from '@/engine/education/runLog';
+import { events, siteObject } from '@/engine/account';
 import { EFFORT_KEY } from '@/engine/education/classReport';
 import type { CheckQ, SiteProblem, SiteStepId, SiteText } from '@/engine/education/lab/siteText';
 
 import { useFollowGate } from '../stage/RealFollow';
+import { useAccount } from '../../account/AccountProvider';
 import css from './lab.module.css';
 import lg from './site.module.css';
 import PyTask from './PyTask';
@@ -397,11 +399,19 @@ function Predict({ T, st, patch }: { T: SiteText; st: FlowState; patch: FlowPatc
   );
 }
 
-/** Hints in three levels (each one costs a little on the stars). */
-function Hints({ T, st, patch }: { T: SiteText; st: FlowState; patch: FlowPatch }) {
+/** Hints in three levels (each one costs a little on the stars). Opening one is a learning event in class mode. */
+function Hints({ T, st, patch, lab }: { T: SiteText; st: FlowState; patch: FlowPatch; lab: RunLab }) {
+  const { track } = useAccount();
   return (
     <div className={lg.hints}>
-      <button type="button" onClick={() => patch((x) => ({ hints: Math.min(3, x.hints + 1) }))} disabled={st.hints >= 3}>
+      <button
+        type="button"
+        onClick={() => {
+          track(() => events.hint(siteObject(lab, T.id), st.hints + 1));
+          patch((x) => ({ hints: Math.min(3, x.hints + 1) }));
+        }}
+        disabled={st.hints >= 3}
+      >
         💡 막히면 힌트 보기 ({st.hints}/3)
       </button>
       {T.hints.slice(0, st.hints).map((h) => (
@@ -580,6 +590,7 @@ export function SitePanel(p: SitePanelProps) {
 
 function SiteSteps(p: SitePanelProps) {
   const { T, st, busy } = p;
+  const { track } = useAccount();
   const guide = <p className={lg.guide}>{STEP_GUIDE[st.step]}</p>;
   switch (st.step) {
     case 'brief': {
@@ -613,7 +624,13 @@ function SiteSteps(p: SitePanelProps) {
           </div>
           <div className={css.foot}>
             <span />
-            <SiteBtn disabled={busy} onClick={p.onRunBefore}>
+            <SiteBtn
+              disabled={busy}
+              onClick={() => {
+                track(() => events.problemStarted(p.lab, T.id));
+                p.onRunBefore();
+              }}
+            >
               {busy ? '계산 중…' : '▶ 라인 가동'}
             </SiteBtn>
           </div>
@@ -713,7 +730,7 @@ function SiteSteps(p: SitePanelProps) {
             <Sec n={2} title="조작반에서 값 바꾸기" state={parts[1].state} wait="계산이 맞으면 조작반이 열려요.">
               <p className={lg.secText}>{T.calc.after}</p>
               {p.hmi}
-              <Hints T={T} st={st} patch={p.patch} />
+              <Hints T={T} st={st} patch={p.patch} lab={p.lab} />
             </Sec>
             <Sec n={3} title="결과 예상하기" state={parts[2].state} wait="조작반이 열리면 함께 열려요.">
               <p className={lg.secText}>가동하기 전에, 이 값이면 어떻게 될지 하나 골라요.</p>

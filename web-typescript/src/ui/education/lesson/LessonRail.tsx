@@ -23,6 +23,7 @@ import { glossFirst } from '@/engine/education/symbols';
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 
+import { useAccount } from '../../account/AccountProvider';
 import { QuickCheck } from './QuickCheck';
 import { Rich, SymbolTable, TermChips } from './Rich';
 import { TopicArt } from './TopicArt';
@@ -108,7 +109,10 @@ interface Props {
 export default function LessonRail({ topic, page, onPage, results, onChecked, level, onTopic, onSite, onward, controls }: Props) {
   const i = PAGES.indexOf(page);
   const act = isActivity(page) ? topic.steps.find((s) => s.key === page)! : null;
-  const [teacher, setTeacher] = useState(false);
+  const [teacherOn, setTeacher] = useState(false);
+  // 교사용 보기: free mode and teachers keep the switch; a student in class mode never sees teacher blocks.
+  const teacherAllowed = useAccount().role !== 'student';
+  const teacher = teacherOn && teacherAllowed;
   const [notes, setNotes] = useState(false);
   /** The guesses made in this lesson (index into the activity's 보기). */
   const [guess, setGuess] = useState<Partial<Record<StepKey, number>>>({});
@@ -167,18 +171,20 @@ export default function LessonRail({ topic, page, onPage, results, onChecked, le
           </span>
           <h2>{headline}</h2>
         </div>
-        <button
-          type="button"
-          className={css.teacherBtn}
-          aria-pressed={teacher}
-          onClick={() => {
-            setTeacher(!teacher);
-            remember(TEACHER_KEY, !teacher);
-          }}
-          title="선생님이 물어볼 것과 정답을 보여 줘요"
-        >
-          교사용 {teacher ? '켜짐' : '보기'}
-        </button>
+        {teacherAllowed && (
+          <button
+            type="button"
+            className={css.teacherBtn}
+            aria-pressed={teacher}
+            onClick={() => {
+              setTeacher(!teacher);
+              remember(TEACHER_KEY, !teacher);
+            }}
+            title="선생님이 물어볼 것과 정답을 보여 줘요"
+          >
+            교사용 {teacher ? '켜짐' : '보기'}
+          </button>
+        )}
       </header>
 
       <div className={css.scroll} ref={scroll}>

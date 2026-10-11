@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 
+import { AccountProvider } from '@/ui/account/AccountProvider';
 import Console from '@/ui/simulator/Console';
 
 export const metadata: Metadata = {
@@ -8,5 +9,9 @@ export const metadata: Metadata = {
 };
 
 export default function ConsolePage() {
-  return <Console />;
+  return (
+    <AccountProvider>
+      <Console />
+    </AccountProvider>
+  );
 }
