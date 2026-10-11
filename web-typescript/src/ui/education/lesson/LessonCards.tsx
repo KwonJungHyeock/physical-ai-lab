@@ -5,7 +5,7 @@
  * 정리 · 평가). Each card leads with the one line to remember, then the figure (an activity
  * outlines its own panel), what the teacher asks, what the students do, and the answer folded
  * away. The long theory sits behind 자세히, and ← 이전 · 다음 → move along the steps.
- * The hands-on controls for the activities are in the 3D view (stage/ControlOverlay).
+ * Not mounted since the lesson rail (LessonRail) took its place; its page list, labels and links are shared.
  */
 
 import { STEP_NAME, lessonNo, nextTopicOf, type StepKey, type Topic } from '@/engine/education/catalog';
@@ -49,7 +49,7 @@ export const isActivity = (p: PageId): p is StepKey => p === 'A' || p === 'B' ||
 /** The theme places with a problem that teaches this 학문. */
 const sitesOf = (cat: Topic['cat']) => THEMES.filter((s) => s.problems.some((p) => p.units.includes(cat)));
 /** The site problems this 차시 is learnt for (one of the 차시 they need), else the places of its 학문. */
-const usedBy = (t: Topic) => {
+export const usedBy = (t: Topic) => {
   const ps = problemsUsing(t.id);
   return ps.length ? ps.map(({ site, k }) => ({ id: site.id, color: site.color, label: `${site.name} ${k}. ${site.problems[k - 1].title}` })) : sitesOf(t.cat).map((s) => ({ id: s.id, color: s.color, label: s.name }));
 };

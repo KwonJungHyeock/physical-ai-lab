@@ -1,7 +1,8 @@
 /* 교육 tab. Uses the console's colour tokens (defined on .app). */
 .learn {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(380px, 27vw, 460px);
+  /* The lesson rail on the left (lesson/LessonRail), the 3D view as wide as the rest. */
+  grid-template-columns: clamp(400px, 30vw, 480px) minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr);
   gap: 10px;
   /* Below the floating top bar on a PC window (--top, set by the console), above it otherwise. */
@@ -807,8 +808,8 @@
   color: var(--accent);
   border-color: color-mix(in srgb, var(--accent) 40%, transparent);
 }
-/* Side notes inside the controls fold away unless asked for (the theory column explains). */
-.overlay:not([data-notes]) .guideControls .note {
+/* Side notes inside the controls fold away unless asked for (the rail's reading explains). */
+.guideControls:not([data-notes]) .note {
   display: none;
 }
 .resultBox {
@@ -1544,7 +1545,7 @@
 
 @media (max-width: 1180px) {
   .learn {
-    grid-template-columns: minmax(0, 1fr) 360px;
+    grid-template-columns: 370px minmax(0, 1fr);
   }
   .learn .overlay {
     width: 320px;
@@ -1555,6 +1556,13 @@
     grid-template-columns: 1fr;
     grid-template-rows: auto 62vh auto;
     height: auto;
+  }
+  /* Narrow: the 3D view first, the lesson under it. */
+  .learn > .stage {
+    grid-row: 2;
+  }
+  .learn > aside {
+    grid-row: 3;
   }
   .learn .panel {
     overflow: visible;

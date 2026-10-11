@@ -153,6 +153,9 @@ for (const sc of scenarios) {
     const st = sc[k];
     await panel.locator('ol[aria-label="실습 순서"] button').nth(i).click();
     await page.waitForTimeout(700);
+    // The controls open once a prediction is picked (예상 → 해 보기): pick one, as a student would.
+    await panel.getByRole('radio').first().click({ timeout: 10000 }).catch(() => {});
+    await page.waitForTimeout(300);
     let got = null;
     let problem = '';
     await record(`${sc.topic}-${k}`, async () => {

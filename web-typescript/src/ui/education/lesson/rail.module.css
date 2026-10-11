@@ -1,0 +1,882 @@
+/*
+ * The lesson rail (LessonRail.tsx): the lesson in one column left of the 3D view.
+ * Each kind of block has its own colour, so what to read, what to pick and what to move shows
+ * before the words do. The colours stay the app's own (white panels, blue accent, green done):
+ *   read    white       slate stripe
+ *   ask     warm amber  pick a round choice
+ *   do      blue        the topic's controls
+ *   result  green       what came out
+ *   teacher dashed grey only with 교사용 on
+ */
+
+.rail {
+  --read: #475467;
+  --read-bg: #ffffff;
+  --read-line: #e4e7ec;
+  --ask: #b54708;
+  --ask-bg: #fff8ec;
+  --ask-line: #f5d9a8;
+  --do: #2f5be7;
+  --do-bg: #eef4ff;
+  --do-line: #c7d7fe;
+  --res: #067647;
+  --res-bg: #ecfdf3;
+  --res-line: #abefc6;
+  --tch: #475467;
+  --tch-bg: #f9fafb;
+  --tch-line: #98a2b3;
+  --rail-bg: #f4f6fa;
+
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-height: 0;
+  background: var(--rail-bg);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 14.5px;
+  line-height: 1.6;
+  word-break: keep-all;
+}
+
+/* Head: where in the lesson, what this page is --------------------------------- */
+.head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px 11px 16px;
+  background: #fff;
+  border-bottom: 1px solid var(--line);
+}
+.head > div {
+  flex: 1;
+  min-width: 0;
+}
+.kicker {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--do);
+  letter-spacing: 0.01em;
+}
+.head h2 {
+  margin: 1px 0 0;
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+.teacherBtn {
+  flex: none;
+  margin-top: 2px;
+  border: 1px dashed var(--tch-line);
+  border-radius: 999px;
+  background: #fff;
+  padding: 4px 10px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--tch);
+  cursor: pointer;
+}
+.teacherBtn[aria-pressed='true'] {
+  border-style: solid;
+  border-color: var(--tch);
+  background: var(--tch);
+  color: #fff;
+}
+
+/* The scrolling middle: the page's blocks, then the activity's flow ------------- */
+.scroll {
+  overflow-y: auto;
+  min-height: 0;
+  padding: 12px 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scrollbar-width: thin;
+  scroll-behavior: smooth;
+}
+.scroll > * {
+  flex: none;
+}
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: railIn 0.3s ease;
+}
+.body:empty {
+  display: none;
+}
+.flow {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.flow[hidden] {
+  display: none;
+}
+@keyframes railIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+}
+
+/* A block ------------------------------------------------------------------------ */
+.blk {
+  --k: var(--read);
+  --k-bg: var(--read-bg);
+  --k-line: var(--read-line);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 11px 13px 12px 15px;
+  background: var(--k-bg);
+  border: 1px solid var(--k-line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+/* The kind's stripe down the left edge. */
+.blk::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--k);
+}
+.blk[data-kind='ask'] {
+  --k: var(--ask);
+  --k-bg: var(--ask-bg);
+  --k-line: var(--ask-line);
+}
+.blk[data-kind='do'] {
+  --k: var(--do);
+  --k-bg: var(--do-bg);
+  --k-line: var(--do-line);
+}
+.blk[data-kind='result'] {
+  --k: var(--res);
+  --k-bg: var(--res-bg);
+  --k-line: var(--res-line);
+}
+.blk[data-kind='teacher'] {
+  --k: var(--tch);
+  --k-bg: var(--tch-bg);
+  --k-line: var(--tch-line);
+  border-style: dashed;
+}
+.blk[data-kind='teacher']::before {
+  display: none;
+}
+/* The block to do now: a ring in its colour. Done: as is, with ✓. To do later: folded, grey. */
+.blk[data-st='now'] {
+  border-color: var(--k);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--k) 16%, transparent),
+    0 4px 14px rgba(16, 24, 40, 0.07);
+}
+.blk[data-st='todo'] {
+  background: #fff;
+  border-style: dashed;
+  border-color: #d0d5dd;
+  padding-block: 9px 10px;
+}
+.blk[data-st='todo']::before {
+  background: #d0d5dd;
+}
+.blk[data-st='todo'] .blkHead {
+  color: var(--faint);
+}
+.blk[data-st='todo'] .num {
+  background: #fff;
+  color: var(--faint);
+  border-color: #d0d5dd;
+}
+
+.blkHead {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  color: var(--k);
+}
+.mark {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.num {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid var(--k);
+  background: var(--k);
+  color: #fff;
+  font-style: normal;
+  font-size: 12.5px;
+  font-weight: 800;
+  line-height: 1;
+}
+.tag {
+  flex: none;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+.blkTitle {
+  min-width: 0;
+  margin-left: 2px;
+  font-size: 15.5px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.blk[data-st='todo'] .blkTitle {
+  color: var(--muted);
+}
+.blk p {
+  margin: 0;
+}
+.wait {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* 오늘의 질문: the lesson's hook, dark like the 3D figures -------------------------- */
+.hook {
+  margin: 0;
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px 15px;
+  border-radius: 14px;
+  background:
+    radial-gradient(120% 140% at 100% 0%, rgba(111, 155, 255, 0.28), transparent 55%),
+    linear-gradient(160deg, #1b2537, #121a28);
+  color: #f2f5fb;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.5;
+}
+.hook small {
+  font-size: 12px;
+  font-weight: 800;
+  color: #9fb8ff;
+  letter-spacing: 0.04em;
+}
+
+/* The figure: a dark frame (the 3D renders are dark; the drawings sit on white inside). */
+.fig {
+  margin: 0;
+  display: grid;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 14px;
+  background: linear-gradient(160deg, #1f2a3d, #141c2a);
+}
+.figBtn {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 9px;
+  overflow: hidden;
+  background: #fff;
+  cursor: zoom-in;
+}
+.figure {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.fig figcaption {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px 2px 6px;
+  font-size: 12px;
+  color: #b8c3d6;
+}
+.fig figcaption span {
+  flex: 1;
+  min-width: 0;
+}
+.fig figcaption button {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 9px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: #e6ecf7;
+  cursor: pointer;
+}
+.fig figcaption button:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+.fig figcaption button[data-main] {
+  border-color: transparent;
+  background: #2f5be7;
+  color: #fff;
+}
+
+/* Reading -------------------------------------------------------------------------- */
+.key {
+  margin: 0;
+  font-size: 16.5px;
+  font-weight: 800;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.goals,
+.principle {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: g;
+  display: grid;
+  gap: 7px;
+}
+.goals li,
+.principle li {
+  counter-increment: g;
+  position: relative;
+  padding-left: 28px;
+}
+.goals li::before,
+.principle li::before {
+  content: counter(g);
+  position: absolute;
+  left: 0;
+  top: 2px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: #eef1f6;
+  color: var(--read);
+  font-size: 12px;
+  font-weight: 800;
+}
+.terms {
+  display: grid;
+  gap: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--read-line);
+}
+.terms small,
+.sites small {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.fold {
+  background: #fff;
+  border: 1px solid var(--read-line);
+  border-radius: 12px;
+  padding: 0 13px;
+}
+.fold summary,
+.figFold summary {
+  padding: 10px 0;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--read);
+  cursor: pointer;
+}
+.fold[open] {
+  padding-bottom: 12px;
+}
+.fold > p {
+  margin: 0 0 8px;
+}
+.formulas {
+  display: grid;
+  gap: 4px;
+  margin: 4px 0 10px;
+}
+.formulas code {
+  display: block;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #f2f4f7;
+  font-size: 13px;
+  overflow-x: auto;
+}
+.points {
+  margin: 0;
+  padding: 0 0 0 18px;
+  display: grid;
+  gap: 4px;
+}
+.points li:not([data-done]) {
+  color: var(--muted);
+}
+
+/* An activity: 활동 1 · 2 · 3 and what this one changes ---------------------------- */
+.acts {
+  margin: 0;
+  padding: 3px;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 3px;
+  background: #e7ebf2;
+  border-radius: 11px;
+}
+.acts button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--muted);
+  text-align: left;
+  cursor: pointer;
+}
+.acts button:hover {
+  background: rgba(255, 255, 255, 0.6);
+}
+.acts button i {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: #fff;
+  font-style: normal;
+  font-size: 11.5px;
+  font-weight: 800;
+}
+.acts button[data-done] i {
+  background: #12935f;
+  color: #fff;
+}
+.acts button[aria-current] {
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.12);
+}
+.acts button[aria-current] i {
+  background: var(--do);
+  color: #fff;
+}
+.acts button span {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.change {
+  margin: 0;
+  display: grid;
+  gap: 1px;
+  padding: 9px 13px 10px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.change small {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.change span {
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+.change s {
+  color: var(--faint);
+  font-weight: 700;
+  text-decoration-thickness: 1.5px;
+}
+.change b {
+  color: var(--do);
+}
+
+/* ① 예상: round choices, not buttons ----------------------------------------------- */
+.q {
+  font-size: 15px;
+  font-weight: 700;
+}
+.choices {
+  display: grid;
+  gap: 6px;
+}
+.choices button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1.5px solid #ecd9b8;
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+.choices button:hover {
+  border-color: var(--ask);
+}
+.choices button i {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #d0b48a;
+  background: #fff;
+}
+.choices button[aria-checked='true'] {
+  border-color: var(--ask);
+  background: #fff1dc;
+  font-weight: 800;
+}
+.choices button[aria-checked='true'] i {
+  border-color: var(--ask);
+  box-shadow: inset 0 0 0 3px #fff;
+  background: var(--ask);
+}
+.choices button[data-right] {
+  border-color: #12935f;
+}
+.choices button[data-right]::after {
+  content: '정답';
+  margin-left: auto;
+  flex: none;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #12935f;
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 800;
+}
+
+/* ② 해 보기: the topic's own controls ------------------------------------------------ */
+.doIt {
+  font-size: 14px;
+  color: #1d2b53;
+}
+.controls {
+  padding: 8px;
+  border: 0 !important;
+  border-radius: 10px;
+  background: #fff !important;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+}
+.controls[hidden] {
+  display: none;
+}
+.notesBtn {
+  align-self: flex-start;
+  border: 1px solid var(--do-line);
+  border-radius: 999px;
+  background: #fff;
+  padding: 2px 10px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--do);
+  cursor: pointer;
+}
+
+/* ③ 결과 · ④ 왜 ----------------------------------------------------------------------- */
+.rail .result.result {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  display: grid;
+  gap: 8px;
+  animation: none;
+}
+.verdict {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.verdict[data-ok='true'] {
+  color: var(--res);
+}
+.verdict[data-ok='false'] {
+  color: #b54708;
+}
+.verdict b {
+  color: var(--ink);
+}
+.point {
+  font-size: 15.5px;
+  font-weight: 800;
+  line-height: 1.5;
+  color: #054f31;
+}
+.vals {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.vals li {
+  min-width: 0;
+  padding: 5px 10px;
+  border-radius: 9px;
+  background: #fff;
+  border: 1px solid var(--res-line);
+}
+.vals small {
+  display: block;
+  font-size: 11.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.vals b {
+  display: block;
+  font-size: 14px;
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+}
+.why {
+  display: grid;
+  gap: 6px;
+}
+.more {
+  justify-self: start;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--read);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.figFold {
+  padding: 0 4px;
+}
+.figFold[open] {
+  display: grid;
+  gap: 6px;
+}
+
+/* 교사용 -------------------------------------------------------------------------------- */
+.tdl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 10px;
+  font-size: 13.5px;
+}
+.tdl dt {
+  grid-column: 1;
+  font-weight: 800;
+  color: var(--tch);
+}
+.tdl dd {
+  grid-column: 2;
+  margin: 0;
+}
+
+/* 정리: the three results side by side ------------------------------------------------- */
+.tableWrap {
+  overflow-x: auto;
+  margin: 0 -4px;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.table th,
+.table td {
+  padding: 6px 6px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--res-line);
+}
+.table thead th {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.table tbody th {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.table tbody th i {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  font-style: normal;
+  font-size: 11px;
+}
+.table tr[data-done] th i {
+  background: #12935f;
+  color: #fff;
+}
+.table td {
+  font-weight: 700;
+}
+.sites {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.sites small {
+  flex-basis: 100%;
+}
+.sites button {
+  border: 1.5px solid var(--c, var(--line));
+  border-radius: 999px;
+  background: #fff;
+  padding: 4px 12px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+/* 평가 → where to go next ------------------------------------------------------------- */
+.onward {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #12935f, #0b7a4d);
+  color: #fff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(18, 147, 95, 0.3);
+}
+.onward small {
+  font-size: 12.5px;
+  font-weight: 700;
+  opacity: 0.85;
+}
+.onward b {
+  font-size: 17px;
+  font-weight: 800;
+}
+.onward span {
+  font-size: 12.5px;
+  opacity: 0.85;
+}
+
+/* Foot: back, and the one big button that says where it goes -------------------------- */
+.foot {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  padding: 10px 12px 12px;
+  background: #fff;
+  border-top: 1px solid var(--line);
+}
+.prev {
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: #fff;
+  padding: 0 14px;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+}
+.prev:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.next {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+  padding: 7px 14px 8px;
+  border: 1.5px solid var(--do);
+  border-radius: 11px;
+  background: #fff;
+  font: inherit;
+  text-align: right;
+  color: var(--do);
+  cursor: pointer;
+}
+.next small {
+  font-size: 11.5px;
+  font-weight: 700;
+  opacity: 0.8;
+}
+.next span {
+  font-size: 15px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.next[data-ready] {
+  border-color: transparent;
+  background: var(--do);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(47, 91, 231, 0.28);
+}
+.next[data-onward] {
+  background: #12935f;
+  box-shadow: 0 4px 12px rgba(18, 147, 95, 0.3);
+}
+.next:disabled {
+  border-color: var(--line);
+  background: var(--soft);
+  color: var(--muted);
+  box-shadow: none;
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .body {
+    animation: none;
+  }
+  .scroll {
+    scroll-behavior: auto;
+  }
+}

@@ -4,8 +4,8 @@
  * 교육 tab: a robotics course of 8 단원 and 28 차시 (engine/education/catalog.ts, written in
  * content-markdown/*.md). It opens on the course home (roadmap/Course: where to go on, the roadmap
  * and the 단원 in their three 대단원, fitted to the school's equipment, with a 단원 preview); a 차시 is one
- * lesson screen — the step bar on top (lesson/LessonBar), the 3D view with the activity panel
- * over it (stage/ControlOverlay), and a short card per step on the right (lesson/LessonCards).
+ * lesson screen — the step bar on top (lesson/LessonBar), the lesson in one column on the left
+ * (lesson/LessonRail: what to read, pick, move and see, the topic's controls inside) and the 3D view.
  * The 교육 tab opens on the 로봇 시티 (map/ParkView): the 로봇 아카데미 (the 1학문 차시, and 전체 차시 for
  * the whole course), seven theme places with their problem-solving labs (lab/*Lab), and the 관제센터
  * (data/DataCenter) over every lab run. A lesson's 정리 card links to the places that use its 학문.
@@ -22,7 +22,6 @@ import { workspaceProfile, type WorkspaceProfile } from '@/engine/physics/worksp
 
 import LearnStage, { type LearnScene } from './stage/LearnStage';
 import { HOME_POSE, type Mm, type RealArm } from './lessons';
-import ControlOverlay from './stage/ControlOverlay';
 import { SymbolsProvider } from './lesson/Rich';
 import Course from './roadmap/Course';
 import FactoryLab from './lab/FactoryLab';
@@ -38,7 +37,8 @@ import { LabGateContext, type LabGate } from './lab/SiteFlow';
 import ParkView from './map/ParkView';
 import { FollowBar, FollowContext, useRealFollow } from './stage/RealFollow';
 import LessonBar from './lesson/LessonBar';
-import LessonCards, { PAGES, isActivity, type Onward, type PageId, type ResumeSpot } from './lesson/LessonCards';
+import { PAGES, isActivity, type Onward, type PageId, type ResumeSpot } from './lesson/LessonCards';
+import LessonRail from './lesson/LessonRail';
 import { TOPIC_PANELS } from './topics';
 import { TCP } from './topics/kit';
 import type { ResultRow, StepView } from './topics/types';
@@ -493,36 +493,45 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
       <SymbolsProvider symbols={topic.symbols}>
         <div className={css.learn} hidden={hidden || screen !== 'topic'}>
           <LessonBar topic={topic} page={page} onPage={setPage} results={results[topicId] ?? NO_RESULTS} level={level} onBack={() => setScreen(lessonFrom)} />
+          <LessonRail
+            key={topicId}
+            topic={topic}
+            page={page}
+            onPage={setPage}
+            results={results[topicId] ?? NO_RESULTS}
+            onChecked={() => markDone(topicId)}
+            level={level}
+            onTopic={(t) => choose(t)}
+            onSite={toSite}
+            onward={onward}
+            controls={
+              <Panel
+                key={topicId}
+                id={topicId}
+                step={step}
+                goStep={goStep}
+                record={record}
+                results={results[topicId] ?? NO_RESULTS}
+                chain={chain}
+                show={setScene}
+                onPick={onPick}
+                real={real}
+                workspace={workspace}
+                frontDeg={frontDeg}
+                missions={missions}
+                complete={complete}
+              />
+            }
+          />
           <section className={css.stage} aria-label="3D 실습 화면">
             <div className={css.canvas} data-picking={picking || undefined}>
-              <LearnStage robot={robot} chain={chain} gripperRobot={gripperRobot} scene={scene} paused={!inLesson} shift={384} onTablePick={(mm) => pick.current?.(mm)} />
-              <ControlOverlay key={topicId} topic={topic} page={page} onPage={setPage} results={results[topicId] ?? NO_RESULTS}>
-                <Panel
-                  key={topicId}
-                  id={topicId}
-                  step={step}
-                  goStep={goStep}
-                  record={record}
-                  results={results[topicId] ?? NO_RESULTS}
-                  chain={chain}
-                  show={setScene}
-                  onPick={onPick}
-                  real={real}
-                  workspace={workspace}
-                  frontDeg={frontDeg}
-                  missions={missions}
-                  complete={complete}
-                />
-              </ControlOverlay>
+              <LearnStage robot={robot} chain={chain} gripperRobot={gripperRobot} scene={scene} paused={!inLesson} onTablePick={(mm) => pick.current?.(mm)} />
               <p className={css.stageHint}>끌어서 돌려 보기 · 휠로 확대 · 오른쪽 끌기로 옮기기{picking ? ' · 책상을 클릭하면 그 자리를 골라요' : ''}</p>
             </div>
           </section>
-          <aside className={css.panel} aria-label={`${topic.title} 수업 카드`}>
-            <LessonCards key={topicId} topic={topic} page={page} onPage={setPage} results={results[topicId] ?? NO_RESULTS} onChecked={() => markDone(topicId)} level={level} onTopic={(t) => choose(t)} onSite={toSite} onward={onward} />
-          </aside>
         </div>
       </SymbolsProvider>
-      <FollowBar {...follow} hidden={hidden} />
+      <FollowBar {...follow} hidden={hidden} stage={screen === 'topic' ? 'right' : 'left'} />
       </FollowContext.Provider>
     </LabGateContext.Provider>
   );

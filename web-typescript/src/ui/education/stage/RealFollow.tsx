@@ -161,7 +161,7 @@ export function useRealFollow(real: RealArm, chain: readonly ChainSegment[], pla
 }
 
 /** The 실물 연동 switch, its state, and the big stop while it is on. */
-export function FollowBar(p: ReturnType<typeof useRealFollow> & { hidden?: boolean }) {
+export function FollowBar(p: ReturnType<typeof useRealFollow> & { hidden?: boolean; /** Where the 3D view is: left (site labs) or right (a lesson). */ stage?: 'left' | 'right' }) {
   const { on, stop } = p;
   // Esc stops the real arm, as the stop button does.
   useEffect(() => {
@@ -173,7 +173,7 @@ export function FollowBar(p: ReturnType<typeof useRealFollow> & { hidden?: boole
   if (!p.online || p.hidden) return null;
   const lag = Number.isFinite(p.status.lag) ? `${p.status.lag.toFixed(0)}°` : '—';
   return (
-    <div className={css.bar} data-on={p.on || undefined} role="region" aria-label="실물 연동">
+    <div className={css.bar} data-on={p.on || undefined} data-stage={p.stage} role="region" aria-label="실물 연동">
       <button type="button" className={css.toggle} aria-pressed={p.on} onClick={p.toggle}>
         <i aria-hidden /> 실물 연동 {p.on ? '켜짐' : '꺼짐'}
       </button>

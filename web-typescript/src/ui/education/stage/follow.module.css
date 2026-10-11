@@ -1,4 +1,5 @@
-/* 실물 연동 bar (RealFollow.tsx): bottom, over the 3D side of the 교육 screens (clear of the panel on the right). Console colour tokens. */
+/* 실물 연동 bar (RealFollow.tsx): bottom, over the 3D side of the 교육 screens — left on the site labs
+   (their panel is on the right), right on a lesson (its rail is on the left). Console colour tokens. */
 .bar {
   position: fixed;
   left: 36vw;
@@ -16,6 +17,10 @@
   box-shadow: var(--shadow-sm);
   font-size: 13px;
   color: var(--ink);
+}
+.bar[data-stage='right'] {
+  left: calc(50vw + clamp(200px, 15vw, 240px));
+  max-width: min(680px, calc(70vw - 60px));
 }
 .bar[data-on] {
   border-color: var(--real);
