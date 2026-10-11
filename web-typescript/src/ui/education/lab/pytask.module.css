@@ -1,0 +1,216 @@
+/* 대학 과제 (PyTask.tsx): a compact editor, two buttons and the results, inside the 대학 card of the
+   panel (site.module.css .uni) — narrow (the panel is 400 – 600 px), light like the lesson screens. */
+
+.box {
+  display: grid;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 9px 10px 10px;
+  border-radius: 10px;
+  border: 1px solid #d9d4f5;
+  background: #fff;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink, #101828);
+}
+.head {
+  display: grid;
+  gap: 1px;
+}
+.head small {
+  font-size: 11px;
+  font-weight: 800;
+  color: #5b45c4;
+}
+.head b {
+  font-size: 13px;
+}
+.line {
+  color: #344054;
+}
+
+/* Editor: line numbers and a plain textarea. */
+.editor {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  border: 1px solid var(--line, #e4e7ec);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fbfbfd;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 18px;
+}
+.editor:focus-within {
+  border-color: #8b7be0;
+  box-shadow: 0 0 0 2px rgba(91, 69, 196, 0.15);
+}
+.gutter {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 6px 8px 8px;
+  overflow: hidden;
+  background: #f4f5f8;
+  border-right: 1px solid #eceef2;
+  color: #a0a8b6;
+  text-align: right;
+  user-select: none;
+}
+.gutter span {
+  min-height: 18px;
+}
+.gutter .errLine {
+  color: #fff;
+  background: #cf222e;
+  border-radius: 3px;
+  padding-inline: 3px;
+}
+.code {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 8px 10px;
+  border: none;
+  outline: none;
+  resize: vertical;
+  background: transparent;
+  color: #1f2328;
+  font: inherit;
+  line-height: 18px;
+  tab-size: 4;
+  white-space: pre;
+  overflow: auto;
+}
+
+/* Buttons. */
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.run,
+.reset {
+  border-radius: 8px;
+  padding: 5px 12px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.run {
+  border: 1px solid #5b45c4;
+  background: #5b45c4;
+  color: #fff;
+}
+.run:hover:not(:disabled) {
+  background: #4a36ad;
+}
+.reset {
+  border: 1px solid var(--line, #d0d5dd);
+  background: #fff;
+  color: #344054;
+}
+.run:disabled,
+.reset:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.note {
+  font-size: 11px;
+  color: var(--muted, #667085);
+}
+
+/* Results. */
+.err {
+  display: grid;
+  gap: 3px;
+  padding: 7px 9px;
+  border-radius: 8px;
+  background: #fff1f0;
+  border: 1px solid #f5c2bf;
+  color: #7a1c14;
+}
+.err code {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 11.5px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.err .inline {
+  display: inline;
+}
+.sum,
+.allOk {
+  font-weight: 700;
+}
+.sum {
+  color: #9a3412;
+}
+.allOk {
+  color: #146c2e;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.5px;
+}
+.table th {
+  text-align: left;
+  font-weight: 700;
+  color: var(--muted, #667085);
+  padding: 2px 4px;
+  border-bottom: 1px solid var(--line, #e4e7ec);
+}
+.table td {
+  padding: 4px;
+  vertical-align: top;
+  border-bottom: 1px solid #f0f1f4;
+}
+.mark {
+  width: 14px;
+  font-weight: 800;
+}
+.ok .mark {
+  color: #146c2e;
+}
+.bad .mark {
+  color: #cf222e;
+}
+.call {
+  display: block;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 10.5px;
+  color: #475467;
+  word-break: break-all;
+}
+.why {
+  display: block;
+  color: #b42318;
+}
+.val {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  /* Whole values and words stay together (None, 숨김 …); only a very long value wraps. */
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  min-width: 4.5em;
+}
+.val small {
+  color: var(--muted, #667085);
+}
+.output summary {
+  cursor: pointer;
+  font-size: 11.5px;
+  color: var(--muted, #667085);
+}
+.output code {
+  display: block;
+  max-height: 140px;
+  overflow: auto;
+  margin-top: 3px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: #f4f5f8;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 11px;
+  white-space: pre;
+}

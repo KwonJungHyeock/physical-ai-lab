@@ -116,6 +116,21 @@ export const ENERGY_ITEMS: Record<EnergyProblem, readonly Item[]> = {
   3: [pack(135, -25, '종이팩'), { ...can(157, -25, '캔'), on: 0 }, clear(190, 25, '투명 PET', true), { ...color(190, 39, '유색 PET'), on: 2 }],
 };
 
+/** ②: the can with drink left in it (its index in ENERGY_ITEMS[2]). */
+export const FULL_CAN = 3;
+const fullCans = new Map<number, readonly Item[]>();
+/** ②'s pieces with the full can at `canG` g (the situation), one list per mass so its camera picture is made once. */
+export function speedItems(canG?: number): readonly Item[] {
+  const base = ENERGY_ITEMS[2];
+  if (canG === undefined || canG === base[FULL_CAN].massG) return base;
+  let list = fullCans.get(canG);
+  if (!list) {
+    list = base.map((t, k) => (k === FULL_CAN ? { ...t, massG: canG } : t));
+    fullCans.set(canG, list);
+  }
+  return list;
+}
+
 /* --- values ------------------------------------------------------------------------------ */
 
 /** ①: the brightness bands for the grey pixels (S < 43): below `canV` a can, from there below `clearV` clear PET, above it the board. */
@@ -124,7 +139,10 @@ export interface VisionValues {
   clearV: number;
 }
 /** ②: the carry speed (setting 1 – 100, as pymycobot's) for each kind; empty moves stay at 100. */
-export type SpeedValues = Record<Kind, number>;
+export type SpeedValues = Record<Kind, number> & {
+  /** The situation, not the student's: how heavy the can with drink left in it really is (default 60 g; 대단원 마무리 평가), g. */
+  canG?: number;
+};
 /** ③: which blob the program picks first — the biggest, the nearest the robot, or the one seen whole. */
 export type OrderMode = 'area' | 'near' | 'visible';
 export interface OrderValues {
@@ -847,7 +865,7 @@ export function runVision(chain: readonly ChainSegment[], v: VisionValues): Ener
   return runJob(chain, ENERGY_ITEMS[1], v, 'area', travel, v);
 }
 export function runSpeed(chain: readonly ChainSegment[], v: SpeedValues): EnergyRun {
-  return runJob(chain, ENERGY_ITEMS[2], VISION_FIX, 'area', { carry: (k) => v[k], empty: SPEED.empty }, v);
+  return runJob(chain, speedItems(v.canG), VISION_FIX, 'area', { carry: (k) => v[k], empty: SPEED.empty }, v);
 }
 export function runOrder(chain: readonly ChainSegment[], v: OrderValues): EnergyRun {
   return runJob(chain, ENERGY_ITEMS[3], VISION_FIX, v.order, travel, v);
@@ -861,7 +879,7 @@ export function runEnergy(chain: readonly ChainSegment[], p: EnergyProblem, v: E
 
 /** ②: the carry of each piece at a speed setting (no run): its time, the cup's largest sideways acceleration, and the force the cup needs then vs what it holds. */
 export function carryPreview(chain: readonly ChainSegment[], v: SpeedValues) {
-  const list = ENERGY_ITEMS[2];
+  const list = speedItems(v.canG);
   return list.map((t, k) => {
     const above = poseAt(chain, [t.x, t.y, APPROACH_Z])!;
     const d = poseAt(chain, dropAt(BIN_OF[t.kind], dims(t).h), above)!;

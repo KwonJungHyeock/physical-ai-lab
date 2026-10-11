@@ -23,6 +23,7 @@ import type { CheckQ, SiteProblem, SiteStepId, SiteText } from '@/engine/educati
 import { useFollowGate } from '../stage/RealFollow';
 import css from './lab.module.css';
 import lg from './site.module.css';
+import PyTask from './PyTask';
 import RobotRecord from './RobotRecord';
 
 export const NUM = ['①', '②', '③', '④'];
@@ -784,6 +785,7 @@ function SiteSteps(p: SitePanelProps) {
                     <p key={l}>{l}</p>
                   ))}
                   {T.uni.code && <pre>{T.uni.code}</pre>}
+                  <PyTask lab={p.lab} prob={T.id} />
                 </div>
               </Sec>
             )}

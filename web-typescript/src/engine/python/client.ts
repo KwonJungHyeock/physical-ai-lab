@@ -3,6 +3,7 @@
  * for every run, replaced when a run has to be cut off.
  */
 
+import type { GradeRaw } from './grade';
 import type { PyInit, PyResult } from './types';
 
 /** A program that runs longer than this (real time) is stopped — usually an endless loop. */
@@ -18,6 +19,7 @@ interface WorkerReply {
   ready?: boolean;
   started?: boolean;
   result?: PyResult;
+  graded?: GradeRaw;
   failed?: string;
 }
 
@@ -51,8 +53,21 @@ export function warmPython(): Promise<void> {
 }
 
 export async function runPython(code: string, init: PyInit): Promise<PyResult> {
+  return (await request({ code, init })).result!;
+}
+
+/**
+ * Run a student's function on test cases (engine/python/grade.ts): the code runs in the same
+ * worker as the simulator's programs, with the same time limit.
+ */
+export async function gradePython(code: string, fn: string, cases: readonly (readonly unknown[])[]): Promise<GradeRaw> {
+  return (await request({ grade: { code, fn, cases } })).graded!;
+}
+
+/** Send one job to the worker; a job still running after RUN_TIMEOUT_MS is stopped with the worker. */
+async function request(job: object): Promise<WorkerReply> {
   await warmPython();
-  return new Promise<PyResult>((resolve, reject) => {
+  return new Promise<WorkerReply>((resolve, reject) => {
     const id = nextId++;
     let timer = 0;
     pending.set(id, (m) => {
@@ -70,8 +85,8 @@ export async function runPython(code: string, init: PyInit): Promise<PyResult> {
       window.clearTimeout(timer);
       pending.delete(id);
       if (m.failed) reject(new Error(m.failed));
-      else resolve(m.result!);
+      else resolve(m);
     });
-    get().postMessage({ id, code, init });
+    get().postMessage({ id, ...job });
   });
 }

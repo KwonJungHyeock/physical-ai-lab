@@ -1,6 +1,7 @@
 /// <reference lib="webworker" />
 /**
- * Web worker that runs student Python programs (engine.ts) in Pyodide.
+ * Web worker that runs student Python programs (engine.ts) in Pyodide, and grades the
+ * functions of the site labs' 대학 과제 (grade.ts).
  * A worker, so a program that never ends can be stopped by ending the worker,
  * and the page stays responsive while Python loads and runs.
  *
@@ -9,6 +10,7 @@
  */
 
 import { runScript, type PyodideLike } from './engine';
+import { gradeScript } from './grade';
 import type { PyInit } from './types';
 
 let pyodide: Promise<PyodideLike> | null = null;
@@ -40,8 +42,14 @@ function load(): Promise<PyodideLike> {
   return pyodide;
 }
 
-self.onmessage = async (e: MessageEvent<{ id: number; warm?: boolean; code?: string; init?: PyInit }>) => {
-  const { id, warm, code, init } = e.data;
+interface GradeJob {
+  code: string;
+  fn: string;
+  cases: unknown[][];
+}
+
+self.onmessage = async (e: MessageEvent<{ id: number; warm?: boolean; code?: string; init?: PyInit; grade?: GradeJob }>) => {
+  const { id, warm, code, init, grade } = e.data;
   try {
     const py = await load();
     if (warm) {
@@ -49,6 +57,11 @@ self.onmessage = async (e: MessageEvent<{ id: number; warm?: boolean; code?: str
       return;
     }
     self.postMessage({ id, started: true });
+    if (grade) {
+      // 대학 과제 (engine/education/lab/pyTasks.ts): call the student's function on each case.
+      self.postMessage({ id, graded: gradeScript(py, grade.code, grade.fn, grade.cases) });
+      return;
+    }
     const result = runScript(py, code ?? '', init!);
     self.postMessage({ id, result });
   } catch (err) {
