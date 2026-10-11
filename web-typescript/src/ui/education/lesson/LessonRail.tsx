@@ -27,6 +27,7 @@ import { useAccount } from '../../account/AccountProvider';
 import { QuickCheck } from './QuickCheck';
 import { Rich, SymbolTable, TermChips } from './Rich';
 import { TopicArt } from './TopicArt';
+import { TopicShot, hasShot } from './TopicShot';
 import { ACT_NAME, PAGES, PAGE_LABEL, isActivity, usedBy, type Onward, type PageId } from './LessonCards';
 import type { ResultRow } from '../topics/types';
 import lc from '../learn.module.css';
@@ -118,7 +119,7 @@ export default function LessonRail({ topic, page, onPage, results, onChecked, le
   const [guess, setGuess] = useState<Partial<Record<StepKey, number>>>({});
   const [why, setWhy] = useState<0 | 1 | 2>(0);
   /** The figure or an activity's demo shown large over the screen. */
-  const [zoom, setZoom] = useState<null | { focus?: StepKey; clip?: StepKey }>(null);
+  const [zoom, setZoom] = useState<null | { focus?: StepKey; clip?: StepKey; shots?: true }>(null);
   const scroll = useRef<HTMLDivElement>(null);
   useEffect(() => {
     try {
@@ -191,7 +192,7 @@ export default function LessonRail({ topic, page, onPage, results, onChecked, le
       <div className={css.body} key={`${topic.id}-${page}`}>
         {page === 'intro' && <IntroPage topic={topic} teacher={teacher} fig={<Fig topic={topic} onZoom={setZoom} />} />}
         {page === 'theory' && <ConceptPage topic={topic} level={level} teacher={teacher} fig={<Fig topic={topic} onZoom={setZoom} />} />}
-        {page === 'cmp' && <WrapPage topic={topic} results={results} teacher={teacher} onSite={onSite} />}
+        {page === 'cmp' && <WrapPage topic={topic} results={results} teacher={teacher} onSite={onSite} onShots={() => setZoom({ shots: true })} />}
         {page === 'check' && <CheckPage topic={topic} level={level} onChecked={onChecked} onward={onward} onTopic={onTopic} />}
       </div>
 
@@ -354,7 +355,9 @@ export default function LessonRail({ topic, page, onPage, results, onChecked, le
 
       {zoom && (
         <div className={lc.lightbox} role="dialog" aria-modal="true" aria-label={`${topic.title} ${zoom.clip ? '시연' : '그림'}`} onClick={() => setZoom(null)}>
-          {zoom.clip ? (
+          {zoom.shots ? (
+            <TopicShot id={topic.id} className={css.shotsBig} />
+          ) : zoom.clip ? (
             <figure className={wb.clip} onClick={(e) => e.stopPropagation()}>
               {/* eslint-disable-next-line @next/next/no-img-element -- a GIF made by tools/check/learn-sim.mjs, shown as is */}
               <img src={tryGif(topic.id, zoom.clip)} alt={`${topic.id} ${STEP_NAME[zoom.clip]} 시연: 원고의 할 일대로 누른 화면`} />
@@ -534,7 +537,7 @@ function ConceptPage({ topic, level, teacher, fig }: { topic: Topic; level: Stud
   );
 }
 
-function WrapPage({ topic, results, teacher, onSite }: { topic: Topic; results: Partial<Record<StepKey, ResultRow>>; teacher: boolean; onSite?: Props['onSite'] }) {
+function WrapPage({ topic, results, teacher, onSite, onShots }: { topic: Topic; results: Partial<Record<StepKey, ResultRow>>; teacher: boolean; onSite?: Props['onSite']; onShots(): void }) {
   const [takeaway, field] = glossFirst([topic.takeaway, topic.field]);
   const cols = [...new Set(KEYS.flatMap((k) => Object.keys(results[k] ?? {})))];
   const n = KEYS.filter((k) => results[k]).length;
@@ -570,6 +573,19 @@ function WrapPage({ topic, results, teacher, onSite }: { topic: Topic; results: 
           <p className={css.wait}>활동 1 · 2 · 3 을 해 보면 결과가 이 표에 모여요.</p>
         )}
       </Block>
+      {hasShot(topic.id) && (
+        <figure className={css.shots}>
+          <button type="button" onClick={onShots} title="크게 보기" aria-label="세 활동의 3D 화면 크게 보기">
+            <TopicShot id={topic.id} />
+          </button>
+          <figcaption>
+            <span>세 활동이 끝난 3D 화면 — 내 화면과 비교해 보세요</span>
+            <button type="button" onClick={onShots}>
+              ⤢ 크게
+            </button>
+          </figcaption>
+        </figure>
+      )}
       <Block kind="read" title="그래서 알게 된 것">
         <ul className={css.points}>
           {topic.steps.map((s) => (
