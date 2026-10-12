@@ -587,8 +587,9 @@
   font-size: 13px;
   line-height: 1.5;
 }
-.boss b {
+.boss small {
   display: block;
+  font-weight: 700;
   font-size: 11.5px;
   color: var(--site);
 }

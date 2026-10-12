@@ -22,6 +22,7 @@ import { events, siteObject } from '@/engine/account';
 import { EFFORT_KEY } from '@/engine/education/classReport';
 import type { CheckQ, SiteProblem, SiteStepId, SiteText } from '@/engine/education/lab/siteText';
 
+import { sentencesOf } from '@/engine/education/sentences';
 import { Lines } from '../lesson/Rich';
 import { useFollowGate } from '../stage/RealFollow';
 import { useAccount } from '../../account/AccountProvider';
@@ -204,7 +205,7 @@ export const bodyClass = `${css.body} ${lg.scroll}`;
 export function Boss({ name, line }: { name: string; line: string }) {
   return (
     <p className={lg.boss}>
-      <b>{name}</b>
+      <small>{name}</small>
       <Lines text={line} />
     </p>
   );
@@ -226,6 +227,23 @@ export function ValueLines({ text }: { text: string }) {
         </span>
       ))}
       {at >= 0 && <span className={lg.line}>{text.slice(at + 1)}</span>}
+    </>
+  );
+}
+
+/** A numbered question, one sentence to a line, the number in front of the first. */
+function NumberedLines({ n, text }: { n: number; text: string }) {
+  const [first, ...rest] = sentencesOf(text);
+  return (
+    <>
+      <span className={lg.line}>
+        <b>{n}.</b> {first}
+      </span>
+      {rest.map((t) => (
+        <span key={t} className={lg.line}>
+          {t}
+        </span>
+      ))}
     </>
   );
 }
@@ -487,9 +505,17 @@ function PrincipleCard({ T, fig }: { T: SiteText; fig: ReactNode }) {
       <small>원리 카드 · {T.principle.unit}</small>
       <b>{T.principle.title}</b>
       {fig}
-      <p className={lg.formula}>{T.principle.formula}</p>
+      <p className={lg.formula}>
+        {T.principle.formula.split(' · ').map((f) => (
+          <span key={f} className={lg.line}>
+            {f}
+          </span>
+        ))}
+      </p>
       {T.principle.lines.map((l) => (
-        <p key={l}>{l}</p>
+        <p key={l}>
+          <Lines text={l} />
+        </p>
       ))}
       <div className={lg.pdfLinks}>
         {T.pdf.map((d) => (
@@ -711,7 +737,8 @@ function SiteSteps(p: SitePanelProps) {
             </Sec>
             <Sec n={2} title="원인 고르기" kind="ask" state={parts[1].state} wait={`위에서 ${n}가지를 모두 재면 열려요.`}>
               <p className={lg.secText}>
-                <b>{T.question}</b> 잰 값을 보고 골라요. 틀려도 괜찮아요. 고를 때마다 이유를 알려 줘요.
+                <b className={lg.line}>{T.question}</b>
+                <Lines text="잰 값을 보고 골라요. 틀려도 괜찮아요. 고를 때마다 이유를 알려 줘요." />
               </p>
               <ChoicePick T={T} st={st} patch={p.patch} />
             </Sec>
@@ -841,7 +868,9 @@ function SiteSteps(p: SitePanelProps) {
                 <div className={lg.uni}>
                   <b>{T.uni.title}</b>
                   {T.uni.lines.map((l) => (
-                    <p key={l}>{l}</p>
+                    <p key={l}>
+                      <Lines text={l} />
+                    </p>
                   ))}
                   {T.uni.code && <pre>{T.uni.code}</pre>}
                   <PyTask lab={p.lab} prob={T.id} />
@@ -852,14 +881,18 @@ function SiteSteps(p: SitePanelProps) {
               <div className={lg.real}>
                 <p><Lines text={T.real} /></p>
                 <p className={lg.safety}>
-                  <b>안전</b> {T.safety}
+                  <b className={lg.line}>안전</b>
+                  <Lines text={T.safety} />
                 </p>
                 <RobotRecord lab={p.lab} problem={T.id} />
               </div>
             </Sec>
             <Sec n={4} title="기록지 내기" kind="read" state="info">
               <p className={lg.secText}>
-                아래 <b>[실습 기록 · 인쇄]</b>로 이 현장에서 한 일을 한 장으로 인쇄하거나 PDF로 저장해요.
+                <span className={lg.line}>
+                  아래 <b>[실습 기록 · 인쇄]</b>를 눌러요.
+                </span>
+                <span className={lg.line}>이 현장에서 한 일을 한 장으로 인쇄하거나 PDF로 저장해요.</span>
               </p>
             </Sec>
           </div>
@@ -914,7 +947,7 @@ function Checks({ T, st, patch }: { T: SiteText; st: FlowState; patch: FlowPatch
         return (
           <div key={q.q} className={lg.check} data-r={res === null ? undefined : res ? 'ok' : 'no'}>
             <p>
-              <b>{i + 1}.</b> {q.q}
+              <NumberedLines n={i + 1} text={q.q} />
             </p>
             {q.kind === 'num' && (
               <div className={lg.checkRow}>
@@ -946,8 +979,8 @@ function Checks({ T, st, patch }: { T: SiteText; st: FlowState; patch: FlowPatch
             )}
             {st.shown[i] && (
               <small>
-                {res === null ? '모범 답 · ' : res ? '✓ 맞아요 · ' : '✗ 다시 보세요 · '}
-                {q.explain}
+                <b className={lg.line}>{res === null ? '모범 답' : res ? '✓ 맞아요' : '✗ 다시 보세요'}</b>
+                <Lines text={q.explain} />
               </small>
             )}
           </div>

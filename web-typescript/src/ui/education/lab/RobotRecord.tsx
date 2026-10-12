@@ -15,6 +15,7 @@ import { useMemo, useState, useSyncExternalStore } from 'react';
 import { RUN_LOG_KEY, loadRuns, logRun, type RunLab, type RunRecord } from '@/engine/education/runLog';
 import type { SiteProblem } from '@/engine/education/lab/siteText';
 
+import { Lines } from '../lesson/Rich';
 import lg from './site.module.css';
 
 function subscribe(on: () => void) {
@@ -49,7 +50,9 @@ export default function RobotRecord({ lab, problem }: { lab: RunLab; problem: Si
       {sim ? (
         <Form key={sim.t} sim={sim} robots={robots} />
       ) : (
-        <p>먼저 시뮬레이터에서 값을 고쳐 [다시 가동]해요. 그 값을 실제 로봇에서 똑같이 돌린 뒤, 잰 결과를 여기에 적어요.</p>
+        <p>
+          <Lines text="먼저 시뮬레이터에서 값을 고쳐 [다시 가동]해요. 그 값을 실제 로봇에서 똑같이 돌려요. 잰 결과를 여기에 적어요." />
+        </p>
       )}
     </div>
   );

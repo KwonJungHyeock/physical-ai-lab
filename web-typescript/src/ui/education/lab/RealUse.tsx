@@ -12,6 +12,7 @@ import { useState } from 'react';
 import { REAL_USE, type RealUseSite } from '@/engine/education/lab/realUse';
 
 import Icon from '../../simulator/Icon';
+import { Lines } from '../lesson/Rich';
 import lg from './site.module.css';
 
 const KEY = 'edu-real-use';
@@ -60,14 +61,16 @@ export default function RealUse({ site, beside = false }: { site: RealUseSite; b
           ×
         </button>
       </header>
-      <p>{r.task}</p>
+      <p>
+        <Lines text={r.task} />
+      </p>
       <p className={lg.realScale}>
         <em>실제 규모</em>
-        {r.scale}
+        <Lines text={r.scale} />
       </p>
       <p className={lg.realSame}>
         <em>이 실습과 같은 점</em>
-        {r.same}
+        <Lines text={r.same} />
       </p>
     </aside>
   );
