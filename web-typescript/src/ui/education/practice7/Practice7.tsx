@@ -2,9 +2,12 @@
 
 /**
  * 로봇 실습 7: the seven acceptance checks as seven easy practices (engine/education/practice7.ts).
- * One screen: the unit tabs on top, a colourful panel on the left (알아보기 · 따라 하기 · 문제 · 실물로 ·
- * 결과, each part its own colour), the 3D arm on the right. Every 따라 하기 plays in 3D; 실물로 does the
- * same on the connected robot and writes what was measured into the 검수 기록 (the console's result sheet).
+ * One screen: the unit tabs on top, a plain white panel on the left and the 3D arm, as large as it can be,
+ * on the right. The panel shows one part at a time (알아보기 · 따라 하기 · 문제 · 실물로 · 결과, picked
+ * from a row of tabs; the part to do now opens by itself). Colour only marks the parts apart and what
+ * matters now: the step to press, the main button, right or wrong. Every 따라 하기 plays in 3D; 실물로
+ * does the same on the connected robot and writes what was measured into the 검수 기록 (the console's
+ * result sheet).
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
@@ -52,6 +55,9 @@ import type { RealArm } from '../lessons';
 import LearnStage, { type LearnScene, type ViewPose } from '../stage/LearnStage';
 import { LEARN_SPEED, ease, lerpQ, tipOf, type Mm } from '../topics/kit';
 import css from './practice7.module.css';
+
+/** The console's accent (--accent): the 3D view's labels in the screen's one colour. */
+const ACCENT = '#3454d1';
 
 interface Props {
   robot: UrdfRobot;
@@ -180,7 +186,7 @@ export default function Practice7({ robot, chain, gripperRobot, real, hidden, te
           {UNITS.map((u) => {
             const st = stars(u, progress[u.id]);
             return (
-              <button key={u.id} type="button" aria-current={u.id === unitId || undefined} style={{ '--c': u.color } as CSSProperties} onClick={() => setUnitId(u.id)} title={`${u.id}. ${u.title}`}>
+              <button key={u.id} type="button" aria-current={u.id === unitId || undefined} data-done={unitDone(u, progress[u.id]) || undefined} onClick={() => setUnitId(u.id)} title={`${u.id}. ${u.title}`}>
                 <i>{unitDone(u, progress[u.id]) ? '✓' : u.id}</i>
                 <span>
                   <b>{u.title}</b>
@@ -349,11 +355,11 @@ function UnitView({ unit, prog, update, onNext, robot, chain, gripperRobot, real
       pumpOn,
       blocks: blockPoses,
       boxes: kit ? BIN_WALLS : [],
-      labels: [...(kit ? BIN_LABELS : []), ...(extra.labels ?? []), ...(say ? [{ key: 'say', mm: [...tipOf(chain, pose, tcpFor(tool === 'none' ? 'pump' : tool, false)).slice(0, 2), tipOf(chain, pose, 0)[2] + 60] as Mm, text: say, color: unit.color }] : [])],
+      labels: [...(kit ? BIN_LABELS : []), ...(extra.labels ?? []), ...(say ? [{ key: 'say', mm: [...tipOf(chain, pose, tcpFor(tool === 'none' ? 'pump' : tool, false)).slice(0, 2), tipOf(chain, pose, 0)[2] + 60] as Mm, text: say, color: ACCENT }] : [])],
       target: extra.target ?? null,
       lines: extra.lines ?? [],
     };
-  }, [unitId, pose, tool, pumpOn, blocks, carry, extra, say, chain, unit.color]);
+  }, [unitId, pose, tool, pumpOn, blocks, carry, extra, say, chain]);
 
   /** The 3D view as a picture (the view must be drawn from where the camera is first). */
   const stageRef = useRef<HTMLDivElement>(null);
@@ -711,31 +717,49 @@ function UnitView({ unit, prog, update, onNext, robot, chain, gripperRobot, real
   const allSteps = unit.steps.every((s) => prog.steps.includes(s.id));
   const quizOk = quizRight(unit, prog) === unit.quiz.length;
   const nowPart: Part = !allSteps ? 'do' : !quizOk ? 'quiz' : !prog.real ? 'real' : 'done';
+  // The unit opens at the part to do now; after that the student moves on (the tabs, or the
+  // 다음 button a finished part shows), so a result just made never vanishes under them.
+  const [shown, setShown] = useState<Part>(nowPart);
+  // The one step to press next (the others stay plain): the first open one not done yet.
+  const nextStep = unit.steps.findIndex((s, i) => stepOpen(i) && !prog.steps.includes(s.id));
+  const partDone: Record<Part, boolean> = { look: true, do: allSteps, quiz: quizOk, real: !!prog.real, done: false };
   const next = UNITS.find((u) => u.id === unitId + 1);
   const code = useMemo(() => ['from pymycobot import MyCobot280RDKX5', '', 'mc = MyCobot280RDKX5("/dev/ttyS1", 1000000)', ...WAVE.map((w) => w.line)], []);
 
   return (
     <>
       <div className={css.body}>
-        <aside className={css.panel} style={{ '--c': unit.color } as CSSProperties} aria-label={`${unit.id}. ${unit.title}`}>
+        <aside className={css.panel} aria-label={`${unit.id}. ${unit.title}`}>
           <div className={css.unitHead}>
-            <span className={css.unitNo}>{unit.id}</span>
-            <div>
-              <small>검수 {unit.check}</small>
-              <h2>{unit.title}</h2>
-            </div>
-            <span className={css.unitStars}>{'★'.repeat(stars(unit, prog))}{'☆'.repeat(3 - stars(unit, prog))}</span>
+            <small>
+              실습 {unit.id} · 검수 {unit.check}
+            </small>
+            <h2>{unit.title}</h2>
+            <span className={css.unitStars} aria-label={`별 ${stars(unit, prog)}개`}>
+              {'★'.repeat(stars(unit, prog))}
+              {'☆'.repeat(3 - stars(unit, prog))}
+            </span>
           </div>
-          <ol className={css.path} aria-label="순서">
-            {PARTS.map((p) => (
-              <li key={p.id} data-now={p.id === nowPart || undefined} style={{ '--k': p.color, '--ks': p.soft } as CSSProperties}>
+          <p className={css.about}>{unit.about}</p>
+          <div className={css.path} role="tablist" aria-label="순서">
+            {PARTS.map((p, i) => (
+              <button
+                key={p.id}
+                type="button"
+                role="tab"
+                aria-selected={p.id === shown}
+                data-now={p.id === nowPart || undefined}
+                style={{ '--k': p.color } as CSSProperties}
+                onClick={() => setShown(p.id)}
+                title={p.id === nowPart ? '지금 할 차례' : undefined}
+              >
+                <i>{i + 1}</i>
                 {p.name}
-              </li>
+              </button>
             ))}
-          </ol>
+          </div>
 
-          <Section part="look">
-            <p className={css.about}>{unit.about}</p>
+          <Section part="look" shown={shown} finished={partDone.look} onNext={setShown}>
             <p className={css.like}>
               <em>이렇게 생각해요</em>
               {unit.like}
@@ -746,12 +770,12 @@ function UnitView({ unit, prog, update, onNext, robot, chain, gripperRobot, real
             </p>
           </Section>
 
-          <Section part="do" now={nowPart === 'do'}>
+          <Section part="do" shown={shown} now={nowPart === 'do'} finished={partDone.do} onNext={setShown}>
             <div className={css.steps} data-grid={unit.steps.length > 3 || undefined}>
               {unit.steps.map((s, i) => {
                 const done = prog.steps.includes(s.id);
                 return (
-                  <button key={s.id} type="button" className={css.step} data-done={done || undefined} disabled={busy || !stepOpen(i)} onClick={() => void doStep(s.id)}>
+                  <button key={s.id} type="button" className={css.step} data-done={done || undefined} data-next={i === nextStep || undefined} disabled={busy || !stepOpen(i)} onClick={() => void doStep(s.id)}>
                     <i>{done ? '✓' : i + 1}</i>
                     <span>
                       <b>{s.label}</b>
@@ -764,7 +788,7 @@ function UnitView({ unit, prog, update, onNext, robot, chain, gripperRobot, real
             <DoExtra unitId={unitId} arrivals={arrivals} photos={photos} shot={shot} found={found} line={line} code={code} />
           </Section>
 
-          <Section part="quiz" now={nowPart === 'quiz'}>
+          <Section part="quiz" shown={shown} now={nowPart === 'quiz'} finished={partDone.quiz} onNext={setShown}>
             {unit.quiz.map((q, qi) => {
               const got = prog.quiz[qi];
               const right = got === q.answer;
@@ -799,7 +823,7 @@ function UnitView({ unit, prog, update, onNext, robot, chain, gripperRobot, real
             })}
           </Section>
 
-          <Section part="real" now={nowPart === 'real'}>
+          <Section part="real" shown={shown} now={nowPart === 'real'} finished={partDone.real} onNext={setShown}>
             <p className={css.realDoes}>{unit.real.does}</p>
             <p className={css.ready}>
               <b>준비</b> {unit.real.ready}
@@ -870,14 +894,14 @@ function UnitView({ unit, prog, update, onNext, robot, chain, gripperRobot, real
             </p>
           </Section>
 
-          <Section part="done" now={nowPart === 'done'}>
+          <Section part="done" shown={shown} now={nowPart === 'done'} finished={partDone.done} onNext={setShown}>
             <ul className={css.result}>
               <li data-ok={allSteps || undefined}>{allSteps ? '✓' : '○'} 따라 하기 ({prog.steps.length} / {unit.steps.length})</li>
               <li data-ok={quizOk || undefined}>{quizOk ? '✓' : '○'} 문제 ({quizRight(unit, prog)} / {unit.quiz.length})</li>
               <li data-ok={!!prog.real || undefined}>{prog.real ? '✓' : '○'} 실물로 {prog.real ? `: ${prog.real.text}` : '(로봇을 연결하면)'}</li>
             </ul>
             {next && (
-              <button type="button" className={css.next} style={{ '--n': next.color } as CSSProperties} onClick={() => onNext(next.id)}>
+              <button type="button" className={css.next} onClick={() => onNext(next.id)}>
                 다음: {next.id}. {next.title} →
               </button>
             )}
@@ -892,11 +916,9 @@ function UnitView({ unit, prog, update, onNext, robot, chain, gripperRobot, real
 
         <section className={css.stage} ref={stageRef} aria-label="3D 실습 화면">
           <LearnStage robot={robot} chain={chain} gripperRobot={gripperRobot} scene={scene} paused={hidden} home={UNIT_HOME[unitId].kit ? VIEW_KIT : unitId === 7 ? VIEW_TALL : VIEW_ARM} focus={focus} />
-          <span className={css.badge} style={{ '--c': unit.color } as CSSProperties}>
+          <span className={css.badge}>
             {unit.id}. {unit.title}
-          </span>
-          <span className={css.mode} data-real={real.online || undefined}>
-            {real.online ? '● 실물 로봇 연결됨' : '○ 시뮬레이션'}
+            <small data-real={real.online || undefined}>{real.online ? '● 실물 로봇 연결됨' : '시뮬레이션'}</small>
           </span>
         </section>
       </div>
@@ -904,15 +926,25 @@ function UnitView({ unit, prog, update, onNext, robot, chain, gripperRobot, real
   );
 }
 
-function Section({ part, now, children }: { part: Part; now?: boolean; children: ReactNode }) {
-  const p = PARTS.find((x) => x.id === part)!;
+/** One part's page: only the shown one is in the panel (the others keep their state above). */
+function Section({ part, shown, now, finished, onNext, children }: { part: Part; shown: Part; now?: boolean; finished: boolean; onNext(p: Part): void; children: ReactNode }) {
+  const i = PARTS.findIndex((x) => x.id === part);
+  const p = PARTS[i];
+  const after = PARTS[i + 1];
+  if (part !== shown) return null;
   return (
-    <section className={css.sec} data-now={now || undefined} style={{ '--k': p.color, '--ks': p.soft } as CSSProperties}>
+    <section className={css.sec} role="tabpanel" style={{ '--k': p.color } as CSSProperties}>
       <h3>
-        <span>{p.name}</span>
+        {p.name}
         {now && <em>지금 할 일</em>}
+        {finished && part !== 'look' && <em data-ok>✓ 했어요</em>}
       </h3>
       <div className={css.secBody}>{children}</div>
+      {finished && after && (
+        <button type="button" className={css.onward} onClick={() => onNext(after.id)}>
+          다음: {after.name} →
+        </button>
+      )}
     </section>
   );
 }
@@ -986,7 +1018,7 @@ function DoExtra({ unitId, arrivals, photos, shot, found, line, code }: { unitId
     return (
       <pre className={css.code} aria-label="파이썬 코드">
         {code.map((l, i) => (
-          <code key={i} data-now={i - (code.length - WAVE.length) === line || undefined}>
+          <code key={i} data-now={(line >= 0 && i - (code.length - WAVE.length) === line) || undefined}>
             {l || ' '}
           </code>
         ))}

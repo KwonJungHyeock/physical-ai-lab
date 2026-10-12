@@ -20,14 +20,15 @@ import type { RobotAction } from '../simulator/sim';
 export type UnitId = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 export const UNIT_IDS: readonly UnitId[] = [1, 2, 3, 4, 5, 6, 7];
 
-/** The five parts of every unit, each with its own colour so a student always knows what kind of thing they are doing. */
+/** The five parts of every unit. Each has a colour for its small marker (the part tabs, the line beside its page),
+ * so a student can tell them apart without the panel itself turning colourful. */
 export type Part = 'look' | 'do' | 'quiz' | 'real' | 'done';
-export const PARTS: readonly { id: Part; name: string; color: string; soft: string }[] = [
-  { id: 'look', name: '알아보기', color: '#0284c7', soft: '#e0f2fe' },
-  { id: 'do', name: '따라 하기', color: '#16a34a', soft: '#dcfce7' },
-  { id: 'quiz', name: '문제', color: '#ea580c', soft: '#ffedd5' },
-  { id: 'real', name: '실물로', color: '#7c3aed', soft: '#ede9fe' },
-  { id: 'done', name: '결과', color: '#ca8a04', soft: '#fef9c3' },
+export const PARTS: readonly { id: Part; name: string; color: string }[] = [
+  { id: 'look', name: '알아보기', color: '#0284c7' },
+  { id: 'do', name: '따라 하기', color: '#16a34a' },
+  { id: 'quiz', name: '문제', color: '#ea580c' },
+  { id: 'real', name: '실물로', color: '#7c3aed' },
+  { id: 'done', name: '결과', color: '#ca8a04' },
 ];
 
 export interface Quiz {
@@ -52,8 +53,6 @@ export interface Unit {
   /** The acceptance check it shows (검수 번호), the same number. */
   check: UnitId;
   title: string;
-  /** Rainbow colour of the unit's tab and header. */
-  color: string;
   icon: string;
   /** 알아보기: what it is in one sentence, an everyday comparison, and where real robots do it. */
   about: string;
@@ -72,7 +71,6 @@ export const UNITS: readonly Unit[] = [
     id: 1,
     check: 1,
     title: CHECKS[0].title,
-    color: '#ef4444',
     icon: 'joints',
     about: '로봇팔에는 관절이 6개 있어요. 하나씩 움직여서 이름과 하는 일을 알아봐요.',
     like: '내 팔의 어깨 · 팔꿈치 · 손목처럼, 로봇도 관절마다 돌아가는 방향이 달라요.',
@@ -100,7 +98,6 @@ export const UNITS: readonly Unit[] = [
     id: 2,
     check: 2,
     title: CHECKS[1].title,
-    color: '#f97316',
     icon: 'flag',
     about: '같은 곳에 다섯 번 보내서, 매번 얼마나 똑같은 곳에 도착하는지 재요.',
     like: '다트를 다섯 번 던져 한 점에 모이면 잘 던진 거예요. 로봇도 도착점이 모일수록 정밀해요.',
@@ -124,7 +121,6 @@ export const UNITS: readonly Unit[] = [
     id: 3,
     check: 3,
     title: CHECKS[2].title,
-    color: '#eab308',
     icon: 'camera',
     about: '로봇의 눈인 카메라 두 대로 사진을 찍어요. 위에서 보는 키트 카메라, 팔 끝의 손 카메라.',
     like: '교실 천장의 CCTV(고정)와 내 휴대폰 카메라(들고 움직임)의 차이예요.',
@@ -148,7 +144,6 @@ export const UNITS: readonly Unit[] = [
     id: 4,
     check: 4,
     title: CHECKS[3].title,
-    color: '#22c55e',
     icon: 'search',
     about: '카메라로 블록을 찾고, 찾은 자리로 로봇이 가서 집어 색깔별 상자에 넣어요.',
     like: '눈으로 컵을 보고 → 어디 있는지 알고 → 손을 뻗는 것과 같은 순서예요.',
@@ -172,7 +167,6 @@ export const UNITS: readonly Unit[] = [
     id: 5,
     check: 5,
     title: CHECKS[4].title,
-    color: '#06b6d4',
     icon: 'tool',
     about: '로봇 손(도구)은 바꿔 낄 수 있어요. 집게(그리퍼)로 한 번, 흡착 펌프로 한 번 옮겨요.',
     like: '숟가락과 젓가락을 음식에 따라 바꿔 쓰는 것과 같아요.',
@@ -197,7 +191,6 @@ export const UNITS: readonly Unit[] = [
     id: 6,
     check: 6,
     title: CHECKS[5].title,
-    color: '#6366f1',
     icon: 'brain',
     about: '로봇 안의 작은 컴퓨터(RDK X5)가 사진 속 물건을 알아보고 이름표를 붙여요. 인터넷 없이.',
     like: '휴대폰 사진첩이 사진 속 얼굴을 알아보는 것과 같은 원리예요.',
@@ -221,7 +214,6 @@ export const UNITS: readonly Unit[] = [
     id: 7,
     check: 7,
     title: CHECKS[6].title,
-    color: '#a855f7',
     icon: 'code',
     about: '버튼 대신 파이썬 코드로 로봇에게 명령해요. 코드 한 줄 = 동작 하나.',
     like: '리모컨 버튼 대신 문자로 "앞으로 가" 라고 보내는 것과 같아요.',

@@ -177,7 +177,7 @@ export default function ParkView({ progress, allOpen, onAllOpen, hidden, onTopic
               data-st={states[s.id]}
               aria-pressed={selected === s.id}
               style={{ '--c': s.color } as CSSProperties}
-              onClick={() => select(selected === s.id ? null : s.id)}
+              onClick={() => select(s.id)}
               title={`${s.keyword} · ${s.name}${states[s.id] === 'locked' ? ' (잠김: 누르면 먼저 배울 차시가 보여요)' : ''}`}
             >
               <i>
@@ -343,6 +343,9 @@ function SiteCard({ id, progress, allOpen, state, onTopic, onLab, onData, onClos
   const firstTodo = s.content === 'lessons' ? (centerTopics().find((t) => !progress.done[t]) ?? centerTopics()[0]) : null;
   const firstNeeds = s.content === 'lab' ? problemMissing(s, 1, progress) : [];
   const started = !!sc && sc.done > 0;
+  // 현장 들어가기 opens the first problem still to solve (the one the list and 다음 할 일 point at), so
+  // entering from here, from a problem's row or from 다음 할 일 lands on the same screen.
+  const entry = ((rows.findIndex((r) => r.open && !r.done) + 1 || 1) as ProblemNo);
   return (
     <div className={css.site} style={{ '--c': locked ? '#8a94a6' : s.color } as CSSProperties} data-state={state}>
       <header>
@@ -432,7 +435,7 @@ function SiteCard({ id, progress, allOpen, state, onTopic, onLab, onData, onClos
             {state === 'done' ? '수업 다시 보기' : started ? `이어 하기 · ${topicName(firstTodo!)}` : '첫 차시 시작'} →
           </button>
         ) : s.content === 'lab' ? (
-          <button type="button" className={css.primary} onClick={() => onLab(s.lab!)}>
+          <button type="button" className={css.primary} onClick={() => onLab(s.lab!, entry)}>
             {state === 'done' ? '현장 다시 들어가기' : started ? '이어서 고치기' : '현장 들어가기'} →
           </button>
         ) : s.content === 'data' ? (

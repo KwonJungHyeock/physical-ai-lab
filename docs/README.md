@@ -61,7 +61,7 @@
 | [`20-world-map-plan.md`](reports/education/20-world-map-plan.md) | 보고 #20 — 통합 월드맵: 로봇 아카데미(이론 28차시) + 현장 테마 7곳 + 디지털 트윈 관제센터를 섬 도시 하나로, CC0 모델 자산 |
 | [`22-course-flow.md`](reports/education/22-course-flow.md) | 보고 #22 — 교육 전개 점검과 수정 1~5단계: 먼저 배울 차시 · 이론과 현장을 번갈아 · 주차별 계획 2안, 정확성, 스스로 생각하게(식 보기 · 7문항 평가), 대학 Python 과제 · 반 결과, 실물 연동 |
 | [`24-lesson-screen.md`](reports/education/24-lesson-screen.md) | 보고 #24 — 수업 화면 개편(왼쪽 레일: 개념 · 질문 · 해 보기 · 결과 색 구분), 3D 수업 그림, 학급 계정 화면, 1-4 단면 수정, 실물 연동 시험 순서 |
-| [`25-easy-track-plan.md`](reports/education/25-easy-track-plan.md) | 보고 #25 — 쉬운 실습 트랙 기획안(시연 피드백) → 최종 반영: 로봇 실습 7 (검수 7가지를 알록달록한 5단계 패널로, 시뮬레이션 → 실물 로봇 → 검수 기록), 2안 · 1안 기획 |
+| [`25-easy-track-plan.md`](reports/education/25-easy-track-plan.md) | 보고 #25 — 쉬운 실습 트랙 기획안(시연 피드백) → 최종 반영: 로봇 실습 7 (검수 7가지를 단순한 5단계 패널로, 색은 구역 구분 · 강조에만, 시뮬레이션 → 실물 로봇 → 검수 기록), 2안 · 1안 기획 |
 
 ### [`system/`](reports/system/) — 시스템 구성
 | 문서 | 내용 |
