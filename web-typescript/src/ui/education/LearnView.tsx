@@ -34,6 +34,7 @@ import DataCenter from './data/DataCenter';
 import FinalExam from './lab/FinalExam';
 import LogisticsLab from './lab/LogisticsLab';
 import { LabGateContext, type LabGate } from './lab/SiteFlow';
+import Practice7 from './practice7/Practice7';
 import ParkView from './map/ParkView';
 import { FollowBar, FollowContext, useRealFollow } from './stage/RealFollow';
 import LessonBar from './lesson/LessonBar';
@@ -128,7 +129,9 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
   const [locked, setLocked] = useState<TopicId | null>(null);
   const [topicId, setTopicId] = useState<TopicId>(FIRST);
   /** The park (front page), the course, a lesson, or the problem-solving lab (opened once, then kept). */
-  const [screen, setScreen] = useState<'map' | 'course' | 'topic' | 'lab' | 'logistics' | 'bio' | 'farm' | 'cafe' | 'ai' | 'energy' | 'data' | 'final'>('map');
+  const [screen, setScreen] = useState<'map' | 'course' | 'topic' | 'lab' | 'logistics' | 'bio' | 'farm' | 'cafe' | 'ai' | 'energy' | 'data' | 'final' | 'p7'>('map');
+  /** 로봇 실습 7 mounts on first use (its own 3D view). */
+  const [p7Seen, setP7Seen] = useState(false);
   /** 대단원 마무리 평가: mounted the first time it is opened. */
   const [finalSeen, setFinalSeen] = useState(false);
   const openFinal = useCallback(() => {
@@ -503,8 +506,13 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
         onCourse={() => setScreen('course')}
         onFinal={openFinal}
         onData={openData}
+        onPractice={() => {
+          setP7Seen(true);
+          setScreen('p7');
+        }}
         pick={mapPick}
       />
+      {p7Seen && <Practice7 robot={robot} chain={chain} gripperRobot={gripperRobot} real={real} hidden={hidden || screen !== 'p7'} teacher={!student} onBack={() => setScreen('map')} />}
       {dataSeen && <DataCenter hidden={hidden || screen !== 'data'} onBack={() => setScreen('map')} onOpenLab={(lab) => openSiteLab(lab)} />}
       {energySeen && (
         <EnergyLab robot={robot} chain={chain} gripperRobot={gripperRobot} hidden={hidden || screen !== 'energy'} level={level} saved={energySolved} onSolved={onEnergySolved} onBack={() => setScreen('map')} />

@@ -74,13 +74,15 @@ interface Props {
   onFinal(): void;
   /** The 디지털 트윈 관제센터. */
   onData(): void;
+  /** 로봇 실습 7: the seven acceptance checks as easy practices (the first thing a beginner does). */
+  onPractice?(): void;
   /** Pick a place from outside (a lesson's 이 원리를 쓰는 현장); `n` changes on every request. */
   pick?: { id: SiteId; n: number } | null;
 }
 
 const tagOf = (content: (typeof SITES)[number]['content']) => (content === 'lessons' ? '이론' : content === 'data' ? '데이터' : '테마');
 
-export default function ParkView({ progress, allOpen, onAllOpen, hidden, onTopic, onLab, onCourse, onFinal, onData, pick }: Props) {
+export default function ParkView({ progress, allOpen, onAllOpen, hidden, onTopic, onLab, onCourse, onFinal, onData, onPractice, pick }: Props) {
   const [selected, setSelected] = useState<SiteId | null>(null);
   /** The 3D park loads the first time the map is shown. */
   const [seen, setSeen] = useState(false);
@@ -143,6 +145,11 @@ export default function ParkView({ progress, allOpen, onAllOpen, hidden, onTopic
           })}
         </ol>
         <div className={css.tools}>
+          {onPractice && (
+            <button type="button" className={css.p7} onClick={onPractice} title="검수 7가지를 쉬운 실습으로: 시뮬레이션 → 실물 로봇">
+              로봇 실습 7
+            </button>
+          )}
           <button type="button" className={css.line} onClick={onCourse} title="8단원 28차시 이론 수업 목록">
             전체 차시
           </button>
@@ -187,7 +194,7 @@ export default function ParkView({ progress, allOpen, onAllOpen, hidden, onTopic
           {selected ? (
             <SiteCard id={selected} progress={progress} allOpen={allOpen} state={states[selected]} onTopic={onTopic} onLab={onLab} onData={onData} onClose={() => select(null)} />
           ) : (
-            <Overview states={states} progress={progress} nDone={nDone} nAll={nAll} step={step} onTopic={onTopic} onLab={onLab} onGo={select} finalOpen={finalOpen} onFinal={onFinal} />
+            <Overview states={states} progress={progress} nDone={nDone} nAll={nAll} step={step} onTopic={onTopic} onLab={onLab} onGo={select} finalOpen={finalOpen} onFinal={onFinal} onPractice={onPractice} />
           )}
         </aside>
       </section>
@@ -233,6 +240,7 @@ function Overview({
   onGo,
   finalOpen,
   onFinal,
+  onPractice,
 }: {
   states: Record<SiteId, SiteState>;
   progress: ParkProgress;
@@ -244,12 +252,20 @@ function Overview({
   onGo(id: SiteId): void;
   finalOpen: boolean;
   onFinal(): void;
+  onPractice?(): void;
 }) {
   const counted = SITES.filter((s) => s.content !== 'data');
   const solved = THEMES.reduce((n, s) => n + (siteScore(s.id, progress)?.done ?? 0), 0);
   return (
     <div className={css.over}>
       <h2>로봇이 일하는 도시에서 배워요</h2>
+      {onPractice && (
+        <button type="button" className={css.p7Go} onClick={onPractice}>
+          <small>처음이라면 여기부터 · 검수 7가지</small>
+          <b>로봇 실습 7</b>
+          <span>관절 · 반복 · 카메라 · 비전 · 도구 · AI · 코드를 하나씩, 시뮬레이션 → 실물 로봇</span>
+        </button>
+      )}
       <p>
         <b>로봇 아카데미</b>에서 차시를 배우면, 그 원리를 쓰는 <b>현장</b>의 문제가 열려요. 아래 <b>다음 할 일</b>을 따라가면 이론과 현장을 번갈아 배워요.{' '}
         <b>관제센터</b>에서는 모든 현장의 실습 기록을 데이터로 분석해요.
