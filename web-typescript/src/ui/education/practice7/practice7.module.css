@@ -741,7 +741,7 @@
     display: none;
   }
   .body {
-    grid-template-columns: minmax(300px, 340px) minmax(0, 1fr);
+    grid-template-columns: minmax(340px, 380px) minmax(0, 1fr);
   }
 }
 @media (max-width: 1250px) {

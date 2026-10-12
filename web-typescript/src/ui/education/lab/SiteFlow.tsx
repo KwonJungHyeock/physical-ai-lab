@@ -211,6 +211,12 @@ export function Boss({ name, line }: { name: string; line: string }) {
   );
 }
 
+/** Where a closing note in brackets starts ("값 (설명)" → the index of " ("), or -1. */
+function noteAt(x: string): number {
+  const at = x.lastIndexOf(' (');
+  return at > 0 && x.endsWith(')') && /[가-힣]/.test(x.slice(at)) ? at : -1;
+}
+
 /** `text` split at " · " outside brackets: "a · b (c · d)" → ["a", "b (c · d)"]. */
 function splitDots(text: string): string[] {
   const out: string[] = [];
@@ -235,7 +241,7 @@ function splitDots(text: string): string[] {
  */
 export function ValueLines({ text }: { text: string }) {
   const parts = (text.length > 34 ? splitDots(text) : [text]).flatMap((x) => {
-    const at = x.indexOf(' (');
+    const at = noteAt(x);
     return at > 0 && x.length > 24 ? [x.slice(0, at), x.slice(at + 1)] : [x];
   });
   // Short items that fit together share a line again (a bracketed note keeps its own).
@@ -262,7 +268,7 @@ export function ValueLines({ text }: { text: string }) {
  */
 function formulaLines(formula: string): string[] {
   return splitDots(formula).flatMap((f) => {
-    const at = f.indexOf(' (');
+    const at = noteAt(f);
     const parts = at > 0 ? [f.slice(0, at), f.slice(at + 1)] : [f];
     return parts.flatMap((x) => (x.length > 34 && x.includes(' → ') ? x.split(' → ').map((y, i) => (i ? `→ ${y}` : y)) : [x]));
   });
@@ -305,7 +311,9 @@ export function Ask({ ask }: { ask: readonly string[] }) {
   return (
     <ul className={lg.ask}>
       {ask.map((q) => (
-        <li key={q}>{q}</li>
+        <li key={q}>
+          <Lines text={q} />
+        </li>
       ))}
     </ul>
   );
