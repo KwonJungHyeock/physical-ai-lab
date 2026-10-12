@@ -2,8 +2,9 @@
 
 /**
  * 실제 현장에서는: over a site lab's 3D cell, how robot arms do this same job at real workplaces
- * (engine/education/lab/realUse.ts). Open at first; folded to a small pill once closed, remembered
- * in the browser.
+ * (engine/education/lab/realUse.ts). Open the first time a site is entered, folded to a small pill
+ * after that (it sits over the 3D cell, so it must not cover the work on every step), and folded for
+ * good once closed. Remembered in the browser.
  */
 
 import { useState } from 'react';
@@ -14,10 +15,16 @@ import Icon from '../../simulator/Icon';
 import lg from './site.module.css';
 
 const KEY = 'edu-real-use';
+/** The sites whose card has been shown open once. */
+const SEEN_KEY = 'edu-real-use-seen';
 
-function readOpen(): boolean {
+function readOpen(site: RealUseSite): boolean {
   try {
-    return localStorage.getItem(KEY) !== 'closed';
+    if (localStorage.getItem(KEY) === 'closed') return false;
+    const seen: string[] = JSON.parse(localStorage.getItem(SEEN_KEY) ?? '[]');
+    if (seen.includes(site)) return false;
+    localStorage.setItem(SEEN_KEY, JSON.stringify([...seen, site]));
+    return true;
   } catch {
     return true;
   }
@@ -25,7 +32,7 @@ function readOpen(): boolean {
 
 /** `beside`: the lab shows its camera view at the top left, so the card stands to its right. */
 export default function RealUse({ site, beside = false }: { site: RealUseSite; beside?: boolean }) {
-  const [open, setOpen] = useState(readOpen);
+  const [open, setOpen] = useState(() => readOpen(site));
   const r = REAL_USE[site];
   const toggle = (v: boolean) => {
     setOpen(v);

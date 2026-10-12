@@ -23,6 +23,31 @@ body {
   font-family: var(--font-ui), "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
 }
 
+/*
+ * Korean text wraps between words, never inside one (keep-all; a token longer than its line still
+ * breaks so nothing overflows), and a paragraph's last line is not left with one short word
+ * (pretty). Headings balance their lines.
+ */
+body {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+p,
+li,
+dd,
+dt,
+figcaption,
+blockquote,
+label {
+  text-wrap: pretty;
+}
+h1,
+h2,
+h3,
+h4 {
+  text-wrap: balance;
+}
+
 /* 물류 센터 실습 기록지: while it is open, print only the sheet (it is a direct child of body). */
 @media print {
   body:has(> .logi-record) > :not(.logi-record) {

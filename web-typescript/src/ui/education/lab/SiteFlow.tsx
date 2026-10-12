@@ -22,6 +22,7 @@ import { events, siteObject } from '@/engine/account';
 import { EFFORT_KEY } from '@/engine/education/classReport';
 import type { CheckQ, SiteProblem, SiteStepId, SiteText } from '@/engine/education/lab/siteText';
 
+import { Lines } from '../lesson/Rich';
 import { useFollowGate } from '../stage/RealFollow';
 import { useAccount } from '../../account/AccountProvider';
 import css from './lab.module.css';
@@ -203,8 +204,29 @@ export const bodyClass = `${css.body} ${lg.scroll}`;
 export function Boss({ name, line }: { name: string; line: string }) {
   return (
     <p className={lg.boss}>
-      <b>{name}</b> {line}
+      <b>{name}</b>
+      <Lines text={line} />
     </p>
+  );
+}
+
+/**
+ * A value as the panel shows it: a note in brackets goes to the next line, and a list too long for
+ * one line ("a · b · c") is set one item to a line, so no item breaks in the middle.
+ */
+export function ValueLines({ text }: { text: string }) {
+  const at = text.indexOf(' (');
+  const head = at < 0 ? text : text.slice(0, at);
+  const items = head.length > 34 ? head.split(' · ') : [head];
+  return (
+    <>
+      {items.map((x) => (
+        <span key={x} className={lg.line}>
+          {x}
+        </span>
+      ))}
+      {at >= 0 && <span className={lg.line}>{text.slice(at + 1)}</span>}
+    </>
   );
 }
 
@@ -214,7 +236,9 @@ export function Goals({ goals }: { goals: readonly string[] }) {
       <summary>이번 문제에서 배울 것</summary>
       <ol>
         {goals.map((g) => (
-          <li key={g}>{g}</li>
+          <li key={g}>
+            <Lines text={g} />
+          </li>
         ))}
       </ol>
     </details>
@@ -285,7 +309,8 @@ function ChoicePick({ T, st, patch }: { T: SiteText; st: FlowState; patch: FlowP
       </div>
       {st.pick !== null && (
         <p className={lg.note} data-r={right ? 'ok' : 'no'}>
-          <b>{right ? '맞아요.' : '다시 생각해 보세요.'}</b> {T.choices[st.pick].fb.replace(/^맞아요\.\s*/, '')}
+          <b>{right ? '맞아요.' : '다시 생각해 보세요.'}</b>
+          <Lines text={T.choices[st.pick].fb.replace(/^맞아요\.\s*/, '')} />
         </p>
       )}
     </>
@@ -346,7 +371,7 @@ function Calc({ T, st, patch }: { T: SiteText; st: FlowState; patch: FlowPatch }
   const anyFormula = C.fields.some((f) => splitFormula(f.label)[1]);
   return (
     <div className={lg.calc} data-ok={ok || undefined}>
-      <p>{C.prompt}</p>
+      <p><Lines text={C.prompt} /></p>
       {anyFormula && !ok && <small className={lg.calcTip}>먼저 식을 스스로 세워 봐요. 막히면 칸마다 [식 보기]를 눌러요. 본 식은 기록지에 남아요.</small>}
       {C.fields.map((f, i) => {
         const r = st.calcChecked && st.calc[i] !== '' ? near(st.calc[i], f.answer, f.tol) : null;
@@ -433,7 +458,9 @@ function PredictionCheck({ T, st, hit, patch }: { T: SiteText; st: FlowState; hi
   return (
     <>
       <p className={lg.note} data-r={ok ? 'ok' : undefined}>
-        <b>{ok ? '예상 적중!' : '예상과 달랐어요.'}</b> 내 예상: “{T.predictions[st.pred]}”. {ok ? '결과를 미리 맞혔어요.' : '왜 달랐을까요? 가장 가까운 생각을 아래에서 골라 보세요.'}
+        <b>{ok ? '예상 적중!' : '예상과 달랐어요.'}</b>
+        <span className={lg.line}>내 예상: “{T.predictions[st.pred]}”</span>
+        <Lines text={ok ? '결과를 미리 맞혔어요.' : '왜 달랐을까요? 가장 가까운 생각을 아래에서 골라 보세요.'} />
       </p>
       {!ok && (
         <>
@@ -444,7 +471,7 @@ function PredictionCheck({ T, st, hit, patch }: { T: SiteText; st: FlowState; hi
               </button>
             ))}
           </div>
-          {st.missed !== null && <p className={lg.note}>{T.missed[st.missed].fb}</p>}
+          {st.missed !== null && <p className={lg.note}><Lines text={T.missed[st.missed].fb} /></p>}
         </>
       )}
     </>
@@ -501,28 +528,14 @@ function Sec({ n, title, state, kind, wait, children }: { n: number; title: stri
   );
 }
 
-/** The step's parts in one line, so a first-timer sees the whole way before starting. */
-function Roadmap({ parts }: { parts: readonly { title: string; state: SecState }[] }) {
-  return (
-    <ol className={lg.roadmap} aria-label="이 단계에서 할 일">
-      {parts.map((p, i) => (
-        <li key={p.title} data-s={p.state}>
-          <i>{p.state === 'done' ? '✓' : i + 1}</i>
-          {p.title}
-        </li>
-      ))}
-    </ol>
-  );
-}
-
 /** What each step is for, in one sentence. */
 const STEP_GUIDE: Record<SiteStepId, string> = {
-  brief: '오늘 현장에서 할 일을 읽고, 지금 프로그램 그대로 라인을 한 번 돌려 봐요.',
-  run: '무엇이 잘못됐는지 직접 봐요. 문제가 생기는 순간은 느리게, 가까이 보여 줘요.',
-  cause: '추측하지 말고 먼저 재요. 잰 값으로 원인을 고르고, 왜 그런지 말로 정리해요.',
-  fix: '숫자를 먼저 계산하고, 그 값을 조작반에 넣어요. 가동하기 전에 결과를 예상해요.',
-  compare: '고치기 전과 후를 숫자로 비교하고, 내 예상이 맞았는지 확인해요.',
-  done: '무엇을 배웠는지 원리로 정리하고, 확인 문제로 스스로 점검해요.',
+  brief: '오늘 할 일을 읽어요. 지금 프로그램 그대로 한 번 돌려요.',
+  run: '무엇이 잘못됐는지 봐요. 문제 순간은 느리게, 가까이 보여 줘요.',
+  cause: '먼저 재요. 잰 값으로 원인을 고르고, 까닭을 정리해요.',
+  fix: '숫자를 먼저 계산해요. 그 값을 조작반에 넣고, 결과를 예상해요.',
+  compare: '고치기 전과 후를 숫자로 비교해요. 예상이 맞았는지 봐요.',
+  done: '배운 원리를 정리해요. 확인 문제로 스스로 점검해요.',
 };
 
 /** What a lab puts into the shared steps: its own cards, operator panel and runs. */
@@ -599,34 +612,33 @@ export function SitePanel(p: SitePanelProps) {
 function SiteSteps(p: SitePanelProps) {
   const { T, st, busy } = p;
   const { track } = useAccount();
-  const guide = <p className={lg.guide}>{STEP_GUIDE[st.step]}</p>;
+  const guide = <p className={lg.guide}><Lines text={STEP_GUIDE[st.step]} /></p>;
   switch (st.step) {
     case 'brief': {
-      const parts = [
-        { title: '상황 읽기', state: 'info' as const },
-        { title: '작업 기준 확인', state: 'info' as const },
-        { title: '라인 가동', state: 'now' as const },
-      ];
       return (
         <>
           <Head eyebrow={`${T.day} · 작업 지시서 ${T.order}`} title={T.orderTitle} solved={p.solved} />
           <div className={bodyClass}>
             {guide}
-            <Roadmap parts={parts} />
             <Sec n={1} title="상황 읽기" kind="read" state="info">
-              <p className={css.story}>{T.brief}</p>
+              <p className={css.story}><Lines text={T.brief} /></p>
               <Boss name={p.boss} line={T.boss} />
               <Goals goals={T.goals} />
             </Sec>
             <Sec n={2} title="작업 기준 확인" kind="read" state="info">
               {p.order}
               <p className={lg.note}>
-                <b>지금 작업 프로그램</b> · {p.program}
+                <b>지금 작업 프로그램</b>
+                <ValueLines text={p.program} />
               </p>
             </Sec>
             <Sec n={3} title="라인 가동" kind="do" state="now">
               <p className={lg.secText}>
-                아래 <b>[▶ 라인 가동]</b>을 눌러요. 값은 아직 바꾸지 않아요. 무엇이 문제인지는 다음 단계에서 찾아요.
+                <span className={lg.line}>
+                  아래 <b>[▶ 라인 가동]</b>을 눌러요.
+                </span>
+                <span className={lg.line}>값은 아직 바꾸지 않아요.</span>
+                <span className={lg.line}>무엇이 문제인지는 다음 단계에서 찾아요.</span>
               </p>
             </Sec>
           </div>
@@ -657,9 +669,8 @@ function SiteSteps(p: SitePanelProps) {
           <Head eyebrow="가동 결과" title={p.runTitle} solved={p.solved} />
           <div className={bodyClass}>
             {guide}
-            <Roadmap parts={parts} />
             <Sec n={1} title="문제 장면 보기" kind="read" state={parts[0].state}>
-              <p className={css.story}>{T.happened}</p>
+              <p className={css.story}><Lines text={T.happened} /></p>
               <p className={lg.secText}>3D 화면에서 다시 보려면 오른쪽 위 <b>[▶ 재생]</b>. 끌면 돌려 보고, 휠로 확대돼요.</p>
             </Sec>
             <Sec n={2} title="생각해 보기" kind="ask" state={parts[1].state} wait="장면이 끝나면 열려요.">
@@ -692,9 +703,8 @@ function SiteSteps(p: SitePanelProps) {
           <Head eyebrow="원인 찾기" title={T.question} solved={p.solved} />
           <div className={bodyClass}>
             {guide}
-            <Roadmap parts={parts} />
             <Sec n={1} title={parts[0].title} kind="do" state={parts[0].state}>
-              <p className={lg.secText}>{T.look}</p>
+              <p className={lg.secText}><Lines text={T.look} /></p>
               <Measure rows={p.rows} meas={st.meas} reveal={found} onMeasure={() => p.patch((x) => ({ meas: Math.min(n, x.meas + 1) }))} />
               {measured && !found && <small className={lg.calcTip}>어느 값이 작업 기준과 맞지 않는지 직접 견줘 봐요. 원인을 맞히면 문제 값이 빨갛게 표시돼요.</small>}
               {p.measureExtra}
@@ -731,12 +741,11 @@ function SiteSteps(p: SitePanelProps) {
           <Head eyebrow="값 고치기" title={p.fixTitle} solved={p.solved} />
           <div className={bodyClass}>
             {guide}
-            <Roadmap parts={parts} />
             <Sec n={1} title="계산하기" kind="do" state={parts[0].state}>
               <Calc T={T} st={st} patch={p.patch} />
             </Sec>
             <Sec n={2} title="조작반에서 값 바꾸기" kind="do" state={parts[1].state} wait="계산이 맞으면 조작반이 열려요.">
-              <p className={lg.secText}>{T.calc.after}</p>
+              <p className={lg.secText}><Lines text={T.calc.after} /></p>
               {p.hmi}
               <Hints T={T} st={st} patch={p.patch} lab={p.lab} />
             </Sec>
@@ -767,7 +776,6 @@ function SiteSteps(p: SitePanelProps) {
           <Head eyebrow="다시 가동 · 비교" title={p.pass ? '기준을 모두 넘었어요' : '아직 기준에 못 미쳐요'} solved={p.solved} />
           <div className={bodyClass}>
             {guide}
-            <Roadmap parts={parts} />
             <Sec n={1} title="전과 후 비교" kind="result" state={parts[0].state}>
               {p.compare}
             </Sec>
@@ -781,7 +789,10 @@ function SiteSteps(p: SitePanelProps) {
                 </p>
               ) : (
                 <p className={`${lg.note} ${lg.siteNote}`}>
-                  {p.notYet ?? '기준에 못 미친 항목이 있어요.'} 아래 <b>[← 값 다시 고치기]</b>로 돌아가요.
+                  <Lines text={p.notYet ?? '기준에 못 미친 항목이 있어요.'} />
+                  <span className={lg.line}>
+                    아래 <b>[← 값 다시 고치기]</b>로 돌아가요.
+                  </span>
                 </p>
               )}
             </Sec>
@@ -819,7 +830,6 @@ function SiteSteps(p: SitePanelProps) {
               </small>
             </div>
             {guide}
-            <Roadmap parts={parts} />
             <Sec n={1} title="원리 정리" kind="read" state="info">
               <PrincipleCard T={T} fig={p.fig} />
             </Sec>
@@ -840,7 +850,7 @@ function SiteSteps(p: SitePanelProps) {
             )}
             <Sec n={3} title="실제 로봇으로" kind="read" state="info">
               <div className={lg.real}>
-                <p>{T.real}</p>
+                <p><Lines text={T.real} /></p>
                 <p className={lg.safety}>
                   <b>안전</b> {T.safety}
                 </p>

@@ -13,7 +13,7 @@
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { TOPIC_BY_ID, TOPICS, type StepKey, type TopicId } from '@/engine/education/catalog';
+import { TOPIC_BY_ID, TOPICS, lessonNo, nextTopicOf, type StepKey, type TopicId } from '@/engine/education/catalog';
 import { DEFAULT_OWNED, PRODUCTS, type ProductId, type StudyLevel } from '@/engine/education/roadmap';
 import { SITE_BY_ID, labLocks, nextStep, type LabId, type ProblemNo, type SiteId } from '@/engine/education/park';
 import { forwardKinematicsFrames, type ChainSegment } from '@/engine/robot/kinematics';
@@ -111,6 +111,8 @@ declare global {
     __learnAi?: () => void;
     __learnEnergy?: () => void;
     __learnFinal?: () => void;
+    /** Open 로봇 실습 7 (tools/check/text-lines.mjs). */
+    __learnP7?: () => void;
   }
 }
 
@@ -431,6 +433,10 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
     window.__learnAi = () => openSiteLab('ai');
     window.__learnEnergy = () => openSiteLab('energy');
     window.__learnFinal = openFinal;
+    window.__learnP7 = () => {
+      setP7Seen(true);
+      setScreen('p7');
+    };
     return () => {
       delete window.__learnPick;
       delete window.__learnOpen;
@@ -442,6 +448,7 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
       delete window.__learnAi;
       delete window.__learnEnergy;
       delete window.__learnFinal;
+      delete window.__learnP7;
     };
   }, [choose, openLab, openSiteLab, openFinal]);
 
@@ -476,8 +483,10 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
     const n = nextStep({ ...progress, done: { ...progress.done, [topicId]: true } });
     if (n.kind === 'topic') {
       if (n.topic === topicId) return null;
-      const t = TOPIC_BY_ID.get(n.topic)!;
-      return { kicker: '다음 차시', title: `${t.id} ${t.title}`, go: () => choose(n.topic) };
+      // An earlier 차시 still open (passed by with 건너뛰기) never sends the class backwards: go on in order.
+      const ahead = lessonNo(n.topic) > lessonNo(topicId) ? TOPIC_BY_ID.get(n.topic)! : nextTopicOf(topicId);
+      if (!ahead) return null;
+      return { kicker: '다음 차시', title: `${ahead.id} ${ahead.title}`, go: () => choose(ahead.id) };
     }
     if (n.kind === 'lab') {
       const site = SITE_BY_ID.get(n.site)!;
@@ -558,7 +567,7 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
       )}
       <SymbolsProvider symbols={topic.symbols}>
         <div className={css.learn} hidden={hidden || screen !== 'topic'}>
-          <LessonBar topic={topic} page={page} onPage={setPage} results={results[topicId] ?? NO_RESULTS} level={level} onBack={() => setScreen(lessonFrom)} />
+          <LessonBar topic={topic} page={page} onPage={setPage} results={results[topicId] ?? NO_RESULTS} passed={!!done[topicId]} level={level} onBack={() => setScreen(lessonFrom)} />
           <LessonRail
             key={topicId}
             topic={topic}
@@ -570,9 +579,9 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
               markDone(topicId);
             }}
             level={level}
-            onTopic={(t) => choose(t)}
             onSite={toSite}
             onward={onward}
+            passed={!!done[topicId]}
             controls={
               <Panel
                 key={topicId}

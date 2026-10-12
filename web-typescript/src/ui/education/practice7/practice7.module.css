@@ -550,6 +550,9 @@
   font-size: 13px;
   color: var(--bad);
 }
+.why b {
+  display: block;
+}
 .why[data-ok] {
   background: color-mix(in srgb, var(--ok) 7%, #fff);
   color: #0b7a4b;

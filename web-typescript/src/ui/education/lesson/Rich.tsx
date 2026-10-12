@@ -12,6 +12,7 @@
 import { createContext, useContext, useEffect, useId, useRef, useState, type ReactNode } from 'react';
 
 import { findTerm, type Term } from '@/engine/education/glossary';
+import { sentencesOf } from '@/engine/education/sentences';
 import { splitRich, type Sym } from '@/engine/education/symbols';
 
 import css from '../learn.module.css';
@@ -22,8 +23,41 @@ export function SymbolsProvider({ symbols, children }: { symbols: readonly Sym[]
   return <Symbols.Provider value={symbols}>{children}</Symbols.Provider>;
 }
 
-/** `inert`: no buttons inside (for text that sits in a button, like a quiz choice) — symbols set, terms plain. */
-export function Rich({ text, inert }: { text: string; inert?: boolean }) {
+/** Plain text (no terms or symbols), one sentence per line. */
+export function Lines({ text }: { text: string }) {
+  const parts = sentencesOf(text);
+  if (parts.length < 2) return <>{text}</>;
+  return (
+    <>
+      {parts.map((t, i) => (
+        <span key={i} className={css.line}>
+          {t}
+        </span>
+      ))}
+    </>
+  );
+}
+
+/**
+ * `inert`: no buttons inside (for text that sits in a button, like a quiz choice) — symbols set, terms plain.
+ * Text of two or more sentences is set one sentence per line (`inline` keeps it running).
+ */
+export function Rich({ text, inert, inline }: { text: string; inert?: boolean; inline?: boolean }) {
+  const parts = inert || inline ? [text] : sentencesOf(text);
+  if (parts.length > 1)
+    return (
+      <>
+        {parts.map((t, i) => (
+          <span key={i} className={css.line}>
+            <RichRun text={t} />
+          </span>
+        ))}
+      </>
+    );
+  return <RichRun text={text} inert={inert} />;
+}
+
+function RichRun({ text, inert }: { text: string; inert?: boolean }) {
   if (inert)
     return (
       <>

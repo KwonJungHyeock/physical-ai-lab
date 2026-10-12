@@ -15,17 +15,18 @@
  * goes. The topic's controls stay mounted on every page (switching steps must not reset a try).
  */
 
-import { STEP_NAME, STEP_NO, lessonNo, nextTopicOf, type StepKey, type Topic } from '@/engine/education/catalog';
+import { STEP_NAME, lessonNo, type StepKey, type Topic } from '@/engine/education/catalog';
 import { tryGif } from '@/engine/education/media';
 import { problemsUsing, type SiteId } from '@/engine/education/park';
 import type { StudyLevel } from '@/engine/education/roadmap';
 import { glossFirst } from '@/engine/education/symbols';
+import { THEORY_PAGE } from '@/engine/education/theoryPages.gen';
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 
 import { useAccount } from '../../account/AccountProvider';
 import { QuickCheck } from './QuickCheck';
-import { Rich, SymbolTable, TermChips } from './Rich';
+import { Rich, TermChips } from './Rich';
 import { TopicArt } from './TopicArt';
 import { TopicShot, hasShot } from './TopicShot';
 import { ACT_NAME, PAGES, PAGE_LABEL, isActivity, usedBy, type Onward, type PageId } from './LessonCards';
@@ -100,14 +101,15 @@ interface Props {
   results: Partial<Record<StepKey, ResultRow>>;
   onChecked(): void;
   level: StudyLevel;
-  onTopic(id: Topic['id']): void;
   onSite?(id: SiteId): void;
   onward?: Onward | null;
+  /** The 평가 is passed (every 확인 문제 right): the 차시 counts as learnt and 다음 차시 opens. */
+  passed: boolean;
   /** The topic's hands-on controls (sliders, buttons, graphs): kept mounted on every page. */
   controls: ReactNode;
 }
 
-export default function LessonRail({ topic, page, onPage, results, onChecked, level, onTopic, onSite, onward, controls }: Props) {
+export default function LessonRail({ topic, page, onPage, results, onChecked, level, onSite, onward, passed, controls }: Props) {
   const i = PAGES.indexOf(page);
   const act = isActivity(page) ? topic.steps.find((s) => s.key === page)! : null;
   const [teacherOn, setTeacher] = useState(false);
@@ -117,7 +119,6 @@ export default function LessonRail({ topic, page, onPage, results, onChecked, le
   const [notes, setNotes] = useState(false);
   /** The guesses made in this lesson (index into the activity's 보기). */
   const [guess, setGuess] = useState<Partial<Record<StepKey, number>>>({});
-  const [why, setWhy] = useState<0 | 1 | 2>(0);
   /** The figure or an activity's demo shown large over the screen. */
   const [zoom, setZoom] = useState<null | { focus?: StepKey; clip?: StepKey; shots?: true }>(null);
   const scroll = useRef<HTMLDivElement>(null);
@@ -131,11 +132,9 @@ export default function LessonRail({ topic, page, onPage, results, onChecked, le
       /* private window */
     }
   }, []);
-  // A new step starts at the top, with the reason folded.
+  // A new step starts at the top.
   useEffect(() => {
     scroll.current?.scrollTo({ top: 0, behavior: 'instant' });
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setWhy(0);
   }, [page, topic.id]);
   // A result just in: bring it into view (the class looks at the 3D view while trying).
   const done = act ? results[act.key] : undefined;
@@ -161,6 +160,8 @@ export default function LessonRail({ topic, page, onPage, results, onChecked, le
     }
   };
 
+  // The big button waits for the activity's result.
+  const locked = !!act && !results[act.key];
   const headline = act ? act.title : page === 'intro' ? topic.title : page === 'theory' ? '핵심 개념 익히기' : page === 'cmp' ? '세 활동을 모아 정리' : '배운 것을 문제로 확인';
   return (
     <aside className={css.rail} aria-label={`${topic.title} 수업 카드`} data-teacher={teacher || undefined}>
@@ -193,12 +194,12 @@ export default function LessonRail({ topic, page, onPage, results, onChecked, le
         {page === 'intro' && <IntroPage topic={topic} teacher={teacher} fig={<Fig topic={topic} onZoom={setZoom} />} />}
         {page === 'theory' && <ConceptPage topic={topic} level={level} teacher={teacher} fig={<Fig topic={topic} onZoom={setZoom} />} />}
         {page === 'cmp' && <WrapPage topic={topic} results={results} teacher={teacher} onSite={onSite} onShots={() => setZoom({ shots: true })} />}
-        {page === 'check' && <CheckPage topic={topic} level={level} onChecked={onChecked} onward={onward} onTopic={onTopic} />}
+        {page === 'check' && <CheckPage topic={topic} level={level} onChecked={onChecked} passed={passed} />}
       </div>
 
       {/* The activity's own flow, with the topic's controls inside (mounted on every page). */}
       <section className={css.flow} aria-label="실습 제어판" hidden={!act} data-notes={notes || undefined}>
-        {act && <ActivityHead topic={topic} page={act.key} results={results} onPage={onPage} />}
+        {act && <ActivityHead topic={topic} page={act.key} />}
         {act && (
           <Block kind="ask" st={guess[act.key] === undefined ? 'now' : 'done'} n={1} title="예상">
             <p className={css.q}>
@@ -291,13 +292,9 @@ export default function LessonRail({ topic, page, onPage, results, onChecked, le
             {results[act.key] && (
               <div className={css.why}>
                 <p>
-                  <Rich text={why === 2 ? act.why : act.whyShort} />
+                  <Rich text={act.whyShort} />
                 </p>
-                {why < 2 && (
-                  <button type="button" className={css.more} onClick={() => setWhy(2)}>
-                    더 자세히
-                  </button>
-                )}
+                <TheoryBook topic={topic} note="이 결과가 나오는 까닭을 이론서에서 자세히 봐요" small />
               </div>
             )}
           </Block>
@@ -334,21 +331,33 @@ export default function LessonRail({ topic, page, onPage, results, onChecked, le
           ← {i > 0 ? PAGE_LABEL[PAGES[i - 1]] : '이전'}
         </button>
         {i < PAGES.length - 1 ? (
-          <button type="button" className={css.next} data-ready={!act || results[act.key] ? true : undefined} onClick={() => onPage(PAGES[i + 1])}>
-            <small>{act && !results[act.key] ? '결과를 본 뒤에 넘어가요' : '다음'}</small>
+          // An activity opens the next step once its result is in: the big button never skips a try.
+          <button type="button" className={css.next} data-ready={locked ? undefined : true} disabled={locked} onClick={() => onPage(PAGES[i + 1])}>
+            <small>{locked ? '해 보고 결과를 보면 열려요' : '다음'}</small>
             <span>
               {PAGE_LABEL[PAGES[i + 1]]}
               {isActivity(PAGES[i + 1]) ? ` · ${topic.steps.find((s) => s.key === PAGES[i + 1])!.title}` : ''} →
             </span>
           </button>
-        ) : onward ? (
-          <button type="button" className={css.next} data-onward data-ready onClick={onward.go}>
-            <small>{onward.kicker}</small>
-            <span>{onward.title} →</span>
-          </button>
-        ) : (
+        ) : !onward ? (
           <button type="button" className={css.next} disabled>
             <span>마지막 차시예요</span>
+          </button>
+        ) : (
+          // 다음 차시 opens once the 확인 문제 are all right (the 차시 then counts as learnt).
+          <button type="button" className={css.next} data-onward={passed || undefined} data-ready={passed || undefined} disabled={!passed} onClick={onward.go}>
+            <small>{passed ? onward.kicker : '확인 문제를 모두 맞히면 열려요'}</small>
+            <span>{onward.title} →</span>
+          </button>
+        )}
+        {teacherAllowed && (locked || (i === PAGES.length - 1 && onward && !passed)) && (
+          <button
+            type="button"
+            className={css.skip}
+            onClick={() => (i < PAGES.length - 1 ? onPage(PAGES[i + 1]) : onward!.go())}
+            title="수업 속도에 맞춰 선생님이 넘길 때 써요. 이 단계는 끝낸 것으로 치지 않아요."
+          >
+            건너뛰기 (교사용)
           </button>
         )}
       </footer>
@@ -408,36 +417,26 @@ function Fig({ topic, focus, onZoom }: { topic: Topic; focus?: StepKey; onZoom(z
 }
 
 /** 활동 1 · 2 · 3 as a short row (where this one stands), and what this one changes. */
-function ActivityHead({ topic, page, results, onPage }: { topic: Topic; page: StepKey; results: Partial<Record<StepKey, ResultRow>>; onPage(p: PageId): void }) {
+function ActivityHead({ topic, page }: { topic: Topic; page: StepKey }) {
   const act = topic.steps.find((s) => s.key === page)!;
   const [from, to] = act.change.value.includes(' → ') ? act.change.value.split(' → ') : [null, act.change.value];
   return (
-    <>
-      <ol className={css.acts} aria-label="실습 순서">
-        {KEYS.map((k) => {
-          const s = topic.steps.find((x) => x.key === k)!;
-          return (
-            <li key={k}>
-              <button type="button" aria-current={page === k || undefined} data-done={results[k] ? true : undefined} onClick={() => onPage(k)} title={`${STEP_NO[k]} · ${s.title}`}>
-                <i>{results[k] ? '✓' : s.n}</i>
-                <span>{s.title}</span>
-              </button>
-            </li>
-          );
-        })}
-      </ol>
-      <p className={css.change} data-first={!from || undefined}>
-        <small>{from ? `이번에 바꾸는 것 · ${act.change.what}` : `처음 조건 · ${act.change.what}`}</small>
-        <span>
-          {from && (
-            <>
-              <s>{from}</s> →{' '}
-            </>
-          )}
-          <b>{to}</b>
-        </span>
-      </p>
-    </>
+    <p className={css.change} data-first={!from || undefined}>
+      <small>{from ? `이번에 바꾸는 것 · ${act.change.what}` : `처음 조건 · ${act.change.what}`}</small>
+      <span>
+        {from && (
+          <>
+            <s>
+              <Rich text={from} inline />
+            </s>{' '}
+            →{' '}
+          </>
+        )}
+        <b>
+          <Rich text={to} inline />
+        </b>
+      </span>
+    </p>
   );
 }
 
@@ -485,11 +484,28 @@ function IntroPage({ topic, teacher, fig }: { topic: Topic; teacher: boolean; fi
   );
 }
 
+/**
+ * 더 깊이: the unit's 이론서 (PDF) opened at this 차시's page. The screen keeps the easy version;
+ * the long explanation, formulas and symbols live in the book.
+ */
+function TheoryBook({ topic, note, small }: { topic: Topic; note: string; small?: boolean }) {
+  const unit = topic.id.split('-')[0];
+  const page = THEORY_PAGE[topic.id];
+  return (
+    <a className={css.book} data-small={small || undefined} href={`/materials/theory-${unit}.pdf${page ? `#page=${page}` : ''}`} target="_blank" rel="noreferrer">
+      <small>더 깊이 알고 싶다면</small>
+      <b>
+        📘 {unit}단원 이론서 PDF{page ? ` · ${page}쪽` : ''}
+      </b>
+      <span>{note}</span>
+    </a>
+  );
+}
+
 function ConceptPage({ topic, level, teacher, fig }: { topic: Topic; level: StudyLevel; teacher: boolean; fig: ReactNode }) {
   const texts = glossFirst([topic.definition, ...topic.principle, ...topic.theory]);
   const def = texts[0];
   const principle = texts.slice(1, 1 + topic.principle.length);
-  const theory = texts.slice(1 + topic.principle.length);
   return (
     <>
       <Block kind="read" title="핵심 한 줄">
@@ -507,22 +523,7 @@ function ConceptPage({ topic, level, teacher, fig }: { topic: Topic; level: Stud
         </ol>
       </Block>
       {fig}
-      <details className={css.fold}>
-        <summary>{level === 'uni' ? '자세히 · 수식 · 기호' : '자세히 · 기호'}</summary>
-        {theory.map((p) => (
-          <p key={p}>
-            <Rich text={p} />
-          </p>
-        ))}
-        {level === 'uni' && topic.formula.length > 0 && (
-          <div className={css.formulas}>
-            {topic.formula.map((f) => (
-              <code key={f}>{f}</code>
-            ))}
-          </div>
-        )}
-        <SymbolTable symbols={topic.symbols} />
-      </details>
+      <TheoryBook topic={topic} note={level === 'uni' ? '자세한 설명 · 수식 · 기호는 이론서에 있어요' : '자세한 설명과 기호는 이론서에 있어요'} />
       {teacher && (
         <Block kind="teacher" title="개념에서">
           <dl className={css.tdl}>
@@ -633,29 +634,11 @@ function WrapPage({ topic, results, teacher, onSite, onShots }: { topic: Topic; 
   );
 }
 
-function CheckPage({ topic, level, onChecked, onward, onTopic }: { topic: Topic; level: StudyLevel; onChecked(): void; onward?: Onward | null; onTopic(id: Topic['id']): void }) {
-  const next = nextTopicOf(topic.id);
+function CheckPage({ topic, level, onChecked, passed }: { topic: Topic; level: StudyLevel; onChecked(): void; passed: boolean }) {
   return (
-    <>
-      <Block kind="ask" title="확인 문제: 하나씩 골라요">
-        <QuickCheck topic={topic.id} level={level} onAllRight={onChecked} />
-      </Block>
-      {onward ? (
-        <button type="button" className={css.onward} onClick={onward.go}>
-          <small>{onward.kicker}</small>
-          <b>{onward.title}</b>
-          <span>아래 초록 버튼으로도 갈 수 있어요.</span>
-        </button>
-      ) : next ? (
-        <button type="button" className={css.onward} onClick={() => onTopic(next.id)}>
-          <small>다음 차시 · {lessonNo(next.id)}차시</small>
-          <b>
-            {next.id} {next.title}
-          </b>
-        </button>
-      ) : (
-        <p className={css.wait}>마지막 차시예요. 로봇공학 8개 단원 28차시를 모두 마쳤어요.</p>
-      )}
-    </>
+    <Block kind="ask" title="확인 문제: 하나씩 골라요">
+      <QuickCheck topic={topic.id} level={level} onAllRight={onChecked} />
+      {passed && <p className={css.passed}>✓ 모두 맞혔어요. 아래 초록 버튼으로 다음으로 가요.</p>}
+    </Block>
   );
 }

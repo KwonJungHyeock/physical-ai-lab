@@ -52,6 +52,7 @@ import { aiOnRobot, cameraFrameUrl, fetchRobotState, handVisionOnRobot, type Rob
 
 import Icon from '../../simulator/Icon';
 import type { RealArm } from '../lessons';
+import { Lines } from '../lesson/Rich';
 import LearnStage, { type LearnScene, type ViewPose } from '../stage/LearnStage';
 import { LEARN_SPEED, ease, lerpQ, tipOf, type Mm } from '../topics/kit';
 import css from './practice7.module.css';
@@ -740,7 +741,9 @@ function UnitView({ unit, prog, update, onNext, robot, chain, gripperRobot, real
               {'☆'.repeat(3 - stars(unit, prog))}
             </span>
           </div>
-          <p className={css.about}>{unit.about}</p>
+          <p className={css.about}>
+            <Lines text={unit.about} />
+          </p>
           <div className={css.path} role="tablist" aria-label="순서">
             {PARTS.map((p, i) => (
               <button
@@ -762,11 +765,11 @@ function UnitView({ unit, prog, update, onNext, robot, chain, gripperRobot, real
           <Section part="look" shown={shown} finished={partDone.look} onNext={setShown}>
             <p className={css.like}>
               <em>이렇게 생각해요</em>
-              {unit.like}
+              <Lines text={unit.like} />
             </p>
             <p className={css.site}>
               <em>실제 현장</em>
-              {unit.site}
+              <Lines text={unit.site} />
             </p>
           </Section>
 
@@ -814,8 +817,8 @@ function UnitView({ unit, prog, update, onNext, robot, chain, gripperRobot, real
                   </div>
                   {got !== null && (
                     <p className={css.why} data-ok={right || undefined}>
-                      {right ? '맞아요! ' : '다시 골라 봐요. '}
-                      {right ? q.why : '힌트: 위의 "알아보기" 를 다시 읽어 봐요.'}
+                      <b>{right ? '맞아요!' : '다시 골라 봐요.'}</b>
+                      <Lines text={right ? q.why : '힌트: 위의 "알아보기" 를 다시 읽어 봐요.'} />
                     </p>
                   )}
                 </div>
@@ -824,9 +827,11 @@ function UnitView({ unit, prog, update, onNext, robot, chain, gripperRobot, real
           </Section>
 
           <Section part="real" shown={shown} now={nowPart === 'real'} finished={partDone.real} onNext={setShown}>
-            <p className={css.realDoes}>{unit.real.does}</p>
+            <p className={css.realDoes}>
+              <Lines text={unit.real.does} />
+            </p>
             <p className={css.ready}>
-              <b>준비</b> {unit.real.ready}
+              <b>준비</b> <Lines text={unit.real.ready} />
             </p>
             {!real.online ? (
               <p className={css.offline}>
@@ -890,7 +895,8 @@ function UnitView({ unit, prog, update, onNext, robot, chain, gripperRobot, real
               </div>
             )}
             <p className={css.records}>
-              <em>기록하는 것</em> {unit.real.records}
+              <em>기록하는 것</em>
+              <Lines text={unit.real.records} />
             </p>
           </Section>
 

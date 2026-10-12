@@ -588,7 +588,7 @@
   line-height: 1.5;
 }
 .boss b {
-  margin-right: 6px;
+  display: block;
   font-size: 11.5px;
   color: var(--site);
 }
@@ -1095,56 +1095,6 @@
   font-size: 12.5px;
   font-weight: 600;
   line-height: 1.5;
-}
-.roadmap {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 6px;
-  counter-reset: none;
-}
-.roadmap li {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 9px 3px 4px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: #fff;
-  font-size: 11.5px;
-  font-weight: 700;
-  color: var(--muted);
-}
-.roadmap li i {
-  display: grid;
-  place-items: center;
-  width: 17px;
-  height: 17px;
-  border-radius: 50%;
-  background: #eef0f4;
-  font-style: normal;
-  font-size: 10.5px;
-  font-weight: 800;
-}
-.roadmap li[data-s='now'] {
-  border-color: var(--site);
-  color: var(--ink);
-}
-.roadmap li[data-s='now'] i {
-  background: var(--site);
-  color: #fff;
-}
-.roadmap li[data-s='done'] {
-  color: #1f7a45;
-}
-.roadmap li[data-s='done'] i {
-  background: #1f9d55;
-  color: #fff;
-}
-.roadmap li[data-s='todo'] {
-  opacity: 0.6;
 }
 .sec {
   display: grid;
@@ -1668,4 +1618,12 @@
   font-size: 12.5px;
   font-weight: 800;
   cursor: pointer;
+}
+
+/* One sentence (or one value) to a line, like lesson/Rich.tsx. */
+.line {
+  display: block;
+}
+.note b {
+  display: block;
 }

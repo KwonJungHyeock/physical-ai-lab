@@ -35,6 +35,7 @@
     "check:ai": "tsx tests/education/ai-check.mts",
     "check:energy": "tsx tests/education/energy-check.mts",
     "gen:curriculum": "node tools/build/curriculum.mjs",
+    "gen:theory-pages": "node tools/build/theory-pages.mjs",
     "check:final": "tsx tests/education/final-check.mts",
     "check:data": "tsx tests/education/data-check.mts",
     "check:follow": "tsx tests/education/follow-check.mts",

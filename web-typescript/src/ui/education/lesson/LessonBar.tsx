@@ -2,8 +2,8 @@
 
 /**
  * The bar over a lesson: ← 지도, the 차시's name, and its seven steps (도입 · 개념 · 활동 1–3 ·
- * 정리 · 평가) as a line that fills up to the current step, which pulses; steps behind it (and
- * activities already done) carry a ✓. "지금" names the step in words.
+ * 정리 · 평가) as a line that fills up to the current step, which pulses. A ✓ means done, not
+ * visited: an activity once its result is in, the 평가 once every 확인 문제 is right. "지금" names the step in words.
  */
 
 import type { CSSProperties } from 'react';
@@ -20,11 +20,13 @@ interface Props {
   page: PageId;
   onPage(p: PageId): void;
   results: Partial<Record<StepKey, ResultRow>>;
+  /** The 평가 is passed. */
+  passed: boolean;
   level: StudyLevel;
   onBack(): void;
 }
 
-export default function LessonBar({ topic, page, onPage, results, level, onBack }: Props) {
+export default function LessonBar({ topic, page, onPage, results, passed, level, onBack }: Props) {
   const at = PAGES.indexOf(page);
   const cat = categoryOf(topic.id);
   return (
@@ -47,7 +49,8 @@ export default function LessonBar({ topic, page, onPage, results, level, onBack 
           <i />
         </span>
         {PAGES.map((p, i) => {
-          const done = i < at || (isActivity(p) && !!results[p]);
+          // ✓ means done: an activity once its result is in, the 평가 once passed, a reading step once passed by.
+          const done = isActivity(p) ? !!results[p] : p === 'check' ? passed : i < at;
           return (
             <button key={p} type="button" className={css.ps} data-st={i === at ? 'now' : done ? 'done' : undefined} data-act={isActivity(p) || undefined} aria-current={i === at ? 'step' : undefined} onClick={() => onPage(p)}>
               <span className={css.nd}>{done && i !== at ? '✓' : i + 1}</span>

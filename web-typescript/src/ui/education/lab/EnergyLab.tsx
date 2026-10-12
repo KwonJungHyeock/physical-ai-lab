@@ -66,7 +66,7 @@ import LearnStage, { type LearnScene, type ViewPose } from '../stage/LearnStage'
 import EnergyCell, { EnergyPlayback, KIND_HEX, type EnergyMarker, type EnergyOverlay } from './EnergyCell';
 import { ENERGY_LOOK, EnergyAround } from './ambient/Around';
 import type { CellDim } from './CellKit';
-import { ArrowDef, Knob, PROBS, ProbLock, RecordSheet, SitePanel, answeredUpTo, fmt, freshFlow, useLabStart, type FlowState, type MeasureRow } from './SiteFlow';
+import { ArrowDef, Knob, PROBS, ProbLock, RecordSheet, SitePanel, ValueLines, answeredUpTo, fmt, freshFlow, useLabStart, type FlowState, type MeasureRow } from './SiteFlow';
 import RealUse from './RealUse';
 import css from './lab.module.css';
 import lg from './site.module.css';
@@ -516,14 +516,20 @@ export default function EnergyLab({ robot, chain, gripperRobot, hidden, level = 
               <dl>
                 <dt>물건</dt>
                 <dd>
-                  {prob === 1
-                    ? '납작한 재활용 조각 6개 (캔 2 · 투명 PET 2 · 유색 PET 1 · 종이팩 1)'
-                    : prob === 2
-                      ? '6개: 빈 캔 · 음료 남은 캔(60 g) · 투명 PET · 유색 PET · 마른 종이팩 · 젖은 종이팩(30 g)'
-                      : '4개, 두 더미 (종이팩 위에 캔 · 투명 PET 위에 유색 PET)'}
+                  <ValueLines
+                    text={
+                      prob === 1
+                        ? '납작한 재활용 조각 6개 (캔 2 · 투명 PET 2 · 유색 PET 1 · 종이팩 1)'
+                        : prob === 2
+                          ? '6개: 빈 캔 · 음료 남은 캔(60 g) · 투명 PET · 유색 PET · 마른 종이팩 · 젖은 종이팩(30 g)'
+                          : '4개, 두 더미 (종이팩 위에 캔 · 투명 PET 위에 유색 PET)'
+                    }
+                  />
                 </dd>
                 <dt>옮기기</dt>
-                <dd>보정판 → 분류함 (투명 PET A · 유색 PET B · 종이팩 C · 캔 D)</dd>
+                <dd>
+                  <ValueLines text="보정판 → 분류함 (투명 PET A · 유색 PET B · 종이팩 C · 캔 D)" />
+                </dd>
                 <dt>기준</dt>
                 <dd>{prob === 1 ? '모두 제 칸에 · 판에 남은 것 없음' : prob === 2 ? `모두 제 칸에 · 떨어뜨림 0 · 처리량 ${TARGET_PM}개/분 이상` : '모두 제 칸에 · 다른 칸에 섞인 것 0'}</dd>
                 <dt>장비</dt>

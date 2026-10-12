@@ -269,7 +269,8 @@
     radial-gradient(120% 140% at 100% 0%, rgba(111, 155, 255, 0.28), transparent 55%),
     linear-gradient(160deg, #1b2537, #121a28);
   color: #f2f5fb;
-  font-size: 17px;
+  /* One line for a short question at 1366 wide (the panel's text is about 22 em). */
+  font-size: 16px;
   font-weight: 800;
   line-height: 1.5;
 }
@@ -339,7 +340,7 @@
 /* Reading -------------------------------------------------------------------------- */
 .key {
   margin: 0;
-  font-size: 16.5px;
+  font-size: 15px;
   font-weight: 800;
   line-height: 1.55;
   color: var(--ink);
@@ -387,6 +388,38 @@
   font-weight: 700;
   color: var(--muted);
 }
+/* 더 깊이: the 이론서 link (TheoryBook). */
+.book {
+  display: grid;
+  gap: 1px;
+  padding: 10px 13px;
+  border: 1px solid var(--read-line);
+  border-left: 4px solid var(--read);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink);
+  text-decoration: none;
+}
+.book:hover {
+  background: #f7f9fc;
+}
+.book small {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.book b {
+  font-size: 14px;
+  color: var(--read);
+}
+.book span {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.book[data-small] {
+  margin-top: 8px;
+  padding: 7px 11px;
+}
 .fold {
   background: #fff;
   border: 1px solid var(--read-line);
@@ -431,68 +464,6 @@
 }
 
 /* An activity: 활동 1 · 2 · 3 and what this one changes ---------------------------- */
-.acts {
-  margin: 0;
-  padding: 3px;
-  list-style: none;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 3px;
-  background: #e7ebf2;
-  border-radius: 11px;
-}
-.acts button {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-  min-width: 0;
-  padding: 6px 8px;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  font: inherit;
-  font-size: 12.5px;
-  font-weight: 700;
-  line-height: 1.3;
-  color: var(--muted);
-  text-align: left;
-  cursor: pointer;
-}
-.acts button:hover {
-  background: rgba(255, 255, 255, 0.6);
-}
-.acts button i {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 19px;
-  height: 19px;
-  border-radius: 50%;
-  background: #fff;
-  font-style: normal;
-  font-size: 11.5px;
-  font-weight: 800;
-}
-.acts button[data-done] i {
-  background: #12935f;
-  color: #fff;
-}
-.acts button[aria-current] {
-  background: #fff;
-  color: var(--ink);
-  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.12);
-}
-.acts button[aria-current] i {
-  background: var(--do);
-  color: #fff;
-}
-.acts button span {
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
 .change {
   margin: 0;
   display: grid;
@@ -508,7 +479,7 @@
   color: var(--muted);
 }
 .change span {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 800;
   line-height: 1.4;
 }
@@ -819,33 +790,6 @@
 }
 
 /* 평가 → where to go next ------------------------------------------------------------- */
-.onward {
-  display: grid;
-  gap: 2px;
-  width: 100%;
-  padding: 14px 16px;
-  border: 0;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #12935f, #0b7a4d);
-  color: #fff;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  box-shadow: 0 6px 18px rgba(18, 147, 95, 0.3);
-}
-.onward small {
-  font-size: 12.5px;
-  font-weight: 700;
-  opacity: 0.85;
-}
-.onward b {
-  font-size: 17px;
-  font-weight: 800;
-}
-.onward span {
-  font-size: 12.5px;
-  opacity: 0.85;
-}
 
 /* Foot: back, and the one big button that says where it goes -------------------------- */
 .foot {
@@ -905,6 +849,24 @@
 .next[data-onward] {
   background: #12935f;
   box-shadow: 0 4px 12px rgba(18, 147, 95, 0.3);
+}
+.skip {
+  grid-column: 1 / -1;
+  justify-self: end;
+  margin-top: -2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.passed {
+  margin: 8px 0 0;
+  font-weight: 700;
+  color: #12935f;
 }
 .next:disabled {
   border-color: var(--line);

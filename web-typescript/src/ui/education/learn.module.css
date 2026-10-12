@@ -645,13 +645,16 @@
   background: var(--stop-soft, #fdecea);
   color: #b42318;
 }
+/* The level sits on its own line above the question, so the question keeps the full width. */
 .quizLevel {
+  display: block;
+  width: fit-content;
+  margin-bottom: 2px;
   font-style: normal;
   font-size: 10.5px;
   font-weight: 800;
   border-radius: 6px;
   padding: 1px 6px;
-  vertical-align: 1px;
   color: var(--muted);
   background: var(--soft);
 }
@@ -1567,4 +1570,12 @@
   .learn .panel {
     overflow: visible;
   }
+}
+
+/* One sentence per line (lesson/Rich.tsx Lines · Rich). */
+.line {
+  display: block;
+}
+.line + .line {
+  margin-top: 2px;
 }

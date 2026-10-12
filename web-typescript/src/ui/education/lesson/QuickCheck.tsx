@@ -43,9 +43,9 @@ export function QuestionItem({ q, picked, onPick }: { q: Question; picked: numbe
   return (
     <>
       <p>
-        <em className={css.quizLevel} data-level={q.level}>
+        <small className={css.quizLevel} data-level={q.level}>
           {LEVEL_NAME[q.level]}
-        </em>{' '}
+        </small>
         <Rich text={q.q} />
       </p>
       <span className={q.kind === 'ox' ? css.oxBtns : css.mcBtns}>
