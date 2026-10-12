@@ -777,7 +777,11 @@ function SiteSteps(p: SitePanelProps) {
             <Sec n={1} title={parts[0].title} kind="do" state={parts[0].state}>
               <p className={lg.secText}><Lines text={T.look} /></p>
               <Measure rows={p.rows} meas={st.meas} reveal={found} onMeasure={() => p.patch((x) => ({ meas: Math.min(n, x.meas + 1) }))} />
-              {measured && !found && <small className={lg.calcTip}>어느 값이 작업 기준과 맞지 않는지 직접 견줘 봐요. 원인을 맞히면 문제 값이 빨갛게 표시돼요.</small>}
+              {measured && !found && (
+                <small className={lg.calcTip}>
+                  <Lines text="어느 값이 작업 기준과 맞지 않는지 직접 견줘 봐요. 원인을 맞히면 문제 값이 빨갛게 표시돼요." />
+                </small>
+              )}
               {p.measureExtra}
             </Sec>
             <Sec n={2} title="원인 고르기" kind="ask" state={parts[1].state} wait={`위에서 ${n}가지를 모두 재면 열려요.`}>
@@ -898,7 +902,7 @@ function SiteSteps(p: SitePanelProps) {
               {'★'.repeat(stars)}
               {'☆'.repeat(3 - stars)}
               <small>
-                원인 {st.tried.length + 1}번째에 찾음 · 계산 다시 {st.calcMisses}번 · 식 보기 {peeks}번 · 힌트 {st.hints}번 · 다시 가동 {st.tries}번
+                <ValueLines text={`원인 ${st.tried.length + 1}번째에 찾음 · 계산 다시 ${st.calcMisses}번 · 식 보기 ${peeks}번 · 힌트 ${st.hints}번 · 다시 가동 ${st.tries}번`} />
               </small>
             </div>
             {guide}
@@ -923,7 +927,7 @@ function SiteSteps(p: SitePanelProps) {
               </Sec>
             )}
             <Sec n={3} title="실제 로봇으로" kind="read" state="info">
-              <div className={lg.real}>
+              <div className={lg.robotNote}>
                 <p><Lines text={T.real} /></p>
                 <p className={lg.safety}>
                   <b className={lg.line}>안전</b>

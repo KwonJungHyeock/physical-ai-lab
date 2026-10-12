@@ -11090,7 +11090,7 @@ export const QUESTION_DATA: readonly Question[] = [
     "topic": "7-2",
     "kind": "ox",
     "level": 1,
-    "q": "HSV 에서 `H` 는 색상, `S` 는 채도, `V` 는 밝기를 뜻한다.",
+    "q": "HSV 의 `H` 는 색상, `S` 는 채도, `V` 는 밝기다.",
     "answer": true,
     "why": "색을 종류, 선명한 정도, 밝기로 나눈다."
   },
@@ -11897,7 +11897,7 @@ export const QUESTION_DATA: readonly Question[] = [
     "topic": "8-2",
     "kind": "mc",
     "level": 1,
-    "q": "책상 위치 (`x`, `y`, `z`) 에서 관절 각 `θ` 를 구하는 단계는?",
+    "q": "책상 위치에서 관절 각 `θ` 를 구하는 단계는?",
     "choices": [
       "색 찾기",
       "호모그래피",
