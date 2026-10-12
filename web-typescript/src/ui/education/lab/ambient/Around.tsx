@@ -5,24 +5,44 @@
  * positions in mm): the rest of the line or room, out of the robot's reach and mostly behind the cell.
  * Each site has its look (floor, sky and the floor's height when the cell stands on a bench or a
  * counter) and its surroundings, in its own file under around/; the cell itself is the site's own *Cell.
+ * The surroundings are off by default (the arm's work cell alone, as the real application looks);
+ * 현장 주변 in the view tools brings them back.
  */
 
-import type { SiteLook } from './Ground';
-import { AI_LOOK } from './around/ai';
-import { BIO_LOOK } from './around/bio';
+import type { ComponentType } from 'react';
+
+import { useSurround } from './ambient';
+import { AI_LOOK, AiAround as Ai } from './around/ai';
+import { BIO_LOOK, BioAround as Bio } from './around/bio';
+import { CafeAround as Cafe, CareAround as Care } from './around/cafe';
+import { EnergyAround as Energy } from './around/energy';
 import { FACTORY_LOOK } from './around/factory';
-import { FARM_LOOK } from './around/farm';
-import { LOGISTICS_LOOK } from './around/logistics';
+import { FARM_LOOK, FarmAround as Farm } from './around/farm';
+import { LOGISTICS_LOOK, LogisticsAround as Logistics } from './around/logistics';
+import type { SiteLook } from './Ground';
 import { CAFE_COUNTER_MM, CARE_ARM_Z } from './Props';
 
 export { Hall } from './Hall';
 export { FactoryAround } from './around/factory';
-export { LogisticsAround } from './around/logistics';
-export { BioAround } from './around/bio';
-export { FarmAround } from './around/farm';
-export { CafeAround, CareAround, CareBed } from './around/cafe';
-export { AiAround } from './around/ai';
-export { ENERGY_LOOK, EnergyAround } from './around/energy';
+export { CareBed } from './around/cafe';
+export { ENERGY_LOOK } from './around/energy';
+
+/** A site's surroundings, drawn only while 현장 주변 is on (the view tools); the cell itself always is. */
+function whenSurround(Around: ComponentType): ComponentType {
+  function Shown() {
+    return useSurround() ? <Around /> : null;
+  }
+  Shown.displayName = `Surround(${Around.displayName ?? Around.name})`;
+  return Shown;
+}
+
+export const LogisticsAround = whenSurround(Logistics);
+export const BioAround = whenSurround(Bio);
+export const FarmAround = whenSurround(Farm);
+export const CafeAround = whenSurround(Cafe);
+export const CareAround = whenSurround(Care);
+export const AiAround = whenSurround(Ai);
+export const EnergyAround = whenSurround(Energy);
 
 export type AroundSite = 'factory' | 'logistics' | 'bio' | 'farm' | 'cafe' | 'care' | 'ai';
 

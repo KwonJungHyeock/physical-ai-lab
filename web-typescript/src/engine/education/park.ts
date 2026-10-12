@@ -40,6 +40,10 @@ export interface Site {
   short: string;
   /** The industry, in a word or two. */
   kind: string;
+  /** The technology the place stands for, as a keyword button on the map (인공지능, 데이터 사이언스, …). */
+  keyword: string;
+  /** Icon name (ui/simulator/Icon) of that keyword. */
+  icon: string;
   /** The robot the student works with here. */
   robot: string;
   desc: string;
@@ -60,6 +64,8 @@ export const SITES: readonly Site[] = [
     name: '로봇 아카데미',
     short: '아카데미',
     kind: '로봇공학 이론',
+    keyword: '로봇공학',
+    icon: 'school',
     robot: 'myCobot 280',
     desc: '8학문 28차시로 로봇의 몸·움직임·제어·인식을 배우는 곳이에요. 1학문을 마치면 도시의 현장이 열려요.',
     crew: ['myCobot 280'],
@@ -72,6 +78,8 @@ export const SITES: readonly Site[] = [
     name: '스마트팩토리',
     short: '팩토리',
     kind: '제조 AI · 공정',
+    keyword: '제조 AI',
+    icon: 'factory',
     robot: 'myCobot 280 + 컨베이어',
     desc: '컨베이어로 오는 상자를 집어 옮기는 라인이에요. 고장 난 공정을 값을 바꿔 고쳐요.',
     issue: '생산 인력이 줄고, 사람 손의 반복 작업에서 불량이 나와요.',
@@ -90,6 +98,8 @@ export const SITES: readonly Site[] = [
     name: '물류 허브',
     short: '물류',
     kind: '물류 · 팔레타이징',
+    keyword: '물류 자동화',
+    icon: 'box',
     robot: 'myCobot 280 + 흡착 펌프',
     desc: '컨베이어로 오는 상자를 팔레트에 차곡차곡 쌓아요 (팔레타이징).',
     issue: '택배 물량은 늘고, 무거운 상자를 드는 반복 작업으로 다치는 사람이 많아요.',
@@ -108,6 +118,8 @@ export const SITES: readonly Site[] = [
     name: '바이오·헬스케어',
     short: '바이오',
     kind: '실험 자동화 · 의료',
+    keyword: '바이오 · 의료',
+    icon: 'flask',
     robot: 'myCobot 280 + 어댑티브 그리퍼',
     desc: '시료가 든 시험관을 쏟지 않고, 정확히, 부딪히지 않게 옮겨요.',
     issue: '감염 위험이 있는 시료를 사람이 다루고, 반복 실험에서 작은 오차가 쌓여요.',
@@ -126,6 +138,8 @@ export const SITES: readonly Site[] = [
     name: '스마트팜',
     short: '스마트팜',
     kind: '수확 · 선별 자동화',
+    keyword: '스마트 농업',
+    icon: 'leaf',
     robot: 'myCobot 280 + 카메라 · 어댑티브 그리퍼',
     desc: '카메라로 익은 방울토마토만 찾아, 터뜨리지 않고 포장해요.',
     issue: '농촌은 고령화로 일손이 모자라고, 수확 시기를 놓치면 작물이 버려져요.',
@@ -144,6 +158,8 @@ export const SITES: readonly Site[] = [
     name: '스마트시티',
     short: '시티',
     kind: '서비스 로봇 · 돌봄',
+    keyword: '서비스 로봇',
+    icon: 'cup',
     robot: 'myCobot 280 + 어댑티브 그리퍼 · myAGV 위 280 (모바일 매니퓰레이터)',
     desc: '카페에서는 음료를 흘리지 않고 손님 손 앞에서 멈춰 건네고, 돌봄 센터에서는 모바일 매니퓰레이터가 어르신께 무거운 물병도 건네요.',
     issue: '고령 사회로 돌봄·서비스 일손이 모자라고, 로봇은 사람 곁에서 안전해야 해요.',
@@ -162,6 +178,8 @@ export const SITES: readonly Site[] = [
     name: '피지컬 AI 연구소',
     short: 'AI 연구소',
     kind: 'AI 인식 · 학습',
+    keyword: '인공지능',
+    icon: 'brain',
     robot: 'myCobot 280 + AI 키트 (카메라 · 흡착)',
     desc: '보고 판단해서 스스로 집어 놓아요. 배운 것을 모두 써요.',
     issue: '로봇이 처음 보는 물건과 바뀐 환경에서도 스스로 판단해야 해요.',
@@ -180,6 +198,8 @@ export const SITES: readonly Site[] = [
     name: '에너지·자원순환',
     short: '자원순환',
     kind: '재활용 선별 · 탄소',
+    keyword: '자원순환',
+    icon: 'recycle',
     robot: 'myCobot 280 + AI 키트 (카메라 · 흡착)',
     desc: '섞여 들어온 재활용품을 카메라로 알아보고, 재질별 분류함에 빠르고 정확하게 나눠요.',
     issue: '분리배출이 잘못되어 재활용률이 낮고, 선별장 작업은 위험하고 느려요.',
@@ -198,6 +218,8 @@ export const SITES: readonly Site[] = [
     name: '디지털 트윈 관제센터',
     short: '관제센터',
     kind: '데이터 사이언스',
+    keyword: '데이터 사이언스',
+    icon: 'chart',
     robot: '모든 현장의 기록',
     desc: '모든 현장에서 돌린 실습 기록을 모아 그래프로 비교하고, 병목을 찾고, 시뮬과 실제 로봇을 견줘요.',
     issue: '현장 데이터는 쌓이는데, 읽고 개선에 쓰는 사람이 부족해요.',

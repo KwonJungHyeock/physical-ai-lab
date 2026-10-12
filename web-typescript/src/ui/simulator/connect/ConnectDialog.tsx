@@ -15,13 +15,16 @@
  * - 로봇 Wi-Fi (only on a robot's own console): move the robot from its
  *   hotspot to the classroom router, or back.
  *
- * Connecting opens that robot's console (the same app, served by the robot): a radar beside the
- * list shows the search, and the link to the picked robot is drawn and checked step by step
- * (network → robot server → arm signal → console) before the console opens.
+ * Connecting keeps this program's own screens (교육 · 시뮬레이터, always this version) and sends
+ * only the arm's commands to the robot (robotLink setRemoteRobot). A robot with an older server
+ * (no `remote` in its state) cannot take that: its own console opens instead, as before.
+ * A radar beside the list shows the search, and the link to the picked robot is drawn and checked
+ * step by step (network → robot server → arm signal → console) before it is used.
  */
 
 import { useEffect, useRef, useState } from 'react';
 
+import { remoteRobot, setRemoteRobot } from '@/engine/simulator/robotLink';
 import { identifyRobot, networkPrefix, pcNetworks, probeRobot, ROBOT_PORT, sameRobot, scanNetwork, type FoundRobot } from '@/engine/simulator/discover';
 
 import { sessionHandoff } from '@/engine/account';
@@ -132,7 +135,14 @@ export default function ConnectDialog({ current, auto, carry, onClose }: Props) 
     const quick = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     if (link.step >= LINK_STEPS.length) {
       const t = window.setTimeout(() => {
-        // The class login goes along (a robot's page is another address with its own store).
+        // A newer robot: stay on this program's screens and drive the arm from here.
+        if (link.robot?.remote) {
+          setRemoteRobot(link.addr);
+          window.location.reload();
+          return;
+        }
+        // An older robot: open its own console. The class login goes along (a robot's page is
+        // another address with its own store).
         const program = (carryNow.current?.() ?? '').replace(/^#/, '');
         const login = sessionNow.current ? sessionHandoff(sessionNow.current) : '';
         const hash = [login, program].filter(Boolean).join('&');
@@ -248,6 +258,18 @@ export default function ConnectDialog({ current, auto, carry, onClose }: Props) 
           {!link && tab === 'wifi' && current && <WifiPanel onFind={() => setTab('find')} />}
 
           <div className={css.connectFoot}>
+            {remoteRobot() && (
+              <button
+                type="button"
+                className={css.ghost}
+                onClick={() => {
+                  setRemoteRobot(null);
+                  window.location.reload();
+                }}
+              >
+                연결 끊기 (시뮬레이션으로)
+              </button>
+            )}
             <button type="button" className={css.ghost} onClick={onClose}>
               {current ? '닫기' : '시뮬레이션만 (로봇 없이)'}
             </button>

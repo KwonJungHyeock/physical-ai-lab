@@ -1566,3 +1566,106 @@
 .sec[data-s='todo'] .secTag {
   color: var(--faint);
 }
+
+/* 실제 현장 적용 예 (RealUse): top left of the 3D cell, under the run's status pill (the sky is free there). */
+.real,
+.realPill {
+  position: absolute;
+  left: 12px;
+  top: 54px;
+  z-index: 6;
+}
+.real[data-beside],
+.realPill[data-beside] {
+  left: 324px;
+}
+.real {
+  width: min(300px, calc(100% - 120px));
+  padding: 12px 14px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.18);
+  color: var(--ink, #1b2333);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.real header {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 6px;
+  color: #2f5be7;
+}
+.real header > svg {
+  flex: none;
+  margin-top: 3px;
+}
+.real header span {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+.real header small {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+.real header b {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--ink, #1b2333);
+}
+.real header button {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 50%;
+  background: #eef1f6;
+  color: #5b6577;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+.real p {
+  margin: 0 0 6px;
+}
+.real p:last-child {
+  margin-bottom: 0;
+}
+.real em {
+  display: block;
+  font-style: normal;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #5b6577;
+}
+.realScale {
+  padding-top: 6px;
+  border-top: 1px solid #e8ecf2;
+}
+.realSame {
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #eef6ff;
+}
+.realSame em {
+  color: #2f5be7;
+}
+.realPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.16);
+  color: #2f5be7;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 800;
+  cursor: pointer;
+}

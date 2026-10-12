@@ -1,8 +1,10 @@
 'use client';
 
 /**
- * 교육 홈 · 로봇 시티: the course as one island city (engine/education/park.ts). One screen: a slim
- * bar (the nine places, 전체 차시, the teacher's 모든 현장 열기), the city in 3D (world/WorldScene),
+ * 교육 홈 · 로봇 시티: the course as one island city (engine/education/park.ts). One screen: a bar
+ * with the 로드맵 (the nine places in learning order: number, done / 지금 여기 / locked), 전체 차시 and
+ * the teacher's 모든 현장 열기; the city in 3D (world/WorldScene) with a row of 기술 키워드 buttons
+ * over it (인공지능, 데이터 사이언스, …: each one flies to its place),
  * and a card on the right — the city at a glance, or the picked place: its social problem, the robots
  * of that field, its three problems (each with the 차시 to learn first, a link into it) and the way in.
  * Theory and practice take turns (engine/education/park.ts nextStep): the card's 다음 할 일 is the next
@@ -33,6 +35,7 @@ import {
   type SiteState,
 } from '@/engine/education/park';
 
+import Icon from '../../simulator/Icon';
 import MyResult from './MyResult';
 import css from './park.module.css';
 import type { SiteView } from './world/WorldScene';
@@ -122,22 +125,22 @@ export default function ParkView({ progress, allOpen, onAllOpen, hidden, onTopic
           로봇 시티
           <small>이론은 아카데미에서, 현장의 문제는 각 구역에서 풀어요</small>
         </b>
-        <ol className={css.route} aria-label="도시의 구역">
-          {SITES.map((s) => (
-            <li key={s.id}>
-              <button
-                type="button"
-                data-st={states[s.id]}
-                aria-current={selected === s.id || undefined}
-                style={{ '--c': s.color } as CSSProperties}
-                onClick={() => select(s.id)}
-                title={`${s.name} · ${s.kind}`}
-              >
-                <i>{states[s.id] === 'done' ? '✓' : ''}</i>
-                <span>{s.short}</span>
-              </button>
-            </li>
-          ))}
+        <ol className={css.route} aria-label="로드맵: 배우는 순서">
+          {SITES.map((s, i) => {
+            const st = states[s.id];
+            const here = s.id === next && st === 'open';
+            return (
+              <li key={s.id} data-st={st} data-here={here || undefined} style={{ '--c': s.color } as CSSProperties}>
+                <button type="button" aria-current={selected === s.id || undefined} onClick={() => select(s.id)} title={`${i + 1}. ${s.name} · ${s.kind}`}>
+                  <i>{st === 'done' ? '✓' : st === 'locked' ? <Icon name="lock" size={12} /> : i + 1}</i>
+                  <span>
+                    <b>{s.short}</b>
+                    <small>{st === 'done' ? '완료' : here ? '지금 여기' : st === 'locked' ? '잠김' : '열림'}</small>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
         </ol>
         <div className={css.tools}>
           <button type="button" className={css.line} onClick={onCourse} title="8단원 28차시 이론 수업 목록">
@@ -158,6 +161,28 @@ export default function ParkView({ progress, allOpen, onAllOpen, hidden, onTopic
             로봇 시티를 불러오는 중…
           </p>
         )}
+        <nav className={css.keys} aria-label="기술 키워드로 찾기">
+          <span className={css.keysHead}>기술 키워드</span>
+          {SITES.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              data-st={states[s.id]}
+              aria-pressed={selected === s.id}
+              style={{ '--c': s.color } as CSSProperties}
+              onClick={() => select(selected === s.id ? null : s.id)}
+              title={`${s.keyword} · ${s.name}${states[s.id] === 'locked' ? ' (잠김: 누르면 먼저 배울 차시가 보여요)' : ''}`}
+            >
+              <i>
+                <Icon name={s.icon} size={18} />
+              </i>
+              <span>
+                <b>{s.keyword}</b>
+                <small>{s.name}</small>
+              </span>
+            </button>
+          ))}
+        </nav>
         <aside className={css.card} style={{ width: CARD_PX }} aria-label={selected ? `${SITE_BY_ID.get(selected)!.name} 안내` : '로봇 시티 안내'}>
           {selected ? (
             <SiteCard id={selected} progress={progress} allOpen={allOpen} state={states[selected]} onTopic={onTopic} onLab={onLab} onData={onData} onClose={() => select(null)} />

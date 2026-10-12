@@ -60,6 +60,7 @@ import BioCell, { BioPlayback, type BioMarker, type BioOverlay } from './BioCell
 import { BioAround, LOOKS } from './ambient/Around';
 import type { CellDim } from './CellKit';
 import { ArrowDef, Knob, PROBS, ProbLock, RecordSheet, SitePanel, answeredUpTo, fmt, freshFlow, useLabStart, type FlowState, type MeasureRow } from './SiteFlow';
+import RealUse from './RealUse';
 import css from './lab.module.css';
 import lg from './site.module.css';
 
@@ -480,6 +481,7 @@ export default function BioLab({ robot, chain, gripperRobot, hidden, level = 'hs
             </span>
           </div>
         )}
+        <RealUse site="bio" />
         <p className={css.hint}>끌어서 돌려 보기 · 휠로 확대</p>
       </section>
 

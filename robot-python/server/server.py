@@ -42,6 +42,7 @@ program at a time, stop always accepted, servo release refused while moving.
 import argparse
 import base64
 import glob
+import ipaddress
 import json
 import math
 import os
@@ -1003,13 +1004,40 @@ class Handler(SimpleHTTPRequestHandler):
         pass
 
     def cross_origin(self):
-        if self.path.split("?")[0] in CROSS_ORIGIN:
+        route = self.path.split("?")[0]
+        if route in CROSS_ORIGIN:
             self.send_header("Access-Control-Allow-Origin", "*")
             self.send_header("Access-Control-Allow-Private-Network", "true")
+        elif route.startswith("/api/") and self.remote_console():
+            # The PC program driving this robot from its own screens (로봇 연결).
+            self.send_header("Access-Control-Allow-Origin", self.headers.get("Origin"))
+            self.send_header("Vary", "Origin")
+            self.send_header("Access-Control-Allow-Private-Network", "true")
+
+    def remote_console(self):
+        """The request comes from the PC program on this classroom network (its window at
+        http://localhost / 127.0.0.1, or the class server at a private address), which drives the
+        arm from its own screens. Not any page on the internet."""
+        origin = self.headers.get("Origin")
+        if not origin:
+            return False
+        parts = urllib.parse.urlsplit(origin)
+        if parts.scheme != "http" or not parts.hostname:
+            return False
+        host = parts.hostname
+        if host == "localhost":
+            return True
+        try:
+            ip = ipaddress.ip_address(host)
+        except ValueError:
+            return False
+        return ip.is_loopback or ip.is_private
 
     def do_OPTIONS(self):
         # Preflight for 로봇 찾기 (another page, possibly HTTPS, asking a robot on the local network)
-        if self.path.split("?")[0] not in CROSS_ORIGIN:
+        # and for the PC program driving the arm from its own screens.
+        route = self.path.split("?")[0]
+        if route not in CROSS_ORIGIN and not (route.startswith("/api/") and self.remote_console()):
             self.send_response(404)
             self.send_header("Content-Length", "0")
             self.end_headers()
@@ -1074,14 +1102,14 @@ class Handler(SimpleHTTPRequestHandler):
             refresh_identity()
             # Only this robot's own console keeps a run alive: another PC's 로봇 찾기 asking the
             # state (cross-origin) must not keep a run going after its own console has gone.
-            if self.same_origin():
+            if self.same_origin() or ("console=1" in self.path and self.remote_console()):
                 ROBOT.seen()
             # age: seconds since the last good angle read, measured on the robot's clock
             age = round(time.time() - ROBOT.state["updated"], 2) if ROBOT.state["updated"] else None
             state = {k: v for k, v in ROBOT.state.items() if k != "arrivals"}
             state["arrivalCount"] = len(ROBOT.state["arrivals"])
             return self.send_json({**state, **IDENTITY, "boot": BOOT_ID, "speedCap": SPEED_CAP, "age": age, "camera": CAMERA.available, "cameras": CAMERA.count,
-                                   "pump": ROBOT.pump.available, "pumpError": ROBOT.pump.error})
+                                   "pump": ROBOT.pump.available, "pumpError": ROBOT.pump.error, "remote": True})
         if self.path.split("?")[0] == "/api/wifi":
             try:
                 return self.send_json({"ok": True, **WIFI.status(), **IDENTITY})
@@ -1112,11 +1140,11 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_POST(self):
         route = self.path.split("?")[0]
-        # Only JSON, and only from this robot's own console (or, for 움직여 확인, any page that
-        # asks first): a plain form or text/plain POST from another web page needs no preflight
-        # and would otherwise drive the arm.
+        # Only JSON, and only from this robot's own console or the PC program on this network (or,
+        # for 움직여 확인, any page that asks first): a plain form or text/plain POST from another web
+        # page needs no preflight and would otherwise drive the arm.
         ctype = (self.headers.get("Content-Type") or "").split(";")[0].strip().lower()
-        if ctype != "application/json" or (route not in CROSS_ORIGIN and not self.same_origin()):
+        if ctype != "application/json" or (route not in CROSS_ORIGIN and not self.same_origin() and not self.remote_console()):
             return self.send_json({"ok": False, "error": "이 요청은 받을 수 없어요 (로봇 콘솔 화면에서만)."}, 403)
         try:
             body = self.read_json()

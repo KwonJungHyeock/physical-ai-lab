@@ -70,6 +70,7 @@ import { FactoryAround, LOOKS } from './ambient/Around';
 import { BoxList, CompareView, EventLog, Fix1, Fix2, Fix3, Headline, P1Numbers, type Runs } from './FactoryParts';
 import { Playback } from './playback';
 import { ArrowDef, PROBS, ProbLock, RecordSheet, SitePanel, answeredUpTo, fmt, freshFlow, useLabStart, type FlowState, type MeasureRow } from './SiteFlow';
+import RealUse from './RealUse';
 import css from './lab.module.css';
 import lg from './site.module.css';
 
@@ -538,6 +539,7 @@ export default function FactoryLab({ robot, chain, gripperRobot, hidden, level =
             </span>
           </div>
         )}
+        <RealUse site="factory" />
         <p className={css.hint}>끌어서 돌려 보기 · 휠로 확대</p>
       </section>
 

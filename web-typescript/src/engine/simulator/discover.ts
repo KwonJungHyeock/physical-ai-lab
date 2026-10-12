@@ -32,6 +32,8 @@ export interface FoundRobot {
   /** The server reaches the robot hardware (serial port answers). */
   connected: boolean;
   running: boolean;
+  /** Its server takes commands from the PC program's own screens (newer robots). */
+  remote: boolean;
   /** Round trip of the answer, ms. */
   ms: number;
 }
@@ -46,6 +48,7 @@ interface StateReply {
   model?: string;
   host?: string;
   label?: string;
+  remote?: boolean;
 }
 
 /** Chrome's Local Network Access options to try for `ip` (other browsers ignore the field). */
@@ -96,6 +99,7 @@ export async function probeRobot(ip: string, timeoutMs = 1500, port = ROBOT_PORT
       demo: !!s.demo,
       connected: s.connected,
       running: !!s.running,
+      remote: !!s.remote,
       ms: Math.round(performance.now() - t0),
     };
   } catch {

@@ -1,13 +1,42 @@
 /**
  * Talking to the on-robot server (robot-python/server/server.py).
  *
- * The console is the same web app everywhere. When it is served by the robot,
- * `/api/state` answers and the console switches to robot mode: it mirrors the
- * real arm, and "로봇에서 실행" drives it. Anywhere else (Vercel, dev server)
- * that request fails and the console stays a simulator.
+ * The console is the same web app everywhere. When `/api/state` answers, the console switches to
+ * robot mode: it mirrors the real arm, and "로봇에서 실행" drives it. That server is either
+ *  - the page's own (the console served by the robot itself), or
+ *  - a robot connected from the PC program (로봇 연결): the PC keeps showing its own, newest screens
+ *    and only the arm's commands go to the robot (its address is kept for this window, see
+ *    setRemoteRobot). A robot whose server is older than that has no `remote` in its state; the
+ *    connect window then opens the robot's own page instead.
+ * Anywhere else (Vercel, dev server) that request fails and the console stays a simulator.
  */
 
 import type { RobotAction } from './sim';
+
+/** sessionStorage: host:port of the robot this window drives from its own screens. */
+const REMOTE_KEY = 'robot-console-remote';
+function readRemote(): string {
+  try {
+    return typeof sessionStorage === 'undefined' ? '' : (sessionStorage.getItem(REMOTE_KEY) ?? '');
+  } catch {
+    return '';
+  }
+}
+let remote = readRemote();
+/** The robot this window drives from afar ('' when none: the page's own server, if any). */
+export const remoteRobot = () => remote;
+/** Drive the robot at `address` (host:port) from this window's own screens, or stop (null). */
+export function setRemoteRobot(address: string | null) {
+  remote = address ?? '';
+  try {
+    if (address) sessionStorage.setItem(REMOTE_KEY, address);
+    else sessionStorage.removeItem(REMOTE_KEY);
+  } catch {
+    /* private mode: for this page only */
+  }
+}
+/** A robot API path, on the remote robot when there is one. */
+const api = (path: string) => (remote ? `http://${remote}${path}` : path);
 
 export interface RobotState {
   connected: boolean;
@@ -49,6 +78,8 @@ export interface RobotState {
   kind?: string;
   model?: string;
   host?: string;
+  /** The robot's server takes commands from the PC program's own screens (로봇 연결 without leaving them). */
+  remote?: boolean;
 }
 
 /** Where the arm really stopped for one move: commanded and measured joint angles. */
@@ -59,7 +90,7 @@ export interface Arrival {
 
 export async function fetchArrivals(): Promise<Arrival[]> {
   try {
-    const r = await fetch('/api/arrivals', { cache: 'no-store' });
+    const r = await fetch(api('/api/arrivals'), { cache: 'no-store' });
     return ((await r.json()) as { arrivals: Arrival[] }).arrivals ?? [];
   } catch {
     return [];
@@ -67,7 +98,7 @@ export async function fetchArrivals(): Promise<Arrival[]> {
 }
 
 /** Frame URL of the robot's camera number `cam` (from 0); a fresh one each call, so the browser does not cache it. */
-export const cameraFrameUrl = (cam = 0) => `/api/camera.jpg?cam=${cam}&t=${Date.now()}`;
+export const cameraFrameUrl = (cam = 0) => api(`/api/camera.jpg?cam=${cam}&t=${Date.now()}`);
 
 /** Result of the official colour program run on the robot (robot-python/server/camera.py). */
 export interface RobotVision {
@@ -81,7 +112,7 @@ export interface RobotVision {
 
 export async function visionOnRobot(cam = 0): Promise<RobotVision> {
   try {
-    const r = await fetch('/api/vision', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cam }) });
+    const r = await fetch(api('/api/vision'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cam }) });
     return (await r.json()) as RobotVision;
   } catch (err) {
     return { ok: false, error: String(err), ms: 0, engine: '', markers: [], detections: [] };
@@ -95,7 +126,7 @@ export async function visionOnRobot(cam = 0): Promise<RobotVision> {
  */
 export async function handVisionOnRobot(cam: number, planeZ: number): Promise<RobotVision> {
   try {
-    const r = await fetch('/api/vision/hand', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cam, planeZ }) });
+    const r = await fetch(api('/api/vision/hand'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cam, planeZ }) });
     const j = (await r.json()) as RobotVision;
     return { ...j, markers: j.markers ?? [], detections: j.detections ?? [] };
   } catch (err) {
@@ -117,7 +148,7 @@ export interface RobotAi {
 
 export async function aiOnRobot(cam = 0): Promise<RobotAi> {
   try {
-    const r = await fetch('/api/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cam }) });
+    const r = await fetch(api('/api/ai'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cam }) });
     const j = (await r.json()) as RobotAi;
     return { ...j, detections: j.detections ?? [] };
   } catch (err) {
@@ -128,7 +159,7 @@ export async function aiOnRobot(cam = 0): Promise<RobotAi> {
 /** Before the acceptance demonstration: what the robot has for each check (/api/selfcheck). */
 export async function fetchSelfcheck(): Promise<{ ok: boolean; error?: string; items: import('./evidence').PrepItem[] }> {
   try {
-    const r = await fetch('/api/selfcheck', { cache: 'no-store' });
+    const r = await fetch(api('/api/selfcheck'), { cache: 'no-store' });
     const j = (await r.json()) as { items?: import('./evidence').PrepItem[] };
     return { ok: r.ok, items: j.items ?? [] };
   } catch (err) {
@@ -138,7 +169,7 @@ export async function fetchSelfcheck(): Promise<{ ok: boolean; error?: string; i
 
 export async function fetchRobotState(signal?: AbortSignal): Promise<RobotState | null> {
   try {
-    const r = await fetch('/api/state', { cache: 'no-store', signal });
+    const r = await fetch(api(remote ? '/api/state?console=1' : '/api/state'), { cache: 'no-store', signal });
     if (!r.ok) return null;
     const s = (await r.json()) as RobotState;
     return typeof s.connected === 'boolean' ? s : null;
@@ -158,7 +189,7 @@ export interface PostResult {
 
 async function post(path: string, body: unknown = {}): Promise<PostResult> {
   try {
-    const r = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const r = await fetch(api(path), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     return { ...((await r.json()) as PostResult), status: r.status };
   } catch (err) {
     return { ok: false, error: `로봇 서버에 연결할 수 없어요 (${err instanceof Error ? err.message : String(err)})` };
@@ -220,7 +251,7 @@ export interface WifiNetwork {
 
 export async function fetchWifi(signal?: AbortSignal): Promise<WifiStatus> {
   try {
-    const r = await fetch('/api/wifi', { cache: 'no-store', signal });
+    const r = await fetch(api('/api/wifi'), { cache: 'no-store', signal });
     return (await r.json()) as WifiStatus;
   } catch (err) {
     return { ok: false, error: `로봇이 대답하지 않아요 (${err instanceof Error ? err.message : String(err)})` };
@@ -229,7 +260,7 @@ export async function fetchWifi(signal?: AbortSignal): Promise<WifiStatus> {
 
 export async function scanWifi(): Promise<{ ok: boolean; error?: string; networks: WifiNetwork[] }> {
   try {
-    const r = await fetch('/api/wifi/scan', { cache: 'no-store', signal: AbortSignal.timeout(40000) });
+    const r = await fetch(api('/api/wifi/scan'), { cache: 'no-store', signal: AbortSignal.timeout(40000) });
     return (await r.json()) as { ok: boolean; error?: string; networks: WifiNetwork[] };
   } catch (err) {
     return { ok: false, error: `Wi-Fi 목록을 받지 못했어요 (${err instanceof Error ? err.message : String(err)})`, networks: [] };

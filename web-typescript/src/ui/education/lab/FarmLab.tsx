@@ -62,6 +62,7 @@ import FarmCell, { FarmPlayback, type FarmMarker, type FarmOverlay } from './Far
 import { FarmAround, LOOKS } from './ambient/Around';
 import type { CellDim } from './CellKit';
 import { ArrowDef, Knob, PROBS, ProbLock, RecordSheet, SitePanel, answeredUpTo, fmt, freshFlow, useLabStart, type FlowState, type MeasureRow } from './SiteFlow';
+import RealUse from './RealUse';
 import css from './lab.module.css';
 import lg from './site.module.css';
 
@@ -491,6 +492,7 @@ export default function FarmLab({ robot, chain, gripperRobot, hidden, level = 'h
             </span>
           </div>
         )}
+        <RealUse site="farm" beside />
         <p className={css.hint}>끌어서 돌려 보기 · 휠로 확대</p>
       </section>
 

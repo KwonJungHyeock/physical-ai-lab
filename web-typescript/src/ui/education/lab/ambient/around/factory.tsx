@@ -17,6 +17,7 @@ import { useAmbientClock } from '../ambient';
 import type { SiteLook } from '../Ground';
 import { Blob } from '../Ground';
 import { Hall } from '../Hall';
+import { Surround } from '../Surround';
 import Model from '../Model';
 import { Monitor, RouteAgv, WorkingArm } from '../Props';
 
@@ -346,13 +347,17 @@ function PartsShelf({ at, yaw = 0, kind = 'shelf' }: { at: Xy; yaw?: number; kin
  * The cell's steel work bench (its top is the robot frame's z = 0) and the factory floor round it,
  * FACTORY_BENCH_MM below: the cell's safety marking, the next station (another arm on its own bench),
  * the main line behind with cartons riding by, parts shelving with crates and totes, finished goods on
- * pallets, the line's production board and notice board, two workers, the AGV aisle.
+ * pallets, the line's production board and notice board, two workers, the AGV aisle. The bench, its
+ * control box, e-stop, signal tower and safety tape are the cell itself and always drawn; the rest only
+ * with 현장 주변 on.
  */
 export function FactoryAround() {
   const hazard = useHazard();
   return (
     <group position={[0, 0, m(-FACTORY_BENCH_MM)]}>
-      <Hall band={LINE_BLUE} x={-2900} y={3100} h={3200} />
+      <Surround>
+        <Hall band={LINE_BLUE} x={-2900} y={3100} h={3200} />
+      </Surround>
       {/* The cell's bench: a steel table under the arm and its belt, the control box and a tote below. */}
       <SteelTable x0={-300} x1={520} y0={-420} y1={580} h={FACTORY_BENCH_MM}>
         <ControlBox at={[-40, 280]} size={[420, 380, 420]} />
@@ -364,64 +369,66 @@ export function FactoryAround() {
       </group>
       {/* The robot cell's floor marking: hazard tape round the bench. */}
       <TapeBox x0={-650} x1={900} y0={-780} y1={940} w={70} hazard={hazard} />
-      {/* The next station: another arm on its own bench moving parts between two fixtures. */}
-      <group position={[m(NEXT[0]), m(NEXT[1]), 0]} rotation={[0, 0, NEXT_YAW]}>
-        <SteelTable x0={70 - 315} x1={70 + 315} y0={-240} y1={240} h={FACTORY_BENCH_MM - 18} inset={31}>
-          <Model group="factory" name="crate" at={[70, 0]} />
-        </SteelTable>
-      </group>
-      <WorkingArm
-        at={NEXT}
-        yaw={NEXT_YAW}
-        job={{
-          pick: [150, -95, 25],
-          place: [150, 95, 25],
-          period: 9,
-          block: '#d9622b',
-        }}
-        phase={2.5}
-        table={[600, 450, FACTORY_BENCH_MM]}
-      />
-      <group position={[0, 0, m(FACTORY_BENCH_MM)]}>
-        <Model group="factory" name="signalTower" at={[NEXT[0] - 230, NEXT[1] + 150]} h={320} />
-      </group>
-      {/* The main line behind: a real belt with cartons riding by, two workers beyond it, its production board in front. */}
-      <MainLine at={[200, 2100]} yaw={-Math.PI / 2} len={4600} />
-      <Model group="people" name="workerWoman" at={[-700, 2700]} yaw={0.4} pose="Idle" />
-      <Model group="people" name="workerMan" at={[-2050, 2650]} yaw={-0.5} pose="Idle" />
-      <group position={[m(-300), m(1720), 0]}>
-        <RBox at={[0, 0, 600]} size={[60, 60, 1200]} radius={4}>
-          <meshStandardMaterial color="#aeb6bf" metalness={0.7} roughness={0.35} />
-        </RBox>
-        <RBox at={[0, 0, 12]} size={[360, 360, 24]} radius={4}>
-          <meshStandardMaterial color="#3a4350" roughness={0.6} />
-        </RBox>
-      </group>
-      <Monitor at={[-270, 1700]} z={1080} stand={false} yaw={-0.97} w={560} kind="line" accent={LINE_BLUE} title="2라인 · 생산 현황" />
-      {/* The aisle between the cells and the line: its lines, its name on the floor, the AGV going up and down it. */}
-      <Tape a={[-2100, 1150]} b={[2400, 1150]} w={80} color="#f2c230" />
-      <Tape a={[-2100, 1600]} b={[2400, 1600]} w={80} color="#f2c230" />
-      <FloorWords at={[700, 1375]} w={900} h={220} lines={['보행자 · AGV 통로']} />
-      <RouteAgv
-        route={[
-          [-1900, 1280],
-          [1900, 1280],
-          [1900, 1470],
-          [-1900, 1470],
-        ]}
-        speed={260}
-        cargo={
-          <RBox at={[0, 0, 30]} size={[200, 150, 60]} radius={4}>
-            <meshStandardMaterial color={LINE_BLUE} roughness={0.5} />
+      <Surround>
+        {/* The next station: another arm on its own bench moving parts between two fixtures. */}
+        <group position={[m(NEXT[0]), m(NEXT[1]), 0]} rotation={[0, 0, NEXT_YAW]}>
+          <SteelTable x0={70 - 315} x1={70 + 315} y0={-240} y1={240} h={FACTORY_BENCH_MM - 18} inset={31}>
+            <Model group="factory" name="crate" at={[70, 0]} />
+          </SteelTable>
+        </group>
+        <WorkingArm
+          at={NEXT}
+          yaw={NEXT_YAW}
+          job={{
+            pick: [150, -95, 25],
+            place: [150, 95, 25],
+            period: 9,
+            block: '#d9622b',
+          }}
+          phase={2.5}
+          table={[600, 450, FACTORY_BENCH_MM]}
+        />
+        <group position={[0, 0, m(FACTORY_BENCH_MM)]}>
+          <Model group="factory" name="signalTower" at={[NEXT[0] - 230, NEXT[1] + 150]} h={320} />
+        </group>
+        {/* The main line behind: a real belt with cartons riding by, two workers beyond it, its production board in front. */}
+        <MainLine at={[200, 2100]} yaw={-Math.PI / 2} len={4600} />
+        <Model group="people" name="workerWoman" at={[-700, 2700]} yaw={0.4} pose="Idle" />
+        <Model group="people" name="workerMan" at={[-2050, 2650]} yaw={-0.5} pose="Idle" />
+        <group position={[m(-300), m(1720), 0]}>
+          <RBox at={[0, 0, 600]} size={[60, 60, 1200]} radius={4}>
+            <meshStandardMaterial color="#aeb6bf" metalness={0.7} roughness={0.35} />
           </RBox>
-        }
-      />
-      {/* Parts shelving along the back wall, the notice board, a hand truck and finished goods on a pallet. */}
-      <PartsShelf at={[-2500, 350]} yaw={Math.PI / 2} />
-      <PartsShelf at={[-2500, -850]} yaw={Math.PI / 2} kind="rack" />
-      <NoticeBoard at={[-2650, 1250]} yaw={1.25} w={800} h={560} lines={['2라인 · 부품 분류 셀', '안전 수칙', '로봇 작업 중 안전선 안 출입 금지', '비상 시 비상 정지 버튼', '안전모 · 안전화 착용']} />
-      <Model group="factory" name="handTruck" at={[-1900, 1000]} yaw={2.2} />
-      <PalletLoad at={[-2000, -1700]} yaw={Math.PI / 2} />
+          <RBox at={[0, 0, 12]} size={[360, 360, 24]} radius={4}>
+            <meshStandardMaterial color="#3a4350" roughness={0.6} />
+          </RBox>
+        </group>
+        <Monitor at={[-270, 1700]} z={1080} stand={false} yaw={-0.97} w={560} kind="line" accent={LINE_BLUE} title="2라인 · 생산 현황" />
+        {/* The aisle between the cells and the line: its lines, its name on the floor, the AGV going up and down it. */}
+        <Tape a={[-2100, 1150]} b={[2400, 1150]} w={80} color="#f2c230" />
+        <Tape a={[-2100, 1600]} b={[2400, 1600]} w={80} color="#f2c230" />
+        <FloorWords at={[700, 1375]} w={900} h={220} lines={['보행자 · AGV 통로']} />
+        <RouteAgv
+          route={[
+            [-1900, 1280],
+            [1900, 1280],
+            [1900, 1470],
+            [-1900, 1470],
+          ]}
+          speed={260}
+          cargo={
+            <RBox at={[0, 0, 30]} size={[200, 150, 60]} radius={4}>
+              <meshStandardMaterial color={LINE_BLUE} roughness={0.5} />
+            </RBox>
+          }
+        />
+        {/* Parts shelving along the back wall, the notice board, a hand truck and finished goods on a pallet. */}
+        <PartsShelf at={[-2500, 350]} yaw={Math.PI / 2} />
+        <PartsShelf at={[-2500, -850]} yaw={Math.PI / 2} kind="rack" />
+        <NoticeBoard at={[-2650, 1250]} yaw={1.25} w={800} h={560} lines={['2라인 · 부품 분류 셀', '안전 수칙', '로봇 작업 중 안전선 안 출입 금지', '비상 시 비상 정지 버튼', '안전모 · 안전화 착용']} />
+        <Model group="factory" name="handTruck" at={[-1900, 1000]} yaw={2.2} />
+        <PalletLoad at={[-2000, -1700]} yaw={Math.PI / 2} />
+      </Surround>
     </group>
   );
 }

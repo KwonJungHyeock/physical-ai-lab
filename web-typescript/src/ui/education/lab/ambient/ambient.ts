@@ -57,6 +57,45 @@ export function useAmbient(): boolean {
   return useSyncExternalStore(subscribe, current, () => true);
 }
 
+/**
+ * The site's surroundings (the room, the people, the other lines round the cell): off by default, so
+ * the view shows the arm and its work cell as a real deployment looks; the view tools turn them on.
+ */
+const SURROUND_KEY = 'edu-surround';
+const surroundSubs = new Set<() => void>();
+let surround: boolean | null = null;
+
+function surroundNow(): boolean {
+  if (surround === null) {
+    surround = false;
+    try {
+      if (typeof window !== 'undefined') surround = localStorage.getItem(SURROUND_KEY) === 'on';
+    } catch {
+      /* private window: off */
+    }
+  }
+  return surround;
+}
+
+export function setSurround(v: boolean): void {
+  surround = v;
+  try {
+    localStorage.setItem(SURROUND_KEY, v ? 'on' : 'off');
+  } catch {
+    /* private window: for this visit only */
+  }
+  surroundSubs.forEach((f) => f());
+}
+
+const subscribeSurround = (f: () => void) => {
+  surroundSubs.add(f);
+  return () => void surroundSubs.delete(f);
+};
+
+export function useSurround(): boolean {
+  return useSyncExternalStore(subscribeSurround, surroundNow, () => false);
+}
+
 /** The ambient clock of one moving thing (seconds, from `seed`). */
 export interface AmbientClock {
   /** Advances by the frame's `dt` while motion is on: the time to draw at, or null to leave the frame as it is. */

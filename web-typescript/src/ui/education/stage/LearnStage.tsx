@@ -29,7 +29,7 @@ import { VIEWS, type ViewName } from '../../simulator/stage/Stage';
 import { GLYPH, ToolGlyph, ViewCube } from '../../simulator/stage/StageTools';
 import tools from '../../simulator/console.module.css';
 import { LEARN_COLORS, ellipsoid, ghostify, workspaceEnvelope, workspaceSection } from './learn3d';
-import { StageRobot, setAmbient, useAmbient } from '../lab/ambient/ambient';
+import { StageRobot, setAmbient, setSurround, useAmbient, useSurround } from '../lab/ambient/ambient';
 import { SiteGround, type SiteLook } from '../lab/ambient/Ground';
 import css from '../learn.module.css';
 import { FollowContext, toolOf, type FollowLink } from './RealFollow';
@@ -106,6 +106,10 @@ export default function LearnStage({ robot, chain, gripperRobot, scene, onTableP
   // Read here: the Canvas is its own React root (실물 연동 is passed in by hand).
   const follow = useContext(FollowContext);
   const [tone] = useState(readTone);
+  const surround = useSurround();
+  // The work cell alone: a lighter sky, and the first view drawn in on the cell (no room to take in).
+  const cellSky = look && !surround ? new Color(look.sky).lerp(new Color('#ffffff'), 0.35).getStyle() : null;
+  const start = useMemo(() => (cellSky ? closer(home, 0.78) : home), [cellSky, home]);
   return (
     <>
       <Canvas
@@ -120,8 +124,15 @@ export default function LearnStage({ robot, chain, gripperRobot, scene, onTableP
         }}
       >
         {/* The simulator's studio: slate background, its lights, its spot-lit desk and grid. */}
-        <color attach="background" args={[look?.sky ?? TONES[tone].sky]} />
-        {look && <fog attach="fog" args={[look.sky, look.fog?.[0] ?? 2.2, look.fog?.[1] ?? 6.5]} />}
+        <color attach="background" args={[cellSky ?? look?.sky ?? TONES[tone].sky]} />
+        {look && surround && <fog attach="fog" args={[look.sky, look.fog?.[0] ?? 2.2, look.fog?.[1] ?? 6.5]} />}
+        {/* The work cell alone (현장 주변 off): its floor fading into a light studio sky, nothing else round it. */}
+        {cellSky && (
+          <>
+            <fog attach="fog" args={[cellSky, 2.6, 6]} />
+            <Backdrop top={new Color(cellSky).lerp(new Color('#ffffff'), 0.5).getStyle()} horizon={cellSky} />
+          </>
+        )}
         {/* A bright lesson tone: a soft sky to the horizon, the desk fading into it far off. */}
         {!look && TONES[tone].horizon && (
           <>
@@ -160,7 +171,7 @@ export default function LearnStage({ robot, chain, gripperRobot, scene, onTableP
             </SceneContent>
           </StageRobot.Provider>
         </Suspense>
-        <ViewControl apiRef={api} home={home} focus={focus} />
+        <ViewControl apiRef={api} home={start} focus={focus} />
         <ViewShift px={shift} />
         {/* A site lab's room is built at real size: let the view draw back far enough to take it in. */}
         <CameraControls makeDefault smoothTime={0.25} minDistance={0.15} maxDistance={look ? 6 : 3.2} maxPolarAngle={Math.PI * 0.49} dollyToCursor dollySpeed={0.6} />
@@ -180,6 +191,12 @@ function ViewShift({ px }: { px: number }) {
     camera.updateProjectionMatrix();
   }, [camera, size.width, size.height, px]);
   return null;
+}
+
+/** `pose` with the camera `k` of the way from its target (k < 1: closer). */
+function closer(pose: ViewPose, k: number): ViewPose {
+  const [cx, cy, cz, tx, ty, tz] = pose;
+  return [tx + (cx - tx) * k, ty + (cy - ty) * k, tz + (cz - tz) * k, tx, ty, tz];
 }
 
 /** The first view: the arm's middle (robot z ≈ 130 mm) from the front right, camera then target. */
@@ -247,11 +264,14 @@ function ViewControl({ apiRef, home, focus = null }: { apiRef: RefObject<ViewApi
 /** Ambient motion on: a play-like wave; off: two pause bars. */
 const AMBIENT_ON = 'M3 12c2.5-5 5.5-5 8 0s5.5 5 8 0M3 17c2.5-3 5.5-3 8 0s5.5 3 8 0';
 const AMBIENT_OFF = 'M8 6v12M16 6v12';
+/** 현장 주변: a building outline (walls and a roof line) round the cell. */
+const SURROUND = 'M3 20V9l5-3v4l5-3v4l5-3v12H3zM7 20v-4h3v4M14 14h3';
 
 /** The simulator's view cube and a short rail (처음 시점 · 확대 · 축소) at the top right of the view. */
 function ViewTools({ apiRef, ambient }: { apiRef: RefObject<ViewApi | null>; ambient: boolean }) {
   const orient = useCallback(() => apiRef.current?.orient() ?? null, [apiRef]);
   const moving = useAmbient();
+  const surround = useSurround();
   return (
     <div className={css.viewTools}>
       <ViewCube orient={orient} onView={(v) => apiRef.current?.view(v)} />
@@ -269,6 +289,20 @@ function ViewTools({ apiRef, ambient }: { apiRef: RefObject<ViewApi | null>; amb
         {ambient && (
           <>
             <i className={tools.railSep} />
+            <button
+              type="button"
+              title={surround ? '현장 주변 숨기기 (로봇팔 작업 셀만 보기)' : '현장 주변 보기 (건물·사람·다른 라인)'}
+              aria-label="현장 주변 보기"
+              aria-pressed={surround}
+              data-on={surround || undefined}
+              onClick={() => setSurround(!surround)}
+            >
+              <ToolGlyph d={SURROUND} />
+            </button>
+          </>
+        )}
+        {ambient && surround && (
+          <>
             <button
               type="button"
               title={moving ? '주변 움직임 끄기 (다른 로봇·AGV·벨트 멈춤)' : '주변 움직임 켜기'}
