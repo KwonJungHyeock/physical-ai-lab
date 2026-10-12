@@ -54,10 +54,11 @@ import type { UrdfRobot } from '@/engine/robot/urdf';
 import { logRun } from '@/engine/education/runLog';
 
 import LearnStage, { type LearnScene, type ViewPose } from '../stage/LearnStage';
+import { Lines } from '../lesson/Rich';
 import CafeCell, { CafePlayback, type CafeMarker, type CafeOverlay } from './CafeCell';
 import { CafeAround, CareAround, LOOKS } from './ambient/Around';
 import type { CellDim } from './CellKit';
-import { ArrowDef, Knob, PROBS, ProbLock, RecordSheet, SitePanel, answeredUpTo, fmt, freshFlow, useLabStart, type FlowState, type MeasureRow } from './SiteFlow';
+import { ArrowDef, Knob, PROBS, ProbLock, RecordSheet, SitePanel, ValueLines, answeredUpTo, fmt, freshFlow, useLabStart, type FlowState, type MeasureRow } from './SiteFlow';
 import RealUse from './RealUse';
 import css from './lab.module.css';
 import lg from './site.module.css';
@@ -474,11 +475,15 @@ export default function CafeLab({ robot, chain, gripperRobot, hidden, level = 'h
                 <dt>{prob === 3 ? '물병' : '음료'}</dt>
                 <dd>{prob === 3 ? `물을 가득 채운 물병 Ø${BOTTLE.d} × ${BOTTLE.h} mm · ${fmt(BOTTLE.kg * 1000)} g` : `시음 컵 Ø${CUP.d} mm · 커피 입구 ${CUP.headspace} mm 아래까지`}</dd>
                 <dt>옮기기</dt>
-                <dd>{prob === 3 ? '미니 냉장고 위 쟁반 → 침대 옆 협탁 (AGV는 멈춘 채 J1로 돌기)' : '바 → 픽업대 (직선 이동)'}</dd>
+                <dd>
+                  <ValueLines text={prob === 3 ? '미니 냉장고 위 쟁반 → 침대 옆 협탁 (AGV는 멈춘 채 J1로 돌기)' : '바 → 픽업대 (직선 이동)'} />
+                </dd>
                 <dt>기준</dt>
                 <dd>{prob === 1 ? `넘치지 않기 · ${CARRY_MAX_S} s 안` : prob === 2 ? `움직이는 컵이 손에 닿지 않기 · 손 앞 ${STOP_MARGIN_MM} mm 넘게 남기고 멈춤` : 'J1 과부하 없이 탁자에 놓기'}</dd>
                 <dt>도구</dt>
-                <dd>{prob === 3 ? 'myAGV 위 myCobot 280 (모바일 매니퓰레이터) · ' : ''}어댑티브 그리퍼{prob === 2 ? ' · 픽업대 거리 센서' : ''}</dd>
+                <dd>
+                  <ValueLines text={`${prob === 3 ? 'myAGV 위 myCobot 280 (모바일 매니퓰레이터) · ' : ''}어댑티브 그리퍼${prob === 2 ? ' · 픽업대 거리 센서' : ''}`} />
+                </dd>
               </dl>
             </div>
           }
@@ -542,7 +547,9 @@ function Events({ run, onSeek }: { run: CafeRun | null; onSeek(t: number): void 
         <li key={i} data-k={['spill', 'touch', 'overload', 'overspeed', 'unreachable', 'hit'].includes(e.kind) ? 'bad' : e.kind === 'detect' ? 'warn' : undefined}>
           <button type="button" onClick={() => onSeek(Math.max(0, e.t - 0.6))}>
             <time>{e.t.toFixed(1)} s</time>
-            <span>{e.text}</span>
+            <span>
+              <Lines text={e.text} />
+            </span>
           </button>
         </li>
       ))}

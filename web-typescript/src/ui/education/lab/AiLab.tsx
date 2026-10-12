@@ -54,10 +54,11 @@ import { BLOCK_MM, CAL_BOARD, HOME_DEG } from '@/engine/simulator/board';
 import { logRun } from '@/engine/education/runLog';
 
 import LearnStage, { type LearnScene, type ViewPose } from '../stage/LearnStage';
+import { Lines } from '../lesson/Rich';
 import AiCell, { AiPlayback, thingColor, type AiMarker, type AiOverlay } from './AiCell';
 import { AiAround, LOOKS } from './ambient/Around';
 import type { CellDim } from './CellKit';
-import { ArrowDef, Knob, PROBS, ProbLock, RecordSheet, SitePanel, answeredUpTo, fmt, freshFlow, useLabStart, type FlowState, type MeasureRow } from './SiteFlow';
+import { ArrowDef, Knob, PROBS, ProbLock, RecordSheet, SitePanel, ValueLines, answeredUpTo, fmt, freshFlow, useLabStart, type FlowState, type MeasureRow } from './SiteFlow';
 import RealUse from './RealUse';
 import css from './lab.module.css';
 import lg from './site.module.css';
@@ -479,11 +480,15 @@ export default function AiLab({ robot, chain, gripperRobot, hidden, level = 'hs'
                 <dt>물건</dt>
                 <dd>{prob === 3 ? `원기둥 부품 Ø${POST.d} × ${POST.h} mm 4개` : prob === 2 ? '빨간 블록 25 mm (세 번, 매번 다른 자리)' : '블록 25 mm 4개 (새 세트)'}</dd>
                 <dt>옮기기</dt>
-                <dd>보정판 → 색깔별 분류함 (빨강 D · 초록 C · 파랑 A · 노랑 B)</dd>
+                <dd>
+                  <ValueLines text="보정판 → 색깔별 분류함 (빨강 D · 초록 C · 파랑 A · 노랑 B)" />
+                </dd>
                 <dt>기준</dt>
                 <dd>{prob === 1 ? '모두 제 색 분류함에' : `흡착 컵이 윗면 가운데에서 ${SEAL_MM} mm 안 · 제 분류함에`}</dd>
                 <dt>장비</dt>
-                <dd>공식 AI 키트 (위 카메라 · 흡착 펌프 · 분류함 4개)</dd>
+                <dd>
+                  <ValueLines text="공식 AI 키트 (위 카메라 · 흡착 펌프 · 분류함 4개)" />
+                </dd>
               </dl>
             </div>
           }
@@ -648,7 +653,9 @@ function Events({ run, onSeek }: { run: AiRun | null; onSeek(t: number): void })
         <li key={i} data-k={['wrong', 'miss', 'press', 'left', 'unreachable'].includes(e.kind) ? 'bad' : undefined}>
           <button type="button" onClick={() => onSeek(Math.max(0, e.t - 0.6))}>
             <time>{e.t.toFixed(1)} s</time>
-            <span>{e.text}</span>
+            <span>
+              <Lines text={e.text} />
+            </span>
           </button>
         </li>
       ))}

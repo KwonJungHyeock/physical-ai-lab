@@ -24,7 +24,9 @@ function measure(root) {
   // its own by design (a <small> label over its value, a symbol's name over the symbol in <rt>).
   const lineOf = (el) => {
     const tops = [];
-    const label = el.querySelector(':scope > small');
+    // A label set on a line of its own (small · em · b shown as a block) above its text.
+    const first = el.firstElementChild;
+    const label = first && first.matches('small, em, b') && getComputedStyle(first).display === 'block' ? first : el.querySelector(':scope > small');
     const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
     for (let n = walker.nextNode(); n; n = walker.nextNode()) {
       if (!n.textContent.trim() || n.parentElement.closest('rt') || label?.contains(n)) continue;
@@ -37,6 +39,8 @@ function measure(root) {
   // A block of running text: a sentence line, or a paragraph / list item with no block inside.
   const blocks = [...root.querySelectorAll('p, li, dd, span[class*=line]')].filter((el) => {
     if (!el.offsetParent || el.closest('[hidden]') || el.closest('button') || el.closest('[role=radiogroup]')) return false;
+    // A run's event log: each entry is a button (time · what happened), not running text.
+    if (el.querySelector(':scope > button')) return false;
     if (el.querySelector('p, li, dd, span[class*=line], div')) return false;
     const t = el.textContent.replace(/\s+/g, ' ').trim();
     return t.length >= 6;

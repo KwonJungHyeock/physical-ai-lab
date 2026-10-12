@@ -389,6 +389,7 @@
   background: #fff8e8;
 }
 .hint em {
+  display: block;
   font-style: normal;
   font-weight: 800;
   color: #b25e00;

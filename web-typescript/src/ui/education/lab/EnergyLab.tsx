@@ -63,6 +63,7 @@ import type { UrdfRobot } from '@/engine/robot/urdf';
 import { HOME_DEG } from '@/engine/simulator/board';
 
 import LearnStage, { type LearnScene, type ViewPose } from '../stage/LearnStage';
+import { Lines } from '../lesson/Rich';
 import EnergyCell, { EnergyPlayback, KIND_HEX, type EnergyMarker, type EnergyOverlay } from './EnergyCell';
 import { ENERGY_LOOK, EnergyAround } from './ambient/Around';
 import type { CellDim } from './CellKit';
@@ -533,7 +534,9 @@ export default function EnergyLab({ robot, chain, gripperRobot, hidden, level = 
                 <dt>기준</dt>
                 <dd>{prob === 1 ? '모두 제 칸에 · 판에 남은 것 없음' : prob === 2 ? `모두 제 칸에 · 떨어뜨림 0 · 처리량 ${TARGET_PM}개/분 이상` : '모두 제 칸에 · 다른 칸에 섞인 것 0'}</dd>
                 <dt>장비</dt>
-                <dd>공식 AI 키트 (위 카메라 · 흡착 펌프(컵 Ø20) · 분류함 4개)</dd>
+                <dd>
+                  <ValueLines text="공식 AI 키트 (위 카메라 · 흡착 펌프(컵 Ø20) · 분류함 4개)" />
+                </dd>
               </dl>
             </div>
           }
@@ -710,7 +713,9 @@ function Events({ run, onSeek }: { run: EnergyRun | null; onSeek(t: number): voi
         <li key={i} data-k={['wrong', 'miss', 'drop', 'left', 'unreachable'].includes(e.kind) ? 'bad' : e.kind === 'ride' ? 'warn' : undefined}>
           <button type="button" onClick={() => onSeek(Math.max(0, e.t - 0.6))}>
             <time>{e.t.toFixed(1)} s</time>
-            <span>{e.text}</span>
+            <span>
+              <Lines text={e.text} />
+            </span>
           </button>
         </li>
       ))}

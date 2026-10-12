@@ -58,10 +58,11 @@ import type { UrdfRobot } from '@/engine/robot/urdf';
 import { logRun } from '@/engine/education/runLog';
 
 import LearnStage, { type LearnScene, type ViewPose } from '../stage/LearnStage';
+import { Lines } from '../lesson/Rich';
 import FarmCell, { FarmPlayback, type FarmMarker, type FarmOverlay } from './FarmCell';
 import { FarmAround, LOOKS } from './ambient/Around';
 import type { CellDim } from './CellKit';
-import { ArrowDef, Knob, PROBS, ProbLock, RecordSheet, SitePanel, answeredUpTo, fmt, freshFlow, useLabStart, type FlowState, type MeasureRow } from './SiteFlow';
+import { ArrowDef, Knob, PROBS, ProbLock, RecordSheet, SitePanel, ValueLines, answeredUpTo, fmt, freshFlow, useLabStart, type FlowState, type MeasureRow } from './SiteFlow';
 import RealUse from './RealUse';
 import css from './lab.module.css';
 import lg from './site.module.css';
@@ -514,7 +515,9 @@ export default function FarmLab({ robot, chain, gripperRobot, hidden, level = 'h
                 <dt>토마토</dt>
                 <dd>방울토마토 지름 25 ~ 29 mm{prob === 3 ? ' · 완숙 (6 N이면 터짐)' : ''}</dd>
                 <dt>옮기기</dt>
-                <dd>선별 트레이 → 포장 용기 (카메라로 찾아서)</dd>
+                <dd>
+                  <ValueLines text="선별 트레이 → 포장 용기 (카메라로 찾아서)" />
+                </dd>
                 <dt>기준</dt>
                 <dd>{prob === 1 ? '익은 것만 모두 담기' : prob === 2 ? '손가락 가운데로 잡기 (5 mm 안)' : `터뜨리지 않고 · 떨어뜨리지 않고 · 최대 힘 ${fmt(TOMATO.burst * SAFE_SHARE, 1)} N 이하`}</dd>
                 <dt>장비</dt>
@@ -696,7 +699,9 @@ function Events({ run, onSeek }: { run: FarmRun | null; onSeek(t: number): void 
         <li key={i} data-k={['press', 'burst', 'slip', 'unreachable', 'hit', 'unripe', 'missed'].includes(e.kind) ? 'bad' : e.kind === 'grip' && (e.value ?? 0) > 4.2 && run.values && 'speed' in run.values ? 'warn' : undefined}>
           <button type="button" onClick={() => onSeek(Math.max(0, e.t - 0.6))}>
             <time>{e.t.toFixed(1)} s</time>
-            <span>{e.text}</span>
+            <span>
+              <Lines text={e.text} />
+            </span>
           </button>
         </li>
       ))}

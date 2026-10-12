@@ -798,7 +798,8 @@ function UnitView({ unit, prog, update, onNext, robot, chain, gripperRobot, real
               return (
                 <div key={qi} className={css.q}>
                   <p>
-                    <b>Q{qi + 1}.</b> {q.q}
+                    <small className={css.qNo}>Q{qi + 1}</small>
+                    <Lines text={q.q} />
                   </p>
                   <div className={css.opts} data-ox={q.options.length === 2 || undefined}>
                     {q.options.map((o, oi) => (
@@ -835,7 +836,11 @@ function UnitView({ unit, prog, update, onNext, robot, chain, gripperRobot, real
             </p>
             {!real.online ? (
               <p className={css.offline}>
-                지금은 시뮬레이션이에요. 위쪽 <b>[로봇 연결]</b> 로 로봇을 연결하면 여기서 바로 실물로 해 볼 수 있어요.
+                <span className={css.line}>지금은 시뮬레이션이에요.</span>
+                <span className={css.line}>
+                  위쪽 <b>[로봇 연결]</b> 로 로봇을 연결해요.
+                </span>
+                <span className={css.line}>그러면 여기서 바로 실물로 해 볼 수 있어요.</span>
               </p>
             ) : (
               <div className={css.realBtns}>
@@ -915,7 +920,8 @@ function UnitView({ unit, prog, update, onNext, robot, chain, gripperRobot, real
 
           {teacher && (
             <p className={css.teacher}>
-              <em>선생님께</em> {unit.teacher}
+              <em>선생님께</em>
+              <Lines text={unit.teacher} />
             </p>
           )}
         </aside>

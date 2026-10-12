@@ -211,24 +211,61 @@ export function Boss({ name, line }: { name: string; line: string }) {
   );
 }
 
+/** `text` split at " · " outside brackets: "a · b (c · d)" → ["a", "b (c · d)"]. */
+function splitDots(text: string): string[] {
+  const out: string[] = [];
+  let depth = 0;
+  let from = 0;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (c === '(' || c === '[') depth++;
+    else if (c === ')' || c === ']') depth--;
+    else if (depth === 0 && text.startsWith(' · ', i)) {
+      out.push(text.slice(from, i));
+      from = i + 3;
+    }
+  }
+  out.push(text.slice(from));
+  return out;
+}
+
 /**
- * A value as the panel shows it: a note in brackets goes to the next line, and a list too long for
- * one line ("a · b · c") is set one item to a line, so no item breaks in the middle.
+ * A value as the panel shows it: a list too long for one line ("a · b · c") is set one item to a
+ * line, and a note in brackets goes to the next line, so nothing breaks in the middle.
  */
 export function ValueLines({ text }: { text: string }) {
-  const at = text.indexOf(' (');
-  const head = at < 0 ? text : text.slice(0, at);
-  const items = head.length > 34 ? head.split(' · ') : [head];
+  const parts = (text.length > 34 ? splitDots(text) : [text]).flatMap((x) => {
+    const at = x.indexOf(' (');
+    return at > 0 && x.length > 24 ? [x.slice(0, at), x.slice(at + 1)] : [x];
+  });
+  // Short items that fit together share a line again (a bracketed note keeps its own).
+  const lines: string[] = [];
+  for (const x of parts) {
+    const last = lines.length - 1;
+    if (last >= 0 && !x.startsWith('(') && !lines[last].startsWith('(') && lines[last].length + 3 + x.length <= 30) lines[last] += ` · ${x}`;
+    else lines.push(x);
+  }
   return (
     <>
-      {items.map((x) => (
+      {lines.map((x) => (
         <span key={x} className={lg.line}>
           {x}
         </span>
       ))}
-      {at >= 0 && <span className={lg.line}>{text.slice(at + 1)}</span>}
     </>
   );
+}
+
+/**
+ * A formula set one part to a line: parts split at " · ", a note in brackets on the next line, and
+ * a long part broken before its "→".
+ */
+function formulaLines(formula: string): string[] {
+  return splitDots(formula).flatMap((f) => {
+    const at = f.indexOf(' (');
+    const parts = at > 0 ? [f.slice(0, at), f.slice(at + 1)] : [f];
+    return parts.flatMap((x) => (x.length > 34 && x.includes(' → ') ? x.split(' → ').map((y, i) => (i ? `→ ${y}` : y)) : [x]));
+  });
 }
 
 /** A numbered question, one sentence to a line, the number in front of the first. */
@@ -460,7 +497,7 @@ function Hints({ T, st, patch, lab }: { T: SiteText; st: FlowState; patch: FlowP
       {T.hints.slice(0, st.hints).map((h) => (
         <p key={h.k} className={lg.hint}>
           <em>{h.k}</em>
-          {h.t}
+          <Lines text={h.t} />
         </p>
       ))}
     </div>
@@ -506,7 +543,7 @@ function PrincipleCard({ T, fig }: { T: SiteText; fig: ReactNode }) {
       <b>{T.principle.title}</b>
       {fig}
       <p className={lg.formula}>
-        {T.principle.formula.split(' · ').map((f) => (
+        {formulaLines(T.principle.formula).map((f) => (
           <span key={f} className={lg.line}>
             {f}
           </span>

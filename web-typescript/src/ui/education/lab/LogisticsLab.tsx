@@ -67,6 +67,7 @@ import type { UrdfRobot } from '@/engine/robot/urdf';
 import { logRun } from '@/engine/education/runLog';
 
 import LearnStage, { type LearnScene, type ViewPose } from '../stage/LearnStage';
+import { Lines } from '../lesson/Rich';
 import PalletCell, { PalletPlayback, type PalletDim, type PalletOverlay } from './PalletCell';
 import { LogisticsAround, LOOKS } from './ambient/Around';
 import { ArrowDef, Knob, ProbLock, RecordSheet, SitePanel, answeredUpTo, fmt, freshFlow, useLabStart, type FlowState, type MeasureRow } from './SiteFlow';
@@ -888,7 +889,9 @@ function Events({ run, onSeek }: { run: PalletRun | null; onSeek(t: number): voi
         <li key={i} data-k={e.kind === 'press' || e.kind === 'moved' || e.kind === 'slip' || e.kind === 'hit' || e.kind === 'unreachable' ? 'bad' : e.kind === 'drop' ? 'warn' : undefined}>
           <button type="button" onClick={() => onSeek(Math.max(0, e.t - 0.6))}>
             <time>{e.t.toFixed(1)} s</time>
-            <span>{e.text}</span>
+            <span>
+              <Lines text={e.text} />
+            </span>
           </button>
         </li>
       ))}

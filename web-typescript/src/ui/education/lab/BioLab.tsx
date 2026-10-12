@@ -56,10 +56,11 @@ import type { UrdfRobot } from '@/engine/robot/urdf';
 import { logRun } from '@/engine/education/runLog';
 
 import LearnStage, { type LearnScene, type ViewPose } from '../stage/LearnStage';
+import { Lines } from '../lesson/Rich';
 import BioCell, { BioPlayback, type BioMarker, type BioOverlay } from './BioCell';
 import { BioAround, LOOKS } from './ambient/Around';
 import type { CellDim } from './CellKit';
-import { ArrowDef, Knob, PROBS, ProbLock, RecordSheet, SitePanel, answeredUpTo, fmt, freshFlow, useLabStart, type FlowState, type MeasureRow } from './SiteFlow';
+import { ArrowDef, Knob, PROBS, ProbLock, RecordSheet, SitePanel, ValueLines, answeredUpTo, fmt, freshFlow, useLabStart, type FlowState, type MeasureRow } from './SiteFlow';
 import RealUse from './RealUse';
 import css from './lab.module.css';
 import lg from './site.module.css';
@@ -509,7 +510,9 @@ export default function BioLab({ robot, chain, gripperRobot, hidden, level = 'hs
                 <dt>기준</dt>
                 <dd>{prob === 1 ? '시료를 쏟지 않기' : prob === 2 ? `칸 가운데에서 ${READ_MM} mm 안 (분석기가 읽음)` : '원심분리기 · 랙에 부딪히지 않기'}</dd>
                 <dt>도구</dt>
-                <dd>어댑티브 그리퍼 (손가락 끝까지 112 mm)</dd>
+                <dd>
+                  <ValueLines text="어댑티브 그리퍼 (손가락 끝까지 112 mm)" />
+                </dd>
               </dl>
             </div>
           }
@@ -581,7 +584,9 @@ function Events({ run, onSeek }: { run: BioRun | null; onSeek(t: number): void }
         <li key={i} data-k={e.kind === 'spill' || e.kind === 'hit' || e.kind === 'catch' || e.kind === 'unreachable' ? 'bad' : e.kind === 'place' && (e.value ?? 0) > READ_MM ? 'warn' : undefined}>
           <button type="button" onClick={() => onSeek(Math.max(0, e.t - 0.6))}>
             <time>{e.t.toFixed(1)} s</time>
-            <span>{e.text}</span>
+            <span>
+              <Lines text={e.text} />
+            </span>
           </button>
         </li>
       ))}
