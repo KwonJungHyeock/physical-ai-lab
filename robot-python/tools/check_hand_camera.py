@@ -19,8 +19,10 @@ import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "server"))
 import camera  # noqa: E402
 
-# get_coords at the kit's photo pose, as the console's demo arm reports it (URDF forward kinematics)
-PHOTO_COORDS = [188.0, -26.0, 232.2, -179.76, -3.07, -137.25]
+# get_coords at the kit's photo pose (HAND_PHOTO_DEG), as the console's demo arm reports it: URDF
+# forward kinematics with the firmware's tool frame turned by camera.FIRMWARE_TO_FLANGE_DEG
+# (server.demo_coords), so a picture drawn here is what server.py --demo --camera <picture> sees.
+PHOTO_COORDS = [188.0, -26.0, 232.2, 176.94, 0.27, -37.8]
 COLORS_BGR = {"빨강": (30, 30, 220), "초록": (40, 180, 40), "파랑": (200, 60, 20), "노랑": (20, 210, 230)}
 
 
@@ -53,10 +55,10 @@ def check(name, blocks, coords, top_z):
 
 
 def main():
-    # where the photo pose looks: a little in front of the robot
+    # where the photo pose looks: in front of the robot, a little to its right (picture centre ≈ (138, -46))
     cam = camera.hand_camera_pose(PHOTO_COORDS)
     print(f"camera at ({cam[0][3]:.0f}, {cam[1][3]:.0f}, {cam[2][3]:.0f}) mm, looking {'down' if cam[2][2] < -0.9 else 'sideways'}")
-    blocks = {"빨강": (140, -15), "초록": (190, -10), "파랑": (150, 40), "노랑": (190, 35)}
+    blocks = {"빨강": (115, -75), "초록": (165, -75), "파랑": (115, -20), "노랑": (165, -20)}
     w1 = check("table", blocks, PHOTO_COORDS, camera.BLOCK_TOP_MM)
     # robot on a 50 mm base: the table (and the block tops) are 50 mm lower in the robot's frame
     w2 = check("on a 50 mm base", blocks, PHOTO_COORDS, camera.BLOCK_TOP_MM - 50)
