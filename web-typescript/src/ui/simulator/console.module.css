@@ -7164,6 +7164,21 @@ button.jpRow:hover {
   background: rgba(255, 255, 255, 0.03);
   border-color: rgba(255, 255, 255, 0.08);
 }
+/* The status card (연결 확인 · 손으로 움직이기 · 영점 맞추기) is white: light buttons there, not the dark panel's. */
+.app .side .lightsPop .jogWide {
+  color: #101828;
+  background: #f4f6fb;
+  border: 1px solid #d0d5dd;
+}
+.app .side .lightsPop .jogWide:hover:not(:disabled) {
+  background: #eef1fd;
+  border-color: #3454d1;
+}
+.app .side .lightsPop .jogWide:disabled {
+  color: #98a2b3;
+  background: #f9fafb;
+  border-color: #eaecf0;
+}
 .app .side .poseList li,
 .app .side .poseGo {
   background: rgba(255, 255, 255, 0.04);

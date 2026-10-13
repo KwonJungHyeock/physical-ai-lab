@@ -44,7 +44,7 @@ const shot = async (name, f) => {
 // The PC program's side (PC_BASE: the same pages without a robot server, e.g. a static server on the
 // export): the intro's [연결하기] → 로봇 연결 → [ID 로 연결].
 if (process.env.PC_BASE && want('connect')) {
-  await page.goto(`${process.env.PC_BASE}/console`, { waitUntil: 'load', timeout: 240000 });
+  await page.goto(`${process.env.PC_BASE}/console.html`, { waitUntil: 'load', timeout: 240000 });
   await btn('연결하기', true).waitFor({ timeout: 240000 });
   await settle(page, 2000);
   await btn('연결하기', true).click();
@@ -88,6 +88,9 @@ await shot('status', async () => {
   await settle(page, 1500);
   const pop = page.getByRole('dialog', { name: '로봇 상태' });
   await pop.waitFor();
+  // The buttons wait while the arm still moves (it goes to 기본 자세 when the page opens).
+  await page.waitForFunction(() => [...document.querySelectorAll('[role=dialog][aria-label="로봇 상태"] button')].some((b) => b.textContent?.includes('연결 확인') && !b.disabled), null, { timeout: 120000 });
+  await settle(page, 600);
   await save(page, out('b-status.png'), { crop: [pop, page.locator('button[title="로봇 상태 자세히 보기"]')], pad: 12 });
   await page.keyboard.press('Escape');
   await page.locator('button[title="로봇 상태 자세히 보기"]').click().catch(() => {});
@@ -102,10 +105,10 @@ await shot('jog', async () => {
 });
 await shot('jog-xyz', async () => {
   const jog = dockSection('수동 제어');
-  await jog.getByText('좌표로').first().click();
+  await jog.getByRole('button', { name: /^좌표로/ }).first().click();
   await settle(page, 1500);
   await save(page, out('b-jog-xyz.png'), { crop: jog, pad: 10 });
-  await jog.getByText('관절별로').first().click();
+  await jog.getByRole('button', { name: /^관절별로/ }).first().click();
   await settle(page, 800);
 });
 
@@ -151,7 +154,6 @@ await shot('run', async () => {
       { at: page.locator('[data-panel=run]'), n: 2, pos: 'tl' },
     ],
   });
-  await save(page, out('b-runbar.png'), { crop: page.locator('[data-panel=run]'), pad: 10 });
   await hold(false);
   await page.locator('[class*=resultClose]').click().catch(() => {});
   await settle(page, 1000);
@@ -173,7 +175,7 @@ await shot('settings', async () => {
   await settle(page, 3000);
   await page.locator('button[title="설정"]').click();
   await settle(page, 1000);
-  await save(page, out('b-settings.png'), { crop: page.getByRole('menu'), pad: 10 });
+  await save(page, out('b-settings.png'), { crop: page.getByRole('menu'), pad: 1 });
   await page.keyboard.press('Escape');
   await settle(page, 600);
 });
