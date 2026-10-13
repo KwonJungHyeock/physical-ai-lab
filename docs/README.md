@@ -75,6 +75,7 @@
 
 | 파일 | 내용 |
 | --- | --- |
+| [`class-lead/index.html`](mockup/class-lead/index.html) | **시안 · 선생님이 이끄는 수업** (로봇 실습 7-4) — 선생님 노트북(프로젝터 화면 + 선생님만 보는 진행 칸)과 학생 PC 를 나란히. [다음 단계 열기] 를 누르면 학생 화면이 따라 넘어가고, 실물 로봇은 선생님이 허락해야 열림. 캡처는 `class-lead/shots/` |
 | [`edu-console.html`](mockup/edu-console.html) | 교육 도구 화면 목업 (승인된 디자인 기준). 실제 화면은 웹 주소 `/console` |
 | [`myagv/index.html`](mockup/myagv/index.html) | myAGV 주행 · 카메라 실습 목업 (공식 3D 모델 2023 · Plus). 브라우저로 열면 실제로 움직여 볼 수 있음 |
 | [`roadmap-products.html`](mockup/roadmap-products.html) | 제품으로 고르는 로드맵 목업 — 제품 사진 카드를 누르면 배울 수 있는 주제 카드가 학문 칸으로 날아와 모임, 추천 순서 · 실물 비율 |
