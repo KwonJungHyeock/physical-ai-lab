@@ -149,9 +149,10 @@ let failed = 0;
 for (const sc of scenarios) {
   const before = errors.length;
   await openTopic(sc.topic);
-  for (const [i, k] of ['A', 'B', 'C'].entries()) {
+  for (const k of ['A', 'B', 'C']) {
     const st = sc[k];
-    await panel.locator('ol[aria-label="실습 순서"] button').nth(i).click();
+    // The activity's own page (the lesson has no activity tabs: one page per 활동).
+    await page.evaluate(([t, at]) => window.__learnOpen(t, at), [sc.topic, k]);
     await page.waitForTimeout(700);
     // The controls open once a prediction is picked (예상 → 해 보기): pick one, as a student would.
     await panel.getByRole('radio').first().click({ timeout: 10000 }).catch(() => {});

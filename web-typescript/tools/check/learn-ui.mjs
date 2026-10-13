@@ -57,7 +57,7 @@ for (const [w, h] of SIZES) {
   // The 교육 tab opens on the 로봇 시티: its bar and card, with nothing picked and with each place picked.
   const park = page.locator('section[aria-label="로봇 시티 3D 지도"]');
   if (await park.isVisible().catch(() => false)) {
-    report(await page.locator('header:has(ol[aria-label="도시의 구역"])').evaluate(inspect), '로봇 시티 바');
+    report(await page.locator('header:has(ol[aria-label="로드맵: 배우는 순서"])').evaluate(inspect), '로봇 시티 바');
     report(await park.locator('aside').evaluate(inspect), '로봇 시티 안내');
     for (const site of ['center', 'factory', 'logistics', 'ai', 'energy', 'data']) {
       await page.evaluate((x) => window.__parkSelect(x), site);

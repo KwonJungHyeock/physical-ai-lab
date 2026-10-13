@@ -55,6 +55,8 @@ const MISSION_KEY = 'learn-missions';
 const OWNED_KEY = 'learn-owned';
 const LEVEL_KEY = 'learn-level';
 const RESUME_KEY = 'learn-resume';
+/** Each 차시's activity results (활동 1 · 2 · 3), as recorded. */
+const RESULTS_KEY = 'learn-results';
 const LAB_KEY = 'lab-solved';
 const LOGI_KEY = 'lab-solved-logistics';
 const BIO_KEY = 'lab-solved-bio';
@@ -122,6 +124,9 @@ const stepFor = (p: PageId, cur: StepView): StepView => (isActivity(p) || p === 
 /** The site-lab screens, by the lab each shows (실물 연동 asks that lab whether to follow). */
 const FOLLOW_LAB: Partial<Record<string, RunLab>> = { lab: 'factory', logistics: 'logistics', bio: 'bio', farm: 'farm', cafe: 'cafe', ai: 'ai', energy: 'energy' };
 
+/** The screens of the 교육 tab. */
+type Screen = 'map' | 'course' | 'topic' | 'lab' | 'logistics' | 'bio' | 'farm' | 'cafe' | 'ai' | 'energy' | 'data' | 'final' | 'p7';
+
 export default function LearnView({ robot, chain, gripperRobot, real, hidden }: Props) {
   /** Class accounts: a student's events, and the 차시 the teacher opened (free mode: all, nothing recorded). */
   const account = useAccount();
@@ -131,7 +136,11 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
   const [locked, setLocked] = useState<TopicId | null>(null);
   const [topicId, setTopicId] = useState<TopicId>(FIRST);
   /** The park (front page), the course, a lesson, or the problem-solving lab (opened once, then kept). */
-  const [screen, setScreen] = useState<'map' | 'course' | 'topic' | 'lab' | 'logistics' | 'bio' | 'farm' | 'cafe' | 'ai' | 'energy' | 'data' | 'final' | 'p7'>('map');
+  const [screen, setScreen] = useState<Screen>('map');
+  const screenNow = useRef<Screen>('map');
+  useEffect(() => {
+    screenNow.current = screen;
+  });
   /** 로봇 실습 7 mounts on first use (its own 3D view). */
   const [p7Seen, setP7Seen] = useState(false);
   /** 대단원 마무리 평가: mounted the first time it is opened. */
@@ -169,8 +178,10 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
     setAllOpenRaw(on);
     writeJson(ALL_OPEN_KEY, on);
   }, []);
-  /** Where a lesson goes back to: the page it was opened from. */
-  const [lessonFrom, setLessonFrom] = useState<'map' | 'course'>('course');
+  /** Where a lesson goes back to: the page it was opened from (the map, 전체 차시, or a site lab's '배우러 가기'). */
+  const [lessonFrom, setLessonFrom] = useState<Screen>('course');
+  /** Where a site lab goes back to: the map, or 관제센터 when it was opened from there. */
+  const [labFrom, setLabFrom] = useState<'map' | 'data'>('map');
   /** The lab's problems solved so far (1 · 2 · 3), kept between visits. */
   const [labSolved, setLabSolved] = useState<Partial<Record<1 | 2 | 3, boolean>>>({});
   const onLabSolved = useCallback((p: 1 | 2 | 3) => {
@@ -243,6 +254,7 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
   /** The problem a lab opens at when entered for it (the map's next step). */
   const [labStart, setLabStart] = useState<LabGate['start']>(null);
   const openSiteLab = useCallback((lab: LabId, prob?: ProblemNo) => {
+    setLabFrom(screenNow.current === 'data' ? 'data' : 'map');
     if (prob) setLabStart((x) => ({ lab, prob, n: (x?.n ?? 0) + 1 }));
     if (lab === 'logistics') {
       setLogiSeen(true);
@@ -304,6 +316,7 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
     if (TOPIC_BY_ID.has(t as TopicId)) setTopicId(t as TopicId);
     // Progress kept under an id this curriculum no longer has is dropped.
     setDone(Object.fromEntries(Object.entries(readJson<Record<string, boolean>>(DONE_KEY, {})).filter(([k]) => TOPIC_BY_ID.has(k as TopicId))));
+    setResults(Object.fromEntries(Object.entries(readJson<Record<string, Partial<Record<StepKey, ResultRow>>>>(RESULTS_KEY, {})).filter(([k]) => TOPIC_BY_ID.has(k as TopicId))));
     const o = readJson<string[]>(OWNED_KEY, [...DEFAULT_OWNED]).filter((p) => PRODUCTS.some((x) => x.id === p)) as ProductId[];
     setOwnedRaw(o);
     if (readJson<string>(LEVEL_KEY, 'hs') === 'uni') setLevelRaw('uni');
@@ -377,7 +390,10 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
       setResults((r) => {
         const cur = { ...r[topicId], [s]: row };
         if (cur.A && cur.B && cur.C) markDone(topicId);
-        return { ...r, [topicId]: cur };
+        const next = { ...r, [topicId]: cur };
+        // Kept like the 차시 done: a reload (or the next class) still shows the ✓ and the 정리 table.
+        writeJson(RESULTS_KEY, next);
+        return next;
       });
     },
     [topicId, markDone, track],
@@ -455,6 +471,15 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
   const fromMap = useCallback(
     (t: TopicId) => {
       setLessonFrom('map');
+      // Back into the 차시 last left: on the page it was left at (as 전체 차시 does).
+      choose(t, resume?.topic === t ? resume.page : 'intro');
+    },
+    [choose, resume],
+  );
+  /** A site lab's '배우러 가기': the 차시 it needs, and back to the lab from there. */
+  const fromLab = useCallback(
+    (t: TopicId) => {
+      setLessonFrom(screenNow.current);
       choose(t);
     },
     [choose],
@@ -472,8 +497,8 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
   );
 
   const gate = useMemo<LabGate>(
-    () => ({ locks: labLocks(progress, allOpen && !student), onLearn: fromMap, onMap: () => setScreen('map'), start: labStart }),
-    [progress, allOpen, student, fromMap, labStart],
+    () => ({ locks: labLocks(progress, allOpen && !student), onLearn: fromLab, onMap: () => setScreen('map'), start: labStart }),
+    [progress, allOpen, student, fromLab, labStart],
   );
 
   const topic = TOPIC_BY_ID.get(topicId)!;
@@ -490,7 +515,14 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
     }
     if (n.kind === 'lab') {
       const site = SITE_BY_ID.get(n.site)!;
-      return { kicker: '배운 것을 현장에서', title: `${site.name} ${'①②③'[n.prob - 1]} ${site.problems[n.prob - 1].title}`, go: () => openSiteLab(n.lab, n.prob) };
+      // The class may also go on with the theory first: the next 차시 as a small second way.
+      const after = nextTopicOf(topicId);
+      return {
+        kicker: '배운 것을 현장에서',
+        title: `${site.name} ${'①②③'[n.prob - 1]} ${site.problems[n.prob - 1].title}`,
+        go: () => openSiteLab(n.lab, n.prob),
+        alt: after ? { title: `${after.id} ${after.title}`, go: () => choose(after.id) } : undefined,
+      };
     }
     return { kicker: '다음', title: '디지털 트윈 관제센터', go: openData };
   }, [progress, topicId, choose, openSiteLab, openData]);
@@ -501,6 +533,22 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
     [track, topicId],
   );
   const follow = useRealFollow(real, chain, hidden ? null : screen === 'topic' ? 'topic' : (FOLLOW_LAB[screen] ?? null), onFollow);
+  // A lesson's own [실물로] buttons take the arm over from 실물 연동 first (they would fight over it).
+  const { handOver } = follow;
+  const lessonReal = useMemo<RealArm>(
+    () => ({
+      ...real,
+      move: async (angles, speed) => {
+        await handOver();
+        return real.move(angles, speed);
+      },
+      run: async (actions) => {
+        await handOver();
+        return real.run(actions);
+      },
+    }),
+    [real, handOver],
+  );
 
   return (
     <LabGateContext.Provider value={gate}>
@@ -524,7 +572,7 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
       {p7Seen && <Practice7 robot={robot} chain={chain} gripperRobot={gripperRobot} real={real} hidden={hidden || screen !== 'p7'} teacher={!student} onBack={() => setScreen('map')} />}
       {dataSeen && <DataCenter hidden={hidden || screen !== 'data'} onBack={() => setScreen('map')} onOpenLab={(lab) => openSiteLab(lab)} />}
       {energySeen && (
-        <EnergyLab robot={robot} chain={chain} gripperRobot={gripperRobot} hidden={hidden || screen !== 'energy'} level={level} saved={energySolved} onSolved={onEnergySolved} onBack={() => setScreen('map')} />
+        <EnergyLab robot={robot} chain={chain} gripperRobot={gripperRobot} hidden={hidden || screen !== 'energy'} level={level} saved={energySolved} onSolved={onEnergySolved} onBack={() => setScreen(labFrom)} />
       )}
       {finalSeen && <FinalExam robot={robot} chain={chain} gripperRobot={gripperRobot} hidden={hidden || screen !== 'final'} onBack={() => setScreen('map')} />}
       <Course
@@ -539,16 +587,16 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
         onLab={() => setScreen('map')}
       />
       {aiSeen && (
-        <AiLab robot={robot} chain={chain} gripperRobot={gripperRobot} hidden={hidden || screen !== 'ai'} level={level} saved={aiSolved} onSolved={onAiSolved} onBack={() => setScreen('map')} />
+        <AiLab robot={robot} chain={chain} gripperRobot={gripperRobot} hidden={hidden || screen !== 'ai'} level={level} saved={aiSolved} onSolved={onAiSolved} onBack={() => setScreen(labFrom)} />
       )}
       {cafeSeen && (
-        <CafeLab robot={robot} chain={chain} gripperRobot={gripperRobot} hidden={hidden || screen !== 'cafe'} level={level} saved={cafeSolved} onSolved={onCafeSolved} onBack={() => setScreen('map')} />
+        <CafeLab robot={robot} chain={chain} gripperRobot={gripperRobot} hidden={hidden || screen !== 'cafe'} level={level} saved={cafeSolved} onSolved={onCafeSolved} onBack={() => setScreen(labFrom)} />
       )}
       {farmSeen && (
-        <FarmLab robot={robot} chain={chain} gripperRobot={gripperRobot} hidden={hidden || screen !== 'farm'} level={level} saved={farmSolved} onSolved={onFarmSolved} onBack={() => setScreen('map')} />
+        <FarmLab robot={robot} chain={chain} gripperRobot={gripperRobot} hidden={hidden || screen !== 'farm'} level={level} saved={farmSolved} onSolved={onFarmSolved} onBack={() => setScreen(labFrom)} />
       )}
       {bioSeen && (
-        <BioLab robot={robot} chain={chain} gripperRobot={gripperRobot} hidden={hidden || screen !== 'bio'} level={level} saved={bioSolved} onSolved={onBioSolved} onBack={() => setScreen('map')} />
+        <BioLab robot={robot} chain={chain} gripperRobot={gripperRobot} hidden={hidden || screen !== 'bio'} level={level} saved={bioSolved} onSolved={onBioSolved} onBack={() => setScreen(labFrom)} />
       )}
       {logiSeen && (
         <LogisticsLab
@@ -559,15 +607,15 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
           level={level}
           saved={logiSolved}
           onSolved={onLogiSolved}
-          onBack={() => setScreen('map')}
+          onBack={() => setScreen(labFrom)}
         />
       )}
       {labSeen && (
-        <FactoryLab robot={robot} chain={chain} gripperRobot={gripperRobot} hidden={hidden || screen !== 'lab'} level={level} saved={labSolved} onSolved={onLabSolved} onBack={() => setScreen('map')} />
+        <FactoryLab robot={robot} chain={chain} gripperRobot={gripperRobot} hidden={hidden || screen !== 'lab'} level={level} saved={labSolved} onSolved={onLabSolved} onBack={() => setScreen(labFrom)} />
       )}
       <SymbolsProvider symbols={topic.symbols}>
         <div className={css.learn} hidden={hidden || screen !== 'topic'}>
-          <LessonBar topic={topic} page={page} onPage={setPage} results={results[topicId] ?? NO_RESULTS} passed={!!done[topicId]} level={level} onBack={() => setScreen(lessonFrom)} />
+          <LessonBar topic={topic} page={page} onPage={setPage} results={results[topicId] ?? NO_RESULTS} passed={!!done[topicId]} level={level} backLabel={lessonFrom === 'course' ? '← 전체 차시' : lessonFrom === 'map' ? '← 지도' : '← 현장 실습'} onBack={() => setScreen(lessonFrom)} />
           <LessonRail
             key={topicId}
             topic={topic}
@@ -593,7 +641,7 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
                 chain={chain}
                 show={setScene}
                 onPick={onPick}
-                real={real}
+                real={lessonReal}
                 workspace={workspace}
                 frontDeg={frontDeg}
                 missions={missions}

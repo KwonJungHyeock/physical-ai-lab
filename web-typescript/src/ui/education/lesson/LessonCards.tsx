@@ -59,6 +59,8 @@ export interface Onward {
   kicker: string;
   title: string;
   go(): void;
+  /** The other way on (the next 차시 when the main way is a site problem): a small link under it. */
+  alt?: { title: string; go(): void };
 }
 
 interface Props {

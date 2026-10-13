@@ -52,6 +52,7 @@ import { aiOnRobot, cameraFrameUrl, fetchRobotState, handVisionOnRobot, type Rob
 
 import Icon from '../../simulator/Icon';
 import type { RealArm } from '../lessons';
+import { useRobotStop } from '../../simulator/connect/robotStop';
 import { Lines } from '../lesson/Rich';
 import LearnStage, { type LearnScene, type ViewPose } from '../stage/LearnStage';
 import { LEARN_SPEED, ease, lerpQ, tipOf, type Mm } from '../topics/kit';
@@ -110,6 +111,19 @@ function note(check: number, text: string, robot: boolean) {
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+/** The robot server's arrival rule: every joint within this of the target (server.py ARRIVE_DEG). */
+const ARRIVE_DEG = 2;
+const STOPPED = 'stopped';
+
+/** The G base under the arm, mm (the 시뮬레이터 tab's setting; 0 when the arm stands on the table). */
+function mountMm(): number {
+  try {
+    const m = JSON.parse(localStorage.getItem('robot-console-mount') ?? 'null') as { on?: unknown; mm?: unknown } | null;
+    return m?.on === true && typeof m.mm === 'number' ? m.mm : 0;
+  } catch {
+    return 0;
+  }
+}
 const r1 = (n: number) => (Math.round(n * 10) / 10).toFixed(1);
 
 /** The kit's bins as open boxes (four walls each), for the 3D view. */
@@ -207,6 +221,7 @@ export default function Practice7({ robot, chain, gripperRobot, real, hidden, te
         prog={progress[unitId]}
         update={(f) => update(unitId, f)}
         onNext={setUnitId}
+        onFinish={onBack}
         robot={robot}
         chain={chain}
         gripperRobot={gripperRobot}
@@ -223,6 +238,8 @@ interface UnitProps {
   prog: UnitProgress;
   update(f: (p: UnitProgress) => UnitProgress): void;
   onNext(id: UnitId): void;
+  /** After the last unit: back to the 교육 home. */
+  onFinish(): void;
   robot: UrdfRobot;
   chain: readonly ChainSegment[];
   gripperRobot: UrdfRobot | null;
@@ -232,7 +249,7 @@ interface UnitProps {
 }
 
 /** One unit: its own 3D scene, panel and robot state (remounted on every unit change, so all of it starts fresh). */
-function UnitView({ unit, prog, update, onNext, robot, chain, gripperRobot, real, hidden, teacher }: UnitProps) {
+function UnitView({ unit, prog, update, onNext, onFinish, robot, chain, gripperRobot, real, hidden, teacher }: UnitProps) {
   const unitId = unit.id;
   const markStep = (step: string) => update((p) => (p.steps.includes(step) ? p : { ...p, steps: [...p.steps, step] }));
   const answer = (qi: number, choice: number) =>
@@ -515,6 +532,7 @@ function UnitView({ unit, prog, update, onNext, robot, chain, gripperRobot, real
   const [realFound, setRealFound] = useState<Partial<Record<ColorName, { x: number; y: number }>> | null>(null);
   const [realPlanOk, setRealPlanOk] = useState(false);
   const [swapped, setSwapped] = useState(false);
+  const [gripOk, setGripOk] = useState(false);
   useEffect(() => {
     if (!real.online || hidden) return;
     let alive = true;
@@ -529,38 +547,72 @@ function UnitView({ unit, prog, update, onNext, robot, chain, gripperRobot, real
     };
   }, [real.online, hidden, unitId]);
 
-  /** Send one pose and wait until the arm is there (or 12 s): the angles it stopped at. */
+  /** The token of the real run going on: a stop (here, in the top bar, Esc) or leaving bumps `token`. */
+  const runTok = useRef(-1);
+  const guard = () => {
+    if (runTok.current !== token.current) throw new Error(STOPPED);
+  };
+
+  /**
+   * Send one pose and wait until the arm is there: the angles it stopped at. "There" is the robot
+   * server's own arrival rule (every joint within 2°); not there in 12 s is an error, and a stop
+   * ends the wait at once (no next pose is sent after a stop).
+   */
   const moveAndWait = useCallback(
-    async (to: readonly number[], speed = 25): Promise<number[] | null> => {
+    async (to: readonly number[], speed = 25): Promise<number[]> => {
+      guard();
       const r = await real.move(to.slice(), speed);
+      guard();
       if (!r.ok) throw new Error(r.error ?? '로봇이 받지 않았어요.');
       const t0 = Date.now();
-      let last: number[] | null = null;
       while (Date.now() - t0 < 12000) {
         await sleep(150);
-        last = real.now();
-        if (last && Math.max(...last.map((a, i) => Math.abs(a - to[i]))) < 1.0) break;
+        guard();
+        const now = real.now();
+        if (now && Math.max(...now.map((a, i) => Math.abs(a - to[i]))) < ARRIVE_DEG) {
+          await sleep(300);
+          guard();
+          return real.now() ?? now;
+        }
       }
-      await sleep(300);
-      return real.now() ?? last;
+      throw new Error('12초 안에 자세에 도착하지 못했어요. 팔 둘레에 걸리는 것이 없는지 보고 다시 해 주세요.');
     },
     [real],
   );
 
-  const realRun = (f: () => Promise<void>) => async () => {
+  /** After a program was handed to the robot (/api/run): wait until it has run to the end. */
+  const waitRun = async (limitS = 180) => {
+    const t0 = Date.now();
+    await sleep(400);
+    while (Date.now() - t0 < limitS * 1000) {
+      guard();
+      const st = await fetchRobotState();
+      if (st && !st.running) {
+        if (st.error) throw new Error(st.error);
+        return;
+      }
+      await sleep(400);
+    }
+    throw new Error('프로그램이 제 시간 안에 끝나지 않았어요.');
+  };
+
+  const realRun = async (f: () => Promise<void>) => {
     if (realBusy || !real.online) return;
+    runTok.current = token.current;
     setRealBusy(true);
     setRealMsg('로봇이 움직여요…');
     try {
       await f();
     } catch (e) {
-      setRealMsg(`멈췄어요: ${e instanceof Error ? e.message : String(e)}`);
+      const why = e instanceof Error ? e.message : String(e);
+      setRealMsg(why === STOPPED ? '멈췄어요.' : `멈췄어요: ${why}`);
     } finally {
       setRealBusy(false);
     }
   };
 
-  const real1 = realRun(async () => {
+  const real1 = () =>
+    void realRun(async () => {
     await moveAndWait(READY_DEG);
     const errs: number[] = [];
     for (let j = 0; j < 6; j++) {
@@ -568,7 +620,7 @@ function UnitView({ unit, prog, update, onNext, robot, chain, gripperRobot, real
       let worst = 0;
       for (const q of swingPoses(j).slice(1)) {
         const got = await moveAndWait(q);
-        if (got) worst = Math.max(worst, Math.abs(got[j] - q[j]));
+        worst = Math.max(worst, Math.abs(got[j] - q[j]));
       }
       errs.push(worst);
     }
@@ -578,7 +630,8 @@ function UnitView({ unit, prog, update, onNext, robot, chain, gripperRobot, real
     realDone(text);
   });
 
-  const real2 = realRun(async () => {
+  const real2 = () =>
+    void realRun(async () => {
     const r = repeatPoses(chain);
     if (!r) throw new Error('목표 점 자세를 계산하지 못했어요.');
     await moveAndWait(r.home);
@@ -586,7 +639,7 @@ function UnitView({ unit, prog, update, onNext, robot, chain, gripperRobot, real
     for (let k = 0; k < REPEAT_TIMES; k++) {
       setRealMsg(`${k + 1} / ${REPEAT_TIMES} 번째 도착`);
       const got = await moveAndWait(r.at);
-      if (got) pts = [...pts, tipOf(chain, got, tcpFor('pump', false))];
+      pts = [...pts, tipOf(chain, got, tcpFor('pump', false))];
       const marks = pts.flatMap((p) => [[p[0] - 3, p[1], p[2]], [p[0] + 3, p[1], p[2]]] as Mm[]);
       setExtra((e) => ({ ...e, lines: [{ key: 'real', points: marks, color: '#7c3aed', width: 3, segments: true }] }));
       await moveAndWait(r.home);
@@ -597,7 +650,8 @@ function UnitView({ unit, prog, update, onNext, robot, chain, gripperRobot, real
     realDone(text);
   });
 
-  const real3 = realRun(async () => {
+  const real3 = () =>
+    void realRun(async () => {
     const n = Math.max(1, cams);
     const urls = Array.from({ length: Math.min(2, n) }, (_, i) => cameraFrameUrl(i));
     const sizes = await Promise.all(
@@ -615,15 +669,20 @@ function UnitView({ unit, prog, update, onNext, robot, chain, gripperRobot, real
     const got = sizes.filter(Boolean);
     if (!got.length) throw new Error('카메라 사진을 받지 못했어요. 카메라 USB 를 확인해 주세요.');
     const text = `실제 카메라 ${got.length}대로 사진 (${got.join(', ')})`;
-    setRealMsg(got.length < 2 ? `${text}. 검수에는 2대가 필요해요: 두 번째 카메라를 꽂아 주세요.` : text);
+    // 검수 3 asks for two cameras: one is shown, not recorded as done.
+    if (got.length < 2) return setRealMsg(`${text}. 검수에는 2대가 필요해요: 두 번째 카메라를 꽂고 다시 찍어 주세요.`);
+    setRealMsg(text);
     realDone(text);
   });
 
-  const real4find = realRun(async () => {
+  const real4find = () =>
+    void realRun(async () => {
     setRealMsg('손 카메라 자세로 가요…');
     await moveAndWait(PHOTO_DEG);
     setRealMsg('로봇이 손 카메라 사진으로 블록 자리를 계산해요…');
-    const r = await handVisionOnRobot(handCam, BLOCK_MM);
+    // The block tops in the robot's own frame: lower by the G base when the arm stands on one
+    // (the setting the 시뮬레이터 tab keeps).
+    const r = await handVisionOnRobot(handCam, BLOCK_MM - mountMm());
     if (!r.ok) throw new Error(r.error ?? '찾지 못했어요.');
     const where: Partial<Record<ColorName, { x: number; y: number }>> = {};
     for (const d of r.detections) if (d.x !== undefined && d.y !== undefined && d.color in COLOR_HEX) where[d.color as ColorName] = { x: d.x, y: d.y };
@@ -654,7 +713,8 @@ function UnitView({ unit, prog, update, onNext, robot, chain, gripperRobot, real
       }
     });
 
-  const real4move = realRun(async () => {
+  const real4move = () =>
+    void realRun(async () => {
     if (!realFound || !realPlanOk) return;
     const plan = sortPlan(chain, realFound);
     if (!plan) throw new Error('자세를 계산하지 못했어요.');
@@ -662,22 +722,28 @@ function UnitView({ unit, prog, update, onNext, robot, chain, gripperRobot, real
     const r = await real.run(toActions(plan, 'pump'));
     if (!r.ok) throw new Error(r.error ?? '로봇이 받지 않았어요.');
     const n = Object.keys(realFound).length;
-    const text = `실제 블록 ${n}개를 찾아 색깔별 상자로 옮기기 실행 (시뮬레이션 확인 뒤)`;
-    setRealMsg(`${text}. 로봇이 다 옮길 때까지 지켜봐요.`);
+    setRealMsg(`실제 블록 ${n}개를 옮기는 중이에요. 로봇이 다 옮길 때까지 지켜봐요.`);
+    await waitRun();
+    const text = `실제 블록 ${n}개를 찾아 색깔별 상자로 옮김 (시뮬레이션 확인 뒤, 끝까지 실행)`;
+    setRealMsg(text);
     realDone(text);
   });
 
-  const real5grip = realRun(async () => {
+  const real5grip = () =>
+    void realRun(async () => {
     const a = await real.grip(true);
     if (!a.ok) throw new Error(a.error ?? '그리퍼가 답하지 않아요.');
     await sleep(1500);
     const b = await real.grip(false);
     if (!b.ok) throw new Error(b.error ?? '그리퍼가 답하지 않아요.');
     await sleep(800);
+    setGripOk(true);
     setRealMsg('그리퍼 열기 · 닫기 ✓ 이제 흡착 펌프로 바꿔 끼워요.');
   });
 
-  const real5pump = realRun(async () => {
+  const real5pump = () =>
+    void realRun(async () => {
+    if (!gripOk) throw new Error('먼저 ① 그리퍼 열기 · 닫기를 해 주세요. 검수 5는 두 도구를 모두 써 봐야 해요.');
     const a = await real.pump(true);
     if (!a.ok) throw new Error(a.error ?? '펌프가 답하지 않아요.');
     await sleep(2000);
@@ -688,9 +754,11 @@ function UnitView({ unit, prog, update, onNext, robot, chain, gripperRobot, real
     realDone(text);
   });
 
-  const real6 = realRun(async () => {
+  const real6 = () =>
+    void realRun(async () => {
     setRealMsg('로봇 안에서 AI 모델을 돌려요… 처음 한 번은 몇 초 걸려요.');
-    const r = await aiOnRobot(0);
+    // The kit camera (the one that is not on the hand) when there are two.
+    const r = await aiOnRobot(cams >= 2 ? 1 - handCam : 0);
     if (!r.ok) throw new Error(r.error ?? 'AI 샘플을 실행하지 못했어요.');
     setRealAi(r);
     const names = r.detections.map((d) => `${d.label} ${Math.round(d.score * 100)}%`).join(', ') || '찾은 물체 없음';
@@ -699,11 +767,14 @@ function UnitView({ unit, prog, update, onNext, robot, chain, gripperRobot, real
     realDone(text);
   });
 
-  const real7 = realRun(async () => {
+  const real7 = () =>
+    void realRun(async () => {
     await moveAndWait(WAVE[0].angles, 30);
     const r = await real.run(WAVE.map((w, i) => ({ type: 'angles' as const, angles: w.angles.slice(), speed: 30, line: i + 1 })));
     if (!r.ok) throw new Error(r.error ?? '로봇이 받지 않았어요.');
-    const text = `파이썬 API 명령 ${WAVE.length}줄을 로봇에서 실행`;
+    setRealMsg(`파이썬 API 명령 ${WAVE.length}줄을 로봇이 실행하는 중이에요.`);
+    await waitRun();
+    const text = `파이썬 API 명령 ${WAVE.length}줄을 로봇에서 끝까지 실행`;
     setRealMsg(text);
     realDone(text);
   });
@@ -713,6 +784,16 @@ function UnitView({ unit, prog, update, onNext, robot, chain, gripperRobot, real
     void real.stop();
     setRealMsg('멈췄어요.');
   };
+  // [로봇 정지] in the top bar stops a real run here too; so does leaving 로봇 실습 7.
+  useRobotStop(() => {
+    if (realBusy) stopReal();
+  });
+  useEffect(() => {
+    // The running loop sees the token and ends with '멈췄어요.'.
+    if (!hidden || !realBusy) return;
+    token.current += 1;
+    void real.stop();
+  }, [hidden, realBusy, real]);
 
   /* --- the panel ------------------------------------------------------------------------------ */
   const allSteps = unit.steps.every((s) => prog.steps.includes(s.id));
@@ -911,9 +992,13 @@ function UnitView({ unit, prog, update, onNext, robot, chain, gripperRobot, real
               <li data-ok={quizOk || undefined}>{quizOk ? '✓' : '○'} 문제 ({quizRight(unit, prog)} / {unit.quiz.length})</li>
               <li data-ok={!!prog.real || undefined}>{prog.real ? '✓' : '○'} 실물로 {prog.real ? `: ${prog.real.text}` : '(로봇을 연결하면)'}</li>
             </ul>
-            {next && (
+            {next ? (
               <button type="button" className={css.next} onClick={() => onNext(next.id)}>
                 다음: {next.id}. {next.title} →
+              </button>
+            ) : (
+              <button type="button" className={css.next} onClick={onFinish}>
+                로봇 실습 7 마치기 · 교육 홈으로 →
               </button>
             )}
           </Section>

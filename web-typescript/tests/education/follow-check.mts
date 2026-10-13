@@ -172,4 +172,51 @@ const zero = [0, 0, 0, 0, 0, 0];
   console.log('  ✓ the pump and the gripper follow on change; a plain stop turns it off');
 }
 
+{
+  // A target that never answers (Wi-Fi gone) does not freeze a new run, and its late answer is ignored.
+  const { r, io, settle } = fake(zero);
+  const f = new Follower(io);
+  f.start();
+  f.feed(0, [5, 0, 0, 0, 0, 0]);
+  const hung = r.pending.splice(0); // never answered for now
+  f.stop();
+  f.start();
+  f.feed(500, [5, 0, 0, 0, 0, 0]);
+  assert.equal(r.sent.length, 2, 'the new run sends although the old target is still out');
+  r.refuse = '예전 요청 실패';
+  for (const h of hung) h();
+  await new Promise((res) => setTimeout(res, 0));
+  assert.equal(f.status.phase, 'following', 'the old answer does not stop the new run');
+  r.refuse = '';
+  await settle();
+  console.log('  ✓ a hung target does not freeze the next run, and its late answer is ignored');
+}
+
+{
+  // The real arm lags: a pump change waits for the arm to reach the pose where the screen switched it.
+  const { r, io, settle } = fake(zero);
+  const f = new Follower(io);
+  f.start();
+  f.feed(0, zero, { pump: false });
+  assert.deepEqual(r.pumps, [false]);
+  await settle();
+  const pick = [30, 0, 0, 0, 0, 0];
+  f.feed(200, pick, { pump: true }); // the screen arm is at the pick and switches the pump on
+  const after = [60, 0, 0, 0, 0, 0];
+  await settle();
+  f.feed(400, after, { pump: true }); // the screen arm has moved on
+  assert.deepEqual(r.pumps, [false], 'not yet: the real arm is far from the pick');
+  assert.ok(r.sent.at(-1)!.angles[0] <= 30 + 1e-9, 'aims at the pick, not past it');
+  await settle();
+  r.angles = [29.5, 0, 0, 0, 0, 0];
+  f.feed(600, after, { pump: true });
+  assert.deepEqual(r.pumps, [false, true], 'there: the pump goes on');
+  const n = r.sent.length;
+  f.feed(800, after, { pump: true });
+  assert.equal(r.sent.length, n, 'a short pause for the cup');
+  f.feed(1100, after, { pump: true });
+  assert.equal(r.sent.length, n + 1, 'then it follows on');
+  console.log('  ✓ a tool change waits until the real arm is where the screen made it, then pauses');
+}
+
 console.log('follow: all checks passed');

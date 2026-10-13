@@ -402,7 +402,7 @@ export default function BioLab({ robot, chain, gripperRobot, hidden, level = 'hs
         </button>
         <b className={css.chapter}>
           <i className={lg.dot} aria-hidden />
-          바이오 실험실
+          바이오·헬스케어
           <small>시험관 옮기기</small>
         </b>
         <nav className={css.probs} aria-label="문제">
@@ -563,7 +563,7 @@ export default function BioLab({ robot, chain, gripperRobot, hidden, level = 'hs
           onNext={() => (prob < 3 ? setProb((prob + 1) as BioProblem) : onBack())}
         />
       </aside>
-      {record && <RecordSheet site="바이오 실험실 (시험관 옮기기)" tone={lg.bio} texts={BIO_TEXT} st={st} solved={solved} level={level} onClose={() => setRecord(false)} />}
+      {record && <RecordSheet site="바이오·헬스케어 (시험관 옮기기)" tone={lg.bio} texts={BIO_TEXT} st={st} solved={solved} level={level} onClose={() => setRecord(false)} />}
     </div>
   );
 }

@@ -379,7 +379,7 @@ export default function AiLab({ robot, chain, gripperRobot, hidden, level = 'hs'
         </button>
         <b className={css.chapter}>
           <i className={lg.dot} aria-hidden />
-          AI 연구소
+          피지컬 AI 연구소
           <small>종합 미션</small>
         </b>
         <nav className={css.probs} aria-label="문제">
@@ -531,7 +531,7 @@ export default function AiLab({ robot, chain, gripperRobot, hidden, level = 'hs'
           onNext={() => (prob < 3 ? setProb((prob + 1) as AiProblem) : onBack())}
         />
       </aside>
-      {record && <RecordSheet site="AI 연구소 (종합 미션)" tone={lg.ai} texts={AI_TEXT} st={st} solved={solved} level={level} onClose={() => setRecord(false)} />}
+      {record && <RecordSheet site="피지컬 AI 연구소 (종합 미션)" tone={lg.ai} texts={AI_TEXT} st={st} solved={solved} level={level} onClose={() => setRecord(false)} />}
     </div>
   );
 }

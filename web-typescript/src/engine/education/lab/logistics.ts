@@ -249,7 +249,7 @@ for k in range(12):
       ],
     },
     pdf: [
-      { label: '1-2 위치와 자세', href: '/materials/theory-1.pdf' },
+      { label: '1-2 위치와 자세', href: '/materials/theory-1.pdf#page=6' },
       { label: '2-1 좌표 변환', href: '/materials/theory-2.pdf#page=2' },
     ],
     checks: [

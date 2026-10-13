@@ -345,6 +345,33 @@ const release = { grip: 'robot.gripper.open()', suction: 'robot.pump.off()' };
   console.log('  ok   coordinate jog keeps the tool as held (home, upright and two tilted poses; x, y, z ±20 mm)');
 }
 
+{
+  // The result sheet marks a check ✓ only when it was shown in full on the real robot.
+  const { realMissing, reportHtml } = await import('../../src/engine/simulator/evidence');
+  assert.equal(realMissing(3, ['실제 키트 카메라 사진 저장 (RGB)']), '실제 카메라 2대 사진 (키트 카메라 · 손 카메라)');
+  assert.equal(realMissing(3, ['실제 키트 카메라 사진 저장 (RGB)', '실제 손 카메라 사진 저장 (RGB)']), null);
+  assert.equal(realMissing(3, ['로봇 실습 7 · 영상 취득: 실제 카메라 2대로 사진 (640×480, 640×480)']), null);
+  assert.ok(realMissing(4, ['실제 손 카메라로 블록 위치 계산 (공식 손-눈 보정, 80ms): red (200, 0)']));
+  assert.equal(realMissing(4, ['로봇 실습 7 · 비전-로봇 연계: 실제 블록 2개를 찾아 색깔별 상자로 옮김 (시뮬레이션 확인 뒤, 끝까지 실행)']), null);
+  assert.equal(realMissing(5, ['실제 어댑티브 그리퍼 열기']), '흡착 펌프로 바꿔 끼운 뒤 켜기 · 끄기');
+  assert.equal(realMissing(5, ['실제 어댑티브 그리퍼 열기', '실제 흡착 펌프 켜기']), null);
+  assert.equal(realMissing(1, ['로봇에서 실행 완료: 6축 하나씩']), null);
+  const at = new Date().toISOString();
+  const html = reportHtml({
+    robot: '로봇 1',
+    model: 'myCobot 280 RDK X5',
+    evidence: [
+      { check: 1, at, text: '로봇에서 실행 완료: 6축 하나씩', robot: true },
+      { check: 5, at, text: '실제 어댑티브 그리퍼 열기', robot: true },
+    ],
+    prep: null,
+    prepAt: null,
+  });
+  assert.ok(html.includes('◐ 실제 로봇 일부'), 'one tool only: shown in part');
+  assert.ok(/1\s*\/\s*7/.test(html.replace(/<[^>]+>/g, ' ')), 'only the full check counts');
+  console.log('  ok   result sheet: ✓ only for a check shown in full on the robot (2 cameras, a real pick, both tools)');
+}
+
 console.log('\nConsole validated against the AI Kit.');
 
 function seeded(seed: number): () => number {

@@ -350,6 +350,11 @@ export default function LessonRail({ topic, page, onPage, results, onChecked, le
             <span>{onward.title} →</span>
           </button>
         )}
+        {i === PAGES.length - 1 && onward?.alt && passed && (
+          <button type="button" className={css.alt} onClick={onward.alt.go}>
+            또는 다음 차시: {onward.alt.title} →
+          </button>
+        )}
         {teacherAllowed && (locked || (i === PAGES.length - 1 && onward && !passed)) && (
           <button
             type="button"

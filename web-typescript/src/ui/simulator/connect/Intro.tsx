@@ -20,13 +20,13 @@ import css from './intro.module.css';
 
 /** Where robots work: the pictures the window goes through, with what the robot does there. */
 const SCENES = [
-  { id: 'park', name: '로봇 시티', line: '아카데미에서 배우고, 일곱 현장에서 로봇으로 문제를 풀어요' },
-  { id: 'factory', name: '스마트 공장', line: '센서가 알린 상자를 컨베이어에서 집어 옮겨요' },
-  { id: 'logistics', name: '물류 센터', line: '상자를 팔레트에 한 층씩 정확히 쌓아요' },
-  { id: 'bio', name: '바이오 실험실', line: '시험관을 정해진 칸에 1 mm 안으로 꽂아요' },
+  { id: 'park', name: '로봇 시티', line: '아카데미에서 배우고, 현장마다 로봇으로 문제를 풀어요' },
+  { id: 'factory', name: '스마트팩토리', line: '센서가 알린 상자를 컨베이어에서 집어 옮겨요' },
+  { id: 'logistics', name: '물류 허브', line: '상자를 팔레트에 한 층씩 정확히 쌓아요' },
+  { id: 'bio', name: '바이오·헬스케어', line: '시험관을 정해진 칸에 1 mm 안으로 꽂아요' },
   { id: 'farm', name: '스마트팜', line: '카메라로 익은 토마토를 찾아 따서 담아요' },
-  { id: 'cafe', name: '서비스 카페', line: '사람 곁에서 속도를 줄여 안전하게 음료를 건네요' },
-  { id: 'ai', name: 'AI 연구소', line: '처음 보는 부품도 AI 로 알아보고 분류해요' },
+  { id: 'cafe', name: '스마트시티', line: '사람 곁에서 속도를 줄여 안전하게 음료를 건네요' },
+  { id: 'ai', name: '피지컬 AI 연구소', line: '처음 보는 부품도 AI 로 알아보고 분류해요' },
 ];
 /** How long each place shows, ms. */
 const SCENE_MS = 2600;

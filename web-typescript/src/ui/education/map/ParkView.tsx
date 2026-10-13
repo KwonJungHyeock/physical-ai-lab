@@ -90,6 +90,12 @@ export default function ParkView({ progress, allOpen, onAllOpen, hidden, onTopic
   const [seen, setSeen] = useState(false);
   const [ready, setReady] = useState(false);
   const onReady = useCallback(() => setReady(true), []);
+  // Back on the map (from a lesson or a lab): the card shows where to go next again, not the last pick.
+  const [wasHidden, setWasHidden] = useState(hidden);
+  if (wasHidden !== hidden) {
+    setWasHidden(hidden);
+    if (!hidden) setSelected(null);
+  }
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => void (!hidden && setSeen(true)), [hidden]);
   useEffect(() => {
@@ -239,7 +245,8 @@ function SiteCard({ id, progress, allOpen, state, step, onTopic, onLab, onData }
             open: s.content === 'lab' && p.ready && !missing.length ? () => onLab(s.lab!, no) : null,
           };
         });
-  const firstTodo = s.content === 'lessons' ? (centerTopics().find((t) => !progress.done[t]) ?? centerTopics()[0]) : null;
+  // The academy goes on where the whole course goes on (the route's 지금 여기), else at the first 차시 not done.
+  const firstTodo = s.content === 'lessons' ? (step.kind === 'topic' ? step.topic : (centerTopics().find((t) => !progress.done[t]) ?? centerTopics()[0])) : null;
   const firstNeeds = s.content === 'lab' ? problemMissing(s, 1, progress) : [];
   const started = !!sc && sc.done > 0;
   // 현장 들어가기 opens the first problem still to solve (the one the list and 다음 할 일 point at), so

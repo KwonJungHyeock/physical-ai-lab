@@ -705,7 +705,7 @@ function Empty({ onDemo, onOpenLab, onClass }: { onDemo(): void; onOpenLab(lab: 
       <div className={css.emptyCard}>
         <h2>아직 실습 기록이 없어요</h2>
         <p>
-          현장 실습에서 [실행]을 누를 때마다 값, 결과, 작업 시간이 여기에 쌓여요. 기록이 모이면 어느 현장이 병목인지, 어떤 값이 성공을 좌우하는지 그래프로
+          현장 실습에서 [▶ 다시 가동]을 누를 때마다 값, 결과, 작업 시간이 여기에 쌓여요. 기록이 모이면 어느 현장이 병목인지, 어떤 값이 성공을 좌우하는지 그래프로
           찾아볼 수 있어요.
         </p>
         <button type="button" className={css.primary} onClick={onDemo}>

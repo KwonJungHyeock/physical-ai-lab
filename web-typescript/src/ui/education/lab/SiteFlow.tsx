@@ -675,8 +675,8 @@ export function SitePanel(p: SitePanelProps) {
   useEffect(() => {
     if (finished) keepEffort(p.lab, p.T.id, p.st.hints, stars);
   }, [finished, p.lab, p.T.id, p.st.hints, stars]);
-  // 실물 연동: the real arm follows only the fixed program's re-run (and never where the setup differs).
-  useFollowGate(p.lab, p.T.id, !lock && p.st.step === 'compare');
+  // 실물 연동: the real arm follows only the fixed program's re-run, once it passes (never where the setup differs).
+  useFollowGate(p.lab, p.T.id, !lock && p.st.step === 'compare', p.pass);
   return lock ? <LockedProblem T={p.T} lock={lock} /> : <SiteSteps {...p} />;
 }
 

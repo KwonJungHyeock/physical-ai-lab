@@ -23,17 +23,19 @@ interface Props {
   /** The 평가 is passed. */
   passed: boolean;
   level: StudyLevel;
+  /** Where the back button goes, in words ('← 지도', '← 전체 차시' …). */
+  backLabel: string;
   onBack(): void;
 }
 
-export default function LessonBar({ topic, page, onPage, results, passed, level, onBack }: Props) {
+export default function LessonBar({ topic, page, onPage, results, passed, level, backLabel, onBack }: Props) {
   const at = PAGES.indexOf(page);
   const cat = categoryOf(topic.id);
   return (
     <header className={css.bar}>
       <div className={css.barHead}>
         <button type="button" className={css.back} onClick={onBack}>
-          ← 지도
+          {backLabel}
         </button>
         <span className={css.ttl}>
           <small title={`대단원 ${partOf(cat.id).no} ${partOf(cat.id).title}`}>

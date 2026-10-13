@@ -33,7 +33,7 @@ const COLS: readonly { key: SortKey; name: string; num?: boolean; title?: string
   { key: 'solved', name: `현장 /${PROBLEMS_OF}`, num: true, title: '해결한 현장 문제' },
   { key: 'stars', name: '별', num: true, title: '해결한 문제의 별 합 (그 컴퓨터에 남은 것만)' },
   { key: 'hints', name: '힌트', num: true, title: '현장 문제에서 본 힌트 합 (그 컴퓨터에 남은 것만)' },
-  { key: 'runs', name: '다시 가동', num: true, title: '시뮬레이터에서 [실행]한 횟수' },
+  { key: 'runs', name: '다시 가동', num: true, title: '현장 실습에서 [▶ 다시 가동]한 횟수' },
   { key: 'final', name: '마무리 평가', num: true },
   { key: 'robot', name: '실물', num: true, title: '실제 로봇에서 실행한 횟수' },
   { key: 'exportedAt', name: '내보낸 때', num: true },

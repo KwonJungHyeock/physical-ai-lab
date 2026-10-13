@@ -50,6 +50,26 @@ const time = (iso: string) => {
   return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 };
 
+/**
+ * What a check needs on the real robot before the sheet marks it ✓ (from the robot's lines):
+ * null when it is all there, else what is still missing, in words. A check shown only in part
+ * (one camera, one tool, blocks found but not moved) is marked ◐ with what is missing.
+ */
+export function realMissing(check: number, robotLines: readonly string[]): string | null {
+  if (!robotLines.length) return '실제 로봇 기록 없음';
+  const any = (re: RegExp) => robotLines.some((t) => re.test(t));
+  switch (check) {
+    case 3:
+      return any(/카메라 2대/) || (any(/키트 카메라/) && any(/손 카메라/)) ? null : '실제 카메라 2대 사진 (키트 카메라 · 손 카메라)';
+    case 4:
+      return any(/실행 완료|옮김/) ? null : '찾은 블록을 실제로 집어 옮기기';
+    case 5:
+      return any(/그리퍼/) && any(/펌프/) ? null : !any(/그리퍼/) ? '그리퍼 열기 · 닫기' : '흡착 펌프로 바꿔 끼운 뒤 켜기 · 끄기';
+    default:
+      return null;
+  }
+}
+
 /** The result sheet: a self-contained HTML page (print it to PDF from the browser). */
 export function reportHtml(opts: { robot: string; model: string; evidence: readonly Evidence[]; prep: readonly PrepItem[] | null; prepAt: string | null }): string {
   const now = new Date();
@@ -57,7 +77,17 @@ export function reportHtml(opts: { robot: string; model: string; evidence: reado
     const list = opts.evidence.filter((e) => e.check === c.check);
     const real = list.some((e) => e.robot);
     const sim = list.some((e) => !e.robot);
-    const state = real ? '<b class="ok">✓ 실제 로봇</b>' : sim ? '<b class="sim">△ 시뮬레이션만</b>' : '<b class="no">— 기록 없음</b>';
+    const missing = realMissing(
+      c.check,
+      list.filter((e) => e.robot).map((e) => e.text),
+    );
+    const state = real
+      ? missing
+        ? `<b class="sim">◐ 실제 로봇 일부</b><small class="miss">남은 것: ${esc(missing)}</small>`
+        : '<b class="ok">✓ 실제 로봇</b>'
+      : sim
+        ? '<b class="sim">△ 시뮬레이션만</b>'
+        : '<b class="no">— 기록 없음</b>';
     const lines = list.length
       ? `<ul>${list
           .slice(-8)
@@ -74,7 +104,10 @@ export function reportHtml(opts: { robot: string; model: string; evidence: reado
         )
         .join('')}</table>`
     : '';
-  const done = CHECKS.filter((c) => opts.evidence.some((e) => e.check === c.check && e.robot)).length;
+  const done = CHECKS.filter((c) => {
+    const robotLines = opts.evidence.filter((e) => e.check === c.check && e.robot).map((e) => e.text);
+    return robotLines.length > 0 && realMissing(c.check, robotLines) === null;
+  }).length;
   return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>검수 결과표 (${esc(opts.robot)})</title>
 <style>
@@ -84,7 +117,7 @@ h1{font-size:22px;margin:0 0 4px}h2{font-size:16px;margin:28px 0 8px}h2 small,td
 table{width:100%;border-collapse:collapse;font-size:13px}td{border-top:1px solid #e4e7ec;padding:9px 8px;vertical-align:top}
 td.n{width:28px;font-weight:800;font-size:16px;color:#3454d1}ul{margin:6px 0 0;padding-left:16px}li{margin:2px 0}
 time{color:#667085;font-variant-numeric:tabular-nums}i{font-style:normal;font-size:11px;background:#e7f6ee;color:#16955a;border-radius:4px;padding:0 4px}
-i.s{background:#eef1f7;color:#475467}.ok{color:#16955a}.sim{color:#b54708}.no{color:#b42318}
+i.s{background:#eef1f7;color:#475467}.ok{color:#16955a}.sim{color:#b54708}.no{color:#b42318}.miss{display:block;color:#b54708}
 .prep td:first-child{width:20px;font-weight:800}@media print{body{padding:0}}
 </style></head><body>
 <h1>검수 결과표 (myCobot 280 RDK X5)</h1>

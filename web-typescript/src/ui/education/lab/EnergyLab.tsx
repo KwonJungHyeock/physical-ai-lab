@@ -417,7 +417,7 @@ export default function EnergyLab({ robot, chain, gripperRobot, hidden, level = 
         </button>
         <b className={css.chapter}>
           <i className={lg.dot} aria-hidden />
-          에너지 · 자원순환
+          에너지·자원순환
           <small>재활용 선별</small>
         </b>
         <nav className={css.probs} aria-label="문제">
@@ -588,7 +588,7 @@ export default function EnergyLab({ robot, chain, gripperRobot, hidden, level = 
         />
       </aside>
       {/* The record sheet is drawn on the page's body: it takes the nearest site tone (green). */}
-      {record && <RecordSheet site="에너지 · 자원순환 (재활용 선별)" tone={lg.energy} texts={ENERGY_TEXT} st={st} solved={solved} level={level} onClose={() => setRecord(false)} />}
+      {record && <RecordSheet site="에너지·자원순환 (재활용 선별)" tone={lg.energy} texts={ENERGY_TEXT} st={st} solved={solved} level={level} onClose={() => setRecord(false)} />}
     </div>
   );
 }

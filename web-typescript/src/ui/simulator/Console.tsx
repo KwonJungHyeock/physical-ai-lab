@@ -41,7 +41,7 @@ import {
   type RobotAi,
   type RobotState,
 } from '@/engine/simulator/robotLink';
-import { loadEvidence, reportHtml, saveEvidence, type Evidence, type PrepItem } from '@/engine/simulator/evidence';
+import { loadEvidence, reportHtml, saveEvidence, type PrepItem } from '@/engine/simulator/evidence';
 import { categoryOf, loadProgress, markKey, openCheck, saveProgress, type ConsoleMode, type Progress, type Where } from '@/engine/simulator/modules';
 import { DEFAULT_MODEL, MODEL_CHOICE, modelById, type RobotModelId } from '@/engine/robot/catalog';
 import { activeArm, adaptPython, armById, setActiveArm, type ArmSpec } from '@/engine/robot/arms';
@@ -88,6 +88,7 @@ import Hud, { type HudStatus } from './stage/Hud';
 import Intro from './connect/Intro';
 import FirstGuide, { resetFirstGuide } from './connect/FirstGuide';
 import HelpSheet from './connect/HelpSheet';
+import { announceRobotStop } from './connect/robotStop';
 import MissionCard from './tasks/MissionCard';
 import ModelPicker from './connect/ModelPicker';
 import ConnectDialog from './connect/ConnectDialog';
@@ -736,13 +737,13 @@ export default function Console() {
   /* --- modules ----------------------------------------------------------------- */
   const here: Where = { level, theme, id: practice.id };
 
-  /** 검수 결과 기록 (kept in this browser): what was shown for each check, when, with what values. */
-  const evidence = useRef<Evidence[]>([]);
+  /**
+   * 검수 결과 기록 (kept in this browser): what was shown for each check, when, with what values.
+   * Read from storage on every write: 로봇 실습 7 (education tab) adds lines to the same list.
+   */
   const note = (check: number | undefined, text: string, real: boolean) => {
     if (!check) return;
-    if (!evidence.current.length) evidence.current = loadEvidence();
-    evidence.current = [...evidence.current, { check, at: new Date().toISOString(), text, robot: real }];
-    saveEvidence(evidence.current);
+    saveEvidence([...loadEvidence(), { check, at: new Date().toISOString(), text, robot: real }]);
   };
 
   /** 검수 준비 점검 (the robot's self-check) and the result sheet. */
@@ -760,9 +761,8 @@ export default function Console() {
     addLog(bad.length ? 'warn' : 'ok', `검수 준비 점검: ${r.items.length - bad.length}/${r.items.length} 준비됨${bad.length ? `. 확인할 것: ${bad.map((i) => i.name).join(', ')}` : ''}`);
   };
   const saveReport = () => {
-    if (!evidence.current.length) evidence.current = loadEvidence();
     const who = robotMode && robot?.robotId ? `로봇 ${robot.robotId}${robot.host ? ` (${robot.host})` : ''}` : '시뮬레이터';
-    const html = reportHtml({ robot: who, model: modelById(modelNow ?? DEFAULT_MODEL)?.name ?? 'myCobot 280 RDK X5', evidence: evidence.current, prep: prep?.items ?? null, prepAt: prep?.at ?? null });
+    const html = reportHtml({ robot: who, model: modelById(modelNow ?? DEFAULT_MODEL)?.name ?? 'myCobot 280 RDK X5', evidence: loadEvidence(), prep: prep?.items ?? null, prepAt: prep?.at ?? null });
     const d = new Date();
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
@@ -775,7 +775,6 @@ export default function Console() {
   };
   const clearEvidence = () => {
     if (!window.confirm('지금까지의 검수 기록을 지우고 새로 시작할까요?')) return;
-    evidence.current = [];
     saveEvidence([]);
     addLog('info', '검수 기록을 새로 시작해요.');
   };
@@ -1525,6 +1524,8 @@ export default function Console() {
     if (token.current) token.current.aborted = true;
     if (tracker.current) tracker.current.alive = false;
     if (realRunRef.current || robotMode) void stopRobot();
+    // 실물 연동 and 로봇 실습 7 end too, so they do not send the arm on.
+    announceRobotStop();
   }, [robotMode]);
 
   // The first time this PC opens a robot's console by its address, offer the PC program, so next
@@ -3486,7 +3487,8 @@ function timed<T>(fn: () => T): [T, number] {
  * mycobot_280/mycobot_280_rdkx5 — launch/mycobot_follow.launch.py and
  * slider_control.launch.py; the nodes open /dev/ttyS1 at 1 000 000 baud).
  */
-const ROS2_STEPS = (a: ArmSpec) => `source /opt/ros/humble/setup.bash
+const ROS2_STEPS = (a: ArmSpec) => `sudo systemctl stop robot-console     # 콘솔 서버 끄기 (시리얼 포트를 비워요)
+source /opt/ros/humble/setup.bash
 source ~/colcon_ws/install/setup.bash      # mycobot_ros2 를 빌드한 작업공간
 
 # ① 실제 팔 → RViz: 서보를 풀고 손으로 움직이면 화면의 모델이 따라와요
@@ -3496,7 +3498,10 @@ ros2 launch ${a.ros.pkg} ${a.ros.follow}
 ros2 launch ${a.ros.pkg} slider_control.launch.py
 
 # 다른 터미널에서 관절 값 보기
-ros2 topic echo /joint_states`;
+ros2 topic echo /joint_states
+
+# 끝나면 콘솔 서버 다시 켜기
+sudo systemctl start robot-console`;
 
 /**
  * 고급: the student's node next to the official driver node alone
@@ -3504,7 +3509,10 @@ ros2 topic echo /joint_states`;
  * angles to the arm). Not the launch file — its joint_state_publisher_gui would
  * publish /joint_states too and fight the student's node.
  */
-const ROS2_NODE_STEPS = (a: ArmSpec) => `# 터미널 1: 로봇 드라이버 노드 (/joint_states 를 받아 팔을 움직여요)
+const ROS2_NODE_STEPS = (a: ArmSpec) => `# 먼저: 콘솔 서버 끄기 (시리얼 포트를 비워요)
+sudo systemctl stop robot-console
+
+# 터미널 1: 로봇 드라이버 노드 (/joint_states 를 받아 팔을 움직여요)
 source /opt/ros/humble/setup.bash
 source ~/colcon_ws/install/setup.bash      # mycobot_ros2 를 빌드한 작업공간
 ros2 run ${a.ros.pkg} slider_control
@@ -3515,7 +3523,10 @@ python3 my_node.py
 
 # 터미널 3: 확인
 ros2 node list
-ros2 topic echo /joint_states`;
+ros2 topic echo /joint_states
+
+# 끝나면 콘솔 서버 다시 켜기
+sudo systemctl start robot-console`;
 
 function ExportDialog({ text, level, ros, onClose, onCopied }: { text: string; level: Level; ros: boolean; onClose(): void; onCopied(how: 'copy' | 'file'): void }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -3531,7 +3542,10 @@ function ExportDialog({ text, level, ros, onClose, onCopied }: { text: string; l
       <div className={css.dialogInner}>
         <h2>{level === 'ros' ? 'ROS 2 노드를 로봇에서 실행하기' : '파이썬 API(pymycobot)로 로봇에서 실행하기'}</h2>
         <ol>
-          <li>로봇 OS(RDK X5)에 접속해요. 콘솔 서버(server.py)가 켜져 있으면 먼저 Ctrl+C 로 꺼요. 로봇 연결을 함께 쓸 수 없어요.</li>
+          <li>
+            로봇 OS(RDK X5)에 접속해요. 콘솔 서버가 팔의 시리얼 포트를 쓰고 있어서 먼저 꺼요: <code>sudo systemctl stop robot-console</code>. 끝나면{' '}
+            <code>sudo systemctl start robot-console</code> 로 다시 켜요.
+          </li>
           <li>
             아래 코드를 복사해 파일로 저장해요 (예: {file}).
             {level === 'python' && ' 시뮬레이션을 통과한 코드 그대로예요.'}

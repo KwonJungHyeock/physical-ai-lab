@@ -465,7 +465,7 @@ export default function FactoryLab({ robot, chain, gripperRobot, hidden, level =
         </button>
         <b className={css.chapter}>
           <i className={lg.dot} aria-hidden />
-          스마트 공장
+          스마트팩토리
           <small>컨베이어 공정</small>
         </b>
         <nav className={css.probs} aria-label="문제">
@@ -570,7 +570,7 @@ export default function FactoryLab({ robot, chain, gripperRobot, hidden, level =
           onNext={() => (prob < 3 ? setProb((prob + 1) as ProblemId) : onBack())}
         />
       </aside>
-      {record && <RecordSheet site="스마트 공장 (컨베이어 공정)" tone={lg.factory} texts={FACTORY_TEXT} st={st} solved={solved} level={level} onClose={() => setRecord(false)} />}
+      {record && <RecordSheet site="스마트팩토리 (컨베이어 공정)" tone={lg.factory} texts={FACTORY_TEXT} st={st} solved={solved} level={level} onClose={() => setRecord(false)} />}
     </div>
   );
 }

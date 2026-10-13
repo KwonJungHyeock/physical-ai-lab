@@ -11,7 +11,7 @@
  * setup differs from the screen (the care robot on its AGV, the AI kit).
  */
 
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Follower, FOLLOW_CAP, type FollowStatus, type FollowTool } from '@/engine/education/follow';
 import type { RunLab } from '@/engine/education/runLog';
@@ -21,6 +21,7 @@ import type { PostResult } from '@/engine/simulator/robotLink';
 import { EFFECTOR_BY_ID, type EffectorId } from '@/engine/simulator/effectors';
 import { createWorld, moveProblem, type WorldState } from '@/engine/simulator/sim';
 
+import { useRobotStop } from '../../simulator/connect/robotStop';
 import type { RealArm } from '../lessons';
 import css from './follow.module.css';
 
@@ -43,17 +44,20 @@ export function toolOf(toolId: EffectorId, pump: boolean, gapMm?: number): Follo
 
 const LAB_WAIT = '현장 실습에서는 값을 고친 뒤 [다시 가동 · 비교]에서 고친 프로그램이 돌 때만 실물이 따라 움직여요.';
 
-/** A site lab's say: follows only while the fixed program re-runs, never where the real setup differs. */
-export function useFollowGate(lab: RunLab, prob: 1 | 2 | 3, rerun: boolean) {
+/** A site lab's say: follows only while the fixed program re-runs and passes, never where the real setup differs. */
+export function useFollowGate(lab: RunLab, prob: 1 | 2 | 3, rerun: boolean, pass = true) {
   const link = useContext(FollowContext);
   const why =
     lab === 'ai'
       ? 'AI 연구소는 실물 키트의 배치가 화면과 달라 실물 연동을 쓰지 않아요.'
       : lab === 'cafe' && prob === 3
         ? '돌봄 문제는 실물에서 팔이 myAGV 위에 있어 세팅이 달라요. 실물 연동을 쓰지 않아요.'
-        : rerun
-          ? null
-          : LAB_WAIT;
+        : !rerun
+          ? LAB_WAIT
+          : pass
+            ? null
+            : // A fix that still fails on screen (it may hit, drop or crush) is not played on the real arm.
+              '기준을 모두 넘은 프로그램만 실물이 따라 움직여요. 값을 다시 고쳐 주세요.';
   useEffect(() => link?.allow(lab, why, prob), [link, lab, why, prob]);
 }
 
@@ -96,6 +100,13 @@ class FollowRig {
     if (on) this.follower.start();
     else this.follower.stop();
   }
+  /** Hand the arm to another command without stopping it; true when it was following. */
+  release(): boolean {
+    const was = this.following;
+    this.following = false;
+    this.follower.release();
+    return was;
+  }
   /** The arm on screen this frame. */
   feed(angles: readonly number[], tool: FollowTool, toolId: EffectorId) {
     if (!this.following) return;
@@ -124,6 +135,16 @@ export function useRealFollow(real: RealArm, chain: readonly ChainSegment[], pla
   const following = on && reason === null;
   useEffect(() => rig.update(real, chain), [rig, real, chain]);
   useEffect(() => rig.follow(following), [rig, following]);
+  // Following that ended without a click (the robot dropped, the screen changed, the page was
+  // hidden) does not start again by itself: the switch goes off and has to be turned on again.
+  const [wasFollowing, setWasFollowing] = useState(false);
+  if (wasFollowing !== following) {
+    setWasFollowing(following);
+    if (wasFollowing && !following && on) {
+      setOn(false);
+      setError(reason ? `실물 연동을 껐어요. ${reason} 다시 쓰려면 켜 주세요.` : '');
+    }
+  }
   const followCb = useRef(onFollow);
   useEffect(() => {
     followCb.current = onFollow;
@@ -168,8 +189,23 @@ export function useRealFollow(real: RealArm, chain: readonly ChainSegment[], pla
     rig.follower.stop();
     void rig.real?.stop();
   };
+  /**
+   * Before a lesson's own [실물로] move or program: 실물 연동 lets go (switched off, the arm not
+   * stopped) so the two do not fight over the arm; the move then goes out after a short pause.
+   */
+  const handOver = useCallback(async () => {
+    if (!rig.release()) return;
+    setOn(false);
+    setError('');
+    await new Promise((r) => setTimeout(r, 300));
+  }, [rig]);
+  // [로봇 정지] in the top bar (or anywhere on the page) turns 실물 연동 off as well.
+  useRobotStop(() => {
+    setOn(false);
+    rig.follower.stop();
+  });
 
-  return { link, online: real.online, on, following, reason, status, error, toggle, stop };
+  return { link, online: real.online, on, following, reason, status, error, toggle, stop, handOver };
 }
 
 /** The 실물 연동 switch, its state, and the big stop while it is on. */

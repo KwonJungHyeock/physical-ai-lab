@@ -38,6 +38,14 @@ export function setRemoteRobot(address: string | null) {
 /** A robot API path, on the remote robot when there is one. */
 const api = (path: string) => (remote ? `http://${remote}${path}` : path);
 
+/**
+ * How long a request may take before it counts as lost (Wi-Fi gone): a command answers at once, the
+ * robot's camera vision takes a few seconds, its AI longer (the model loads on the first call).
+ */
+const POST_MS = 10_000;
+const VISION_MS = 30_000;
+const AI_MS = 90_000;
+
 export interface RobotState {
   connected: boolean;
   /** Different on every start of the robot's server (a change: it restarted, run ids start over). */
@@ -112,7 +120,7 @@ export interface RobotVision {
 
 export async function visionOnRobot(cam = 0): Promise<RobotVision> {
   try {
-    const r = await fetch(api('/api/vision'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cam }) });
+    const r = await fetch(api('/api/vision'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cam }), signal: AbortSignal.timeout(VISION_MS) });
     return (await r.json()) as RobotVision;
   } catch (err) {
     return { ok: false, error: String(err), ms: 0, engine: '', markers: [], detections: [] };
@@ -126,7 +134,7 @@ export async function visionOnRobot(cam = 0): Promise<RobotVision> {
  */
 export async function handVisionOnRobot(cam: number, planeZ: number): Promise<RobotVision> {
   try {
-    const r = await fetch(api('/api/vision/hand'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cam, planeZ }) });
+    const r = await fetch(api('/api/vision/hand'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cam, planeZ }), signal: AbortSignal.timeout(VISION_MS) });
     const j = (await r.json()) as RobotVision;
     return { ...j, markers: j.markers ?? [], detections: j.detections ?? [] };
   } catch (err) {
@@ -148,7 +156,7 @@ export interface RobotAi {
 
 export async function aiOnRobot(cam = 0): Promise<RobotAi> {
   try {
-    const r = await fetch(api('/api/ai'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cam }) });
+    const r = await fetch(api('/api/ai'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cam }), signal: AbortSignal.timeout(AI_MS) });
     const j = (await r.json()) as RobotAi;
     return { ...j, detections: j.detections ?? [] };
   } catch (err) {
@@ -189,7 +197,7 @@ export interface PostResult {
 
 async function post(path: string, body: unknown = {}): Promise<PostResult> {
   try {
-    const r = await fetch(api(path), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const r = await fetch(api(path), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(POST_MS) });
     return { ...((await r.json()) as PostResult), status: r.status };
   } catch (err) {
     return { ok: false, error: `로봇 서버에 연결할 수 없어요 (${err instanceof Error ? err.message : String(err)})` };

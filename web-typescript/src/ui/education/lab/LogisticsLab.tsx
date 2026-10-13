@@ -431,7 +431,7 @@ export default function LogisticsLab({ robot, chain, gripperRobot, hidden, level
         </button>
         <b className={css.chapter}>
           <i className={lg.dot} aria-hidden />
-          물류 센터
+          물류 허브
           <small>팔레타이징</small>
         </b>
         <nav className={css.probs} aria-label="문제">
@@ -555,7 +555,7 @@ export default function LogisticsLab({ robot, chain, gripperRobot, hidden, level
           onBack={onBack}
         />
       </aside>
-      {record && <RecordSheet site="물류 센터 (팔레타이징)" tone={lg.site} texts={LOGI_TEXT} st={st} solved={solved} level={level} onClose={() => setRecord(false)} />}
+      {record && <RecordSheet site="물류 허브 (팔레타이징)" tone={lg.site} texts={LOGI_TEXT} st={st} solved={solved} level={level} onClose={() => setRecord(false)} />}
     </div>
   );
 }

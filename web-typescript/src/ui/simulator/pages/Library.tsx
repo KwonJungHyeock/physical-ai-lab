@@ -7,11 +7,12 @@
  * tools/build/library-gifs.mjs) and one line of what it opens. Picking one opens it in the simulator.
  */
 
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 import { THEMES, type Theme } from '@/engine/simulator/board';
 import { SCENES, type SceneId } from '@/engine/simulator/desk';
 import { EFFECTORS, type Effector, type EffectorId } from '@/engine/simulator/effectors';
+import { loadEvidence, realMissing, type Evidence } from '@/engine/simulator/evidence';
 import { CATEGORIES, CHECKS, checkState, markKey, openCheck, type ConsoleMode, type Progress, type Where } from '@/engine/simulator/modules';
 import { LEVELS, practiceFor, practicesFor, type Level, type Practice, type PracticeId } from '@/engine/simulator/practices';
 import { MODELS, type RobotModelId } from '@/engine/robot/catalog';
@@ -157,7 +158,21 @@ export default function Library(p: Props) {
   const scenes = SCENES.filter((s) => s.id !== 'kit' || p.kitAvailable);
   const tools = EFFECTORS.filter((e) => p.tools.includes(e.id)).sort((a, b) => Number(b.kind === 'none') - Number(a.kind === 'none'));
   const models = MODELS.filter((m) => m.status !== 'planned');
-  const checksDone = CHECKS.filter((c) => checkState(p.progress, c.check) > 0).length;
+  // The 검수 record (the result sheet's lines) is shared with 로봇 실습 7 on the 교육 tab: a check
+  // shown there counts here too.
+  const [evidence, setEvidence] = useState<readonly Evidence[]>([]);
+  useEffect(() => {
+    // Read after mount (the page is a static export).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setEvidence(loadEvidence());
+  }, []);
+  const stateOf = (check: number): 0 | 1 | 2 => {
+    const lines = evidence.filter((e) => e.check === check);
+    const robotLines = lines.filter((e) => e.robot).map((e) => e.text);
+    const fromRecord = robotLines.length && realMissing(check, robotLines) === null ? 2 : lines.length ? 1 : 0;
+    return Math.max(checkState(p.progress, check), fromRecord) as 0 | 1 | 2;
+  };
+  const checksDone = CHECKS.filter((c) => stateOf(c.check) > 0).length;
   const current = p.practiceId;
 
   const groups: { id: Exclude<LibrarySection, 'all'>; name: string; icon: string; sub: string; aside?: ReactNode; cards: ReactNode[] }[] = [
@@ -203,7 +218,7 @@ export default function Library(p: Props) {
             desc={pr?.goal ?? c.spec}
             badge={`검수 ${c.check}`}
             tags={[c.spec]}
-            state={checkState(p.progress, c.check)}
+            state={stateOf(c.check)}
             current={p.mode === 'check' && pr?.id === current}
             disabled={p.busy || !where}
             onOpen={() => where && p.onOpen('check', where)}
