@@ -769,3 +769,31 @@
 .ready b {
   display: block;
 }
+
+/* A led lesson ("선생님과 함께"): the lead screen fills the area; the 3D view is laid over its slot. */
+.p7[data-lead] {
+  grid-template-rows: minmax(0, 1fr);
+}
+.leadBody {
+  position: relative;
+  min-height: 0;
+}
+.stage[data-lead] {
+  position: absolute;
+  z-index: 2;
+  border-radius: 14px;
+}
+.stage[data-lead] .badge {
+  display: none;
+}
+.leadStart {
+  flex: none;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}

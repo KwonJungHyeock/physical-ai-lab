@@ -11,6 +11,7 @@
  *  - live.ts    the teacher's live grid from events (where, last seen, stuck / idle flags)
  *  - roster.ts  the teacher's 번호 ↔ 이름 list (never leaves the teacher's PC), login cards
  *  - pin.ts     PBKDF2 PIN / password hashes (the same format as the server)
+ *  - lead.ts    a lesson the teacher leads: the shared step, students' marks, the rail's summary
  */
 
 export * from './types';
@@ -22,3 +23,4 @@ export * from './live';
 export * from './roster';
 export * from './pin';
 export * from './profile';
+export * from './lead';

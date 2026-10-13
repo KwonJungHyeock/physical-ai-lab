@@ -813,3 +813,96 @@ func TestRobotOrigin(t *testing.T) {
 		t.Fatalf("robot page preflight: %d %v", w.Code, w.Header())
 	}
 }
+
+/* --- a lesson the teacher leads ------------------------------------------------------------------ */
+
+func TestLead(t *testing.T) {
+	e := newEnv(t)
+	op := e.operator()
+	a := e.teacher(op, "kim")
+	b := e.teacher(op, "lee")
+	c := e.class(a, 3)
+	s1, s2 := e.student(c, 1), e.student(c, 2)
+	lead := "/classes/" + c.id + "/lead"
+
+	// No lead yet: students see none and cannot mark.
+	if r := e.must(e.do("GET", "/lead", s1, nil), 200); r.body["lead"] != nil {
+		t.Fatal("lead before start")
+	}
+	e.must(e.do("PUT", "/lead/me", s1, map[string]any{"group": 1, "role": "robot"}), 409)
+
+	// Roles: students cannot lead, another teacher cannot see or lead this class.
+	e.must(e.do("PUT", lead, s1, map[string]any{"lesson": "p7-4", "step": 0}), 403)
+	e.must(e.do("PUT", lead, b, map[string]any{"lesson": "p7-4", "step": 0}), 404)
+	e.must(e.do("GET", lead, b, nil), 404)
+	e.must(e.do("GET", "/lead", a, nil), 403)
+
+	// Bad input.
+	for _, in := range []map[string]any{{"lesson": "P7 4", "step": 0}, {"lesson": "p7-4", "step": 21}, {"lesson": "p7-4", "step": -1}, {"lesson": "", "step": 0}} {
+		e.must(e.do("PUT", lead, a, in), 400)
+	}
+
+	// Start: step 0, robots locked.
+	r := e.must(e.do("PUT", lead, a, map[string]any{"lesson": "p7-4", "step": 0}), 200)
+	l := r.body["lead"].(map[string]any)
+	if l["lesson"] != "p7-4" || l["gate"] != false || l["rev"].(float64) != 1 {
+		t.Fatalf("start: %v", l)
+	}
+	r = e.must(e.do("GET", "/lead", s1, nil), 200)
+	if r.body["lead"].(map[string]any)["lesson"] != "p7-4" || r.body["me"] != nil {
+		t.Fatalf("student sees: %v", r.body)
+	}
+
+	// Students join with group and role, answer, ask for help.
+	e.must(e.do("PUT", "/lead/me", s1, map[string]any{"group": 1, "role": "robot", "lesson": "p7-4", "step": 0, "answer": "초록 블록"}), 200)
+	e.must(e.do("PUT", "/lead/me", s2, map[string]any{"group": 1, "role": "screen", "lesson": "p7-4", "step": 0, "help": true}), 200)
+	for _, bad := range []map[string]any{{"group": 13}, {"group": 1, "role": "boss"}, {"group": 1, "robot": "fly"}, {"group": 1, "answer": strings.Repeat("가", 41)}, {"group": 1, "lesson": "x y"}} {
+		e.must(e.do("PUT", "/lead/me", s1, bad), 400)
+	}
+	r = e.must(e.do("GET", lead, a, nil), 200)
+	ms := r.body["marks"].([]any)
+	if len(ms) != 2 || ms[0].(map[string]any)["answer"] != "초록 블록" || ms[1].(map[string]any)["help"] != true || ms[0].(map[string]any)["role"] != "robot" {
+		t.Fatalf("marks: %v", ms)
+	}
+
+	// Next step, robots allowed, then stop: the stop count never goes back.
+	e.clk.add(5 * time.Second)
+	r = e.must(e.do("PUT", lead, a, map[string]any{"lesson": "p7-4", "step": 4, "gate": true}), 200)
+	l = r.body["lead"].(map[string]any)
+	if l["step"].(float64) != 4 || l["gate"] != true || l["since"].(float64) <= l["at"].(float64) {
+		t.Fatalf("step: %v", l)
+	}
+	e.must(e.do("PUT", lead, a, map[string]any{"lesson": "p7-4", "step": 4, "gate": false, "stop": 1}), 200)
+	r = e.must(e.do("PUT", lead, a, map[string]any{"lesson": "p7-4", "step": 4, "stop": 0}), 200)
+	if r.body["lead"].(map[string]any)["stop"].(float64) != 1 {
+		t.Fatal("stop count went back")
+	}
+	if r = e.must(e.do("GET", "/lead", s2, nil), 200); r.body["lead"].(map[string]any)["stop"].(float64) != 1 || r.body["me"].(map[string]any)["help"] != true {
+		t.Fatalf("student after stop: %v", r.body)
+	}
+	// The group's member sees the group's robot PC.
+	e.must(e.do("PUT", "/lead/me", s1, map[string]any{"group": 1, "role": "robot", "lesson": "p7-4", "step": 4, "robot": "done", "result": "4개 옮김"}), 200)
+	if mate, _ := e.must(e.do("GET", "/lead", s2, nil), 200).body["mate"].(map[string]any); mate == nil || mate["no"].(float64) != 1 || mate["robot"] != "done" {
+		t.Fatal("group's robot not shown to its member")
+	}
+	if e.must(e.do("GET", "/lead", s1, nil), 200).body["mate"] != nil {
+		t.Fatal("the robot PC gets itself as mate")
+	}
+
+	// The operator can see it too; ending it clears it for everyone.
+	e.must(e.do("GET", lead, op, nil), 200)
+	e.must(e.do("DELETE", lead, a, nil), 200)
+	if r = e.must(e.do("GET", "/lead", s1, nil), 200); r.body["lead"] != nil {
+		t.Fatal("lead after end")
+	}
+	if r = e.must(e.do("GET", lead, a, nil), 200); r.body["lead"] != nil || len(r.body["marks"].([]any)) != 0 {
+		t.Fatal("teacher sees an ended lead")
+	}
+
+	// A lead the teacher's screen left alone runs out.
+	e.must(e.do("PUT", lead, a, map[string]any{"lesson": "p7-1", "step": 0}), 200)
+	e.clk.add(31 * time.Minute)
+	if r = e.must(e.do("GET", "/lead", s1, nil), 200); r.body["lead"] != nil {
+		t.Fatal("idle lead still on")
+	}
+}

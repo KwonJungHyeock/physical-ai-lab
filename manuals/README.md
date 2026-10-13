@@ -6,9 +6,9 @@
 
 | 문서 | 대상 | 원고 |
 | --- | --- | --- |
-| [`로봇 기초교육 자료.pdf`](course/로봇%20기초교육%20자료.pdf) | 처음 받은 학교의 선생님 · 실습 담당자 — 로봇 기본 세팅(USB 설치 · Wi-Fi · 연결 · 영점 · 검수 준비 점검), 간단 조작, 기초 수업 2차시(지도안 · 활동지 · 확인 문제), 프로그램 사용 가이드, 문제 해결 | [`course/basic-training.md`](course/basic-training.md) |
+| [`로봇 기초교육 자료.pdf`](course/로봇%20기초교육%20자료.pdf) | 처음 받은 학교의 선생님 · 실습 담당자 — 로봇 기본 세팅(USB 설치 · Wi-Fi · 연결 · 영점 · 검수 준비 점검), 간단 조작, 기초 수업 2차시(선생님과 함께 수업 진행 방법 · 단계표 · 활동지 · 확인 문제), 프로그램 사용 가이드, 문제 해결 | [`course/basic-training.md`](course/basic-training.md) |
 | [`시뮬레이터 사용 매뉴얼.pdf`](simulator/시뮬레이터%20사용%20매뉴얼.pdf) (27쪽) | 학생 · 선생님 · 처음 쓰는 분 — 설치, 화면, 직접 제어, 블록 · Python · ROS 2, 과제, 실제 로봇 연결, 문제 해결 | [`simulator/simulator-guide.md`](simulator/simulator-guide.md) |
-| [`교사용 교육 가이드라인.pdf`](course/교사용%20교육%20가이드라인.pdf) (21쪽) | 선생님 — 과정 한눈에, 수업 준비 · 안전, 한 차시 50분 운영, 28차시 계획표, 학문별 지도 포인트, 평가, 자료실 | [`course/teacher-guide.md`](course/teacher-guide.md) |
+| [`교사용 교육 가이드라인.pdf`](course/교사용%20교육%20가이드라인.pdf) (21쪽) | 선생님 — 과정 한눈에, 수업 준비 · 안전, 한 차시 50분 운영, 28차시 계획표, 학문별 지도 포인트, 평가, 자료실, 로봇 실습 7 선생님과 함께 수업(일곱 수업 단계표) | [`course/teacher-guide.md`](course/teacher-guide.md) |
 
 원고(md)를 고친 뒤 PDF 를 다시 만들기 (개발 서버를 켠 상태, `web-typescript/` 에서):
 ```bash

@@ -35,6 +35,8 @@ import FinalExam from './lab/FinalExam';
 import LogisticsLab from './lab/LogisticsLab';
 import { LabGateContext, type LabGate } from './lab/SiteFlow';
 import Practice7 from './practice7/Practice7';
+import { LeadEnded, LeadInvite, LeadJoin } from './lead/LeadDialogs';
+import { useStudentLead } from './lead/useLead';
 import ParkView from './map/ParkView';
 import { FollowBar, FollowContext, useRealFollow } from './stage/RealFollow';
 import LessonBar from './lesson/LessonBar';
@@ -132,6 +134,12 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
   const account = useAccount();
   const { track, lessonOpen } = account;
   const student = account.role === 'student';
+  /** A lesson the teacher leads (로봇 실습 7 "선생님과 함께"): a student is invited, joins, and follows it there. */
+  const clientOf = account.client;
+  const leadClient = useMemo(() => (student ? clientOf() : null), [student, clientOf]);
+  const studentLead = useStudentLead(leadClient);
+  const [joinOpen, setJoinOpen] = useState(false);
+  const studentNo = account.session?.role === 'student' ? account.session.student.no : null;
   /** A 차시 a student tried to open before the teacher opened it. */
   const [locked, setLocked] = useState<TopicId | null>(null);
   const [topicId, setTopicId] = useState<TopicId>(FIRST);
@@ -569,7 +577,33 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
         }}
         pick={mapPick}
       />
-      {p7Seen && <Practice7 robot={robot} chain={chain} gripperRobot={gripperRobot} real={real} hidden={hidden || screen !== 'p7'} teacher={!student} onBack={() => setScreen('map')} />}
+      {p7Seen && (
+        <Practice7
+          robot={robot}
+          chain={chain}
+          gripperRobot={gripperRobot}
+          real={real}
+          hidden={hidden || screen !== 'p7'}
+          teacher={!student}
+          studentLead={student ? studentLead : null}
+          studentNo={studentNo}
+          onBack={() => setScreen('map')}
+        />
+      )}
+      {student && !hidden && studentLead.lead && !studentLead.joined && !joinOpen && <LeadInvite lead={studentLead.lead} onJoin={() => setJoinOpen(true)} />}
+      {student && !hidden && studentLead.ended && <LeadEnded onClose={studentLead.dismissEnded} />}
+      {joinOpen && studentLead.lead && (
+        <LeadJoin
+          robotOnline={real.online}
+          onClose={() => setJoinOpen(false)}
+          onJoin={(j) => {
+            setJoinOpen(false);
+            studentLead.join(j);
+            setP7Seen(true);
+            setScreen('p7');
+          }}
+        />
+      )}
       {dataSeen && <DataCenter hidden={hidden || screen !== 'data'} onBack={() => setScreen('map')} onOpenLab={(lab) => openSiteLab(lab)} />}
       {energySeen && (
         <EnergyLab robot={robot} chain={chain} gripperRobot={gripperRobot} hidden={hidden || screen !== 'energy'} level={level} saved={energySolved} onSolved={onEnergySolved} onBack={() => setScreen(labFrom)} />

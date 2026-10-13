@@ -39,6 +39,7 @@ type Server struct {
 	user    *limiter // per username
 	ip      *limiter // per client address
 	flood   *budget  // statements per student per window
+	lead    *leadBook
 	now     func() time.Time
 	Logf    func(format string, args ...any)
 	// devOrigins: loopback web origins allowed by AllowDevOrigin (off unless the program is started
@@ -58,6 +59,7 @@ func NewServer(store *Store, syncer *Syncer) *Server {
 		user:    newLimiter(5, time.Minute, time.Hour, 15*time.Minute, now),
 		ip:      newLimiter(30, 5*time.Minute, time.Hour, 10*time.Minute, now),
 		flood:   &budget{max: 1500, window: 5 * time.Minute, used: map[string]*spend{}, now: now},
+		lead:    newLeadBook(),
 		now:     now,
 		Logf:    log.Printf,
 	}
@@ -105,6 +107,11 @@ func (srv *Server) Handler() http.Handler {
 	mux.Handle("GET "+p+"/classes/{id}/events", srv.need(staff, srv.events))
 	mux.Handle("GET "+p+"/classes/{id}/live", srv.need(staff, srv.live))
 	mux.Handle("GET "+p+"/classes/{id}/export", srv.need(staff, srv.export))
+	mux.Handle("GET "+p+"/classes/{id}/lead", srv.need(staff, srv.getLead))
+	mux.Handle("PUT "+p+"/classes/{id}/lead", srv.need(staff, srv.putLead))
+	mux.Handle("DELETE "+p+"/classes/{id}/lead", srv.need(staff, srv.endLead))
+	mux.Handle("GET "+p+"/lead", srv.need(st, srv.myLead))
+	mux.Handle("PUT "+p+"/lead/me", srv.need(st, srv.putMark))
 
 	return srv.wrap(mux)
 }

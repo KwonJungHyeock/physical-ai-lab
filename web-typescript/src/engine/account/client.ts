@@ -17,6 +17,7 @@
 import type { ClassInfo, IssuedStudent, Role, Session, StudentClass, StudentId, UserInfo, XapiAgent } from './types';
 import type { Statement, StoredStatement } from './events';
 import type { SendResult } from './queue';
+import type { LeadSet, LeadView, MarkIn, MyLead } from './lead';
 
 export const CLASS_PORT = 47290;
 export const API_PREFIX = '/class-api/v1';
@@ -353,6 +354,26 @@ export class ClassServerClient {
     const qs = q.toString();
     return this.call('GET', `/classes/${encodeURIComponent(id)}/live${qs ? '?' + qs : ''}`);
   }
+  /** The lesson the teacher leads in this class now (lead: null when none) and the students' marks. */
+  lead(id: string): Promise<LeadView> {
+    return this.call('GET', `/classes/${encodeURIComponent(id)}/lead`);
+  }
+  /** Start the led lesson or move it on (step, robots allowed, answer shown, stop all robots). */
+  setLead(id: string, l: LeadSet): Promise<LeadView> {
+    return this.call('PUT', `/classes/${encodeURIComponent(id)}/lead`, l);
+  }
+  endLead(id: string): Promise<{ ok: true }> {
+    return this.call('DELETE', `/classes/${encodeURIComponent(id)}/lead`);
+  }
+  /** Student: the lesson the teacher leads now (null: none), the student's own mark, the group's robot PC. */
+  myLead(): Promise<MyLead> {
+    return this.call('GET', '/lead');
+  }
+  /** Student: what this screen did on the step (409 'no_lead' when the teacher has ended it). */
+  setMark(m: MarkIn): Promise<MyLead> {
+    return this.call('PUT', '/lead/me', m);
+  }
+
   /**
    * The class's records as a file's text (CSV for Excel, or JSON). Reading a response as text drops the
    * UTF-8 BOM, which Excel needs to read Korean: it is put back on the CSV.

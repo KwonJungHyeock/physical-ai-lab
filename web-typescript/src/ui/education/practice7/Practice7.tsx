@@ -50,8 +50,17 @@ import { tcpFor, type EffectorId } from '@/engine/simulator/effectors';
 import { addEvidence } from '@/engine/simulator/evidence';
 import { aiOnRobot, cameraFrameUrl, fetchRobotState, handVisionOnRobot, type RobotAi } from '@/engine/simulator/robotLink';
 
+import { LESSON_BY_ID, type LeadLesson } from '@/engine/education/lead';
+import type { Lead, LeadSet } from '@/engine/account';
+
 import Icon from '../../simulator/Icon';
+import { useAccount } from '../../account/AccountProvider';
 import type { RealArm } from '../lessons';
+import type { LeadKit } from '../lead/kit';
+import { LeadStart } from '../lead/LeadDialogs';
+import LeadStudent from '../lead/LeadStudent';
+import LeadTeacher from '../lead/LeadTeacher';
+import { useLeadHost, type HostState, type LeadSession, type StudentLead } from '../lead/useLead';
 import { useRobotStop } from '../../simulator/connect/robotStop';
 import { Lines } from '../lesson/Rich';
 import LearnStage, { type LearnScene, type ViewPose } from '../stage/LearnStage';
@@ -67,10 +76,18 @@ interface Props {
   gripperRobot: UrdfRobot | null;
   real: RealArm;
   hidden?: boolean;
-  /** Teachers see one line of advice per unit. */
+  /** Teachers see one line of advice per unit, and can lead the class through a unit ("선생님과 함께"). */
   teacher: boolean;
+  /** A logged-in student's view of the lesson the teacher leads (LearnView polls it). */
+  studentLead?: StudentLead | null;
+  studentNo?: number | null;
   onBack(): void;
 }
+
+/** A unit shown as a lesson the teacher leads: the teacher's presenter screen or a student's. */
+type LeadMode =
+  | { kind: 'teacher'; lesson: LeadLesson; lead: Lead; host: HostState; sess: LeadSession; onEnd(): void }
+  | { kind: 'student'; lesson: LeadLesson; lead: Lead; sl: StudentLead; no: number | null };
 
 const KEY = 'practice7-progress';
 const UNIT_KEY = 'practice7-unit';
@@ -164,8 +181,28 @@ const VIEW_KIT: ViewPose = [0.68, 0.62, 0.42, 0.13, 0.04, 0];
 /** Unit 7 waves with the arm upright (about 45 cm tall): drawn back to take it all in. */
 const VIEW_TALL: ViewPose = [0.8, 0.5, 0.8, 0, 0.22, 0];
 
-export default function Practice7({ robot, chain, gripperRobot, real, hidden, teacher, onBack }: Props) {
+export default function Practice7({ robot, chain, gripperRobot, real, hidden, teacher, studentLead, studentNo, onBack }: Props) {
   const [unitId, setUnitIdRaw] = useState<UnitId>(readUnit);
+  const account = useAccount();
+  const [startOpen, setStartOpen] = useState(false);
+  const [teach, setTeach] = useState<{ sess: LeadSession; first: LeadSet } | null>(null);
+  const host = useLeadHost(teach?.sess ?? null, teach?.first ?? null);
+  const tLead = teach ? host.lead : null;
+  const sLead = studentLead?.joined ? studentLead.lead : null;
+  const active = tLead ?? sLead;
+  const lesson = active ? (LESSON_BY_ID.get(active.lesson) ?? null) : null;
+  const shownUnit = lesson?.unit ?? unitId;
+  const endTeach = async () => {
+    await host.end();
+    setTeach(null);
+  };
+  const leadMode: LeadMode | null =
+    lesson && tLead && teach
+      ? { kind: 'teacher', lesson, lead: tLead, host, sess: teach.sess, onEnd: () => void endTeach() }
+      : lesson && sLead && studentLead
+        ? { kind: 'student', lesson, lead: sLead, sl: studentLead, no: studentNo ?? null }
+        : null;
+  const staff = account.role === 'teacher' || account.role === 'operator';
   const [progress, setProgress] = useState<Progress>(readProgress);
   const setUnitId = (id: UnitId) => {
     setUnitIdRaw(id);
@@ -186,6 +223,30 @@ export default function Practice7({ robot, chain, gripperRobot, real, hidden, te
       writeProgress(next);
       return next;
     });
+
+  const view = (
+    <UnitView
+      key={shownUnit}
+      unit={UNIT_BY_ID.get(shownUnit)!}
+      prog={progress[shownUnit]}
+      update={(f) => update(shownUnit, f)}
+      onNext={setUnitId}
+      onFinish={onBack}
+      robot={robot}
+      chain={chain}
+      gripperRobot={gripperRobot}
+      real={real}
+      hidden={hidden}
+      teacher={teacher}
+      lead={leadMode}
+    />
+  );
+  if (leadMode)
+    return (
+      <div className={css.p7} data-lead hidden={hidden}>
+        {view}
+      </div>
+    );
 
   return (
     <div className={css.p7} hidden={hidden}>
@@ -214,21 +275,24 @@ export default function Practice7({ robot, chain, gripperRobot, real, hidden, te
             );
           })}
         </nav>
+        {teacher && (
+          <button type="button" className={css.leadStart} onClick={() => setStartOpen(true)} title="프로젝터 화면으로 단계를 이끌고, 학생 화면이 함께 넘어가요">
+            선생님과 함께 수업
+          </button>
+        )}
       </header>
-      <UnitView
-        key={unitId}
-        unit={UNIT_BY_ID.get(unitId)!}
-        prog={progress[unitId]}
-        update={(f) => update(unitId, f)}
-        onNext={setUnitId}
-        onFinish={onBack}
-        robot={robot}
-        chain={chain}
-        gripperRobot={gripperRobot}
-        real={real}
-        hidden={hidden}
-        teacher={teacher}
-      />
+      {view}
+      {startOpen && (
+        <LeadStart
+          client={staff ? account.client() : null}
+          unit={unitId}
+          onClose={() => setStartOpen(false)}
+          onStart={(sess, first) => {
+            setStartOpen(false);
+            setTeach({ sess, first });
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -246,10 +310,11 @@ interface UnitProps {
   real: RealArm;
   hidden?: boolean;
   teacher: boolean;
+  lead: LeadMode | null;
 }
 
 /** One unit: its own 3D scene, panel and robot state (remounted on every unit change, so all of it starts fresh). */
-function UnitView({ unit, prog, update, onNext, onFinish, robot, chain, gripperRobot, real, hidden, teacher }: UnitProps) {
+function UnitView({ unit, prog, update, onNext, onFinish, robot, chain, gripperRobot, real, hidden, teacher, lead }: UnitProps) {
   const unitId = unit.id;
   const markStep = (step: string) => update((p) => (p.steps.includes(step) ? p : { ...p, steps: [...p.steps, step] }));
   const answer = (qi: number, choice: number) =>
@@ -795,6 +860,100 @@ function UnitView({ unit, prog, update, onNext, onFinish, robot, chain, gripperR
     void real.stop();
   }, [hidden, realBusy, real]);
 
+  /** The unit's real-robot buttons. locked: shown but not pressable (a led lesson before the teacher's go); [■ 멈추기] never is. */
+  const realControls = (locked: boolean) =>
+    !real.online ? (
+      <p className={css.offline}>
+        <span className={css.line}>지금은 시뮬레이션이에요.</span>
+        <span className={css.line}>
+          위쪽 <b>[로봇 연결]</b> 로 로봇을 연결해요.
+        </span>
+        <span className={css.line}>그러면 여기서 바로 실물로 해 볼 수 있어요.</span>
+      </p>
+    ) : (
+      <div className={css.realBtns}>
+        {unitId === 1 && <RealBtn onClick={real1} busy={realBusy} disabled={locked} label="실물로 6축 움직이기" />}
+        {unitId === 2 && <RealBtn onClick={real2} busy={realBusy} disabled={locked} label="실물로 5번 다녀오기" />}
+        {unitId === 3 && <RealBtn onClick={real3} busy={realBusy} disabled={locked} label={`실제 카메라 ${Math.max(1, Math.min(2, cams))}대로 찍기`} />}
+        {unitId === 4 && (
+          <>
+            {cams >= 2 && (
+              <span className={css.camPick}>
+                손 카메라:
+                {[0, 1].map((i) => (
+                  <button key={i} type="button" aria-pressed={handCam === i} onClick={() => setHandCam(i)}>
+                    {i + 1}번
+                  </button>
+                ))}
+              </span>
+            )}
+            <RealBtn onClick={real4find} busy={realBusy} disabled={locked} label="① 실제 블록 찾기" />
+            <button type="button" className={css.simBtn} disabled={!realFound || busy || realBusy} onClick={() => void real4check()}>
+              ② 시뮬레이션으로 확인
+            </button>
+            <RealBtn onClick={real4move} busy={realBusy} disabled={locked || !realPlanOk} label="③ 실물로 옮기기" />
+          </>
+        )}
+        {unitId === 5 && (
+          <>
+            <RealBtn onClick={real5grip} busy={realBusy} disabled={locked} label="① 그리퍼 열기 · 닫기" />
+            <label className={css.swap}>
+              <input type="checkbox" checked={swapped} onChange={(e) => setSwapped(e.target.checked)} /> 흡착 펌프로 바꿔 끼웠어요
+            </label>
+            <RealBtn onClick={real5pump} busy={realBusy} disabled={locked || !swapped} label="② 펌프 켜기 · 끄기" />
+          </>
+        )}
+        {unitId === 6 && <RealBtn onClick={real6} busy={realBusy} disabled={locked} label="로봇 안에서 AI 실행" />}
+        {unitId === 7 && <RealBtn onClick={real7} busy={realBusy} disabled={locked} label="같은 코드를 실물로 실행" />}
+        {realBusy && (
+          <button type="button" className={css.stop} onClick={stopReal}>
+            ■ 멈추기
+          </button>
+        )}
+      </div>
+    );
+  const realMedia = (
+    <>
+      {realShots.length > 0 && (
+        <div className={css.pics}>
+          {realShots.map((u, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={u} src={u} alt={`실제 카메라 ${i + 1} 사진`} />
+          ))}
+        </div>
+      )}
+      {realAi?.image && (
+        <div className={css.pics}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={realAi.image} alt="로봇 AI 가 찾은 물체" />
+        </div>
+      )}
+    </>
+  );
+
+  /* --- a led lesson: the lead screen, with the 3D view laid over the place it marks --------------- */
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const [slotEl, setSlotEl] = useState<HTMLElement | null>(null);
+  const [slotBox, setSlotBox] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
+  useEffect(() => {
+    const body = bodyRef.current;
+    if (!lead || !slotEl || !body) return;
+    const measure = () => {
+      const a = body.getBoundingClientRect();
+      const b = slotEl.getBoundingClientRect();
+      setSlotBox({ left: b.left - a.left, top: b.top - a.top, width: b.width, height: b.height });
+    };
+    const ro = new ResizeObserver(measure);
+    ro.observe(slotEl);
+    ro.observe(body);
+    window.addEventListener('resize', measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [lead, slotEl]);
+  const slotShown = !!lead && !!slotEl && !!slotBox && slotBox.width > 0;
+
   /* --- the panel ------------------------------------------------------------------------------ */
   const allSteps = unit.steps.every((s) => prog.steps.includes(s.id));
   const quizOk = quizRight(unit, prog) === unit.quiz.length;
@@ -808,9 +967,41 @@ function UnitView({ unit, prog, update, onNext, onFinish, robot, chain, gripperR
   const next = UNITS.find((u) => u.id === unitId + 1);
   const code = useMemo(() => ['from pymycobot import MyCobot280RDKX5', '', 'mc = MyCobot280RDKX5("/dev/ttyS1", 1000000)', ...WAVE.map((w) => w.line)], []);
 
+  const kit: LeadKit = {
+    unit,
+    doStep: (id) => doStep(id),
+    busy,
+    doneSteps: prog.steps,
+    extra: <DoExtra unitId={unitId} arrivals={arrivals} photos={photos} shot={shot} found={found} line={line} code={code} />,
+    real: { online: real.online, busy: realBusy, msg: realMsg, controls: realControls, media: realMedia, stop: stopReal, doneAt: prog.real?.at ?? null },
+  };
+  const stage = (
+    <section
+      className={css.stage}
+      ref={stageRef}
+      aria-label="3D 실습 화면"
+      data-lead={lead ? true : undefined}
+      style={lead ? (slotShown ? { ...slotBox! } : { left: 0, top: 0, width: 480, height: 360, visibility: 'hidden' }) : undefined}
+    >
+      <LearnStage robot={robot} chain={chain} gripperRobot={gripperRobot} scene={scene} paused={hidden || (!!lead && !slotShown)} home={UNIT_HOME[unitId].kit ? VIEW_KIT : unitId === 7 ? VIEW_TALL : VIEW_ARM} focus={focus} />
+      <span className={css.badge}>
+        {unit.id}. {unit.title}
+        <small data-real={real.online || undefined}>{real.online ? '● 실물 로봇 연결됨' : '시뮬레이션'}</small>
+      </span>
+    </section>
+  );
+
+  if (lead)
+    return (
+      <div className={css.leadBody} ref={bodyRef}>
+        {lead.kind === 'teacher' ? <LeadTeacher lesson={lead.lesson} lead={lead.lead} host={lead.host} sess={lead.sess} kit={kit} slot={setSlotEl} onEnd={lead.onEnd} /> : <LeadStudent lesson={lead.lesson} lead={lead.lead} sl={lead.sl} no={lead.no} kit={kit} slot={setSlotEl} />}
+        {stage}
+      </div>
+    );
+
   return (
     <>
-      <div className={css.body}>
+      <div className={css.body} ref={bodyRef}>
         <aside className={css.panel} aria-label={`${unit.id}. ${unit.title}`}>
           <div className={css.unitHead}>
             <small>
@@ -915,71 +1106,9 @@ function UnitView({ unit, prog, update, onNext, onFinish, robot, chain, gripperR
             <p className={css.ready}>
               <b>준비</b> <Lines text={unit.real.ready} />
             </p>
-            {!real.online ? (
-              <p className={css.offline}>
-                <span className={css.line}>지금은 시뮬레이션이에요.</span>
-                <span className={css.line}>
-                  위쪽 <b>[로봇 연결]</b> 로 로봇을 연결해요.
-                </span>
-                <span className={css.line}>그러면 여기서 바로 실물로 해 볼 수 있어요.</span>
-              </p>
-            ) : (
-              <div className={css.realBtns}>
-                {unitId === 1 && <RealBtn onClick={real1} busy={realBusy} label="실물로 6축 움직이기" />}
-                {unitId === 2 && <RealBtn onClick={real2} busy={realBusy} label="실물로 5번 다녀오기" />}
-                {unitId === 3 && <RealBtn onClick={real3} busy={realBusy} label={`실제 카메라 ${Math.max(1, Math.min(2, cams))}대로 찍기`} />}
-                {unitId === 4 && (
-                  <>
-                    {cams >= 2 && (
-                      <span className={css.camPick}>
-                        손 카메라:
-                        {[0, 1].map((i) => (
-                          <button key={i} type="button" aria-pressed={handCam === i} onClick={() => setHandCam(i)}>
-                            {i + 1}번
-                          </button>
-                        ))}
-                      </span>
-                    )}
-                    <RealBtn onClick={real4find} busy={realBusy} label="① 실제 블록 찾기" />
-                    <button type="button" className={css.simBtn} disabled={!realFound || busy || realBusy} onClick={() => void real4check()}>
-                      ② 시뮬레이션으로 확인
-                    </button>
-                    <RealBtn onClick={real4move} busy={realBusy} disabled={!realPlanOk} label="③ 실물로 옮기기" />
-                  </>
-                )}
-                {unitId === 5 && (
-                  <>
-                    <RealBtn onClick={real5grip} busy={realBusy} label="① 그리퍼 열기 · 닫기" />
-                    <label className={css.swap}>
-                      <input type="checkbox" checked={swapped} onChange={(e) => setSwapped(e.target.checked)} /> 흡착 펌프로 바꿔 끼웠어요
-                    </label>
-                    <RealBtn onClick={real5pump} busy={realBusy} disabled={!swapped} label="② 펌프 켜기 · 끄기" />
-                  </>
-                )}
-                {unitId === 6 && <RealBtn onClick={real6} busy={realBusy} label="로봇 안에서 AI 실행" />}
-                {unitId === 7 && <RealBtn onClick={real7} busy={realBusy} label="같은 코드를 실물로 실행" />}
-                {realBusy && (
-                  <button type="button" className={css.stop} onClick={stopReal}>
-                    ■ 멈추기
-                  </button>
-                )}
-              </div>
-            )}
+            {realControls(false)}
             {realMsg && <p className={css.realMsg}>{realMsg}</p>}
-            {realShots.length > 0 && (
-              <div className={css.pics}>
-                {realShots.map((u, i) => (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img key={u} src={u} alt={`실제 카메라 ${i + 1} 사진`} />
-                ))}
-              </div>
-            )}
-            {realAi?.image && (
-              <div className={css.pics}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={realAi.image} alt="로봇 AI 가 찾은 물체" />
-              </div>
-            )}
+            {realMedia}
             <p className={css.records}>
               <em>기록하는 것</em>
               <Lines text={unit.real.records} />
@@ -1011,13 +1140,7 @@ function UnitView({ unit, prog, update, onNext, onFinish, robot, chain, gripperR
           )}
         </aside>
 
-        <section className={css.stage} ref={stageRef} aria-label="3D 실습 화면">
-          <LearnStage robot={robot} chain={chain} gripperRobot={gripperRobot} scene={scene} paused={hidden} home={UNIT_HOME[unitId].kit ? VIEW_KIT : unitId === 7 ? VIEW_TALL : VIEW_ARM} focus={focus} />
-          <span className={css.badge}>
-            {unit.id}. {unit.title}
-            <small data-real={real.online || undefined}>{real.online ? '● 실물 로봇 연결됨' : '시뮬레이션'}</small>
-          </span>
-        </section>
+        {stage}
       </div>
     </>
   );
