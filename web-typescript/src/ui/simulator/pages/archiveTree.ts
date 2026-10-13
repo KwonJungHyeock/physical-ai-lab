@@ -92,9 +92,18 @@ export function buildTree(programs: ArchiveItem[], checks: ArchiveItem[]): ArcFo
       {
         key: 'guides',
         name: '매뉴얼 · 가이드',
-        note: '시뮬레이터 사용 매뉴얼과 교사용 교육 가이드라인 (인쇄용 PDF)',
+        note: '로봇 기초교육 자료, 시뮬레이터 사용 매뉴얼, 교사용 교육 가이드라인 (인쇄용 PDF)',
         folders: [],
         files: [
+          {
+            key: 'basic-guide',
+            name: '로봇 기초교육 자료.pdf',
+            type: 'pdf',
+            note: '로봇 기본 세팅 · 간단 조작 · 기초 수업 2차시 (지도안 · 활동지 · 확인 문제) · 프로그램 사용 가이드',
+            href: '/guides/basic-guide.pdf',
+            download: '로봇 기초교육 자료.pdf',
+            thumb: '/guides/thumbs/basic-guide.jpg',
+          },
           {
             key: 'simulator-guide',
             name: '시뮬레이터 사용 매뉴얼.pdf',

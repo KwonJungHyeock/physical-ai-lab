@@ -6,6 +6,7 @@
 
 | 문서 | 대상 | 원고 |
 | --- | --- | --- |
+| [`로봇 기초교육 자료.pdf`](course/로봇%20기초교육%20자료.pdf) | 처음 받은 학교의 선생님 · 실습 담당자 — 로봇 기본 세팅(USB 설치 · Wi-Fi · 연결 · 영점 · 검수 준비 점검), 간단 조작, 기초 수업 2차시(지도안 · 활동지 · 확인 문제), 프로그램 사용 가이드, 문제 해결 | [`course/basic-training.md`](course/basic-training.md) |
 | [`시뮬레이터 사용 매뉴얼.pdf`](simulator/시뮬레이터%20사용%20매뉴얼.pdf) (27쪽) | 학생 · 선생님 · 처음 쓰는 분 — 설치, 화면, 직접 제어, 블록 · Python · ROS 2, 과제, 실제 로봇 연결, 문제 해결 | [`simulator/simulator-guide.md`](simulator/simulator-guide.md) |
 | [`교사용 교육 가이드라인.pdf`](course/교사용%20교육%20가이드라인.pdf) (21쪽) | 선생님 — 과정 한눈에, 수업 준비 · 안전, 한 차시 50분 운영, 28차시 계획표, 학문별 지도 포인트, 평가, 자료실 | [`course/teacher-guide.md`](course/teacher-guide.md) |
 
@@ -13,6 +14,7 @@
 ```bash
 node tools/build/guide-shots/simulator.mjs   # 화면 캡처 → simulator/img (번호 표시 포함)
 node tools/build/guide-shots/teacher.mjs     # 화면 캡처 → course/img
+BASE=http://localhost:8090 PC_BASE=http://localhost:3001 node tools/build/guide-shots/basic.mjs   # 로봇에 연결한 화면 → course/img/b-* (로봇 서버 또는 데모 서버)
 node tools/build/guide-shots/diagrams.mjs    # 설명 그림 (d-*.png)
 node tools/build/guides.mjs                  # md → PDF, 인쇄 쪽 검사
 ```
@@ -50,5 +52,6 @@ node tools/build/guides.mjs                  # md → PDF, 인쇄 쪽 검사
 
 | 안내서 | 내용 |
 | --- | --- |
+| [`basic-training.md`](course/basic-training.md) | 로봇 기초교육 자료의 원고 (그림은 `course/img/b-*`) |
 | [`teacher-guide.md`](course/teacher-guide.md) | 교사용 교육 가이드라인의 원고 (그림은 `course/img/`) |
 | [`robotics-course.md`](course/robotics-course.md) | 로봇공학 · 피지컬 AI — 윗줄 [교육] 탭: 대상 · 장비 → 커리큘럼 지도(8개 단원 · 28차시) → 단원 미리보기 → 수업 화면(단계 막대 · 활동 패널 · 수업 카드), 자료실 PDF 26종, 시연 GIF |

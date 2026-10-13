@@ -47,6 +47,7 @@
 | [`09-robot-console.md`](reports/console/09-robot-console.md) | 보고 #9 — 로봇 연결 콘솔: 검수항목 7종 실습, 테마 2개, 제어판 · 영점, 실제 카메라 |
 | [`11-roadmap.md`](reports/console/11-roadmap.md) | 보고 #11 — 실습/검수 시연 분리, 실시간 조그 · 3D 표시, 브랜드, 현장 세팅, 모델 확장 순서 |
 | [`13-check-audit.md`](reports/console/13-check-audit.md) | 보고 #13 — 검수항목 7종 실기 구현 가능성 점검과 반영 목록 |
+| [`27-acceptance-rehearsal.md`](reports/console/27-acceptance-rehearsal.md) | 보고 #27 — 전체 검수(중복 · 누락 · 실물 연동 · 화면 이동) 수정 목록, 검수 7종 전 경로 리허설(데모 로봇, 7/7), 실물로만 확인되는 것, 기초교육 자료 |
 
 ### [`education/`](reports/education/) — 교육 과정 · 교재
 | 문서 | 내용 |

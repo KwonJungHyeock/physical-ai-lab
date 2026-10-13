@@ -1,5 +1,5 @@
 // The guides in manuals/ → print-ready PDFs (A4), with a layout check of the printed pages.
-//   node tools/build/guides.mjs [simulator|teacher ...]
+//   node tools/build/guides.mjs [simulator|teacher|basic ...]
 //
 // Source: Markdown with a few extra blocks (see manuals/README.md "배포용 PDF 만들기"):
 //   front matter (title, subtitle, audience, version, cover), `# ` = chapter (new page), `## ` · `### `,
@@ -20,6 +20,7 @@ const repo = path.dirname(web);
 const GUIDES = {
   simulator: { src: 'manuals/simulator/simulator-guide.md', out: 'manuals/simulator/시뮬레이터 사용 매뉴얼.pdf' },
   teacher: { src: 'manuals/course/teacher-guide.md', out: 'manuals/course/교사용 교육 가이드라인.pdf' },
+  basic: { src: 'manuals/course/basic-training.md', out: 'manuals/course/로봇 기초교육 자료.pdf' },
 };
 // A copy for the console's 자료실 (pages/Archive.tsx), served at /guides/<name>-guide.pdf.
 const publicCopy = (name) => path.join(web, 'public', 'guides', `${name}-guide.pdf`);

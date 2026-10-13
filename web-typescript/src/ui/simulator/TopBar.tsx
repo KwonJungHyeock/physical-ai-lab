@@ -17,7 +17,7 @@ export type ConsoleView = 'learn' | 'sim' | 'library' | 'archive';
 const SCREENS: { id: ConsoleView; name: string; icon: string; title: string }[] = [
   { id: 'learn', name: '교육', icon: 'book', title: '로봇공학 단원 · 수업' },
   { id: 'sim', name: '시뮬레이터', icon: 'cube', title: '실습 · 코딩 · 로봇 연결' },
-  { id: 'library', name: '라이브러리', icon: 'gallery', title: '실습 과제 · 검수 시연 · 실습 환경 · 로봇 모델 · 도구' },
+  { id: 'library', name: '라이브러리', icon: 'gallery', title: '실습 과제 · 실습 환경 · 도구' },
   { id: 'archive', name: '자료실', icon: 'archive', title: '내려받기: 프로그램 · 교재 · 문항지 · 매뉴얼' },
 ];
 
