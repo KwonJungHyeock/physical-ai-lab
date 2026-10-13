@@ -5367,6 +5367,13 @@ button.jpRow:hover {
   justify-content: flex-end;
   gap: 8px;
   margin-top: 14px;
+  /* The list is long on a 768 px screen: the buttons (the result sheet above all) stay in sight at the box's foot. */
+  position: sticky;
+  bottom: -22px;
+  margin-bottom: -22px;
+  padding: 12px 0 22px;
+  background: #fff;
+  border-top: 1px solid var(--line);
 }
 
 /* 로봇 찾기: name first, address under it */
