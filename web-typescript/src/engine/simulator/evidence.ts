@@ -13,6 +13,8 @@ export interface Evidence {
   text: string;
   /** Done on the real robot (true) or in the simulator (false). */
   robot: boolean;
+  /** Done on a demo robot server (server.py --demo: a pretend arm): practice, not proof. */
+  demo?: boolean;
 }
 
 /** One line of the robot's self-check (/api/selfcheck). */
@@ -43,6 +45,20 @@ export function saveEvidence(list: readonly Evidence[]): void {
     /* this session only */
   }
 }
+
+let demoRobot = false;
+/** The robot server now connected is a demo (pretend arm): robot lines written from now on say so. */
+export function setDemoRobot(on: boolean): void {
+  demoRobot = on;
+}
+
+/** Add one line to the record (the console's checks and 로봇 실습 7 both write here). */
+export function addEvidence(check: number, text: string, robot: boolean): void {
+  saveEvidence([...loadEvidence(), { check, at: new Date().toISOString(), text, robot, ...(robot && demoRobot ? { demo: true } : {}) }]);
+}
+
+/** A line that counts as shown on a real robot (not the simulator, not a demo server). */
+export const onRealRobot = (e: Evidence) => e.robot && !e.demo;
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 const time = (iso: string) => {
@@ -75,23 +91,26 @@ export function reportHtml(opts: { robot: string; model: string; evidence: reado
   const now = new Date();
   const rows = CHECKS.map((c) => {
     const list = opts.evidence.filter((e) => e.check === c.check);
-    const real = list.some((e) => e.robot);
+    const real = list.some(onRealRobot);
+    const demo = list.some((e) => e.robot && e.demo);
     const sim = list.some((e) => !e.robot);
     const missing = realMissing(
       c.check,
-      list.filter((e) => e.robot).map((e) => e.text),
+      list.filter(onRealRobot).map((e) => e.text),
     );
     const state = real
       ? missing
         ? `<b class="sim">◐ 실제 로봇 일부</b><small class="miss">남은 것: ${esc(missing)}</small>`
         : '<b class="ok">✓ 실제 로봇</b>'
-      : sim
-        ? '<b class="sim">△ 시뮬레이션만</b>'
-        : '<b class="no">— 기록 없음</b>';
+      : demo
+        ? '<b class="sim">◇ 데모 로봇(가짜 팔)만</b><small class="miss">실제 로봇으로 다시 해야 해요</small>'
+        : sim
+          ? '<b class="sim">△ 시뮬레이션만</b>'
+          : '<b class="no">— 기록 없음</b>';
     const lines = list.length
       ? `<ul>${list
           .slice(-8)
-          .map((e) => `<li><time>${time(e.at)}</time> ${e.robot ? '<i>로봇</i>' : '<i class="s">시뮬</i>'} ${esc(e.text)}</li>`)
+          .map((e) => `<li><time>${time(e.at)}</time> ${e.robot ? (e.demo ? '<i class="s">데모</i>' : '<i>로봇</i>') : '<i class="s">시뮬</i>'} ${esc(e.text)}</li>`)
           .join('')}</ul>`
       : '';
     return `<tr><td class="n">${c.check}</td><td><b>${esc(c.title)}</b><small>${esc(c.spec)}</small></td><td>${state}${lines}</td></tr>`;
@@ -105,9 +124,12 @@ export function reportHtml(opts: { robot: string; model: string; evidence: reado
         .join('')}</table>`
     : '';
   const done = CHECKS.filter((c) => {
-    const robotLines = opts.evidence.filter((e) => e.check === c.check && e.robot).map((e) => e.text);
+    const robotLines = opts.evidence.filter((e) => e.check === c.check && onRealRobot(e)).map((e) => e.text);
     return robotLines.length > 0 && realMissing(c.check, robotLines) === null;
   }).length;
+  const demoNote = opts.evidence.some((e) => e.robot && e.demo)
+    ? '<p class="warn">데모 로봇(가짜 팔, 연습용 서버)으로 한 기록은 연습이라 위의 수에 넣지 않았어요.</p>'
+    : '';
   return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>검수 결과표 (${esc(opts.robot)})</title>
 <style>
@@ -118,11 +140,12 @@ table{width:100%;border-collapse:collapse;font-size:13px}td{border-top:1px solid
 td.n{width:28px;font-weight:800;font-size:16px;color:#3454d1}ul{margin:6px 0 0;padding-left:16px}li{margin:2px 0}
 time{color:#667085;font-variant-numeric:tabular-nums}i{font-style:normal;font-size:11px;background:#e7f6ee;color:#16955a;border-radius:4px;padding:0 4px}
 i.s{background:#eef1f7;color:#475467}.ok{color:#16955a}.sim{color:#b54708}.no{color:#b42318}.miss{display:block;color:#b54708}
-.prep td:first-child{width:20px;font-weight:800}@media print{body{padding:0}}
+.prep td:first-child{width:20px;font-weight:800}.warn{font-size:13px;color:#b54708;background:#fffaeb;border:1px solid #fedf89;border-radius:6px;padding:8px 10px;margin:0 0 12px}@media print{body{padding:0}}
 </style></head><body>
 <h1>검수 결과표 (myCobot 280 RDK X5)</h1>
 <p class="meta">${esc(opts.robot)} · ${esc(opts.model)} · 만든 때 ${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} · ROBODYNE SYSTEMS Physical AI 학습 프로그램</p>
 <p class="sum">실제 로봇으로 확인한 검수 <b>${done} / ${CHECKS.length}</b></p>
+${demoNote}
 <table>${rows}</table>
 ${prep}
 </body></html>`;

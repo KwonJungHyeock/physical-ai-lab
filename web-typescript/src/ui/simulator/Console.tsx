@@ -41,7 +41,7 @@ import {
   type RobotAi,
   type RobotState,
 } from '@/engine/simulator/robotLink';
-import { loadEvidence, reportHtml, saveEvidence, type PrepItem } from '@/engine/simulator/evidence';
+import { addEvidence, loadEvidence, reportHtml, saveEvidence, setDemoRobot, type PrepItem } from '@/engine/simulator/evidence';
 import { categoryOf, loadProgress, markKey, openCheck, saveProgress, type ConsoleMode, type Progress, type Where } from '@/engine/simulator/modules';
 import { DEFAULT_MODEL, MODEL_CHOICE, modelById, type RobotModelId } from '@/engine/robot/catalog';
 import { activeArm, adaptPython, armById, setActiveArm, type ArmSpec } from '@/engine/robot/arms';
@@ -743,8 +743,11 @@ export default function Console() {
    */
   const note = (check: number | undefined, text: string, real: boolean) => {
     if (!check) return;
-    saveEvidence([...loadEvidence(), { check, at: new Date().toISOString(), text, robot: real }]);
+    addEvidence(check, text, real);
   };
+  // A demo robot server (pretend arm): what is recorded on it is practice, not proof (the sheet says so).
+  const demoRobot = !!robot?.demo;
+  useEffect(() => setDemoRobot(demoRobot), [demoRobot]);
 
   /** 검수 준비 점검 (the robot's self-check) and the result sheet. */
   const [prep, setPrep] = useState<{ items: PrepItem[]; at: string } | null>(null);

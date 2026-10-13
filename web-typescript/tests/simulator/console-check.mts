@@ -369,7 +369,15 @@ const release = { grip: 'robot.gripper.open()', suction: 'robot.pump.off()' };
   });
   assert.ok(html.includes('◐ 실제 로봇 일부'), 'one tool only: shown in part');
   assert.ok(/1\s*\/\s*7/.test(html.replace(/<[^>]+>/g, ' ')), 'only the full check counts');
-  console.log('  ok   result sheet: ✓ only for a check shown in full on the robot (2 cameras, a real pick, both tools)');
+  const demoHtml = reportHtml({
+    robot: '로봇 2',
+    model: 'myCobot 280 RDK X5',
+    evidence: [{ check: 1, at, text: '로봇에서 실행 완료: 6축 하나씩', robot: true, demo: true }],
+    prep: null,
+    prepAt: null,
+  });
+  assert.ok(demoHtml.includes('◇ 데모 로봇(가짜 팔)만') && /0\s*\/\s*7/.test(demoHtml.replace(/<[^>]+>/g, ' ')), 'a demo server run is practice, not counted');
+  console.log('  ok   result sheet: ✓ only for a check shown in full on the robot (2 cameras, a real pick, both tools); a demo server is not counted');
 }
 
 console.log('\nConsole validated against the AI Kit.');

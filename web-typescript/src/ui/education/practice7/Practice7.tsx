@@ -47,7 +47,7 @@ import type { UrdfRobot } from '@/engine/robot/urdf';
 import type { BlockPose } from '@/engine/physics/physics';
 import { BINS, BLOCK_MM, BLOCK_START, COLOR_HEX, COLORS, HOME_DEG, TOP_CAMERA, type ColorName } from '@/engine/simulator/board';
 import { tcpFor, type EffectorId } from '@/engine/simulator/effectors';
-import { loadEvidence, saveEvidence } from '@/engine/simulator/evidence';
+import { addEvidence } from '@/engine/simulator/evidence';
 import { aiOnRobot, cameraFrameUrl, fetchRobotState, handVisionOnRobot, type RobotAi } from '@/engine/simulator/robotLink';
 
 import Icon from '../../simulator/Icon';
@@ -107,7 +107,7 @@ function writeProgress(p: Progress) {
 
 /** One line in the 검수 기록 the console's result sheet is made from. */
 function note(check: number, text: string, robot: boolean) {
-  saveEvidence([...loadEvidence(), { check, at: new Date().toISOString(), text: `로봇 실습 7 · ${text}`, robot }]);
+  addEvidence(check, `로봇 실습 7 · ${text}`, robot);
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
