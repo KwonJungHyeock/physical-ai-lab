@@ -3,11 +3,11 @@
 // the result chips against the numbers its 볼 것 promises.
 //   [SLOW=3] npx tsx tools/check/learn-sim.mjs [5-2 ...] [--clips]   (tsx: the scenarios are TypeScript)
 // Needs the app running (npm run dev; BASE=http://localhost:3000) and Playwright.
-// --clips also records each try (the lesson rail with its controls beside the 3D view) to
+// --clips also records each try (the lesson rail with its controls beside the 3D view, Chrome screencast) to
 // public/education/clips/<topic>-<step>.gif with ffmpeg (FFMPEG=path, else ffmpeg on PATH).
 
 import { execFileSync, execSync } from 'node:child_process';
-import { existsSync, mkdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -122,30 +122,44 @@ async function record(name, run) {
   const x = Math.min(a.x, b.x);
   const y = Math.min(a.y, b.y);
   const box = { x, y, width: Math.max(a.x + a.width, b.x + b.width) - x, height: Math.max(a.y + a.height, b.y + b.height) - y };
+  // Frames as the page paints them (Chrome's screencast), not a screenshot per frame: forcing a software-3D
+  // screenshot of this area takes seconds and starves a lesson that steps its physics per frame (8-2).
+  const cdp = await ctx.newCDPSession(page);
   const frames = [];
-  let going = true;
-  const grab = (async () => {
-    const t0 = Date.now();
-    while (going) {
-      const file = path.join(dir, `f${String(frames.length).padStart(4, '0')}.jpg`);
-      await page.screenshot({ path: file, type: 'jpeg', quality: 88, clip: { x: box.x, y: box.y, width: box.width, height: box.height } });
-      frames.push({ file, t: (Date.now() - t0) / 1000 });
-    }
-  })();
+  cdp.on('Page.screencastFrame', (f) => {
+    const file = path.join(dir, `f${String(frames.length).padStart(5, '0')}.jpg`);
+    writeFileSync(file, Buffer.from(f.data, 'base64'));
+    frames.push({ file, t: f.metadata.timestamp ?? Date.now() / 1000 });
+    cdp.send('Page.screencastFrameAck', { sessionId: f.sessionId }).catch(() => {});
+  });
+  await cdp.send('Page.startScreencast', { format: 'jpeg', quality: 88 });
   try {
     await run();
     await page.waitForTimeout(1200);
   } finally {
-    going = false;
-    await grab;
+    await cdp.send('Page.stopScreencast').catch(() => {});
+    await cdp.detach().catch(() => {});
   }
-  // Real timing: each frame lasts until the next one was taken.
+  // A screen that did not change sends no frames: take one.
+  if (!frames.length) {
+    const file = path.join(dir, 'f00000.jpg');
+    await page.screenshot({ path: file, type: 'jpeg', quality: 88 });
+    frames.push({ file, t: 0 });
+  }
+  // Real timing: each frame lasts until the next one was painted.
   const list = frames.map((f, i) => `file '${f.file}'\nduration ${((frames[i + 1]?.t ?? f.t + 0.1) - f.t).toFixed(3)}`).join('\n');
   writeFileSync(path.join(dir, 'list.txt'), `${list}\nfile '${frames.at(-1).file}'\n`);
   mkdirSync(clipDir, { recursive: true });
-  const vf = 'fps=10,scale=800:-2:flags=lanczos';
+  const crop = `crop=${Math.round(box.width)}:${Math.round(box.height)}:${Math.round(box.x)}:${Math.round(box.y)}`;
+  const vf = `${crop},fps=10,scale=800:-2:flags=lanczos`;
+  const input = ['-f', 'concat', '-safe', '0', '-i', path.join(dir, 'list.txt')];
+  const palette = path.join(dir, 'palette.png');
   const out = path.join(clipDir, name);
-  execFileSync(ffmpeg, ['-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', path.join(dir, 'list.txt'), '-vf', `${vf},split[a][b];[a]palettegen=max_colors=160:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle`, '-loop', '0', `${out}.gif`]);
+  // Two passes (palette, then the GIF): one pass keeps every frame in memory, too much for a minutes-long try.
+  execFileSync(ffmpeg, ['-y', '-loglevel', 'error', ...input, '-vf', `${vf},palettegen=max_colors=160:stats_mode=diff`, palette]);
+  // Written beside and then moved, so a failed encode never leaves a broken clip.
+  execFileSync(ffmpeg, ['-y', '-loglevel', 'error', ...input, '-i', palette, '-lavfi', `${vf}[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle`, '-loop', '0', `${out}.part.gif`]);
+  renameSync(`${out}.part.gif`, `${out}.gif`);
   rmSync(dir, { recursive: true, force: true });
   console.log(`    clip ${name}.gif ${(statSync(`${out}.gif`).size / 1024).toFixed(0)} KB`);
 }
