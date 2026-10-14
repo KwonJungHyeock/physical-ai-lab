@@ -166,9 +166,12 @@ if (want('check')) {
 if (want('symbol')) {
   await pageTab('개념').click();
   await settle(page, 2000);
-  await aside().locator('button[class*=sym]').first().click();
+  const chip = aside().locator('button[class*=sym]:visible').first();
+  await chip.click();
   await settle(page, 900);
-  await save(page, out('11-symbol.png'), { crop: [aside().locator('button[class*=sym]').first(), page.locator('[role=tooltip], [class*=symPop], [class*=pop]').first()], pad: 20 });
+  // The bubble the chip opened (its aria-describedby), not any other tooltip on the page.
+  const bubble = page.locator(`[id="${await chip.getAttribute('aria-describedby')}"]`);
+  await save(page, out('11-symbol.png'), { crop: [chip, bubble], pad: 20 });
   await page.keyboard.press('Escape');
 }
 if (want('clip')) {
