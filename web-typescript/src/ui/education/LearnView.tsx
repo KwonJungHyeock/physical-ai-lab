@@ -547,7 +547,8 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
     (place: string, prob: number | null) => track(() => events.operated(operatedObject(place === 'topic' ? { lesson: topicId } : { lab: place, problem: prob ?? undefined }), REAL_ROBOT)),
     [track, topicId],
   );
-  const follow = useRealFollow(real, chain, hidden ? null : screen === 'topic' ? 'topic' : (FOLLOW_LAB[screen] ?? null), onFollow);
+  const followAt = screen === 'topic' ? 'topic' : (FOLLOW_LAB[screen] ?? null);
+  const follow = useRealFollow(real, chain, hidden ? null : followAt, onFollow);
   // A lesson's own [실물로] buttons take the arm over from 실물 연동 first (they would fight over it).
   const { handOver } = follow;
   const lessonReal = useMemo<RealArm>(
@@ -700,7 +701,8 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
           </section>
         </div>
       </SymbolsProvider>
-      <FollowBar {...follow} hidden={hidden} stage="right" />
+      {/* Only where the real arm can follow (a lesson, a site lab): not over the map, 마무리 평가 or the 관제센터. */}
+      <FollowBar {...follow} hidden={hidden || !followAt} stage="right" />
       {locked && !hidden && (
         <LessonLocked
           topic={locked}
