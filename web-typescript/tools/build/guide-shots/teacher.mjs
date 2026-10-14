@@ -119,19 +119,24 @@ await panel.locator('[class*=guideControls] button[class*=primary]:not([disabled
 await page.waitForFunction(() => document.querySelector('section[aria-label="실습 제어판"] [data-kind="result"][data-st="now"]'), null, { timeout: 120000 }).catch(() => {});
 await settle(page, 2500);
 if (want('rail')) {
+  // The rail scrolls: a tall window shows the activity's whole flow at once.
+  const vp = page.viewportSize();
+  await page.setViewportSize({ width: vp.width, height: 2000 });
+  await settle(page, 4000);
   await scrollAside(0);
   await save(page, out('07-rail.png'), {
-    crop: aside(),
-    pad: 30,
+    crop: panel,
+    pad: 34,
     marks: [
       { at: panel.locator('[class*=change]').first(), n: 1, pos: 'l' },
       { at: panel.locator('[data-kind="ask"]'), n: 2, pos: 'l' },
       { at: panel.locator('[data-kind="do"]'), n: 3, pos: 'l' },
       { at: panel.locator('[data-kind="result"]'), n: 4, pos: 'l' },
       { at: panel.locator('[data-kind="read"]').last(), n: 5, pos: 'l' },
-      { at: aside().locator('footer'), n: 6, pos: 'l' },
     ],
   });
+  await page.setViewportSize(vp);
+  await settle(page, 3000);
 }
 if (want('activity')) {
   await setTeacher(true);
