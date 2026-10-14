@@ -3,7 +3,7 @@
 // the result chips against the numbers its 볼 것 promises.
 //   [SLOW=3] npx tsx tools/check/learn-sim.mjs [5-2 ...] [--clips]   (tsx: the scenarios are TypeScript)
 // Needs the app running (npm run dev; BASE=http://localhost:3000) and Playwright.
-// --clips also records each try's 3D view (with the panel) to
+// --clips also records each try (the lesson rail with its controls beside the 3D view) to
 // public/education/clips/<topic>-<step>.gif with ffmpeg (FFMPEG=path, else ffmpeg on PATH).
 
 import { execFileSync, execSync } from 'node:child_process';
@@ -69,6 +69,7 @@ await page.addStyleTag({ content: 'nextjs-portal{display:none!important} [class*
 
 const panel = page.locator('section[aria-label="실습 제어판"]');
 const stage = page.locator('section[aria-label="3D 실습 화면"]');
+const rail = page.locator('aside[aria-label$="수업 카드"]');
 
 async function openTopic(id) {
   // The lesson opens straight at 활동 1 (window.__learnOpen, the same as 수업 시작 on the course map).
@@ -110,13 +111,17 @@ const matches = (got, want) => {
   return re ? new RegExp(re[1]).test(got) : got.includes(want);
 };
 
-/** Frames of the 3D view while `run` goes on, then encoded to a clip. */
+/** Frames of the rail and the 3D view while `run` goes on, then encoded to a clip. */
 async function record(name, run) {
   if (!clips) return run();
   const dir = path.join(tmpdir(), `clip-${name}`);
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
-  const box = await stage.boundingBox();
+  // What the student sees: the rail (예상 · 해 보기 · 결과) and the 3D view beside it.
+  const [a, b] = [await rail.boundingBox(), await stage.boundingBox()];
+  const x = Math.min(a.x, b.x);
+  const y = Math.min(a.y, b.y);
+  const box = { x, y, width: Math.max(a.x + a.width, b.x + b.width) - x, height: Math.max(a.y + a.height, b.y + b.height) - y };
   const frames = [];
   let going = true;
   const grab = (async () => {
@@ -138,7 +143,7 @@ async function record(name, run) {
   const list = frames.map((f, i) => `file '${f.file}'\nduration ${((frames[i + 1]?.t ?? f.t + 0.1) - f.t).toFixed(3)}`).join('\n');
   writeFileSync(path.join(dir, 'list.txt'), `${list}\nfile '${frames.at(-1).file}'\n`);
   mkdirSync(clipDir, { recursive: true });
-  const vf = 'fps=12,scale=560:-2:flags=lanczos';
+  const vf = 'fps=10,scale=800:-2:flags=lanczos';
   const out = path.join(clipDir, name);
   execFileSync(ffmpeg, ['-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', path.join(dir, 'list.txt'), '-vf', `${vf},split[a][b];[a]palettegen=max_colors=160:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle`, '-loop', '0', `${out}.gif`]);
   rmSync(dir, { recursive: true, force: true });
