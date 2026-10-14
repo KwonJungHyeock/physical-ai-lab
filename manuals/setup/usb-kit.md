@@ -9,6 +9,14 @@
 만드는 쪽: `robot-python/usb-kit/` (설치 파일·양식), `robot-python/server/usb_setup.py` (로봇 쪽), `robot-python/tools/make_usb_kit.py` (묶기).
 
 ## 1. USB 만들기 (PC, 한 번)
+
+**시뮬레이터 프로그램으로 (Windows, 권장)**: USB 를 꽂고 `Physical AI 시뮬레이터.exe` → 윗줄 **⚙ 설정 → [로봇 USB 만들기]**.
+꽂은 USB 가 저절로 골라지고 Wi-Fi 이름에는 이 PC 의 Wi-Fi 가 들어 있습니다. 비밀번호 · 사용자를 적고 **[USB 만들기]** →
+**[USB 꺼내기]**. 아래 1~2 를 프로그램이 대신합니다(프로그램에 든 서명된 키트를 쓰고, `wifi.txt` 를 로봇이 읽는 양식으로 씁니다).
+로봇에 꽂았던 USB 를 다시 꽂으면 **[로봇 결과 보기]** 에 `result-*.txt` 를 로봇마다 한 줄로 보여 줍니다(성공 로봇은 [연결]).
+다시 만들면 예전 결과는 `eduino/지난 결과/` 로 옮깁니다. 만드는 쪽: `desktop-go/usbkit.go`, 화면 `web-typescript/src/ui/simulator/connect/UsbMaker.tsx`.
+
+**직접 (프로그램 없이)**:
 1. 받은 `eduino_usb.zip` 을 풀어 나온 **`eduino` 폴더를 USB 맨 위에** 복사합니다.
    ```
    USB

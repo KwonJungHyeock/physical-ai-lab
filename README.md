@@ -68,8 +68,9 @@ npm run gen:curriculum    # content-markdown/*.md → src/engine/education/curri
 ```
 
 ```bash
-sh desktop-go/build.sh                              # build:robot 후 desktop-go/dist/PhysicalAI-Simulator.zip (exe + 읽어보세요)
 export EDUINO_SIGNING_KEY=~/keys/eduino-kit-signing.pem   # USB 키트 서명용 비밀 키 (저장소 밖, 없으면 서명 없는 키트)
+sh desktop-go/build.sh                              # build:robot 후 desktop-go/dist/PhysicalAI-Simulator.zip (exe + 읽어보세요),
+                                                    #   키가 있으면 서명된 로봇 키트를 exe 에 넣음 (⚙ → 로봇 USB 만들기)
 python3 robot-python/tools/make_usb_kit.py -o dist  # dist/eduino_usb.zip (USB 키트) · dist/robot_console.zip (+ .sig)
 python3 robot-python/tools/make_release.py -o dist  # 배포 묶음: exe · USB · 매뉴얼 PDF · 수업 자료 PDF
 python3 -m compileall robot-python                  # 파이썬 문법 검사
@@ -166,6 +167,8 @@ HTTP + JSON 만 쓰고 WebSocket 은 없습니다 (화면이 `/api/state` 를 �
 myAGV `agv_server.py` 는 같은 화면 파일에 `GET /api/state`, `POST /api/drive`(0.1–0.2초마다 유지 신호) · `/api/stop` ·
 `/api/straight` · `/api/trim` · `/api/led` · `/api/identify` · `/api/reconnect`, `GET /api/camera.jpg`, `/api/wifi…` 를 둡니다.
 exe(`desktop-go`)는 `/api/*` 에 404 를 돌려 시뮬레이터로 두고, `GET /__physical-ai-simulator/lan` 으로 이 PC 의 네트워크 대역을 알려 줍니다.
+로봇 USB 만들기(`desktop-go/usbkit.go`)는 `/__physical-ai-simulator/usb` (USB 목록 · `/pcwifi` · `/make` · `/job` · `/results` · `/eject`):
+127.0.0.1 에서만, `X-Physical-AI: 1` 머리글이 있는 요청만 받습니다 (학급 서버 모드에는 없음).
 
 ## 문서 · 배포
 
