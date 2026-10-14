@@ -57,6 +57,38 @@ export const EFFECTOR_BY_ID: Record<EffectorId, Effector> = Object.fromEntries(
 ) as Record<EffectorId, Effector>;
 
 /**
+ * The robot's flange as its server reads it (/api/tool): a gripper answers with its opening (0–100),
+ * null when no gripper answers, undefined when not known (a program running, an older robot). The pump
+ * has no sensor: a gripper answering means the pump is not what is fitted.
+ */
+export type FlangeReading = number | null | undefined;
+
+/** The tool on screen against the robot's flange: a gripper on screen and none answers, or another tool on screen and a gripper answers. */
+export function toolMismatch(id: EffectorId, flange: FlangeReading): 'no-gripper' | 'gripper-fitted' | null {
+  if (flange === undefined) return null;
+  const grip = EFFECTOR_BY_ID[id].kind === 'grip';
+  if (grip && flange === null) return 'no-gripper';
+  if (!grip && flange !== null) return 'gripper-fitted';
+  return null;
+}
+
+/** Which tool commands a list of robot actions holds (step lists and a Python program's timed commands alike). */
+export function toolsUsed(actions: readonly { type: string; cmd?: string; on?: boolean }[]): { grip: boolean; pump: boolean } {
+  return {
+    grip: actions.some((a) => a.type === 'gripper' || (a.type === 'timed' && a.cmd === 'gripper')),
+    pump: actions.some((a) => a.type === 'pump' || (a.type === 'timed' && a.cmd === 'pump')),
+  };
+}
+
+/** Before sending gripper or pump commands to the real arm: why not, in words ('' when fine or not known). */
+export function flangeRefusal(uses: { grip: boolean; pump: boolean }, flange: FlangeReading): string {
+  if (flange === undefined) return '';
+  if (uses.grip && flange === null) return '로봇의 그리퍼가 대답하지 않아요. 그리퍼가 끼워져 있는지, 그리퍼 케이블이 팔 끝에 꽂혀 있는지 확인해 주세요.';
+  if (uses.pump && flange !== null) return '로봇에 그리퍼가 끼워져 있어요. 흡착 펌프로 바꿔 끼운 뒤 다시 해 주세요.';
+  return '';
+}
+
+/**
  * The camera flange adds this much between the robot flange and the tool:
  * the pump head sits at 89.3 mm on the bare flange and at 106.2 mm on the
  * camera flange (official URDFs mycobot_280_m5_with_pump / _with_camera_flange_pump).

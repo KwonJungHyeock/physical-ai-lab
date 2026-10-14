@@ -2673,7 +2673,7 @@ div.zeroFlow {
   top: 62px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 6;
+  z-index: 13;
   width: min(460px, calc(100% - 24px));
   display: grid;
   gap: 4px;
@@ -2690,12 +2690,18 @@ div.zeroFlow {
   font-size: 14px;
   color: #93370d;
 }
+.ownerActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
 .connBanner {
   position: absolute;
   top: 62px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 6;
+  z-index: 13;
   width: min(460px, calc(100% - 24px));
   display: grid;
   gap: 8px;

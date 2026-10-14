@@ -130,8 +130,9 @@ STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 class DemoArm:
     """Stand-in with the MyCobot280RDKX5 method names used here; moves at ~speed x 2 °/s."""
 
-    def __init__(self):
+    def __init__(self, gripper=True):
         self.angles = [3.95, 134.47, -57.83, -129.46, 104.41, -1.84]  # measured power-on rest pose
+        self.has_gripper = gripper   # --no-gripper: a flange without one (get_gripper_value answers -1)
         self.target, self.speed, self.t = list(self.angles), 30, time.time()
         self.limp = [False] * 6
         self.grip, self.grip_target, self.grip_speed, self.grip_t = 100.0, 100.0, 50, time.time()
@@ -214,6 +215,8 @@ class DemoArm:
         return 1
 
     def get_gripper_value(self, gripper_type=1):
+        if not self.has_gripper:
+            return -1
         self._grip_tick()
         return int(round(self.grip))
 
@@ -349,12 +352,12 @@ class NoArm:
 class Robot:
     """The arm plus a live state the console polls, and one program runner."""
 
-    def __init__(self, demo, port, baud):
+    def __init__(self, demo, port, baud, gripper=True):
         self.demo = demo
         self.port, self.baud = port, baud
         open_error = ""
         if demo:
-            self.arm = DemoArm()
+            self.arm = DemoArm(gripper)
         else:
             # A missing pymycobot or a port that will not open must not stop the server (systemd
             # would restart it every few seconds and no PC could find the robot to learn why): it
@@ -1182,6 +1185,16 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.send_json({"ok": False, "error": str(exc), "networks": []}, 503)
         if self.path.split("?")[0] == "/api/selfcheck":
             return self.send_json({"ok": True, "items": selfcheck(), **IDENTITY})
+        if self.path.split("?")[0] == "/api/tool":
+            # What is on the flange, for the screen to compare with the tool it shows: a gripper answers
+            # get_gripper_value with 0..100 (none: -1 or nothing). The pump has no sensor (pump: wired up).
+            if ROBOT.state["running"] or not ROBOT.state["connected"]:
+                return self.send_json({"ok": True, "busy": True, "gripper": None, "pump": ROBOT.pump.available})
+            try:
+                g = ROBOT.call("get_gripper_value", 1)
+            except Exception:  # noqa: BLE001 - a robot that does not answer has no gripper to report
+                g = None
+            return self.send_json({"ok": True, "gripper": g if isinstance(g, int) and g >= 0 else None, "pump": ROBOT.pump.available})
         if self.path.split("?")[0] == "/api/arrivals":
             return self.send_json({"run": ROBOT.state["run"], "arrivals": ROBOT.state["arrivals"]})
         if self.path.split("?")[0] == "/api/camera.jpg":
@@ -1418,6 +1431,7 @@ def main():
     ap.add_argument("--baud", type=int, default=PROFILE["baudrate"], help="통신 속도")
     ap.add_argument("--owner-lease", type=float, default=Owner.LEASE_S, help="한 PC 가 로봇을 쥐고 있는 시간, 초 (기본 15)")
     ap.add_argument("--demo", action="store_true", help="로봇 없이 가짜 팔로 실행")
+    ap.add_argument("--no-gripper", action="store_true", help="(--demo) 그리퍼를 끼우지 않은 가짜 팔")
     ap.add_argument("--name", default=None, help="로봇 찾기에 보일 사용자 이름 (기본: USB 의 wifi.txt 사용자= 로 정한 이름)")
     ap.add_argument("--camera", default="auto",
                     help="카메라: auto(기본, 연결된 카메라를 모두 찾아 씀), 장치 번호나 그림 파일 경로를 쉼표로 (예: 0,2), 또는 none")
@@ -1431,7 +1445,7 @@ def main():
 
     if not os.path.exists(os.path.join(STATIC_DIR, "console.html")):
         raise SystemExit(f"화면 파일이 없어요: {STATIC_DIR}/console.html — 받은 압축 파일을 이 폴더에 그대로 풀었는지 확인해 주세요.")
-    ROBOT = Robot(args.demo, args.serial, args.baud)
+    ROBOT = Robot(args.demo, args.serial, args.baud, gripper=not args.no_gripper)
     if not args.demo:
         log(f"[펌프] 준비됨 (40핀 BOARD {Pump.PIN_A}·{Pump.PIN_B})" if ROBOT.pump.available else f"[펌프] 쓸 수 없어요: {ROBOT.pump.error}")
     WIFI = Wifi(args.demo, log)

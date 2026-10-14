@@ -216,6 +216,19 @@ export async function fetchSelfcheck(): Promise<{ ok: boolean; error?: string; i
   }
 }
 
+/** What is on the flange (/api/tool): a gripper's opening, null when no gripper answers; undefined when not known (running, an older robot). */
+export async function fetchTool(): Promise<number | null | undefined> {
+  try {
+    const r = await fetch(api('/api/tool'), { cache: 'no-store', signal: AbortSignal.timeout(4000) });
+    if (!r.ok) return undefined;
+    const j = (await r.json()) as { busy?: boolean; gripper?: number | null };
+    if (j.busy) return undefined;
+    return typeof j.gripper === 'number' && j.gripper >= 0 ? j.gripper : null;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function fetchRobotState(signal?: AbortSignal): Promise<RobotState | null> {
   try {
     const r = await fetch(api(remote ? '/api/state?console=1' : '/api/state'), { cache: 'no-store', signal });

@@ -15,7 +15,7 @@ import { memo, useCallback, useEffect, useEffectEvent, useMemo, useRef, useState
 import { Vector3 } from 'three';
 
 import { BLOCK_MM, BLOCK_START, HAND_PHOTO_DEG, HOME_DEG, randomBlockLayout, type ColorName, type Theme } from '@/engine/simulator/board';
-import { EFFECTOR_BY_ID, tcpFor, type EffectorId } from '@/engine/simulator/effectors';
+import { EFFECTOR_BY_ID, flangeRefusal, tcpFor, toolMismatch, toolsUsed, type EffectorId, type FlangeReading } from '@/engine/simulator/effectors';
 import { toPymycobot } from '@/engine/simulator/export';
 import {
   aiOnRobot,
@@ -25,6 +25,7 @@ import {
   handVisionOnRobot,
   fetchRobotState,
   fetchSelfcheck,
+  fetchTool,
   focusRobot,
   jogRobot,
   jogRobotAxis,
@@ -715,6 +716,14 @@ export default function Console() {
   const realRunRef = useRef(false);
   /** The latest robot state, for the real-time jog loop (state updates are too slow for it). */
   const robotNow = useRef<RobotState | null>(null);
+  /** What the real arm's flange has (/api/tool): read on connect, on a tool change and every 20 s while idle. */
+  const [flange, setFlange] = useState<FlangeReading>(undefined);
+  const [flangeHidden, setFlangeHidden] = useState('');
+  const readFlange = useCallback(async () => {
+    const v = await fetchTool();
+    setFlange(v);
+    return v;
+  }, []);
   /** The running real-time jog (see startJog). */
   const jog = useRef<{
     /** A held key: a joint or a base axis and its direction; a slider: the pose to reach. */
@@ -915,6 +924,12 @@ export default function Console() {
   /** Send actions to the robot and lock the console until the server reports that run finished. */
   const startReal = async (actions: RobotAction[], note: string, kind: 'program' | 'check' = 'program') => {
     realKind.current = kind;
+    // A gripper program on an arm without one (or a pump program with a gripper on): say so instead.
+    const why = flangeRefusal(toolsUsed(actions), await readFlange());
+    if (why) {
+      addLog('err', `로봇: ${why}`);
+      return;
+    }
     const res = await runOnRobot(actions, EFFECTOR_BY_ID[effector].gripperType);
     if (!res.ok) {
       addLog('err', `로봇: ${res.error ?? '실행할 수 없어요.'}`);
@@ -2662,20 +2677,43 @@ export default function Console() {
     addLog('info', m === 'check' ? '검수 시연 모드예요. 위의 1~7 번호로 검수 항목을 하나씩 열어 시연해요.' : '실습 모드예요. [라이브러리]의 실습 과제에서 주제별 실습을 골라요.');
   };
 
+  // The flange again on connect, on a tool change and every 20 s while the arm is idle (tools get swapped mid-class).
+  const flangeLive = robotMode && !!robot?.connected;
+  useEffect(() => {
+    if (!flangeLive) return;
+    const look = () => {
+      if (!robotNow.current?.running) void readFlange();
+    };
+    look();
+    const t = window.setInterval(look, 20000);
+    return () => window.clearInterval(t);
+  }, [flangeLive, effector, readFlange]);
+  const mismatch = flangeLive ? toolMismatch(effector, flange) : null;
+  const mismatchKey = mismatch ? `${effector}:${mismatch}` : '';
+
   /** The real arm for the 교육 screens (only when this console runs on the robot). */
   const realArm = useMemo<RealArm>(
     () => ({
       online: robotMode && !!robot?.connected,
       angles: robot?.angles ?? null,
       move: (angles, speed) => moveRobot(angles, speed),
-      run: (actions) => runOnRobot(actions),
+      run: async (actions) => {
+        const why = flangeRefusal(toolsUsed(actions), await readFlange());
+        return why ? { ok: false, error: why } : runOnRobot(actions);
+      },
       now: () => robotNow.current?.angles ?? null,
       target: (angles, speed) => targetRobot(angles, speed),
       stop: () => stopRobot(),
-      pump: (on) => pumpRobot(on),
-      grip: (open) => gripRobot(open, EFFECTOR_BY_ID[effector].gripperType ?? 1),
+      pump: async (on) => {
+        const why = on ? flangeRefusal({ grip: false, pump: true }, await readFlange()) : '';
+        return why ? { ok: false, error: why } : pumpRobot(on);
+      },
+      grip: async (open) => {
+        const why = flangeRefusal({ grip: true, pump: false }, await readFlange());
+        return why ? { ok: false, error: why } : gripRobot(open, EFFECTOR_BY_ID[effector].gripperType ?? 1);
+      },
     }),
-    [robotMode, robot?.connected, robot?.angles, effector],
+    [robotMode, robot?.connected, robot?.angles, effector, readFlange],
   );
 
   return (
@@ -3125,6 +3163,33 @@ export default function Console() {
                 <div className={css.ownerBanner} role="status">
                   <b>다른 PC({otherOwner(robot)})가 이 로봇을 움직이는 중이에요.</b>
                   <span>그동안 이 화면의 로봇 명령은 로봇이 받지 않아요. 그 PC 가 끝내고 15초가 지나면 다시 쓸 수 있어요. 멈추기는 언제나 돼요.</span>
+                </div>
+              )}
+              {mismatch && !pcOffer && flangeHidden !== mismatchKey && !otherOwner(robot) && (
+                <div className={css.ownerBanner} role="status" aria-label="도구 확인">
+                  <b>
+                    {mismatch === 'no-gripper'
+                      ? `화면의 도구는 ${EFFECTOR_BY_ID[effector].name}인데, 로봇의 그리퍼가 대답하지 않아요.`
+                      : `로봇에 그리퍼가 끼워져 있어요. 화면의 도구는 ${EFFECTOR_BY_ID[effector].name}예요.`}
+                  </b>
+                  <span>
+                    {mismatch === 'no-gripper'
+                      ? '그리퍼가 끼워져 있는지, 그리퍼 케이블이 팔 끝에 꽂혀 있는지 확인해요. 다른 도구를 끼웠다면 도구 칸에서 그 도구로 바꿔요.'
+                      : '이대로 실행하면 손끝 길이가 달라 블록에 닿지 않거나 부딪힐 수 있어요. 화면 도구를 그리퍼로 바꿔요.'}
+                  </span>
+                  <span className={css.ownerActions}>
+                    {mismatch === 'gripper-fitted' && (
+                      <button type="button" className={css.primary} disabled={busy} onClick={() => changeTool('adaptive', cameraFlange)}>
+                        어댑티브 그리퍼로 바꾸기
+                      </button>
+                    )}
+                    <button type="button" className={css.ghost} onClick={() => void readFlange()}>
+                      다시 확인
+                    </button>
+                    <button type="button" className={css.ghost} onClick={() => setFlangeHidden(mismatchKey)}>
+                      닫기
+                    </button>
+                  </span>
                 </div>
               )}
               {robotMode && (serverLost || (robot && !robot.connected)) && (
