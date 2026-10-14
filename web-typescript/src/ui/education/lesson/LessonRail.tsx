@@ -4,14 +4,17 @@
  * The lesson in one column on the left of the 3D view: everything a student reads, picks and
  * does, in order, in one place (it replaces the floating activity panel and the theory column).
  *
- * What a block is shows before its words do — each kind has its own colour, icon and tag:
- *   개념 (read)    white          the idea to remember, the principle, the long theory folded
- *   질문 (ask)     warm amber     something to pick: round choice rows, never buttons
- *   해 보기 (do)   blue           the topic's own controls: move, press, watch the 3D view
- *   결과 (result)  green          what came out, and whether the guess was right
+ * Laid out as the 시뮬레이션 챕터 공통 양식 (문구 7종, 자리 · 색 고정):
+ *   미션         the dark card at the top: 오늘의 질문 and the three activities as a checklist
+ *   지금 할 일   the green strip under it: one sentence ending in a verb, always one; the place to
+ *                press glows (box-shadow, never transform)
+ *   개념 (read)    blue          the idea to remember, the principle, the long theory folded
+ *   질문 (ask)     grey          something to pick: round choice rows, never buttons
+ *   해 보기 (do)   white         the topic's own controls: move, press, watch the 3D view
+ *   결과 (result)  green         the feedback right under the try: was the guess right, and why
  *   교사용 (teacher) dashed grey   what the teacher asks and the answers (only when switched on)
  * An activity goes 예상 → 해 보기 → 결과 → 왜, one block opening after the other: the block to do
- * now is outlined, the next ones wait folded. The one big button at the foot always names where it
+ * now glows, the next ones wait folded. The one big button at the foot always names where it
  * goes. The topic's controls stay mounted on every page (switching steps must not reset a try).
  */
 
@@ -162,32 +165,64 @@ export default function LessonRail({ topic, page, onPage, results, onChecked, le
 
   // The big button waits for the activity's result.
   const locked = !!act && !results[act.key];
-  const headline = act ? act.title : page === 'intro' ? topic.title : page === 'theory' ? '핵심 개념 익히기' : page === 'cmp' ? '세 활동을 모아 정리' : '배운 것을 문제로 확인';
+  const guessed = act ? guess[act.key] !== undefined : false;
+  // 지금 할 일: one sentence, and which place glows.
+  const [todo, glow]: [string, 'ask' | 'do' | 'next' | 'none'] = act
+    ? !guessed
+      ? ['예상을 하나 골라요.', 'ask']
+      : !results[act.key]
+        ? ['해 보기의 할 일대로 직접 움직여 봐요.', 'do']
+        : ['결과와 이유를 읽고 다음으로 가요.', 'next']
+    : page === 'intro'
+      ? ['그림을 보고 오늘 배울 것을 읽어요.', 'next']
+      : page === 'theory'
+        ? ['핵심 한 줄과 원리를 읽어요.', 'next']
+        : page === 'cmp'
+          ? ['세 활동의 결과를 비교해 읽어요.', 'next']
+          : passed
+            ? ['다음 차시로 넘어가요.', 'next']
+            : ['확인 문제를 모두 풀어요.', 'none'];
   return (
-    <aside className={css.rail} aria-label={`${topic.title} 수업 카드`} data-teacher={teacher || undefined}>
-      <header className={css.head}>
-        <div>
-          <span className={css.kicker}>
-            {PAGE_LABEL[page]}
-            {act ? ` · ${ACT_NAME[act.key]}` : ''} · {MINUTES[level][page]}분
-          </span>
-          <h2>{headline}</h2>
+    <aside className={css.rail} aria-label={`${topic.title} 수업 카드`} data-teacher={teacher || undefined} data-glow={glow}>
+      <header className={css.mission} aria-label="미션">
+        <div className={css.missionTop}>
+          <small>
+            {topic.id} {topic.title} · 오늘의 질문
+          </small>
+          {teacherAllowed && (
+            <button
+              type="button"
+              className={css.teacherBtn}
+              aria-pressed={teacher}
+              onClick={() => {
+                setTeacher(!teacher);
+                remember(TEACHER_KEY, !teacher);
+              }}
+              title="선생님이 물어볼 것과 정답을 보여 줘요"
+            >
+              교사용 {teacher ? '켜짐' : '보기'}
+            </button>
+          )}
         </div>
-        {teacherAllowed && (
-          <button
-            type="button"
-            className={css.teacherBtn}
-            aria-pressed={teacher}
-            onClick={() => {
-              setTeacher(!teacher);
-              remember(TEACHER_KEY, !teacher);
-            }}
-            title="선생님이 물어볼 것과 정답을 보여 줘요"
-          >
-            교사용 {teacher ? '켜짐' : '보기'}
-          </button>
-        )}
+        <p className={css.missionQ}>
+          <Rich text={glossFirst([topic.question])[0]} inert />
+        </p>
+        <ol className={css.goalsRow} aria-label="목표">
+          {topic.steps.map((s) => (
+            <li key={s.key} data-done={results[s.key] ? true : undefined} data-now={act?.key === s.key || undefined} title={`${ACT_NAME[s.key]} · ${s.title}`}>
+              <i aria-hidden="true">{results[s.key] ? '✓' : s.n}</i>
+              <span>{s.title}</span>
+            </li>
+          ))}
+        </ol>
       </header>
+      <p className={css.todo} role="status" aria-label="지금 할 일">
+        <small>지금 할 일</small>
+        <b>{todo}</b>
+        <span>
+          {PAGE_LABEL[page]} · {MINUTES[level][page]}분
+        </span>
+      </p>
 
       <div className={css.scroll} ref={scroll}>
       <div className={css.body} key={`${topic.id}-${page}`}>
@@ -446,13 +481,10 @@ function ActivityHead({ topic, page }: { topic: Topic; page: StepKey }) {
 }
 
 function IntroPage({ topic, teacher, fig }: { topic: Topic; teacher: boolean; fig: ReactNode }) {
-  const [q, ...goals] = glossFirst([topic.question, ...topic.objectives]);
+  // 오늘의 질문 sits in the 미션 card above, on every page.
+  const goals = glossFirst(topic.objectives);
   return (
     <>
-      <p className={css.hook}>
-        <small>오늘의 질문</small>
-        <Rich text={q} />
-      </p>
       {fig}
       <Block kind="read" title="오늘 배울 것">
         <ol className={css.goals}>

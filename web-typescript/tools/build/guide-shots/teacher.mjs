@@ -125,7 +125,8 @@ if (want('rail')) {
   await settle(page, 4000);
   await scrollAside(0);
   await save(page, out('07-rail.png'), {
-    crop: panel,
+    // From the 지금 할 일 strip down, so the crop never cuts it in half.
+    crop: [aside().locator('[aria-label="지금 할 일"]'), panel],
     pad: 34,
     marks: [
       { at: panel.locator('[class*=change]').first(), n: 1, pos: 'l' },

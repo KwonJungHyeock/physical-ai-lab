@@ -1,34 +1,40 @@
 /*
- * The lesson rail (LessonRail.tsx): the lesson in one column left of the 3D view.
- * Each kind of block has its own colour, so what to read, what to pick and what to move shows
- * before the words do. The colours stay the app's own (white panels, blue accent, green done):
- *   read    white       slate stripe
- *   ask     warm amber  pick a round choice
- *   do      blue        the topic's controls
- *   result  green       what came out
- *   teacher dashed grey only with 교사용 on
+ * The lesson rail (LessonRail.tsx): the lesson in one column left of the 3D view, laid out as the
+ * 시뮬레이션 챕터 공통 양식 — each kind of text has one place and one colour:
+ *   미션        dark card at the top     오늘의 질문 + the three activities as a checklist
+ *   지금 할 일  green strip under it     one sentence; the place to press glows
+ *   read  개념  blue box                 the idea to remember
+ *   ask   질문  grey box                 pick a round choice
+ *   do    해 보기 white                  the topic's controls
+ *   result 결과 green                    the feedback under the try
+ *   teacher     dashed grey              only with 교사용 on
  */
 
 .rail {
-  --read: #475467;
-  --read-bg: #ffffff;
-  --read-line: #e4e7ec;
-  --ask: #b54708;
-  --ask-bg: #fff8ec;
-  --ask-line: #f5d9a8;
-  --do: #2f5be7;
-  --do-bg: #eef4ff;
-  --do-line: #c7d7fe;
+  --read: #2f5be7;
+  --read-bg: #f2f6ff;
+  --read-line: #cfdcfd;
+  --ask: #475467;
+  --ask-bg: #f2f4f7;
+  --ask-line: #d0d5dd;
+  --do: #344054;
+  --do-bg: #ffffff;
+  --do-line: #d0d5dd;
   --res: #067647;
   --res-bg: #ecfdf3;
   --res-line: #abefc6;
   --tch: #475467;
   --tch-bg: #f9fafb;
   --tch-line: #98a2b3;
+  /* 지금 할 일 and the glow on the place to press. */
+  --now: #12935f;
+  --now-bg: #e7f8ef;
+  /* The big button. */
+  --go: #2f5be7;
   --rail-bg: #f4f6fa;
 
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
   min-height: 0;
   background: var(--rail-bg);
   border: 1px solid var(--line);
@@ -41,34 +47,139 @@
   word-break: keep-all;
 }
 
-/* Head: where in the lesson, what this page is --------------------------------- */
-.head {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 12px 14px 11px 16px;
-  background: #fff;
-  border-bottom: 1px solid var(--line);
+/* 미션: 오늘의 질문 and the three activities, on every page ------------------------- */
+.mission {
+  display: grid;
+  gap: 7px;
+  margin: 10px 10px 0;
+  padding: 11px 13px 11px 14px;
+  border-radius: 13px;
+  background:
+    radial-gradient(120% 140% at 100% 0%, rgba(111, 155, 255, 0.26), transparent 55%),
+    linear-gradient(160deg, #1b2537, #121a28);
+  color: #f2f5fb;
 }
-.head > div {
+.missionTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.missionTop small {
   flex: 1;
   min-width: 0;
-}
-.kicker {
-  display: block;
-  font-size: 12.5px;
+  font-size: 11.5px;
   font-weight: 800;
-  color: var(--do);
-  letter-spacing: 0.01em;
+  color: #9fb8ff;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.head h2 {
-  margin: 1px 0 0;
-  font-size: 19px;
+.missionQ {
+  margin: 0;
+  font-size: 15px;
   font-weight: 800;
-  line-height: 1.35;
-  letter-spacing: -0.01em;
-  text-wrap: balance;
+  line-height: 1.45;
 }
+.missionQ :global(*) {
+  color: inherit;
+}
+.goalsRow {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  /* Content-sized: short goal names stay on one line, a long one (up to 14 letters) wraps inside its chip. */
+  display: flex;
+  gap: 5px;
+}
+.goalsRow li {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  padding: 3px 8px 3px 4px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #c5cfe0;
+}
+.goalsRow li i {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  font-size: 10.5px;
+  font-style: normal;
+  font-weight: 800;
+}
+.goalsRow li span {
+  min-width: 0;
+  line-height: 1.3;
+  word-break: keep-all;
+}
+.goalsRow li[data-now] {
+  background: rgba(111, 155, 255, 0.2);
+  border-color: rgba(159, 184, 255, 0.55);
+  color: #fff;
+}
+.goalsRow li[data-done] i {
+  background: #12935f;
+  color: #fff;
+}
+.goalsRow li[data-done] {
+  color: #d6f5e3;
+}
+.mission .teacherBtn {
+  margin-top: 0;
+  border-color: rgba(255, 255, 255, 0.35);
+  background: transparent;
+  color: #d9e2f2;
+  padding: 2px 9px;
+  font-size: 11.5px;
+}
+.mission .teacherBtn[aria-pressed='true'] {
+  border-color: #fff;
+  background: #fff;
+  color: #1b2537;
+}
+
+/* 지금 할 일: one sentence, always one ------------------------------------------- */
+.todo {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 8px 10px 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--now-bg);
+  border: 1px solid color-mix(in srgb, var(--now) 35%, transparent);
+  color: #05603a;
+}
+.todo small {
+  flex: none;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--now);
+}
+.todo b {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 800;
+}
+.todo span {
+  flex: none;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #3b7a5a;
+}
+
 .teacherBtn {
   flex: none;
   margin-top: 2px;
@@ -179,9 +290,33 @@
 /* The block to do now: a ring in its colour. Done: as is, with ✓. To do later: folded, grey. */
 .blk[data-st='now'] {
   border-color: var(--k);
-  box-shadow:
-    0 0 0 3px color-mix(in srgb, var(--k) 16%, transparent),
-    0 4px 14px rgba(16, 24, 40, 0.07);
+  box-shadow: 0 4px 14px rgba(16, 24, 40, 0.07);
+}
+/* The place 지금 할 일 points at glows (box-shadow only: nothing moves). */
+.rail[data-glow='ask'] .blk[data-kind='ask'][data-st='now'],
+.rail[data-glow='do'] .blk[data-kind='do'][data-st='now'],
+.rail[data-glow='next'] .next[data-ready] {
+  border-color: var(--now);
+  animation: glow 1.8s ease-in-out infinite;
+}
+@keyframes glow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 2px color-mix(in srgb, var(--now) 30%, transparent),
+      0 4px 14px rgba(16, 24, 40, 0.07);
+  }
+  50% {
+    box-shadow:
+      0 0 0 6px color-mix(in srgb, var(--now) 16%, transparent),
+      0 4px 14px rgba(16, 24, 40, 0.07);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rail[data-glow] .blk,
+  .rail[data-glow] .next {
+    animation: none;
+  }
 }
 .blk[data-st='todo'] {
   background: #fff;
@@ -258,28 +393,6 @@
   color: var(--muted);
 }
 
-/* 오늘의 질문: the lesson's hook, dark like the 3D figures -------------------------- */
-.hook {
-  margin: 0;
-  display: grid;
-  gap: 4px;
-  padding: 14px 16px 15px;
-  border-radius: 14px;
-  background:
-    radial-gradient(120% 140% at 100% 0%, rgba(111, 155, 255, 0.28), transparent 55%),
-    linear-gradient(160deg, #1b2537, #121a28);
-  color: #f2f5fb;
-  /* One line for a short question at 1366 wide (the panel's text is about 22 em). */
-  font-size: 16px;
-  font-weight: 800;
-  line-height: 1.5;
-}
-.hook small {
-  font-size: 12px;
-  font-weight: 800;
-  color: #9fb8ff;
-  letter-spacing: 0.04em;
-}
 
 /* The figure: a dark frame (the 3D renders are dark; the drawings sit on white inside). */
 .fig {
@@ -507,7 +620,7 @@
   gap: 10px;
   width: 100%;
   padding: 9px 12px;
-  border: 1.5px solid #ecd9b8;
+  border: 1.5px solid var(--ask-line);
   border-radius: 10px;
   background: #fff;
   font: inherit;
@@ -526,12 +639,12 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  border: 2px solid #d0b48a;
+  border: 2px solid #98a2b3;
   background: #fff;
 }
 .choices button[aria-checked='true'] {
   border-color: var(--ask);
-  background: #fff1dc;
+  background: #e4e7ec;
   font-weight: 800;
 }
 .choices button[aria-checked='true'] i {
@@ -820,12 +933,12 @@
   gap: 0;
   min-width: 0;
   padding: 7px 14px 8px;
-  border: 1.5px solid var(--do);
+  border: 1.5px solid var(--go);
   border-radius: 11px;
   background: #fff;
   font: inherit;
   text-align: right;
-  color: var(--do);
+  color: var(--go);
   cursor: pointer;
 }
 .next small {
@@ -842,7 +955,7 @@
 }
 .next[data-ready] {
   border-color: transparent;
-  background: var(--do);
+  background: var(--go);
   color: #fff;
   box-shadow: 0 4px 12px rgba(47, 91, 231, 0.28);
 }

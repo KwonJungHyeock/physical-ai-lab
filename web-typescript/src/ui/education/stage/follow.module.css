@@ -19,8 +19,12 @@
   color: var(--ink);
 }
 .bar[data-stage='right'] {
-  left: calc(50vw + clamp(200px, 15vw, 240px));
-  max-width: min(680px, calc(70vw - 60px));
+  /* A lesson: bottom-left of the 3D view, one row above its hint line (the hint runs along the
+     bottom right), so the two never cover each other. */
+  left: calc(clamp(400px, 30vw, 480px) + 28px);
+  bottom: 74px;
+  transform: none;
+  max-width: calc(100vw - clamp(400px, 30vw, 480px) - 150px);
 }
 .bar[data-on] {
   border-color: var(--real);
@@ -56,6 +60,7 @@
 
 .state {
   min-width: 0;
+
   color: var(--muted);
   line-height: 1.35;
 }

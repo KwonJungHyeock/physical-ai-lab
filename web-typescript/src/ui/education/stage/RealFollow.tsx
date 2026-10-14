@@ -229,7 +229,7 @@ export function FollowBar(p: ReturnType<typeof useRealFollow> & { hidden?: boole
         {p.error ? (
           <b className={css.err}>{p.error}</b>
         ) : !p.on ? (
-          '켜면 화면의 팔을 실물이 따라 움직여요 (속도 50 이하). 팔 둘레를 비워 주세요.'
+          '켜면 실물이 따라 움직여요 (속도 50 이하) · 팔 둘레를 비워 주세요.'
         ) : p.following ? (
           <>실물이 따라오는 중 · 화면과 차이 {lag}</>
         ) : (
