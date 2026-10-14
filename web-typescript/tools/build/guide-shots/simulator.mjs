@@ -76,19 +76,22 @@ if (want('connect-id')) {
 }
 await btn('시뮬레이션만 (로봇 없이)').click();
 await settle(page, 2500);
+// The model picker shows only when other models can be chosen (MODEL_CHOICE); the app is the 280 RDK X5.
 const picker = page.locator('[role=dialog][aria-label="로봇 모델 고르기"] [class*=pickerBox]').first();
-const start280 = picker.locator('button[aria-label$="시작"]').first();
-if (want('model'))
-  await save(page, out('02-model.jpg'), {
-    crop: picker,
-    pad: 24,
-    marks: [
-      { at: picker.locator('[class*=lineBoards]').first(), n: 1, pos: 'l' },
-      { at: start280, n: 2, pos: 'l' },
-      { at: picker.locator('li').filter({ hasText: 'myAGV' }), n: 3, pos: 'tr' },
-    ],
-  });
-await start280.click();
+if (await visible(picker)) {
+  const start280 = picker.locator('button[aria-label$="시작"]').first();
+  if (want('model'))
+    await save(page, out('02-model.jpg'), {
+      crop: picker,
+      pad: 24,
+      marks: [
+        { at: picker.locator('[class*=lineBoards]').first(), n: 1, pos: 'l' },
+        { at: start280, n: 2, pos: 'l' },
+        { at: picker.locator('li').filter({ hasText: 'myAGV' }), n: 3, pos: 'tr' },
+      ],
+    });
+  await start280.click();
+}
 await settle(page, 12000);
 
 // 2 · 화면 둘러보기
