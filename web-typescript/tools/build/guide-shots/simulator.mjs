@@ -449,7 +449,7 @@ if (want('tasks') || want('checks') || want('library')) {
 
 // 9 · AI 키트 환경 · 카메라
 if (want('kit') || want('camera')) {
-  await dock.locator('[class*=envChip]').filter({ hasText: 'AI 키트' }).click();
+  await dock.locator('[class*=envChip]').filter({ hasText: 'AI 키트' }).click({ position: { x: 12, y: 12 } }); // the chip's ▶ 데모 sits over its middle
   // The monitor stands over the small camera picture and the camera panel: hidden for these two.
   await hud.locator('button[aria-label="모니터 감추기"]').click();
   await settle(page, 15000);
