@@ -72,6 +72,7 @@
 | --- | --- |
 | [`14-system-architecture.md`](reports/system/14-system-architecture.md) | 보고 #14 — 아키텍처 · 배포 경로, 개발 8단계, 순서도, 기능별 구현, 품질 검증, 신규 제품 추가 |
 | [`23-accounts-hybrid.md`](reports/system/23-accounts-hybrid.md) | 보고 #23 — 학급 계정과 학습 기록: 교실 학급 서버(교사 PC) + 가명 클라우드, 역할 · 로그인 · 끊김 대응 · xAPI 이벤트 · 법 점검표 |
+| [`30-usb-maker.md`](reports/system/30-usb-maker.md) | 보고 #30 — 로봇 USB 만들기: 시뮬레이터 프로그램에 로봇 키트를 넣어, Wi-Fi 를 칸에 적고 버튼 하나로 USB 를 만들고 로봇마다 결과를 봄 |
 
 ## `mockup/` — 화면 목업
 
