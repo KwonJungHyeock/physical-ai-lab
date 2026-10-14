@@ -172,7 +172,7 @@ FINAL_ITEMS.forEach((f, i) => {
 
 /* --- 4. 로봇 실습 7 ------------------------------------------------------------------------------- */
 p('---', '', '# 4. 로봇 실습 7 (납품 검수 7가지를 쉬운 실습으로)', '');
-for (const u of UNITS as readonly { id: string; check: number; title: string; about: string; like: string; site: string; quiz: { q: string; options: string[]; answer: number; why: string }[]; real: { does: string; records: string } }[]) {
+for (const u of UNITS as unknown as readonly { check: number; title: string; about: string; like: string; site: string; quiz: { q: string; options: string[]; answer: number; why: string }[]; real: { does: string; records: string } }[]) {
   p(`### 7-${u.check} ${plain(u.title)}`, '');
   p(`- **알아보기**: ${plain(u.about)}`, `- **비유**: ${plain(u.like)}`, `- **현장**: ${plain(u.site)}`);
   p('- **문제**:', ...u.quiz.map((q) => `  - ${plain(q.q)} → **${plain(q.options[q.answer])}** · ${plain(q.why)}`));
