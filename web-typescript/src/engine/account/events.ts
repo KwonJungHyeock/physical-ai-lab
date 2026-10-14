@@ -282,6 +282,20 @@ export const events = {
   /** A program run on the real robot. */
   operated: (object: string, robot?: string, d?: StatementDeps) =>
     statement({ verb: 'operated', object, context: robot ? { 'urn:robocity:ctx:robot': robot.slice(0, 40) } : undefined }, d),
+  /**
+   * A check done on the real robot with what it measured (로봇 실습 7): response = the sentence the
+   * student saw, values = the numbers (urn:robocity:val:<name>). demo: a demo robot server (practice).
+   */
+  robotResult: (object: string, robot: string, out: { response: string; values?: Record<string, unknown>; demo?: boolean }, d?: StatementDeps) =>
+    statement(
+      {
+        verb: 'operated',
+        object,
+        result: { success: true, response: out.response.slice(0, MAX_RESPONSE), ...(out.values ? { extensions: valueExtensions(out.values) } : {}) },
+        context: { 'urn:robocity:ctx:robot': robot.slice(0, 40), ...(out.demo ? { 'urn:robocity:ctx:demo': true } : {}) },
+      },
+      d,
+    ),
 };
 
 /* --- checks (the same rules as the server, to drop a bad statement before it is queued) ------------ */

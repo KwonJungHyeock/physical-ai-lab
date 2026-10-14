@@ -1148,6 +1148,68 @@
 .stu .smallBtn {
   justify-self: start;
 }
+.realLine {
+  margin: 0;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: var(--done-soft);
+  color: var(--done);
+  font-size: 12.5px;
+  font-weight: 650;
+}
+.realLine[data-demo] {
+  background: var(--soft);
+  color: var(--muted);
+}
+
+/* 로봇 실습 7 · 실물 결과 */
+.real {
+  display: grid;
+  gap: 8px;
+  padding-top: 8px;
+}
+.real h3 {
+  margin: 0;
+  font-size: 15px;
+}
+.real h3 small {
+  margin-left: 6px;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.realScroll {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.real th small {
+  display: block;
+  color: var(--faint);
+  font-weight: 600;
+}
+.real td small {
+  color: var(--muted);
+  font-weight: 500;
+}
+.realCell {
+  color: var(--done);
+  font-size: 13px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.realCell[data-demo] {
+  color: var(--muted);
+}
+.realCell em {
+  margin-left: 4px;
+  padding: 1px 5px;
+  border-radius: 6px;
+  background: var(--soft);
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+}
 
 /* students */
 .issue {

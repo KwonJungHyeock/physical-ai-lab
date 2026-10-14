@@ -6,8 +6,12 @@
 import { ClassApiError, placeLabel, type LiveFlag, type Place } from '@/engine/account';
 import { TOPICS } from '@/engine/education/catalog';
 import { THEMES } from '@/engine/education/park';
+import { UNITS, unitLesson } from '@/engine/education/practice7';
 
-const LESSON_NAMES: Record<string, string> = Object.fromEntries(TOPICS.map((t) => [t.id, `${t.id} ${t.title}`]));
+const LESSON_NAMES: Record<string, string> = Object.fromEntries([
+  ...TOPICS.map((t) => [t.id, `${t.id} ${t.title}`]),
+  ...UNITS.map((u) => [unitLesson(u.id), `로봇 실습 7-${u.id} ${u.title}`]),
+]);
 const LAB_NAMES: Record<string, string> = Object.fromEntries(THEMES.filter((s) => s.lab).map((s) => [s.lab!, s.name]));
 const PAGE_NAMES: Record<string, string> = { intro: '도입', theory: '개념', A: '활동 1', B: '활동 2', C: '활동 3', cmp: '정리', check: '평가' };
 

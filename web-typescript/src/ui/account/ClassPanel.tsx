@@ -35,9 +35,10 @@ import {
   type Roster,
 } from '@/engine/account';
 import { CATEGORIES, TOPICS } from '@/engine/education/catalog';
+import { UNITS, realBrief, unitOfLesson } from '@/engine/education/practice7';
 
 import LoginCards from './LoginCards';
-import { FLAG_TEXT, ago, placeText } from './labels';
+import { FLAG_TEXT, ago, clock, placeText } from './labels';
 import css from './account.module.css';
 
 type Tab = 'live' | 'students' | 'lessons' | 'names';
@@ -412,6 +413,12 @@ function LiveGrid({ cls, client, roster, onError, onReset }: { cls: ClassInfo; c
                   {r.lastActivity ? `마지막 활동 ${ago(r.lastActivity, now)}` : r.lastSeen ? `접속 ${ago(r.lastSeen, now)}` : '기록 없음'} · 마침 {r.completed} · 통과 {r.passed}
                   {r.hintsHere > 0 ? ` · 힌트 ${r.hintsHere}` : ''}
                 </p>
+                {r.robot[0] && (
+                  <p className={css.realLine} data-demo={r.robot[0].demo || undefined} title={r.robot[0].text}>
+                    실물 {robotBrief(r.robot[0])}
+                    {r.robot[0].demo ? ' (데모)' : ''} · {ago(r.robot[0].at, now)}
+                  </p>
+                )}
                 {r.stuckOn.slice(0, 2).map((x) => (
                   <p key={x.object} className={css.stuck}>
                     {placeText(x.place)}: {x.fails}번 실패
@@ -427,7 +434,75 @@ function LiveGrid({ cls, client, roster, onError, onReset }: { cls: ClassInfo; c
           })}
         </ul>
       )}
+      <RealTable rows={named} />
     </div>
+  );
+}
+
+type RobotEntry = LiveRow['robot'][number];
+
+/** A real-robot result in a few words ("7-2 폭 0.8 mm"). */
+function robotBrief(x: RobotEntry): string {
+  const unit = x.place.kind === 'lesson' ? unitOfLesson(x.place.lesson) : null;
+  return unit ? `7-${unit} ${realBrief(unit, x.values)}` : placeText(x.place);
+}
+
+/**
+ * 로봇 실습 7 · 실물 결과: who did which acceptance check on the real robot and what it measured (the
+ * values the student's screen sent). Shown once any student has one; a demo robot server's results
+ * are marked, not counted as the real arm.
+ */
+function RealTable({ rows }: { rows: readonly (LiveRow & { name?: string | null })[] }) {
+  const withReal = rows.filter((r) => r.robot.some((x) => x.place.kind === 'lesson' && unitOfLesson(x.place.lesson)));
+  if (!withReal.length) return null;
+  const cell = (r: LiveRow, unit: number) => r.robot.find((x) => x.place.kind === 'lesson' && unitOfLesson(x.place.lesson) === unit);
+  const doneBy = (unit: number) => withReal.filter((r) => cell(r, unit) && !cell(r, unit)!.demo).length;
+  return (
+    <section className={css.real} aria-label="로봇 실습 7 실물 결과">
+      <h3>
+        로봇 실습 7 · 실물 결과 <small>학생 화면이 잰 값 · 마지막 한 번</small>
+      </h3>
+      <div className={css.realScroll}>
+        <table className={css.table}>
+          <thead>
+            <tr>
+              <th>번호</th>
+              {UNITS.map((u) => (
+                <th key={u.id} title={u.title}>
+                  7-{u.id} {u.title}
+                  <small>{doneBy(u.id)}명</small>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {withReal.map((r) => (
+              <tr key={r.no}>
+                <td className={css.num}>
+                  {r.no}
+                  {r.name ? <small> {r.name}</small> : null}
+                </td>
+                {UNITS.map((u) => {
+                  const x = cell(r, u.id);
+                  return (
+                    <td key={u.id} className={css.realCell} data-demo={x?.demo || undefined} title={x ? `${clock(x.at)} · ${x.text}${x.demo ? ' (데모 로봇 서버: 연습)' : ''}` : undefined}>
+                      {x ? (
+                        <>
+                          {realBrief(u.id, x.values)}
+                          {x.demo && <em>데모</em>}
+                        </>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
 

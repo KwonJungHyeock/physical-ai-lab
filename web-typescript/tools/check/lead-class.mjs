@@ -480,6 +480,35 @@ try {
     10000,
   );
   await shot(s2, "lead-s7-ended");
+
+  console.log("7 · 학급 관리: 로봇 PC 가 잰 실물 결과");
+  // The robot PC's student sent what the robot did (events.robotResult) through the class's queue.
+  let measured = null;
+  for (let i = 0; i < 20 && !measured; i++) {
+    const ev = await api("GET", `/classes/${cls.id}/events?after=0`, t.token);
+    measured = ev.statements.find(
+      (s) =>
+        s.object.id === "urn:robocity:lesson:p7-4" &&
+        s.verb.id.endsWith("operated") &&
+        s.result?.response,
+    );
+    if (!measured) await new Promise((r) => setTimeout(r, 1000));
+  }
+  ok(
+    measured &&
+      measured.context.extensions["urn:robocity:ctx:no"] === 1 &&
+      typeof measured.result.extensions["urn:robocity:val:blocks"] === "number",
+    `학급 서버: 1번의 7-4 실물 결과 (${measured?.result?.response})`,
+  );
+  await tap(teacher.locator('button[title="선생님 계정"]'));
+  await tap(teacher.getByRole("menuitem", { name: /학급 관리/ }));
+  await until(teacher, /로봇 실습 7 · 실물 결과/, "학급 관리: 실물 결과 표", 30000);
+  await until(teacher, /블록 \d개 옮김/, '학급 관리: 1번 7-4 "블록 N개 옮김"');
+  await until(teacher, /실물 7-4 블록 \d개 옮김 \(데모\)/, "학생 카드: 데모 로봇 서버 표시");
+  await teacher
+    .locator("section[aria-label='로봇 실습 7 실물 결과']")
+    .scrollIntoViewIfNeeded();
+  await shot(teacher, "lead-t8-dashboard");
 } catch (e) {
   // What every screen showed when it failed.
   for (const [n, p] of Object.entries({ teacher, s1, s2, s3 }))

@@ -34,6 +34,7 @@ import {
   swingPoses,
   toActions,
   unitDone,
+  unitLesson,
   type Found,
   type Move,
   type Part,
@@ -47,14 +48,14 @@ import type { UrdfRobot } from '@/engine/robot/urdf';
 import type { BlockPose } from '@/engine/physics/physics';
 import { BINS, BLOCK_MM, BLOCK_START, COLOR_HEX, COLORS, HOME_DEG, TOP_CAMERA, type ColorName } from '@/engine/simulator/board';
 import { tcpFor, type EffectorId } from '@/engine/simulator/effectors';
-import { addEvidence } from '@/engine/simulator/evidence';
+import { addEvidence, isDemoRobot } from '@/engine/simulator/evidence';
 import { aiOnRobot, cameraFrameUrl, fetchRobotState, handVisionOnRobot, type RobotAi } from '@/engine/simulator/robotLink';
 
 import { LESSON_BY_ID, type LeadLesson } from '@/engine/education/lead';
-import type { Lead, LeadSet } from '@/engine/account';
+import { events, lessonObject, type Lead, type LeadSet } from '@/engine/account';
 
 import Icon from '../../simulator/Icon';
-import { useAccount } from '../../account/AccountProvider';
+import { REAL_ROBOT, useAccount } from '../../account/AccountProvider';
 import type { RealArm } from '../lessons';
 import type { LeadKit } from '../lead/kit';
 import { LeadStart } from '../lead/LeadDialogs';
@@ -324,9 +325,12 @@ function UnitView({ unit, prog, update, onNext, onFinish, robot, chain, gripperR
       quiz[qi] = choice;
       return { ...p, quiz };
     });
-  const realDone = (text: string) => {
+  const account = useAccount();
+  /** Done on the real robot: the 검수 기록, this PC's progress, and (a logged-in student) the teacher's 학급 관리. */
+  const realDone = (text: string, values: Record<string, string | number | boolean>) => {
     note(unit.check, `${unit.title}: ${text}`, true);
     update((p) => ({ ...p, real: { at: new Date().toISOString(), text } }));
+    account.track(() => events.robotResult(lessonObject(unitLesson(unitId)), REAL_ROBOT, { response: text, values, demo: isDemoRobot() }));
   };
 
   /* --- the 3D scene ----------------------------------------------------------------------------- */
@@ -692,7 +696,7 @@ function UnitView({ unit, prog, update, onNext, onFinish, robot, chain, gripperR
     const k = errs.indexOf(Math.max(...errs));
     const text = `관절 6개 모두 ±30° 움직임 · 명령과 잰 각도 차이 최대 J${k + 1} ${r1(errs[k])}°`;
     setRealMsg(text);
-    realDone(text);
+    realDone(text, { maxErrDeg: r1(errs[k]), joint: k + 1 });
   });
 
   const real2 = () =>
@@ -712,7 +716,7 @@ function UnitView({ unit, prog, update, onNext, onFinish, robot, chain, gripperR
     const s = spreadMm(pts);
     const text = `같은 점에 ${pts.length}번 도착 · 흩어진 폭 ${r1(s)} mm (잰 각도로 계산)`;
     setRealMsg(text);
-    realDone(text);
+    realDone(text, { times: pts.length, spreadMm: r1(s) });
   });
 
   const real3 = () =>
@@ -737,7 +741,7 @@ function UnitView({ unit, prog, update, onNext, onFinish, robot, chain, gripperR
     // 검수 3 asks for two cameras: one is shown, not recorded as done.
     if (got.length < 2) return setRealMsg(`${text}. 검수에는 2대가 필요해요: 두 번째 카메라를 꽂고 다시 찍어 주세요.`);
     setRealMsg(text);
-    realDone(text);
+    realDone(text, { cams: got.length, sizes: got.join(' ') });
   });
 
   const real4find = () =>
@@ -791,7 +795,7 @@ function UnitView({ unit, prog, update, onNext, onFinish, robot, chain, gripperR
     await waitRun();
     const text = `실제 블록 ${n}개를 찾아 색깔별 상자로 옮김 (시뮬레이션 확인 뒤, 끝까지 실행)`;
     setRealMsg(text);
-    realDone(text);
+    realDone(text, { blocks: n, colors: Object.keys(realFound).join(' ') });
   });
 
   const real5grip = () =>
@@ -816,7 +820,7 @@ function UnitView({ unit, prog, update, onNext, onFinish, robot, chain, gripperR
     if (!b.ok) throw new Error(b.error ?? '펌프가 답하지 않아요.');
     const text = '그리퍼 열기 · 닫기, 흡착 펌프로 바꿔 끼운 뒤 켜기 · 끄기';
     setRealMsg(`${text} ✓`);
-    realDone(text);
+    realDone(text, { gripper: true, pump: true });
   });
 
   const real6 = () =>
@@ -829,7 +833,7 @@ function UnitView({ unit, prog, update, onNext, onFinish, robot, chain, gripperR
     const names = r.detections.map((d) => `${d.label} ${Math.round(d.score * 100)}%`).join(', ') || '찾은 물체 없음';
     const text = `로봇 안 AI(YOLOv5s) ${r.ms} ms · ${names}`;
     setRealMsg(text);
-    realDone(text);
+    realDone(text, { ms: r.ms, found: r.detections.length, ...(r.detections[0] ? { top: r.detections[0].label } : {}) });
   });
 
   const real7 = () =>
@@ -841,7 +845,7 @@ function UnitView({ unit, prog, update, onNext, onFinish, robot, chain, gripperR
     await waitRun();
     const text = `파이썬 API 명령 ${WAVE.length}줄을 로봇에서 끝까지 실행`;
     setRealMsg(text);
-    realDone(text);
+    realDone(text, { lines: WAVE.length });
   });
 
   const stopReal = () => {

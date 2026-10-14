@@ -237,6 +237,38 @@ export const UNITS: readonly Unit[] = [
 
 export const UNIT_BY_ID: ReadonlyMap<UnitId, Unit> = new Map(UNITS.map((u) => [u.id, u]));
 
+/** The lesson id a unit is recorded under in the class's events (lessonObject('p7-4')). */
+export const unitLesson = (id: UnitId) => `p7-${id}`;
+
+/** The unit of a recorded lesson id ("p7-4" → 4), or null. */
+export function unitOfLesson(lesson: string): UnitId | null {
+  const m = /^p7-([1-7])$/.exec(lesson);
+  return m ? (Number(m[1]) as UnitId) : null;
+}
+
+type Values = Readonly<Record<string, string | number | boolean | null | undefined>>;
+
+/** A real-robot result in a few words for the teacher's table ("폭 0.8 mm"), from its measured values. */
+export function realBrief(unit: UnitId, v: Values): string {
+  const n = (k: string) => (typeof v[k] === 'number' ? (v[k] as number) : null);
+  switch (unit) {
+    case 1:
+      return n('maxErrDeg') === null ? '6축 구동' : `차이 최대 ${n('maxErrDeg')}°${n('joint') ? ` (J${n('joint')})` : ''}`;
+    case 2:
+      return n('spreadMm') === null ? '반복 도착' : `${n('times') ?? ''}번 · 폭 ${n('spreadMm')} mm`;
+    case 3:
+      return n('cams') === null ? '사진' : `카메라 ${n('cams')}대`;
+    case 4:
+      return n('blocks') === null ? '블록 옮김' : `블록 ${n('blocks')}개 옮김`;
+    case 5:
+      return v.gripper && v.pump ? '그리퍼 · 펌프' : '도구 바꿈';
+    case 6:
+      return n('ms') === null ? 'AI 실행' : `${n('ms')} ms · ${n('found') ?? 0}개`;
+    case 7:
+      return n('lines') === null ? 'API 실행' : `${n('lines')}줄 실행`;
+  }
+}
+
 /* --- progress ------------------------------------------------------------------------------ */
 
 export interface UnitProgress {

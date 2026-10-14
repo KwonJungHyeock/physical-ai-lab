@@ -51,6 +51,8 @@ let demoRobot = false;
 export function setDemoRobot(on: boolean): void {
   demoRobot = on;
 }
+/** The connected robot server is a demo (what setDemoRobot was last told). */
+export const isDemoRobot = () => demoRobot;
 
 /** Add one line to the record (the console's checks and 로봇 실습 7 both write here). */
 export function addEvidence(check: number, text: string, robot: boolean): void {

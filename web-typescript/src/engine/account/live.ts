@@ -14,6 +14,9 @@
 
 import { EXT_NO, parsePlace, verbKeyOf, type Place, type Statement, type VerbKey } from './events';
 
+const VAL_PREFIX = 'urn:robocity:val:';
+const EXT_DEMO = 'urn:robocity:ctx:demo';
+
 export interface LiveOptions {
   /** Same object failed this many times since its last pass → stuck. */
   stuckFails: number;
@@ -38,6 +41,18 @@ interface Track {
   passed: Set<string>;
   /** The latest answer per object (teacher only; may be a typed sentence). */
   answers: Map<string, string>;
+  /** The latest real-robot result per object (operated with a response: 로봇 실습 7). */
+  robot: Map<string, RobotResult>;
+}
+
+/** What the real robot did and measured, as the student's screen reported it. */
+export interface RobotResult {
+  text: string;
+  /** The measured values by name (the urn:robocity:val: prefix taken off). */
+  values: Record<string, string | number | boolean | null>;
+  at: number;
+  /** On a demo robot server (practice, not the real arm). */
+  demo: boolean;
 }
 
 export interface LiveState {
@@ -65,6 +80,7 @@ function track(state: LiveState, no: number): Track {
       completed: new Set(),
       passed: new Set(),
       answers: new Map(),
+      robot: new Map(),
     };
     state.students.set(no, t);
   }
@@ -120,6 +136,13 @@ export function applyStatements(state: LiveState, statements: readonly Statement
       case 'answered':
         if (typeof s.result?.response === 'string') t.answers.set(obj, s.result.response);
         break;
+      case 'operated':
+        if (typeof s.result?.response === 'string' && at >= (t.robot.get(obj)?.at ?? 0)) {
+          const values: RobotResult['values'] = {};
+          for (const [k, v] of Object.entries(s.result.extensions ?? {})) if (k.startsWith(VAL_PREFIX)) values[k.slice(VAL_PREFIX.length)] = v;
+          t.robot.set(obj, { text: s.result.response, values, at, demo: s.context?.extensions?.[EXT_DEMO] === true });
+        }
+        break;
     }
   }
   return state;
@@ -145,6 +168,8 @@ export interface LiveRow {
   hintsHere: number;
   completed: number;
   passed: number;
+  /** Real-robot results, the newest first. */
+  robot: (RobotResult & { object: string; place: Place })[];
 }
 
 /** One row per 번호 (in the given order), with the flags. locked: 번호 whose PIN is locked out. */
@@ -176,6 +201,7 @@ export function liveRows(state: LiveState, nos: readonly number[], now: number, 
       hintsHere: t?.place ? (t.hints.get(t.place.object) ?? 0) : 0,
       completed: t?.completed.size ?? 0,
       passed: t?.passed.size ?? 0,
+      robot: t ? [...t.robot].map(([object, r]) => ({ ...r, object, place: parsePlace(object) })).sort((a, b) => b.at - a.at) : [],
     };
   });
 }

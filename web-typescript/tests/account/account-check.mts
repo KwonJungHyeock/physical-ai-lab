@@ -103,6 +103,7 @@ const deps = { now: () => T0, uuid: () => `00000000-0000-4000-8000-${String(++n)
     A.events.hint(A.siteObject('factory', 1), 2, deps),
     A.events.ran(A.siteObject('factory', 1), deps),
     A.events.operated(A.siteObject('factory', 1), 'mycobot280-rdkx5', deps),
+    A.events.robotResult(A.lessonObject('p7-2'), 'mycobot280-rdkx5', { response: '같은 점에 5번 도착 · 흩어진 폭 0.8 mm (잰 각도로 계산)', values: { times: 5, spreadMm: 0.8 }, demo: true }, deps),
   ];
   for (const s of all) assert.equal(A.statementProblem(s), null, JSON.stringify(s));
   const pr = all[6];
@@ -111,6 +112,10 @@ const deps = { now: () => T0, uuid: () => `00000000-0000-4000-8000-${String(++n)
   assert.equal(pr.result?.score?.scaled, 1, 'scaled clamped');
   assert.deepEqual(pr.result?.extensions, { 'urn:robocity:val:speed': 60, 'urn:robocity:val:mode_name': 'policy', 'urn:robocity:val:ok': true });
   assert.equal(all[4].result?.response?.length, A.MAX_RESPONSE, 'long answers cut to 500');
+  const rr = all[11];
+  assert.equal(rr.verb.id, A.VERBS.operated.id);
+  assert.deepEqual(rr.result?.extensions, { 'urn:robocity:val:times': 5, 'urn:robocity:val:spreadMm': 0.8 });
+  assert.deepEqual(rr.context?.extensions, { 'urn:robocity:ctx:robot': 'mycobot280-rdkx5', 'urn:robocity:ctx:demo': true });
   assert.equal(all[0].timestamp, new Date(T0).toISOString());
   assert.equal(all[0].actor, undefined, 'the client never sets the actor');
   assert.equal(all[0].object.definition?.type, A.ACTIVITY_TYPES.page);
@@ -523,6 +528,45 @@ const mk = (i: number) => A.events.pageOpened('1-1', i, { now: () => T0, uuid: (
   assert.equal(A.readHandoff('#class=%%%', Date.now()), null, 'garbage is ignored');
   assert.equal(A.readHandoff(hash, Date.now() + 7200_000), null, 'an expired login is not taken');
   console.log('  ✓ login handed over to a robot page in the fragment, checked, then removed');
+}
+
+/* --- 로봇 실습 7 real-robot results on the live grid ------------------------------------------- */
+{
+  const P = await import('../../src/engine/education/practice7');
+  const min = 60_000;
+  let n = 0;
+  const at = (no: number, s: Statement, t: number): Statement => ({
+    ...s,
+    id: `00000000-0000-4000-8000-${String(5000 + ++n).padStart(12, '0')}`,
+    stored: new Date(t).toISOString(),
+    context: { ...s.context, extensions: { ...s.context?.extensions, [A.EXT_NO]: no } },
+  });
+  const res = (unit: 1 | 2 | 3 | 4 | 5 | 6 | 7, text: string, values: Record<string, unknown>, demo = false) =>
+    A.events.robotResult(A.lessonObject(P.unitLesson(unit)), 'mycobot280-rdkx5', { response: text, values, demo });
+  const evs = [
+    at(1, res(2, '폭 1.4 mm', { times: 5, spreadMm: 1.4 }), T0),
+    at(1, res(2, '폭 0.6 mm', { times: 5, spreadMm: 0.6 }), T0 + 2 * min),
+    at(1, res(6, 'AI', { ms: 412, found: 3, top: 'cup' }), T0 + min),
+    at(2, res(1, '차이', { maxErrDeg: 0.4, joint: 3 }, true), T0),
+    at(2, A.events.operated(A.siteObject('factory', 1), 'mycobot280-rdkx5'), T0 + min),
+  ];
+  // Out of order: the newer 7-2 result wins either way.
+  const rows = A.buildLiveGrid([evs[1], evs[0], ...evs.slice(2)], [1, 2, 3], T0 + 3 * min);
+  assert.deepEqual(rows[0].robot.map((x) => [x.object, x.text]), [
+    [A.lessonObject('p7-2'), '폭 0.6 mm'],
+    [A.lessonObject('p7-6'), 'AI'],
+  ]);
+  assert.deepEqual(rows[0].robot[0].values, { times: 5, spreadMm: 0.6 }, 'values without the prefix');
+  assert.equal(rows[1].robot.length, 1, 'an operated event without a result is not a measurement');
+  assert.equal(rows[1].robot[0].demo, true);
+  assert.deepEqual(rows[2].robot, []);
+  assert.equal(P.realBrief(2, rows[0].robot[0].values), '5번 · 폭 0.6 mm');
+  assert.equal(P.realBrief(1, rows[1].robot[0].values), '차이 최대 0.4° (J3)');
+  assert.equal(P.realBrief(6, rows[0].robot[1].values), '412 ms · 3개');
+  assert.equal(P.realBrief(4, {}), '블록 옮김', 'no values: still says what was done');
+  assert.equal(P.unitOfLesson('p7-4'), 4);
+  assert.equal(P.unitOfLesson('1-2'), null);
+  console.log('  ✓ real-robot results (로봇 실습 7): newest per unit, values, demo marked, brief words');
 }
 
 console.log('account check: ok');
