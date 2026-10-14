@@ -58,7 +58,7 @@ async function call<T>(kind: string, method: string, path: string, token?: strin
     return null;
   }
 }
-const must = async <T>(kind: string, method: string, path: string, token?: string, body?: unknown) => {
+const must = async <T,>(kind: string, method: string, path: string, token?: string, body?: unknown) => {
   const r = await call<T>(kind, method, path, token, body);
   if (!r) throw new Error(`${method} ${path} 실패: ${[...errors.keys()].at(-1)}`);
   return r;
@@ -70,7 +70,7 @@ await must('setup', 'POST', '/teachers', op.token, { username: 'kim', password: 
 const t = await must<{ token: string }>('setup', 'POST', '/login/teacher', undefined, { username: 'kim', password: 'teacher-pass-1' });
 const cls = await must<{ id: string; code: string }>('setup', 'POST', '/classes', t.token, { name: '부하 시험반' });
 const issued = (await must<{ issued: { no: number; pin: string }[] }>('setup', 'POST', `/classes/${cls.id}/students`, t.token, { count: N })).issued;
-const students = [];
+const students: { no: number; token: string; group: number; robot: boolean }[] = [];
 for (const s of issued) {
   const r = await must<{ token: string }>('login', 'POST', '/login/student', undefined, { classCode: cls.code, no: s.no, pin: s.pin });
   // Groups of about 4, at most 12 (the server's limit); the first student of each group is its robot PC.
