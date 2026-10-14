@@ -25,6 +25,7 @@ const GUIDES = {
 // A copy for the console's 자료실 (pages/Archive.tsx), served at /guides/<name>-guide.pdf.
 const publicCopy = (name) => path.join(web, 'public', 'guides', `${name}-guide.pdf`);
 const pick = process.argv.slice(2);
+// SENTENCES=1: also list every sentence that prints on more than one line.
 
 // ---------- Markdown → HTML ----------
 /** Printed width in Hangul-character units (Latin letters, digits and spaces are about half as wide). */
@@ -42,6 +43,25 @@ function inline(s) {
   return s;
 }
 
+/**
+ * A paragraph or list item set one sentence per line (as the app's lesson panels are): a sentence ends at
+ * . ? ! after a word, number, bracket or quote, and a space — never inside **bold** or `code`.
+ */
+function sentences(s) {
+  const parts = s.split(/(?<=(?:[가-힣A-Za-z0-9)\]’”"'%°●◐○][.?!]|\*\*\.)(?:\*\*)?)\s+(?=\S)/);
+  const out = [];
+  for (const p of parts) {
+    const open = (t) => ((t.match(/\*\*/g) ?? []).length % 2) + ((t.match(/`/g) ?? []).length % 2);
+    if (out.length && open(out[out.length - 1])) out[out.length - 1] += ` ${p}`;
+    else out.push(p);
+  }
+  return out;
+}
+const bySentence = (s) => {
+  const ss = sentences(s);
+  return ss.length < 2 ? inline(s) : ss.map((x) => `<span class="ln">${inline(x)}</span>`).join('');
+};
+
 function parseFront(text) {
   const m = text.match(/^---\n([\s\S]*?)\n---\n/);
   const meta = {};
@@ -58,7 +78,7 @@ function blocks(lines, ctx) {
   let i = 0;
   const para = [];
   const flush = () => {
-    if (para.length) out.push({ t: 'p', html: `<p>${inline(para.join(' '))}</p>` });
+    if (para.length) out.push({ t: 'p', html: `<p>${bySentence(para.join(' '))}</p>` });
     para.length = 0;
   };
   while (i < lines.length) {
@@ -132,7 +152,13 @@ function blocks(lines, ctx) {
         out.push({ t: 'card', html: `<div class="step"><div class="stepno">${n}</div><div class="stepbody"><div class="steptitle">${inline(arg)}</div>${inner(body)}</div></div>` });
       } else if (kind === 'marks') {
         const items = body.filter((l) => /^\d+\.\s/.test(l)).map((l) => l.match(/^(\d+)\.\s+(.*)$/));
-        out.push({ t: 'card', html: `<ol class="marks">${items.map(([, n, t]) => `<li><i class="mk">${n}</i><span>${inline(t)}</span></li>`).join('')}</ol>` });
+        // "**name** — what it does": the name on a line of its own, then one line per sentence.
+        const item = (t) => {
+          const k = t.indexOf(' — ');
+          const desc = k > 0 ? t.slice(k + 3) : t;
+          return `${k > 0 ? `<span class="ln mname">${inline(t.slice(0, k))}</span>` : ''}${sentences(desc).map((x) => `<span class="ln">${inline(x)}</span>`).join('')}`;
+        };
+        out.push({ t: 'card', html: `<ol class="marks">${items.map(([, n, t]) => `<li><i class="mk">${n}</i><span>${item(t)}</span></li>`).join('')}</ol>` });
       } else if (kind === 'cols') {
         const parts = [];
         let cur = [];
@@ -188,7 +214,7 @@ function blocks(lines, ctx) {
         else items[items.length - 1].text += ` ${l.trim()}`;
       }
       const tag = ordered ? 'ol' : 'ul';
-      out.push({ t: 'list', html: `<${tag}>${items.map((it) => `<li>${inline(it.text)}${it.sub.length ? `<ul>${it.sub.map((s) => `<li>${inline(s)}</li>`).join('')}</ul>` : ''}</li>`).join('')}</${tag}>` });
+      out.push({ t: 'list', html: `<${tag}>${items.map((it) => `<li>${bySentence(it.text)}${it.sub.length ? `<ul>${it.sub.map((s) => `<li>${bySentence(s)}</li>`).join('')}</ul>` : ''}</li>`).join('')}</${tag}>` });
       continue;
     }
     para.push(line.trim());
@@ -241,6 +267,7 @@ body{margin:0}
 p,li,td,th,figcaption,.steptitle{word-break:keep-all;overflow-wrap:break-word;line-break:strict;text-wrap:pretty;orphans:3;widows:3}
 h1,h2,h3{text-wrap:balance;word-break:keep-all;break-after:avoid}
 p{margin:0 0 7pt}
+.ln{display:block}
 b{font-weight:700}
 a{color:var(--accent);text-decoration:none}
 code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.9em;background:var(--soft);border:1px solid var(--line);border-radius:4px;padding:0 3px;white-space:nowrap}
@@ -305,6 +332,7 @@ tbody tr:nth-child(even) td{background:#fafbfd}
 .marks{list-style:none;padding:0;margin:0 0 11pt;display:grid;grid-template-columns:1fr 1fr;gap:4pt 14pt;break-inside:avoid}
 .marks li{display:flex;gap:6pt;align-items:flex-start;margin:0;font-size:9.4pt;line-height:1.5}
 .marks .mk{flex:none;margin-top:1pt}
+.marks .mname{font-weight:600}
 td .mk{background:var(--accent-soft);color:var(--accent);box-shadow:inset 0 0 0 0.6pt #b9c6f5;font-size:7.6pt;width:13pt;height:13pt}
 .cols{display:grid;gap:12pt;break-inside:avoid;margin-bottom:6pt;align-items:start}
 .cols2{grid-template-columns:1fr 1fr}.cols3{grid-template-columns:1fr 1fr 1fr}
@@ -445,6 +473,23 @@ async function build(name) {
     }
     return out;
   });
+  // One sentence per line: the sentences (and one-sentence paragraphs · list items) that print on 2+ lines.
+  const wraps = await pg.evaluate(() => {
+    const out = [];
+    let n = 0;
+    const units = [...document.querySelectorAll('main .ln, main p, main li')].filter((el) => !el.querySelector('.ln, p, li') && !el.closest('table, .toc, .cover, figure'));
+    for (const el of units) {
+      const t = el.textContent.replace(/\s+/g, ' ').trim();
+      if (t.length < 4) continue;
+      n++;
+      const r = document.createRange();
+      r.selectNodeContents(el);
+      const rows = [];
+      for (const b of r.getClientRects()) if (b.width > 1 && !rows.some((y) => Math.abs(y - b.bottom) < 8)) rows.push(b.bottom);
+      if (rows.length > 1) out.push([rows.length, t]);
+    }
+    return { n, out };
+  });
   const headLv = new Map(list.filter((b) => b.t === 'h').map((b) => [b.text.replace(/\*\*|`|\[|\]/g, '').replace(/\s+/g, ''), b.lv]));
   const squash = (t) => t.replace(/\*\*|`|\[|\]|!\[|\]\([^)]*\)|\{w=\d+\}/g, '').replace(/\s+/g, '');
   /**
@@ -532,6 +577,8 @@ async function build(name) {
   mkdirSync(path.dirname(publicCopy(name)), { recursive: true });
   copyFileSync(outFile, publicCopy(name));
   console.log(`${path.basename(outFile)}: ${n}쪽, 그림 ${ctx.fig}${problems.length ? `, 문제 ${problems.length}` : ', 문제 없음'}`);
+  console.log(`  문장 ${wraps.n}개 중 두 줄 넘는 문장 ${wraps.out.length}개${process.env.SENTENCES ? '' : ' (SENTENCES=1 로 목록)'}`);
+  if (process.env.SENTENCES) for (const [k, t] of wraps.out) console.log(`    ${k}줄  ${t}`);
   for (const p of problems) console.log(`  ${p}`);
   return problems.length;
 }
