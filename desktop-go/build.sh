@@ -1,6 +1,9 @@
 #!/bin/sh
 # Build "Physical AI 시뮬레이터.exe": the web app (npm run build:robot) embedded in one Windows program.
 #   sh desktop-go/build.sh            → desktop-go/dist/PhysicalAI-Simulator.zip
+#   EDUINO_SIGNING_KEY=~/keys/eduino-kit-signing.pem sh desktop-go/build.sh
+#                                     → the same, carrying the signed robot kit (⚙ → 로봇 USB 만들기, usbkit.go)
+#   KIT=path/eduino_usb.zip sh desktop-go/build.sh   → carrying a kit made before
 # Needs Go 1.24+ and the web app's npm packages. The program's icon needs go-winres
 # (go install github.com/tc-hib/go-winres@latest); without it the program has no icon.
 set -e
@@ -11,6 +14,19 @@ VERSION=$(date +%Y.%m.%d)
 rm -rf site dist
 mkdir -p dist
 cp -R ../robot-python/server/static site
+
+# The robot kit the program writes onto USB sticks: made now with the signing key, or given as KIT.
+rm -f kit/eduino_usb.zip
+if [ -n "$EDUINO_SIGNING_KEY" ]; then
+  KITDIR=$(mktemp -d)
+  python3 ../robot-python/tools/make_usb_kit.py -o "$KITDIR"
+  cp "$KITDIR/eduino_usb.zip" kit/eduino_usb.zip
+  rm -rf "$KITDIR"
+elif [ -n "$KIT" ]; then
+  cp "$KIT" kit/eduino_usb.zip
+else
+  echo "로봇 키트 없이 만듭니다 (EDUINO_SIGNING_KEY 또는 KIT): 로봇 USB 만들기는 '키트 없음' 으로 나와요."
+fi
 
 WINRES=$(command -v go-winres || echo "$(go env GOPATH)/bin/go-winres")
 if [ -x "$WINRES" ]; then

@@ -60,10 +60,14 @@ interface Props {
   auto?: boolean;
   /** The open program, as an address part (`#carry=…`) for the robot's console to put back. */
   carry?: () => string;
+  /** Open this robot at once (a USB result's [연결]): its checks, then its console. */
+  start?: { addr: string; label: string } | null;
+  /** Desktop program: robots not on the Wi-Fi yet → 로봇 USB 만들기. */
+  onUsb?: () => void;
   onClose(): void;
 }
 
-export default function ConnectDialog({ current, auto, carry, onClose }: Props) {
+export default function ConnectDialog({ current, auto, carry, start, onUsb, onClose }: Props) {
   const [tab, setTab] = useState<Tab>('find');
   // On a robot's console its own network is the one to search; elsewhere the last one used.
   const hereNet = current?.ips[0]?.replace(/\d+$/, '');
@@ -101,6 +105,13 @@ export default function ConnectDialog({ current, auto, carry, onClose }: Props) 
     }
     setLink({ label, robot, addr, step: 0 });
   };
+  const started = useRef(false);
+  useEffect(() => {
+    if (!start || started.current) return;
+    started.current = true;
+     
+    setLink({ label: start.label, addr: start.addr, step: 0 });
+  }, [start]);
   // The latest program at the moment of leaving (the console redraws while the dialog is open).
   const carryNow = useRef(carry);
   const session = useAccount().session;
@@ -195,7 +206,7 @@ export default function ConnectDialog({ current, auto, carry, onClose }: Props) 
 
           {link && <LinkSteps link={link} onRetry={() => setLink({ label: link.label, robot: link.robot, addr: link.addr, step: 0 })} onBack={() => setLink(null)} />}
 
-          {!link && tab === 'find' && <FindRobots prefix={prefix} setPrefix={setPrefix} here={current?.ips ?? []} auto={auto} onScan={setScan} onConnect={(r) => go(r.address, r.robotId, r)} />}
+          {!link && tab === 'find' && <FindRobots prefix={prefix} setPrefix={setPrefix} here={current?.ips ?? []} auto={auto} onScan={setScan} onConnect={(r) => go(r.address, r.robotId, r)} onUsb={onUsb} />}
 
           {!link && tab === 'id' && (
             <>
@@ -432,6 +443,7 @@ function FindRobots({
   auto,
   onScan,
   onConnect,
+  onUsb,
 }: {
   prefix: string;
   setPrefix(p: string): void;
@@ -440,6 +452,7 @@ function FindRobots({
   /** The search as it goes (for the radar). */
   onScan(s: { scanning: boolean; found: FoundRobot[]; progress: number }): void;
   onConnect(r: FoundRobot): void;
+  onUsb?: () => void;
 }) {
   const [found, setFound] = useState<FoundRobot[]>([]);
   const [progress, setProgress] = useState<number | null>(null);
@@ -554,6 +567,15 @@ function FindRobots({
                 : '이 네트워크에서 로봇을 찾지 못했어요.'
               : `[로봇 찾기] 를 누르면 ${net}1 ~ 254 를 살펴봐요 (몇 초 걸려요).`}
       </p>
+      {onUsb && scanned && !scanning && !found.length && (
+        <button type="button" className={css.usbHint} onClick={onUsb}>
+          <Icon name="usb" size={18} />
+          <span>
+            <b>로봇이 아직 이 Wi-Fi 에 없나요?</b>
+            <small>로봇 USB 만들기: Wi-Fi 이름 · 비밀번호를 적은 USB 를 로봇에 꽂으면 붙어요.</small>
+          </span>
+        </button>
+      )}
 
       {found.length > 4 && (
         <input className={css.findFilter} value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="이름 · ID · IP 로 찾기" aria-label="찾은 로봇 거르기" spellCheck={false} />

@@ -2,3 +2,5 @@
 site/
 dist/
 *.syso
+# the signed robot kit build.sh puts here (embedded; kit/README.txt stays)
+kit/eduino_usb.zip

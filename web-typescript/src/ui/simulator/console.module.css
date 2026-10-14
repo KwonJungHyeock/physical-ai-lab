@@ -3096,6 +3096,32 @@ div.zeroFlow {
 .connectHint b {
   color: var(--accent);
 }
+/* No robot found (desktop program): the way to put robots on this Wi-Fi. */
+.usbHint {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 11px 14px;
+  border: 1.5px dashed var(--accent);
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  text-align: left;
+  cursor: pointer;
+}
+.usbHint span {
+  display: grid;
+  gap: 2px;
+}
+.usbHint b {
+  font-size: 13.5px;
+}
+.usbHint small {
+  font-size: 12px;
+  color: var(--ink);
+}
 .connectRecent {
   display: flex;
   align-items: center;

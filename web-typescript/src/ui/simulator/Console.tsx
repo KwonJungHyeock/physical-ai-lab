@@ -62,6 +62,7 @@ import {
   type ObjectKind,
   type SceneId,
 } from '@/engine/simulator/desk';
+import { usbAvailable } from '@/engine/simulator/usbKit';
 import { carryHash, loadLastPractice, loadProgram, readCarried, saveLastPractice, saveProgram } from '@/engine/simulator/programs';
 import { isStarter, newSession, placedBlocks, practiceFor, practicesFor, repeatability, starterFor, toolFits, toolNeeded, type Level, type PracticeId, type Session } from '@/engine/simulator/practices';
 import { check, parse, type CameraId, type Problem, type Step } from '@/engine/simulator/program';
@@ -93,6 +94,7 @@ import { announceRobotStop } from './connect/robotStop';
 import MissionCard from './tasks/MissionCard';
 import ModelPicker from './connect/ModelPicker';
 import ConnectDialog from './connect/ConnectDialog';
+import UsbMaker from './connect/UsbMaker';
 import PartsPanel from './control/PartsPanel';
 import PyPanel from './editors/PyPanel';
 import RunBar from './tasks/RunBar';
@@ -423,6 +425,19 @@ export default function Console() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setDesktop(fromSim);
   }, []);
+  /** 로봇 USB 만들기: only where the desktop program answers (it writes the USB stick). */
+  const [usbOk, setUsbOk] = useState(false);
+  const [usbOpen, setUsbOpen] = useState(false);
+  /** A robot to open at once in the connect dialog (from a USB result's [연결]). */
+  const [connectTo, setConnectTo] = useState<{ addr: string; label: string } | null>(null);
+  useEffect(() => {
+    if (!desktop) return;
+    let live = true;
+    void usbAvailable().then((ok) => live && setUsbOk(ok));
+    return () => {
+      live = false;
+    };
+  }, [desktop]);
   // On a robot's console the window title names the robot (several tabs, several robots).
   const robotId = robot?.robotId;
   useEffect(() => {
@@ -2685,9 +2700,21 @@ export default function Console() {
       {connectOpen && pastIntro && (
         <ConnectDialog
           current={robotMode && robot?.robotId ? { id: robot.robotId, ips: robot.ips ?? [] } : null}
-          auto={desktop}
+          auto={desktop && !connectTo}
+          start={connectTo}
+          onUsb={usbOk && account.role !== 'student' ? () => (setConnectOpen(false), setUsbOpen(true)) : undefined}
           carry={() => (practice.id === 'demo' ? '' : carryHash({ level, theme, id: practice.id, code }))}
-          onClose={() => setConnectOpen(false)} />
+          onClose={() => (setConnectOpen(false), setConnectTo(null))} />
+      )}
+      {usbOpen && (
+        <UsbMaker
+          onClose={() => setUsbOpen(false)}
+          onConnect={(addr, id) => {
+            setUsbOpen(false);
+            setConnectTo({ addr, label: id || addr });
+            setConnectOpen(true);
+          }}
+        />
       )}
       {helpOpen && (
         <HelpSheet
@@ -2845,6 +2872,21 @@ export default function Console() {
                 </b>
                 <small>같은 Wi-Fi 의 로봇 찾기 · 로봇의 Wi-Fi 바꾸기</small>
               </button>
+              {usbOk && account.role !== 'student' && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setUsbOpen(true);
+                    close();
+                  }}
+                >
+                  <b>
+                    <Icon name="usb" size={15} /> 로봇 USB 만들기
+                  </b>
+                  <small>Wi-Fi 를 적어 USB 를 만들고, 로봇에 꽂았던 결과를 봐요</small>
+                </button>
+              )}
               {account.role !== 'student' && (
               <button
                 type="button"
