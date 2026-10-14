@@ -82,54 +82,64 @@ const drawer = page.locator('aside[aria-label$="단원 미리보기"]');
 if (want('unit'))
   await save(page, out('02-unit.jpg'), {
     crop: drawer,
-    pad: 10,
+    pad: 34,
     marks: [
       { at: drawer.locator('header').first(), n: 1, pos: 'l' },
       { at: drawer.locator('[class*=facts]'), n: 2, pos: 'l' },
       { at: drawer.locator('button[aria-current="true"]'), n: 3, pos: 'l' },
-      { at: drawer.locator('[class*=gear]').last(), n: 4, pos: 'l' },
-      { at: drawer.getByRole('button', { name: /수업 시작/ }), n: 5, pos: 'l' },
+      { at: drawer.getByRole('button', { name: /수업 시작/ }), n: 4, pos: 'l' },
     ],
   });
 await page.keyboard.press('Escape');
 await settle(page, 600);
 
-// 2 · 수업 화면 (16차시 5-2 PID, 활동 2)
+// 2 · 수업 화면 (16차시 5-2 PID, 활동 2): the lesson in one rail on the left of the 3D view
 await page.evaluate((t) => window.__learnOpen(t, 'B'), TOPIC);
 await settle(page, 5000);
-await panel.getByRole('group', { name: '예상 고르기' }).getByRole('button').first().click().catch(() => {});
-await panel.locator('[class*=guideControls] button[class*=primary]:not([disabled])').first().click().catch(() => {});
-await settle(page, 12000);
+const teacherBtn = aside().locator('button[aria-pressed]', { hasText: '교사용' }).first();
+const setTeacher = async (on) => {
+  if ((await teacherBtn.getAttribute('aria-pressed')) !== String(on)) await teacherBtn.click();
+  await settle(page, 800);
+};
+await setTeacher(false);
 if (want('topic'))
   await save(page, out('03-topic.jpg'), {
     marks: [
       { at: page.locator('nav[aria-label="수업 순서"]'), n: 1, pos: 'tl' },
-      { at: panel, n: 2, pos: 'tr' },
+      { at: aside(), n: 2, pos: 'tr' },
       { at: { x: 860, y: 420, w: 0, h: 0 }, n: 3, box: false },
-      { at: aside(), n: 4, pos: 'tl' },
+      { at: teacherBtn, n: 4, pos: 'b' },
+      { at: aside().locator('footer'), n: 5, pos: 'tr' },
     ],
   });
-if (want('overlay')) {
-  await panel.getByRole('button', { name: /왜 그럴까/ }).click().catch(() => {});
-  await settle(page, 1200);
-  await panel.evaluate((el) => el.querySelector('[class*=overlayBody]')?.scrollTo(0, 0));
-  await save(page, out('07-overlay.png'), {
-    crop: panel,
+// One try: the guess, then the topic's run button, then the result and the reason.
+await panel.getByRole('group', { name: '예상 고르기' }).or(panel.getByRole('radiogroup', { name: '예상 고르기' })).getByRole('radio').first().click().catch(() => {});
+await settle(page, 1500);
+await panel.locator('[class*=guideControls] button[class*=primary]:not([disabled])').first().click().catch(() => {});
+await page.waitForFunction(() => document.querySelector('section[aria-label="실습 제어판"] [data-kind="result"][data-st="now"]'), null, { timeout: 120000 }).catch(() => {});
+await settle(page, 2500);
+if (want('rail')) {
+  await scrollAside(0);
+  await save(page, out('07-rail.png'), {
+    crop: aside(),
     pad: 30,
     marks: [
-      { at: panel.locator('ol[aria-label="실습 순서"]'), n: 1, pos: 'l' },
-      { at: panel.locator('[class*=chg]'), n: 2, pos: 'l' },
-      { at: panel.getByRole('group', { name: '예상 고르기' }), n: 3, pos: 'l' },
-      { at: panel.locator('[class*=guideControls]'), n: 4, pos: 'l' },
-      { at: panel.locator('[class*=resultBox]'), n: 5, pos: 'l' },
-      { at: panel.getByRole('button', { name: /왜 그럴까/ }), n: 6, pos: 'l' },
+      { at: panel.locator('[class*=change]').first(), n: 1, pos: 'l' },
+      { at: panel.locator('[data-kind="ask"]'), n: 2, pos: 'l' },
+      { at: panel.locator('[data-kind="do"]'), n: 3, pos: 'l' },
+      { at: panel.locator('[data-kind="result"]'), n: 4, pos: 'l' },
+      { at: panel.locator('[data-kind="read"]').last(), n: 5, pos: 'l' },
+      { at: aside().locator('footer'), n: 6, pos: 'l' },
     ],
   });
 }
 if (want('activity')) {
-  await scrollAside(0);
+  await setTeacher(true);
+  await aside().locator('[data-kind="teacher"]').last().scrollIntoViewIfNeeded().catch(() => {});
+  await settle(page, 1200);
   await save(page, out('06-activity.jpg'), { crop: aside(), pad: 6 });
 }
+await setTeacher(true);
 
 const shootPage = async (label, file, opts = {}) => {
   await pageTab(label).click();
@@ -159,6 +169,8 @@ if (want('symbol')) {
 if (want('clip')) {
   await pageTab('활동 1').click();
   await settle(page, 1500);
+  await aside().locator('details', { hasText: '그림 · 시연으로 다시 보기' }).locator('summary').click();
+  await settle(page, 1200);
   await aside().getByRole('button', { name: '▶ 시연' }).first().click();
   await settle(page, 5000);
   await save(page, out('12-clip.jpg'));
