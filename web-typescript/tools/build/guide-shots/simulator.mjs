@@ -100,7 +100,7 @@ if (want('overview'))
   await save(page, out('04-overview.jpg'), {
     marks: [
       { at: page.locator('nav[aria-label="화면"]'), n: 1, pos: 'bl' },
-      { at: page.locator('button[aria-label^="과제:"]'), n: 2, pos: 'bl' },
+      { at: page.locator('button[aria-label*="과제:"]'), n: 2, pos: 'bl' },
       { at: top.locator('[class*="__goal"]').first(), n: 3, pos: 'br' },
       { at: page.locator('[class*=connPill]'), n: 4, pos: 'bl' },
       { at: page.locator('button[title="설정"]'), n: 5, pos: 'bl' },
@@ -399,7 +399,7 @@ await settle(page, 1500);
 
 // 8 · 라이브러리
 if (want('tasks') || want('checks') || want('library')) {
-  await page.locator('button[aria-label^="과제:"]').click();
+  await page.locator('button[aria-label*="과제:"]').click();
   await settle(page, 5000);
   const nav = page.locator('nav[aria-label="LIBRARY"]');
   if (want('tasks'))
