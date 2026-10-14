@@ -410,15 +410,29 @@ if (want('tasks') || want('checks') || want('library')) {
         { at: page.locator('button[data-lib] [class*=cardTags]').nth(1), n: 3, pos: 'bl' },
       ],
     });
-  await nav.getByRole('button', { name: /검수 시연/ }).click();
-  await settle(page, 4000);
-  if (want('checks'))
+  // The checks show in the library only while the teacher's 검수 시연 is on (⚙ → 검수 시연 (교사용)).
+  const checkMode = async (on) => {
+    await page.locator('button[title="설정"]').click();
+    await settle(page, 1000);
+    await page.getByRole('menuitem', { name: on ? /검수 시연 \(교사용\)/ : /검수 시연 끝내기/ }).click();
+    await settle(page, 4000);
+  };
+  if (want('checks')) {
+    await checkMode(true);
+    await screenTab('라이브러리').click();
+    await settle(page, 4000);
+    await nav.getByRole('button', { name: /검수 시연/ }).click();
+    await settle(page, 4000);
     await save(page, out('31-checks.jpg'), {
       marks: [
         { at: page.locator('[class*=pageActions]'), n: 1, pos: 'bl' },
         { at: page.locator('button[data-lib^="check-"]').first(), n: 2, pos: 'tl' },
       ],
     });
+    await checkMode(false);
+    await screenTab('라이브러리').click();
+    await settle(page, 4000);
+  }
   await nav.getByRole('button', { name: /전체/ }).click();
   await settle(page, 5000);
   if (want('library'))
@@ -477,19 +491,19 @@ if (want('archive')) {
   });
 }
 
-// 11 · 교육: 첫 화면 (히어로 · 학습 로드맵)
+// 11 · 교육: 첫 화면 = 로봇 시티 (로드맵 · 로봇 실습 7 · 전체 차시 · 3D 지도 · 기술 키워드)
 if (want('learn')) {
   await screenTab('교육').click();
   await settle(page, 6000);
-  // The 교육 tab opens on the 로봇 시티: the course home is behind 전체 차시.
-  await page.getByRole('button', { name: '전체 차시', exact: true }).click().catch(() => {});
-  await settle(page, 3000);
-  const home = page.locator('section[aria-label="교육 홈"]');
+  await page.waitForFunction(() => !document.body.innerText.includes('로봇 시티를 불러오는 중'), null, { timeout: 240000 }).catch(() => {});
+  await settle(page, 8000);
   await save(page, out('39-learn-map.jpg'), {
     marks: [
-      { at: home.getByRole('button', { name: /처음 시작하기|이어서 수업하기/ }), n: 1, pos: 'bl' },
-      { at: home.locator('section[aria-label="학습 로드맵"]'), n: 2, pos: 'tl' },
-      { at: home.getByRole('button', { name: '장비 선택하기', exact: true }), n: 3, pos: 'br' },
+      { at: page.locator('ol[aria-label="로드맵: 배우는 순서"]'), n: 1, pos: 'bl' },
+      { at: btn('로봇 실습 7', true), n: 2, pos: 'b' },
+      { at: btn('전체 차시', true), n: 3, pos: 'b' },
+      { at: page.locator('section[aria-label="로봇 시티 3D 지도"]'), n: 4, pos: 'tl' },
+      { at: page.locator('nav[aria-label="기술 키워드로 찾기"]'), n: 5, pos: 'tr' },
     ],
   });
 }
