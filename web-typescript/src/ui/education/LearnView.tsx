@@ -115,6 +115,9 @@ declare global {
     __learnAi?: () => void;
     __learnEnergy?: () => void;
     __learnFinal?: () => void;
+    /** Open the 디지털 트윈 관제센터 / the map (tools/check/text-lines.mjs). */
+    __learnData?: () => void;
+    __learnMap?: () => void;
     /** Open 로봇 실습 7 (tools/check/text-lines.mjs). */
     __learnP7?: () => void;
   }
@@ -457,6 +460,8 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
     window.__learnAi = () => openSiteLab('ai');
     window.__learnEnergy = () => openSiteLab('energy');
     window.__learnFinal = openFinal;
+    window.__learnData = openData;
+    window.__learnMap = () => setScreen('map');
     window.__learnP7 = () => {
       setP7Seen(true);
       setScreen('p7');
@@ -472,9 +477,11 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
       delete window.__learnAi;
       delete window.__learnEnergy;
       delete window.__learnFinal;
+      delete window.__learnData;
+      delete window.__learnMap;
       delete window.__learnP7;
     };
-  }, [choose, openLab, openSiteLab, openFinal]);
+  }, [choose, openLab, openSiteLab, openFinal, openData]);
 
   const fromMap = useCallback(
     (t: TopicId) => {

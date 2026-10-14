@@ -52,6 +52,7 @@ import {
 } from '@/engine/education/dataScience';
 import { RUN_LOG_KEY, clearRuns, loadRuns, type RunLab } from '@/engine/education/runLog';
 
+import { Lines } from '../lesson/Rich';
 import { Bars, HistogramChart, Scatter, Sparkline, TwinPlot, type BarRow } from './charts';
 import ClassResults, { NO_CLASS, type ClassLoad } from './ClassResults';
 import css from './data.module.css';
@@ -548,8 +549,7 @@ export default function DataCenter({ hidden, onBack, onOpenLab }: { hidden?: boo
                           <h2>작업 시간 분포</h2>
                           <HistogramChart h={hist} unit="s" mean={sum.duration.mean} height={210} />
                           <p className={css.small}>
-                            막대 높이는 그 시간대에 끝난 실행 수예요. 평균 {fmtNum(sum.duration.mean, 1)} s, 표준편차 {fmtNum(sum.duration.std, 2)} s 예요. 표준편차가 작을수록
-                            매번 비슷하게 움직여요.
+                            <Lines text={`막대 높이는 그 시간대에 끝난 실행 수예요. 평균 ${fmtNum(sum.duration.mean, 1)} s, 표준편차 ${fmtNum(sum.duration.std, 2)} s예요. 표준편차가 작을수록 매번 비슷하게 움직여요.`} />
                           </p>
                         </article>
                         <article className={css.card}>

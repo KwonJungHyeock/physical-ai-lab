@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 
 import { MAX_NAME, MAX_NO, PROBLEMS_OF, STUDENT_NAME_KEY, STUDENT_NO_KEY, THEORY_OF, buildReport, reportFileName, reportText } from '@/engine/education/classReport';
 
+import { Lines } from '../lesson/Rich';
 import css from './park.module.css';
 
 const readKey = (k: string) => {
@@ -59,7 +60,9 @@ export default function MyResult({ theory, solved }: { theory: number; solved: n
   return (
     <details className={css.mine}>
       <summary>📤 선생님께 내 결과 내기</summary>
-      <p>이름을 적고 파일로 내보내요. 그 파일을 선생님께 내면 반 전체 결과로 모여요.</p>
+      <p>
+        <Lines text="이름을 적고 파일로 내보내요. 그 파일을 선생님께 내면 반 전체 결과로 모여요." />
+      </p>
       <div className={css.mineFields}>
         <label>
           이름

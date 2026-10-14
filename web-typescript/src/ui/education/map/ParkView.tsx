@@ -38,6 +38,7 @@ import {
 } from '@/engine/education/park';
 
 import Icon from '../../simulator/Icon';
+import { Lines } from '../lesson/Rich';
 import MyResult from './MyResult';
 import css from './park.module.css';
 import type { SiteView } from './world/WorldScene';
@@ -264,11 +265,13 @@ function SiteCard({ id, progress, allOpen, state, step, onTopic, onLab, onData }
       {/* Everything above the action scrolls together; the action stays below it, never over the text. */}
       <div className={css.siteBody}>
       <h2>{s.name}</h2>
-      <p className={css.desc}>{s.desc}</p>
+      <p className={css.desc}>
+        <Lines text={s.desc} />
+      </p>
       {s.issue && (
         <p className={css.issue}>
           <b>사회 문제</b>
-          {s.issue}
+          <Lines text={s.issue} />
         </p>
       )}
       <div className={css.crew} aria-label="이 현장의 로봇">

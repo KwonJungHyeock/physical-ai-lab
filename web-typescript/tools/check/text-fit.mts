@@ -20,6 +20,8 @@ import { LOGI_TEXT } from '../../src/engine/education/lab/logistics';
 import { sentencesOf } from '../../src/engine/education/sentences';
 import { glossFirst } from '../../src/engine/education/symbols';
 import { QUESTIONS } from '../../src/engine/education/questions';
+import { FINAL_ITEMS } from '../../src/engine/education/lab/final';
+import { SITES as PLACES } from '../../src/engine/education/park';
 import type { TopicData } from '../../src/engine/education/curriculum-types';
 import { readFileSync } from 'node:fs';
 import { parseSubject } from '../build/curriculum-md.mjs';
@@ -158,6 +160,25 @@ for (const u of mdFile ? [] : UNITS) {
   add(src, '실물', u.real.does);
   add(src, '준비', u.real.ready);
   add(src, '기록', u.real.records);
+}
+
+// 대단원 마무리 평가 (the 평가 문항 panel, as wide as a site lab's) and the map's place cards.
+for (const f of mdFile ? [] : FINAL_ITEMS) {
+  const src = `평가 ${f.lab}`;
+  add(src, '말', f.line);
+  add(src, '상황', f.brief);
+  f.spec.forEach((x) => add(src, '조건', x));
+  f.causes.forEach((c) => add(src, '원인', c.t));
+  add(src, '계산', f.calc.prompt);
+  f.hints.forEach((h) => add(src, '힌트', h));
+  add(src, '원리', f.principle);
+  add(src, '답', f.answer);
+}
+for (const p of mdFile ? [] : PLACES) {
+  const src = `지도 ${p.id}`;
+  add(src, '설명', p.desc);
+  add(src, '사회 문제', p.issue);
+  p.problems.forEach((x) => add(src, '문제', `${x.title}: ${x.fix}`));
 }
 
 const lines = (it: Item) => Math.max(1, Math.ceil(it.em / LINE_EM));

@@ -42,6 +42,7 @@ import { FARM_VIEW } from './FarmLab';
 import { LOGI_VIEW } from './LogisticsLab';
 import PalletCell, { PalletPlayback } from './PalletCell';
 import { Playback } from './playback';
+import { Lines } from '../lesson/Rich';
 import { fmt, near } from './SiteFlow';
 import { useAccount } from '../../account/AccountProvider';
 import css from './lab.module.css';
@@ -176,14 +177,14 @@ export default function FinalExam({ robot, chain, gripperRobot, hidden, onBack }
             <section className={fx.intro}>
               <h2>일곱 현장에 다시 문제가 생겼어요</h2>
               <p>
-                현장마다 지난번에 고친 프로그램 그대로인데, 상황이 조금 바뀌었어요. 센서를 또 옮기고, 팔레트를 또 옮기고, 로봇을 바꾸고 … 외운 답은 통하지 않아요. 원리로 <b>새 숫자</b>를 다시 계산해 고쳐요.
+                <Lines text="현장마다 프로그램은 지난번에 고친 그대로예요. 그런데 상황이 조금 바뀌었어요. 센서도, 팔레트도, 로봇도 바뀌었어요. 외운 답은 통하지 않아요. 원리로 새 숫자를 다시 계산해 고쳐요." />
               </p>
               <ul className={fx.rules}>
                 <li>
                   <b>원인</b> 처음에 맞히면 4점, 두 번째 2점
                 </li>
                 <li>
-                  <b>계산</b> 처음 확인에 맞으면 3점, 나중에 맞으면 1점이에요. 맞혀야 고치기가 열려요 (건너뛰면 0점).
+                  <b>계산</b> 처음 확인에 맞으면 3점, 나중에 맞으면 1점. 맞혀야 고치기가 열려요 (건너뛰면 0점)
                 </li>
                 <li>
                   <b>고치기</b> 다시 가동해서 통과하면 3점
@@ -488,9 +489,12 @@ function ItemScreen({ item, no, robot, chain, gripperRobot, hidden, record, setR
               <span>1</span> 상황
             </h3>
             <p className={fx.line}>
-              <b>{item.boss}</b> “{item.line}”
+              <b>{item.boss}</b>
+              <Lines text={`“${item.line}”`} />
             </p>
-            <p>{item.brief}</p>
+            <p>
+              <Lines text={item.brief} />
+            </p>
             <ul className={fx.spec}>
               {item.spec.map((x) => (
                 <li key={x}>{x}</li>
@@ -541,7 +545,9 @@ function ItemScreen({ item, no, robot, chain, gripperRobot, hidden, record, setR
                   ))}
                 </tbody>
               </table>
-              <p className={fx.prompt}>{item.calc.prompt}</p>
+              <p className={fx.prompt}>
+                <Lines text={item.calc.prompt} />
+              </p>
               {item.calc.fields.map((f, i) => (
                 <label key={f.label} className={fx.calcRow}>
                   <span>{f.label}</span>
@@ -642,7 +648,7 @@ function ItemScreen({ item, no, robot, chain, gripperRobot, hidden, record, setR
             <section className={fx.hints}>
               {item.hints.slice(0, record.hints).map((h, i) => (
                 <p key={i}>
-                  <b>힌트 {i + 1}</b> {h}
+                  <b>힌트 {i + 1}</b> <Lines text={h} />
                 </p>
               ))}
               {record.hints < item.hints.length && (
@@ -656,7 +662,9 @@ function ItemScreen({ item, no, robot, chain, gripperRobot, hidden, record, setR
           {(record.pass || done) && (
             <section className={fx.principle}>
               <b>원리</b>
-              <p>{item.principle}</p>
+              <p>
+                <Lines text={item.principle} />
+              </p>
             </section>
           )}
 

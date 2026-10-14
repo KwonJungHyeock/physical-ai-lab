@@ -5,7 +5,8 @@
 // The panels set one sentence per line; a sentence that fits never wraps. Results that only appear
 // after an activity (결과 · 왜) are measured by text-fit.mts from the content itself.
 // Needs the app running (npm run dev) and Playwright:
-//   BASE=http://localhost:3000 node tools/check/text-lines.mjs [1-1 ... | labs]   → prints problems and a summary
+//   BASE=http://localhost:3000 node tools/check/text-lines.mjs [1-1 ... | labs | more]   → prints problems and a summary
+//   `more`: the map's place cards, 대단원 마무리 평가 (its list and each item) and the 관제센터's tabs (예시 데이터).
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 
@@ -14,7 +15,10 @@ import { chromiumPath, loadPlaywright } from './inspect.mjs';
 const web = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const base = process.env.BASE ?? 'http://localhost:3000';
 const all = JSON.parse(execFileSync('npx', ['tsx', '-e', "import('./src/engine/education/catalog.ts').then((m) => console.log(JSON.stringify((m.TOPICS ?? m.default.TOPICS).map((t) => t.id))))"], { cwd: web }).toString());
-const ids = process.argv[2] === 'labs' ? [] : process.argv.length > 2 ? process.argv.slice(2) : all;
+const mode = process.argv[2];
+const ids = mode === 'labs' || mode === 'more' ? [] : process.argv.length > 2 ? process.argv.slice(2) : all;
+const labs = process.argv.length <= 2 || mode === 'labs';
+const more = process.argv.length <= 2 || mode === 'more';
 const [W, H] = (process.env.SIZE ?? '1366x768').split('x').map(Number);
 
 /** Runs in the page: every text block inside `root`, its sentences' line counts and orphans. */
@@ -114,7 +118,7 @@ const LABS = [
   ['자원순환', '__learnEnergy', '__energyOpen'],
 ];
 const STEPS = ['brief', 'run', 'cause', 'fix', 'compare', 'done'];
-if (process.argv.length <= 2 || ids.length === 0) {
+if (labs) {
   for (const [lab, learn, hook] of LABS) {
     await page.evaluate((f) => window[f](), learn);
     await page.waitForFunction((n) => !!window[n], hook ?? '__labOpen');
@@ -132,7 +136,7 @@ if (process.argv.length <= 2 || ids.length === 0) {
   }
 }
 // 로봇 실습 7: each unit's panel with every part opened in turn (알아보기 · 해 보기 · 문제 · 실물).
-if (process.argv.length <= 2 || ids.length === 0) {
+if (labs) {
   await page.evaluate(() => window.__learnP7());
   await page.waitForTimeout(4000);
   const units = page.locator('nav[aria-label="실습 고르기"] button');
@@ -146,6 +150,36 @@ if (process.argv.length <= 2 || ids.length === 0) {
       const panel = page.locator('aside:has([aria-label="순서"])').first();
       report(`실습7 ${u + 1} ${k + 1}`, await panel.evaluate(measure));
     }
+  }
+}
+// The map's place cards, 마무리 평가, the 관제센터.
+if (more) {
+  await page.evaluate(() => window.__learnMap());
+  await page.waitForFunction(() => !!window.__parkSelect, null, { timeout: 120000 });
+  await page.waitForTimeout(3000);
+  for (const id of ['center', 'factory', 'logistics', 'lab', 'farm', 'cafe', 'ai', 'energy', 'data']) {
+    await page.evaluate((s) => window.__parkSelect(s), id);
+    await page.waitForTimeout(900);
+    report(`지도 ${id}`, await page.locator('aside[aria-label$=" 안내"]:visible').first().evaluate(measure));
+  }
+  await page.evaluate(() => window.__learnFinal());
+  await page.waitForFunction(() => !!window.__finalOpen, null, { timeout: 120000 });
+  await page.waitForTimeout(1500);
+  report('평가 목록', await page.locator('[class*=hub]:visible').first().evaluate(measure));
+  for (let k = 0; k < 7; k++) {
+    await page.evaluate((n) => window.__finalOpen(n), k);
+    await page.waitForTimeout(2500);
+    report(`평가 ${k + 1}`, await page.locator('aside[aria-label="평가 문항"]:visible').first().evaluate(measure));
+  }
+  await page.evaluate(() => window.__finalOpen(null));
+  await page.evaluate(() => window.__learnData());
+  const dc = page.locator('section[aria-label="디지털 트윈 관제센터"]');
+  await dc.waitFor({ timeout: 60000 });
+  await dc.getByRole('button', { name: '예시 데이터', exact: true }).click();
+  for (const tab of ['한눈에 보기', '현장 분석', '디지털 트윈', '데이터 탐구', '반 결과']) {
+    await dc.locator('nav[aria-label="화면"]').getByRole('button', { name: tab }).click();
+    await page.waitForTimeout(1500);
+    report(`관제 ${tab}`, await dc.evaluate(measure));
   }
 }
 await browser.close();
