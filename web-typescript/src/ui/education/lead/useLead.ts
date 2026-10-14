@@ -117,7 +117,7 @@ export interface StudentLead {
   joined: Joined | null;
   /** The group's robot PC (for a student following on screen). */
   mate: Mate | null;
-  join(j: Joined): void;
+  join(j: Joined): Promise<string | null>;
   leave(): void;
   /** What this screen did on a step (group and role are added). */
   send(m: Want): void;
@@ -203,20 +203,33 @@ export function useStudentLead(client: ClassServerClient | null): StudentLead {
     };
   }, [client, joined, push]);
 
+  /** Join with this group and role; resolves with why not (null: joined), e.g. the group's robot is taken. */
   const join = useCallback(
-    (j: Joined) => {
+    async (j: Joined): Promise<string | null> => {
+      const l = leadRef.current;
+      if (!client || !l) return '선생님 수업을 찾지 못했어요.';
+      try {
+        const r = await client.setMark(cleanMark({ ...emptyMark(j.group, j.role), lesson: l.lesson, step: l.step }));
+        me.current = r.me;
+        setMate(r.mate ?? null);
+      } catch (e) {
+        return e instanceof ClassApiError ? e.message : String(e);
+      }
       joinedRef.current = j;
       setJoined(j);
       setEnded(false);
       want.current = null;
-      void push();
+      return null;
     },
-    [push],
+    [client],
   );
   const leave = useCallback(() => {
     joinedRef.current = null;
     setJoined(null);
-  }, []);
+    // Give up the group's robot (and the group) on the server, so a classmate can take it.
+    const l = leadRef.current;
+    if (client && l) client.setMark(emptyMark()).catch(() => {});
+  }, [client]);
   const send = useCallback(
     (m: Want) => {
       want.current = m;

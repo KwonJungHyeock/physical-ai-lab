@@ -50,6 +50,7 @@ import {
   type Statement,
 } from '@/engine/account';
 import { RUN_LOG_KEY, type RunLogEvent } from '@/engine/education/runLog';
+import { setConsoleName } from '@/engine/simulator/robotLink';
 
 import LoginDialog from './LoginDialog';
 
@@ -239,6 +240,11 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   }, [findServer]);
 
   // A saved login: is it still good? (401: log in again; offline: keep working, it is checked later.)
+  // The robot tells other PCs who is moving it by this name (robotLink.setConsoleName).
+  useEffect(() => {
+    setConsoleName(!session ? null : session.role === 'student' ? `${session.student.no}번 학생` : `선생님 ${session.user.username}`);
+  }, [session]);
+
   const checked = useRef<string | null>(null);
   useEffect(() => {
     if (!session || checked.current === session.token) return;

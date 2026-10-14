@@ -888,6 +888,13 @@ func TestLead(t *testing.T) {
 	if e.must(e.do("GET", "/lead", s1, nil), 200).body["mate"] != nil {
 		t.Fatal("the robot PC gets itself as mate")
 	}
+	// One robot PC per group: a second student asking for group 1's robot is refused, another group is fine.
+	if r := e.must(e.do("PUT", "/lead/me", s2, map[string]any{"group": 1, "role": "robot"}), 409); r.body["error"] != "robot_taken" {
+		t.Fatalf("second robot PC: %v", r.body)
+	}
+	e.must(e.do("PUT", "/lead/me", s2, map[string]any{"group": 2, "role": "robot"}), 200)
+	e.must(e.do("PUT", "/lead/me", s1, map[string]any{"group": 1, "role": "robot", "lesson": "p7-4", "step": 4}), 200)
+	e.must(e.do("PUT", "/lead/me", s2, map[string]any{"group": 1, "role": "screen"}), 200)
 
 	// The operator can see it too; ending it clears it for everyone.
 	e.must(e.do("GET", lead, op, nil), 200)

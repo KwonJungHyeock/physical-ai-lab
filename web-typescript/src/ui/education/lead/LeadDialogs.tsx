@@ -167,15 +167,19 @@ function lastJoin(): Joined {
   return { group: 0, role: 'screen' };
 }
 
-export function LeadJoin({ robotOnline, onJoin, onClose }: { robotOnline: boolean; onJoin(j: Joined): void; onClose(): void }) {
+export function LeadJoin({ robotOnline, onJoin, onClose }: { robotOnline: boolean; onJoin(j: Joined): Promise<string | null>; onClose(): void }) {
   const [j, setJ] = useState<Joined>(lastJoin);
-  const go = () => {
+  const [err, setErr] = useState('');
+  const [busy, setBusy] = useState(false);
+  const go = async () => {
     try {
       localStorage.setItem(LAST_KEY, JSON.stringify(j));
     } catch {
       /* not remembered */
     }
-    onJoin(j);
+    setBusy(true);
+    setErr((await onJoin(j)) ?? '');
+    setBusy(false);
   };
   return (
     <div className={css.dlgBack} role="dialog" aria-modal="true" aria-label="수업에 함께하기">
@@ -209,12 +213,13 @@ export function LeadJoin({ robotOnline, onJoin, onClose }: { robotOnline: boolea
             </span>
           </label>
         </div>
+        {err && <p className={css.joinErr}>{err}</p>}
         {j.role === 'robot' && !robotOnline && <p className={css.warn}>아직 로봇이 연결되지 않았어요. 위쪽 [로봇 연결] 로 우리 조 로봇을 연결해 두어요 (실물 단계 전까지).</p>}
         <div className={css.dlgFoot}>
           <button type="button" className={css.subBtn} onClick={onClose}>
             나중에
           </button>
-          <button type="button" className={css.primary} onClick={go}>
+          <button type="button" className={css.primary} disabled={busy} onClick={() => void go()}>
             함께하기 →
           </button>
         </div>

@@ -48,4 +48,12 @@ sudo python3 autostart.py --agv    # myAGV 에서 자동 시작
 프로그램, 움직이는 중 서보 풀기·영점 거부, 서보가 풀려 있지 않으면 영점 거부, 도착 시간 초과 시
 정지, 펌프·펜·실린더 거부(핀 미확인).
 
+한 번에 한 PC 만 움직입니다: 화면은 요청마다 `X-Console-Id` (탭마다 하나) · `X-Console-Name` (예: "3번 학생")
+을 붙입니다. 움직이는 요청(run · move · jog · target · gripper · pump · calibrate · joint · release · focus)을
+보낸 PC 가 실행 중일 때와 마지막 요청 · 실행이 끝난 뒤 15초 동안 로봇을 쥐고, 그동안 다른 PC 의 움직이는
+요청은 `409` ("다른 PC(3번 학생)가 이 로봇을 움직이는 중이에요") 입니다. **정지는 누구든 언제나** 됩니다.
+`/api/state` 의 `owner` = 지금 쥔 PC (`{id, name}` 또는 `null`), 화면은 이것으로 안내 띠를 보여 줍니다.
+이름표가 없는 요청(스크립트)은 주소로 구분합니다. 시간은 `--owner-lease 초` 로 바꿀 수 있고,
+점검은 `python3 robot-python/tools/check_robot_owner.py` (13개).
+
 터미널에는 요청마다 한 줄씩 기록됩니다 (실행 시작·각 동작·`send_angles` 응답·거절·오류·영상처리).

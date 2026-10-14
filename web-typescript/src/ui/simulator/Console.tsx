@@ -38,6 +38,7 @@ import {
   stopRobot,
   targetRobot,
   visionOnRobot,
+  otherOwner,
   type RobotAi,
   type RobotState,
 } from '@/engine/simulator/robotLink';
@@ -3076,6 +3077,12 @@ export default function Console() {
                   <button type="button" className={css.ghost} onClick={closePcOffer}>
                     나중에
                   </button>
+                </div>
+              )}
+              {robotMode && !serverLost && robot?.connected && otherOwner(robot) && (
+                <div className={css.ownerBanner} role="status">
+                  <b>다른 PC({otherOwner(robot)})가 이 로봇을 움직이는 중이에요.</b>
+                  <span>그동안 이 화면의 로봇 명령은 로봇이 받지 않아요. 그 PC 가 끝내고 15초가 지나면 다시 쓸 수 있어요. 멈추기는 언제나 돼요.</span>
                 </div>
               )}
               {robotMode && (serverLost || (robot && !robot.connected)) && (

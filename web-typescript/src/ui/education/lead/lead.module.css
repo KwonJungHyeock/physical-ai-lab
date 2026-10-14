@@ -53,6 +53,16 @@
   font-size: 13px;
   color: #ffb4ab;
 }
+.joinErr {
+  margin: 4px 0 0;
+  padding: 8px 12px;
+  border-radius: 9px;
+  background: var(--help-soft);
+  color: var(--help);
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.45;
+}
 .warn {
   margin: 4px 0 0;
   padding: 8px 12px;

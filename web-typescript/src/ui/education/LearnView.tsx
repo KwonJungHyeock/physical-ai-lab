@@ -596,11 +596,13 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
         <LeadJoin
           robotOnline={real.online}
           onClose={() => setJoinOpen(false)}
-          onJoin={(j) => {
+          onJoin={async (j) => {
+            const why = await studentLead.join(j);
+            if (why) return why;
             setJoinOpen(false);
-            studentLead.join(j);
             setP7Seen(true);
             setScreen('p7');
+            return null;
           }}
         />
       )}

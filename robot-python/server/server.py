@@ -945,6 +945,57 @@ CROSS_ORIGIN = ("/api/state", "/api/identify")
 BOOT_ID = os.urandom(4).hex()
 # Files whose names change with every build (and the Python runtime): kept by the browser.
 LONG_CACHE = ("/_next/static/", "/pyodide/")
+# Requests that move the arm or its tool: one console at a time may send them (see Owner).
+MOTION_ROUTES = ("/api/run", "/api/move", "/api/jog", "/api/target", "/api/gripper", "/api/pump",
+                 "/api/calibrate", "/api/joint", "/api/release", "/api/focus")
+
+
+class Owner:
+    """Who is moving the arm. In a classroom several PCs can open the same robot; only one of them may
+    drive it at a time, so two programs never fight over the arm. The console that sends a motion
+    request holds the robot while its run goes on and for LEASE_S seconds after its last request or
+    the end of its run (the consoles' state polls notice the end);
+    another console's motion request is refused meanwhile, with the holder's name. Stop is always
+    taken, from anyone (it is not a motion request). A console says who it is with X-Console-Id (a
+    random id per browser tab) and X-Console-Name (e.g. "3번 학생", URL-encoded); a request without
+    them is known by its address."""
+
+    LEASE_S = 15.0
+
+    def __init__(self, clock=time.time):
+        self.lock = threading.Lock()
+        self.clock = clock
+        self.id = None
+        self.name = ""
+        self.until = 0.0
+
+    def _hold(self, running, now):
+        """While its run goes on the holder keeps the robot; the lease counts from the run's end."""
+        if self.id and running:
+            self.until = max(self.until, now + self.LEASE_S)
+
+    def claim(self, cid, name, running):
+        """None when `cid` may move the arm now (it then holds it), else why not."""
+        now = self.clock()
+        with self.lock:
+            self._hold(running, now)
+            if self.id and self.id != cid and (running or now < self.until):
+                wait = "" if running else f" {max(1, round(self.until - now))}초 뒤에 다시 해 주세요."
+                return f"다른 PC({self.name or '이름 없음'})가 이 로봇을 움직이는 중이에요." + (" 그 PC 의 실행이 끝나면 다시 해 주세요." if running else wait)
+            self.id, self.name, self.until = cid, name, now + self.LEASE_S
+            return None
+
+    def view(self, running):
+        """The holder ({id, name}) while it holds the robot, else None."""
+        now = self.clock()
+        with self.lock:
+            self._hold(running, now)
+            if self.id and now < self.until:
+                return {"id": self.id, "name": self.name}
+            return None
+
+
+OWNER = Owner()
 
 
 def refresh_identity(force=False):
@@ -1045,7 +1096,7 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_response(204)
         self.cross_origin()
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Console-Id, X-Console-Name")
         self.send_header("Access-Control-Max-Age", "600")
         self.send_header("Content-Length", "0")
         self.end_headers()
@@ -1072,6 +1123,14 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+
+    def console(self):
+        """(id, name) of the console sending this request (Owner)."""
+        cid = (self.headers.get("X-Console-Id") or "").strip()
+        if not (0 < len(cid) <= 64 and all(c.isalnum() or c in "-_" for c in cid)):
+            cid = "ip:" + self.client_address[0]
+        name = urllib.parse.unquote(self.headers.get("X-Console-Name") or "").strip()[:40]
+        return cid, name or self.client_address[0]
 
     def read_json(self):
         n = int(self.headers.get("Content-Length") or 0)
@@ -1109,7 +1168,8 @@ class Handler(SimpleHTTPRequestHandler):
             state = {k: v for k, v in ROBOT.state.items() if k != "arrivals"}
             state["arrivalCount"] = len(ROBOT.state["arrivals"])
             return self.send_json({**state, **IDENTITY, "boot": BOOT_ID, "speedCap": SPEED_CAP, "age": age, "camera": CAMERA.available, "cameras": CAMERA.count,
-                                   "pump": ROBOT.pump.available, "pumpError": ROBOT.pump.error, "remote": True})
+                                   "pump": ROBOT.pump.available, "pumpError": ROBOT.pump.error, "remote": True,
+                                   "owner": OWNER.view(ROBOT.state["running"])})
         if self.path.split("?")[0] == "/api/wifi":
             try:
                 return self.send_json({"ok": True, **WIFI.status(), **IDENTITY})
@@ -1151,6 +1211,12 @@ class Handler(SimpleHTTPRequestHandler):
             if route == "/api/stop":
                 ROBOT.stop()
                 return self.send_json({"ok": True})
+            if route in MOTION_ROUTES:
+                cid, name = self.console()
+                err = OWNER.claim(cid, name, ROBOT.state["running"])
+                if err:
+                    log(f"[거절] {name}: {err}")
+                    return self.send_json({"ok": False, "error": err, "owner": OWNER.view(ROBOT.state["running"])}, 409)
             if route in ("/api/run", "/api/move"):
                 if route == "/api/run":
                     err, run = ROBOT.start(body.get("actions"), "프로그램 실행 중")
@@ -1165,6 +1231,9 @@ class Handler(SimpleHTTPRequestHandler):
                 a = ROBOT.state["angles"]
                 if not a or ROBOT.state["running"] or ROBOT.state["released"]:
                     return self.send_json({"ok": False, "error": "지금은 움직여 알려 줄 수 없어요."}, 409)
+                holder = OWNER.view(False)
+                if holder and holder["id"] != self.console()[0]:
+                    return self.send_json({"ok": False, "error": f"지금은 다른 PC({holder['name']})가 쓰는 중이라 움직여 알려 줄 수 없어요."}, 409)
                 there = list(a)
                 there[0] += -5 if a[0] > 0 else 5
                 # Asked by another PC's page: its polls do not count for the dead-man check, so the
@@ -1347,6 +1416,7 @@ def main():
     ap.add_argument("--port", type=int, default=8080, help="웹 주소 포트 (기본 8080)")
     ap.add_argument("--serial", default=PROFILE["serial_port"], help="로봇 시리얼 포트")
     ap.add_argument("--baud", type=int, default=PROFILE["baudrate"], help="통신 속도")
+    ap.add_argument("--owner-lease", type=float, default=Owner.LEASE_S, help="한 PC 가 로봇을 쥐고 있는 시간, 초 (기본 15)")
     ap.add_argument("--demo", action="store_true", help="로봇 없이 가짜 팔로 실행")
     ap.add_argument("--name", default=None, help="로봇 찾기에 보일 사용자 이름 (기본: USB 의 wifi.txt 사용자= 로 정한 이름)")
     ap.add_argument("--camera", default="auto",
@@ -1355,6 +1425,7 @@ def main():
                     help="그리퍼가 멈춘 자리보다 이만큼(0~100 단위) 더 조여 버팀 (기본 5, 음수 = 힘 빼기 끔)")
     ap.add_argument("--deadman", type=float, default=DEADMAN_S, help="화면 연결이 이만큼(초) 끊기면 실행 중인 로봇을 멈춤 (0 = 끔)")
     args = ap.parse_args()
+    Owner.LEASE_S = max(0.5, args.owner_lease)
     DEADMAN_S = args.deadman
     GRIP_SQUEEZE = args.grip_squeeze
 

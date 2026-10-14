@@ -39,6 +39,45 @@ export function setRemoteRobot(address: string | null) {
 const api = (path: string) => (remote ? `http://${remote}${path}` : path);
 
 /**
+ * Who this console is, for the robot's one-console-at-a-time rule (server.py Owner): a random id per
+ * browser tab and a name people recognise ("3번 학생", "선생님 kim"), set by the class login.
+ */
+const ID_KEY = 'robot-console-id';
+let myId = '';
+export function consoleId(): string {
+  if (myId) return myId;
+  try {
+    myId = sessionStorage.getItem(ID_KEY) ?? '';
+  } catch {
+    /* private mode */
+  }
+  if (!myId) {
+    myId = Array.from(crypto.getRandomValues(new Uint8Array(8)), (b) => b.toString(16).padStart(2, '0')).join('');
+    try {
+      sessionStorage.setItem(ID_KEY, myId);
+    } catch {
+      /* this page only */
+    }
+  }
+  return myId;
+}
+let myName = '';
+export function setConsoleName(name: string | null) {
+  myName = (name ?? '').slice(0, 40);
+}
+/**
+ * The id headers go to this page's own robot, and to a robot on another address only once its state
+ * shows it knows them (an older server's preflight would refuse the request).
+ */
+let ownerAware = false;
+function consoleHeaders(): Record<string, string> {
+  if (remote && !ownerAware) return {};
+  return { 'X-Console-Id': consoleId(), ...(myName ? { 'X-Console-Name': encodeURIComponent(myName) } : {}) };
+}
+/** Another console is moving the arm now (its name), else null. */
+export const otherOwner = (s: RobotState | null): string | null => (s?.owner && s.owner.id !== consoleId() ? s.owner.name || '다른 PC' : null);
+
+/**
  * How long a request may take before it counts as lost (Wi-Fi gone): a command answers at once, the
  * robot's camera vision takes a few seconds, its AI longer (the model loads on the first call).
  */
@@ -88,6 +127,8 @@ export interface RobotState {
   host?: string;
   /** The robot's server takes commands from the PC program's own screens (로봇 연결 without leaving them). */
   remote?: boolean;
+  /** The console moving the arm now ({id, name}, see consoleId), null when none; absent on older servers. */
+  owner?: { id: string; name: string } | null;
 }
 
 /** Where the arm really stopped for one move: commanded and measured joint angles. */
@@ -180,7 +221,9 @@ export async function fetchRobotState(signal?: AbortSignal): Promise<RobotState 
     const r = await fetch(api(remote ? '/api/state?console=1' : '/api/state'), { cache: 'no-store', signal });
     if (!r.ok) return null;
     const s = (await r.json()) as RobotState;
-    return typeof s.connected === 'boolean' ? s : null;
+    if (typeof s.connected !== 'boolean') return null;
+    ownerAware = 'owner' in s;
+    return s;
   } catch {
     return null;
   }
@@ -197,7 +240,7 @@ export interface PostResult {
 
 async function post(path: string, body: unknown = {}): Promise<PostResult> {
   try {
-    const r = await fetch(api(path), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(POST_MS) });
+    const r = await fetch(api(path), { method: 'POST', headers: { 'Content-Type': 'application/json', ...consoleHeaders() }, body: JSON.stringify(body), signal: AbortSignal.timeout(POST_MS) });
     return { ...((await r.json()) as PostResult), status: r.status };
   } catch (err) {
     return { ok: false, error: `로봇 서버에 연결할 수 없어요 (${err instanceof Error ? err.message : String(err)})` };

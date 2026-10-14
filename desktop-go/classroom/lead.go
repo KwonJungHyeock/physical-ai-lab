@@ -194,7 +194,8 @@ func (srv *Server) myLead(w http.ResponseWriter, _ *http.Request, s session) {
 	writeJSON(w, http.StatusOK, map[string]any{"lead": lc.lead, "me": me, "mate": mate})
 }
 
-// robotOf: the group's robot PC (the lowest 번호 with the robot role), for its members' screens; nil: none.
+// robotOf: the group's robot PC (putMark lets only one student per group take the robot role), for
+// its members' screens; nil: none.
 func robotOf(lc *leadClass, group int) any {
 	var best *Mark
 	for _, m := range lc.marks {
@@ -247,6 +248,15 @@ func (srv *Server) putMark(w http.ResponseWriter, r *http.Request, s session) {
 	if len(lc.marks) >= 200 && lc.marks[s.No] == nil {
 		writeErr(w, http.StatusConflict, "full", "이 수업에 더 들어올 수 없어요.")
 		return
+	}
+	// One robot PC per group: two PCs driving the same robot would fight over the arm.
+	if in.Role == "robot" && in.Group > 0 {
+		for no, o := range lc.marks {
+			if no != s.No && o.Group == in.Group && o.Role == "robot" {
+				writeErr(w, http.StatusConflict, "robot_taken", fmt.Sprintf("%d번이 이미 %d조의 로봇 담당이에요. [화면으로 따라오기] 로 들어와요.", no, in.Group))
+				return
+			}
+		}
 	}
 	m := &Mark{No: s.No, Group: in.Group, Role: in.Role, Lesson: in.Lesson, Step: in.Step, Done: in.Done,
 		Help: in.Help, Answer: in.Answer, Robot: in.Robot, Result: in.Result, At: srv.now().UnixMilli()}
