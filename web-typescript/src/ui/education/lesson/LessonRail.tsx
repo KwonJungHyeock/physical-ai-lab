@@ -49,7 +49,8 @@ const MINUTES: Record<StudyLevel, Record<PageId, number>> = {
 type Kind = 'read' | 'ask' | 'do' | 'result' | 'teacher';
 type St = 'now' | 'done' | 'todo';
 
-const TAG: Record<Kind, string> = { read: '개념', ask: '질문 · 골라요', do: '해 보기 · 직접 움직여요', result: '결과', teacher: '교사용' };
+// The kind in one word (its colour says the same). What to do with it is the 지금 할 일 strip's job.
+const TAG: Record<Kind, string> = { read: '개념', ask: '질문', do: '해 보기', result: '결과', teacher: '교사용' };
 
 /** The kind's mark: a small line icon (book, question, hand, check, person). */
 function Mark({ kind }: { kind: Kind }) {
@@ -89,7 +90,7 @@ function Block({ kind, st, n, title, wait, children, label }: { kind: Kind; st?:
     <section className={css.blk} data-kind={kind} data-st={st} aria-label={label}>
       <header className={css.blkHead}>
         {n !== undefined ? <i className={css.num}>{st === 'done' ? '✓' : n}</i> : <Mark kind={kind} />}
-        <span className={css.tag}>{TAG[kind]}</span>
+        {title !== TAG[kind] && <span className={css.tag}>{TAG[kind]}</span>}
         {title && <b className={css.blkTitle}>{title}</b>}
       </header>
       {folded ? wait && <p className={css.wait}>{wait}</p> : children}
@@ -186,9 +187,7 @@ export default function LessonRail({ topic, page, onPage, results, onChecked, le
     <aside className={css.rail} aria-label={`${topic.title} 수업 카드`} data-teacher={teacher || undefined} data-glow={glow}>
       <header className={css.mission} aria-label="미션">
         <div className={css.missionTop}>
-          <small>
-            {topic.id} {topic.title} · 오늘의 질문
-          </small>
+          <small>오늘의 질문</small>
           {teacherAllowed && (
             <button
               type="button"
@@ -269,7 +268,6 @@ export default function LessonRail({ topic, page, onPage, results, onChecked, le
         <section className={css.blk} data-kind="do" data-st={act ? (results[act.key] ? 'done' : guess[act.key] !== undefined ? 'now' : 'todo') : undefined}>
           <header className={css.blkHead}>
             <i className={css.num}>{act && results[act.key] ? '✓' : 2}</i>
-            <span className={css.tag}>{TAG.do}</span>
             <b className={css.blkTitle}>해 보기</b>
           </header>
           {act && guess[act.key] === undefined && <p className={css.wait}>먼저 위에서 예상을 골라요. 그다음 직접 움직여 봐요.</p>}
@@ -363,7 +361,8 @@ export default function LessonRail({ topic, page, onPage, results, onChecked, le
 
       <footer className={css.foot}>
         <button type="button" className={css.prev} disabled={i === 0} onClick={() => onPage(PAGES[i - 1])}>
-          ← {i > 0 ? PAGE_LABEL[PAGES[i - 1]] : '이전'}
+          <small>이전</small>
+          {i > 0 && <span>{PAGE_LABEL[PAGES[i - 1]]}</span>}
         </button>
         {i < PAGES.length - 1 ? (
           // An activity opens the next step once its result is in: the big button never skips a try.
@@ -371,7 +370,7 @@ export default function LessonRail({ topic, page, onPage, results, onChecked, le
             <small>{locked ? '해 보고 결과를 보면 열려요' : '다음'}</small>
             <span>
               {PAGE_LABEL[PAGES[i + 1]]}
-              {isActivity(PAGES[i + 1]) ? ` · ${topic.steps.find((s) => s.key === PAGES[i + 1])!.title}` : ''} →
+              {isActivity(PAGES[i + 1]) ? ` · ${topic.steps.find((s) => s.key === PAGES[i + 1])!.title}` : ''}
             </span>
           </button>
         ) : !onward ? (
@@ -382,12 +381,12 @@ export default function LessonRail({ topic, page, onPage, results, onChecked, le
           // 다음 차시 opens once the 확인 문제 are all right (the 차시 then counts as learnt).
           <button type="button" className={css.next} data-onward={passed || undefined} data-ready={passed || undefined} disabled={!passed} onClick={onward.go}>
             <small>{passed ? onward.kicker : '확인 문제를 모두 맞히면 열려요'}</small>
-            <span>{onward.title} →</span>
+            <span>{onward.title}</span>
           </button>
         )}
         {i === PAGES.length - 1 && onward?.alt && passed && (
           <button type="button" className={css.alt} onClick={onward.alt.go}>
-            또는 다음 차시: {onward.alt.title} →
+            또는 다음 차시: {onward.alt.title}
           </button>
         )}
         {teacherAllowed && (locked || (i === PAGES.length - 1 && onward && !passed)) && (
