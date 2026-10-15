@@ -11,7 +11,9 @@
   Started with `-class` it is the teacher's LAN class server (accounts, learning events: `classroom/`);
   `cloud/` = the reference receiver for the pseudonymised cloud sync (docs/reports/system/23-accounts-hybrid.md).
   Delivering it: during development send the zip split in two (`zip -s 30m`, under the 30 MB file limit);
-  a confirmed final build goes on the `release` branch as one `PhysicalAI-Simulator.zip` + README (latest only).
+  a build to test or deliver goes on the `release` branch as two files + README: `PhysicalAI-Simulator.zip`
+  (built without the kit: `sh desktop-go/build.sh`) and `eduino_usb.zip` (`robot-python/tools/make_usb_kit.py`, signed),
+  each under GitHub's 100 MB file limit; the program takes the kit from beside it for 로봇 USB 만들기.
 - `content-markdown/` — the lesson sources the app reads (8 md + `reference/`), Korean; `sites/` = the 산업단지 site labs' lesson scripts (story, activities, answers, teacher's plan).
   `npm run gen:curriculum` turns them into `web-typescript/src/engine/education/curriculum.gen.ts`.
 - `manuals/` — step-by-step guides for people (Korean), by audience: `simulator/`, `setup/`, `robot-arm/`, `myagv/`, `course/`.

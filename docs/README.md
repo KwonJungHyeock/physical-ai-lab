@@ -68,7 +68,7 @@
 | [`29-one-robot-results.md`](reports/education/29-one-robot-results.md) | 보고 #29 — 한 로봇 한 PC (로봇 서버 조작권 · 조마다 로봇 담당 한 명), 로봇 실습 7 실물 결과를 학급 관리로, 매뉴얼 두 권을 지금 화면에 맞춤, 시연 GIF 84개를 수업 레일 + 3D 화면으로 다시 녹화 |
 | [`32-theory-review.md`](reports/education/32-theory-review.md) · [`부록 문항`](reports/education/32-theory-review-quiz.md) | 보고 #32 — 이론 검증 자료: 28차시의 정의 · 원리 · 자세히 · 수식 · 기호 · 활동 정답과 이유, 현장 실습 21문제 · 마무리 평가 · 로봇 실습 7의 원리와 계산 정답, 확인 문항 560개 정답 · 풀이 (앱 데이터에서 그대로, `tools/build/theory-review.mts`) |
 | [`32-review-u12-result.md`](reports/education/32-review-u12-result.md) | 보고 #32 결과 — 1·2단원 검증 지시서 반영: 고친 문장, 질문 · 결정, 파트 4 조사 |
-| [`33-lesson-rail-design.md`](reports/education/33-lesson-rail-design.md) | 보고 #33 — 수업 레일 공통 양식(미션 카드 · 지금 할 일 · 고정 색), 실물 연동 막대 한 줄, 1·2단원 반영 이론서 · 문항지 다시 만듦, 배포 delivery40 |
+| [`33-lesson-rail-design.md`](reports/education/33-lesson-rail-design.md) | 보고 #33 — 수업 레일 공통 양식(미션 카드 · 지금 할 일 · 고정 색), 실물 연동 막대 한 줄, 1·2단원 반영 이론서 · 문항지 다시 만듦, 디자인 원칙 점검, GitHub `release` 브랜치에 시뮬레이터 · USB 키트 두 파일 |
 
 ### [`system/`](reports/system/) — 시스템 구성
 | 문서 | 내용 |
