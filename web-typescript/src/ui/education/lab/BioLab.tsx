@@ -25,6 +25,7 @@ import {
   CATCH_MM,
   ROW,
   SPILL_DEG,
+  RACK,
   SRC,
   TUBE,
   BELOW,
@@ -57,16 +58,19 @@ import { logRun } from '@/engine/education/runLog';
 
 import LearnStage, { type LearnScene, type ViewPose } from '../stage/LearnStage';
 import { Lines } from '../lesson/Rich';
+import { bioBriefCards } from './BioCards';
 import BioCell, { BioPlayback, type BioMarker, type BioOverlay } from './BioCell';
 import { BioAround, LOOKS } from './ambient/Around';
 import type { CellDim } from './CellKit';
-import { ArrowDef, Knob, PROBS, ProbLock, RecordSheet, SitePanel, ValueLines, answeredUpTo, fmt, freshFlow, useLabStart, type FlowState, type MeasureRow } from './SiteFlow';
+import { ArrowDef, Knob, type DeckPlan, PROBS, ProbLock, RecordSheet, SitePanel, ValueLines, answeredUpTo, fmt, freshFlow, useLabStart, type FlowState, type MeasureRow } from './SiteFlow';
 import RealUse from './RealUse';
 import css from './lab.module.css';
 import lg from './site.module.css';
 
 /** The bench from the front right, a little above (three.js metres, y up): camera, then target. */
 export const BIO_VIEW: ViewPose = [1.4, 0.95, 0.4, -0.3, 0.2, 0.05];
+/** 카드 모드 (문제 ①): the whole bench, both racks and the arm, from in front of the arm. */
+const BIO_BENCH: ViewPose = [0.78, 0.5, 0.3, 0.08, 0.06, 0];
 const SLOW = 0.35;
 const SLOW_LEAD_S = 1.6;
 
@@ -107,6 +111,24 @@ const closeLook = (p: Mm): ViewPose => {
   return [x + 0.3, y + 0.22, z + 0.33, x, y, z];
 };
 const up = (p: readonly number[], z = LIFT_Z): Mm => [p[0], p[1], z];
+/** A tight look at a small thing (the tube): nearer than closeLook. */
+const nearLook = (p: Mm): ViewPose => {
+  const [x, y, z] = world(p);
+  return [x + 0.19, y + 0.11, z + 0.2, x, y, z];
+};
+/** 카드 모드 · 작업 지시: the same numbers on the cards and in 3D (① 시료 랙 · ② 분석 랙 · ③ 시험관). */
+const TUBE_TOP: Mm = [SRC[0], SRC[1], SEAT_Z + TUBE.above];
+const BRIEF_TAGS: Record<'src' | 'dst' | 'tube', BioMarker> = {
+  src: { key: 'b-src', mm: [SRC[0], SRC[1] + 40, RACK.top], ok: true, text: '① 시료 랙' },
+  dst: { key: 'b-dst', mm: [DST[0], DST[1], RACK.top], ok: true, text: '② 분석 랙' },
+  tube: { key: 'b-tube', mm: TUBE_TOP, ok: true, text: '③ 시험관' },
+};
+const BRIEF_CARDS: { tags: (keyof typeof BRIEF_TAGS)[]; view: ViewPose }[] = [
+  { tags: ['src', 'dst', 'tube'], view: BIO_BENCH },
+  { tags: ['tube'], view: nearLook(TUBE_TOP) },
+  { tags: ['dst'], view: closeLook([DST[0], DST[1], RACK.top]) },
+  { tags: [], view: BIO_BENCH },
+];
 const poseText = (x: number, y: number, z: number, o: { yawDeg: number; tiltDeg: number }) => {
   const [rx, ry, rz] = toolRpyDeg(x, y, o);
   return `x ${fmt(x)} · y ${fmt(y)} · z ${fmt(z)} · rx ${fmt(rx)} · ry ${fmt(ry + 0)} · rz ${fmt(rz, 1)}`;
@@ -209,6 +231,11 @@ export default function BioLab({ robot, chain, gripperRobot, hidden, level = 'hs
   const slowFrom = useRef<number | null>(null);
   const s = st[prob];
   const { step, runs } = s;
+  // 카드 모드 (시범: 문제 ①만): which card of the step is on screen, so the 3D view shows the same thing.
+  const [card, setCard] = useState<{ step: SiteStepId; i: number }>({ step: 'brief', i: 0 });
+  const onCard = useCallback((step: SiteStepId, i: number) => setCard({ step, i }), []);
+  const deck = useMemo<DeckPlan | undefined>(() => (prob === 1 ? { brief: bioBriefCards(BIO_TEXT[1], '이 연구원'), onCard } : undefined), [prob, onCard]);
+  const briefCard = deck && step === 'brief' ? BRIEF_CARDS[card.step === 'brief' ? card.i : 0] : null;
 
   useEffect(() => {
     for (const p of PROBS) if (solved[p]) onSolved?.(p);
@@ -282,7 +309,13 @@ export default function BioLab({ robot, chain, gripperRobot, hidden, level = 'hs
   }, [shown, step, fail, play]);
 
   const failAt = fail?.at ?? null;
-  const focus = useMemo<ViewPose | null>(() => (failAt && ((step === 'run' && slow) || step === 'cause') ? closeLook(failAt) : null), [failAt, step, slow]);
+  const focus = useMemo<ViewPose | null>(() => {
+    if (failAt && ((step === 'run' && slow) || step === 'cause')) return closeLook(failAt);
+    if (briefCard) return briefCard.view;
+    // 카드 모드: the place pose being fixed, up close.
+    if (deck && step === 'fix') return closeLook(up(DST));
+    return null;
+  }, [failAt, step, slow, briefCard, deck]);
 
   useEffect(() => {
     player.setStill(startTubes(prob));
@@ -305,6 +338,10 @@ export default function BioLab({ robot, chain, gripperRobot, hidden, level = 'hs
 
   const overlay = useMemo<BioOverlay>(() => {
     const o: BioOverlay = { markers: [], dims: [] };
+    if (briefCard) {
+      o.markers = briefCard.tags.map((k) => BRIEF_TAGS[k]);
+      return o;
+    }
     if (step === 'fix') {
       if (prob === 1 && pose1) {
         const v = s.values as PoseValues;
@@ -346,7 +383,7 @@ export default function BioLab({ robot, chain, gripperRobot, hidden, level = 'hs
         .filter((e) => (e.kind === 'place' || e.kind === 'catch') && e.t <= playT + 1e-6 && e.at)
         .forEach((e) => o.markers!.push({ key: `e${e.t}`, mm: [e.at![0], e.at![1], 46], ok: (e.value ?? 0) <= READ_MM, text: `${(e.tube ?? 0) + 1}번 · ${fmt(e.value ?? 0, 1)} mm` }));
     return o;
-  }, [prob, step, s.values, s.meas, pose1, calib, route, rows, shown, fail, frame, fi, playT]);
+  }, [prob, step, s.values, s.meas, pose1, calib, route, rows, shown, fail, frame, fi, playT, briefCard]);
 
   // The arm at rest shows what is being set: ① the place pose, ③ nothing special.
   const scene = useMemo<LearnScene>(() => ({ angles: pose1?.q ?? HOME_Q, tool: 'adaptive', pumpOn: false }), [pose1]);
@@ -433,7 +470,7 @@ export default function BioLab({ robot, chain, gripperRobot, hidden, level = 'hs
       </header>
 
       <section className={css.stage} aria-label="3D 실험대">
-        <LearnStage robot={robot} chain={chain} gripperRobot={gripperRobot} scene={scene} paused={hidden} home={BIO_VIEW} focus={focus} live={player.arm} look={LOOKS.bio}>
+        <LearnStage robot={robot} chain={chain} gripperRobot={gripperRobot} scene={scene} paused={hidden} home={deck ? BIO_BENCH : BIO_VIEW} focus={focus} live={player.arm} look={LOOKS.bio}>
           <BioAround />
           <BioCell player={player} prob={prob} overlay={overlay} tubes={nTubes} spill={spill} />
         </LearnStage>
@@ -492,6 +529,7 @@ export default function BioLab({ robot, chain, gripperRobot, hidden, level = 'hs
           lab="bio"
           st={s}
           boss="이 연구원"
+          deck={deck}
           level={level}
           solved={solved[prob]}
           busy={busy}

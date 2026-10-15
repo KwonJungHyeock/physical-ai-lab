@@ -11,7 +11,7 @@
  * FlowState.
  */
 
-import { createContext, useContext, useEffect, useMemo, type CSSProperties, type ReactNode } from 'react';
+import { Children, createContext, isValidElement, useContext, useEffect, useMemo, useState, type CSSProperties, type ReactElement, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
 import { TOPIC_BY_ID, type TopicId } from '@/engine/education/catalog';
@@ -28,6 +28,7 @@ import { useFollowGate } from '../stage/RealFollow';
 import { useAccount } from '../../account/AccountProvider';
 import css from './lab.module.css';
 import lg from './site.module.css';
+import dk from './deck.module.css';
 import PyTask from './PyTask';
 import RobotRecord from './RobotRecord';
 
@@ -647,6 +648,110 @@ export interface SitePanelProps {
   onStep(s: SiteStepId): void;
   onRecord(): void;
   onNext(): void;
+  /** 카드 모드 (시범: 바이오 ①): each step one card at a time, with its own pictures and camera. */
+  deck?: DeckPlan;
+}
+
+/* --- 카드 모드: one card on screen at a time, with a picture, its own camera and a next button --- */
+
+/** A picture card (the brief's story told in pictures before anything is pressed). */
+export interface DeckCard {
+  kicker: string;
+  title: string;
+  body?: ReactNode;
+  visual?: ReactNode;
+}
+
+export interface DeckPlan {
+  /** 작업 지시: these cards instead of the brief's three parts. */
+  brief?: readonly DeckCard[];
+  /** Which card is on screen (the lab moves its camera and 3D tags to match). */
+  onCard?(step: SiteStepId, card: number): void;
+}
+
+interface DeckProps {
+  deck: boolean;
+  card: number;
+  /** Per card: null when it can be opened, else why it waits (a part still 🔒). */
+  waits: readonly (string | null)[];
+  setWaits(w: readonly (string | null)[]): void;
+  setCard(i: number): void;
+}
+
+export function DeckCardView({ c }: { c: DeckCard }) {
+  return (
+    <article className={dk.card}>
+      <span className={dk.kicker}>{c.kicker}</span>
+      <h3 className={dk.title}>{c.title}</h3>
+      {c.visual && <figure className={dk.visual}>{c.visual}</figure>}
+      {c.body && <div className={dk.text}>{c.body}</div>}
+    </article>
+  );
+}
+
+type PageEl = ReactElement<{ state?: SecState; wait?: string; title?: string }>;
+const isPage = (n: ReactNode): n is PageEl => isValidElement(n) && (n.type === Sec || n.type === DeckCardView);
+
+/** A step's body: as it was (every part at once), or in 카드 모드 the parts one at a time under a progress bar. */
+function Body({ deck, card, waits, setWaits, setCard, children }: DeckProps & { children: ReactNode }) {
+  const all = Children.toArray(children);
+  const pages = all.filter(isPage);
+  const lead = all.filter((n) => !isPage(n));
+  // A waiting part closes itself and every card after it.
+  let shut: string | null = null;
+  const w = pages.map((pg) => (shut ??= pg.props.state === 'todo' ? (pg.props.wait ?? '앞 카드를 마치면 열려요.') : null));
+  const key = w.map((x) => x ?? '').join('|');
+  useEffect(() => {
+    if (deck) setWaits(key.split('|').map((x) => x || null));
+  }, [deck, key, setWaits]);
+  if (!deck) return <div className={bodyClass}>{children}</div>;
+  const at = Math.min(card, pages.length - 1);
+  return (
+    <div className={`${bodyClass} ${dk.deck}`}>
+      <ol className={dk.progress} aria-label={`${pages.length}장 중 ${at + 1}장`}>
+        {pages.map((pg, i) => (
+          <li key={i}>
+            <button type="button" data-at={i === at || undefined} data-seen={i < at || undefined} disabled={!!w[i]} onClick={() => setCard(i)} aria-label={`${i + 1}장${pg.props.title ? ' · ' + pg.props.title : ''}`} />
+          </li>
+        ))}
+      </ol>
+      <div className={dk.page} key={at}>
+        {at === 0 && lead}
+        {pages[at]}
+      </div>
+      {waits[at + 1] && at < pages.length - 1 && <p className={dk.waitNext}>🔒 다음 카드 · {waits[at + 1]}</p>}
+    </div>
+  );
+}
+
+/** The step's buttons: in 카드 모드 only on its last card; before that, 이전 · 다음. */
+function Foot({ deck, card, waits, setCard, children }: DeckProps & { children: ReactNode }) {
+  if (!deck) return <div className={css.foot}>{children}</div>;
+  const n = Math.max(1, waits.length);
+  const at = Math.min(card, n - 1);
+  const back = at > 0 && (
+    <button type="button" className={dk.back} onClick={() => setCard(at - 1)} aria-label="이전 카드">
+      ←
+    </button>
+  );
+  if (at >= n - 1)
+    return (
+      <div className={`${css.foot} ${dk.foot}`}>
+        {back}
+        {children}
+      </div>
+    );
+  return (
+    <div className={`${css.foot} ${dk.foot}`}>
+      {back || <span />}
+      <span className={dk.count}>
+        <b>{at + 1}</b> / {n}
+      </span>
+      <button type="button" className={dk.next} disabled={!!waits[at + 1]} onClick={() => setCard(at + 1)}>
+        다음 →
+      </button>
+    </div>
+  );
 }
 
 /** The stars for a solved problem: one off for leaning on the hints (2+ hints, or opening every worked formula), for many re-runs, and for guessing (3+ wrong causes or calculations). */
@@ -684,13 +789,24 @@ function SiteSteps(p: SitePanelProps) {
   const { T, st, busy } = p;
   const { track } = useAccount();
   const guide = <p className={lg.guide}><Lines text={STEP_GUIDE[st.step]} /></p>;
+  // 카드 모드: which card of this step is on screen (back to the first when the step changes).
+  const [cardAt, setCardAt] = useState<{ step: SiteStepId; i: number }>({ step: st.step, i: 0 });
+  const [waits, setWaits] = useState<readonly (string | null)[]>([null]);
+  const card = cardAt.step === st.step ? cardAt.i : 0;
+  const onCard = p.deck?.onCard;
+  useEffect(() => {
+    onCard?.(st.step, card);
+  }, [onCard, st.step, card]);
+  const bp: DeckProps = { deck: !!p.deck, card, waits, setWaits, setCard: (i) => setCardAt({ step: st.step, i }) };
   switch (st.step) {
     case 'brief': {
       return (
         <>
           <Head eyebrow={`${T.day} · 작업 지시서 ${T.order}`} title={T.orderTitle} solved={p.solved} />
-          <div className={bodyClass}>
-            {guide}
+          <Body {...bp}>
+            {p.deck?.brief ? p.deck.brief.map((c) => <DeckCardView key={c.kicker} c={c} />) : guide}
+            {!p.deck?.brief && (
+              <>
             <Sec n={1} title="상황 읽기" kind="read" state="info">
               <p className={css.story}><Lines text={T.brief} /></p>
               <Boss name={p.boss} line={T.boss} />
@@ -712,8 +828,10 @@ function SiteSteps(p: SitePanelProps) {
                 <span className={lg.line}>무엇이 문제인지는 다음 단계에서 찾아요.</span>
               </p>
             </Sec>
-          </div>
-          <div className={css.foot}>
+              </>
+            )}
+          </Body>
+          <Foot {...bp}>
             <span />
             <SiteBtn
               disabled={busy}
@@ -724,7 +842,7 @@ function SiteSteps(p: SitePanelProps) {
             >
               {busy ? '계산 중…' : '▶ 라인 가동'}
             </SiteBtn>
-          </div>
+          </Foot>
         </>
       );
     }
@@ -738,7 +856,7 @@ function SiteSteps(p: SitePanelProps) {
       return (
         <>
           <Head eyebrow="가동 결과" title={p.runTitle} solved={p.solved} />
-          <div className={bodyClass}>
+          <Body {...bp}>
             {guide}
             <Sec n={1} title="문제 장면 보기" kind="read" state={parts[0].state}>
               <p className={css.story}><Lines text={T.happened} /></p>
@@ -750,11 +868,11 @@ function SiteSteps(p: SitePanelProps) {
             <Sec n={3} title="결과 · 기록 확인" kind="result" state={parts[2].state} wait="장면이 끝나면 열려요.">
               {p.runResult}
             </Sec>
-          </div>
-          <div className={css.foot}>
+          </Body>
+          <Foot {...bp}>
             <span className={lg.footNote}>{p.playing ? '공정을 돌려 보는 중…' : '다 봤으면 다음으로'}</span>
             <SiteBtn onClick={() => p.onStep('cause')}>원인 찾으러 가기 →</SiteBtn>
-          </div>
+          </Foot>
         </>
       );
     }
@@ -772,7 +890,7 @@ function SiteSteps(p: SitePanelProps) {
       return (
         <>
           <Head eyebrow="원인 찾기" title={T.question} solved={p.solved} />
-          <div className={bodyClass}>
+          <Body {...bp}>
             {guide}
             <Sec n={1} title={parts[0].title} kind="do" state={parts[0].state}>
               <p className={lg.secText}><Lines text={T.look} /></p>
@@ -795,13 +913,13 @@ function SiteSteps(p: SitePanelProps) {
               <p className={lg.secText}>빈칸마다 알맞은 말을 골라 설명을 완성해요.</p>
               <Blanks T={T} value={st.blanks} on={(blanks) => p.patch({ blanks })} />
             </Sec>
-          </div>
-          <div className={css.foot}>
+          </Body>
+          <Foot {...bp}>
             <span className={lg.footNote}>{!explained ? '①②③을 마치면 다음으로' : '다 됐어요'}</span>
             <SiteBtn disabled={!explained} onClick={() => p.onStep('fix')}>
               값 고치러 가기 →
             </SiteBtn>
-          </div>
+          </Foot>
         </>
       );
     }
@@ -815,7 +933,7 @@ function SiteSteps(p: SitePanelProps) {
       return (
         <>
           <Head eyebrow="값 고치기" title={p.fixTitle} solved={p.solved} />
-          <div className={bodyClass}>
+          <Body {...bp}>
             {guide}
             <Sec n={1} title="계산하기" kind="do" state={parts[0].state}>
               <Calc T={T} st={st} patch={p.patch} />
@@ -829,13 +947,13 @@ function SiteSteps(p: SitePanelProps) {
               <p className={lg.secText}>가동하기 전에, 이 값이면 어떻게 될지 하나 골라요.</p>
               <Predict T={T} st={st} patch={p.patch} />
             </Sec>
-          </div>
-          <div className={css.foot}>
+          </Body>
+          <Foot {...bp}>
             <span className={lg.footNote}>{!ok ? '① 계산부터' : st.pred === null ? '③ 예상을 고르면 가동할 수 있어요' : '준비됐어요'}</span>
             <SiteBtn disabled={busy || !ok || st.pred === null} onClick={p.onRunFix}>
               {busy ? '계산 중…' : '▶ 다시 가동'}
             </SiteBtn>
-          </div>
+          </Foot>
         </>
       );
     }
@@ -850,7 +968,7 @@ function SiteSteps(p: SitePanelProps) {
       return (
         <>
           <Head eyebrow="다시 가동 · 비교" title={p.pass ? '기준을 모두 넘었어요' : '아직 기준에 못 미쳐요'} solved={p.solved} />
-          <div className={bodyClass}>
+          <Body {...bp}>
             {guide}
             <Sec n={1} title="전과 후 비교" kind="result" state={parts[0].state}>
               {p.compare}
@@ -872,15 +990,15 @@ function SiteSteps(p: SitePanelProps) {
                 </p>
               )}
             </Sec>
-          </div>
-          <div className={css.foot}>
+          </Body>
+          <Foot {...bp}>
             <button type="button" className={css.ghost} onClick={() => p.onStep('fix')}>
               ← 값 다시 고치기
             </button>
             <SiteBtn disabled={!p.pass} onClick={() => p.onStep('done')}>
               해결 확인 →
             </SiteBtn>
-          </div>
+          </Foot>
         </>
       );
     }
@@ -897,7 +1015,7 @@ function SiteSteps(p: SitePanelProps) {
       return (
         <>
           <Head eyebrow="해결 · 원리" title={`${T.title}: 해결했어요`} solved={p.solved} />
-          <div className={bodyClass}>
+          <Body {...bp}>
             <div className={lg.stars}>
               {'★'.repeat(stars)}
               {'☆'.repeat(3 - stars)}
@@ -944,13 +1062,13 @@ function SiteSteps(p: SitePanelProps) {
                 <span className={lg.line}>이 현장에서 한 일을 한 장으로 인쇄하거나 PDF로 저장해요.</span>
               </p>
             </Sec>
-          </div>
-          <div className={css.foot}>
+          </Body>
+          <Foot {...bp}>
             <button type="button" className={css.ghost} onClick={p.onRecord}>
               실습 기록 · 인쇄
             </button>
             <SiteBtn onClick={p.onNext}>{p.nextLabel}</SiteBtn>
-          </div>
+          </Foot>
         </>
       );
     }
