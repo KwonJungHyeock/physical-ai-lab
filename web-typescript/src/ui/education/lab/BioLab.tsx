@@ -69,8 +69,11 @@ import lg from './site.module.css';
 
 /** The bench from the front right, a little above (three.js metres, y up): camera, then target. */
 export const BIO_VIEW: ViewPose = [1.4, 0.95, 0.4, -0.3, 0.2, 0.05];
-/** 카드 모드 (문제 ①): the whole bench, both racks and the arm, from in front of the arm. */
-const BIO_BENCH: ViewPose = [0.78, 0.5, 0.3, 0.08, 0.06, 0];
+/**
+ * 카드 모드 (문제 ①): the whole bench, both racks and the arm, from in front of the arm — the first
+ * view (LearnStage draws it in to 0.78 with the work cell alone).
+ */
+const BIO_BENCH: ViewPose = [0.98, 0.62, 0.38, 0.08, 0.06, 0];
 const SLOW = 0.35;
 const SLOW_LEAD_S = 1.6;
 
@@ -123,11 +126,12 @@ const BRIEF_TAGS: Record<'src' | 'dst' | 'tube', BioMarker> = {
   dst: { key: 'b-dst', mm: [DST[0], DST[1], RACK.top], ok: true, text: '② 분석 랙' },
   tube: { key: 'b-tube', mm: TUBE_TOP, ok: true, text: '③ 시험관' },
 };
-const BRIEF_CARDS: { tags: (keyof typeof BRIEF_TAGS)[]; view: ViewPose }[] = [
-  { tags: ['src', 'dst', 'tube'], view: BIO_BENCH },
+/** Per brief card: its 3D tags and where the camera looks (null: the first view, the whole bench). */
+const BRIEF_CARDS: { tags: (keyof typeof BRIEF_TAGS)[]; view: ViewPose | null }[] = [
+  { tags: ['src', 'dst', 'tube'], view: null },
   { tags: ['tube'], view: nearLook(TUBE_TOP) },
   { tags: ['dst'], view: closeLook([DST[0], DST[1], RACK.top]) },
-  { tags: [], view: BIO_BENCH },
+  { tags: [], view: null },
 ];
 const poseText = (x: number, y: number, z: number, o: { yawDeg: number; tiltDeg: number }) => {
   const [rx, ry, rz] = toolRpyDeg(x, y, o);
