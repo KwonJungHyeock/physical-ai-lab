@@ -702,7 +702,7 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
         </div>
       </SymbolsProvider>
       {/* Only where the real arm can follow (a lesson, a site lab): not over the map, 마무리 평가 or the 관제센터. */}
-      <FollowBar {...follow} hidden={hidden || !followAt} stage="right" />
+      <FollowBar {...follow} hidden={hidden || !followAt} stage={screen === 'topic' ? 'right' : 'lab'} />
       {locked && !hidden && (
         <LessonLocked
           topic={locked}

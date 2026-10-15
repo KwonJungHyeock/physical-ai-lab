@@ -209,7 +209,7 @@ export function useRealFollow(real: RealArm, chain: readonly ChainSegment[], pla
 }
 
 /** The 실물 연동 switch, its state, and the big stop while it is on. */
-export function FollowBar(p: ReturnType<typeof useRealFollow> & { hidden?: boolean; /** Where the 3D view is: left (site labs) or right (a lesson). */ stage?: 'left' | 'right' }) {
+export function FollowBar(p: ReturnType<typeof useRealFollow> & { hidden?: boolean; /** Where the 3D view is: right (a lesson), or right with the lab's numbers along its bottom (a site lab). */ stage?: 'left' | 'right' | 'lab' }) {
   const { on, stop } = p;
   // Esc stops the real arm, as the stop button does.
   useEffect(() => {
@@ -222,14 +222,15 @@ export function FollowBar(p: ReturnType<typeof useRealFollow> & { hidden?: boole
   const lag = Number.isFinite(p.status.lag) ? `${p.status.lag.toFixed(0)}°` : '—';
   return (
     <div className={css.bar} data-on={p.on || undefined} data-stage={p.stage} role="region" aria-label="실물 연동">
-      <button type="button" className={css.toggle} aria-pressed={p.on} onClick={p.toggle}>
+      <button type="button" className={css.toggle} aria-pressed={p.on} onClick={p.toggle} title="켜면 실물이 화면을 따라 움직여요 (속도 50 이하)">
         <i aria-hidden /> 실물 연동 {p.on ? '켜짐' : '꺼짐'}
       </button>
       <span className={css.state}>
         {p.error ? (
           <b className={css.err}>{p.error}</b>
         ) : !p.on ? (
-          '켜면 실물이 따라 움직여요 (속도 50 이하) · 팔 둘레를 비워 주세요.'
+          // Off: one short safety line (the rest is in the switch's title).
+          '팔 둘레를 비우고 켜요.'
         ) : p.following ? (
           <>실물이 따라오는 중 · 화면과 차이 {lag}</>
         ) : (

@@ -523,7 +523,7 @@ export default function BioLab({ robot, chain, gripperRobot, hidden, level = 'hs
             </span>
           </div>
         )}
-        <RealUse site="bio" />
+        <RealUse site="bio" folded={!!deck} />
         <p className={css.hint}>끌어서 돌려 보기 · 휠로 확대</p>
       </section>
 

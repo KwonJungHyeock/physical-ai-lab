@@ -182,7 +182,8 @@ export const causeFound = (T: SiteText, st: FlowState) => st.pick !== null && !!
 
 /* --- small pieces ------------------------------------------------------------------ */
 
-export function Head({ eyebrow, title, solved }: { eyebrow: string; title: string; solved?: boolean }) {
+export function Head({ eyebrow, title, solved, hide }: { eyebrow: string; title: string; solved?: boolean; /** 카드 모드: each card has its own title. */ hide?: boolean }) {
+  if (hide) return null;
   return (
     <div className={css.head}>
       <div>
@@ -744,9 +745,6 @@ function Foot({ deck, card, waits, setCard, children }: DeckProps & { children: 
   return (
     <div className={`${css.foot} ${dk.foot}`}>
       {back || <span />}
-      <span className={dk.count}>
-        <b>{at + 1}</b> / {n}
-      </span>
       <button type="button" className={dk.next} disabled={!!waits[at + 1]} onClick={() => setCard(at + 1)}>
         다음 →
       </button>
@@ -788,7 +786,8 @@ export function SitePanel(p: SitePanelProps) {
 function SiteSteps(p: SitePanelProps) {
   const { T, st, busy } = p;
   const { track } = useAccount();
-  const guide = <p className={lg.guide}><Lines text={STEP_GUIDE[st.step]} /></p>;
+  // 카드 모드: no step guide over the cards (each card says what to do).
+  const guide = p.deck ? null : <p className={lg.guide}><Lines text={STEP_GUIDE[st.step]} /></p>;
   // 카드 모드: which card of this step is on screen (back to the first when the step changes).
   const [cardAt, setCardAt] = useState<{ step: SiteStepId; i: number }>({ step: st.step, i: 0 });
   const [waits, setWaits] = useState<readonly (string | null)[]>([null]);
@@ -802,7 +801,7 @@ function SiteSteps(p: SitePanelProps) {
     case 'brief': {
       return (
         <>
-          <Head eyebrow={`${T.day} · 작업 지시서 ${T.order}`} title={T.orderTitle} solved={p.solved} />
+          <Head hide={!!p.deck} eyebrow={`${T.day} · 작업 지시서 ${T.order}`} title={T.orderTitle} solved={p.solved} />
           <Body {...bp}>
             {p.deck?.brief ? p.deck.brief.map((c) => <DeckCardView key={c.kicker} c={c} />) : guide}
             {!p.deck?.brief && (
@@ -855,12 +854,12 @@ function SiteSteps(p: SitePanelProps) {
       ];
       return (
         <>
-          <Head eyebrow="가동 결과" title={p.runTitle} solved={p.solved} />
+          <Head hide={!!p.deck} eyebrow="가동 결과" title={p.runTitle} solved={p.solved} />
           <Body {...bp}>
             {guide}
             <Sec n={1} title="문제 장면 보기" kind="read" state={parts[0].state}>
               <p className={css.story}><Lines text={T.happened} /></p>
-              <p className={lg.secText}>3D 화면에서 다시 보려면 오른쪽 위 <b>[▶ 재생]</b>. 끌면 돌려 보고, 휠로 확대돼요.</p>
+              {!p.deck && <p className={lg.secText}>3D 화면에서 다시 보려면 오른쪽 위 <b>[▶ 재생]</b>. 끌면 돌려 보고, 휠로 확대돼요.</p>}
             </Sec>
             <Sec n={2} title="생각해 보기" kind="ask" state={parts[1].state} wait="장면이 끝나면 열려요.">
               <Ask ask={T.ask} />
@@ -889,7 +888,7 @@ function SiteSteps(p: SitePanelProps) {
       ];
       return (
         <>
-          <Head eyebrow="원인 찾기" title={T.question} solved={p.solved} />
+          <Head hide={!!p.deck} eyebrow="원인 찾기" title={T.question} solved={p.solved} />
           <Body {...bp}>
             {guide}
             <Sec n={1} title={parts[0].title} kind="do" state={parts[0].state}>
@@ -932,7 +931,7 @@ function SiteSteps(p: SitePanelProps) {
       ];
       return (
         <>
-          <Head eyebrow="값 고치기" title={p.fixTitle} solved={p.solved} />
+          <Head hide={!!p.deck} eyebrow="값 고치기" title={p.fixTitle} solved={p.solved} />
           <Body {...bp}>
             {guide}
             <Sec n={1} title="계산하기" kind="do" state={parts[0].state}>
@@ -967,7 +966,7 @@ function SiteSteps(p: SitePanelProps) {
       ];
       return (
         <>
-          <Head eyebrow="다시 가동 · 비교" title={p.pass ? '기준을 모두 넘었어요' : '아직 기준에 못 미쳐요'} solved={p.solved} />
+          <Head hide={!!p.deck} eyebrow="다시 가동 · 비교" title={p.pass ? '기준을 모두 넘었어요' : '아직 기준에 못 미쳐요'} solved={p.solved} />
           <Body {...bp}>
             {guide}
             <Sec n={1} title="전과 후 비교" kind="result" state={parts[0].state}>
@@ -1014,7 +1013,7 @@ function SiteSteps(p: SitePanelProps) {
       ];
       return (
         <>
-          <Head eyebrow="해결 · 원리" title={`${T.title}: 해결했어요`} solved={p.solved} />
+          <Head hide={!!p.deck} eyebrow="해결 · 원리" title={`${T.title}: 해결했어요`} solved={p.solved} />
           <Body {...bp}>
             <div className={lg.stars}>
               {'★'.repeat(stars)}

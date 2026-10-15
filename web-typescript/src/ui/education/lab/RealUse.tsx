@@ -31,9 +31,12 @@ function readOpen(site: RealUseSite): boolean {
   }
 }
 
-/** `beside`: the lab shows its camera view at the top left, so the card stands to its right. */
-export default function RealUse({ site, beside = false }: { site: RealUseSite; beside?: boolean }) {
-  const [open, setOpen] = useState(() => readOpen(site));
+/**
+ * `beside`: the lab shows its camera view at the top left, so the card stands to its right.
+ * `folded`: starts as the small pill even the first time (카드 모드: the first card points at the bench).
+ */
+export default function RealUse({ site, beside = false, folded = false }: { site: RealUseSite; beside?: boolean; folded?: boolean }) {
+  const [open, setOpen] = useState(() => !folded && readOpen(site));
   const r = REAL_USE[site];
   const toggle = (v: boolean) => {
     setOpen(v);

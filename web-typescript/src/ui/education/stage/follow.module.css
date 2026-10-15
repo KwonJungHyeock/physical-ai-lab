@@ -26,6 +26,13 @@
   transform: none;
   max-width: calc(100vw - clamp(400px, 30vw, 480px) - 150px);
 }
+/* A site lab: the same corner, one row higher, clear of the run's numbers (작업 현황) along the bottom. */
+.bar[data-stage='lab'] {
+  left: calc(clamp(400px, 30vw, 480px) + 28px);
+  bottom: 100px;
+  transform: none;
+  max-width: calc(100vw - clamp(400px, 30vw, 480px) - 150px);
+}
 .bar[data-on] {
   border-color: var(--real);
   box-shadow: 0 0 0 3px var(--real-soft), var(--shadow-sm);

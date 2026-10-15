@@ -79,7 +79,10 @@
   line-height: 1.65;
 }
 
-/* A part of a step (Sec) shown as a card: no box of its own, a bigger heading. */
+/*
+ * A part of a step (Sec) shown as a card, headed like the picture cards: its kind (개념 · 질문 ·
+ * 해 보기 · 결과) as the kicker, then the title. No number or 지금 할 일 chip: the progress bar says it.
+ */
 .page > section[data-s] {
   gap: 12px;
   padding: 0;
@@ -88,17 +91,59 @@
   box-shadow: none;
 }
 .page > section[data-s] > header {
-  gap: 10px;
+  display: grid;
+  justify-items: start;
+  gap: 6px;
 }
-.page > section[data-s] > header i {
-  width: 30px;
-  height: 30px;
-  font-size: 14px;
+.page > section[data-s] > header i,
+.page > section[data-s] > header em {
+  display: none;
+}
+.page > section[data-s] > header > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  letter-spacing: 0.01em;
+}
+.page > section[data-s] > header > span::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.page > section[data-s='done'] > header > span::after {
+  content: '✓ 했어요';
+  margin-left: 4px;
+  color: #1f9d55;
 }
 .page > section[data-s] > header b {
-  font-size: 19px;
+  color: #101828;
+  font-size: 22px;
+  font-weight: 800;
   line-height: 1.3;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
+}
+
+/* 재기: one measurement per row, its name over its value (no squeezed two columns). */
+.page dl {
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+.page dl > div {
+  display: grid;
+  gap: 1px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eef0f4;
+}
+.page dl > div:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+.page dl dd {
+  text-align: left;
+  font-size: 15px;
 }
 
 /* Picture cards (작업 지시). */
@@ -293,7 +338,7 @@
   font-size: 12.5px;
 }
 
-/* Foot: ← · n / N · 다음 →, and on the last card the step's own buttons. */
+/* Foot: ← · 다음 →, and on the last card the step's own buttons. */
 .foot {
   gap: 10px;
   padding: 10px 14px 12px;
@@ -321,14 +366,6 @@
 }
 .back:hover {
   background: #f9fafb;
-}
-.count {
-  color: #98a2b3;
-  font-size: 13px;
-  font-variant-numeric: tabular-nums;
-}
-.count b {
-  color: var(--site);
 }
 .next {
   border: 0;
