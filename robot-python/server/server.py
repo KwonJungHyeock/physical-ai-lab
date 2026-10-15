@@ -125,6 +125,13 @@ def log(text):
 
 
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+# Shown for a manual PDF (/guides/*.pdf) the robot does not carry: they are in the PC program.
+GUIDE_ELSEWHERE = """<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+<title>설명서</title><body style="font-family:sans-serif;max-width:32em;margin:3em auto;padding:0 1em;line-height:1.7">
+<h2>이 설명서는 PC 프로그램에 있어요</h2>
+<p>로봇에는 설명서 PDF 를 넣지 않았어요.</p>
+<p>PC 의 <b>Physical AI 시뮬레이터</b> 프로그램 → <b>자료실</b>에서 열어 주세요.</p>
+</body>"""
 
 
 class DemoArm:
@@ -1205,6 +1212,17 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-Type", "image/jpeg")
             self.send_header("Cache-Control", "no-store")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return None
+        route = self.path.split("?")[0]
+        if route.startswith("/guides/") and route.endswith(".pdf") and not os.path.exists(self.translate_path(route)):
+            # The robot's kit leaves the three manuals out (it has to fit in one 100 MB download):
+            # say where they are instead of a bare 404.
+            body = GUIDE_ELSEWHERE.encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)

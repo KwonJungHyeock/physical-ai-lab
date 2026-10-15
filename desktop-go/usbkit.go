@@ -67,6 +67,7 @@ func loadKit() *kitData {
 	kitOnce.Do(func() {
 		f, err := kitFiles.Open(kitZip)
 		if err != nil {
+			kitNow = kitBeside()
 			return
 		}
 		st, err := f.Stat()
@@ -87,6 +88,32 @@ func loadKit() *kitData {
 		}
 	})
 	return kitNow
+}
+
+// kitBeside: a program built without the kit (so it fits in one download) takes eduino_usb.zip
+// from the folder it runs in or the one above it (where the program's zip was unpacked).
+func kitBeside() *kitData {
+	exe, err := os.Executable()
+	if err != nil {
+		return nil
+	}
+	dir := filepath.Dir(exe)
+	for _, p := range []string{filepath.Join(dir, "eduino_usb.zip"), filepath.Join(filepath.Dir(dir), "eduino_usb.zip")} {
+		f, err := os.Open(p)
+		if err != nil {
+			continue
+		}
+		st, err := f.Stat()
+		if err != nil {
+			f.Close()
+			continue
+		}
+		if k, err := openKit(f, st.Size()); err == nil {
+			return k // f stays open: the kit is read from it whenever a stick is made
+		}
+		f.Close()
+	}
+	return nil
 }
 
 func openKit(ra io.ReaderAt, size int64) (*kitData, error) {

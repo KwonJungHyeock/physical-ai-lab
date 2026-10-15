@@ -14,6 +14,8 @@ with its static/ screens; unpacked on the robot as ~/robot_console/), robot_cons
 (its signature), checks/ (robot-python/checks/: pump, robot and network checks) and
 "Physical AI Tool.html", the PC program (static/pc/physical-ai-tool.html: it
 finds the robots on the classroom Wi-Fi and opens one; copy it to a PC's desktop).
+The three manual PDFs (static/guides/*.pdf) are left out: they are in the PC program, and the
+robot's server answers their links with a note saying so.
 robot_console.zip also carries models/yolov5s.onnx, the AI sample's model (check 6; downloaded
 once from the YOLOv5 v7.0 release into robot-python/server/models/ and checked against its SHA-256).
 Text files meant for Windows Notepad are written with a UTF-8 BOM and CRLF
@@ -99,6 +101,10 @@ def console_zip(version):
             dirs[:] = sorted(d for d in dirs if d != "__pycache__")
             for name in sorted(files):
                 if name.endswith((".pyc", ".pyo")) or (root == CONSOLE and name == "VERSION"):
+                    continue
+                # The three manuals (about 20 MB) stay in the PC program only, so the kit fits in one
+                # download under 100 MB; the robot's server answers their links with where to find them.
+                if os.path.relpath(root, CONSOLE) == os.path.join("static", "guides") and name.endswith(".pdf"):
                     continue
                 path = os.path.join(root, name)
                 if name.endswith((".pem", ".key")):
