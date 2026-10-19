@@ -183,6 +183,29 @@
     display: inline;
   }
 }
+/* An iPad held across (up to about 1180 px): the steps as numbers, only the current one named. */
+@media (max-width: 1180px) {
+  .steps button span {
+    display: none;
+  }
+  .steps button[data-st='now'] span {
+    display: inline;
+  }
+  .probs button[aria-current] .probName {
+    display: inline-block;
+    max-width: 11em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: bottom;
+  }
+}
+/* Fingers: the step and problem buttons at least 36 px high. */
+@media (pointer: coarse) {
+  .steps button,
+  .probs button {
+    min-height: 36px;
+  }
+}
 
 /* Stage ---------------------------------------------------------------------- */
 .stage {
