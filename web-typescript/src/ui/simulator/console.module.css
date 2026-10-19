@@ -8848,6 +8848,14 @@ button.jpRow:hover {
   touch-action: none;
 }
 @media (pointer: coarse) {
+  /* Only the picked block's keys (a tap picks it): all of them at finger size would cover the program. */
+  .blockKeys {
+    opacity: 0;
+  }
+  .picked > .blockKeys,
+  .picked > .cHead > .blockKeys {
+    opacity: 1;
+  }
   .blockKeys {
     top: -20px;
     gap: 2px;

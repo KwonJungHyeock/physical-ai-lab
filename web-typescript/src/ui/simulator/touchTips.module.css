@@ -14,13 +14,7 @@
   box-shadow: 0 8px 24px rgba(16, 24, 40, 0.28);
   transform: translate(-50%, -100%);
   pointer-events: none;
-  animation: tipIn 0.14s ease-out;
 }
 .tip[data-below] {
   transform: translate(-50%, 0);
-}
-@keyframes tipIn {
-  from {
-    opacity: 0;
-  }
 }
