@@ -1473,7 +1473,7 @@ button.dockToggle:hover {
 }
 
 /* --- narrow windows: one column, the page scrolls ----------------------------- */
-@media not ((min-width: 1100px) and (min-height: 600px)) {
+@media not ((min-width: 1000px) and (min-height: 600px)) {
   .viewport {
     height: min(480px, 60vh);
   }
@@ -1481,7 +1481,7 @@ button.dockToggle:hover {
 }
 
 /* --- PC: the console fills the window like a desktop app ------------------------ */
-@media (min-width: 1100px) and (min-height: 600px) {
+@media (min-width: 1000px) and (min-height: 600px) {
   .app {
     --dock-w: 312px;
     --editor-w: clamp(420px, 30vw, 560px);
@@ -1547,7 +1547,7 @@ button.dockToggle:hover {
 }
 
 /* A laptop-sized window: slimmer columns and labels. */
-@media (min-width: 1100px) and (max-width: 1440px) {
+@media (min-width: 1000px) and (max-width: 1440px) {
   .app {
     --dock-w: 272px;
     --editor-w: 430px;
@@ -2648,12 +2648,12 @@ div.zeroFlow {
 }
 
 /* wide screens get a wider dock for the larger controls */
-@media (min-width: 1100px) and (min-height: 600px) {
+@media (min-width: 1000px) and (min-height: 600px) {
   .app {
     --dock-w: 344px;
   }
 }
-@media (min-width: 1100px) and (max-width: 1440px) {
+@media (min-width: 1000px) and (max-width: 1440px) {
   .app {
     --dock-w: 310px;
   }
@@ -2851,7 +2851,7 @@ div.zeroFlow {
  * the editor, the practice line and the run bar float over it. The dock and
  * the editor fold to tabs on the window's edges.
  * ======================================================================== */
-@media (min-width: 1100px) and (min-height: 600px) {
+@media (min-width: 1000px) and (min-height: 600px) {
   .app {
     --top: 88px;
     --gap: 14px;
@@ -3002,13 +3002,13 @@ div.zeroFlow {
   background: var(--head-2);
 }
 
-@media (min-width: 1100px) and (min-height: 600px) {
+@media (min-width: 1000px) and (min-height: 600px) {
 
   .pip {
     width: clamp(160px, 17vw, 300px);
   }
 }
-@media (min-width: 1100px) and (max-width: 1440px) {
+@media (min-width: 1000px) and (max-width: 1440px) {
   .app {
     --editor-w: 400px;
     --dock-w: 300px;
@@ -3222,7 +3222,7 @@ div.zeroFlow {
  * picker takes what is left, and on smaller screens words give way to
  * numbers and icons (checked by the layout test at 1920/1536/1366 wide).
  * ======================================================================== */
-@media (min-width: 1100px) and (min-height: 600px) {
+@media (min-width: 1000px) and (min-height: 600px) {
   .topBar {
     flex-wrap: nowrap;
     /* Clip sideways only: the practice list (and other menus) drop down out of the bar. */
@@ -3242,7 +3242,7 @@ div.zeroFlow {
     margin-left: auto;
   }
 }
-@media (min-width: 1100px) and (max-width: 1760px) {
+@media (min-width: 1000px) and (max-width: 1760px) {
   .brand small,
 .conn small {
     display: none;
@@ -3252,7 +3252,7 @@ div.zeroFlow {
     gap: 8px 14px !important;
   }
 }
-@media (min-width: 1100px) and (max-width: 1560px) {
+@media (min-width: 1000px) and (max-width: 1560px) {
 
   .checkChips button {
     width: 28px !important;
@@ -3269,7 +3269,7 @@ div.zeroFlow {
 }
 
 /* camera window: small, in the view's lower right, beside the robot (not over it) */
-@media (min-width: 1100px) and (min-height: 600px) {
+@media (min-width: 1000px) and (min-height: 600px) {
   .camOverlay {
     top: auto !important;
     bottom: 132px;
@@ -3330,13 +3330,13 @@ div.zeroFlow {
 
 /* top bar on laptop screens: logo alone, the model's short name, so ① ② keep whole words */
 
-@media (min-width: 1100px) and (max-width: 1440px) {
+@media (min-width: 1000px) and (max-width: 1440px) {
   .brand > span {
     display: none;
   }
 
 }
-@media (min-width: 1100px) and (max-width: 1279px) {
+@media (min-width: 1000px) and (max-width: 1279px) {
   .topBar {
     gap: 8px 10px !important;
   }
@@ -3354,7 +3354,7 @@ div.zeroFlow {
 .camShowSeg {
   display: none !important;
 }
-@media (min-width: 1100px) and (max-width: 1440px) and (min-height: 600px) {
+@media (min-width: 1000px) and (max-width: 1440px) and (min-height: 600px) {
   .camOverlay {
     width: min(300px, calc(100% - var(--inset-l) - var(--inset-r) - 24px));
   }
@@ -4902,7 +4902,7 @@ button.jpRow:hover {
 }
 
 /* --- PC window: the panel floats on one side, the 3D view fills the rest --------------- */
-@media (min-width: 1100px) and (min-height: 600px) {
+@media (min-width: 1000px) and (min-height: 600px) {
   .app {
     --side-w: clamp(460px, 34vw, 600px);
     --top: 80px;
@@ -4978,7 +4978,7 @@ button.jpRow:hover {
   display: block;
 }
 /* a laptop window: the panel a little narrower, the top bar's secondary labels go */
-@media (min-width: 1100px) and (max-width: 1440px) {
+@media (min-width: 1000px) and (max-width: 1440px) {
   .app {
     --side-w: clamp(420px, 34vw, 470px);
   }
@@ -4995,14 +4995,14 @@ button.jpRow:hover {
     font-size: 15px;
   }
 }
-@media (min-width: 1100px) and (max-width: 1279px) {
+@media (min-width: 1000px) and (max-width: 1279px) {
   .goal {
     display: none;
   }
 }
 
 /* --- narrow windows: one column, the panel under the 3D view ---------------------------- */
-@media not ((min-width: 1100px) and (min-height: 600px)) {
+@media not ((min-width: 1000px) and (min-height: 600px)) {
   .topBar {
     flex-wrap: wrap;
   }
@@ -5229,7 +5229,7 @@ button.jpRow:hover {
   gap: 6px;
   white-space: nowrap;
 }
-@media (min-width: 1100px) and (min-height: 600px) {
+@media (min-width: 1000px) and (min-height: 600px) {
   .pcOffer {
     top: calc(var(--top) + 56px);
     left: calc((var(--inset-l) + 100% - var(--inset-r)) / 2);
@@ -5759,7 +5759,7 @@ button.jpRow:hover {
 }
 
 /* --- top bar --------------------------------------------------------------- */
-@media (min-width: 1100px) and (min-height: 600px) {
+@media (min-width: 1000px) and (min-height: 600px) {
   .app {
     --top: 64px;
   }
@@ -5816,7 +5816,7 @@ button.jpRow:hover {
 }
 
 /* --- work panel: width per tab ---------------------------------------------- */
-@media (min-width: 1100px) and (min-height: 600px) {
+@media (min-width: 1000px) and (min-height: 600px) {
   .app .shell {
     --side-w: clamp(400px, 26vw, 440px);
   }
@@ -7259,7 +7259,7 @@ button.jpRow:hover {
  * Final top bar (2026-10): product lockup, four screens, what is open, connection · settings · stop.
  * Light: a white bar with a hairline and a soft shadow under it, dark type, the open screen in the accent.
  * ======================================================================== */
-@media (min-width: 1100px) and (min-height: 600px) {
+@media (min-width: 1000px) and (min-height: 600px) {
   .app .topBar {
     min-height: 64px;
     gap: 14px;
@@ -8912,5 +8912,16 @@ button.jpRow:hover {
   }
   .axisRow {
     grid-template-columns: 24px 44px minmax(0, 1fr) 44px;
+  }
+}
+
+/* An iPad held across (about 1024–1180 px): the logo alone, the task chip trimmed to its space. */
+@media (max-width: 1180px) {
+  .lockup > i,
+  .product {
+    display: none;
+  }
+  .context {
+    overflow: hidden;
   }
 }
