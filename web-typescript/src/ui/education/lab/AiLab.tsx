@@ -62,6 +62,7 @@ import { ArrowDef, Knob, PROBS, ProbLock, RecordSheet, SitePanel, ValueLines, an
 import RealUse from './RealUse';
 import css from './lab.module.css';
 import lg from './site.module.css';
+import ViewHint from '../../simulator/ViewHint';
 
 /** The kit on its bench from the front right, a little above, the lab behind it at real size (three.js metres, y up): camera, then target. */
 export const AI_VIEW: ViewPose = [2.1, 1.25, 1.7, -0.2, 0.35, 0.15];
@@ -459,7 +460,7 @@ export default function AiLab({ robot, chain, gripperRobot, hidden, level = 'hs'
           </div>
         )}
         <RealUse site="ai" beside />
-        <p className={css.hint}>끌어서 돌려 보기 · 휠로 확대</p>
+        <ViewHint className={css.hint} />
       </section>
 
       <aside className={css.panel} aria-label="실습 안내">

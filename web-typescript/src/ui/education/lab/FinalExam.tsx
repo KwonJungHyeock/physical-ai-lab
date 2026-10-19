@@ -48,6 +48,7 @@ import { useAccount } from '../../account/AccountProvider';
 import css from './lab.module.css';
 import lg from './site.module.css';
 import fx from './final.module.css';
+import ViewHint from '../../simulator/ViewHint';
 
 const KEY = 'final-exam';
 /** Sheets handed in on this computer (one per student), for the teacher's class table. */
@@ -479,7 +480,7 @@ function ItemScreen({ item, no, robot, chain, gripperRobot, hidden, record, setR
             </span>
           </div>
         )}
-        <p className={css.hint}>끌어서 돌려 보기 · 휠로 확대</p>
+        <ViewHint className={css.hint} />
       </section>
 
       <aside className={css.panel} aria-label="평가 문항">

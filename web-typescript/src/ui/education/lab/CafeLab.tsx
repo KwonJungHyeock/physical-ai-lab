@@ -62,6 +62,7 @@ import { ArrowDef, Knob, PROBS, ProbLock, RecordSheet, SitePanel, ValueLines, an
 import RealUse from './RealUse';
 import css from './lab.module.css';
 import lg from './site.module.css';
+import ViewHint from '../../simulator/ViewHint';
 
 /** The café from the front right, a little above (three.js metres, y up): camera, then target. */
 export const CAFE_VIEW: ViewPose = [1.3, 1.55, -1.35, 0.05, -0.15, 0.3];
@@ -454,7 +455,7 @@ export default function CafeLab({ robot, chain, gripperRobot, hidden, level = 'h
           </div>
         )}
         <RealUse site={prob === 3 ? 'care' : 'cafe'} />
-        <p className={css.hint}>끌어서 돌려 보기 · 휠로 확대</p>
+        <ViewHint className={css.hint} />
       </section>
 
       <aside className={css.panel} aria-label="실습 안내">

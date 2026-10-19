@@ -73,6 +73,7 @@ import { ArrowDef, PROBS, ProbLock, RecordSheet, SitePanel, answeredUpTo, fmt, f
 import RealUse from './RealUse';
 import css from './lab.module.css';
 import lg from './site.module.css';
+import ViewHint from '../../simulator/ViewHint';
 
 /** The cell on its bench from the front right, at a standing person's eye height (three.js metres, y up): camera, then target. */
 export const LAB_VIEW: ViewPose = [1.6, 0.85, 1.2, -0.2, 0.23, -0.25];
@@ -540,7 +541,7 @@ export default function FactoryLab({ robot, chain, gripperRobot, hidden, level =
           </div>
         )}
         <RealUse site="factory" />
-        <p className={css.hint}>끌어서 돌려 보기 · 휠로 확대</p>
+        <ViewHint className={css.hint} />
       </section>
 
       <aside className={css.panel} aria-label="실습 안내">

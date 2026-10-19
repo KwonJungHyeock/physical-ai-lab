@@ -74,6 +74,7 @@ import { ArrowDef, Knob, ProbLock, RecordSheet, SitePanel, answeredUpTo, fmt, fr
 import RealUse from './RealUse';
 import css from './lab.module.css';
 import lg from './site.module.css';
+import ViewHint from '../../simulator/ViewHint';
 
 /** The cell on its bench from the front right, at a standing person's eye, the warehouse behind it (three.js metres, y up): camera, then target. */
 export const LOGI_VIEW: ViewPose = [1.45, 0.7, 0.75, -0.15, 0.05, -0.05];
@@ -528,7 +529,7 @@ export default function LogisticsLab({ robot, chain, gripperRobot, hidden, level
           </div>
         )}
         <RealUse site="logistics" />
-        <p className={css.hint}>끌어서 돌려 보기 · 휠로 확대</p>
+        <ViewHint className={css.hint} />
       </section>
 
       <aside className={css.panel} aria-label="실습 안내">

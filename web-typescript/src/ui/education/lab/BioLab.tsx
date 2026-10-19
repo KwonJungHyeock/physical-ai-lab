@@ -66,6 +66,7 @@ import { ArrowDef, Knob, type DeckPlan, PROBS, ProbLock, RecordSheet, SitePanel,
 import RealUse from './RealUse';
 import css from './lab.module.css';
 import lg from './site.module.css';
+import ViewHint from '../../simulator/ViewHint';
 
 /** The bench from the front right, a little above (three.js metres, y up): camera, then target. */
 export const BIO_VIEW: ViewPose = [1.4, 0.95, 0.4, -0.3, 0.2, 0.05];
@@ -524,7 +525,7 @@ export default function BioLab({ robot, chain, gripperRobot, hidden, level = 'hs
           </div>
         )}
         <RealUse site="bio" folded={!!deck} />
-        <p className={css.hint}>끌어서 돌려 보기 · 휠로 확대</p>
+        <ViewHint className={css.hint} />
       </section>
 
       <aside className={css.panel} aria-label="실습 안내">

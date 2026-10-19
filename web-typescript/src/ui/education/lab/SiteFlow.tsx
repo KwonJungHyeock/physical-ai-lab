@@ -859,7 +859,7 @@ function SiteSteps(p: SitePanelProps) {
             {guide}
             <Sec n={1} title="문제 장면 보기" kind="read" state={parts[0].state}>
               <p className={css.story}><Lines text={T.happened} /></p>
-              {!p.deck && <p className={lg.secText}>3D 화면에서 다시 보려면 오른쪽 위 <b>[▶ 재생]</b>. 끌면 돌려 보고, 휠로 확대돼요.</p>}
+              {!p.deck && <p className={lg.secText}>3D 화면에서 다시 보려면 오른쪽 위 <b>[▶ 재생]</b>. 끌면 돌려 보고, 오른쪽 <b>[+]</b>로 확대돼요.</p>}
             </Sec>
             <Sec n={2} title="생각해 보기" kind="ask" state={parts[1].state} wait="장면이 끝나면 열려요.">
               <Ask ask={T.ask} />

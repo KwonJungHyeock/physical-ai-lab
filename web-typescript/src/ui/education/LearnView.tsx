@@ -50,6 +50,7 @@ import { events, lessonObject } from '@/engine/account';
 import { REAL_ROBOT, operatedObject, useAccount } from '../account/AccountProvider';
 import LessonLocked from '../account/LessonLocked';
 import css from './learn.module.css';
+import ViewHint from '../simulator/ViewHint';
 
 const TOPIC_KEY = 'learn-topic';
 const DONE_KEY = 'learn-done';
@@ -696,7 +697,7 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
           <section className={css.stage} aria-label="3D 실습 화면">
             <div className={css.canvas} data-picking={picking || undefined}>
               <LearnStage robot={robot} chain={chain} gripperRobot={gripperRobot} scene={scene} paused={!inLesson} onTablePick={(mm) => pick.current?.(mm)} />
-              <p className={css.stageHint}>끌어서 돌려 보기 · 휠로 확대 · 오른쪽 끌기로 옮기기{picking ? ' · 책상을 클릭하면 그 자리를 골라요' : ''}</p>
+              <ViewHint className={css.stageHint} pan extra={picking ? ' · 책상을 누르면 그 자리를 골라요' : ''} />
             </div>
           </section>
         </div>

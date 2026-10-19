@@ -66,6 +66,7 @@ import { ArrowDef, Knob, PROBS, ProbLock, RecordSheet, SitePanel, ValueLines, an
 import RealUse from './RealUse';
 import css from './lab.module.css';
 import lg from './site.module.css';
+import ViewHint from '../../simulator/ViewHint';
 
 /** The cell from the front right, above the sorting table, the greenhouse's rows behind it (three.js metres, y up): camera, then target. */
 export const FARM_VIEW: ViewPose = [1.3, 0.75, 1.15, -0.02, 0.1, -0.25];
@@ -494,7 +495,7 @@ export default function FarmLab({ robot, chain, gripperRobot, hidden, level = 'h
           </div>
         )}
         <RealUse site="farm" beside />
-        <p className={css.hint}>끌어서 돌려 보기 · 휠로 확대</p>
+        <ViewHint className={css.hint} />
       </section>
 
       <aside className={css.panel} aria-label="실습 안내">
