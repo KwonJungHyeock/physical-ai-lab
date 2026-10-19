@@ -9,6 +9,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 import Icon from './Icon';
+import { isTouch } from './touch';
 import css from './console.module.css';
 
 /** The screens: the robotics course, the simulator, the library to open things from, the downloads. */
@@ -71,6 +72,46 @@ export function MenuChip({ label, title, className, children }: { label: ReactNo
   );
 }
 
+type FsDoc = Document & { webkitFullscreenEnabled?: boolean; webkitFullscreenElement?: Element | null; webkitExitFullscreen?: () => void };
+type FsEl = HTMLElement & { webkitRequestFullscreen?: () => void };
+
+/**
+ * 전체 화면 (tablets only): the browser's address bar and tabs out of the way, so the lesson has the
+ * whole screen. Shown where the browser allows it (Android Chrome, iPad Safari).
+ */
+function FullscreenChip() {
+  const [on, setOn] = useState<boolean | null>(null);
+  useEffect(() => {
+    const d = document as FsDoc;
+    if (!isTouch() || !(d.fullscreenEnabled || d.webkitFullscreenEnabled)) return;
+    const read = () => setOn(!!(d.fullscreenElement || d.webkitFullscreenElement));
+    read();
+    document.addEventListener('fullscreenchange', read);
+    document.addEventListener('webkitfullscreenchange', read);
+    return () => {
+      document.removeEventListener('fullscreenchange', read);
+      document.removeEventListener('webkitfullscreenchange', read);
+    };
+  }, []);
+  if (on === null) return null;
+  const toggle = () => {
+    const d = document as FsDoc;
+    const root = document.documentElement as FsEl;
+    if (on) {
+      if (d.exitFullscreen) void d.exitFullscreen().catch(() => {});
+      else d.webkitExitFullscreen?.();
+    } else if (root.requestFullscreen) void root.requestFullscreen().catch(() => {});
+    else root.webkitRequestFullscreen?.();
+  };
+  return (
+    <div className={`${css.menuChip} ${css.settingsChip}`}>
+      <button type="button" className={css.menuChipBtn} onClick={toggle} aria-pressed={on} aria-label={on ? '전체 화면 끝내기' : '전체 화면'} title={on ? '전체 화면 끝내기' : '전체 화면: 주소창을 숨겨 화면을 넓게 써요'}>
+        <Icon name={on ? 'shrink' : 'expand'} size={18} />
+      </button>
+    </div>
+  );
+}
+
 export default function TopBar({ view, onView, busy, context, settings, status, robotStop, onStop, onHelp }: Props) {
   return (
     <header className={css.topBar} data-panel="topbar">
@@ -86,7 +127,7 @@ export default function TopBar({ view, onView, busy, context, settings, status, 
 
       <nav className={css.screens} role="tablist" aria-label="화면">
         {SCREENS.map((s) => (
-          <button key={s.id} type="button" role="tab" aria-selected={view === s.id} disabled={busy && view !== s.id} onClick={() => onView(s.id)} title={s.title}>
+          <button key={s.id} type="button" role="tab" aria-label={s.name} aria-selected={view === s.id} disabled={busy && view !== s.id} onClick={() => onView(s.id)} title={s.title}>
             <Icon name={s.icon} size={17} />
             <span>{s.name}</span>
           </button>
@@ -97,6 +138,7 @@ export default function TopBar({ view, onView, busy, context, settings, status, 
 
       <div className={css.topStatus}>
         {status}
+        <FullscreenChip />
         <div className={`${css.menuChip} ${css.settingsChip}`}>
           <button type="button" className={css.menuChipBtn} onClick={onHelp} title="도움말: 화면 · 순서 · 단축키 · 매뉴얼" aria-label="도움말">
             <Icon name="help" size={18} />

@@ -228,8 +228,13 @@ export function DeskObjects({ world, objects, edit }: { world: RefObject<WorldSt
   // A release anywhere (off the canvas too) ends the drag.
   useEffect(() => {
     if (!drag) return;
+    // A touch the browser takes back (pointercancel) ends it too, so the camera is never left frozen.
     window.addEventListener('pointerup', end);
-    return () => window.removeEventListener('pointerup', end);
+    window.addEventListener('pointercancel', end);
+    return () => {
+      window.removeEventListener('pointerup', end);
+      window.removeEventListener('pointercancel', end);
+    };
   }, [drag, end]);
   // Editing switched off mid-drag (a run started): the camera gets its orbit back.
   useEffect(() => {

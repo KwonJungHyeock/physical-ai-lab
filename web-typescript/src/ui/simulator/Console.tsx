@@ -121,6 +121,8 @@ import StatusLights from './control/StatusLights';
 import type { CameraFrame, StageApi } from './stage/Stage';
 import { DEFAULT_DISPLAY, type DisplayOpts } from './stage/sceneHelpers';
 import css from './console.module.css';
+import { isTouch } from './touch';
+import TouchTips from './TouchTips';
 
 // memo: the 3D view re-renders only when one of its own props changes, not with every console update.
 const Stage = memo(
@@ -365,7 +367,8 @@ export default function Console() {
     window.clearTimeout(jointsTimer.current);
     setJointsLive(true);
     const h = jointsHeld.current;
-    if (!h.panel && !h.point) jointsTimer.current = window.setTimeout(() => setJointsLive(false), JOINT_POINTS_LINGER_MS);
+    // A tablet has no hover to keep them up while a finger aims at one: there they stay.
+    if (!h.panel && !h.point && !isTouch()) jointsTimer.current = window.setTimeout(() => setJointsLive(false), JOINT_POINTS_LINGER_MS);
   };
   const holdJoints = (who: 'panel' | 'point', on: boolean) => {
     jointsHeld.current[who] = on;
@@ -630,7 +633,9 @@ export default function Console() {
       // The 실습 환경 is not restored: every start is the arm alone on an empty desk (빈 화면).
       // The picture quality is chosen by itself: lighter on a small PC (4 cores or fewer), on one that
       // drew the full picture too slowly or not at all before (remembered), or when it runs slowly now.
-      if (localStorage.getItem(QUALITY_KEY) === 'normal' || (navigator.hardwareConcurrency ?? 8) <= 4) setQuality('normal');
+      // A tablet's GPU starts on 보통 too (it can be raised in the settings).
+      const saved = localStorage.getItem(QUALITY_KEY);
+      if (saved === 'normal' || (!saved && isTouch()) || (navigator.hardwareConcurrency ?? 8) <= 4) setQuality('normal');
       if (localStorage.getItem(DOCK_KEY) === '0') setDockOpen(false);
       if (localStorage.getItem(SIDE_KEY) === 'left') setSide('left');
       const roles = JSON.parse(localStorage.getItem(CAM_ROLES_KEY) ?? 'null') as Record<string, unknown> | null;
@@ -798,7 +803,7 @@ export default function Console() {
     document.body.appendChild(a);
     a.click();
     a.remove();
-    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    setTimeout(() => URL.revokeObjectURL(a.href), 60000);
     addLog('ok', '검수 결과표를 저장했어요. 브라우저로 열어 인쇄(PDF 저장)할 수 있어요.');
   };
   const clearEvidence = () => {
@@ -1565,7 +1570,8 @@ export default function Console() {
   // The first time this PC opens a robot's console by its address, offer the PC program, so next
   // time it opens with a double click. Not when it was opened from the PC program itself.
   useEffect(() => {
-    if (!robotMode) return;
+    // A tablet cannot run the Windows program: it keeps the page (홈 화면에 추가) instead.
+    if (!robotMode || isTouch()) return;
     try {
       if (localStorage.getItem(PC_OFFER_KEY)) return;
       if (new URLSearchParams(window.location.search).get('from') === 'pc') {
@@ -2838,6 +2844,7 @@ export default function Console() {
           </div>
         </div>
       )}
+      <TouchTips />
       <div className={css.inner}>
         <TopBar
           view={view}

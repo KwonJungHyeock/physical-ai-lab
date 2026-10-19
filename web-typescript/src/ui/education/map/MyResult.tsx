@@ -36,7 +36,7 @@ function downloadJson(name: string, text: string) {
   document.body.appendChild(a);
   a.click();
   a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  setTimeout(() => URL.revokeObjectURL(url), 60000); // an iPad asks before saving: the link must outlive the question
 }
 
 /** `theory` · `solved`: this computer's progress, for the line under the button. */

@@ -7510,8 +7510,14 @@ button.jpRow:hover {
 
 }
 @media (max-width: 1280px) {
-  .app .screens button span {
-    display: none;
+  /* Narrow (a tablet held across): the name under its icon, never the icon alone. */
+  .app .screens button {
+    flex-direction: column;
+    justify-content: center;
+    gap: 1px;
+    padding: 0 8px;
+    font-size: 10.5px;
+    line-height: 1.1;
   }
   .connPill small {
     display: none;
@@ -8806,4 +8812,105 @@ button.jpRow:hover {
 .app .connectBox .linkBox {
   border-radius: 18px;
   background: linear-gradient(180deg, #f8faff, #fff);
+}
+
+/* --- 반복 안에 넣기 (BlockEditor): the loop's own slot, tapped before a palette block --------- */
+.loopSlot {
+  justify-self: stretch;
+  margin-top: 2px;
+  padding: 6px 10px;
+  border: 1.5px dashed #c3cad6;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+.loopSlot:hover {
+  border-color: var(--blk-flow);
+  color: var(--ink);
+}
+.loopSlotOn {
+  border-style: solid;
+  border-color: var(--blk-flow);
+  background: color-mix(in srgb, var(--blk-flow) 10%, #fff);
+  color: var(--ink);
+}
+
+/*
+ * Tablets (fingers, no mouse): every control at least about 40 px, the 3D joint ring held by the
+ * finger (not taken over as a page pan), and the hover-only names shown.
+ */
+.jptDial .jptHit {
+  touch-action: none;
+}
+@media (pointer: coarse) {
+  .blockKeys {
+    top: -20px;
+    gap: 2px;
+    padding: 3px;
+    border-radius: 10px;
+  }
+  .blockKeys button {
+    width: 36px;
+    height: 34px;
+    font-size: 16px;
+  }
+  .numChip {
+    height: 34px;
+    padding: 0 12px;
+    font-size: 14px;
+  }
+  .loopSlot {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  .jptDot {
+    left: -18px;
+    top: -18px;
+    width: 36px;
+    height: 36px;
+    font-size: 13px;
+  }
+  .jptTag {
+    left: 24px;
+    opacity: 1;
+    transform: none;
+  }
+  .app .objDelete {
+    width: 34px;
+    height: 34px;
+    font-size: 18px;
+  }
+  .app .helpBtn {
+    min-width: 36px;
+    min-height: 36px;
+  }
+  .camClose {
+    min-width: 36px;
+    min-height: 36px;
+  }
+  .app .stepper button {
+    width: 40px;
+    height: 36px;
+  }
+  .stepSeg button,
+  .undoBar button {
+    min-height: 38px;
+  }
+  .app .tlRate button {
+    padding: 8px 11px;
+  }
+  /* Jog keys: a full finger (held down for seconds while the arm moves). */
+  .jogKey,
+  .axisRow .jogKey {
+    width: 44px;
+    height: 44px;
+  }
+  .axisRow {
+    grid-template-columns: 24px 44px minmax(0, 1fr) 44px;
+  }
 }

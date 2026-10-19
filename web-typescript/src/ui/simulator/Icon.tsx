@@ -12,6 +12,8 @@ const PATHS: Record<string, string> = {
   chart: 'M4 20h16M7 16v-5M11 16V8M15 16v-7M19 16V5',
   play: 'M8 5.5v13l10.5-6.5z',
   stop: 'M7 7h10v10H7z',
+  expand: 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5',
+  shrink: 'M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5',
   robot: 'M5 20h11M8 20v-3h5v3M10.5 17V11l6-4 2.5 4M10.5 11a1.6 1.6 0 1 0 0 .01M16.5 7a1.6 1.6 0 1 0 0 .01',
   joints: 'M4 7h9M17 7h3M4 12h3M11 12h9M4 17h11M19 17h1M15 5v4M9 10v4M17 15v4',
   move: 'M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3',

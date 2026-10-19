@@ -57,7 +57,7 @@ function saveFile(name: string, text: string, type: string) {
   link.href = url;
   link.download = name;
   link.click();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  window.setTimeout(() => URL.revokeObjectURL(url), 60000); // an iPad asks before saving: the link must outlive the question
 }
 
 const today = () => {

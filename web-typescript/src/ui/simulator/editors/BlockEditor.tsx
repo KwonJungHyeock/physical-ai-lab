@@ -449,11 +449,34 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
   };
 
   const listOf = (path: Path) => (path.length === 1 ? steps : (steps[path[0]] as Extract<Step, { type: 'repeat' }>).body);
+  /**
+   * ↑ ↓ also go in and out of a loop (tablets cannot drag a block into one): the first block of a
+   * loop going up, or its last going down, leaves it; a block next to a loop going towards it goes in.
+   */
   const moveBy = (path: Path, dir: -1 | 1) => {
     const list = listOf(path);
     const k = path[path.length - 1];
     const to = k + dir;
+    if (path.length === 2 && (to < 0 || to >= list.length)) {
+      const i = path[0];
+      const [item] = list.splice(k, 1);
+      steps.splice(dir < 0 ? i : i + 1, 0, item);
+      setPicked(String(dir < 0 ? i : i + 1));
+      commit();
+      return;
+    }
     if (to < 0 || to >= list.length) return;
+    const next = list[to];
+    if (path.length === 1 && next.type === 'repeat' && list[k].type !== 'repeat') {
+      const [item] = list.splice(k, 1);
+      const loop = dir < 0 ? k - 1 : k;
+      const body = (steps[loop] as Extract<Step, { type: 'repeat' }>).body;
+      if (dir < 0) body.push(item);
+      else body.unshift(item);
+      setPicked(`${loop},${dir < 0 ? body.length - 1 : 0}`);
+      commit();
+      return;
+    }
     [list[k], list[to]] = [list[to], list[k]];
     setPicked([...path.slice(0, -1), to].join());
     commit();
@@ -533,6 +556,19 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
             }}
           >
             {s.body.map((c, j) => build(c, [path[0], j]))}
+            {/* Tap here, then a block in the palette: it goes inside the loop (no dragging needed). */}
+            <button
+              type="button"
+              className={`${css.loopSlot} ${picked === `in:${path[0]}` ? css.loopSlotOn : ''}`}
+              aria-pressed={picked === `in:${path[0]}`}
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                setPicked((p) => (p === `in:${path[0]}` ? null : `in:${path[0]}`));
+              }}
+            >
+              ＋ {s.body.length ? '반복 안에 더 넣기' : '반복 안에 넣을 블록 고르기'}
+            </button>
           </div>
           <div className={css.cFoot} />
         </div>
@@ -564,12 +600,22 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
           endDrag();
         }}
       >
-        <p className={css.paletteTip}>{picked ? '누르면 고른 블록 다음에 들어가요' : '누르면 맨 끝에 들어가요 · 끌어다 놓아도 돼요'}</p>
+        <p className={css.paletteTip}>{picked?.startsWith('in:') ? '누르면 반복 안에 들어가요' : picked ? '누르면 고른 블록 다음에 들어가요' : '누르면 맨 끝에 들어가요'}</p>
         {palette.map(([name, items]) => (
           <PaletteGroup key={name} name={name} empty={items.length === 0}>
             {items.map((proto, k) => {
               const preview = makeStep(proto);
               const add = () => {
+                // Into a loop when its slot is picked (the end of its body).
+                if (picked?.startsWith('in:')) {
+                  const i = Number(picked.slice(3));
+                  const loop = steps[i];
+                  if (loop?.type === 'repeat') {
+                    // The slot stays picked, so several blocks go in one after another.
+                    applyDrop({ where: 'into', i }, { kind: 'new', proto });
+                    return;
+                  }
+                }
                 // After the picked block (inside a loop when it is in one), else at the end.
                 const at = picked ? picked.split(',').map(Number) : null;
                 const valid = at && (at.length === 1 ? at[0] < steps.length : at[0] < steps.length && steps[at[0]].type === 'repeat');
@@ -711,12 +757,15 @@ function NumChip({
     const close = (e: Event) => {
       if (e instanceof KeyboardEvent ? e.key === 'Escape' || e.key === 'Enter' : !box.current?.contains(e.target as Node) && !chip.current?.contains(e.target as Node)) setOpen(null);
     };
-    const away = () => setOpen(null);
-    document.addEventListener('mousedown', close);
+    // A window resize moves the chip (close), but not the on-screen keyboard opening for its own field.
+    const away = () => {
+      if (!box.current?.contains(document.activeElement)) setOpen(null);
+    };
+    document.addEventListener('pointerdown', close);
     document.addEventListener('keydown', close);
     window.addEventListener('resize', away);
     return () => {
-      document.removeEventListener('mousedown', close);
+      document.removeEventListener('pointerdown', close);
       document.removeEventListener('keydown', close);
       window.removeEventListener('resize', away);
     };

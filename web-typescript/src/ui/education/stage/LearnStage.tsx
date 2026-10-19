@@ -33,6 +33,7 @@ import { StageRobot, setAmbient, setSurround, useAmbient, useSurround } from '..
 import { SiteGround, type SiteLook } from '../lab/ambient/Ground';
 import css from '../learn.module.css';
 import { FollowContext, toolOf, type FollowLink } from './RealFollow';
+import { isTouch } from '../../simulator/touch';
 
 const MODEL_URL = '/robot/rdkx5/rdkx5.glb';
 const DRACO_PATH = '/draco/';
@@ -106,6 +107,8 @@ export default function LearnStage({ robot, chain, gripperRobot, scene, onTableP
   // Read here: the Canvas is its own React root (실물 연동 is passed in by hand).
   const follow = useContext(FollowContext);
   const [tone] = useState(readTone);
+  // A tablet: a little fewer pixels for its mobile GPU (the lesson stays smooth while it turns).
+  const [touch] = useState(isTouch);
   const surround = useSurround();
   // The work cell alone: a lighter sky, and the first view drawn in on the cell (no room to take in).
   const cellSky = look && !surround ? new Color(look.sky).lerp(new Color('#ffffff'), 0.35).getStyle() : null;
@@ -115,7 +118,7 @@ export default function LearnStage({ robot, chain, gripperRobot, scene, onTableP
       <Canvas
         shadows="percentage"
         frameloop={paused ? 'never' : 'always'}
-        dpr={[1, 1.75]}
+        dpr={[1, touch ? 1.5 : 1.75]}
         gl={{ antialias: true, preserveDrawingBuffer: true }}
         camera={{ position: [0.66, 0.5, 0.62], fov: 34, near: 0.01, far: 30 }}
         onCreated={({ gl, camera }) => {

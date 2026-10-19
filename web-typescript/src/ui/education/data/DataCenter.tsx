@@ -106,7 +106,7 @@ function download(name: string, text: string) {
   document.body.appendChild(a);
   a.click();
   a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  setTimeout(() => URL.revokeObjectURL(url), 60000); // an iPad asks before saving: the link must outlive the question
 }
 
 export default function DataCenter({ hidden, onBack, onOpenLab }: { hidden?: boolean; onBack(): void; onOpenLab(lab: RunLab): void }) {

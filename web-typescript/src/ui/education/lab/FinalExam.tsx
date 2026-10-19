@@ -892,7 +892,7 @@ function downloadCsv(list: readonly Submitted[]) {
   document.body.appendChild(a);
   a.click();
   a.remove();
-  window.setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  window.setTimeout(() => URL.revokeObjectURL(a.href), 60000); // an iPad asks before saving: the link must outlive the question
 }
 
 function ClassSheet({ list, onClear, onClose }: { list: readonly Submitted[]; onClear(): void; onClose(): void }) {

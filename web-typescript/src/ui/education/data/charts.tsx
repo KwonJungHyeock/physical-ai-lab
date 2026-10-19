@@ -161,7 +161,7 @@ export function Scatter({ points, x, y, fit, height = 300 }: { points: readonly 
                 ),
               });
             return (
-              <g key={i} onMouseEnter={show} onMouseLeave={() => setTip(null)}>
+              <g key={i} onPointerEnter={show} onPointerLeave={(e) => e.pointerType === 'mouse' && setTip(null)}>
                 <circle cx={cx} cy={cy} r={9} fill="transparent" />
                 {p.source === 'robot' ? (
                   <rect x={cx - 4.5} y={cy - 4.5} width={9} height={9} transform={`rotate(45 ${cx} ${cy})`} fill={c} stroke="#fff" strokeWidth={1.5} />
@@ -253,7 +253,7 @@ export function HistogramChart({ h, unit, mean, height = 200 }: { h: Histogram; 
             return (
               <g
                 key={i}
-                onMouseEnter={() =>
+                onPointerEnter={() =>
                   setTip({
                     x: x0 + wdt / 2,
                     y: y0,
@@ -267,7 +267,7 @@ export function HistogramChart({ h, unit, mean, height = 200 }: { h: Histogram; 
                     ),
                   })
                 }
-                onMouseLeave={() => setTip(null)}
+                onPointerLeave={(e) => e.pointerType === 'mouse' && setTip(null)}
               >
                 <rect x={x0} y={m.t} width={wdt} height={H - m.t - m.b} fill="transparent" />
                 {c > 0 && (
@@ -406,7 +406,7 @@ export function TwinPlot({ pairs, label, unit, height = 300 }: { pairs: readonly
             return (
               <g
                 key={i}
-                onMouseEnter={() =>
+                onPointerEnter={() =>
                   setTip({
                     x: cx,
                     y: cy,
@@ -425,7 +425,7 @@ export function TwinPlot({ pairs, label, unit, height = 300 }: { pairs: readonly
                     ),
                   })
                 }
-                onMouseLeave={() => setTip(null)}
+                onPointerLeave={(e) => e.pointerType === 'mouse' && setTip(null)}
               >
                 <circle cx={cx} cy={cy} r={9} fill="transparent" />
                 <line x1={cx} y1={py(c.sim)} x2={cx} y2={cy} stroke={ACCENT} strokeOpacity={0.35} strokeWidth={1.5} />

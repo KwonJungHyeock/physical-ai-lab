@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { JetBrains_Mono, Michroma } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
@@ -34,6 +34,16 @@ export const metadata: Metadata = {
   title: "Physical AI 로봇 학습 시뮬레이터",
   description: "myCobot 280 RDK X5 로봇팔 블록·파이썬 실습과 시뮬레이션",
   icons: { icon: "/icons/icon-192.png", apple: "/icons/apple-touch-icon.png" },
+};
+
+// Tablets (a Galaxy Tab or an iPad, as a teaching pendant): the page at the device's width, and
+// the white of the top bar in the browser's own bar. Pinch zoom stays allowed (the 3D view and the
+// map take two-finger gestures themselves).
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

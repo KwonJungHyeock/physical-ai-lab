@@ -61,3 +61,38 @@ h4 {
     display: none !important;
   }
 }
+
+/*
+ * Tablets (a Galaxy Tab or an iPad held as a teaching pendant, fingers only):
+ * - no pull-to-refresh or rubber-band bounce reloading the lesson (inner panels still scroll);
+ * - a tap is a tap: no double-tap zoom on buttons, no grey flash, and holding a button does not
+ *   select its text or open the long-press menu (a jog key is held down for seconds).
+ */
+html,
+body {
+  overscroll-behavior: none;
+}
+body {
+  -webkit-tap-highlight-color: transparent;
+}
+button,
+[role="button"],
+[role="tab"],
+a,
+label,
+select,
+summary,
+input[type="range"],
+input[type="checkbox"],
+input[type="radio"] {
+  touch-action: manipulation;
+}
+@media (pointer: coarse) {
+  button,
+  [role="button"],
+  [role="tab"] {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}

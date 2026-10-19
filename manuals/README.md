@@ -34,6 +34,7 @@ node tools/build/guides.mjs                  # md → PDF, 인쇄 쪽 검사
 | --- | --- |
 | [`usb-kit.md`](setup/usb-kit.md) | USB 키트로 로봇 준비 — 처음 한 번 명령 한 줄, 그 뒤로는 `wifi.txt` 에 Wi-Fi 이름·비밀번호만 적어 꽂기 (로봇팔·myAGV 공통) |
 | [`pc-simulator.md`](setup/pc-simulator.md) | PC 에 시뮬레이터 설치하기 — 로봇 없이, 인터넷 없이 연습 (크롬·엣지 앱 설치, Windows 실행 파일) |
+| [`tablet.md`](setup/tablet.md) | 태블릿으로 쓰기 (갤럭시 탭 · 아이패드) — 로봇 · 학급 서버 주소 열기, 홈 화면에 추가 · 전체 화면, 손가락 조작(길게 눌러 설명, 반복 안에 블록 넣기), 태블릿에서 다른 점 |
 
 ## `robot-arm/` — 로봇팔 (myCobot 280 RDK X5)
 
