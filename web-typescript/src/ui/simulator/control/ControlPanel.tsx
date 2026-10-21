@@ -54,8 +54,6 @@ interface Props {
   /** Key held: move continuously (joint or tool tip along a base axis) until onJogStop. */
   onJointJog(i: number, dir: -1 | 1): void;
   onTipJog(axis: Axis, dir: -1 | 1, scale?: number): void;
-  /** Slide jog: how fast, as a share of the set speed (0.1..1), while it moves. */
-  onJogScale(scale: number): void;
   onJogStop(): void;
   /** The joint the jog keys work on (0..5), also picked from its point on the 3D arm. */
   selected: number;
@@ -154,89 +152,13 @@ function JogKey({ dir, label, disabled, onStep, onStart, onStop, turn }: { dir: 
   );
 }
 
-/** Pulled less than this share of the way, the slide jog does not move. */
-const SLIDE_DEAD = 0.12;
-
-/**
- * Slide jog: pull the knob left or right; the further it goes, the faster the
- * tool moves. Let go and the knob springs back to the middle and the arm stops.
- */
-function SlideJog({ label, disabled, onStart, onScale, onStop }: { label: string; disabled: boolean; onStart(dir: -1 | 1, scale: number): void; onScale(scale: number): void; onStop(): void }) {
-  const track = useRef<HTMLDivElement>(null);
-  const [pull, setPull] = useState<number | null>(null);
-  const drag = useRef<{ id: number; dir: 0 | -1 | 1 } | null>(null);
-  const fns = useRef({ onStart, onScale, onStop });
-  useEffect(() => {
-    fns.current = { onStart, onScale, onStop };
-  });
-  useEffect(
-    () => () => {
-      if (drag.current?.dir) fns.current.onStop();
-    },
-    [],
-  );
-  const move = (clientX: number) => {
-    const b = track.current?.getBoundingClientRect();
-    const d = drag.current;
-    if (!b || !d) return;
-    const f = Math.max(-1, Math.min(1, (clientX - (b.left + b.width / 2)) / (b.width / 2 - 14)));
-    setPull(f);
-    const dir = Math.abs(f) < SLIDE_DEAD ? 0 : f > 0 ? 1 : -1;
-    const scale = Math.max(0.1, (Math.abs(f) - SLIDE_DEAD) / (1 - SLIDE_DEAD));
-    if (dir !== d.dir) {
-      if (d.dir) fns.current.onStop();
-      d.dir = dir;
-      if (dir) fns.current.onStart(dir, scale);
-    } else if (dir) fns.current.onScale(scale);
-  };
-  const end = (e: React.PointerEvent) => {
-    if (drag.current?.id !== e.pointerId) return;
-    if (drag.current.dir) fns.current.onStop();
-    drag.current = null;
-    setPull(null);
-  };
-  return (
-    <div
-      ref={track}
-      className={css.slideJog}
-      role="slider"
-      aria-label={label}
-      aria-valuemin={-100}
-      aria-valuemax={100}
-      aria-valuenow={Math.round((pull ?? 0) * 100)}
-      aria-disabled={disabled || undefined}
-      title={`${label} · 끌면 끄는 만큼 빠르게, 놓으면 멈춰요`}
-      data-dragging={pull !== null || undefined}
-      onPointerDown={(e) => {
-        if (disabled || e.button !== 0) return;
-        e.currentTarget.setPointerCapture(e.pointerId);
-        drag.current = { id: e.pointerId, dir: 0 };
-        move(e.clientX);
-      }}
-      onPointerMove={(e) => {
-        if (drag.current?.id === e.pointerId) move(e.clientX);
-      }}
-      onPointerUp={end}
-      onPointerCancel={end}
-    >
-      <i aria-hidden="true">−</i>
-      <span className={css.slideKnob} style={{ '--pull': pull ?? 0 } as React.CSSProperties} />
-      <i aria-hidden="true">+</i>
-    </div>
-  );
-}
-
 export default function ControlPanel(p: Props) {
   const angles = useLive(p.live, (v) => v.angles);
   const { tipOf } = p;
   const tip = useMemo(() => tipOf(angles), [tipOf, angles]);
   const [frame, setFrame] = useState<Frame>('base');
-  /** The coordinate row whose drag handle shows (one at a time keeps the six rows short). */
-  const [sel, setSel] = useState<Axis>('z');
   const [jStep, setJStep] = useState(5);
   const [tStep, setTStep] = useState(10);
-  // The how-to lines stay behind [?] (the panel stays short; the keys say what they do on hover).
-  const [help, setHelp] = useState(false);
   const [drag, setDrag] = useState<{ i: number; deg: number } | null>(null);
 
   const commit = () => {
@@ -318,17 +240,15 @@ export default function ControlPanel(p: Props) {
     >
       <div className={css.pendantBar}>
         <span className={css.frameSeg} role="group" aria-label="좌표계">
-          <button type="button" aria-pressed={frame === 'base'} onClick={() => chooseFrame('base')} title="베이스 좌표: 손끝 위치(X·Y·Z)를 곧게 옮기거나, 손끝은 그대로 두고 도구 방향(RX·RY·RZ)을 돌려요">
+          <button type="button" aria-pressed={frame === 'base'} onClick={() => chooseFrame('base')} title="좌표: 손끝 위치 X · Y · Z, 회전 RX · RY · RZ">
             <b>좌표</b>
-            <small>위치 · 회전</small>
           </button>
-          <button type="button" aria-pressed={frame === 'joint'} onClick={() => chooseFrame('joint')} title="모터(관절)를 하나씩 돌려요">
+          <button type="button" aria-pressed={frame === 'joint'} onClick={() => chooseFrame('joint')} title="관절: J1 ~ J6 하나씩">
             <b>관절</b>
-            <small>J1 ~ J6</small>
           </button>
         </span>
         <span className={css.stepSeg} role="group" aria-label="한 번 누를 때 움직이는 양">
-          <em className={css.stepLabel}>한 번에</em>
+          <em className={css.stepLabel}>단위</em>
           {steps.map((v) => (
             <button key={v} type="button" aria-pressed={step === v} onClick={() => (frame === 'joint' ? setJStep(v) : setTStep(v))}>
               {v}
@@ -336,24 +256,10 @@ export default function ControlPanel(p: Props) {
           ))}
           <i>{frame === 'joint' ? '°' : 'mm'}</i>
         </span>
-        <button type="button" className={css.helpBtn} aria-pressed={help} onClick={() => setHelp((h) => !h)} title={help ? '도움말 닫기' : '쓰는 방법 보기'} aria-label="쓰는 방법">
-          ?
-        </button>
       </div>
 
-      {help && (
-        <p className={css.jogHint}>
-          <b>◀ ▶</b> 짧게 누르면 한 칸({frame === 'joint' ? `${jStep}°` : `${tStep}mm`}), 누르고 있으면 계속 움직여요.
-          {frame === 'joint' ? (
-            <>
-              {' '}
-              3D 의 관절 점 ①~⑥ 이나 이 목록에서 관절을 고르고, 양옆 버튼·막대·3D 의 링으로 돌려요. 키보드 <b>↑↓</b> 고르기 · <b>←→</b> 돌리기.
-            </>
-          ) : null}
-        </p>
-      )}
       <label className={css.speedRow}>
-        <span>움직이는 속도</span>
+        <span>속도</span>
         <input
           type="range"
           min={10}
@@ -416,7 +322,6 @@ export default function ControlPanel(p: Props) {
                   <span className={css.jpName}>
                     <b>{jointLabels()[i].name}</b>
                     <em>J{i + 1}</em>
-                    <small>{jointLabels()[i].what}</small>
                   </span>
                   {value}
                 </div>
@@ -465,34 +370,27 @@ export default function ControlPanel(p: Props) {
             <div key={group} className={css.axisGroup} role="group" aria-label={group}>
               <p>
                 {group}
-                <small>
-                  한 번에 {rows[0].step}
-                  {unit}
-                </small>
+                <small>{unit}</small>
               </p>
               {rows.map(({ axis, color, step, hint }) => {
                 const name = axis.toUpperCase();
                 const v = tip?.[axis as 'x'];
                 const turn = group === '회전';
                 return (
-                  <div key={axis} className={css.axisRow} data-on={sel === axis || undefined} title={`${name}: ${hint}`}>
+                  <div key={axis} className={css.axisRow} title={`${name}: ${hint}`}>
                     <JogKey turn={turn} dir={-1} label={`${name}− ${hint}`} disabled={p.busy} onStep={() => p.onTipStep(axis, -step)} onStart={() => p.onTipJog(axis, -1)} onStop={p.onJogStop} />
-                    <button type="button" className={css.axisValue} onClick={() => setSel(axis)} aria-pressed={sel === axis} title={`${name} 고르기 (아래 손잡이로 끌어 움직이기)`}>
+                    <span className={css.axisValue}>
                       <span className={css.axisName} style={{ color }}>
                         {name}
                       </span>
                       <b>{v === undefined ? '—' : v.toFixed(1)}</b>
-                    </button>
+                    </span>
                     <JogKey turn={turn} dir={1} label={`${name}+ ${hint}`} disabled={p.busy} onStep={() => p.onTipStep(axis, step)} onStart={() => p.onTipJog(axis, 1)} onStop={p.onJogStop} />
                   </div>
                 );
               })}
             </div>
           ))}
-          <div className={css.axisSlide}>
-            <span style={{ color: [...AXES, ...TURNS].find((a) => a.axis === sel)?.color }}>{sel.toUpperCase()}</span>
-            <SlideJog label={`${sel.toUpperCase()} 밀어서 움직이기`} disabled={p.busy} onStart={(dir, scale) => p.onTipJog(sel, dir, scale)} onScale={p.onJogScale} onStop={p.onJogStop} />
-          </div>
         </div>
       )}
 

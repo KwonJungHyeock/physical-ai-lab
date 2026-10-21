@@ -485,6 +485,6 @@
 
 /* Opened from the left menu bar: next to the bar, like its other windows. */
 .hud[data-docked] {
-  left: calc(var(--inset-l, 12px) + 74px);
+  left: var(--inset-l, 12px);
   top: calc(var(--top, 0px) + 58px);
 }

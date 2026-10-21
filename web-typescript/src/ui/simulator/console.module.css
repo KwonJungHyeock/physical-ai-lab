@@ -1022,64 +1022,18 @@ input.field {
   min-height: 0;
   min-width: 0;
 }
-.dockSection {
-  border-bottom: 1px solid var(--line);
-}
-.dockSection:last-child {
-  border-bottom: none;
-}
 .dockScroll > * {
   /* Sections keep their height; the column scrolls instead of squeezing them. */
   flex: 0 0 auto;
   min-width: 0;
 }
-.dockHead {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 12px 4px 6px;
-}
-.dockToggle {
-  flex: 1;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  border: none;
-  background: transparent;
-  padding: 7px 8px;
-  border-radius: 9px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--ink);
-  cursor: pointer;
-  text-align: left;
-}
-button.dockToggle:hover {
-  background: var(--soft);
-}
 .dockIcon {
   color: var(--accent);
-}
-.dockChevron {
-  margin-left: auto;
-  color: var(--faint);
-  transition: transform 0.2s;
-}
-.dockSection[data-open='false'] .dockChevron {
-  transform: rotate(-90deg);
 }
 .dockAside {
   flex: 0 0 auto;
   font-size: 11.5px;
   color: var(--muted);
-}
-
-.realTag {
-  padding: 1px 7px;
-  border-radius: 999px;
-  background: var(--real-soft);
-  color: #b45309;
-  font-weight: 700;
 }
 .dockBody {
   padding: 0 12px 12px;
@@ -1733,23 +1687,6 @@ button.dockToggle:hover {
   column-gap: 10px;
   align-items: start;
 }
-.axisSlide {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: 26px minmax(0, 1fr);
-  align-items: center;
-  gap: 6px;
-  margin-top: 2px;
-}
-.axisSlide > span {
-  font-size: 12px;
-  font-weight: 800;
-  text-align: center;
-}
-.axisSlide .slideJog {
-  grid-column: auto;
-  margin: 0;
-}
 .axisGroup > p {
   margin: 0;
   font-size: 12px;
@@ -1841,7 +1778,7 @@ button.dockToggle:hover {
 }
 .zeroFlow {
   margin: 0;
-  padding-left: 18px;
+  padding: 0;
   display: grid;
   gap: 10px;
   font-size: 12.5px;
@@ -1849,15 +1786,6 @@ button.dockToggle:hover {
 }
 div.zeroFlow {
   padding-left: 0;
-}
-.zeroFlow li {
-  display: grid;
-  gap: 6px;
-  justify-items: start;
-}
-.zeroFlow li::marker {
-  font-weight: 700;
-  color: var(--accent);
 }
 .zeroFlow p {
   margin: 0;
@@ -1891,18 +1819,66 @@ div.zeroFlow {
   color: #b54708 !important;
   font-size: 11.5px;
 }
-.zeroCheck {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 6px;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
+/* 영점: the five steps as one line of dots, the joint at hand with its reading */
+.zeroSteps {
+  list-style: none;
+  margin: 0 0 4px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  counter-reset: zs;
 }
-.zeroCheck input {
-  width: 18px;
-  height: 18px;
+.zeroSteps li {
+  counter-increment: zs;
+  position: relative;
+  padding-top: 24px;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--muted);
+  word-break: keep-all;
+}
+.zeroSteps li::before {
+  content: counter(zs);
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin-left: -10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 11px;
+  line-height: 20px;
+}
+.zeroSteps li[data-state='done']::before {
+  content: '✓';
+  background: #1f6f4a;
+  color: #fff;
+}
+.zeroSteps li[data-state='now'] {
+  color: var(--ink);
+}
+.zeroSteps li[data-state='now']::before {
+  background: #2f5bea;
+  color: #fff;
+}
+.zeroLead {
+  margin: 4px 0;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+}
+.zeroJoint > span:nth-child(2) {
+  display: grid;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.zeroJoint .zeroNow {
+  margin-left: auto;
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
 }
 .zeroStepBtns {
   display: flex;
@@ -2610,27 +2586,6 @@ div.zeroFlow {
   padding: 10px;
   gap: 10px;
 }
-.dockSection,
-.dockSection:last-child {
-  border: 1px solid #dde2e9;
-  border-radius: 12px;
-  background: #fff;
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
-  overflow: hidden;
-}
-.dockHead {
-  padding: 0 12px 0 4px;
-  min-height: 44px;
-  background: #f6f8fb;
-  border-bottom: 1px solid #e6eaf0;
-}
-.dockSection[data-open='false'] .dockHead {
-  border-bottom: none;
-}
-.dockToggle {
-  font-size: 15px;
-  padding: 9px 8px;
-}
 .dockAside {
   font-size: 12.5px;
 }
@@ -2806,15 +2761,6 @@ div.zeroFlow {
   display: grid;
   gap: 8px;
 }
-.poseListHead b {
-  display: block;
-  font-size: 14px;
-}
-.poseListHead small {
-  display: block;
-  font-size: 12.5px;
-  color: var(--muted);
-}
 .poseList ul {
   list-style: none;
   margin: 0;
@@ -2874,19 +2820,6 @@ div.zeroFlow {
 .poseDel:hover {
   color: #b42318;
   border-color: #f3b4ae;
-}
-
-.jogHint {
-  margin: 0;
-  padding: 7px 10px;
-  border-radius: 8px;
-  background: var(--accent-soft);
-  color: #2b3f99;
-  font-size: 12.5px;
-  line-height: 1.4;
-}
-.jogHint b {
-  letter-spacing: 0.05em;
 }
 
 .leds {
@@ -3251,20 +3184,6 @@ div.zeroFlow {
 }
 
 /* panel finish: icon chips on section headers, softer cards */
-.dockHead .dockIcon {
-  box-sizing: content-box;
-  padding: 5px;
-  border-radius: 8px;
-  background: var(--accent-soft);
-}
-.dockHead {
-  background: linear-gradient(180deg, #fbfcfe, #f3f6fa);
-}
-.dockSection,
-.dockSection:last-child {
-  border-color: #d9dfe8;
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 4px 12px rgba(16, 24, 40, 0.04);
-}
 .jogWide {
   background: linear-gradient(180deg, #ffffff, #f6f8fb);
   border-color: #d5dbe4;
@@ -3371,12 +3290,6 @@ div.zeroFlow {
 }
 
 /* section headers: the title and its note shrink before they spill out of the card */
-.dockHead {
-  min-width: 0;
-}
-.dockToggle {
-  min-width: 0;
-}
 .dockAside {
   min-width: 0;
   max-width: 45%;
@@ -3513,59 +3426,6 @@ div.zeroFlow {
 }
 
 /* slide jog: pull the knob, it springs back when let go */
-.slideJog {
-  grid-column: 1 / -1;
-  position: relative;
-  height: 26px;
-  margin: 5px 0 3px;
-  padding: 0 9px;
-  border-radius: 13px;
-  background: #1d2636;
-  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5), inset 0 0 0 1px #2c3748;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  touch-action: none;
-  user-select: none;
-  cursor: grab;
-}
-.slideJog::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 6px;
-  bottom: 6px;
-  width: 1px;
-  background: #3a475c;
-}
-.slideJog i {
-  font-style: normal;
-  font-size: 13px;
-  font-weight: 800;
-  color: #64748b;
-}
-.slideKnob {
-  position: absolute;
-  top: 3px;
-  left: calc(50% - 10px + var(--pull, 0) * (50% - 14px));
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 40% 35%, #8b73ff, #6a4ee8 70%);
-  box-shadow: 0 3px 8px rgba(90, 60, 220, 0.5), inset 0 -2px 0 rgba(0, 0, 0, 0.2);
-  transition: left 0.24s cubic-bezier(0.3, 1.5, 0.5, 1);
-}
-.slideJog[data-dragging] {
-  cursor: grabbing;
-}
-.slideJog[data-dragging] .slideKnob {
-  transition: none;
-  transform: scale(1.1);
-}
-.slideJog[aria-disabled] {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
 
 /* the corner camera picture: the lens darkens towards the edges, as a real one does */
 .pip::after {
@@ -4647,52 +4507,6 @@ button.jpRow:hover {
   min-width: 0;
   overflow: hidden;
 }
-.sideTabs {
-  flex: 0 0 auto;
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
-  gap: 5px;
-  padding: 7px;
-  background: linear-gradient(180deg, var(--head-2), var(--head));
-}
-.sideTabs [role='tab'] {
-  display: grid;
-  justify-items: center;
-  gap: 1px;
-  padding: 7px 2px 6px;
-  border: none;
-  border-radius: 11px;
-  background: transparent;
-  color: #aeb8cb;
-  cursor: pointer;
-}
-.sideTabs [role='tab'] b {
-  font-size: 14.5px;
-  color: #e7ecf5;
-  white-space: nowrap;
-}
-.sideTabs [role='tab'] small {
-  font-size: 11px;
-  color: #8e99ae;
-}
-.sideTabs [role='tab']:hover:not(:disabled):not([aria-selected='true']) {
-  background: rgba(255, 255, 255, 0.08);
-}
-.sideTabs [role='tab'][aria-selected='true'] {
-  background: #fff;
-  color: var(--accent);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-}
-.sideTabs [role='tab'][aria-selected='true'] b {
-  color: var(--ink);
-}
-.sideTabs [role='tab'][aria-selected='true'] small {
-  color: var(--muted);
-}
-.sideTabs [role='tab']:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
 .sideFold {
   align-self: center;
   width: 32px;
@@ -4944,33 +4758,6 @@ button.jpRow:hover {
 .shell[data-side='left'] .sideRail .dockRail svg {
   transform: rotate(-90deg);
 }
-.railTab {
-  display: grid;
-  justify-items: center;
-  gap: 6px;
-  padding: 10px 8px;
-  border: none;
-  border-radius: 10px;
-  background: transparent;
-  color: #aeb8cb;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-}
-.railTab span {
-  color: #e7ecf5;
-  font-size: 11px;
-  line-height: 1.2;
-  text-align: center;
-  word-break: keep-all;
-}
-.railTab:hover:not(:disabled),
-.railTab[aria-current='true'] {
-  background: rgba(255, 255, 255, 0.1);
-}
-.railTab:disabled {
-  opacity: 0.4;
-}
 
 /* --- PC window: the panel floats on one side, the 3D view fills the rest --------------- */
 @media (min-width: 1000px) and (min-height: 600px) {
@@ -5060,9 +4847,6 @@ button.jpRow:hover {
   }
   .goal {
     flex-basis: 76px;
-  }
-  .sideTabs [role='tab'] b {
-    font-size: 13.5px;
   }
   .topBar .brand b {
     font-size: 15px;
@@ -5772,23 +5556,6 @@ button.jpRow:hover {
   color: #fff;
 }
 /* [?] beside the step choice: shows the how-to lines. */
-.app .helpBtn {
-  width: 26px;
-  height: 26px;
-  margin-left: 6px;
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  background: #fff;
-  color: var(--muted);
-  font-weight: 900;
-  font-size: 13px;
-  cursor: pointer;
-}
-.app .helpBtn[aria-pressed='true'] {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-}
 
 /* ===========================================================================
  * Control room (2026-10): the work panel in the same dark glass as the monitor over the 3D view.
@@ -5942,7 +5709,7 @@ button.jpRow:hover {
   line-height: 1.2;
 }
 .sideModel b {
-  font-size: 13.5px;
+  font-size: 17px;
   font-weight: 800;
   white-space: nowrap;
   overflow: hidden;
@@ -6137,129 +5904,16 @@ button.jpRow:hover {
   place-items: center;
 }
 /* tabs: one row, icon + name + level */
-.app .side .sideTabs {
-  display: grid;
-  grid-template-columns: 2fr 3fr;
-  gap: 6px;
-  margin: 0 10px 8px;
-  padding: 4px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-}
-.app .side .sideTabs [role='tab'] {
-  display: grid;
-  grid-template-columns: auto auto;
-  align-items: center;
-  align-content: center;
-  justify-content: center;
-  gap: 1px 5px;
-  min-height: 0;
-  height: 44px;
-  padding: 0 4px;
-  border: 0;
-  border-radius: 9px;
-  background: transparent;
-  color: #8696ae;
-  position: relative;
-  box-shadow: none;
-}
-.app .side .sideTabs [role='tab'] b {
-  font-size: 12.5px;
-  font-weight: 800;
-  white-space: nowrap;
-}
-.app .side .sideTabs [role='tab'] small {
-  grid-column: 1 / -1;
-  justify-self: center;
-  font-size: 9.5px;
-  font-weight: 700;
-  color: #5f6f87;
-  line-height: 1.2;
-}
-.app .side .sideTabs [role='tab']:hover {
-  color: #dfe7f3;
-  background: rgba(255, 255, 255, 0.05);
-}
-.app .side .sideTabs [role='tab'][aria-selected='true'] {
-  color: #fff;
-  background: linear-gradient(180deg, rgba(91, 140, 255, 0.32), rgba(91, 140, 255, 0.14));
-  box-shadow:
-    inset 0 0 0 1px rgba(120, 160, 255, 0.55),
-    0 0 14px rgba(91, 140, 255, 0.16);
-}
-.app .side .sideTabs [role='tab'][aria-selected='true'] small {
-  color: #a9c2ff;
-}
-.app .side .sideTabs [role='tab'][aria-selected='true']::after {
-  content: '';
-  position: absolute;
-  left: 28%;
-  right: 28%;
-  bottom: 2px;
-  height: 2px;
-  border-radius: 2px;
-  background: #8fb2ff;
-  box-shadow: 0 0 6px #8fb2ff;
-}
 /* sections */
 .app .side .dockScroll {
   padding: 0 10px 10px;
   gap: 8px;
   background: transparent;
 }
-.app .side .dockSection {
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.035);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  box-shadow: none;
-}
-.app .side .dockSection[data-open='true'] {
-  border-color: rgba(120, 160, 255, 0.22);
-}
 /* Closed sections stay in sight at the bottom, above the pose row (기본 자세 · 일자로 펴기 · 정지,
    54 px), while an open one scrolls under them: on a 768 px laptop screen the jog alone fills the
    panel, and 도구 · 자세 would be out of sight. */
-.app .side .dockSection[data-open='false']:nth-last-child(2),
-.app .side .dockSection[data-open='false']:nth-last-child(3) {
-  position: sticky;
-  z-index: 2;
-  background: #161c25;
-  /* a solid band under each fills the 8 px gap below it, so nothing shows through */
-  box-shadow:
-    0 9px 0 #0e141c,
-    0 -10px 18px rgba(14, 20, 28, 0.85);
-}
-.app .side .dockSection[data-open='false']:nth-last-child(2) {
-  bottom: 62px;
-}
-.app .side .dockSection[data-open='false']:nth-last-child(3) {
-  bottom: 112px;
-}
 /* closed and pinned there: one slim line each, so the open jog keeps the room */
-.app .side .dockSection[data-open='false']:is(:nth-last-child(2), :nth-last-child(3)) .dockToggle {
-  padding-top: 5px;
-  padding-bottom: 5px;
-}
-.app .side .dockSection[data-open='false']:is(:nth-last-child(2), :nth-last-child(3)) .dockIcon {
-  width: 24px;
-  height: 24px;
-  padding: 4px;
-}
-.app .side .dockHead {
-  background: transparent;
-  border: 0;
-  padding: 0;
-}
-.app .side .dockToggle {
-  padding: 10px 10px 10px 12px;
-  gap: 9px;
-  color: var(--ink);
-  font-size: 14px;
-  font-weight: 800;
-  background: transparent;
-}
 .app .side .dockIcon {
   width: 28px;
   height: 28px;
@@ -6268,27 +5922,6 @@ button.jpRow:hover {
   background: rgba(91, 140, 255, 0.14);
   color: #8fb2ff;
   flex: none;
-}
-.dockSub {
-  font-size: 10.5px;
-  font-weight: 600;
-  color: #6f7f97;
-  margin-left: -3px;
-}
-.dockChip {
-  font-size: 10.5px;
-  font-weight: 800;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  color: #b9c6d8;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  white-space: nowrap;
-}
-.dockChip[data-tone='blue'] {
-  background: rgba(91, 140, 255, 0.14);
-  color: #a9c2ff;
-  border-color: rgba(91, 140, 255, 0.3);
 }
 .app .side .dockAside {
   display: flex;
@@ -6397,25 +6030,6 @@ button.jpRow:hover {
 }
 .app .side .stepSeg i {
   color: #5f6f87;
-}
-.app .side .helpBtn {
-  width: 30px;
-  height: 30px;
-  margin: 0;
-  align-self: center;
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: #8696ae;
-}
-.app .side .helpBtn[aria-pressed='true'] {
-  background: rgba(91, 140, 255, 0.3);
-  border-color: rgba(120, 160, 255, 0.55);
-  color: #fff;
-}
-.app .side .jogHint {
-  background: rgba(91, 140, 255, 0.08);
-  border-color: rgba(91, 140, 255, 0.2);
-  color: #b9c6d8;
 }
 .app .side .speedRow {
   color: #8696ae;
@@ -6696,14 +6310,6 @@ button.jpRow:hover {
 }
 .app .side .axisRow .axisValue {
   background: rgba(255, 255, 255, 0.03);
-}
-.app .side .slideJog {
-  background: #070b11;
-  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.07);
-}
-.app .side .slideKnob {
-  background: radial-gradient(circle at 40% 35%, #8fb2ff, #4a74f5 70%);
-  box-shadow: 0 0 10px rgba(111, 155, 255, 0.6), inset 0 -2px 0 rgba(0, 0, 0, 0.2);
 }
 /* the practice needs a tool that is not on: one amber line with [끼우기] */
 .app .missionCard:has(.missionNeed) {
@@ -7134,7 +6740,7 @@ button.jpRow:hover {
   position: absolute;
   z-index: 15;
   /* Right of the left menu bar (LeftRail). */
-  left: calc(var(--inset-l, 12px) + 74px);
+  left: var(--inset-l, 12px);
   top: calc(var(--top, 0px) + 12px);
   width: 318px;
 }
@@ -7336,9 +6942,6 @@ button.jpRow:hover {
   background: transparent;
   color: #8696ae;
   border-color: rgba(255, 255, 255, 0.08);
-}
-.app .side .poseListHead {
-  color: #e8eef8;
 }
 
 /* ===========================================================================
@@ -7648,20 +7251,20 @@ button.jpRow:hover {
   opacity: 0.45;
   cursor: default;
 }
-/* The left column over the 3D view: the left menu (76px), plus the mini arm and its chips while shown.
+/* The left column over the 3D view right of the menu bar: the mini arm and its chips while shown.
    Bars and cards centred on the free view use it. */
 .shell {
-  --left-col: 76px;
+  --left-col: 0px;
 }
 .shell[data-mini='on'] {
-  --left-col: 332px;
+  --left-col: 268px;
 }
 /* --- ▶ 데모 caption bar (stage/DemoCaption.tsx), centred on the free view ------------------- */
 .demoBar {
   position: absolute;
   z-index: 12;
   bottom: 14px;
-  left: calc((var(--inset-l, 12px) + var(--left-col, 76px) + 100% - var(--inset-r, 12px) - 60px) / 2);
+  left: calc((var(--inset-l, 12px) + var(--left-col, 0px) + 100% - var(--inset-r, 12px) - 60px) / 2);
   transform: translateX(-50%);
   display: flex;
   align-items: center;
@@ -8159,7 +7762,7 @@ button.jpRow:hover {
   position: absolute;
   z-index: 12;
   bottom: 14px;
-  left: calc((var(--inset-l, 12px) + var(--left-col, 76px) + 100% - var(--inset-r, 12px) - 60px) / 2);
+  left: calc((var(--inset-l, 12px) + var(--left-col, 0px) + 100% - var(--inset-r, 12px) - 60px) / 2);
   transform: translateX(-50%);
   width: min(760px, calc(100% - var(--inset-l, 12px) - var(--inset-r, 12px) - 420px));
   min-width: 460px;
@@ -8305,7 +7908,7 @@ button.jpRow:hover {
   position: absolute;
   z-index: 14;
   top: calc(var(--top, 0px) + 14px);
-  left: calc((var(--inset-l, 12px) + var(--left-col, 76px) + 100% - var(--inset-r, 12px) - 60px) / 2);
+  left: calc((var(--inset-l, 12px) + var(--left-col, 0px) + 100% - var(--inset-r, 12px) - 60px) / 2);
   transform: translateX(-50%);
   display: flex;
   align-items: center;
@@ -8769,10 +8372,6 @@ button.jpRow:hover {
     height: 34px;
     font-size: 18px;
   }
-  .app .helpBtn {
-    min-width: 36px;
-    min-height: 36px;
-  }
   .camClose {
     min-width: 36px;
     min-height: 36px;
@@ -8820,25 +8419,19 @@ button.jpRow:hover {
 }
 
 /* Panel tabs in two groups: 공정 · 티칭 (수동 제어, 공정 짜기) and 코딩 (블록 · Python · ROS 2). */
-.tabGroup {
-  min-width: 0;
+
+/* The menu bar down the left edge (stage/LeftRail): everything on the 3D view starts right of it. */
+.shell {
+  --bar-w: 68px;
+}
+.shell,
+.shell[data-dock] {
+  --inset-l: calc(var(--bar-w) + var(--gap, 12px));
+}
+
+/* One screen of the side panel (조그 · 도구 · 자세 · 영점), opened from the menu bar. */
+.screen {
   display: grid;
-  gap: 2px;
-}
-.tabGroup + .tabGroup {
-  padding-left: 6px;
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
-}
-.tabGroupName {
-  padding-left: 6px;
-  color: #6f7d94;
-  font-size: 10.5px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-}
-.tabGroupTabs {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(0, 1fr);
-  gap: 3px;
+  gap: 10px;
+  align-content: start;
 }

@@ -25,10 +25,14 @@ const hold = (on) => page.evaluate((v) => (window.__hold = v), on);
 const btn = (name, exact = false) => page.getByRole('button', { name, exact });
 const tab = (name) => page.getByRole('tab', { name });
 const screenTab = (name) => page.locator('nav[aria-label="화면"]').getByRole('tab', { name });
-const dockSection = (title) => page.locator(`[class*=dockSection][aria-label="${title}"]`);
-const openSection = async (title) => {
-  const head = dockSection(title).locator('button[aria-expanded]').first();
-  if ((await head.getAttribute('aria-expanded')) !== 'true') await head.click();
+// The menu bar down the left edge: every screen (조그 · 도구 · 자세 · 공정 · languages) and view window.
+const rail = page.locator('nav[aria-label="메뉴"]');
+const railBtn = (name) => rail.getByRole('button', { name: new RegExp(`^${name}`) });
+/** The side panel's one screen (opened from the menu bar). */
+const screen = () => page.locator('aside[aria-label="작업 패널"] [role=region]');
+const openScreen = async (name) => {
+  const b = railBtn(name);
+  if ((await b.getAttribute('aria-pressed')) !== 'true') await b.click();
   await settle(page, 1200);
 };
 const visible = (loc) => loc.first().isVisible().catch(() => false);
@@ -96,9 +100,6 @@ await settle(page, 12000);
 
 // 2 · 화면 둘러보기
 const top = page.locator('header[data-panel=topbar]');
-// The left menu over the 3D view: 실습 환경 · 물건 · 카메라 · 모니터, one window at a time.
-const rail = page.locator('nav[aria-label="보기 · 환경 메뉴"]');
-const railBtn = (name) => rail.getByRole('button', { name: new RegExp(`^${name}`) });
 if (want('overview'))
   await save(page, out('04-overview.jpg'), {
     marks: [
@@ -118,16 +119,14 @@ if (want('overview'))
     ],
   });
 if (want('topbar')) await save(page, out('05-topbar.png'), { crop: top, pad: 6 });
-const panelTabs = page.locator('nav[aria-label="패널 모드"]');
-if (want('tabs')) await save(page, out('00-tabs.png'), { crop: panelTabs, pad: 8 });
+if (want('tabs')) await save(page, out('00-tabs.png'), { crop: rail, pad: 8 });
 if (want('panel-head'))
   await save(page, out('07-panel-head.png'), {
-    crop: [page.locator('[class*=sideHeader]'), panelTabs],
+    crop: page.locator('[class*=sideHeader]'),
     marks: [
       { at: page.locator('[class*=sideModel]'), n: 1, pos: 'tl' },
       { at: page.locator('[class*=lightsBtn]'), n: 2, pos: 'tl' },
       { at: page.locator('button[aria-label="작업 패널 접기"]'), n: 3, pos: 'tr' },
-      { at: panelTabs, n: 4, pos: 'bl' },
     ],
   });
 if (want('settings')) {
@@ -175,8 +174,8 @@ if (want('monitor'))
   });
 
 // 4 · 수동 제어 (조그: 좌표가 먼저, 관절은 두 번째)
-const jog = dockSection('조그');
-await openSection('조그');
+await openScreen('조그');
+const jog = screen();
 await jog.locator('[class*=frameSeg] button').nth(1).click();
 await settle(page, 800);
 if (want('jog'))
@@ -186,11 +185,10 @@ if (want('jog'))
     marks: [
       { at: jog.locator('[class*=frameSeg]'), n: 1, pos: 'l' },
       { at: jog.locator('[class*=stepSeg]'), n: 2, pos: 'l' },
-      { at: jog.locator('button[aria-label="쓰는 방법"]'), n: 3, pos: 'tr' },
-      { at: jog.locator('[class*=speedRow]'), n: 4, pos: 'l' },
-      { at: jog.locator('[class*=jpSel]'), n: 5, pos: 'l' },
-      { at: jog.locator('[class*=jpSel] [class*=jpValue]'), n: 6, pos: 'tr' },
-      { at: jog.locator('button[class*=jpRow]').first(), n: 7, pos: 'l' },
+      { at: jog.locator('[class*=speedRow]'), n: 3, pos: 'l' },
+      { at: jog.locator('[class*=jpSel]'), n: 4, pos: 'l' },
+      { at: jog.locator('[class*=jpSel] [class*=jpValue]'), n: 5, pos: 'tr' },
+      { at: jog.locator('button[class*=jpRow]').first(), n: 6, pos: 'l' },
     ],
   });
 if (want('self')) {
@@ -224,23 +222,23 @@ if (want('jog-xyz')) {
   await jog.locator('[class*=frameSeg] button').nth(1).click();
   await settle(page, 800);
 }
-await openSection('도구 · 액세서리');
+await openScreen('도구');
 await page.locator('button[title^="흡착 펌프"]').first().click();
 await settle(page, 4000);
 if (want('tools')) {
   // The always-there buttons at the foot of the panel would cover the accessories: out of the way for this one.
   const off = await page.addStyleTag({ content: '[class*=poseDock]{display:none!important}' });
-  const parts = dockSection('도구 · 액세서리');
+  const parts = screen();
   await parts.locator('section[aria-label="도구 · 액세서리"]').evaluate((e) => e.scrollIntoView({ block: 'end' }));
   await settle(page, 800);
   await save(page, out('17-tools.png'), { crop: [parts.locator('[class*=toolRow]'), parts.locator('section[aria-label="도구 · 액세서리"]')], pad: 10 });
   await off.evaluate((e) => e.remove());
 }
-await openSection('자세 저장 · 불러오기');
+await openScreen('자세');
 await hold(true);
 await btn(/지금 자세 저장하기/).click();
 await settle(page, 1500);
-if (want('poses')) await save(page, out('18-poses.png'), { crop: [dockSection('자세 저장 · 불러오기'), page.locator('[class*=poseDock]')], pad: 10 });
+if (want('poses')) await save(page, out('18-poses.png'), { crop: [screen(), page.locator('[class*=poseDock]')], pad: 10 });
 if (want('notices')) {
   await page.locator('[class*=noticeLog]').first().click();
   await settle(page, 1500);
@@ -249,7 +247,7 @@ if (want('notices')) {
 }
 await hold(false);
 await page.locator('button[aria-label="알림 닫기"]').click().catch(() => {});
-await openSection('조그');
+await openScreen('조그');
 if (want('status')) {
   await page.locator('[class*=lightsBtn]').click();
   await settle(page, 1200);
@@ -270,11 +268,11 @@ if (want('leftrail'))
   await save(page, out('32-leftrail.png'), {
     crop: rail,
     pad: 30,
-    marks: ['실습 환경', '물건', '카메라', '모니터'].map((name, i) => ({ at: railBtn(name), n: i + 1, pos: 'r', box: false })),
+    marks: ['환경', '물건', '카메라', '모니터'].map((name, i) => ({ at: railBtn(name), n: i + 1, pos: 'r', box: false })),
   });
 const desk = page.locator('section[aria-label="실습 환경"]');
 if (want('envpanel') || want('objects')) {
-  await railBtn('실습 환경').click();
+  await railBtn('환경').click();
   await settle(page, 2500);
   if (want('envpanel')) await save(page, out('33-envpanel.jpg'), { crop: desk, pad: 10 });
   await desk.getByRole('tab', { name: /^물건/ }).click();
@@ -310,7 +308,7 @@ if (want('envpanel') || want('objects')) {
 }
 
 // 6 · 블록 코딩
-await tab(/블록 코딩/).click();
+await railBtn('블록').click();
 await settle(page, 3000);
 const runBtn = () => page.locator('[data-panel=run]').getByRole('button', { name: '시뮬레이션', exact: true });
 if (want('blocks'))
@@ -368,7 +366,7 @@ if (want('run')) {
 
 // 7 · Python · ROS 2
 if (want('python')) {
-  await tab(/Python/).click();
+  await railBtn('Python').click();
   await settle(page, 3000);
   await save(page, out('27-python.jpg'), {
     marks: [
@@ -385,7 +383,7 @@ if (want('python')) {
   await page.locator('[class*=resultClose]').click().catch(() => {});
 }
 if (want('ros')) {
-  await tab(/ROS 2/).click();
+  await railBtn('ROS 2').click();
   await settle(page, 3000);
   await runBtn().click();
   await page.locator('[data-panel=run] [aria-label="통과"]').waitFor({ timeout: 300000 }).catch(() => console.log('  (ROS 2 통과 표시가 안 나왔어요)'));
@@ -400,7 +398,7 @@ if (want('ros')) {
   });
 }
 if (await visible(page.locator('button[aria-label="다시 보기 닫기"]'))) await page.locator('button[aria-label="다시 보기 닫기"]').click();
-await tab(/블록 코딩/).click();
+await railBtn('블록').click();
 await settle(page, 1500);
 
 // 8 · 라이브러리
@@ -455,7 +453,7 @@ if (want('tasks') || want('checks') || want('library')) {
 
 // 9 · AI 키트 환경 · 카메라
 if (want('kit') || want('camera')) {
-  await railBtn('실습 환경').click();
+  await railBtn('환경').click();
   await settle(page, 1500);
   await desk.locator('button[aria-pressed]').filter({ hasText: 'AI 키트' }).first().click();
   await settle(page, 2000);

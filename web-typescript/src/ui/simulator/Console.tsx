@@ -84,7 +84,7 @@ import BlockEditor from './editors/BlockEditor';
 import CameraViews, { analyse, type CameraView, type CameraViewsHandle, type Detection } from './stage/CameraViews';
 import CodeEditor from './editors/CodeEditor';
 import ControlPanel, { type Axis, type Frame } from './control/ControlPanel';
-import LeftRail, { type RailItem } from './stage/LeftRail';
+import LeftRail, { type BarItem, type RailItem } from './stage/LeftRail';
 import MiniArmLabels from './stage/MiniArmLabels';
 import { createMonitor, type MiniRect } from './stage/MiniArm';
 import DeskPanel from './control/DeskPanel';
@@ -118,7 +118,6 @@ import { LEVEL_TAB, TaskChip } from './tasks/TaskChip';
 import Library, { type LibrarySection } from './pages/Library';
 import Archive, { type ArchiveSection } from './pages/Archive';
 import ZeroPanel from './control/ZeroPanel';
-import DockSection from './DockSection';
 import Icon from './Icon';
 import RobotStatus from './control/RobotStatus';
 import StatusLights from './control/StatusLights';
@@ -142,8 +141,10 @@ const TAB_KEY = 'robot-console-tab';
 /** The 공정 짜기 process being made (its project-file text). */
 const PROCESS_KEY = 'robot-console-process';
 /** The mini arm's corner, px: from the left menu bar's left edge, and its size. */
-const MINI = { left: 70, bottom: 64, width: 250, height: 300 };
-const SIDE_KEY = 'robot-console-side';
+/** The menu bar down the left edge (stage/LeftRail), px; the 3D view's things start right of it. */
+const BAR_W = 68;
+// Left of the arm's joints sit their angle chips (about 80 px): room for them right of the bar.
+const MINI = { left: BAR_W + 24, bottom: 64, width: 250, height: 300 };
 const QUALITY_KEY = 'robot-console-quality';
 const LEVEL_KEY = 'robot-console-level';
 const DISPLAY_KEY = 'robot-console-display';
@@ -164,25 +165,7 @@ const CAM_ROLES_KEY = 'robot-console-cam-roles';
 
 /** What the side panel shows: direct control, or the editor of one language. */
 type PanelTab = 'direct' | 'process' | Level;
-const PANEL_TABS: { id: PanelTab; name: string; sub: string; icon: string }[] = [
-  { id: 'direct', name: '수동 제어', sub: '조그', icon: 'move' },
-  { id: 'process', name: '공정 짜기', sub: '점 · 순서', icon: 'flag' },
-  { id: 'basic', name: LEVEL_TAB.basic.name, sub: LEVEL_TAB.basic.sub, icon: 'grid' },
-  { id: 'python', name: LEVEL_TAB.python.name, sub: LEVEL_TAB.python.sub, icon: 'code' },
-  { id: 'ros', name: LEVEL_TAB.ros.name, sub: LEVEL_TAB.ros.sub, icon: 'joints' },
-];
-/** The tabs in two groups: teaching a process on the arm, and writing a program. */
-const TAB_GROUPS: { name: string; ids: PanelTab[] }[] = [
-  { name: '공정 · 티칭', ids: ['direct', 'process'] },
-  { name: '코딩', ids: ['basic', 'python', 'ros'] },
-];
 /** A picture of each arm family (rendered from its 3D model, tools/build/part-thumbs.mjs). */
-const MODEL_PIC: Record<string, string> = {
-  mycobot280: '/brand/intro/mycobot280-rdkx5.png',
-  mycobot320: '/brand/intro/mycobot320-pi.png',
-  mecharm270: '/brand/intro/mecharm270-pi.png',
-  mypalletizer260: '/brand/intro/mypalletizer260-pi.png',
-};
 const FIRST_LOG: Record<Level, string> = {
   basic: '블록을 쌓고 [시뮬레이션]을 눌러 보세요.',
   python: '파이썬 코드를 고치고 [시뮬레이션]을 눌러 보세요. 통과한 코드는 로봇에서 그대로 돌아가요.',
@@ -273,18 +256,16 @@ export default function Console() {
   /** Each joint's warning and where the mini arm's joints are, written by the 3D view every frame. */
   const monitor = useMemo(() => ({ current: createMonitor() }), []);
   const [deskSel, setDeskSel] = useState<string | null>(null);
-  // 직접 제어: one section open at a time (the one last opened), kept on this PC.
+  // 수동 제어 screens from the menu bar (조그 · 도구 · 자세): the one last opened, kept on this PC.
   const [section, setSection] = useState<string>('jog');
-  const openSection = (id: string) =>
-    setSection((s) => {
-      const next = s === id ? '' : id;
-      try {
-        localStorage.setItem(SECTION_KEY, next);
-      } catch {
-        /* private window */
-      }
-      return next;
-    });
+  const openSection = (id: string) => {
+    setSection(id);
+    try {
+      localStorage.setItem(SECTION_KEY, id);
+    } catch {
+      /* private window */
+    }
+  };
   const [practiceId, setPracticeId] = useState<PracticeId>('joints');
   const practice = practiceFor(level, theme, practiceId);
   /** Every model opens with no tool on; a practice that needs one asks for it ([끼우기]). */
@@ -298,8 +279,8 @@ export default function Console() {
   /** The side panel's tab: direct control first, then one tab per language. */
   const [tab, setTab] = useState<PanelTab>('direct');
   const [proc, setProc] = useState<Process>(() => emptyProcess());
-  /** The side panel on the right (default) or the left of the window. */
-  const [side, setSide] = useState<'right' | 'left'>('right');
+  /** The side panel stays on the right: the menu bar holds the left edge. */
+  const side = 'right';
   /** Each language keeps its own program while another tab is open. */
   const kept = useRef<Partial<Record<Level, { theme: Theme; id: PracticeId; code: string }>>>({});
   /** The 라이브러리 and 자료실 pages: their open section. */
@@ -571,7 +552,7 @@ export default function Console() {
     const v = vp.getBoundingClientRect();
     const p = panel.getBoundingClientRect();
     const onRight = p.left > v.left + v.width / 2;
-    let l = onRight ? 0 : Math.max(0, p.right - v.left + 12);
+    let l = onRight ? BAR_W + 12 : Math.max(BAR_W + 12, p.right - v.left + 12);
     // The left menu bar and the mini arm beside it: the robot is framed to their right.
     if (miniShown.current) l = Math.max(l, (onRight ? 12 : l) + MINI.left + MINI.width + 8);
     const r = onRight ? Math.max(0, v.right - p.left + 12) : 0;
@@ -661,7 +642,6 @@ export default function Console() {
       const saved = localStorage.getItem(QUALITY_KEY);
       if (saved === 'normal' || (!saved && isTouch()) || (navigator.hardwareConcurrency ?? 8) <= 4) setQuality('normal');
       if (localStorage.getItem(DOCK_KEY) === '0') setDockOpen(false);
-      if (localStorage.getItem(SIDE_KEY) === 'left') setSide('left');
       const roles = JSON.parse(localStorage.getItem(CAM_ROLES_KEY) ?? 'null') as Record<string, unknown> | null;
       if (roles && typeof roles === 'object') {
         setCamRoles(Object.fromEntries(Object.entries(roles).filter(([, r]) => r === 'top' || r === 'hand')) as Record<number, CameraId>);
@@ -1758,14 +1738,6 @@ export default function Console() {
     }
     if (m.on !== mount.on) addLog('info', m.on ? `받침대(G 베이스)를 달았어요. 로봇이 책상보다 ${m.mm}mm 높아요. 그만큼 더 아래까지 닿아요.` : '받침대를 뗐어요. 로봇이 책상 바로 위에 있어요.');
   };
-  const chooseSide = (s: 'right' | 'left') => {
-    setSide(s);
-    try {
-      localStorage.setItem(SIDE_KEY, s);
-    } catch {
-      /* this session only */
-    }
-  };
 
   const chooseQuality = (q: 'high' | 'normal') => {
     setQuality(q);
@@ -2499,11 +2471,6 @@ export default function Console() {
   /** The fitted tool's own buttons (direct control). */
   const toolRow = (
     <div className={css.toolRow}>
-      <span className={css.subHead}>
-        <span>{EFFECTOR_BY_ID[effector].name}</span>
-        {robotMode && kind === 'suction' && <span className={css.subNote}>실제 펌프도 켜고 꺼요</span>}
-        {robotMode && kind === 'grip' && <span className={css.subNote}>실제 그리퍼도 열고 닫아요</span>}
-      </span>
       <div className={css.poseRow}>
         {kind === 'grip' && (
           <>
@@ -2542,7 +2509,6 @@ export default function Console() {
             </button>
           </>
         )}
-        {kind === 'none' && <span className={css.subNote}>도구 없이 끝 플랜지만 있어요. 아래에서 도구를 고르면 그 도구의 버튼이 나와요.</span>}
         {kind === 'press' && (
           <button type="button" className={css.jogWide} disabled={busy} onClick={() => toolStep({ type: 'push', line: 0 })}>
             누르기
@@ -2573,12 +2539,6 @@ export default function Console() {
   const poseNames = Object.keys(poses);
   const recordRow = (
     <div className={css.poseList}>
-      <div className={css.poseListHead}>
-        <span>
-          <b>내 자세</b>
-          <small>지금 팔의 자세를 저장했다가, 누르면 그 자세로 다시 가요 (이 PC 에 남아요)</small>
-        </span>
-      </div>
       <button className={css.jogWide} type="button" disabled={busy} onClick={recordPose}>
         <Icon name="save" size={15} /> 지금 자세 저장하기
       </button>
@@ -2630,7 +2590,7 @@ export default function Console() {
         ? { text: '실제 로봇 연결', tone: 'real' }
         : { text: '정상 · 시뮬레이션', tone: 'ok' };
 
-  /** The mini arm's corner: right of the left menu bar (and of the side panel when it is on the left), above the position line. */
+  /** The mini arm's corner: right of the left menu bar, above the position line. */
   const miniPlace = useMemo<() => MiniRect>(
     () => () => {
       const vp = shellRef.current?.querySelector<HTMLElement>('[data-viewport]');
@@ -2675,9 +2635,6 @@ export default function Console() {
       onTipStep={tipStep}
       onJointJog={(i, dir) => startJog({ joint: i, dir })}
       onTipJog={(axis, dir, scale) => startJog({ axis, dir, scale })}
-      onJogScale={(scale) => {
-        if (jog.current) jog.current.scale = scale;
-      }}
       onJogStop={() => endJog()}
       selected={jogJoint}
       onSelect={setJogJoint}
@@ -2686,6 +2643,69 @@ export default function Console() {
       onHold={(on) => holdJoints('panel', on)}
     />
   );
+
+  /* --- the menu bar: work screens in the side panel, view windows next to the bar ------------ */
+  const workScreen = zeroMode ? 'zero' : shownTab === 'direct' ? section || 'jog' : shownTab;
+  const openWork = (id: string) => {
+    if (dockShown && workScreen === id) return toggleDock();
+    if (id === 'zero') {
+      setZeroMode(true);
+      // The 0° pose stands the arm straight up: frame all of it.
+      stageApi.current?.view('tall');
+      return chooseTab('direct');
+    }
+    if (zeroMode) {
+      setRingJoint(null);
+      setZeroMode(false);
+    }
+    if (id === 'jog' || id === 'parts' || id === 'pose') {
+      openSection(id);
+      return openTab('direct');
+    }
+    openTab(id as PanelTab);
+  };
+  const work = (id: string, label: string, icon: string, title: string, free = false): BarItem => ({
+    id,
+    label,
+    icon,
+    title,
+    on: dockShown && workScreen === id,
+    disabled: busy && !free && workScreen !== id,
+    onClick: () => openWork(id),
+  });
+  const toggleRail = (item: RailItem) => {
+    const open = railOpen ?? (camOpen ? 'camera' : null);
+    const next = open === item ? null : item;
+    if (next === 'camera') {
+      setRailOpen(null);
+      setCamOpen(true);
+      return;
+    }
+    if (next === null && !railOpen) setCamOpen(false);
+    if (next !== null) setCamOpen(false);
+    setRailOpen(next);
+  };
+  const viewItem = (id: RailItem, label: string, icon: string, title: string, badge?: string): BarItem => ({
+    id,
+    label,
+    icon,
+    title,
+    badge,
+    on: id === 'camera' ? camOpen && !railOpen : railOpen === id,
+    onClick: () => toggleRail(id),
+  });
+  const barGroups: BarItem[][] = [
+    [work('jog', '조그', 'move', '조그: 좌표 · 관절로 움직이기', true), work('parts', '도구', 'tool', '도구 · 액세서리', true), work('pose', '자세', 'home', '자세 저장 · 불러오기', true), work('process', '공정', 'flag', '공정 짜기: 점 · 순서')],
+    [work('basic', '블록', 'grid', `블록 코딩 (${LEVEL_TAB.basic.sub})`), work('python', 'Python', 'code', `Python (${LEVEL_TAB.python.sub})`), work('ros', 'ROS 2', 'joints', `ROS 2 (${LEVEL_TAB.ros.sub})`)],
+    [
+      viewItem('env', '환경', 'scene', '실습 환경 · 장면마다 ▶ 데모'),
+      ...(theme === 'kit' ? [] : [viewItem('objects', '물건', 'box', '책상에 물건 놓기', desk.objects.length ? String(desk.objects.length) : undefined)]),
+      ...(camAvailable ? [viewItem('camera', '카메라', 'camera', '카메라 화면 · 영상 처리')] : []),
+      viewItem('monitor', '모니터', 'chart', '관절 · 손끝 · 그래프 · 부하'),
+    ],
+  ];
+  const barFoot: BarItem[] = [{ ...work('zero', '영점', 'zero', robotMode ? '영점 맞추기' : '로봇을 연결하면 영점을 맞춰요'), disabled: !robotMode || (busy && !zeroMode) }];
+  const SCREEN_TITLE: Record<string, string> = { jog: '조그', parts: '도구', pose: '자세', zero: '영점', process: '공정', basic: LEVEL_TAB.basic.name, python: LEVEL_TAB.python.name, ros: LEVEL_TAB.ros.name };
 
   const zeroPanel = (
     <ZeroPanel
@@ -3093,14 +3113,6 @@ export default function Console() {
                   <small>교실 학급 서버에 선생님 · 학생 계정으로 들어가요</small>
                 </button>
               )}
-              <small className={css.menuHead}>패널 위치</small>
-              <span className={css.menuSeg} role="group" aria-label="패널 위치">
-                {(['left', 'right'] as const).map((s) => (
-                  <button key={s} type="button" aria-pressed={side === s} onClick={() => chooseSide(s)}>
-                    {s === 'left' ? '왼쪽' : '오른쪽'}
-                  </button>
-                ))}
-              </span>
             </>
           )}
           status={
@@ -3358,26 +3370,7 @@ export default function Console() {
               )}
               {loaded && view === 'sim' && display.mini && !railOpen && <MiniArmLabels monitor={monitor} live={live} tipOf={tipOf} side="right" />}
               {loaded && view === 'sim' && (
-                <LeftRail
-                  side="right"
-                  open={railOpen ?? (camOpen ? 'camera' : null)}
-                  onOpen={(item) => {
-                    if (item === 'camera') {
-                      setRailOpen(null);
-                      setCamOpen(true);
-                      return;
-                    }
-                    if (item === null && !railOpen) setCamOpen(false);
-                    if (item !== null) setCamOpen(false);
-                    setRailOpen(item);
-                  }}
-                  entries={[
-                    { id: 'env', label: '실습 환경', icon: 'scene', title: '실습 환경 고르기 · 장면마다 ▶ 데모 · 매트 · 물리' },
-                    ...(theme === 'kit' ? [] : [{ id: 'objects' as const, label: '물건', icon: 'box', title: '책상에 물건 놓기 · 색 · 크기 · 무게', badge: desk.objects.length ? String(desk.objects.length) : undefined }]),
-                    ...(camAvailable ? [{ id: 'camera' as const, label: '카메라', icon: 'camera', title: '카메라 화면 · 영상 처리' }] : []),
-                    { id: 'monitor', label: '모니터', icon: 'chart', title: '관절 다이얼 · 손끝 · 그래프 · 부하 자세히' },
-                  ]}
-                >
+                <LeftRail groups={barGroups} foot={barFoot} sheetOpen={railOpen !== null} onCloseSheet={() => setRailOpen(null)}>
                   {(railOpen === 'env' || railOpen === 'objects') && (
                     <DeskPanel
                       key={railOpen}
@@ -3505,11 +3498,11 @@ export default function Console() {
               <>
                 <div className={css.sideHeader}>
                   <button type="button" className={css.sideModel} onClick={() => setPicking(true)} disabled={busy || !MODEL_CHOICE} title={MODEL_CHOICE ? '로봇 모델 바꾸기' : undefined}>
-                    {/* eslint-disable-next-line @next/next/no-img-element -- a fixed picture, also in the robot's static export */}
-                    <img src={MODEL_PIC[arm.family]} alt="" width={36} height={36} />
                     <span>
-                      <b>{arm.name}</b>
-                      <small>{modelById(modelNow)?.short?.replace(arm.name, '').replace(/^\s*·\s*/, '') || `${arm.dof}축`} · {arm.dof}축</small>
+                      <b>{SCREEN_TITLE[workScreen] ?? ''}</b>
+                      <small>
+                        {arm.name} · {arm.dof}축
+                      </small>
                     </span>
                     {MODEL_CHOICE && <em>바꾸기</em>}
                   </button>
@@ -3533,85 +3526,19 @@ export default function Console() {
                     <Icon name="chevron" size={16} />
                   </button>
                 </div>
-                <nav className={css.sideTabs} role="tablist" aria-label="패널 모드">
-                  {TAB_GROUPS.map((g) => (
-                    <div key={g.name} className={css.tabGroup} role="presentation">
-                      <span className={css.tabGroupName}>{g.name}</span>
-                      <div className={css.tabGroupTabs} role="presentation">
-                        {PANEL_TABS.filter((t) => g.ids.includes(t.id)).map((t) => (
-                          <button
-                            key={t.id}
-                            type="button"
-                            role="tab"
-                            aria-selected={shownTab === t.id}
-                            disabled={busy && t.id !== 'direct' && t.id !== shownTab}
-                            onClick={() => openTab(t.id)}
-                            title={t.id === 'direct' ? '로봇을 손으로 직접 움직여요 (좌표 · 관절 · 도구 · 자세)' : t.id === 'process' ? '점을 찍어 공정 순서를 만들어요 (BEGIN–END)' : `${t.name} (${t.sub}) 로 프로그램을 만들어요`}
-                          >
-                            <Icon name={t.icon} size={15} />
-                            <b>{t.name}</b>
-                            <small>{t.sub}</small>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </nav>
                 {shownTab === 'direct' ? (
-                  <div className={css.dockScroll} role="tabpanel" aria-label="수동 제어">
+                  <div className={css.dockScroll} role="region" aria-label={SCREEN_TITLE[workScreen]}>
                     {zeroMode ? (
-                      <section className={css.dockSection} data-open="true" aria-label="영점 맞추기">
-                        <header className={css.dockHead}>
-                          <span className={css.dockToggle}>
-                            <Icon name="zero" size={15} className={css.dockIcon} />
-                            <span>영점 맞추기</span>
-                          </span>
-                        </header>
-                        <div className={css.dockBody}>{zeroPanel}</div>
-                      </section>
+                      <div className={css.screen}>{zeroPanel}</div>
+                    ) : workScreen === 'parts' ? (
+                      <div className={css.screen}>
+                        {(kind !== 'none' || cameraFlange) && toolRow}
+                        <PartsPanel effector={effector} cameraFlange={cameraFlange} busy={busy} onTool={changeTool} mount={mount} onMount={chooseMount} tools={arm.tools} flangeAvailable={arm.cameraFlange} />
+                      </div>
+                    ) : workScreen === 'pose' ? (
+                      <div className={css.screen}>{recordRow}</div>
                     ) : (
-                      <>
-                        <DockSection
-                          id="jog"
-                          icon="move"
-                          title="조그"
-                          sub="좌표 · 관절"
-                          open={section === 'jog'}
-                          onToggle={() => openSection('jog')}
-                          aside={robotMode ? <span className={css.realTag}>실제 로봇이 움직여요</span> : undefined}
-                        >
-                          {controlPanel}
-                        </DockSection>
-                        <DockSection
-                          id="parts"
-                          icon="tool"
-                          title="도구 · 액세서리"
-                          open={section === 'parts'}
-                          onToggle={() => openSection('parts')}
-                          aside={
-                            <>
-                              <span className={css.dockChip} data-tone="blue">
-                                {EFFECTOR_BY_ID[effector].name}
-                              </span>
-                              {cameraFlange && <span className={css.dockChip}>카메라</span>}
-                              {mount.on && <span className={css.dockChip}>G 베이스 {mount.mm}mm</span>}
-                            </>
-                          }
-                        >
-                          {toolRow}
-                          <PartsPanel effector={effector} cameraFlange={cameraFlange} busy={busy} onTool={changeTool} mount={mount} onMount={chooseMount} tools={arm.tools} flangeAvailable={arm.cameraFlange} />
-                        </DockSection>
-                        <DockSection
-                          id="pose"
-                          icon="home"
-                          title="자세 저장 · 불러오기"
-                          open={section === 'pose'}
-                          onToggle={() => openSection('pose')}
-                          aside={<span className={css.dockChip}>저장 {Object.keys(poses).length}개</span>}
-                        >
-                          {recordRow}
-                        </DockSection>
-                      </>
+                      <div className={css.screen}>{controlPanel}</div>
                     )}
                     {!zeroMode && (
                       // Always in reach, whatever section is open: back to the ready pose, straight up, stop.
@@ -3629,7 +3556,7 @@ export default function Console() {
                     )}
                   </div>
                 ) : shownTab === 'process' ? (
-                  <div className={css.codeTab} role="tabpanel" aria-label="공정 짜기">
+                  <div className={css.codeTab} role="region" aria-label="공정 짜기">
                     <ProcessPanel
                       process={proc}
                       onProcess={changeProcess}
@@ -3646,7 +3573,7 @@ export default function Console() {
                     />
                   </div>
                 ) : (
-                  <div className={css.codeTab} role="tabpanel" aria-label={LEVEL_TAB[level].name}>
+                  <div className={css.codeTab} role="region" aria-label={LEVEL_TAB[level].name}>
                     <MissionCard
                       practice={practice}
                       need={toolAsk}
@@ -3707,12 +3634,6 @@ export default function Console() {
                 <button type="button" className={css.dockRail} onClick={toggleDock} title="패널 열기" aria-label="작업 패널 열기">
                   <Icon name="chevron" size={16} />
                 </button>
-                {PANEL_TABS.map((t) => (
-                  <button key={t.id} type="button" className={css.railTab} aria-current={shownTab === t.id || undefined} disabled={busy && t.id !== 'direct' && t.id !== shownTab} onClick={() => openTab(t.id)} title={`${t.name} 열기`}>
-                    <Icon name={t.icon} size={17} />
-                    <span>{t.name}</span>
-                  </button>
-                ))}
               </div>
             )}
           </aside>

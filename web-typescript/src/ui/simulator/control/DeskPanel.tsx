@@ -171,7 +171,7 @@ export default function DeskPanel(p: Props) {
         <>
           <div className={css.sec}>
             <h4>
-              환경 고르기 <em>배경 가구와 물건이 한 번에 놓여요</em>
+              환경
             </h4>
             <div className={css.scenes}>
               {SCENES.filter((s) => s.id !== 'kit' || p.kitAvailable).map((s) => (
@@ -187,12 +187,11 @@ export default function DeskPanel(p: Props) {
                 </span>
               ))}
             </div>
-            {!kit && p.scene !== 'empty' && <p className={css.note}>환경을 바꾸면 그 환경의 물건으로 바뀌어요. 놓인 물건은 [물건]에서 옮기거나 지울 수 있어요.</p>}
           </div>
           <div className={css.sec}>
             <h4>
               {kit ? 'AI 키트 블록' : '실습 매트 · 블록 4개'}
-              {!kit && <em>{p.matNeeded ? '이 실습에서 써요' : '블록 옮기기 · 펜 · 버튼 실습용'}</em>}
+              {!kit && p.matNeeded && <em>이 실습에서 써요</em>}
             </h4>
             {!kit && (
               <label className={css.switch}>
@@ -208,7 +207,7 @@ export default function DeskPanel(p: Props) {
                 처음 상태로
               </button>
             </div>
-            {!p.canPick && <p className={css.note}>지금 도구로는 블록을 집을 수 없어 치워 두었어요. 흡착 펌프나 그리퍼를 달면 섞을 수 있어요.</p>}
+            {!p.canPick && <p className={css.note}>이 도구로는 블록을 집을 수 없어요</p>}
           </div>
         </>
       )}
@@ -217,7 +216,7 @@ export default function DeskPanel(p: Props) {
         <>
           <div className={css.sec}>
             <h4>
-              물건 놓기 <em>눌러서 놓고, 3D 화면에서 끌어 옮기고, × 나 Delete 키로 지워요</em>
+              물건 놓기
             </h4>
             <div className={css.lib}>
               {OBJECT_ORDER.map((k) => (
@@ -254,7 +253,7 @@ export default function DeskPanel(p: Props) {
                 ))}
               </div>
             ) : (
-              <p className={css.note}>아직 없어요. 위에서 골라 놓아 보세요.</p>
+              <p className={css.note}>없음</p>
             )}
           </div>
           {sel && (
@@ -320,13 +319,6 @@ export default function DeskPanel(p: Props) {
               켜기 · 실제처럼
             </button>
           </div>
-          <p className={css.note}>
-            <b>끄기</b>: 팔이 물건에 닿으면 멈추고 알려 줘요 (실제 로봇을 지키는 연습). 흡착 펌프나 그리퍼로는 물건을 그대로 집어 옮겨요. 코딩 연습과 ▶ 데모에 써요.
-          </p>
-          <p className={css.note}>
-            <b>켜기</b>: 물건에 무게 · 마찰이 생겨 떨어지고, 미끄러지고, 쓰러지고, 팔에 밀려요. 흡착 펌프를 켜거나 그리퍼를 닫으면 손끝의 물건을 집어요. 쌓기 · 분류 같은 피지컬 AI 과제에 추천해요.
-          </p>
-          <p className={css.note}>실습 블록 4개는 물리와 상관없이 늘 정확하게 움직여요. 환경의 가구(컨베이어 · 팔레트 등)에는 언제나 닿으면 멈춰요.</p>
         </div>
       )}
     </section>
