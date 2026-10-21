@@ -34,6 +34,9 @@ const press = async (name) => {
   return m;
 };
 
+// The demo arm has a gripper; 검수 4 · 5 need the pump on the flange (a person swaps it on a real robot).
+const fit = (gripper) => page.evaluate((g) => fetch('/api/demo/tool', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ gripper: g }) }), gripper);
+
 const results = [];
 for (let u = 1; u <= 7; u++) {
   const t0 = Date.now();
@@ -47,16 +50,20 @@ for (let u = 1; u <= 7; u++) {
   if (u === 2) m = await press('실물로 5번 다녀오기');
   if (u === 3) m = await press(/실제 카메라 \d대로 찍기/);
   if (u === 4) {
+    await fit(false);
     await press('① 실제 블록 찾기');
     await panel().getByRole('button', { name: '② 시뮬레이션으로 확인' }).click();
     await page.waitForFunction(() => /이제 \[실물로 옮기기\]|닿지 않는/.test(document.querySelector('aside [class*=realMsg]')?.textContent ?? ''), null, { timeout: 300000 });
     console.log(`  [② 시뮬레이션으로 확인] → ${await msg()}`);
     m = await press('③ 실물로 옮기기');
+    await fit(true);
   }
   if (u === 5) {
     await press('① 그리퍼 열기 · 닫기');
+    await fit(false);
     await panel().getByLabel('흡착 펌프로 바꿔 끼웠어요').check();
     m = await press('② 펌프 켜기 · 끄기');
+    await fit(true);
   }
   if (u === 6) m = await press('로봇 안에서 AI 실행');
   if (u === 7) m = await press('같은 코드를 실물로 실행');

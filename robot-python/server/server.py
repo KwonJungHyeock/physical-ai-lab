@@ -1245,6 +1245,11 @@ class Handler(SimpleHTTPRequestHandler):
             if route == "/api/stop":
                 ROBOT.stop()
                 return self.send_json({"ok": True})
+            if route == "/api/demo/tool" and ROBOT.demo:
+                # 가짜 팔만: 그리퍼 ↔ 흡착 펌프 바꿔 끼우기 (검수 4 · 5 를 로봇 없이 끝까지 해 볼 때)
+                ROBOT.arm.has_gripper = bool(body.get("gripper"))
+                log(f"[데모] {'그리퍼' if ROBOT.arm.has_gripper else '흡착 펌프'} 끼움")
+                return self.send_json({"ok": True})
             if route in MOTION_ROUTES:
                 cid, name = self.console()
                 err = OWNER.claim(cid, name, ROBOT.state["running"])
