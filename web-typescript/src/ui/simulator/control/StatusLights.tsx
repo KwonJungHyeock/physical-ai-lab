@@ -1,9 +1,9 @@
 'use client';
 
 /**
- * Four lights at the top of the work panel — 시뮬레이션 · 로봇 연결 · 실행 중 · 오류 — lit when true.
- * A click opens the status under them: the same four, each with a line of what it means now, then the
- * robot's servos and its own keys (RobotStatus).
+ * The state light at the top of the work panel: the most pressing of 시뮬레이션 · 로봇 연결 · 실행 중 ·
+ * 오류, one light with its name. A click opens the status under it: all four, each with a line of what
+ * it means now, then the robot's servos and its own keys (RobotStatus).
  */
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
@@ -27,6 +27,8 @@ export const ITEMS: { key: keyof Lights; name: string; tone: string; title: stri
 
 export default function StatusLights({ lights, children }: { lights: Lights; children: ReactNode }) {
   const [open, setOpen] = useState(false);
+  // One light: the most pressing state (오류 › 실행 중 › 로봇 연결 › 시뮬레이션); the four are under it.
+  const now = ITEMS.find((it) => it.key === 'error' && lights.error) ?? ITEMS.find((it) => it.key === 'running' && lights.running) ?? ITEMS.find((it) => it.key === 'robot' && lights.robot) ?? ITEMS[0];
   const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!open) return;
@@ -45,13 +47,11 @@ export default function StatusLights({ lights, children }: { lights: Lights; chi
   }, [open]);
   return (
     <div className={css.lights} ref={box}>
-      <button type="button" className={css.lightsBtn} aria-expanded={open} onClick={() => setOpen((o) => !o)} title="로봇 상태 자세히 보기">
-        {ITEMS.map((it) => (
-          <span key={it.key} className={css.light} data-on={lights[it.key] || undefined} data-tone={it.tone} title={it.title}>
-            <i />
-            {it.name}
-          </span>
-        ))}
+      <button type="button" className={css.lightsBtn} aria-expanded={open} onClick={() => setOpen((o) => !o)} title={`${now.title} · 누르면 로봇 상태 자세히`}>
+        <span className={css.light} data-on data-tone={now.tone}>
+          <i />
+          {now.name}
+        </span>
       </button>
       {open && (
         <div className={css.lightsPop} role="dialog" aria-label="로봇 상태">

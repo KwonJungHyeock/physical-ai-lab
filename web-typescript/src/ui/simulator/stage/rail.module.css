@@ -3,8 +3,8 @@
   position: absolute;
   z-index: 14;
   left: var(--inset-l, 12px);
-  top: 50%;
-  transform: translateY(-50%);
+  /* Top-left, level with the notices beside it: one column down the left edge. */
+  top: calc(var(--top, 0px) + 12px);
   display: grid;
   gap: 4px;
   padding: 6px;

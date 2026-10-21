@@ -110,6 +110,7 @@ export default function RunBar(p: Props) {
       </button>
       <button type="button" className={css.runStop} onClick={p.onStop} aria-label="정지" title="정지 (Esc · 스페이스)">
         <Icon name="stop" size={16} />
+        <span>정지</span>
       </button>
     </div>
   );

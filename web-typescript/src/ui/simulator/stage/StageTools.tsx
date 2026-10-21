@@ -49,7 +49,7 @@ function DisplayMenu({ display, onDisplay }: { display: DisplayOpts; onDisplay(d
     <span className={css.displayWrap} ref={box}>
       <button type="button" aria-expanded={open} aria-haspopup="true" aria-label="표시 옵션" title={`표시 옵션: 좌표축·관절축·궤적 등 (${on}개 켜짐)`} onClick={() => setOpen((o) => !o)}>
         <ToolGlyph d={GLYPH.layers} />
-        <i className={css.displayCount}>{on}</i>
+        {on > 0 && <i className={css.displayCount} aria-hidden="true" />}
       </button>
       {open && (
         <div className={css.displayMenu} role="group" aria-label="3D 표시">

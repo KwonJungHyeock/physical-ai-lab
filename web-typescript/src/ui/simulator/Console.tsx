@@ -2987,7 +2987,8 @@ export default function Console() {
           onStop={stop}
           onHelp={() => setHelpOpen(true)}
           context={
-            view === 'sim' || view === 'library' ? (
+            // A coding task belongs to the coding tabs (and the library): 수동 제어 shows none.
+            (view === 'sim' && tab !== 'direct') || view === 'library' ? (
               <TaskChip
                 mode={mode}
                 practice={practice}
@@ -3200,7 +3201,7 @@ export default function Console() {
             checks={mode !== 'check' ? [] : [{ icon: 'doc', title: '검수 결과표', note: '검수 1~7 의 시각 · 실측값 한 장 (열어서 인쇄 → PDF)', action: '저장', run: saveReport, file: '검수결과표.html' }]}
           />
         )}
-        <div ref={shellRef} className={css.shell} data-dock={dockShown ? 'open' : 'closed'} data-side={side} data-tab={shownTab === 'direct' ? 'direct' : 'code'} style={view !== 'sim' ? { display: 'none' } : undefined}>
+        <div ref={shellRef} className={css.shell} data-dock={dockShown ? 'open' : 'closed'} data-side={side} data-tab={shownTab === 'direct' ? 'direct' : 'code'} data-mini={display.mini && !railOpen ? 'on' : 'off'} style={view !== 'sim' ? { display: 'none' } : undefined}>
           <section className={`${css.panel} ${css.stageCol}`} aria-label="시뮬레이션">
             <div className={css.viewport} data-viewport>
               {loadError ? (
@@ -3579,11 +3580,11 @@ export default function Console() {
                         <DockSection
                           id="jog"
                           icon="move"
-                          title="수동 제어"
-                          sub="관절·좌표로 직접 움직이기"
+                          title="조그"
+                          sub="좌표 · 관절"
                           open={section === 'jog'}
                           onToggle={() => openSection('jog')}
-                          aside={robotMode ? <span className={css.realTag}>실제 로봇이 움직여요</span> : <span className={css.dockChip}>속도 {jogSpeed}%</span>}
+                          aside={robotMode ? <span className={css.realTag}>실제 로봇이 움직여요</span> : undefined}
                         >
                           {controlPanel}
                         </DockSection>
@@ -3628,7 +3629,7 @@ export default function Console() {
                           <Icon name="zero" size={15} /> 일자로 펴기
                         </button>
                         <button type="button" className={css.poseStop} onClick={() => void stop()} title="움직임을 바로 멈춰요">
-                          ■ 정지
+                          <Icon name="stop" size={14} /> 정지
                         </button>
                       </div>
                     )}

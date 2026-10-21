@@ -96,6 +96,9 @@ await settle(page, 12000);
 
 // 2 · 화면 둘러보기
 const top = page.locator('header[data-panel=topbar]');
+// The left menu over the 3D view: 실습 환경 · 물건 · 카메라 · 모니터, one window at a time.
+const rail = page.locator('nav[aria-label="보기 · 환경 메뉴"]');
+const railBtn = (name) => rail.getByRole('button', { name: new RegExp(`^${name}`) });
 if (want('overview'))
   await save(page, out('04-overview.jpg'), {
     marks: [
@@ -106,11 +109,11 @@ if (want('overview'))
       { at: page.locator('button[title="설정"]'), n: 5, pos: 'bl' },
       // Without a robot the top bar has no stop: the work panel's ■ 정지 (and Esc) stops the simulator.
       { at: page.locator('aside[aria-label="작업 패널"] [class*=poseStop]'), n: 6, pos: 'tl' },
-      { at: page.locator('[data-panel=hud] section[aria-label="관절 각도"]'), n: 7, pos: 'tr' },
+      { at: page.locator('[aria-label="관절 각도와 손끝 위치"]'), n: 7, pos: 'tr' },
       { at: page.locator('[data-panel=log]'), n: 8, pos: 'r' },
       { at: { x: 640, y: 360, w: 0, h: 0 }, n: 9, box: false },
       { at: page.locator('[data-panel=viewtools]'), n: 10, pos: 'l' },
-      { at: page.locator('[data-panel=envdock]'), n: 11, pos: 'tl' },
+      { at: rail, n: 11, pos: 'r' },
       { at: page.locator('aside[aria-label="작업 패널"]'), n: 12, pos: 'bl' },
     ],
   });
@@ -154,22 +157,28 @@ if (want('display')) {
   await settle(page, 600);
 }
 const hud = page.locator('[data-panel=hud]');
+if (want('monitor') || want('self')) {
+  await railBtn('모니터').click();
+  await settle(page, 1500);
+}
 if (want('monitor'))
   await save(page, out('12-monitor.png'), {
     crop: [hud.locator('[aria-label="모니터에 보일 것"]'), hud.locator('section[aria-label="최근 5초 관절 각도"]')],
     pad: 30,
     marks: [
       { at: hud.locator('[aria-label="모니터에 보일 것"]'), n: 1, pos: 'tl' },
-      { at: hud.locator('button[aria-label="모니터 감추기"]'), n: 2, pos: 'tr' },
+      { at: hud.locator('button[aria-label="모니터 닫기"]'), n: 2, pos: 'tr' },
       { at: hud.locator('section[aria-label="관절 각도"]'), n: 3, pos: 'tl' },
       { at: hud.locator('section[aria-label="손끝"]'), n: 4, pos: 'tl' },
       { at: hud.locator('section[aria-label="최근 5초 관절 각도"]'), n: 5, pos: 'tl' },
     ],
   });
 
-// 4 · 수동 제어
-const jog = dockSection('수동 제어');
-await openSection('수동 제어');
+// 4 · 수동 제어 (조그: 좌표가 먼저, 관절은 두 번째)
+const jog = dockSection('조그');
+await openSection('조그');
+await jog.locator('[class*=frameSeg] button').nth(1).click();
+await settle(page, 800);
 if (want('jog'))
   await save(page, out('14-jog.png'), {
     crop: jog,
@@ -204,11 +213,15 @@ if (want('self')) {
   await page.locator('button[title^="베이스 (J1)"]').click();
   await settle(page, 800);
 }
+if (want('monitor') || want('self')) {
+  await hud.locator('button[aria-label="모니터 닫기"]').click();
+  await settle(page, 1000);
+}
 if (want('jog-xyz')) {
-  await jog.locator('[class*=frameSeg] button').nth(1).click();
+  await jog.locator('[class*=frameSeg] button').nth(0).click();
   await settle(page, 1500);
   await save(page, out('16-jog-xyz.png'), { crop: jog, pad: 10 });
-  await jog.locator('[class*=frameSeg] button').nth(0).click();
+  await jog.locator('[class*=frameSeg] button').nth(1).click();
   await settle(page, 800);
 }
 await openSection('도구 · 액세서리');
@@ -236,7 +249,7 @@ if (want('notices')) {
 }
 await hold(false);
 await page.locator('button[aria-label="알림 닫기"]').click().catch(() => {});
-await openSection('수동 제어');
+await openSection('조그');
 if (want('status')) {
   await page.locator('[class*=lightsBtn]').click();
   await settle(page, 1200);
@@ -252,23 +265,16 @@ if (want('collapsed')) {
   await settle(page, 3000);
 }
 
-// 5 · 실습 환경 막대 · 물건
-const dock = page.locator('[data-panel=envdock]');
-if (want('envdock'))
-  await save(page, out('32-envdock.png'), {
-    crop: dock,
+// 5 · 왼쪽 메뉴 · 실습 환경 · 물건
+if (want('leftrail'))
+  await save(page, out('32-leftrail.png'), {
+    crop: rail,
     pad: 30,
-    marks: [
-      { at: dock.locator('[class*=envLabel]'), n: 1, pos: 'tl' },
-      { at: dock.locator('[class*=envList]'), n: 2, pos: 'tl' },
-      { at: dock.locator('label').filter({ hasText: '매트' }), n: 3, pos: 'tl' },
-      { at: dock.locator('label').filter({ hasText: '물리' }), n: 4, pos: 'tr' },
-      { at: dock.locator('[class*=envAdd]'), n: 5, pos: 'tr' },
-    ],
+    marks: ['실습 환경', '물건', '카메라', '모니터'].map((name, i) => ({ at: railBtn(name), n: i + 1, pos: 'r', box: false })),
   });
 const desk = page.locator('section[aria-label="실습 환경"]');
 if (want('envpanel') || want('objects')) {
-  await dock.locator('[class*=envLabel]').click();
+  await railBtn('실습 환경').click();
   await settle(page, 2500);
   if (want('envpanel')) await save(page, out('33-envpanel.jpg'), { crop: desk, pad: 10 });
   await desk.getByRole('tab', { name: /^물건/ }).click();
@@ -294,7 +300,7 @@ if (want('envpanel') || want('objects')) {
   const b = await x.boundingBox().catch(() => null);
   if (want('objects') && b) await save(page, out('34b-object-3d.jpg'), { crop: { x: b.x - 230, y: b.y - 70, w: 460 + b.width, h: 300 }, pad: 0, marks: [{ at: x, n: 1, pos: 'r' }] });
   else if (want('objects')) console.log('  (3D 의 × 가 안 보여요)');
-  await dock.locator('[class*=envLabel]').click();
+  await railBtn('물건').click();
   await settle(page, 2000);
   await desk.getByRole('tab', { name: /^물건/ }).click();
   await desk.getByRole('button', { name: '모두 치우기' }).click().catch(() => {});
@@ -449,9 +455,11 @@ if (want('tasks') || want('checks') || want('library')) {
 
 // 9 · AI 키트 환경 · 카메라
 if (want('kit') || want('camera')) {
-  await dock.locator('[class*=envChip]').filter({ hasText: 'AI 키트' }).click({ position: { x: 12, y: 12 } }); // the chip's ▶ 데모 sits over its middle
-  // The monitor stands over the small camera picture and the camera panel: hidden for these two.
-  await hud.locator('button[aria-label="모니터 감추기"]').click();
+  await railBtn('실습 환경').click();
+  await settle(page, 1500);
+  await desk.locator('button[aria-pressed]').filter({ hasText: 'AI 키트' }).first().click();
+  await settle(page, 2000);
+  await page.keyboard.press('Escape');
   await settle(page, 15000);
   if (want('kit'))
     await save(page, out('35-kit.jpg'), {
@@ -467,8 +475,6 @@ if (want('kit') || want('camera')) {
     await page.locator('button[aria-label="카메라 닫기"]').click();
     await settle(page, 1500);
   }
-  await page.getByRole('button', { name: /모니터 보이기/ }).click();
-  await settle(page, 1500);
 }
 
 // 10 · 자료실

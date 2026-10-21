@@ -231,6 +231,8 @@ export default function ControlPanel(p: Props) {
   const { tipOf } = p;
   const tip = useMemo(() => tipOf(angles), [tipOf, angles]);
   const [frame, setFrame] = useState<Frame>('base');
+  /** The coordinate row whose drag handle shows (one at a time keeps the six rows short). */
+  const [sel, setSel] = useState<Axis>('z');
   const [jStep, setJStep] = useState(5);
   const [tStep, setTStep] = useState(10);
   // The how-to lines stay behind [?] (the panel stays short; the keys say what they do on hover).
@@ -332,7 +334,7 @@ export default function ControlPanel(p: Props) {
               {v}
             </button>
           ))}
-          <i>{frame === 'joint' ? '°' : `mm · ${TURN_STEPS[TIP_STEPS.indexOf(tStep)]}°`}</i>
+          <i>{frame === 'joint' ? '°' : 'mm'}</i>
         </span>
         <button type="button" className={css.helpBtn} aria-pressed={help} onClick={() => setHelp((h) => !h)} title={help ? '도움말 닫기' : '쓰는 방법 보기'} aria-label="쓰는 방법">
           ?
@@ -454,56 +456,43 @@ export default function ControlPanel(p: Props) {
         </div>
       ) : (
         <div className={css.axisRows}>
-          <p className={css.axisGroup}>
-            위치 <small>X · Y · Z (mm)</small>
-          </p>
-          {AXES.map(({ axis, minus, plus, color }) => (
-            <div key={axis} className={css.axisRow}>
-              <span className={css.axisName} style={{ color }}>
-                {axis.toUpperCase()}
-              </span>
-              <JogKey dir={-1} label={`${axis.toUpperCase()}− ${minus}`} disabled={p.busy} onStep={() => p.onTipStep(axis, -tStep)} onStart={() => p.onTipJog(axis, -1)} onStop={p.onJogStop} />
-              <span className={css.axisValue}>
-                <b>{tip ? (tip[axis as 'x'] ?? 0).toFixed(1) : '—'}</b>
-                <small>mm</small>
-                <em>
-                  − {minus} · + {plus}
-                </em>
-                <SlideJog
-                  label={`${axis.toUpperCase()} 밀어서 움직이기`}
-                  disabled={p.busy}
-                  onStart={(dir, scale) => p.onTipJog(axis, dir, scale)}
-                  onScale={p.onJogScale}
-                  onStop={p.onJogStop}
-                />
-              </span>
-              <JogKey dir={1} label={`${axis.toUpperCase()}+ ${plus}`} disabled={p.busy} onStep={() => p.onTipStep(axis, tStep)} onStart={() => p.onTipJog(axis, 1)} onStop={p.onJogStop} />
+          {(
+            [
+              ['위치', 'mm', AXES.map((a) => ({ ...a, step: tStep, hint: `− ${a.minus} · + ${a.plus}` }))],
+              ['회전', '°', TURNS.map((a) => ({ ...a, step: TURN_STEPS[TIP_STEPS.indexOf(tStep)] ?? 5, hint: `${a.axis.slice(1).toUpperCase()}축 둘레로, 손끝은 그 자리` }))],
+            ] as const
+          ).map(([group, unit, rows]) => (
+            <div key={group} className={css.axisGroup} role="group" aria-label={group}>
+              <p>
+                {group}
+                <small>
+                  한 번에 {rows[0].step}
+                  {unit}
+                </small>
+              </p>
+              {rows.map(({ axis, color, step, hint }) => {
+                const name = axis.toUpperCase();
+                const v = tip?.[axis as 'x'];
+                const turn = group === '회전';
+                return (
+                  <div key={axis} className={css.axisRow} data-on={sel === axis || undefined} title={`${name}: ${hint}`}>
+                    <JogKey turn={turn} dir={-1} label={`${name}− ${hint}`} disabled={p.busy} onStep={() => p.onTipStep(axis, -step)} onStart={() => p.onTipJog(axis, -1)} onStop={p.onJogStop} />
+                    <button type="button" className={css.axisValue} onClick={() => setSel(axis)} aria-pressed={sel === axis} title={`${name} 고르기 (아래 손잡이로 끌어 움직이기)`}>
+                      <span className={css.axisName} style={{ color }}>
+                        {name}
+                      </span>
+                      <b>{v === undefined ? '—' : v.toFixed(1)}</b>
+                    </button>
+                    <JogKey turn={turn} dir={1} label={`${name}+ ${hint}`} disabled={p.busy} onStep={() => p.onTipStep(axis, step)} onStart={() => p.onTipJog(axis, 1)} onStop={p.onJogStop} />
+                  </div>
+                );
+              })}
             </div>
           ))}
-          <p className={css.axisGroup}>
-            회전 <small>RX · RY · RZ (°) · 손끝은 그 자리</small>
-          </p>
-          {TURNS.map(({ axis, color }) => {
-            const name = axis.toUpperCase();
-            const turn = TURN_STEPS[TIP_STEPS.indexOf(tStep)] ?? 5;
-            const v = tip?.[axis as 'rx'];
-            return (
-              <div key={axis} className={css.axisRow}>
-                <span className={css.axisName} style={{ color }}>
-                  {name}
-                </span>
-                <JogKey turn dir={-1} label={`${name}− (${name.slice(1)}축 둘레로 돌리기)`} disabled={p.busy} onStep={() => p.onTipStep(axis, -turn)} onStart={() => p.onTipJog(axis, -1)} onStop={p.onJogStop} />
-                <span className={css.axisValue}>
-                  <b>{v === undefined ? '—' : v.toFixed(1)}</b>
-                  <small>°</small>
-                  <em>도구 방향을 {name.slice(1)}축 둘레로</em>
-                  <SlideJog label={`${name} 밀어서 돌리기`} disabled={p.busy} onStart={(dir, scale) => p.onTipJog(axis, dir, scale)} onScale={p.onJogScale} onStop={p.onJogStop} />
-                </span>
-                <JogKey turn dir={1} label={`${name}+ (${name.slice(1)}축 둘레로 돌리기)`} disabled={p.busy} onStep={() => p.onTipStep(axis, turn)} onStart={() => p.onTipJog(axis, 1)} onStop={p.onJogStop} />
-              </div>
-            );
-          })}
-          <p className={css.subNote}>로봇 베이스 기준. 위치는 도구 방향 그대로 곧게, 회전은 손끝 자리 그대로 도구만 돌아요. 가운데 손잡이를 끌면 끄는 만큼 빠르게, 놓으면 멈춰요.</p>
+          <div className={css.axisSlide}>
+            <span style={{ color: [...AXES, ...TURNS].find((a) => a.axis === sel)?.color }}>{sel.toUpperCase()}</span>
+            <SlideJog label={`${sel.toUpperCase()} 밀어서 움직이기`} disabled={p.busy} onStart={(dir, scale) => p.onTipJog(sel, dir, scale)} onScale={p.onJogScale} onStop={p.onJogStop} />
+          </div>
         </div>
       )}
 

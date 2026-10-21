@@ -1724,22 +1724,46 @@ button.dockToggle:hover {
   background: var(--work);
 }
 .axisGroup {
-  margin: 6px 0 0;
+  display: grid;
+  gap: 4px;
+}
+/* 위치 | 회전 side by side, one slide knob below for the picked axis */
+.axisRows:has(.axisGroup) {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: 10px;
+  align-items: start;
+}
+.axisSlide {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+.axisSlide > span {
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+}
+.axisSlide .slideJog {
+  grid-column: auto;
+  margin: 0;
+}
+.axisGroup > p {
+  margin: 0;
   font-size: 12px;
   font-weight: 800;
 }
-.axisGroup:first-child {
-  margin-top: 0;
-}
-.axisGroup small {
-  margin-left: 4px;
+.axisGroup > p small {
+  margin-left: 6px;
   font-size: 11px;
   font-weight: 600;
   opacity: 0.7;
 }
 .axisRow {
   display: grid;
-  grid-template-columns: 24px 34px minmax(0, 1fr) 34px;
+  grid-template-columns: 34px minmax(0, 1fr) 34px;
   align-items: center;
   gap: 6px;
 }
@@ -1755,13 +1779,22 @@ button.dockToggle:hover {
   font-weight: 800;
 }
 .axisValue {
-  display: grid;
-  grid-template-columns: 1fr auto;
+  display: flex;
   align-items: baseline;
-  padding: 3px 10px;
+  justify-content: space-between;
+  gap: 4px;
+  min-width: 0;
+  height: 34px;
+  padding: 0 8px;
+  border: 1px solid transparent;
   border-radius: 8px;
   background: #111827;
-  line-height: 1.2;
+  line-height: 34px;
+  font: inherit;
+  cursor: pointer;
+}
+.axisValue[aria-pressed='true'] {
+  border-color: rgba(111, 155, 255, 0.55);
 }
 .axisValue b {
   font-family: inherit;
@@ -1770,16 +1803,8 @@ button.dockToggle:hover {
   color: #a7f3d0;
   text-align: right;
 }
-.axisValue small {
-  font-size: 10px;
-  color: #64748b;
-  padding-left: 4px;
-}
-.axisValue em {
-  grid-column: 1 / -1;
-  font-style: normal;
-  font-size: 10px;
-  color: #94a3b8;
+.axisValue .axisName {
+  font-size: 12px;
 }
 
 /* zero calibration, two ways */
@@ -2646,20 +2671,21 @@ div.zeroFlow {
 }
 
 .jogKey,
-.axisRow .jogKey {
+.axisRow .jogKey,
+.axisRow .jpKey {
   width: 36px;
   height: 36px;
   border-radius: 9px;
 }
 
 .axisRow {
-  grid-template-columns: 24px 36px minmax(0, 1fr) 36px;
+  grid-template-columns: 36px minmax(0, 1fr) 36px;
 }
-.axisName {
-  font-size: 16px;
+.axisValue .axisName {
+  font-size: 13px;
 }
 .axisValue b {
-  font-size: 16px;
+  font-size: 15px;
 }
 
 /* wide screens get a wider dock for the larger controls */
@@ -4862,8 +4888,14 @@ button.jpRow:hover {
   color: var(--real);
 }
 .runStop {
-  width: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 14px;
   flex: 0 0 auto;
+  font-size: 14px;
+  font-weight: 800;
   border: none;
   background: var(--stop);
   color: #fff;
@@ -4904,9 +4936,11 @@ button.jpRow:hover {
   cursor: pointer;
 }
 .railTab span {
-  writing-mode: vertical-rl;
   color: #e7ecf5;
-  letter-spacing: 0.03em;
+  font-size: 11px;
+  line-height: 1.2;
+  text-align: center;
+  word-break: keep-all;
 }
 .railTab:hover:not(:disabled),
 .railTab[aria-current='true'] {
@@ -4936,6 +4970,8 @@ button.jpRow:hover {
     --inset-r: var(--gap);
   }
   .shell[data-dock='closed'] {
+    /* the panel is on the right: the left keeps its gap (the 64px above is the old left dock's) */
+    --inset-l: var(--gap);
     --inset-r: 96px;
   }
   .shell[data-side='left'][data-dock='closed'] {
@@ -5703,12 +5739,14 @@ button.jpRow:hover {
 }
 .app .poseDock .poseStop {
   padding: 0 14px;
-  background: #e5484d;
-  border-color: #e5484d;
+  background: var(--stop);
+  border-color: var(--stop);
   color: #fff;
+  box-shadow: 0 2px 0 #c7372b;
 }
 .app .poseDock .poseStop:hover {
-  background: #c93a3f;
+  background: var(--stop);
+  filter: brightness(1.06);
   color: #fff;
 }
 /* [?] beside the step choice: shows the how-to lines. */
@@ -6175,7 +6213,17 @@ button.jpRow:hover {
   bottom: 62px;
 }
 .app .side .dockSection[data-open='false']:nth-last-child(3) {
-  bottom: 130px;
+  bottom: 112px;
+}
+/* closed and pinned there: one slim line each, so the open jog keeps the room */
+.app .side .dockSection[data-open='false']:is(:nth-last-child(2), :nth-last-child(3)) .dockToggle {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+.app .side .dockSection[data-open='false']:is(:nth-last-child(2), :nth-last-child(3)) .dockIcon {
+  width: 24px;
+  height: 24px;
+  padding: 4px;
 }
 .app .side .dockHead {
   background: transparent;
@@ -7007,16 +7055,17 @@ button.jpRow:hover {
   background: rgba(255, 255, 255, 0.08);
 }
 .viewRail .displayCount {
+  /* A dot: some drawing aids are on (the menu lists which). */
   position: absolute;
-  right: 1px;
-  top: 1px;
-  min-width: 14px;
-  height: 14px;
+  right: 5px;
+  top: 5px;
+  min-width: 0;
+  width: 7px;
+  height: 7px;
   margin: 0;
-  padding: 0 3px;
-  font-size: 9px;
-  background: #4a74f5;
-  color: #fff;
+  padding: 0;
+  border-radius: 50%;
+  background: #6f9bff;
 }
 .viewRail .displayMenu {
   top: -6px;
@@ -7577,144 +7626,20 @@ button.jpRow:hover {
   opacity: 0.45;
   cursor: default;
 }
-
-/* --- 실습 환경 dock (stage/EnvDock.tsx) ---------------------------------------------- */
-.envDock {
-  position: absolute;
-  z-index: 12;
-  bottom: 14px;
-  left: calc((var(--inset-l, 12px) + 330px + 100% - var(--inset-r, 12px) - 60px) / 2);
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 8px;
-  border-radius: 16px;
-  color: #e8eef8;
-  background: rgba(15, 21, 30, 0.84);
-  border: 1px solid rgba(160, 190, 255, 0.16);
-  backdrop-filter: blur(12px);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.32);
+/* The left column over the 3D view: the left menu (76px), plus the mini arm and its chips while shown.
+   Bars and cards centred on the free view use it. */
+.shell {
+  --left-col: 76px;
 }
-.app .envLabel {
-  display: grid;
-  padding: 2px 8px 2px 6px;
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  line-height: 1.15;
-  white-space: nowrap;
-  cursor: pointer;
+.shell[data-mini='on'] {
+  --left-col: 332px;
 }
-.envLabel b {
-  font-size: 13px;
-}
-.envLabel small {
-  font-size: 10.5px;
-  color: #8f9db3;
-}
-.app .envLabel:hover small,
-.app .envLabel[aria-expanded='true'] small {
-  color: #a9c2ff;
-}
-.envList {
-  display: flex;
-  gap: 3px;
-}
-.app .envChip {
-  display: grid;
-  justify-items: center;
-  gap: 3px;
-  width: 70px;
-  padding: 4px 3px 4px;
-  border-radius: 10px;
-  border: 1px solid transparent;
-  background: none;
-  color: #b9c6d8;
-  font: inherit;
-  font-size: 10.5px;
-  font-weight: 700;
-  white-space: nowrap;
-  cursor: pointer;
-}
-.envChip i {
-  display: grid;
-  place-items: center;
-  width: 60px;
-  height: 38px;
-  border-radius: 7px;
-  font-style: normal;
-  font-size: 10px;
-  font-weight: 800;
-  color: #a9c2ff;
-  background: #1a2230 center / cover no-repeat;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-.envChip i[data-scene='empty'] {
-  background:
-    radial-gradient(circle, rgba(160, 180, 210, 0.4) 1px, transparent 1.5px) 0 0 / 8px 8px,
-    linear-gradient(#323d4e, #262f3c);
-}
-.envChip i[data-scene='kit'] {
-  background: linear-gradient(135deg, #18233a, #0f1726);
-  /* Its name above the ▶ 데모 pill. */
-  place-items: start center;
-  padding-top: 4px;
-  box-sizing: border-box;
-}
-.app .envChip:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.05);
-  color: #fff;
-}
-.app .envChip[aria-pressed='true'] {
-  color: #fff;
-  background: rgba(91, 140, 255, 0.16);
-  border-color: #6f9bff;
-  box-shadow: 0 0 14px rgba(91, 140, 255, 0.3);
-}
-.app .envChip:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-/* ▶ 데모 on a place's picture (bottom right). */
-.envItem {
-  position: relative;
-  display: flex;
-}
-.app .envDemo {
-  position: absolute;
-  right: 7px;
-  top: 27px;
-  padding: 1px 5px 1px 4px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.85);
-  background: rgba(16, 24, 40, 0.82);
-  color: #fff;
-  font: inherit;
-  font-size: 9.5px;
-  font-weight: 800;
-  line-height: 1.3;
-  white-space: nowrap;
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
-}
-.app .envDemo:hover:not(:disabled) {
-  background: var(--accent);
-  border-color: #fff;
-}
-.app .envDemo:disabled {
-  opacity: 0.35;
-  cursor: default;
-}
-
-/* --- ▶ 데모 caption bar (stage/DemoCaption.tsx), where the 실습 환경 dock is ------------------- */
+/* --- ▶ 데모 caption bar (stage/DemoCaption.tsx), centred on the free view ------------------- */
 .demoBar {
   position: absolute;
   z-index: 12;
   bottom: 14px;
-  left: calc((var(--inset-l, 12px) + 330px + 100% - var(--inset-r, 12px) - 60px) / 2);
+  left: calc((var(--inset-l, 12px) + var(--left-col, 76px) + 100% - var(--inset-r, 12px) - 60px) / 2);
   transform: translateX(-50%);
   display: flex;
   align-items: center;
@@ -7801,92 +7726,6 @@ button.jpRow:hover {
 }
 .app .demoStop:hover {
   background: #eaecf0;
-}
-.envSep {
-  width: 1px;
-  align-self: stretch;
-  margin: 6px 4px;
-  background: rgba(255, 255, 255, 0.09);
-}
-.envSwitch {
-  display: grid;
-  justify-items: center;
-  gap: 5px;
-  padding: 0 3px;
-  font-size: 10.5px;
-  font-weight: 700;
-  color: #b9c6d8;
-  cursor: pointer;
-}
-.envSwitch input {
-  appearance: none;
-  width: 34px;
-  height: 20px;
-  margin: 0;
-  border-radius: 999px;
-  background: #2a3442;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
-  position: relative;
-  cursor: pointer;
-}
-.envSwitch input::after {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #8696ae;
-  transition:
-    transform 0.15s,
-    background 0.15s;
-}
-.envSwitch input:checked {
-  background: #4a74f5;
-  box-shadow: 0 0 10px rgba(91, 140, 255, 0.45);
-}
-.envSwitch input:checked::after {
-  transform: translateX(14px);
-  background: #fff;
-}
-.envSwitch input:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-.app .envAdd {
-  height: 40px;
-  padding: 0 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(120, 160, 255, 0.4);
-  background: rgba(91, 140, 255, 0.14);
-  color: #cfe0ff;
-  font: inherit;
-  font-size: 12.5px;
-  font-weight: 800;
-  white-space: nowrap;
-  cursor: pointer;
-}
-.app .envAdd:hover:not(:disabled) {
-  background: rgba(91, 140, 255, 0.26);
-}
-@media (max-width: 1360px) {
-  .envChip span {
-    display: none;
-  }
-  .app .envChip {
-    width: 52px;
-  }
-  .envChip i {
-    width: 46px;
-    height: 32px;
-  }
-  .app .envDemo {
-    right: 3px;
-    top: 21px;
-    font-size: 8.5px;
-    padding: 0 4px 0 3px;
-  }
 }
 
 /* --- the object picked on the desk (stage/DeskObjects.tsx): its name and × above it in 3D ------ */
@@ -8298,7 +8137,7 @@ button.jpRow:hover {
   position: absolute;
   z-index: 12;
   bottom: 14px;
-  left: calc((var(--inset-l, 12px) + 330px + 100% - var(--inset-r, 12px) - 60px) / 2);
+  left: calc((var(--inset-l, 12px) + var(--left-col, 76px) + 100% - var(--inset-r, 12px) - 60px) / 2);
   transform: translateX(-50%);
   width: min(760px, calc(100% - var(--inset-l, 12px) - var(--inset-r, 12px) - 420px));
   min-width: 460px;
@@ -8444,7 +8283,7 @@ button.jpRow:hover {
   position: absolute;
   z-index: 14;
   top: calc(var(--top, 0px) + 14px);
-  left: calc((var(--inset-l, 12px) + 330px + 100% - var(--inset-r, 12px) - 60px) / 2);
+  left: calc((var(--inset-l, 12px) + var(--left-col, 76px) + 100% - var(--inset-r, 12px) - 60px) / 2);
   transform: translateX(-50%);
   display: flex;
   align-items: center;
@@ -8929,12 +8768,21 @@ button.jpRow:hover {
   }
   /* Jog keys: a full finger (held down for seconds while the arm moves). */
   .jogKey,
-  .axisRow .jogKey {
+  .axisRow .jogKey,
+  .axisRow .jpKey {
     width: 44px;
     height: 44px;
   }
   .axisRow {
-    grid-template-columns: 24px 44px minmax(0, 1fr) 44px;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    gap: 4px;
+  }
+  .axisValue {
+    height: 44px;
+    padding: 0 6px;
+  }
+  .axisValue b {
+    font-size: 14px;
   }
 }
 
