@@ -98,8 +98,10 @@ if (await visible(picker)) {
 }
 await settle(page, 12000);
 
-// 2 · 화면 둘러보기
+// 2 · 화면 둘러보기 (블록 화면: the task chip and its goal bar belong to the coding screens)
 const top = page.locator('header[data-panel=topbar]');
+await openScreen('블록');
+await settle(page, 3000);
 if (want('overview'))
   await save(page, out('04-overview.jpg'), {
     marks: [
@@ -108,9 +110,9 @@ if (want('overview'))
       { at: top.locator('[class*="__goal"]').first(), n: 3, pos: 'br' },
       { at: page.locator('[class*=connPill]'), n: 4, pos: 'bl' },
       { at: page.locator('button[title="설정"]'), n: 5, pos: 'bl' },
-      // Without a robot the top bar has no stop: the work panel's ■ 정지 (and Esc) stops the simulator.
-      { at: page.locator('aside[aria-label="작업 패널"] [class*=poseStop]'), n: 6, pos: 'tl' },
-      { at: page.locator('[aria-label="관절 각도와 손끝 위치"]'), n: 7, pos: 'tr' },
+      // Without a robot the top bar has no stop: the run bar's ■ 정지 (and Esc) stops the simulator.
+      { at: page.locator('[data-panel=run] button[aria-label="정지"]'), n: 6, pos: 'tl' },
+      { at: page.locator('[aria-label="관절 각도와 손끝 위치"] [class*=tcp]'), n: 7, pos: 'tr' },
       { at: page.locator('[data-panel=log]'), n: 8, pos: 'r' },
       { at: { x: 640, y: 360, w: 0, h: 0 }, n: 9, box: false },
       { at: page.locator('[data-panel=viewtools]'), n: 10, pos: 'l' },
@@ -268,7 +270,10 @@ if (want('leftrail'))
   await save(page, out('32-leftrail.png'), {
     crop: rail,
     pad: 30,
-    marks: ['환경', '물건', '카메라', '모니터'].map((name, i) => ({ at: railBtn(name), n: i + 1, pos: 'r', box: false })),
+    // 카메라 is there only with a camera (the AI kit or a robot).
+    marks: (await Promise.all(['환경', '물건', '카메라', '모니터'].map(async (name) => ((await railBtn(name).count()) ? name : null))))
+      .filter(Boolean)
+      .map((name, i) => ({ at: railBtn(name), n: i + 1, pos: 'r', box: false })),
   });
 const desk = page.locator('section[aria-label="실습 환경"]');
 if (want('envpanel') || want('objects')) {
@@ -308,7 +313,7 @@ if (want('envpanel') || want('objects')) {
 }
 
 // 6 · 블록 코딩
-await railBtn('블록').click();
+await openScreen('블록');
 await settle(page, 3000);
 const runBtn = () => page.locator('[data-panel=run]').getByRole('button', { name: '시뮬레이션', exact: true });
 if (want('blocks'))
@@ -398,7 +403,7 @@ if (want('ros')) {
   });
 }
 if (await visible(page.locator('button[aria-label="다시 보기 닫기"]'))) await page.locator('button[aria-label="다시 보기 닫기"]').click();
-await railBtn('블록').click();
+await openScreen('블록');
 await settle(page, 1500);
 
 // 8 · 라이브러리
