@@ -32,6 +32,8 @@ const openScreen = async (name) => {
   await settle(page, 1200);
 };
 const top = page.locator('header[data-panel=topbar]');
+// The demo robot's flange (demo server only): no gripper while the screen shows 도구 없음, a gripper for the tool shots.
+const fit = (gripper) => page.evaluate((g) => fetch('/api/demo/tool', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ gripper: g }) }).catch(() => {}), gripper);
 let failed = 0;
 const shot = async (name, f) => {
   if (!want(name)) return;
@@ -70,14 +72,18 @@ await settle(page, 1500);
 
 // 1 · 연결된 화면 한눈에
 await shot('console', async () => {
+  await fit(false);
   await btn('기본 자세').click();
   await settle(page, 6000);
+  // The "PC 프로그램 받기" notice can come up a little after the page opens.
+  await btn('나중에').click({ timeout: 2000 }).catch(() => {});
+  await settle(page, 800);
   await save(page, out('b-console.jpg'), {
     marks: [
       { at: top.locator('nav[aria-label="화면"]'), n: 1, pos: 'b' },
       { at: page.locator('[class*=connChip], [class*=conn]').filter({ hasText: '연결됨' }).first(), n: 2, pos: 'b' },
-      { at: top.getByRole('button', { name: /로봇 정지/ }), n: 3, pos: 'b' },
-      { at: page.locator('button[title="로봇 상태 자세히 보기"]'), n: 4, pos: 'l' },
+      { at: top.getByRole('button', { name: /로봇 정지/ }), n: 3, pos: 'bl' },
+      { at: page.locator('button[title*="로봇 상태 자세히"]'), n: 4, pos: 'l' },
       { at: rail, n: 5, pos: 'r' },
       { at: btn('기본 자세'), n: 6, pos: 't' },
     ],
@@ -86,16 +92,16 @@ await shot('console', async () => {
 
 // 2 · 로봇 상태 (연결 확인 · 손으로 움직이기 · 영점 맞추기)
 await shot('status', async () => {
-  await page.locator('button[title="로봇 상태 자세히 보기"]').click();
+  await page.locator('button[title*="로봇 상태 자세히"]').click();
   await settle(page, 1500);
   const pop = page.getByRole('dialog', { name: '로봇 상태' });
   await pop.waitFor();
   // The buttons wait while the arm still moves (it goes to 기본 자세 when the page opens).
   await page.waitForFunction(() => [...document.querySelectorAll('[role=dialog][aria-label="로봇 상태"] button')].some((b) => b.textContent?.includes('연결 확인') && !b.disabled), null, { timeout: 120000 });
   await settle(page, 600);
-  await save(page, out('b-status.png'), { crop: [pop, page.locator('button[title="로봇 상태 자세히 보기"]')], pad: 12 });
+  await save(page, out('b-status.png'), { crop: [pop, page.locator('button[title*="로봇 상태 자세히"]')], pad: 12 });
   await page.keyboard.press('Escape');
-  await page.locator('button[title="로봇 상태 자세히 보기"]').click().catch(() => {});
+  await page.locator('button[title*="로봇 상태 자세히"]').click().catch(() => {});
   await settle(page, 800);
 });
 
@@ -117,6 +123,7 @@ await shot('jog-xyz', async () => {
 
 // 4 · 도구 (그리퍼 · 흡착 펌프)
 await shot('tools', async () => {
+  await fit(true);
   await openScreen('도구');
   const sec = screen();
   await sec.getByRole('button', { name: /어댑티브 그리퍼/ }).first().click();
@@ -259,6 +266,7 @@ await shot('p7', async () => {
   await save(page, out('b-p7-real.jpg'), { crop: panel, pad: 8 });
 });
 
+await fit(true);
 await browser.close();
 console.log(failed ? `\n${failed} 장을 찍지 못했어요.` : '\n모두 찍었어요.');
 process.exit(failed ? 1 : 0);
