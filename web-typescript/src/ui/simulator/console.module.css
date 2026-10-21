@@ -1644,104 +1644,12 @@ input.field {
   background: #fff;
   border: 2px solid #f59e0b;
 }
-.axisRows {
-  display: grid;
-  gap: 4px;
-}
 
-.jogKey {
-  width: 26px;
-  height: 26px;
-  display: grid;
-  place-items: center;
-  border-radius: 7px;
-  border: 1px solid #d0d5dd;
-  background: linear-gradient(180deg, #ffffff, #f2f4f7);
-  color: var(--ink);
-  cursor: pointer;
-  box-shadow: 0 1px 1px rgba(16, 24, 40, 0.08);
-  touch-action: none;
-  user-select: none;
-}
-.jogKey:hover:not(:disabled) {
-  border-color: #98a2b3;
-}
-.jogKey:active:not(:disabled) {
-  background: #111827;
-  border-color: #111827;
-  color: #7dd3fc;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
-}
-.jogKey:disabled {
-  color: var(--faint);
-  cursor: not-allowed;
-  background: var(--work);
-}
-.axisGroup {
-  display: grid;
-  gap: 4px;
-}
-/* 위치 | 회전 side by side, one slide knob below for the picked axis */
-.axisRows:has(.axisGroup) {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  column-gap: 10px;
-  align-items: start;
-}
-.axisGroup > p {
-  margin: 0;
-  font-size: 12px;
-  font-weight: 800;
-}
-.axisGroup > p small {
-  margin-left: 6px;
-  font-size: 11px;
-  font-weight: 600;
-  opacity: 0.7;
-}
-.axisRow {
-  display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) 34px;
-  align-items: center;
-  gap: 6px;
-}
-.axisRow .jogKey,
-.axisRow .jpKey {
-  width: 34px;
-  height: 34px;
-}
 .axisName {
   font-family: inherit;
   font-variant-numeric: tabular-nums;
   font-size: 13px;
   font-weight: 800;
-}
-.axisValue {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 4px;
-  min-width: 0;
-  height: 34px;
-  padding: 0 8px;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  background: #111827;
-  line-height: 34px;
-  font: inherit;
-  cursor: pointer;
-}
-.axisValue[aria-pressed='true'] {
-  border-color: rgba(111, 155, 255, 0.55);
-}
-.axisValue b {
-  font-family: inherit;
-  font-variant-numeric: tabular-nums;
-  font-size: 14px;
-  color: #a7f3d0;
-  text-align: right;
-}
-.axisValue .axisName {
-  font-size: 12px;
 }
 
 /* zero calibration, two ways */
@@ -2643,27 +2551,6 @@ div.zeroFlow {
   width: 18px;
   height: 18px;
 }
-.axisRows {
-  gap: 6px;
-}
-
-.jogKey,
-.axisRow .jogKey,
-.axisRow .jpKey {
-  width: 36px;
-  height: 36px;
-  border-radius: 9px;
-}
-
-.axisRow {
-  grid-template-columns: 36px minmax(0, 1fr) 36px;
-}
-.axisValue .axisName {
-  font-size: 13px;
-}
-.axisValue b {
-  font-size: 15px;
-}
 
 /* wide screens get a wider dock for the larger controls */
 @media (min-width: 1000px) and (min-height: 600px) {
@@ -3374,18 +3261,15 @@ div.zeroFlow {
  * Tactile controls (as in the myAGV mockup): raised keys that sink when
  * pressed, round knobs on inset tracks, and a slide jog that springs back
  * ======================================================================== */
-.dock .jogKey,
 .dock .jogWide {
   background: linear-gradient(180deg, #ffffff 0%, #f1f3f6 100%);
   border: 1px solid #d3d9e2;
   box-shadow: 0 2px 0 #d3d9e2, 0 4px 10px rgba(16, 24, 40, 0.07), inset 0 1px 0 #fff;
   transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.12s ease, border-color 0.12s ease;
 }
-.dock .jogKey:hover:not(:disabled),
 .dock .jogWide:hover:not(:disabled) {
   border-color: #b9c1cd;
 }
-.dock .jogKey:active:not(:disabled),
 .dock .jogWide:active:not(:disabled) {
   transform: translateY(2px);
   background: #efeaff;
@@ -3393,14 +3277,10 @@ div.zeroFlow {
   color: #5b3fd6;
   box-shadow: 0 0 0 #d3d9e2, inset 0 2px 5px rgba(90, 60, 220, 0.2);
 }
-.dock .jogKey:disabled,
 .dock .jogWide:disabled {
   box-shadow: none;
   background: var(--work);
   transform: none;
-}
-.dock .jogKey {
-  border-radius: 9px;
 }
 
 /* joint bars: an inset track and a round knob */
@@ -3854,57 +3734,8 @@ div.zeroFlow {
   }
 }
 
-/* ---- Joint jog, teach-pendant style: pick a joint (list or its point on the 3D arm), turn it ---- */
-.jpRows {
-  display: grid;
-  gap: 3px;
-}
-.jpRow {
-  display: grid;
-  grid-template-columns: 30px minmax(0, 1fr) 54px 64px;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 5px 8px 5px 6px;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  background: transparent;
-  font: inherit;
-  color: var(--ink);
-  text-align: left;
-  cursor: pointer;
-}
-button.jpRow:hover {
-  background: #f5f7fa;
-  border-color: #e6e9ef;
-}
-.jpSel {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
-  padding: 8px 8px 8px 9px;
-  cursor: default;
-  position: relative;
-  border-color: #c9d4fb;
-  background: linear-gradient(180deg, #f3f6ff, #fbfcff);
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 6px 16px -10px rgba(47, 91, 234, 0.45);
-}
-.jpSel::before {
-  content: '';
-  position: absolute;
-  left: -1px;
-  top: 10px;
-  bottom: 10px;
-  width: 3px;
-  border-radius: 0 3px 3px 0;
-  background: #2f5bea;
-}
-.jpHead {
-  display: grid;
-  grid-template-columns: 30px minmax(0, 1fr) 76px;
-  align-items: center;
-  gap: 8px;
-}
+/* ---- Joint jog: the joint's glyph and its position bar (track, fill from 0°, knob, limits) ---- */
+
 .jpGlyph {
   width: 30px;
   height: 30px;
@@ -3915,126 +3746,7 @@ button.jpRow:hover {
   border: 1px solid #e1e5ec;
   box-shadow: inset 0 1px 0 #fff, 0 1px 2px rgba(16, 24, 40, 0.06);
 }
-.jpSel .jpGlyph {
-  border-color: #c3cffb;
-  box-shadow: 0 0 0 3px rgba(47, 91, 234, 0.1);
-}
-.jpName {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 0 6px;
-  min-width: 0;
-}
-.jpName b {
-  font-size: 13.5px;
-  font-weight: 700;
-  letter-spacing: -0.2px;
-  white-space: nowrap;
-}
-.jpName em {
-  font: 600 10px ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-style: normal;
-  color: #475467;
-  background: #eef1f5;
-  border-radius: 4px;
-  padding: 1px 4px;
-}
-.jpSel .jpName em {
-  background: #e0e7ff;
-  color: #2f5bea;
-}
-.jpName small {
-  flex-basis: 100%;
-  font-size: 11px;
-  color: #7a8497;
-}
-.jpValue {
-  font: 600 13px ui-monospace, SFMono-Regular, Menlo, monospace;
-  text-align: right;
-  letter-spacing: -0.3px;
-  padding: 4px 7px;
-  border-radius: 7px;
-  background: #f5f7fa;
-  border: 1px solid #e6e9ef;
-  box-shadow: inset 0 1px 2px rgba(16, 24, 40, 0.06);
-  color: var(--ink);
-  white-space: nowrap;
-}
-.jpValue i {
-  font-style: normal;
-  color: #98a2b3;
-}
-.jpValue[data-near] {
-  color: #b54708;
-  border-color: #fedf89;
-  background: #fffaeb;
-}
-.jpSel .jpValue {
-  font-size: 15px;
-  padding: 6px 9px;
-  background: #101828;
-  border-color: #101828;
-  color: #fff;
-}
-.jpSel .jpValue i {
-  color: #98a2b3;
-}
-.jpMini {
-  position: relative;
-  display: block;
-  height: 14px;
-}
-.jpMini .jpTrack {
-  top: 5px;
-  height: 4px;
-}
-.jpMini .jpKnob {
-  width: 8px;
-  height: 8px;
-  top: -2px;
-  border-width: 1.5px;
-  box-shadow: none;
-}
-.jpMini .jpZero {
-  top: -2px;
-  height: 8px;
-}
-.jpCtl {
-  display: grid;
-  grid-template-columns: 38px minmax(0, 1fr) 38px;
-  align-items: center;
-  gap: 8px;
-}
-.jpKey {
-  width: 38px;
-  height: 34px;
-  display: grid;
-  place-items: center;
-  border-radius: 10px;
-  color: #fff;
-  background: linear-gradient(#4a74f5, #2a55d6);
-  border: 1px solid #2248bd;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 1px 0 #1d3fa6, 0 2px 0 #2748b3, 0 7px 12px -6px rgba(47, 91, 234, 0.6);
-  cursor: pointer;
-  touch-action: none;
-  user-select: none;
-  transition: transform 0.06s, box-shadow 0.06s;
-}
-.jpKey:hover:not(:disabled) {
-  background: linear-gradient(#5a80f7, #2f5bea);
-}
-.jpKey:active:not(:disabled) {
-  transform: translateY(2px);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3), 0 0 0 #1d3fa6;
-}
-.jpKey:disabled {
-  color: #98a2b3;
-  background: linear-gradient(#f7f8fa, #eceff3);
-  border-color: #d5dae2;
-  box-shadow: inset 0 1px 0 #fff, 0 1px 0 #d0d5dd;
-  cursor: not-allowed;
-}
+
 .jpBar {
   position: relative;
   height: 34px;
@@ -4058,9 +3770,7 @@ button.jpRow:hover {
   border-radius: 5px;
   background: linear-gradient(#c3cdf2, #aebcf0);
 }
-.jpSel .jpFill {
-  background: linear-gradient(#5a80f7, #2f5bea);
-}
+
 .jpZero {
   position: absolute;
   top: -4px;
@@ -4082,11 +3792,7 @@ button.jpRow:hover {
   box-shadow: 0 2px 5px rgba(16, 24, 40, 0.25);
   pointer-events: none;
 }
-.jpSel .jpKnob {
-  border-color: #2f5bea;
-  box-shadow: 0 0 0 4px rgba(47, 91, 234, 0.15), 0 2px 5px rgba(16, 24, 40, 0.25);
-}
-.jpMini[data-near] .jpKnob,
+
 .jpBar[data-near] .jpKnob {
   border-color: #f79009;
 }
@@ -6047,76 +5753,12 @@ button.jpRow:hover {
   background: #0e141c;
   border-color: #f5a524;
 }
-/* joint rows: name and its small gauge side by side, value at the end */
-.app .side .jpRows {
-  gap: 2px;
-}
-.app .side .jpRow {
-  grid-template-columns: 30px minmax(74px, auto) minmax(0, 1fr) 62px;
-  gap: 10px;
-  padding: 4px 6px;
-}
-.app .side button.jpRow:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.07);
-}
-.app .side .jpSel {
-  grid-template-columns: 1fr;
-  gap: 6px;
-  padding: 8px;
-  border-color: rgba(120, 160, 255, 0.4);
-  background: linear-gradient(180deg, rgba(91, 140, 255, 0.14), rgba(91, 140, 255, 0.05));
-  box-shadow: 0 0 18px rgba(91, 140, 255, 0.1);
-}
-.app .side .jpSel::before {
-  background: #6f9bff;
-  box-shadow: 0 0 8px #6f9bff;
-}
-.app .side .jpHead {
-  grid-template-columns: 30px minmax(0, 1fr) 76px;
-}
 .app .side .jpGlyph {
   background: #e9edf3;
   border-color: transparent;
   box-shadow: none;
 }
-.app .side .jpSel .jpGlyph {
-  box-shadow: 0 0 0 3px rgba(111, 155, 255, 0.3);
-}
-.app .side .jpName b {
-  color: #e8eef8;
-}
-.app .side .jpName em {
-  background: rgba(255, 255, 255, 0.07);
-  color: #a9b8cf;
-}
-.app .side .jpSel .jpName em {
-  background: rgba(91, 140, 255, 0.25);
-  color: #cfe0ff;
-}
-.app .side .jpName small {
-  color: #8696ae;
-}
-.app .side .jpValue {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.08);
-  box-shadow: none;
-  color: #e8eef8;
-}
-.app .side .jpValue i {
-  color: #5f6f87;
-}
-.app .side .jpValue[data-near] {
-  color: #ffcf7a;
-  border-color: rgba(255, 173, 31, 0.4);
-  background: rgba(255, 173, 31, 0.1);
-}
-.app .side .jpSel .jpValue {
-  background: #05080d;
-  border-color: rgba(120, 160, 255, 0.35);
-  color: #fff;
-  box-shadow: inset 0 0 12px rgba(91, 140, 255, 0.15);
-}
+
 .app .side .jpTrack {
   background: rgba(255, 255, 255, 0.09);
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
@@ -6124,10 +5766,7 @@ button.jpRow:hover {
 .app .side .jpFill {
   background: rgba(111, 155, 255, 0.45);
 }
-.app .side .jpSel .jpFill {
-  background: linear-gradient(90deg, #3f6fe6, #8fb2ff);
-  box-shadow: 0 0 8px rgba(111, 155, 255, 0.5);
-}
+
 .app .side .jpZero {
   background: #8696ae;
 }
@@ -6136,23 +5775,12 @@ button.jpRow:hover {
   border-color: #a9b8cf;
   box-shadow: none;
 }
-.app .side .jpSel .jpKnob {
-  background: #fff;
-  border-color: #6f9bff;
-  box-shadow: 0 0 0 4px rgba(111, 155, 255, 0.22), 0 0 10px rgba(111, 155, 255, 0.6);
-}
-.app .side .jpMini[data-near] .jpKnob,
+
 .app .side .jpBar[data-near] .jpKnob {
   border-color: #ffad1f;
 }
 .app .side .jpLimits i {
   color: #5f6f87;
-}
-.app .side .jpKey:disabled {
-  color: #5f6f87;
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.08);
-  box-shadow: none;
 }
 
 /* --- code tabs in the dark panel ------------------------------------------- */
@@ -6284,32 +5912,6 @@ button.jpRow:hover {
   background: rgba(255, 255, 255, 0.04);
   color: #6f7f97;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-}
-/* 좌표로: the step keys as the joint keys, the slide knob in the panel's blue */
-.app .side .dock .jogKey,
-.app .side .jogKey {
-  color: #fff;
-  background: linear-gradient(#4a74f5, #2a55d6);
-  border: 1px solid #2248bd;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 2px 0 #1d3fa6, 0 7px 12px -6px rgba(47, 91, 234, 0.6);
-}
-.app .side .dock .jogKey:hover:not(:disabled) {
-  background: linear-gradient(#5a80f7, #2f5bea);
-  border-color: #2248bd;
-}
-.app .side .dock .jogKey:active:not(:disabled) {
-  color: #fff;
-  background: linear-gradient(#3c66e6, #2348c4);
-  border-color: #2248bd;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-.app .side .dock .jogKey:disabled {
-  color: #5f6f87;
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.08);
-}
-.app .side .axisRow .axisValue {
-  background: rgba(255, 255, 255, 0.03);
 }
 /* the practice needs a tool that is not on: one amber line with [끼우기] */
 .app .missionCard:has(.missionNeed) {
@@ -8387,24 +7989,6 @@ button.jpRow:hover {
   .app .tlRate button {
     padding: 8px 11px;
   }
-  /* Jog keys: a full finger (held down for seconds while the arm moves). */
-  .jogKey,
-  .axisRow .jogKey,
-  .axisRow .jpKey {
-    width: 44px;
-    height: 44px;
-  }
-  .axisRow {
-    grid-template-columns: 44px minmax(0, 1fr) 44px;
-    gap: 4px;
-  }
-  .axisValue {
-    height: 44px;
-    padding: 0 6px;
-  }
-  .axisValue b {
-    font-size: 14px;
-  }
 }
 
 /* An iPad held across (about 1024–1180 px): the logo alone, the task chip trimmed to its space. */
@@ -8440,5 +8024,271 @@ button.jpRow:hover {
   .shell[data-mini='on'] .pip {
     left: auto;
     right: var(--inset-r);
+  }
+}
+
+/* --- 조그 (ControlPanel): the keys fill the panel's height, each says what it does ----------------- */
+.screen:has(> .pendant) {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+.app .side .pendant {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.app .side .pendant .frameSeg button {
+  padding: 9px 8px;
+}
+.app .side .pendant .frameSeg button b {
+  font-size: 14.5px;
+}
+.app .side .pendant .stepSeg button {
+  padding: 7px 0;
+  font-size: 13.5px;
+}
+.app .side .pendant .speedRow {
+  font-size: 13px;
+}
+.jogArea {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.jogGroup {
+  margin: 6px 0 0;
+  font-size: 13px;
+  font-weight: 800;
+  color: #e8eef8;
+}
+.jogGroup small {
+  margin-left: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #8696ae;
+}
+.jogRow {
+  flex: 1 1 0;
+  min-height: 52px;
+  max-height: 112px;
+  display: grid;
+  grid-template-columns: minmax(56px, 24%) minmax(0, 1fr) minmax(56px, 24%);
+  align-items: stretch;
+  gap: 8px;
+}
+.jogRow[data-turn] {
+  min-height: 46px;
+  max-height: 72px;
+}
+.jogMid {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 6px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+  cursor: pointer;
+}
+.jogMid[data-axis] {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  cursor: default;
+}
+.jogMid[data-axis] b {
+  font-size: 18px;
+  font-weight: 900;
+}
+.jogName {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.15;
+}
+.jogMid[data-axis] small {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #a9b8cf;
+  white-space: nowrap;
+}
+.jogMid[data-axis] output {
+  margin-left: auto;
+  font: 700 19px ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: -0.4px;
+  color: #a7f3d0;
+}
+.jogRow[data-turn] .jogMid[data-axis] output {
+  font-size: 16px;
+  color: #cfe0ff;
+}
+.jogRow[data-sel] .jogMid {
+  background: linear-gradient(180deg, rgba(91, 140, 255, 0.18), rgba(91, 140, 255, 0.06));
+  box-shadow: inset 0 0 0 1px rgba(120, 160, 255, 0.5);
+}
+.jogHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.jogHead .jpGlyph {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  background: #e9edf3;
+  border: none;
+}
+.jogHead b {
+  font-size: clamp(13px, 1vw, 14.5px);
+  font-weight: 800;
+  color: #e8eef8;
+  white-space: nowrap;
+}
+.jogHead em {
+  font: 600 11px ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-style: normal;
+  color: #a9b8cf;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+.jogRow[data-sel] .jogHead em {
+  background: rgba(91, 140, 255, 0.3);
+  color: #fff;
+}
+.jogValue {
+  margin-left: auto;
+  font: 700 clamp(14px, 1.1vw, 17px) ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: -0.4px;
+  color: #fff;
+  white-space: nowrap;
+}
+.jogValue i {
+  font-style: normal;
+  color: #8696ae;
+}
+.jogValue[data-near] {
+  color: #ffcf7a;
+}
+.jogMid .jpBar {
+  height: 26px;
+}
+.jogMid .jpBar .jpTrack {
+  top: 6px;
+}
+.jogMid .jpBar input[type='range'] {
+  inset: 0;
+}
+.jogMid .jpLimits {
+  bottom: -3px;
+}
+.jogRow:not([data-sel]) .jpFill {
+  background: rgba(111, 155, 255, 0.55);
+}
+.jogRow[data-sel] .jpFill {
+  background: linear-gradient(90deg, #3f6fe6, #8fb2ff);
+}
+.jogRow[data-sel] .jpKnob {
+  background: #fff;
+  border-color: #6f9bff;
+}
+
+/* the key: raised, blue, its direction word in large type */
+.bigKey {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 4px;
+  border-radius: 12px;
+  color: #fff;
+  background: linear-gradient(#4a74f5, #2a55d6);
+  border: 1px solid #2248bd;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 2px 0 #1d3fa6, 0 8px 14px -8px rgba(47, 91, 234, 0.7);
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  transition: transform 0.06s, box-shadow 0.06s, background 0.1s;
+}
+.bigKey b {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+.bigKey small {
+  font: 700 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: rgba(255, 255, 255, 0.78);
+}
+/* a turning key (a joint, the hand's direction): the turn sign large, its step under it */
+.jogRow:has(.jogHead) .bigKey small,
+.jogRow[data-turn] .bigKey small {
+  font-size: 13px;
+  color: #fff;
+}
+.jogGroup {
+  display: flex;
+  align-items: baseline;
+  gap: 0 6px;
+}
+.toolDown {
+  margin-left: auto;
+  align-self: center;
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(120, 160, 255, 0.5);
+  background: rgba(91, 140, 255, 0.16);
+  color: #dbe6ff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.toolDown:hover:not(:disabled) {
+  background: rgba(91, 140, 255, 0.3);
+}
+.toolDown:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.bigKey:hover:not(:disabled) {
+  background: linear-gradient(#5a80f7, #2f5bea);
+}
+.bigKey:active:not(:disabled) {
+  transform: translateY(2px);
+  background: linear-gradient(#3c66e6, #2348c4);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.35);
+}
+.bigKey:focus-visible {
+  outline: 2px solid #a9c2ff;
+  outline-offset: 2px;
+}
+.bigKey:disabled {
+  color: #5f6f87;
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+.bigKey:disabled small {
+  color: #5f6f87;
+}
+@media (max-height: 820px) {
+  .jogRow {
+    min-height: 44px;
+  }
+  .jogRow[data-turn] {
+    min-height: 40px;
+  }
+  .bigKey b {
+    font-size: 14px;
   }
 }

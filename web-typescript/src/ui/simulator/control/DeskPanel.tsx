@@ -108,7 +108,6 @@ interface Props {
   onUpdate(id: string, patch: Partial<DeskObject>): void;
   onRemove(id: string): void;
   onClear(): void;
-  onPhysics(on: boolean): void;
   onClose(): void;
   /** The tab to open on (the dock's [물건 놓기] opens 물건). */
   initialTab?: Tab;
@@ -116,7 +115,7 @@ interface Props {
   docked?: boolean;
 }
 
-export type Tab = 'scene' | 'objects' | 'physics';
+export type Tab = 'scene' | 'objects';
 
 function Num({ label, value, unit, min, max, step = 1, onChange, disabled }: { label: string; value: number; unit: string; min: number; max: number; step?: number; onChange(v: number): void; disabled?: boolean }) {
   return (
@@ -158,7 +157,6 @@ export default function DeskPanel(p: Props) {
           [
             ['scene', '환경'],
             ['objects', `물건${p.desk.objects.length ? ` ${p.desk.objects.length}` : ''}`],
-            ['physics', `물리 ${p.desk.physics ? '켜짐' : '꺼짐'}`],
           ] as const
         ).map(([id, name]) => (
           <button key={id} type="button" role="tab" aria-selected={shownTab === id} disabled={kit && id !== 'scene'} onClick={() => setTab(id)}>
@@ -308,19 +306,6 @@ export default function DeskPanel(p: Props) {
         </>
       )}
 
-      {shownTab === 'physics' && (
-        <div className={css.sec}>
-          <h4>물리 엔진</h4>
-          <div className={css.seg} role="group" aria-label="물리 엔진">
-            <button type="button" aria-pressed={!p.desk.physics} disabled={p.busy} onClick={() => p.onPhysics(false)}>
-              끄기 · 정확한 동작
-            </button>
-            <button type="button" aria-pressed={p.desk.physics} disabled={p.busy} onClick={() => p.onPhysics(true)}>
-              켜기 · 실제처럼
-            </button>
-          </div>
-        </div>
-      )}
     </section>
   );
 }

@@ -86,6 +86,11 @@ export interface PhysicsWorld {
    */
   grab(reachMm?: number, opts?: { upright?: boolean; passThrough?: boolean }): string | null;
   release(): void;
+  /**
+   * Hold one block exactly where the caller puts it (the simulator's carried object, which follows its
+   * own tool tip); null lets the last one go (it falls from where it was, at rest).
+   */
+  pin(id: string | null, at?: readonly [number, number, number], q?: readonly [number, number, number, number]): void;
   held(): string | null;
   /** Mass held, kg (for the torque calculation). */
   heldMassKg(): number;
@@ -120,6 +125,7 @@ export async function createPhysics(
   let bodies = new Map<string, { body: RAPIER_NS.RigidBody; spec: BlockSpec; size: number; massKg: number }>();
   const tool = { p: new Vector3(), q: new Quaternion(), v: new Vector3() };
   let hold: { id: string; rel: Vector3; relQ: Quaternion; upright: boolean } | null = null;
+  let pinned: string | null = null;
   let angles = startAngles.slice();
   let lastDt = 1 / 60;
   const up = new Vector3(0, 1, 0);
@@ -153,6 +159,7 @@ export async function createPhysics(
     world = new R.World({ x: 0, y: 0, z: -9.81 });
     world.timestep = 1 / 120;
     hold = null;
+    pinned = null;
     // Table: a thick slab with its top at z = 0.
     const table = world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(0.15, 0, -0.02));
     world.createCollider(R.ColliderDesc.cuboid(0.6, 0.6, 0.02).setFriction(0.8), table);
@@ -283,6 +290,25 @@ export async function createPhysics(
       h.body.collider(0).setSensor(false);
       const v = tool.v.clone().multiplyScalar(M / lastDt);
       h.body.setLinvel({ x: v.x, y: v.y, z: v.z }, true);
+    },
+    pin(id, at, q) {
+      if (pinned && pinned !== id) {
+        const was = bodies.get(pinned);
+        if (was) {
+          was.body.setBodyType(R.RigidBodyType.Dynamic, true);
+          was.body.setLinvel({ x: 0, y: 0, z: 0 }, true);
+          was.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+        }
+        pinned = null;
+      }
+      const b = id ? bodies.get(id) : undefined;
+      if (!id || !b) return;
+      if (pinned !== id) {
+        b.body.setBodyType(R.RigidBodyType.KinematicPositionBased, true);
+        pinned = id;
+      }
+      if (at) b.body.setNextKinematicTranslation({ x: at[0] * M, y: at[1] * M, z: at[2] * M });
+      if (q) b.body.setNextKinematicRotation({ x: q[0], y: q[1], z: q[2], w: q[3] });
     },
     held: () => hold?.id ?? null,
     heldMassKg: () => (hold ? (bodies.get(hold.id)?.massKg ?? 0) : 0),

@@ -93,6 +93,14 @@ for (const preset of P.PRESETS) {
   assert.ok(lastMove.kind === 'move' && lastMove.joints!.every((v, i) => Math.abs(v - r.world.angles[i]) < 0.01), `${preset.name} ends on its last point`);
   console.log(`  ok   preset "${preset.name}" runs (${r.simT.toFixed(1)} s, ${r.actions.length} robot actions)`);
 }
+// 집어서 옮기기 really moves a block: the green one from the mat onto 자리 2, the others stay.
+{
+  const r = await play(P.PRESETS[0]);
+  const green = r.world.blocks.find((b) => b.color === '초록')!;
+  assert.ok(Math.hypot(green.x - 190, green.y + 100) < 2 && Math.abs(green.z - 12.5) < 0.5, `green block on 자리 2: ${JSON.stringify(green)}`);
+  assert.equal(r.world.held, null);
+  console.log('  ok   preset "집어서 옮기기" carries the green block onto 자리 2');
+}
 
 // Smooth vs Tick on the square: Smooth is quicker, never stops between the first and last point, and
 // sends the passed points as via targets; Tick stops at each and sends none as via.

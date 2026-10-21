@@ -75,7 +75,7 @@ import type { PyOutput, PyResult } from '@/engine/python/types';
 import { buildChain, forwardKinematics, forwardKinematicsFrames, liftChain, solveIk, type ChainSegment } from '@/engine/robot/kinematics';
 import { jointMax, jointMin } from '@/engine/robot/limits';
 import { tcpPositionMm } from '@/engine/robot/motion';
-import { currentOrientation, shiftTool, solveToolPose, turnTool } from '@/engine/robot/tool';
+import { STRAIGHT_DOWN, currentOrientation, shiftTool, solveToolPose, turnTool } from '@/engine/robot/tool';
 import { parseUrdf, type UrdfRobot } from '@/engine/robot/urdf';
 import type { ImageLike } from '@/engine/vision/color';
 import { Divergence, findColor, offCentre, probeJacobian, stepTowards, type Seen } from '@/engine/vision/track';
@@ -384,7 +384,8 @@ export default function Console() {
   const arm = armById(robotMode || !MODEL_CHOICE ? DEFAULT_MODEL : model);
   setActiveArm(arm.id);
   setActiveDesk(desk);
-  setMatNeeded(practiceUsesMat(practice.id));
+  // 공정 works on the practice mat too (its example picks a block from it).
+  setMatNeeded(practiceUsesMat(practice.id) || tab === 'process');
   const [picking, setPicking] = useState(false);
   /** [?] 도움말 open; the first-run guide's mount number (a new one shows the steps again). */
   const [helpOpen, setHelpOpen] = useState(false);
@@ -1212,15 +1213,6 @@ export default function Console() {
     objectsToWorld(() => []);
     setDeskSel(null);
   };
-  const deskPhysics = (on: boolean) => {
-    if (busy || on === desk.physics) return;
-    const next = { ...desk, physics: on };
-    commitDesk(next);
-    world.current.physics = theme === 'arm' && on;
-    // Back to where things were set up, then the chosen rules.
-    objectsToWorld(() => next.objects.map((o) => ({ ...o })));
-    addLog('info', on ? '물리 엔진을 켰어요. 물건이 떨어지고 미끄러지고, 팔에 밀려요.' : '물리 엔진을 껐어요. 팔이 물건에 닿으면 멈춰요.');
-  };
   const deskMat = (on: boolean) => {
     if (busy) return;
     const next = { ...desk, mat: on };
@@ -1230,7 +1222,7 @@ export default function Console() {
 
   /* --- ▶ 데모 ----------------------------------------------------------------- */
   /**
-   * ▶ 데모 of a 실습 환경: the scene put out as it comes (physics off, the demo's tool on), then its block
+   * ▶ 데모 of a 실습 환경: the scene put out as it comes (the demo's tool on), then its block
    * program played on the simulated arm — never on a connected robot — under the caption bar's four steps.
    */
   const playDemo = async (scene: SceneId) => {
@@ -1242,7 +1234,7 @@ export default function Console() {
     setRailOpen(null);
     setDeskSel(null);
     setGoalCard(null);
-    if (th === 'arm') commitDesk({ ...desk, scene, objects: sceneObjects(scene), physics: false, mat: false });
+    if (th === 'arm') commitDesk({ ...desk, scene, objects: sceneObjects(scene), mat: false });
     if (th !== theme) {
       // The other environment's task list: the same task when it has one (the program stays as it is).
       const list = practicesFor(level, th);
@@ -1703,6 +1695,14 @@ export default function Console() {
 
   const chooseTab = (t: PanelTab) => {
     setTab(t);
+    // Into 공정 on a bare desk: the practice mat and its blocks come out, the arm stays where it is.
+    if (t === 'process' && !busy && theme === 'arm' && !world.current.blocks.length) {
+      setMatNeeded(true);
+      const at = world.current.angles.slice();
+      world.current = createWorld(effector, cameraFlange, layout.current, theme);
+      world.current.angles = at;
+      setAnglesView(at);
+    }
     if (!dockShown) toggleDock();
     try {
       localStorage.setItem(TAB_KEY, t);
@@ -1805,10 +1805,31 @@ export default function Console() {
   /** Slider drag: the 3D arm goes there at once (on the robot: a preview until the slider is let go). */
   const setJoint = (i: number, deg: number) => {
     if (busy || !loaded) return;
-    const next = world.current.angles.slice();
+    const from = world.current.angles.slice();
+    let next = from.slice();
     next[i] = deg;
     // Into itself: the arm stays where it was (the slider springs back) and the card says which joint to change.
     const bad = moveCheck(loaded.chain, world.current, next, 1);
+    // Into the desk, the floor or what is on it: the arm stops where it touches (a servo cannot push
+    // through), unless it is already touching there — then it may move, to get out.
+    if (bad && !(bad instanceof SelfCollision) && !moveCheck(loaded.chain, world.current, from, 1)) {
+      let free = 0;
+      let hit = 1;
+      for (let k = 0; k < 10; k += 1) {
+        const t = (free + hit) / 2;
+        const q = from.slice();
+        q[i] = from[i] + (deg - from[i]) * t;
+        if (moveCheck(loaded.chain, world.current, q, 4)) hit = t;
+        else free = t;
+      }
+      next = from.slice();
+      next[i] = from[i] + (deg - from[i]) * free;
+      if (Math.abs(next[i] - from[i]) < 0.05) {
+        setBadge({ kind: 'stop', text: bad.message });
+        setAnglesView(from);
+        return;
+      }
+    }
     if (bad instanceof SelfCollision) {
       setBadge({ kind: 'stop', text: '팔이 스스로 부딪혀요' });
       setAnglesView(world.current.angles.slice());
@@ -1821,7 +1842,7 @@ export default function Console() {
       // The real arm follows the slider as it is dragged (at jog speed, checked on the way).
       previewing.current = true;
       const goal = (jog.current?.goal ?? basePose()).slice();
-      goal[i] = deg;
+      goal[i] = next[i];
       startJog({ dir: 1, goal });
     }
     const why = bad?.message ?? null;
@@ -1912,6 +1933,14 @@ export default function Console() {
       addLog('info', '도구가 아래를 향하도록 자세를 바꿔요.');
     }
     void goJoints(sol.anglesDeg, `${axis.toUpperCase()} ${delta > 0 ? '+' : ''}${delta}mm`, true);
+  };
+  /** [손 아래로]: the tool pointing straight down again (after RX · RY · RZ), its tip where it is. */
+  const toolDown = () => {
+    if (!loaded || busy) return;
+    const base = basePose();
+    const sol = solveToolPose(loaded.chain, tcpPositionMm(loaded.chain, base, tcpNow), base, { tcpMm: tcpNow, orientation: STRAIGHT_DOWN });
+    if (!sol.converged) return addLog('err', '이 자리에서는 손을 똑바로 아래로 향하게 할 수 없어요.', '손끝을 로봇 쪽으로 조금 옮긴 뒤 다시 눌러 주세요.');
+    void goJoints(sol.anglesDeg, '손 아래로', true);
   };
 
 
@@ -2633,6 +2662,7 @@ export default function Console() {
       onJointCommit={jointCommit}
       onJointStep={jointStep}
       onTipStep={tipStep}
+      onToolDown={toolDown}
       onJointJog={(i, dir) => startJog({ joint: i, dir })}
       onTipJog={(axis, dir, scale) => startJog({ axis, dir, scale })}
       onJogStop={() => endJog()}
@@ -2694,15 +2724,27 @@ export default function Console() {
     on: id === 'camera' ? camOpen && !railOpen : railOpen === id,
     onClick: () => toggleRail(id),
   });
-  const barGroups: BarItem[][] = [
-    [work('jog', '조그', 'move', '조그: 좌표 · 관절로 움직이기', true), work('parts', '도구', 'tool', '도구 · 액세서리', true), work('pose', '자세', 'home', '자세 저장 · 불러오기', true), work('process', '공정', 'flag', '공정 짜기: 점 · 순서')],
-    [work('basic', '블록', 'grid', `블록 코딩 (${LEVEL_TAB.basic.sub})`), work('python', 'Python', 'code', `Python (${LEVEL_TAB.python.sub})`), work('ros', 'ROS 2', 'joints', `ROS 2 (${LEVEL_TAB.ros.sub})`)],
-    [
-      viewItem('env', '환경', 'scene', '실습 환경 · 장면마다 ▶ 데모'),
-      ...(theme === 'kit' ? [] : [viewItem('objects', '물건', 'box', '책상에 물건 놓기', desk.objects.length ? String(desk.objects.length) : undefined)]),
-      ...(camAvailable ? [viewItem('camera', '카메라', 'camera', '카메라 화면 · 영상 처리')] : []),
-      viewItem('monitor', '모니터', 'chart', '관절 · 손끝 · 그래프 · 부하'),
-    ],
+  // 제어: moving the arm by hand. 작업: programs that run (a process of points, blocks, Python, ROS 2). 보기: windows.
+  const barGroups = [
+    { name: '제어', items: [work('jog', '조그', 'move', '조그: 좌표 · 관절로 움직이기', true), work('parts', '도구', 'tool', '도구 · 액세서리', true), work('pose', '자세', 'home', '자세 저장 · 불러오기', true)] },
+    {
+      name: '작업',
+      items: [
+        work('process', '공정', 'flag', '공정 짜기: 자세(점)를 순서대로'),
+        work('basic', '블록', 'grid', `블록 코딩 (${LEVEL_TAB.basic.sub})`),
+        work('python', 'Python', 'code', `Python (${LEVEL_TAB.python.sub})`),
+        work('ros', 'ROS 2', 'joints', `ROS 2 (${LEVEL_TAB.ros.sub})`),
+      ],
+    },
+    {
+      name: '보기',
+      items: [
+        viewItem('env', '환경', 'scene', '실습 환경 · 장면마다 ▶ 데모'),
+        ...(theme === 'kit' ? [] : [viewItem('objects', '물건', 'box', '책상에 물건 놓기', desk.objects.length ? String(desk.objects.length) : undefined)]),
+        ...(camAvailable ? [viewItem('camera', '카메라', 'camera', '카메라 화면 · 영상 처리')] : []),
+        viewItem('monitor', '모니터', 'chart', '관절 · 손끝 · 그래프 · 부하'),
+      ],
+    },
   ];
   const barFoot: BarItem[] = [{ ...work('zero', '영점', 'zero', robotMode ? '영점 맞추기' : '로봇을 연결하면 영점을 맞춰요'), disabled: !robotMode || (busy && !zeroMode) }];
   const SCREEN_TITLE: Record<string, string> = { jog: '조그', parts: '도구', pose: '자세', zero: '영점', process: '공정', basic: LEVEL_TAB.basic.name, python: LEVEL_TAB.python.name, ros: LEVEL_TAB.ros.name };
@@ -3402,7 +3444,6 @@ export default function Console() {
                       onUpdate={deskUpdate}
                       onRemove={deskRemove}
                       onClear={deskClear}
-                      onPhysics={deskPhysics}
                       onClose={() => setRailOpen(null)}
                     />
                   )}

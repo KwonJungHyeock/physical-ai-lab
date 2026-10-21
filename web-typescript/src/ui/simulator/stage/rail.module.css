@@ -27,6 +27,15 @@
 .foot {
   margin-top: auto !important;
 }
+/* The group's name above its buttons: 제어 · 작업 · 보기. */
+.groupName {
+  padding: 0 0 2px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-align: center;
+  color: #5b6a80;
+}
 .rail button {
   position: relative;
   display: grid;

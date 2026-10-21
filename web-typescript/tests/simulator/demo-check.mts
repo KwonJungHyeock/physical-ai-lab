@@ -114,8 +114,8 @@ assert.ok(
   'every arm: the 빈 화면 demo',
 );
 
-// Desk objects in the tool's hands (physics off): the pump takes a flat top it touches and the gripper
-// what is between its open fingers; a closed gripper or a bare flange is still stopped by the object.
+// Desk objects in the tool's hands (the arm's links push them, the physics): the pump takes a flat top it
+// touches and the gripper what is between its open fingers; a closed gripper or a bare flange is stopped by it.
 {
   const arm = setActiveArm('mycobot280-rdkx5');
   const chain = chainOf(arm.urdf);
@@ -133,7 +133,7 @@ assert.ok(
   const gripped = await run('adaptive', 'robot.gripper.open()\nrobot.move_to(200, 0, 15)\nrobot.gripper.close()\nrobot.move_to(200, 0, 90)\n');
   assert.ok(gripped.carry && Math.abs(gripped.objects[0].z - 75) < 0.5, 'the gripper lifts the block it closed on');
   await assert.rejects(run('adaptive', 'robot.gripper.close()\nrobot.move_to(200, 0, 15)\n'), (e: unknown) => e instanceof RunError && /블록에 닿아요/.test(e.message));
-  await assert.rejects(run('none', 'robot.move_to(200, 0, 35)\n'), (e: unknown) => e instanceof RunError && /블록에 닿아요/.test(e.message));
+  await assert.rejects(run('none', 'robot.move_to(200, 0, 20)\n'), (e: unknown) => e instanceof RunError && /블록에 닿아요/.test(e.message));
   // Carried into the furniture: stopped with the object's name.
   setActiveDesk({ ...EMPTY_DESK, scene: 'factory', objects: sceneObjects('factory') });
   const w = createWorld('pump', false, BLOCK_START, 'arm');

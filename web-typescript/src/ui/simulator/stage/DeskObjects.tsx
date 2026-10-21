@@ -3,9 +3,9 @@
 /**
  * The objects on the desk (작업대 꾸미기), in the robot base frame (the parent group is z up, metres):
  * drawn from the world each frame (physics moves them), picked with a click, dragged over the desk
- * and deleted (its × or the Delete key) whenever nothing runs. With physics on, a rigid-body world (Rapier) runs beside the
- * simulator: the arm's links push the objects, they fall and topple, and the pump or a closing
- * gripper picks the one at the tool tip.
+ * and deleted (its × or the Delete key) whenever nothing runs. A rigid-body world (Rapier) runs beside the
+ * simulator: the arm's links push the objects, they fall and topple; what the pump or gripper picks
+ * up follows the tool.
  */
 
 import { Html } from '@react-three/drei';
@@ -308,13 +308,15 @@ const toSpec = (o: DeskObject): BlockSpec => {
 };
 
 /**
- * Physics on: the rigid-body world follows the arm and moves the world's objects. Rebuilt when the
- * world is reset or the objects are edited (the console then gives the world a new objects list).
+ * The rigid-body world (always on in the arm-only theme): it follows the arm, which pushes the
+ * objects; they fall, slide and topple. What the tool picks up is the simulator's (exact, like the
+ * real tool): the physics holds that object where the simulator carries it and lets it fall when let go.
+ * Rebuilt when the world is reset, the objects are edited (the console then gives the world a new
+ * objects list) or the tool changes.
  */
 export function DeskPhysics({ world, chain, tcpMm, effector }: { world: RefObject<WorldState | null>; chain: readonly ChainSegment[]; tcpMm: number; effector: EffectorId }) {
   const phys = useRef<PhysicsWorld | null>(null);
-  const built = useRef<{ list: DeskObject[] | null; on: boolean; loading: boolean }>({ list: null, on: false, loading: false });
-  const gripping = useRef(false);
+  const built = useRef<{ list: DeskObject[] | null; on: boolean; loading: boolean; reach: number }>({ list: null, on: false, loading: false, reach: -1 });
   useEffect(
     () => () => {
       phys.current?.dispose();
@@ -322,6 +324,10 @@ export function DeskPhysics({ world, chain, tcpMm, effector }: { world: RefObjec
     },
     [],
   );
+  // The tool as a solid: an open gripper's fingers go round what they are about to hold and a suction
+  // cup rests on a top, so the solid stops short of the tool point (at the palm, just above the cup's lip).
+  const kind = EFFECTOR_BY_ID[effector].kind;
+  const reach = kind === 'grip' ? Math.max(0, tcpMm - 40) : kind === 'suction' ? Math.max(0, tcpMm - 3) : tcpMm;
   useFrame((_, dt) => {
     const w = world.current;
     if (!w) return;
@@ -332,17 +338,19 @@ export function DeskPhysics({ world, chain, tcpMm, effector }: { world: RefObjec
       return;
     }
     if (b.loading) return;
-    if (!phys.current || b.list !== w.objects || !b.on) {
+    if (!phys.current || b.list !== w.objects || !b.on || b.reach !== reach) {
       const list = w.objects;
       const specs = list.map(toSpec);
       const fixed = w.fixed.map((f) => ({ min: f.min, max: f.max }));
       b.list = list;
       b.on = true;
-      gripping.current = false;
-      if (phys.current) phys.current.reset(specs, fixed, w.angles);
+      if (phys.current && b.reach === reach) phys.current.reset(specs, fixed, w.angles);
       else {
+        phys.current?.dispose();
+        phys.current = null;
+        b.reach = reach;
         b.loading = true;
-        void createPhysics(chain, tcpMm, specs, fixed, w.angles).then((p) => {
+        void createPhysics(chain, reach, specs, fixed, w.angles).then((p) => {
           phys.current = p;
           b.loading = false;
         });
@@ -350,22 +358,24 @@ export function DeskPhysics({ world, chain, tcpMm, effector }: { world: RefObjec
       }
     }
     const p = phys.current;
+    // The object the tool carries goes where the simulator put it.
+    const carried = w.carry ? w.objects.find((k) => k.id === w.carry!.id) : undefined;
+    if (carried) p.pin(carried.id, [carried.x, carried.y, carried.z + carried.size[2] / 2], carried.q ?? yawQ(carried.yawDeg));
+    else p.pin(null);
     p.stepTo(w.angles, Math.min(dt, 1 / 30));
-    // The pump on, or a gripper closed: hold what is at the tool tip; off / open: let go.
-    const kind = EFFECTOR_BY_ID[effector].kind;
-    const open = EFFECTOR_BY_ID[effector].gapMm?.open ?? 0;
-    const grip = !w.held && (kind === 'suction' ? w.pump : kind === 'grip' ? w.gapMm < open - 8 : false);
-    if (grip && !gripping.current) p.grab(kind === 'suction' ? 12 : 22);
-    if (!grip && gripping.current) p.release();
-    gripping.current = grip;
     for (const pose of p.blocks()) {
+      if (pose.id === carried?.id) continue;
       const o = w.objects.find((k) => k.id === pose.id);
       if (!o) continue;
       o.x = pose.at.x;
       o.y = pose.at.y;
       o.z = pose.at.z - o.size[2] / 2;
       o.q = [pose.q.x, pose.q.y, pose.q.z, pose.q.w];
+      // Its turn about the vertical, for the simulator's grip and footprint rules.
+      o.yawDeg = (Math.atan2(2 * (pose.q.w * pose.q.z + pose.q.x * pose.q.y), 1 - 2 * (pose.q.y * pose.q.y + pose.q.z * pose.q.z)) * 180) / Math.PI;
     }
   });
   return null;
 }
+
+const yawQ = (deg: number): [number, number, number, number] => [0, 0, Math.sin((deg * Math.PI) / 360), Math.cos((deg * Math.PI) / 360)];

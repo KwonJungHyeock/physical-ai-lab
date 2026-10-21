@@ -51,6 +51,8 @@ interface Props {
   onJointStep(i: number, delta: number): void;
   /** One step: mm along x / y / z, ° about rx / ry / rz. */
   onTipStep(axis: Axis, delta: number): void;
+  /** The tool pointing straight down again, its tip kept. */
+  onToolDown?(): void;
   /** Key held: move continuously (joint or tool tip along a base axis) until onJogStop. */
   onJointJog(i: number, dir: -1 | 1): void;
   onTipJog(axis: Axis, dir: -1 | 1, scale?: number): void;
@@ -71,15 +73,17 @@ const JOINT_STEPS = [0.5, 1, 5, 10];
 const TIP_STEPS = [1, 5, 10, 20];
 /** The rotation step that goes with each position step (same chip). */
 const TURN_STEPS = [1, 2, 5, 10];
-const AXES: { axis: Axis; minus: string; plus: string; color: string }[] = [
-  { axis: 'x', minus: '뒤', plus: '앞', color: '#e5484d' },
-  { axis: 'y', minus: '오른쪽', plus: '왼쪽', color: '#30a46c' },
-  { axis: 'z', minus: '아래', plus: '위', color: '#3e63dd' },
+/** Base axes as seen from in front of the robot: X away from the base (앞), Y to its left, Z up. */
+const AXES: { axis: Axis; minus: string; plus: string; color: string; arrows: [keyof typeof ARROW, keyof typeof ARROW] }[] = [
+  { axis: 'x', minus: '뒤', plus: '앞', color: '#ff6b62', arrows: ['down', 'up'] },
+  { axis: 'y', minus: '오른쪽', plus: '왼쪽', color: '#4cd18a', arrows: ['right', 'left'] },
+  { axis: 'z', minus: '아래', plus: '위', color: '#7aa2ff', arrows: ['down', 'up'] },
 ];
-const TURNS: { axis: Axis; color: string }[] = [
-  { axis: 'rx', color: '#e5484d' },
-  { axis: 'ry', color: '#30a46c' },
-  { axis: 'rz', color: '#3e63dd' },
+/** Turning the tool about a base axis, the tip kept in place: what that looks like with the tool pointing down. */
+const TURNS: { axis: Axis; color: string; what: string }[] = [
+  { axis: 'rx', color: '#ff6b62', what: '좌우 기울기' },
+  { axis: 'ry', color: '#4cd18a', what: '앞뒤 기울기' },
+  { axis: 'rz', color: '#7aa2ff', what: '돌리기' },
 ];
 
 /** A press shorter than this is a tap (one step); held longer, the axis moves continuously. */
@@ -137,17 +141,53 @@ function usePressJog(step: () => void, start: () => void, stop: () => void) {
   };
 }
 
-function JogKey({ dir, label, disabled, onStep, onStart, onStop, turn }: { dir: -1 | 1; label: string; disabled: boolean; onStep(): void; onStart(): void; onStop(): void; turn?: boolean }) {
+/** The arrow drawn on a position key: where the tool tip goes on screen-like terms. */
+const ARROW: Record<string, string> = {
+  left: 'M15 5l-7 7 7 7',
+  right: 'M9 5l7 7-7 7',
+  up: 'M5 15l7-7 7 7',
+  down: 'M5 9l7 7 7-7',
+};
+
+/**
+ * A jog key: tap = one step, hold = keep moving. Big, with what it does written on it
+ * (the direction word, or the joint's turn and step), not only an arrow.
+ */
+function JogKey({
+  dir,
+  label,
+  disabled,
+  onStep,
+  onStart,
+  onStop,
+  turn,
+  arrow,
+  word,
+  sub,
+}: {
+  dir: -1 | 1;
+  label: string;
+  disabled: boolean;
+  onStep(): void;
+  onStart(): void;
+  onStop(): void;
+  turn?: boolean;
+  arrow?: keyof typeof ARROW;
+  word?: string;
+  sub?: string;
+}) {
   const hold = usePressJog(onStep, onStart, onStop);
   return (
-    <button type="button" className={turn ? css.jpKey : css.jogKey} disabled={disabled} aria-label={label} title={`${label} · 짧게 누르면 한 칸, 누르고 있으면 계속`} {...hold}>
+    <button type="button" className={css.bigKey} data-dir={dir} disabled={disabled} aria-label={label} title={`${label} · 짧게 누르면 한 칸, 누르고 있으면 계속`} {...hold}>
       {turn ? (
-        <TurnIcon dir={dir} />
+        <TurnIcon dir={dir} size={22} />
       ) : (
-        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-          <path d={dir < 0 ? 'M15 5l-7 7 7 7' : 'M9 5l7 7-7 7'} fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+          <path d={ARROW[arrow ?? (dir < 0 ? 'left' : 'right')]} fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       )}
+      {word && <b>{word}</b>}
+      {sub && <small>{sub}</small>}
     </button>
   );
 }
@@ -274,7 +314,7 @@ export default function ControlPanel(p: Props) {
       </label>
 
       {frame === 'joint' ? (
-        <div className={css.jpRows} role="group" aria-label="관절 조그 (↑↓ 관절 고르기, ←→ 돌리기)">
+        <div className={css.jogArea} role="group" aria-label="관절 조그 (↑↓ 관절 고르기, ←→ 돌리기)">
           {angles.slice(0, activeArm().dof).map((a, i) => {
             const shown = drag?.i === i ? drag.deg : a;
             const lo = jointMin()[i];
@@ -282,53 +322,36 @@ export default function ControlPanel(p: Props) {
             const pos = ((shown - lo) / (hi - lo)) * 100;
             const zero = ((0 - lo) / (hi - lo)) * 100;
             const near = Math.min(shown - lo, hi - shown) < 10;
-            const value = (
-              <output htmlFor={`j${i + 1}`} className={css.jpValue} data-near={near || undefined}>
-                {shown >= 0 ? '+' : '−'}
-                {Math.abs(shown).toFixed(1)}
-                <i>°</i>
-              </output>
-            );
-            const track = (
-              <span className={css.jpTrack}>
-                <span className={css.jpFill} style={{ left: `${Math.min(pos, zero)}%`, width: `${Math.abs(pos - zero)}%` }} />
-                <span className={css.jpZero} style={{ left: `${zero}%` }} />
-                <span className={css.jpKnob} style={{ left: `${pos}%` }} />
-              </span>
-            );
-            if (i !== p.selected) {
-              return (
-                <button key={i} type="button" className={css.jpRow} onClick={() => p.onSelect(i)} title={`${jointLabels()[i].name} (J${i + 1}) 고르기. 3D 의 관절 점 ${i + 1} 을 눌러도 돼요`}>
-                  <span className={css.jpGlyph}>
-                    <JointGlyph joint={i} active={false} />
-                  </span>
-                  <span className={css.jpName}>
-                    <b>{jointLabels()[i].name}</b>
-                    <em>J{i + 1}</em>
-                  </span>
-                  <span className={css.jpMini} data-near={near || undefined}>
-                    {track}
-                  </span>
-                  {value}
-                </button>
-              );
-            }
+            const sel = i === p.selected;
             return (
-              <div key={i} className={`${css.jpRow} ${css.jpSel}`}>
-                <div className={css.jpHead}>
-                  <span className={css.jpGlyph}>
-                    <JointGlyph joint={i} />
-                  </span>
-                  <span className={css.jpName}>
+              <div
+                key={i}
+                className={css.jogRow}
+                data-sel={sel || undefined}
+                onPointerDown={() => {
+                  if (!sel) p.onSelect(i);
+                }}
+              >
+                <JogKey turn dir={-1} label={`J${i + 1} −${jStep}°`} sub={`−${jStep}°`} disabled={p.busy} onStep={() => p.onJointStep(i, -jStep)} onStart={() => p.onJointJog(i, -1)} onStop={p.onJogStop} />
+                <div className={css.jogMid} title={`${jointLabels()[i].name} (J${i + 1}). 3D 의 관절 점 ${i + 1} 을 눌러도 골라져요`}>
+                  <span className={css.jogHead}>
+                    <span className={css.jpGlyph}>
+                      <JointGlyph joint={i} active={sel} />
+                    </span>
                     <b>{jointLabels()[i].name}</b>
                     <em>J{i + 1}</em>
+                    <output htmlFor={`j${i + 1}`} className={css.jogValue} data-near={near || undefined}>
+                      {shown >= 0 ? '+' : '−'}
+                      {Math.abs(shown).toFixed(1)}
+                      <i>°</i>
+                    </output>
                   </span>
-                  {value}
-                </div>
-                <div className={css.jpCtl}>
-                  <JogKey turn dir={-1} label={`J${i + 1} −${jStep}°`} disabled={p.busy} onStep={() => p.onJointStep(i, -jStep)} onStart={() => p.onJointJog(i, -1)} onStop={p.onJogStop} />
                   <div className={css.jpBar} data-near={near || undefined}>
-                    {track}
+                    <span className={css.jpTrack}>
+                      <span className={css.jpFill} style={{ left: `${Math.min(pos, zero)}%`, width: `${Math.abs(pos - zero)}%` }} />
+                      <span className={css.jpZero} style={{ left: `${zero}%` }} />
+                      <span className={css.jpKnob} style={{ left: `${pos}%` }} />
+                    </span>
                     <input
                       id={`j${i + 1}`}
                       type="range"
@@ -349,51 +372,62 @@ export default function ControlPanel(p: Props) {
                     />
                     <span className={css.jpLimits}>
                       <i>{lo}°</i>
-                      <i>0</i>
                       <i>{hi}°</i>
                     </span>
                   </div>
-                  <JogKey turn dir={1} label={`J${i + 1} +${jStep}°`} disabled={p.busy} onStep={() => p.onJointStep(i, jStep)} onStart={() => p.onJointJog(i, 1)} onStop={p.onJogStop} />
                 </div>
+                <JogKey turn dir={1} label={`J${i + 1} +${jStep}°`} sub={`+${jStep}°`} disabled={p.busy} onStep={() => p.onJointStep(i, jStep)} onStart={() => p.onJointJog(i, 1)} onStop={p.onJogStop} />
               </div>
             );
           })}
         </div>
       ) : (
-        <div className={css.axisRows}>
-          {(
-            [
-              ['위치', 'mm', AXES.map((a) => ({ ...a, step: tStep, hint: `− ${a.minus} · + ${a.plus}` }))],
-              ['회전', '°', TURNS.map((a) => ({ ...a, step: TURN_STEPS[TIP_STEPS.indexOf(tStep)] ?? 5, hint: `${a.axis.slice(1).toUpperCase()}축 둘레로, 손끝은 그 자리` }))],
-            ] as const
-          ).map(([group, unit, rows]) => (
-            <div key={group} className={css.axisGroup} role="group" aria-label={group}>
-              <p>
-                {group}
-                <small>{unit}</small>
-              </p>
-              {rows.map(({ axis, color, step, hint }) => {
-                const name = axis.toUpperCase();
-                const v = tip?.[axis as 'x'];
-                const turn = group === '회전';
-                return (
-                  <div key={axis} className={css.axisRow} title={`${name}: ${hint}`}>
-                    <JogKey turn={turn} dir={-1} label={`${name}− ${hint}`} disabled={p.busy} onStep={() => p.onTipStep(axis, -step)} onStart={() => p.onTipJog(axis, -1)} onStop={p.onJogStop} />
-                    <span className={css.axisValue}>
-                      <span className={css.axisName} style={{ color }}>
-                        {name}
-                      </span>
-                      <b>{v === undefined ? '—' : v.toFixed(1)}</b>
-                    </span>
-                    <JogKey turn={turn} dir={1} label={`${name}+ ${hint}`} disabled={p.busy} onStep={() => p.onTipStep(axis, step)} onStart={() => p.onTipJog(axis, 1)} onStop={p.onJogStop} />
-                  </div>
-                );
-              })}
-            </div>
-          ))}
+        <div className={css.jogArea}>
+          <p className={css.jogGroup}>
+            손끝 위치 <small>mm · 로봇이 바라보는 쪽이 앞</small>
+          </p>
+          {AXES.map(({ axis, minus, plus, color, arrows }) => {
+            const name = axis.toUpperCase();
+            const v = tip?.[axis];
+            return (
+              <div key={axis} className={css.jogRow}>
+                <JogKey dir={-1} arrow={arrows[0]} word={minus} sub={`${name}−`} label={`${name}− ${minus}으로 ${tStep}mm`} disabled={p.busy} onStep={() => p.onTipStep(axis, -tStep)} onStart={() => p.onTipJog(axis, -1)} onStop={p.onJogStop} />
+                <span className={css.jogMid} data-axis>
+                  <b style={{ color }}>{name}</b>
+                  <output>{v === undefined ? '—' : v.toFixed(1)}</output>
+                </span>
+                <JogKey dir={1} arrow={arrows[1]} word={plus} sub={`${name}+`} label={`${name}+ ${plus}으로 ${tStep}mm`} disabled={p.busy} onStep={() => p.onTipStep(axis, tStep)} onStart={() => p.onTipJog(axis, 1)} onStop={p.onJogStop} />
+              </div>
+            );
+          })}
+          <p className={css.jogGroup}>
+            손 방향 <small>° · 손끝은 그 자리에서</small>
+            {p.onToolDown && (
+              <button type="button" className={css.toolDown} disabled={p.busy} onClick={p.onToolDown} title="손(도구)을 똑바로 아래로 향하게 돌려요. 손끝 위치는 그대로예요">
+                손 아래로
+              </button>
+            )}
+          </p>
+          {TURNS.map(({ axis, color, what }) => {
+            const name = axis.toUpperCase();
+            const v = tip?.[axis];
+            const step = TURN_STEPS[TIP_STEPS.indexOf(tStep)] ?? 5;
+            return (
+              <div key={axis} className={css.jogRow} data-turn>
+                <JogKey turn dir={-1} sub={`${name}−`} label={`${name}− ${what} ${step}°`} disabled={p.busy} onStep={() => p.onTipStep(axis, -step)} onStart={() => p.onTipJog(axis, -1)} onStop={p.onJogStop} />
+                <span className={css.jogMid} data-axis title={`${name}: 베이스의 ${name.slice(1)}축 둘레로 손을 돌려요. 손끝 위치는 그대로예요`}>
+                  <span className={css.jogName}>
+                    <b style={{ color }}>{name}</b>
+                    <small>{what}</small>
+                  </span>
+                  <output>{v === undefined ? '—' : v.toFixed(1)}</output>
+                </span>
+                <JogKey turn dir={1} sub={`${name}+`} label={`${name}+ ${what} ${step}°`} disabled={p.busy} onStep={() => p.onTipStep(axis, step)} onStart={() => p.onTipJog(axis, 1)} onStop={p.onJogStop} />
+              </div>
+            );
+          })}
         </div>
       )}
-
     </div>
   );
 }

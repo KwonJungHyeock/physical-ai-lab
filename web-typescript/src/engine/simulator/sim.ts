@@ -8,19 +8,21 @@
  *
  * What the runner checks on every animation frame, so a program that passes the
  * simulator is one that would not crash into the table on the real robot:
- *   - no joint of the arm below the table,
+ *   - no joint of the arm below the table, and no link (with its thickness) into it,
  *   - the tool tip not below the board (the pen may press 1 mm on its spring),
  *   - the tool not driven into a block it is not holding,
  *   - a held block not pushed into the table or into another block,
- *   - (arm-only theme) the arm off the scene's furniture, and off the desk's objects when physics
- *     is off (with physics on, the page's rigid-body world lets the arm push them instead);
- *     with physics off the pump or a gripper picks a desk object up exactly (it keeps its turn),
- *     and the object carried keeps off the desk, the furniture and the other objects.
+ *   - (arm-only theme) the arm off the scene's furniture; the desk's objects are the page's
+ *     rigid-body world's (physics, always on there): the arm pushes them, they fall and topple.
+ *     The pump or a gripper picks a desk object up exactly (it keeps its turn), the physics holds
+ *     it where the tool carries it, and the object carried keeps off the desk, the furniture and
+ *     the other objects.
  */
 
 import { Matrix4, Vector3 } from 'three';
 
 import { forwardKinematicsFrames, type ChainSegment } from '../robot/kinematics';
+import { armCapsules } from '../physics/collide';
 import {
   jointMoveDuration,
   jointTrajectory,
@@ -91,7 +93,8 @@ export interface WorldStats {
 
 export interface WorldState {
   theme: Theme;
-  /** 작업대 (arm-only theme): the scene, its fixed furniture, the objects on the desk, physics on/off. */
+  /** 작업대 (arm-only theme): the scene, its fixed furniture, the objects on the desk, and whether the
+   *  rigid-body world moves the objects (always, in the arm-only theme). */
   scene: SceneId;
   fixed: readonly FixedBox[];
   objects: DeskObject[];
@@ -107,7 +110,7 @@ export interface WorldState {
   penDown: boolean;
   blocks: BlockState[];
   held: { color: ColorName; offset: Matrix4 } | null;
-  /** A desk object the tool carries (physics off): it hangs this far from the tool tip and keeps its turn, mm. */
+  /** A desk object the tool carries: it hangs this far from the tool tip and keeps its turn, mm. */
   carry?: { id: string; dx: number; dy: number; dz: number } | null;
   /** Pen strokes on the board, each a list of [x, y] mm. */
   trail: [number, number][][];
@@ -133,7 +136,7 @@ export function createWorld(effector: EffectorId, cameraFlange: boolean, layout 
     scene: arm ? desk.scene : 'kit',
     fixed: arm ? SCENE_FIXED[desk.scene] : [],
     objects: arm ? desk.objects.map((o) => ({ ...o, size: [...o.size] as DeskObject['size'] })) : [],
-    physics: arm && desk.physics,
+    physics: arm,
     angles: activeArm().home.slice(),
     effector,
     cameraFlange,
@@ -704,6 +707,11 @@ function afterPoseChange(rt: Runtime): void {
       throw new RunError(`${i + 1}번 관절이 책상에 닿아요.`, '팔이 덜 숙여지도록 각도나 위치를 바꿔 주세요.', true);
     }
   });
+  // The links' own thickness too (a servo body is ~40 mm across): the arm stops on the desk, not in it.
+  for (const c of armCapsules(rt.chain, w.angles)) {
+    const low = Math.min(c.a[2], c.b[2]);
+    if (low - c.r < -1) throw new RunError(`${c.joint}번 관절 쪽 팔이 책상에 닿아요.`, '팔이 덜 숙여지도록 각도나 위치를 바꿔 주세요.', true);
+  }
   // The arm into itself or back through its base (with or without the physics engine).
   const self = selfContact(rt.chain, w.angles, activeArm().family, tcp(rt), 0, rt.selfSlack ?? SELF_SLACK_MM);
   if (self) {
@@ -734,7 +742,7 @@ function afterPoseChange(rt: Runtime): void {
   }
 
   if (w.theme === 'kit') kitCollisions(w, frames, tip);
-  else if (w.fixed.length || (w.objects.length && !w.physics)) deskCollisions(w, frames, tip, tcp(rt));
+  else if (w.fixed.length || w.objects.length) deskCollisions(w, frames, tip, tcp(rt));
 
   // Held block follows the tool.
   if (w.held) {
@@ -786,7 +794,10 @@ function kitCollisions(w: WorldState, frames: readonly Matrix4[], tip: Vector3):
   }
 }
 
-/** Arm only: the scene's furniture always, the desk's objects when physics is off (keeping ~12 mm off). */
+/**
+ * Arm only: the scene's furniture (keeping ~12 mm off), and the desk's objects: with physics the arm's
+ * links push them (the rigid-body world), the tool itself still stops on one it does not work on.
+ */
 function deskCollisions(w: WorldState, frames: readonly Matrix4[], tip: Vector3, tcpMm: number): void {
   const joints = frames.map((f) => new Vector3(f.elements[12] * 1000, f.elements[13] * 1000, f.elements[14] * 1000));
   joints.push(tip);
@@ -801,11 +812,10 @@ function deskCollisions(w: WorldState, frames: readonly Matrix4[], tip: Vector3,
   });
   const pad = 12;
   const inBox = (p: Vector3, b: FixedBox, d: number) => p.x > b.min[0] - d && p.x < b.max[0] + d && p.y > b.min[1] - d && p.y < b.max[1] + d && p.z > b.min[2] - d && p.z < b.max[2] + d;
-  const fix = w.physics ? '피해서 더 높게 움직여 주세요.' : '피해서 움직이거나, [실습 환경] 막대에서 [물리] 를 켜면 팔이 물건을 밀어요.';
+  const fix = '피해서 더 높게 움직여 주세요.';
   for (const b of w.fixed) {
     if (pts.some(({ p }) => inBox(p, b, pad))) throw new RunError(`팔이 ${b.name}에 닿아요.`, fix, true);
   }
-  if (w.physics) return;
   for (const o of w.objects) {
     if (o.id === w.carry?.id) continue;
     const b = objectBox(o);
@@ -813,13 +823,19 @@ function deskCollisions(w: WorldState, frames: readonly Matrix4[], tip: Vector3,
     const rule = toolRule(w, o, tip);
     const top = o.z + o.size[2];
     const hit = pts.some(({ p, tool }) =>
-      tool === undefined || !rule ? inBox(p, b, pad) : rule === 'straddle' ? tool > FINGER_MM && inBox(p, b, 0) : p.z < top - 1.5 && p.z > o.z && insideFoot(o, localXY(o, p), 0),
+      w.physics && tool === undefined
+        ? false
+        : tool === undefined || !rule
+          ? inBox(p, b, w.physics ? 0 : pad)
+          : rule === 'straddle'
+            ? tool > FINGER_MM && inBox(p, b, 0)
+            : p.z < top - 1.5 && p.z > o.z && insideFoot(o, localXY(o, p), 0),
     );
     if (hit) throw new RunError(`팔이 ${b.name}에 닿아요.`, fix, true);
   }
 }
 
-/* --- desk objects the tool picks up (physics off) ----------------------------- */
+/* --- desk objects the tool picks up -------------------------------------------- */
 
 /** The last this many mm of a gripper are its fingers: they may go round what they are about to hold. */
 const FINGER_MM = 40;
@@ -1034,7 +1050,7 @@ async function gripClose(rt: Runtime): Promise<void> {
     : w.blocks.find(
         (b) => Math.hypot(b.x - tip.x, b.y - tip.y) < 9 && Math.abs(b.z - tip.z) < 9,
       );
-  const target = between || w.held || w.carry || w.physics ? null : gripTarget(w, tip);
+  const target = between || w.held || w.carry ? null : gripTarget(w, tip);
   const stopAt = between ? Math.max(gap.closed, BLOCK_MM) : target ? Math.max(gap.closed, gripWidth(target)) : gap.closed;
   const from = w.gapMm;
   await rt.animate(0.5, (t) => {
@@ -1068,7 +1084,7 @@ async function pumpOn(rt: Runtime): Promise<void> {
     : w.blocks.find(
         (b) => Math.hypot(b.x - tip.x, b.y - tip.y) < 9 && Math.abs(b.z + BLOCK_MM / 2 - tip.z) < 3,
       );
-  const object = touching || w.held || w.carry || w.physics ? null : suctionTarget(w, tip);
+  const object = touching || w.held || w.carry ? null : suctionTarget(w, tip);
   if (touching) {
     w.held = { color: touching.color, offset: relativeOffset(tipMatrix, touching) };
     w.version += 1;

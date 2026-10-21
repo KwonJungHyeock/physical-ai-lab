@@ -95,16 +95,19 @@ for (const theme of Object.keys(PRACTICES) as Theme[]) {
   console.log('  ok   theme rules (bins and kit camera: kit only; spots: arm only)');
 }
 
-// 작업대: the scene's furniture and (physics off) the desk's objects stop the arm; with physics on the
-// objects are the rigid-body world's to push; no mat = no blocks, and a program that wants one says so.
+// 작업대: the scene's furniture stops the arm; the desk's objects are the rigid-body world's for the arm's
+// links to push (physics is always on), the tool itself still stops on one; no mat = no blocks, and a
+// program that wants one says so.
 {
   const home = createWorld('pump', false, undefined, 'arm').angles;
   const down = solveIk(chain, new Vector3(0.2, 0, 0.15), home, { restarts: 8 }).anglesDeg;
   const obstacle = makeObject('obstacle', { x: 200, y: 0 });
   setActiveDesk({ ...EMPTY_DESK, objects: [obstacle] });
+  assert.equal(createWorld('pump', false, undefined, 'arm').physics, true);
   assert.match(moveProblem(chain, createWorld('pump', false, undefined, 'arm'), down) ?? '', /장애물에 닿아요/);
-  setActiveDesk({ ...EMPTY_DESK, objects: [obstacle], physics: true });
-  assert.equal(moveProblem(chain, createWorld('pump', false, undefined, 'arm'), down), null);
+  // High over it (the flange, so the tool clears its top): free.
+  const over = solveIk(chain, new Vector3(0.2, 0, 0.3), home, { restarts: 8 }).anglesDeg;
+  assert.equal(moveProblem(chain, createWorld('pump', false, undefined, 'arm'), over), null);
   setActiveDesk({ ...EMPTY_DESK, scene: 'factory' });
   assert.match(moveProblem(chain, createWorld('pump', false, undefined, 'arm'), down) ?? '', /컨베이어에 닿아요/);
   setActiveDesk(EMPTY_DESK);

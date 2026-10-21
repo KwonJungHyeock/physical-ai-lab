@@ -77,12 +77,11 @@ export interface FixedBox {
 export interface Desk {
   scene: SceneId;
   objects: DeskObject[];
-  physics: boolean;
   /** The practice mat and its four blocks even when the practice does not use them. */
   mat: boolean;
 }
 
-export const EMPTY_DESK: Desk = { scene: 'empty', objects: [], physics: false, mat: false };
+export const EMPTY_DESK: Desk = { scene: 'empty', objects: [], mat: false };
 
 let seq = 0;
 export const newObjectId = () => `o${Date.now().toString(36)}${(seq++).toString(36)}`;

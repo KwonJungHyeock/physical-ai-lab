@@ -188,9 +188,9 @@ if (want('jog'))
       { at: jog.locator('[class*=frameSeg]'), n: 1, pos: 'l' },
       { at: jog.locator('[class*=stepSeg]'), n: 2, pos: 'l' },
       { at: jog.locator('[class*=speedRow]'), n: 3, pos: 'l' },
-      { at: jog.locator('[class*=jpSel]'), n: 4, pos: 'l' },
-      { at: jog.locator('[class*=jpSel] [class*=jpValue]'), n: 5, pos: 'tr' },
-      { at: jog.locator('button[class*=jpRow]').first(), n: 6, pos: 'l' },
+      { at: jog.locator('[class*=jogRow][data-sel] button[class*=bigKey]').first(), n: 4, pos: 'l' },
+      { at: jog.locator('[class*=jogRow][data-sel] [class*=jogValue]'), n: 5, pos: 'tr' },
+      { at: jog.locator('[class*=jogRow][data-sel] [class*=jpBar]'), n: 6, pos: 'b' },
     ],
   });
 if (want('self')) {
@@ -203,7 +203,7 @@ if (want('self')) {
     marks: [
       { at: page.locator('[data-panel=log] [class*=notice]').first(), n: 1, pos: 'r' },
       { at: hud.locator('section[aria-label="관절 각도"] h5'), n: 2, pos: 'r' },
-      { at: jog.locator('[class*=jpSel]'), n: 3, pos: 'tl' },
+      { at: jog.locator('[class*=jogRow][data-sel]'), n: 3, pos: 'tl' },
     ],
   });
   await hold(false);
@@ -220,7 +220,16 @@ if (want('monitor') || want('self')) {
 if (want('jog-xyz')) {
   await jog.locator('[class*=frameSeg] button').nth(0).click();
   await settle(page, 1500);
-  await save(page, out('16-jog-xyz.png'), { crop: jog, pad: 10 });
+  await save(page, out('16-jog-xyz.png'), {
+    crop: jog,
+    pad: 44,
+    marks: [
+      { at: jog.locator('button[class*=bigKey]').first(), n: 1, pos: 'l' },
+      { at: jog.locator('[class*=jogMid][data-axis]').first(), n: 2, pos: 't' },
+      { at: jog.locator('[class*=jogRow][data-turn] button[class*=bigKey]').first(), n: 3, pos: 'l' },
+      { at: jog.getByRole('button', { name: '손 아래로' }), n: 4, pos: 'tr' },
+    ],
+  });
   await jog.locator('[class*=frameSeg] button').nth(1).click();
   await settle(page, 800);
 }

@@ -145,10 +145,11 @@ export function processFromFile(text: string): { process: Process } | { error: s
 }
 
 /**
- * Ready-made processes (프리셋) for the 280 on the arm-only desk: a pick and place with J moves
- * above the spots and L descents (tool straight down at x 180, y ∓80, z 110 / 40 for the adaptive
- * gripper), and a square traced in L at z 30 (corners x 150 / 230, y ±50), where Smooth shows.
- * Checked by tests/simulator/process-check.
+ * Ready-made processes (프리셋) for the 280 on the arm-only desk: a pick and place of a real block
+ * with the adaptive gripper (the green block of the practice mat, x 185 y −25, into 자리 2, x 190
+ * y −100: J above at z 80, L down to grip at z 14, tool straight down), and a square traced in L at
+ * z 30 (corners x 150 / 230, y ±50), where Smooth shows.
+ * Checked by tests/simulator/process-check (the block really ends on 자리 2).
  */
 export const PRESETS: readonly Process[] = [
   {
@@ -157,14 +158,14 @@ export const PRESETS: readonly Process[] = [
     speed: DEFAULT_SPEED,
     rows: [
       { kind: 'grip', open: true },
-      { kind: 'move', mode: 'J', joints: [-4.8, -9.7, -68.3, -12, 0, -70.8] },
-      { kind: 'move', mode: 'L', joints: [-4.9, -15.5, -103.8, 29.4, 0, -70.9] },
+      { kind: 'move', mode: 'J', joints: [12.5, -3.6, -92.9, 6.5, 0, -69.8] },
+      { kind: 'move', mode: 'L', joints: [12.5, -19.7, -117.6, 47.3, 0, -69.8] },
       { kind: 'grip', open: false },
-      { kind: 'move', mode: 'L', joints: [-4.8, -9.7, -68.3, -12, 0, -70.8] },
-      { kind: 'move', mode: 'J', joints: [43.1, -9.7, -68.3, -12, 0, -70.8] },
-      { kind: 'move', mode: 'L', joints: [43.1, -15.5, -103.8, 29.4, 0, -70.9] },
+      { kind: 'move', mode: 'L', joints: [12.5, -3.6, -92.9, 6.5, 0, -69.8] },
+      { kind: 'move', mode: 'J', joints: [-10.2, -18.7, -74.8, 3.5, 0, -72.4] },
+      { kind: 'move', mode: 'L', joints: [-10.3, -31.6, -97.8, 39.4, 0, -72.5] },
       { kind: 'grip', open: true },
-      { kind: 'move', mode: 'L', joints: [43.1, -9.7, -68.3, -12, 0, -70.8] },
+      { kind: 'move', mode: 'L', joints: [-10.2, -18.7, -74.8, 3.5, 0, -72.4] },
     ],
   },
   {
