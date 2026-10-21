@@ -553,10 +553,10 @@ const ERR_MAX = 70;
 
 const p73 = cols(3);
 export const fig73: FigureDef = {
-  label: '움직이는 블록을 한 번 보고 따라가기, 계속 보며 이득 K = 3 으로 따라가기, K = 9 로 흔들리기 (위에서 본 자취와 추적 오차 그래프)',
-  caption: '움직이는 블록 따라가기: 한 번 보고 · 계속 보기 이득 3 · 이득 9 (사진 지연 0.2 s), 위에서 본 카메라 가운데의 자취와 추적 오차',
+  label: '움직이는 블록을 한 번 보고 따라가기, 계속 보며 게인 K = 3 으로 따라가기, K = 9 로 흔들리기 (위에서 본 자취와 추적 오차 그래프)',
+  caption: '움직이는 블록 따라가기: 한 번 보고 · 계속 보기 게인 3 · 게인 9 (사진 지연 0.2 s), 위에서 본 카메라 가운데의 자취와 추적 오차',
   symbols: ['e', 'L'],
-  panels: p73.map((p, i) => ({ ...p, title: ['한 번 보고', '계속 보기 · 이득 3', '계속 보기 · 이득 9'][i] })),
+  panels: p73.map((p, i) => ({ ...p, title: ['한 번 보고', '계속 보기 · 게인 3', '계속 보기 · 게인 9'][i] })),
   draw: () => (
     <g>
       <Dividers panels={p73} />
@@ -574,7 +574,7 @@ function Panel73({ p, k }: { p: Panel; k: 'A' | 'B' | 'C' }) {
   const col = k === 'A' ? 'red' : k === 'B' ? 'blue' : 'orange';
   const n = k === 'A' ? 20 : k === 'C' ? 45 : 120;
   const camPts = [m(...START), ...run.x.slice(0, n).map((x, i) => m(x, run.y[i]))];
-  const title = k === 'A' ? 'A 한 번 보고' : k === 'B' ? 'B 계속 보기 · 이득 3' : 'C 계속 보기 · 이득 9';
+  const title = k === 'A' ? 'A 한 번 보고' : k === 'B' ? 'B 계속 보기 · 게인 3' : 'C 계속 보기 · 게인 9';
   const b2 = m(...blockAt(2));
   const end = m(run.x[n - 1], run.y[n - 1]);
   const bEnd = m(...blockAt(k === 'A' ? 2 : n / 10));

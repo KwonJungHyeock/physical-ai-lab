@@ -89,7 +89,7 @@ interface Series {
 
 const f2 = (n: number) => (Math.abs(n) < 0.005 ? 0 : n).toFixed(2);
 const shake = (ratio: number) => (ratio > 1.4 ? '큼' : ratio > 1.15 ? '조금' : '없음');
-/** The gain each step starts at (the slider can still move it): B follows well, C is past the delay limit π/2τ ≈ 7.9 /s. */
+/** The gain each step starts at (the slider can still move it): B follows well, C is past the delay limit (π/2τ ≈ 7.9 /s in continuous time, about 7.2 /s with this screen's 1/30 s steps). */
 const K_START = { B: 3, C: 9 } as const;
 const NUM: Record<Run, string> = { A: '활동 1', B: '활동 2', C: '활동 3' };
 
@@ -246,13 +246,13 @@ export default function G3Servo({ chain, show, step, record }: TopicProps) {
 
   return (
     <section className={css.card}>
-      <h3>{step === 'A' ? '한 번 보고 이동' : step === 'B' ? `계속 보며 이동 · 이득 ${K_START.B}` : `계속 보며 이동 · 이득 ${K_START.C} (크게)`}</h3>
+      <h3>{step === 'A' ? '한 번 보고 이동' : step === 'B' ? `계속 보며 이동 · 게인 ${K_START.B}` : `계속 보며 이동 · 게인 ${K_START.C} (크게)`}</h3>
       {step !== 'A' && (
         <label className={css.slider}>
           <b>
-            이득 <Sym s="K" name={false} />
+            게인 <Sym s="K" name={false} />
           </b>
-          <input type="range" min={1} max={10} step={0.5} value={K} disabled={anim.running} onChange={(ev) => setK(Number(ev.target.value))} aria-label="이득 K" />
+          <input type="range" min={1} max={10} step={0.5} value={K} disabled={anim.running} onChange={(ev) => setK(Number(ev.target.value))} aria-label="게인 K" />
           <span className={css.num}>{fmt(K, 1)} /s</span>
         </label>
       )}
@@ -324,8 +324,8 @@ export default function G3Servo({ chain, show, step, record }: TopicProps) {
         {step === 'A'
           ? `처음 한 번 사진을 보고 블록 위치를 계산해 ${GLIDE_S} 초 동안 그곳으로 가요. 그 뒤로는 보지 않아요.`
           : step === 'B'
-            ? '매 프레임(1/30 s) 사진 속 오차 e 를 보고 그 반대쪽으로 이득 K 에 비례한 빠르기로 움직여요(K = 3 이면 오차 10 px 에 1 초당 30 px 를 줄이는 빠르기). 사진은 0.2 s 늦게 들어와요(지연 τ). [이미지 자코비안] 을 켜면 사진 속 빨간 오차 화살표와 그 오차로 계산한 손끝 움직임(파란 화살표)이 보여요. 표 L(이미지 자코비안)의 숫자는 손끝을 1 mm 옮길 때 블록이 사진에서 몇 px 움직이는지예요.'
-            : '활동 2 와 같은 루프에서 이득 K 만 9 로 올렸어요. 사진이 0.2 s 늦게 들어오니, 늦은 오차를 보고 세게 고치면 블록을 지나쳤다 되돌아오기를 되풀이해요(이득 K × 지연 τ(0.2 s) 가 π/2 ≈ 1.57 을 넘으면, 곧 K 가 약 7.9 /s 를 넘으면 흔들림이 커져요).'}
+            ? '매 프레임(1/30 s) 사진 속 오차 e 를 보고 그 반대쪽으로 게인 K 에 비례한 빠르기로 움직여요(K = 3 이면 오차 10 px 에 1 초당 30 px 를 줄이는 빠르기). 사진은 0.2 s 늦게 들어와요(지연 τ). [이미지 자코비안] 을 켜면 사진 속 빨간 오차 화살표와 그 오차로 계산한 손끝 움직임(파란 화살표)이 보여요. 표 L(이미지 자코비안)의 숫자는 손끝을 1 mm 옮길 때 블록이 사진에서 몇 px 움직이는지예요.'
+            : '활동 2 와 같은 루프에서 게인 K 만 9 로 올렸어요. 사진이 0.2 s 늦게 들어오니, 늦은 오차를 보고 세게 고치면 블록을 지나쳤다 되돌아오기를 되풀이해요(이론으로는 게인 K × 지연 τ(0.2 s) 가 π/2 ≈ 1.57 을 넘으면 흔들림이 커져요. 이 화면은 1/30 s 마다 고쳐서 K 가 약 7.2 /s 를 넘으면 커져요).'}
       </p>
     </section>
   );
