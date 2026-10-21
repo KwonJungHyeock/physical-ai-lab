@@ -22,11 +22,13 @@ await page.addInitScript(() => {
 const hold = (on) => page.evaluate((v) => (window.__hold = v), on);
 const btn = (name, exact = false) => page.getByRole('button', { name, exact });
 const screenTab = (name) => page.locator('nav[aria-label="화면"]').getByRole('tab', { name });
-const tab = (name) => page.locator('nav[aria-label="패널 모드"]').getByRole('tab', { name });
-const dockSection = (title) => page.locator(`[class*=dockSection][aria-label="${title}"]`);
-const openSection = async (title) => {
-  const head = dockSection(title).locator('button[aria-expanded]').first();
-  if ((await head.getAttribute('aria-expanded')) !== 'true') await head.click();
+const rail = page.locator('nav[aria-label="메뉴"]');
+const railBtn = (name) => rail.getByRole('button', { name: new RegExp(`^${name}`) });
+/** The side panel's one screen (opened from the menu bar). */
+const screen = () => page.locator('aside[aria-label="작업 패널"] [role=region]');
+const openScreen = async (name) => {
+  const b = railBtn(name);
+  if ((await b.getAttribute('aria-pressed')) !== 'true') await b.click();
   await settle(page, 1200);
 };
 const top = page.locator('header[data-panel=topbar]');
@@ -76,7 +78,7 @@ await shot('console', async () => {
       { at: page.locator('[class*=connChip], [class*=conn]').filter({ hasText: '연결됨' }).first(), n: 2, pos: 'b' },
       { at: top.getByRole('button', { name: /로봇 정지/ }), n: 3, pos: 'b' },
       { at: page.locator('button[title="로봇 상태 자세히 보기"]'), n: 4, pos: 'l' },
-      { at: page.locator('nav[aria-label="패널 모드"]'), n: 5, pos: 'l' },
+      { at: rail, n: 5, pos: 'r' },
       { at: btn('기본 자세'), n: 6, pos: 't' },
     ],
   });
@@ -99,23 +101,24 @@ await shot('status', async () => {
 
 // 3 · 수동 제어: 관절별로 · 좌표로
 await shot('jog', async () => {
-  await openSection('수동 제어');
-  const jog = dockSection('수동 제어');
+  await openScreen('조그');
+  const jog = screen();
+  await jog.locator('[class*=frameSeg]').getByRole('button', { name: '관절', exact: true }).click();
+  await settle(page, 1200);
   await save(page, out('b-jog.png'), { crop: jog, pad: 10 });
 });
 await shot('jog-xyz', async () => {
-  const jog = dockSection('수동 제어');
-  await jog.getByRole('button', { name: /^좌표로/ }).first().click();
+  await openScreen('조그');
+  const jog = screen();
+  await jog.locator('[class*=frameSeg]').getByRole('button', { name: '좌표', exact: true }).click();
   await settle(page, 1500);
   await save(page, out('b-jog-xyz.png'), { crop: jog, pad: 10 });
-  await jog.getByRole('button', { name: /^관절별로/ }).first().click();
-  await settle(page, 800);
 });
 
 // 4 · 도구 (그리퍼 · 흡착 펌프)
 await shot('tools', async () => {
-  await openSection('도구 · 액세서리');
-  const sec = dockSection('도구 · 액세서리');
+  await openScreen('도구');
+  const sec = screen();
   await sec.getByRole('button', { name: /어댑티브 그리퍼/ }).first().click();
   await settle(page, 2500);
   await save(page, out('b-tools.png'), { crop: sec, pad: 10 });
@@ -123,8 +126,8 @@ await shot('tools', async () => {
 
 // 5 · 자세 저장
 await shot('poses', async () => {
-  await openSection('자세 저장 · 불러오기');
-  const sec = dockSection('자세 저장 · 불러오기');
+  await openScreen('자세');
+  const sec = screen();
   await sec.getByRole('button', { name: /지금 자세 저장하기/ }).click();
   await settle(page, 1500);
   await save(page, out('b-poses.png'), { crop: sec, pad: 10 });
@@ -132,7 +135,7 @@ await shot('poses', async () => {
 
 // 6 · 블록 코딩 → 시뮬레이션 → 로봇에서 실행
 await shot('blocks', async () => {
-  await tab(/블록 코딩/).click();
+  await railBtn('블록').click();
   await settle(page, 4000);
   await save(page, out('b-blocks.jpg'), {
     marks: [
