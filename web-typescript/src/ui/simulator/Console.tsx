@@ -2693,16 +2693,10 @@ export default function Console() {
       busy={busy}
       onFocusJoint={setRingJoint}
       onPose={goPose}
-      onServos={async (off) => {
-        const res = off ? await releaseRobot() : await focusRobot();
-        if (!res.ok) addLog('err', `로봇: ${res.error}`);
-        else addLog('info', off ? '서보를 모두 풀었어요. 팔을 받친 채 곧게 세워 표시선을 맞춰 주세요.' : '서보를 고정했어요.');
-        return res.ok;
-      }}
       onJointServo={async (j, off) => {
         const res = await jointServo(j, off);
         if (!res.ok) addLog('err', `로봇: ${res.error}`);
-        else addLog('info', off ? `J${j} 서보를 풀었어요. 표시선을 손으로 맞춰 주세요.` : `J${j} 서보를 고정했어요.`);
+        else addLog('info', off ? `J${j} 만 풀었어요. 팔을 받친 채 표시선을 손으로 맞춰 주세요.` : `J${j} 서보를 고정했어요.`);
         return res.ok;
       }}
       onNudge={async (j, d) => {

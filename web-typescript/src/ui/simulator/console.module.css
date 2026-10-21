@@ -1891,6 +1891,28 @@ div.zeroFlow {
   color: #b54708 !important;
   font-size: 11.5px;
 }
+.zeroCheck {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.zeroCheck input {
+  width: 18px;
+  height: 18px;
+}
+.zeroStepBtns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.zeroStepBtns > * {
+  flex: 1 1 0;
+}
 .nudgeRow {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
