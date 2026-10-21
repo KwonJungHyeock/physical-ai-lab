@@ -468,11 +468,11 @@ if (want('kit') || want('camera')) {
     await save(page, out('35-kit.jpg'), {
       marks: [
         { at: page.locator('button[title="카메라 화면과 영상 처리 크게 보기"]'), n: 1, pos: 'tr' },
-        { at: tools.getByRole('button', { name: '카메라', exact: true }), n: 2, pos: 'l' },
+        { at: railBtn('카메라'), n: 2, pos: 'r' },
       ],
     });
   if (want('camera')) {
-    await tools.getByRole('button', { name: '카메라', exact: true }).click();
+    await railBtn('카메라').click();
     await settle(page, 12000);
     await save(page, out('13-camera.jpg'), { crop: page.locator('[data-panel=camera]'), pad: 8 });
     await page.locator('button[aria-label="카메라 닫기"]').click();

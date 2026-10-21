@@ -8418,8 +8418,6 @@ button.jpRow:hover {
   }
 }
 
-/* Panel tabs in two groups: 공정 · 티칭 (수동 제어, 공정 짜기) and 코딩 (블록 · Python · ROS 2). */
-
 /* The menu bar down the left edge (stage/LeftRail): everything on the 3D view starts right of it. */
 .shell {
   --bar-w: 68px;
@@ -8434,4 +8432,13 @@ button.jpRow:hover {
   display: grid;
   gap: 10px;
   align-content: start;
+}
+
+/* The small camera picture sits bottom left on a wide screen; while the mini arm (and its angle chips)
+   holds that corner, it goes bottom right of the 3D view. */
+@media (min-width: 1000px) and (min-height: 600px) {
+  .shell[data-mini='on'] .pip {
+    left: auto;
+    right: var(--inset-r);
+  }
 }
