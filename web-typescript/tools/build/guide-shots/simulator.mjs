@@ -38,7 +38,7 @@ const openScreen = async (name) => {
 const visible = (loc) => loc.first().isVisible().catch(() => false);
 const joint = ['베이스 (J1)', '어깨 (J2)', '팔꿈치 (J3)', '손목 1 (J4)', '손목 2 (J5)', '손목 3 (J6)'];
 const setJoint = async (j, deg) => {
-  const row = page.locator(`button[title^="${joint[j]}"]`);
+  const row = page.locator(`[class*=jogMid][title^="${joint[j]}"] [class*=jogHead]`);
   if (await visible(row)) await row.click();
   await page.waitForTimeout(700);
   await page.locator(`#j${j + 1}`).fill(String(deg));
@@ -210,7 +210,7 @@ if (want('self')) {
   await page.locator('button[aria-label="알림 닫기"]').click().catch(() => {});
   await page.locator('[class*=poseDock]').getByRole('button', { name: /기본 자세/ }).click();
   await settle(page, 8000);
-  await page.locator('button[title^="베이스 (J1)"]').click();
+  await page.locator('[class*=jogMid][title^="베이스 (J1)"] [class*=jogHead]').click();
   await settle(page, 800);
 }
 if (want('monitor') || want('self')) {
