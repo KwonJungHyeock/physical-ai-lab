@@ -228,8 +228,8 @@ function linkVisual(robot: UrdfRobot, linkName: string, nodes: GlbNodes, look?: 
 
 export interface ArmModel {
   root: Group;
-  /** Rotation group per movable joint, base to tip. */
-  joints: { group: Group; axis: Vector3 }[];
+  /** Rotation group per movable joint, base to tip; `housing`: the link that holds its motor (the joint's parent link). */
+  joints: { group: Group; axis: Vector3; housing: Object3D | null }[];
   /** The flange link (joint6_flange on the 280, link6 on the 320 and mechArm): tools are attached here. */
   flange: Group;
   setAngles(anglesDeg: readonly number[]): void;
@@ -244,15 +244,19 @@ export function buildArm(robot: UrdfRobot, chain: readonly ChainSegment[], nodes
   let flange = root;
 
   // `depth`: links from the base, so neighbouring links can take the two shell tones in turn.
+  const visuals = new Map<string, Object3D>();
   const addLink = (linkName: string, parent: Group, depth = 0) => {
     const v = linkVisual(robot, linkName, nodes, look, depth % 2);
-    if (v) parent.add(v);
+    if (v) {
+      parent.add(v);
+      visuals.set(linkName, v);
+    }
     for (const seg of chain.filter((s) => s.joint.parent === linkName)) {
       const o = originGroup(seg.joint.origin);
       const r = new Group();
       o.add(r);
       parent.add(o);
-      if (seg.movableIndex >= 0) joints[seg.movableIndex] = { group: r, axis: seg.axis.clone() };
+      if (seg.movableIndex >= 0) joints[seg.movableIndex] = { group: r, axis: seg.axis.clone(), housing: visuals.get(seg.joint.parent) ?? null };
       else if (seg.mimic) followers.push({ group: r, axis: seg.axis.clone(), index: seg.mimic.index, k: seg.mimic.multiplier, offsetDeg: seg.mimic.offsetDeg });
       if (seg.joint.child === (look?.flangeLink ?? 'joint6_flange')) flange = r;
       addLink(seg.joint.child, r, depth + 1);

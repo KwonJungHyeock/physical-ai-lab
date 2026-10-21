@@ -11,8 +11,23 @@ import { useState, type ReactNode } from 'react';
 
 import { OBJECT_KINDS, OBJECT_ORDER, SCENES, SWATCHES, type Desk, type DeskObject, type ObjectKind, type SceneId } from '@/engine/simulator/desk';
 
-import { DemoPill } from '../stage/EnvDock';
 import css from './desk.module.css';
+
+/** ▶ 데모 on a 실습 환경's picture: the arm doing that place's job (off when this arm has no demo there). */
+export function DemoPill({ name, ok, busy, onClick, className }: { name: string; ok: boolean; busy: boolean; onClick(): void; className: string }) {
+  return (
+    <button
+      type="button"
+      className={className}
+      disabled={busy || !ok}
+      onClick={onClick}
+      aria-label={`${name} 데모 보기`}
+      title={ok ? `${name}: 로봇팔이 하는 일을 4단계로 보여 줘요` : '이 로봇팔에 맞춘 데모는 아직 없어요'}
+    >
+      ▶ 데모
+    </button>
+  );
+}
 
 /** Library icons (the same drawings as docs/mockup/sim-scenes.html). */
 const ICON: Record<ObjectKind, ReactNode> = {
@@ -97,6 +112,8 @@ interface Props {
   onClose(): void;
   /** The tab to open on (the dock's [물건 놓기] opens 물건). */
   initialTab?: Tab;
+  /** Opened from the left menu bar (a window beside it) rather than above the bottom dock. */
+  docked?: boolean;
 }
 
 export type Tab = 'scene' | 'objects' | 'physics';
@@ -128,7 +145,7 @@ export default function DeskPanel(p: Props) {
   const sel = p.desk.objects.find((o) => o.id === p.selected) ?? null;
   const shownTab: Tab = kit && tab !== 'scene' ? 'scene' : tab;
   return (
-    <section className={css.panel} aria-label="실습 환경">
+    <section className={css.panel} aria-label="실습 환경" data-docked={p.docked || undefined}>
       <header className={css.head}>
         <b>실습 환경</b>
         <small>{SCENES.find((s) => s.id === p.scene)?.name}</small>

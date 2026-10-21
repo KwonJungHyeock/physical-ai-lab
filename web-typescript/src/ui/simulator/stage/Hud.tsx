@@ -145,14 +145,17 @@ interface Props {
   /** The load estimate uses myCobot 280's link masses: other arms get a note instead. */
   loadModel: boolean;
   status: HudStatus;
+  /** Opened from the left menu bar: always shown, its close button closes the window. */
+  onClose?(): void;
 }
 
-export default function Hud({ world, chain, tcpMm, mountMm, loadModel, status }: Props) {
+export default function Hud({ world, chain, tcpMm, mountMm, loadModel, status, onClose }: Props) {
   // The open arm's joints (a 4-axis arm has four).
   const NAMES = jointLabels().map((j) => j.name);
   const dof = activeArm().dof;
   const [on, setOn] = useState<Record<Panel, boolean>>(DEFAULT_ON);
-  const [hidden, setHidden] = useState(false);
+  const [hiddenSaved, setHidden] = useState(false);
+  const hidden = hiddenSaved && !onClose;
   useEffect(() => {
     try {
       const s = JSON.parse(localStorage.getItem(HUD_KEY) ?? 'null') as { on?: Partial<Record<Panel, boolean>>; hidden?: boolean } | null;
@@ -352,7 +355,7 @@ export default function Hud({ world, chain, tcpMm, mountMm, loadModel, status }:
   const lo = jointMin();
   const hi = jointMax();
   return (
-    <div className={css.hud} ref={root} data-panel="hud">
+    <div className={css.hud} ref={root} data-panel="hud" data-docked={onClose ? true : undefined}>
       <div className={`${css.glass} ${css.bar}`} role="group" aria-label="모니터에 보일 것">
         {PANELS.map((p) => (
           <button key={p.id} type="button" aria-pressed={on[p.id]} title={p.title} onClick={() => save({ ...on, [p.id]: !on[p.id] }, false)}>
@@ -360,7 +363,7 @@ export default function Hud({ world, chain, tcpMm, mountMm, loadModel, status }:
             {p.name}
           </button>
         ))}
-        <button type="button" className={css.hideBtn} onClick={() => save(on, true)} title="모니터 감추기" aria-label="모니터 감추기">
+        <button type="button" className={css.hideBtn} onClick={() => (onClose ? onClose() : save(on, true))} title="모니터 닫기" aria-label="모니터 닫기">
           <Icon name="hide" />
         </button>
       </div>

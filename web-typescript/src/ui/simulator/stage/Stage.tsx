@@ -28,6 +28,7 @@ import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import {
+  Color,
   Box3,
   BoxGeometry,
   BufferGeometry,
@@ -84,6 +85,8 @@ import type { ImageLike, PinholeCamera } from '@/engine/vision/color';
 import { jointMax, jointMin } from '@/engine/robot/limits';
 
 import { baseDressing, buildArm, buildTool, partMesh, type GlbNodes } from './robotModel';
+import { ALERT_COLOR, MiniArm, type MiniRect, type MonitorOut } from './MiniArm';
+import { AlertTracker } from '@/engine/robot/jointAlert';
 import StudioLight from './StudioLight';
 import { jointLabels } from '../control/jointInfo';
 import { useLive, type Live } from '../liveStore';
@@ -149,8 +152,6 @@ export const VIEWS: Record<Exclude<ViewName, 'fit'>, { pos: [number, number, num
   tall: { pos: [0.72, 0.42, 0.62], target: [0.02, 0.2, 0] },
 };
 
-/** A joint this close to its limit (degrees) gets the amber ring. */
-const LIMIT_WARN_DEG = 10;
 /** The view's angle (degrees), and the narrow one of the flat projection. */
 const VIEW_FOV = 34;
 const FLAT_FOV = 5;
@@ -216,6 +217,10 @@ interface StageProps {
   desk?: { scene: SceneId; objects: readonly DeskObject[]; mat: boolean; edit?: DeskEdit };
   /** Where the program will leave the arm (its joint angles), drawn as a see-through arm; null for none. */
   ghost?: readonly number[] | null;
+  /** Each joint's warning (load, limit) is written here every frame; the joint's housing on the arm takes its colour. */
+  monitor?: RefObject<MonitorOut>;
+  /** The see-through side-view arm: where its corner is now; null hides it. */
+  miniRect?: (() => MiniRect) | null;
 }
 
 export interface JointPick {
@@ -389,6 +394,9 @@ function World({
   mountMm = 0,
   desk,
   ghost,
+  monitor,
+  miniRect,
+  quality,
 }: StageProps & { lights: Lights }) {
   // Every node of the arm's model files, by name (a later file wins a shared name).
   const gltfs = useGLTF(spec.glbs as string[], DRACO_PATH) as unknown as { nodes: GlbNodes }[];
@@ -413,40 +421,51 @@ function World({
   useEffect(() => {
     if (ghost) ghostArm.setAngles(ghost);
   }, [ghost, ghostArm]);
-  // A joint near its limit gets a pulsing amber ring around its axis (the monitor flags it too).
-  const halos = useMemo(
+  // A joint in caution or danger (engine/robot/jointAlert.ts: its motor's load, or its limit near):
+  // the housing that holds its motor turns amber or red, pulsing when red. Its own copy of the materials.
+  const tracker = useMemo(() => new AlertTracker(chain, tcpMm ?? 0, spec.family === 'mycobot280', arm.joints.length), [chain, tcpMm, spec, arm]);
+  const housings = useMemo(
     () =>
       arm.joints.map((j) => {
-        const m = new Mesh(new TorusGeometry(0.042, 0.0032, 8, 48), new MeshBasicMaterial({ color: '#ffad1f', transparent: true, depthTest: false }));
-        m.quaternion.setFromUnitVectors(new Vector3(0, 0, 1), j.axis.clone().normalize());
-        m.visible = false;
-        m.renderOrder = 10;
-        m.layers.set(SCREEN_ONLY);
-        j.group.add(m);
-        return m;
+        const mats: { m: MeshStandardMaterial; color: Color }[] = [];
+        j.housing?.traverse((o) => {
+          const mesh = o as Mesh;
+          if (!mesh.isMesh) return;
+          // Once per mesh (a memo may run twice in development): later runs find the copy made.
+          let m = mesh.userData.alertMat as MeshStandardMaterial | undefined;
+          if (!m) {
+            m = (mesh.material as MeshStandardMaterial).clone();
+            mesh.material = m;
+            mesh.userData.alertMat = m;
+            mesh.userData.alertColor = m.color.clone();
+          }
+          if (m.emissive) mats.push({ m, color: mesh.userData.alertColor as Color });
+        });
+        return { mats, level: 0 };
       }),
     [arm],
   );
-  useEffect(
-    () => () =>
-      halos.forEach((h) => {
-        h.parent?.remove(h);
-        h.geometry.dispose();
-        (h.material as MeshBasicMaterial).dispose();
-      }),
-    [halos],
-  );
   useFrame(({ clock }) => {
-    const q = world.current?.angles;
-    if (!q) return;
-    const lo = jointMin();
-    const hi = jointMax();
-    const pulse = 0.5 + 0.45 * Math.sin(clock.elapsedTime * 6);
-    halos.forEach((h, i) => {
-      const a = q[i];
-      const near = a !== undefined && lo[i] !== undefined && (a - lo[i] < LIMIT_WARN_DEG || hi[i] - a < LIMIT_WARN_DEG);
-      h.visible = near;
-      if (near) (h.material as MeshBasicMaterial).opacity = pulse;
+    const w = world.current;
+    if (!w) return;
+    const alerts = tracker.update(clock.elapsedTime, w.angles, w.held ? 0.015 : 0);
+    monitor?.current?.setAlerts(alerts);
+    const pulse = 0.55 + 0.35 * Math.sin(clock.elapsedTime * 7);
+    housings.forEach((h, i) => {
+      const lv = alerts[i]?.level ?? 0;
+      if (lv === h.level && lv < 2) return;
+      h.level = lv;
+      for (const { m, color } of h.mats) {
+        if (lv) {
+          m.color.copy(color).lerp(new Color(ALERT_COLOR[lv]), 0.7);
+          m.emissive.set(ALERT_COLOR[lv]);
+          m.emissiveIntensity = lv === 2 ? pulse : 0.25;
+        } else {
+          m.color.copy(color);
+          m.emissive.set('#000000');
+          m.emissiveIntensity = 1;
+        }
+      }
     });
   });
   // Cables and the contact shadow around the base, on the table (or on the block the arm stands on).
@@ -671,6 +690,9 @@ function World({
       <group position={[0, 0, mountMm / 1000]}>
         <primitive object={arm.root} />
         {ghost && <primitive object={ghostArm.root} />}
+        {miniRect && monitor && (
+          <MiniArm robot={robot} chain={chain} nodes={nodes} look={{ dark: spec.dark, flange: spec.flange, textures: spec.textures, flangeLink: spec.flangeLink }} world={world} place={miniRect} out={monitor} composer={quality === 'high'} />
+        )}
         {display.baseAxes && <primitive object={baseAxes} />}
         {display.reach && shell && <primitive object={shell.group} />}
       </group>

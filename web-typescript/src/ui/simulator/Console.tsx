@@ -84,8 +84,10 @@ import BlockEditor from './editors/BlockEditor';
 import CameraViews, { analyse, type CameraView, type CameraViewsHandle, type Detection } from './stage/CameraViews';
 import CodeEditor from './editors/CodeEditor';
 import ControlPanel, { type Axis, type Frame } from './control/ControlPanel';
-import DeskPanel, { type Tab as DeskTab } from './control/DeskPanel';
-import EnvDock from './stage/EnvDock';
+import LeftRail, { type RailItem } from './stage/LeftRail';
+import MiniArmLabels from './stage/MiniArmLabels';
+import { createMonitor, type MiniRect } from './stage/MiniArm';
+import DeskPanel from './control/DeskPanel';
 import DemoCaption from './stage/DemoCaption';
 import { ResultCard, RunTimeline, applyFrame, snapshot, type Replay } from './stage/RunReplay';
 import Hud, { type HudStatus } from './stage/Hud';
@@ -139,6 +141,8 @@ const GRIPPER_URDF_URL = '/robot/rdkx5/mycobot_280_rdkx5_adaptive_gripper.urdf';
 const TAB_KEY = 'robot-console-tab';
 /** The 공정 짜기 process being made (its project-file text). */
 const PROCESS_KEY = 'robot-console-process';
+/** The mini arm's corner, px: from the left menu bar's left edge, and its size. */
+const MINI = { left: 70, bottom: 64, width: 250, height: 300 };
 const SIDE_KEY = 'robot-console-side';
 const QUALITY_KEY = 'robot-console-quality';
 const LEVEL_KEY = 'robot-console-level';
@@ -264,7 +268,10 @@ export default function Console() {
   const [theme, setTheme] = useState<Theme>(START_THEME);
   // 실습 환경: the desk's scene and objects (빈 화면 at every start), the panel (and the tab it opened on), the picked object.
   const [desk, setDesk] = useState<Desk>(EMPTY_DESK);
-  const [deskOpen, setDeskOpen] = useState<false | DeskTab>(false);
+  /** The left menu bar's open window (실습 환경 · 물건 · 모니터; the camera has its own window). */
+  const [railOpen, setRailOpen] = useState<RailItem | null>(null);
+  /** Each joint's warning and where the mini arm's joints are, written by the 3D view every frame. */
+  const monitor = useMemo(() => ({ current: createMonitor() }), []);
   const [deskSel, setDeskSel] = useState<string | null>(null);
   // 직접 제어: one section open at a time (the one last opened), kept on this PC.
   const [section, setSection] = useState<string>('jog');
@@ -460,6 +467,9 @@ export default function Console() {
   }, [robotId]);
   /** Drawing aids of the 3D view (frames, joint axes, path, grid, reach), kept in this browser. */
   const [display, setDisplay] = useState<DisplayOpts>(DEFAULT_DISPLAY);
+  useEffect(() => {
+    miniShown.current = display.mini;
+  }, [display.mini]);
   // A run is over when nothing is busy any more: the panels come back. The run flag is set a moment
   // before the program turns busy, so wait until it has been busy (or 3 s, for a run that never starts).
   const runSawBusy = useRef(false);
@@ -552,6 +562,7 @@ export default function Console() {
    * How much of the 3D view the floating panels cover on each side, in pixels, so the view
    * frames the robot in the part that stays visible. Null in the stacked (narrow) layout.
    */
+  const miniShown = useRef(true);
   const frameInsets = useCallback(() => {
     const sh = shellRef.current;
     const vp = sh?.querySelector<HTMLElement>('[data-viewport]');
@@ -561,6 +572,8 @@ export default function Console() {
     const p = panel.getBoundingClientRect();
     const onRight = p.left > v.left + v.width / 2;
     let l = onRight ? 0 : Math.max(0, p.right - v.left + 12);
+    // The left menu bar and the mini arm beside it: the robot is framed to their right.
+    if (miniShown.current) l = Math.max(l, (onRight ? 12 : l) + MINI.left + MINI.width + 8);
     const r = onRight ? Math.max(0, v.right - p.left + 12) : 0;
     // The camera window opens in the free part's lower left: the robot is framed beside it.
     const camEl = sh.querySelector<HTMLElement>('[data-panel="camera"]');
@@ -1246,7 +1259,7 @@ export default function Console() {
     if (!demoFits(scene, arm)) return addLog('info', `${name} 데모는 아직 ${arm.name} 에 맞춘 것이 없어요.`);
     const d = demoFor(scene, arm);
     const th: Theme = scene === 'kit' ? 'kit' : 'arm';
-    setDeskOpen(false);
+    setRailOpen(null);
     setDeskSel(null);
     setGoalCard(null);
     if (th === 'arm') commitDesk({ ...desk, scene, objects: sceneObjects(scene), physics: false, mat: false });
@@ -2617,6 +2630,19 @@ export default function Console() {
         ? { text: '실제 로봇 연결', tone: 'real' }
         : { text: '정상 · 시뮬레이션', tone: 'ok' };
 
+  /** The mini arm's corner: right of the left menu bar (and of the side panel when it is on the left), above the position line. */
+  const miniPlace = useMemo<() => MiniRect>(
+    () => () => {
+      const vp = shellRef.current?.querySelector<HTMLElement>('[data-viewport]');
+      const panel = shellRef.current?.querySelector<HTMLElement>('aside');
+      const v = vp?.getBoundingClientRect();
+      const p = panel?.getBoundingClientRect();
+      const dock = v && p && panel && getComputedStyle(panel).position === 'absolute' && p.left < v.left + v.width / 2 ? p.right - v.left + 12 : 12;
+      return { ...MINI, left: dock + MINI.left };
+    },
+    [],
+  );
+
   const runBar = (
     <RunBar
       passed={gateOpen}
@@ -3188,6 +3214,8 @@ export default function Console() {
                   chain={loaded.rawChain}
                   mountMm={mountMm}
                   ghost={ghostWanted && !replay && ghost && ghost.code === code ? ghost.angles : null}
+                  monitor={monitor}
+                  miniRect={display.mini && view === 'sim' && !railOpen ? miniPlace : null}
                   desk={{
                     scene: desk.scene,
                     objects: desk.objects,
@@ -3228,7 +3256,7 @@ export default function Console() {
                   }
                   display={display}
                   frameInsets={frameInsets}
-                  layoutKey={`${dockShown}:${side}:${camOpen}`}
+                  layoutKey={`${dockShown}:${side}:${camOpen}:${display.mini}`}
                   onReady={onStageReady}
                   onRenderError={onRenderError}
                   onSlow={onSlow}
@@ -3330,7 +3358,68 @@ export default function Console() {
                   </div>
                 </div>
               )}
-              {loaded && view === 'sim' && <Hud world={world} chain={loaded.chain} tcpMm={tcpNow} mountMm={mountMm} loadModel={arm.family === 'mycobot280'} status={hudStatus} />}
+              {loaded && view === 'sim' && railOpen === 'monitor' && (
+                <Hud world={world} chain={loaded.chain} tcpMm={tcpNow} mountMm={mountMm} loadModel={arm.family === 'mycobot280'} status={hudStatus} onClose={() => setRailOpen(null)} />
+              )}
+              {loaded && view === 'sim' && display.mini && !railOpen && <MiniArmLabels monitor={monitor} live={live} tipOf={tipOf} side="right" />}
+              {loaded && view === 'sim' && (
+                <LeftRail
+                  side="right"
+                  open={railOpen ?? (camOpen ? 'camera' : null)}
+                  onOpen={(item) => {
+                    if (item === 'camera') {
+                      setRailOpen(null);
+                      setCamOpen(true);
+                      return;
+                    }
+                    if (item === null && !railOpen) setCamOpen(false);
+                    if (item !== null) setCamOpen(false);
+                    setRailOpen(item);
+                  }}
+                  entries={[
+                    { id: 'env', label: '실습 환경', icon: 'scene', title: '실습 환경 고르기 · 장면마다 ▶ 데모 · 매트 · 물리' },
+                    ...(theme === 'kit' ? [] : [{ id: 'objects' as const, label: '물건', icon: 'box', title: '책상에 물건 놓기 · 색 · 크기 · 무게', badge: desk.objects.length ? String(desk.objects.length) : undefined }]),
+                    ...(camAvailable ? [{ id: 'camera' as const, label: '카메라', icon: 'camera', title: '카메라 화면 · 영상 처리' }] : []),
+                    { id: 'monitor', label: '모니터', icon: 'chart', title: '관절 다이얼 · 손끝 · 그래프 · 부하 자세히' },
+                  ]}
+                >
+                  {(railOpen === 'env' || railOpen === 'objects') && (
+                    <DeskPanel
+                      key={railOpen}
+                      docked
+                      initialTab={railOpen === 'objects' ? 'objects' : 'scene'}
+                      desk={desk}
+                      scene={theme === 'kit' ? 'kit' : desk.scene}
+                      kitAvailable={arm.kit}
+                      demoOk={demoOk}
+                      onDemo={(id) => {
+                        setRailOpen(null);
+                        void playDemo(id);
+                      }}
+                      busy={busy}
+                      matNeeded={practiceUsesMat(practice.id)}
+                      payloadG={arm.payloadG}
+                      canPick={canPick}
+                      selected={deskSel}
+                      onSelect={setDeskSel}
+                      onScene={deskScene}
+                      onMat={deskMat}
+                      onShuffle={shuffle}
+                      onReset={() => {
+                        layout.current = BLOCK_START;
+                        resetWorld();
+                        setBadge(null);
+                      }}
+                      onAdd={deskAdd}
+                      onUpdate={deskUpdate}
+                      onRemove={deskRemove}
+                      onClear={deskClear}
+                      onPhysics={deskPhysics}
+                      onClose={() => setRailOpen(null)}
+                    />
+                  )}
+                </LeftRail>
+              )}
               <Notices entries={log} />
               {goalCard && view === 'sim' && (
                 <ResultCard
@@ -3365,63 +3454,11 @@ export default function Console() {
                 />
               ) : loaded && view === 'sim' && demo ? (
                 <DemoCaption demo={demoFor(demo.scene, arm)} step={demo.step} playing={demo.playing} onBlocks={demoToBlocks} onStop={stopDemo} />
-              ) : loaded && view === 'sim' && (
-                <EnvDock
-                  scene={theme === 'kit' ? 'kit' : desk.scene}
-                  kitAvailable={arm.kit}
-                  demoOk={demoOk}
-                  onDemo={(id) => void playDemo(id)}
-                  busy={busy}
-                  mat={theme === 'kit' ? null : { on: practiceUsesMat(practice.id) || desk.mat, locked: practiceUsesMat(practice.id) }}
-                  physics={theme === 'kit' ? null : desk.physics}
-                  open={!!deskOpen}
-                  onScene={deskScene}
-                  onMat={deskMat}
-                  onPhysics={deskPhysics}
-                  onOpen={(t) => {
-                    setDeskOpen((o) => (o === t ? false : t));
-                  }}
-                >
-                  {deskOpen && (
-                    <DeskPanel
-                      key={deskOpen}
-                      initialTab={deskOpen}
-                      desk={desk}
-                      scene={theme === 'kit' ? 'kit' : desk.scene}
-                      kitAvailable={arm.kit}
-                      demoOk={demoOk}
-                      onDemo={(id) => void playDemo(id)}
-                      busy={busy}
-                      matNeeded={practiceUsesMat(practice.id)}
-                      payloadG={arm.payloadG}
-                      canPick={canPick}
-                      selected={deskSel}
-                      onSelect={setDeskSel}
-                      onScene={deskScene}
-                      onMat={deskMat}
-                      onShuffle={shuffle}
-                      onReset={() => {
-                        layout.current = BLOCK_START;
-                        resetWorld();
-                        setBadge(null);
-                      }}
-                      onAdd={deskAdd}
-                      onUpdate={deskUpdate}
-                      onRemove={deskRemove}
-                      onClear={deskClear}
-                      onPhysics={deskPhysics}
-                      onClose={() => {
-                        setDeskOpen(false);
-                      }}
-                    />
-                  )}
-                </EnvDock>
-              )}
+              ) : null}
               <ViewTools
                 api={getStage}
                 display={display}
                 onDisplay={chooseDisplay}
-                camera={camAvailable ? { open: camOpen, toggle: () => setCamOpen((o) => !o) } : undefined}
                 onSnapshot={(ok) => addLog(ok ? 'ok' : 'err', ok ? '3D 화면을 그림 파일(PNG)로 저장했어요. 다운로드 폴더를 보세요.' : '3D 화면을 저장하지 못했어요.')}
               />
               {!camOpen && camView !== 'real' && (theme === 'kit' || cameraFlange) && (

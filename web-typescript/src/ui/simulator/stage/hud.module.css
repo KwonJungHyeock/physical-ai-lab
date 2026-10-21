@@ -482,3 +482,9 @@
   margin-right: 4px;
   vertical-align: 2px;
 }
+
+/* Opened from the left menu bar: next to the bar, like its other windows. */
+.hud[data-docked] {
+  left: calc(var(--inset-l, 12px) + 74px);
+  top: calc(var(--top, 0px) + 58px);
+}

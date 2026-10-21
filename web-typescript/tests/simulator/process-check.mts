@@ -191,4 +191,16 @@ for (const preset of P.PRESETS) {
   console.log('  ok   RX · RY · RZ jog turns the tool 10° about each base axis with the tip kept (< 0.5 mm)');
 }
 
+// Joint warnings shared by the 3D arm, the mini arm and its chips: amber, then red, with the reason.
+{
+  const { judge } = await import('../../src/engine/robot/jointAlert');
+  assert.equal(judge(30, 90).level, 0);
+  assert.deepEqual([judge(65, 90).level, judge(65, 90).why], [1, '부하 65%']);
+  assert.deepEqual([judge(85, 90).level, judge(85, 90).why], [2, '부하 85%']);
+  assert.deepEqual([judge(null, 8).level, judge(null, 8).why], [1, '한계까지 8°']);
+  assert.deepEqual([judge(20, 2).level, judge(20, 2).why], [2, '한계까지 2°']);
+  assert.equal(judge(null, 45).why, '');
+  console.log('  ok   joint warnings: load 60 / 80 %, limit 10° / 3° → amber / red with the reason');
+}
+
 console.log('process: all checks passed');

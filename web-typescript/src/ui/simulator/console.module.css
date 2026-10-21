@@ -7061,14 +7061,14 @@ button.jpRow:hover {
 /* --- notifications (stage/Notices.tsx): one card over the monitor, 기록 under it ----------- */
 .notices {
   position: absolute;
-  z-index: 13;
-  left: var(--inset-l, 12px);
+  z-index: 15;
+  /* Right of the left menu bar (LeftRail). */
+  left: calc(var(--inset-l, 12px) + 74px);
   top: calc(var(--top, 0px) + 12px);
   width: 318px;
 }
 .notices[data-idle] {
   width: auto;
-  left: calc(var(--inset-l, 12px) + 326px);
 }
 .notice {
   display: grid;
