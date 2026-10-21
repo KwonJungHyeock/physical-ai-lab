@@ -70,6 +70,7 @@
 | [`32-theory-review.md`](reports/education/32-theory-review.md) · [`부록 문항`](reports/education/32-theory-review-quiz.md) | 보고 #32 — 이론 검증 자료: 28차시의 정의 · 원리 · 자세히 · 수식 · 기호 · 활동 정답과 이유, 현장 실습 21문제 · 마무리 평가 · 로봇 실습 7의 원리와 계산 정답, 확인 문항 560개 정답 · 풀이 (앱 데이터에서 그대로, `tools/build/theory-review.mts`) |
 | [`32-review-u12-result.md`](reports/education/32-review-u12-result.md) | 보고 #32 결과 — 1·2단원 검증 지시서 반영: 고친 문장, 질문 · 결정, 파트 4 조사 |
 | [`33-lesson-rail-design.md`](reports/education/33-lesson-rail-design.md) | 보고 #33 — 수업 레일 공통 양식(미션 카드 · 지금 할 일 · 고정 색), 실물 연동 막대 한 줄, 1·2단원 반영 이론서 · 문항지 다시 만듦, 디자인 원칙 점검, GitHub `release` 브랜치에 시뮬레이터 · USB 키트 두 파일 |
+| [`35-imitation-teaching-plan.md`](reports/education/35-imitation-teaching-plan.md) | 보고 #35 — 가변저항 티칭 팔(아두이노) → 시뮬레이터 · 280 따라 하기 → 기록 · 재생 · 학습: 시험용 기획(구성 · 시험 T1~T7 · 8차시 초안 · 준비물 · 걱정되는 점) |
 
 ### [`system/`](reports/system/) — 시스템 구성
 | 문서 | 내용 |
