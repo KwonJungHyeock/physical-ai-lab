@@ -72,6 +72,7 @@
 | [`33-lesson-rail-design.md`](reports/education/33-lesson-rail-design.md) | 보고 #33 — 수업 레일 공통 양식(미션 카드 · 지금 할 일 · 고정 색), 실물 연동 막대 한 줄, 1·2단원 반영 이론서 · 문항지 다시 만듦, 디자인 원칙 점검, GitHub `release` 브랜치에 시뮬레이터 · USB 키트 두 파일 |
 | [`35-imitation-teaching-plan.md`](reports/education/35-imitation-teaching-plan.md) | 보고 #35 — 가변저항 티칭 팔(아두이노) → 시뮬레이터 · 280 따라 하기 → 기록 · 재생 · 학습: 시험용 기획(구성 · 시험 T1~T7 · 8차시 초안 · 준비물 · 걱정되는 점) |
 | [`36-education-direction.md`](reports/education/36-education-direction.md) | 보고 #36 — 교육 자료 방향(보류): 자료는 모두 자료실 · 화면은 안내만, 실습 매뉴얼 + 이론 PDF 두 층, PinkLAB 모방학습 자료 분석, 실습 매뉴얼 초안(검수 7종과 겹침) |
+| [`37-theory-review-u38.md`](reports/education/37-theory-review-u38.md) | 보고 #37 — 로봇공학 이론 검토 3 ~ 8단원(보고 #32 후속): 오류 61 (상 5) · 보완 · 추가 제안 · 삭제 · 확인 필요, 위치와 고친 문장 · 다시 계산한 숫자 |
 
 ### [`system/`](reports/system/) — 시스템 구성
 | 문서 | 내용 |
