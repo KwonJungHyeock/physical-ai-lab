@@ -290,7 +290,7 @@ export const reconnectRobot = () => post('/api/reconnect');
  */
 export const jogRobot = (joint: number, dir: -1 | 1, speed: number) => post('/api/jog', { joint, dir, speed });
 /** Smooth tool jog along a base axis on the robot (its own continuous jog_coord), same keep-alive. */
-export const jogRobotAxis = (axis: 'x' | 'y' | 'z', dir: -1 | 1, speed: number) => post('/api/jog', { axis, dir, speed });
+export const jogRobotAxis = (axis: 'x' | 'y' | 'z' | 'rx' | 'ry' | 'rz', dir: -1 | 1, speed: number) => post('/api/jog', { axis, dir, speed });
 
 /** Where the robot's Wi-Fi is connected (robot-python/server/wifi.py). */
 export interface WifiStatus {

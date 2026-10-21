@@ -68,7 +68,7 @@ export default function ProcessPanel({ process: p, onProcess, pose, tipOf, busy,
     a.download = `${p.name.replace(/[\\/:*?"<>|]/g, '_') || '공정'}${PROCESS_EXT}`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    onNote('info', `프로젝트 파일로 저장했어요: ${a.download}`);
+    onNote('info', `공정 파일로 저장했어요: ${a.download}`);
   };
   const load = async (f: File | undefined) => {
     if (!f) return;
@@ -76,10 +76,10 @@ export default function ProcessPanel({ process: p, onProcess, pose, tipOf, busy,
     if ('error' in r) return onNote('err', `${f.name}: ${r.error}`);
     onProcess(r.process);
     setPick(-1);
-    onNote('info', `불러왔어요: ${r.process.name} (${r.process.rows.length}줄)`);
+    onNote('info', `공정 파일을 열었어요: ${r.process.name} (${r.process.rows.length}줄)`);
   };
   const preset = (k: number) => {
-    if (p.rows.length && !window.confirm(`지금 공정 대신 [${PRESETS[k].name}]을 불러올까요?`)) return;
+    if (p.rows.length && !window.confirm(`지금 공정 대신 예제 [${PRESETS[k].name}]을 열까요?`)) return;
     onProcess(structuredClone(PRESETS[k]) as Process);
     setPick(-1);
   };
@@ -206,27 +206,27 @@ export default function ProcessPanel({ process: p, onProcess, pose, tipOf, busy,
       </ol>
 
       <div className={css.files}>
-        <select value="" disabled={busy} aria-label="프리셋" onChange={(e) => e.target.value !== '' && preset(Number(e.target.value))}>
-          <option value="">프리셋…</option>
+        <select value="" disabled={busy} aria-label="공정 예제" onChange={(e) => e.target.value !== '' && preset(Number(e.target.value))}>
+          <option value="">공정 예제…</option>
           {PRESETS.map((x, k) => (
             <option key={x.name} value={k}>
               {x.name}
             </option>
           ))}
         </select>
-        <button type="button" disabled={busy} onClick={() => file.current?.click()} title="프로젝트 파일(.pal) 불러오기">
-          불러오기
+        <button type="button" disabled={busy} onClick={() => file.current?.click()} title="공정 파일(.pal) 열기">
+          공정 파일 열기
         </button>
-        <button type="button" disabled={busy || !p.rows.length} onClick={save} title="프로젝트 파일(.pal)로 저장">
-          저장
+        <button type="button" disabled={busy || !p.rows.length} onClick={save} title="공정 파일(.pal)로 저장">
+          공정 파일 저장
         </button>
         <button
           type="button"
           disabled={busy || !p.rows.length}
           onClick={() => window.confirm('공정을 모두 지울까요?') && set([], -1)}
-          title="새 공정"
+          title="공정을 비우고 새로 시작"
         >
-          새로
+          새 공정
         </button>
         <input
           ref={file}

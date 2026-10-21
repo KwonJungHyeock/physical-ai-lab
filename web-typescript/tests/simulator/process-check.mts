@@ -160,8 +160,8 @@ for (const preset of P.PRESETS) {
   assert.deepEqual(back.process, p);
   assert.match(text, /"format": "physical-ai-lab\/process"/);
   for (const [bad, why] of [
-    ['not json', /프로젝트 파일/],
-    ['{"format":"x"}', /프로젝트 파일/],
+    ['not json', /공정 파일/],
+    ['{"format":"x"}', /공정 파일/],
     [JSON.stringify({ format: P.PROCESS_FORMAT, version: 2, rows: [] }), /새 버전/],
     [JSON.stringify({ format: P.PROCESS_FORMAT, version: 1, rows: [{ kind: 'move', mode: 'X', joints: null }] }), /1번 줄/],
     [JSON.stringify({ format: P.PROCESS_FORMAT, version: 1, rows: [{ kind: 'move', mode: 'J', joints: [1, 2] }] }), /1번 줄/],
@@ -170,6 +170,25 @@ for (const preset of P.PRESETS) {
     assert.ok('error' in r && why.test(r.error), bad);
   }
   console.log('  ok   project file round-trips and refuses malformed files');
+}
+
+// Rotation jog (RX · RY · RZ): the tool turns about a base axis by the asked angle and its tip stays put.
+{
+  const { turnTool } = await import('../../src/engine/robot/tool');
+  const { forwardKinematicsFrames } = await import('../../src/engine/robot/kinematics');
+  const { Quaternion } = await import('three');
+  const quat = (j: number[]) => new Quaternion().setFromRotationMatrix(forwardKinematicsFrames(chain, j).at(-1)!);
+  for (const axis of ['x', 'y', 'z'] as const) {
+    const r = turnTool(chain, A, TCP, axis, 10);
+    assert.ok(r.converged, `turn ${axis}`);
+    const a = tcpPositionMm(chain, A, TCP);
+    const b = tcpPositionMm(chain, r.anglesDeg, TCP);
+    const moved = Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
+    const turned = (quat(A).angleTo(quat(r.anglesDeg)) * 180) / Math.PI;
+    assert.ok(moved < 0.5, `R${axis.toUpperCase()}: tip moved ${moved.toFixed(2)} mm`);
+    assert.ok(Math.abs(turned - 10) < 0.5, `R${axis.toUpperCase()}: turned ${turned.toFixed(2)}°`);
+  }
+  console.log('  ok   RX · RY · RZ jog turns the tool 10° about each base axis with the tip kept (< 0.5 mm)');
 }
 
 console.log('process: all checks passed');

@@ -80,6 +80,7 @@ SETTLE_S = 0.3         # after arriving, wait up to this long for the arm to sto
 JOG_LEAD_DEG = 15.0    # a jog target may lead the arm by at most this much per joint
 JOG_HOLD_S = 1.0       # jogging and no keep-alive for this long: the console let go (or went away), stop
 JOG_EDGE_DEG = 3.0     # a continuous joint jog stops this far before the joint's limit
+COORD_AXES = ("x", "y", "z", "rx", "ry", "rz")  # pymycobot jog_coord ids 1..6
 GRIP_SPEED = 50
 # The gripper is a position servo: told "close", it pushes towards fully closed for as long as it is
 # powered, stalled against the other finger or the object (the buzzing, and a hot motor). Once the
@@ -168,8 +169,9 @@ class DemoArm:
 
     def jog_coord(self, coord_id, direction, speed):
         """The demo arm has no kinematics: a base-axis jog turns the shoulder (x), the base (y) or the
-        elbow (z) so something visible happens; the real robot moves the tool along the axis."""
-        return self.jog_angle((2, 1, 3)[coord_id - 1], direction if coord_id != 3 else 1 - direction, speed)
+        elbow (z), and a turn (rx / ry / rz) a wrist joint, so something visible happens; the real
+        robot moves or turns the tool."""
+        return self.jog_angle((2, 1, 3, 6, 5, 4)[coord_id - 1], direction if coord_id != 3 else 1 - direction, speed)
 
     def jog_angle(self, joint_id, direction, speed):
         """Continuous jog as the firmware does it: keep turning towards the joint's limit until stop()."""
@@ -567,8 +569,9 @@ class Robot:
 
     def jog(self, joint, direction, speed, axis=None):
         """Smooth jog: the robot's own continuous jog for as long as the console keeps calling
-        (every ~0.15 s while the key is held) — a joint (pymycobot jog_angle) or the tool along a
-        base axis x / y / z (jog_coord, the robot keeps the tool's orientation). A repeat only keeps
+        (every ~0.15 s while the key is held) — a joint (pymycobot jog_angle), the tool along a
+        base axis x / y / z (jog_coord 1-3, the robot keeps the tool's orientation) or the tool
+        turned about one, rx / ry / rz (jog_coord 4-6, the tip kept). A repeat only keeps
         it alive; a new speed is sent on at once. The arm stops when the calls stop (JOG_HOLD_S),
         at Stop, and a joint jog near the joint's limit."""
         if self.state["running"]:
@@ -578,9 +581,9 @@ class Robot:
         if direction not in (-1, 1):
             return "방향은 -1 또는 1 이에요."
         if axis is not None:
-            if axis not in ("x", "y", "z"):
-                return "축은 x, y, z 예요."
-            key = ("coord", "xyz".index(axis) + 1, direction)
+            if axis not in COORD_AXES:
+                return "축은 x, y, z, rx, ry, rz 예요."
+            key = ("coord", COORD_AXES.index(axis) + 1, direction)
         else:
             if joint not in range(1, 7):
                 return "관절 번호는 1~6 이에요."
@@ -598,7 +601,7 @@ class Robot:
                 self.call("stop")
             kind, n, d = key
             if self.jog_key != key:
-                log(f"[조그] {'J' + str(n) if kind == 'joint' else 'XYZ'[n - 1]} {'+' if d > 0 else '-'} 연속 (속도 {speed})")
+                log(f"[조그] {'J' + str(n) if kind == 'joint' else COORD_AXES[n - 1].upper()} {'+' if d > 0 else '-'} 연속 (속도 {speed})")
             else:
                 log(f"[조그] 속도 {speed}")
             self.call("jog_angle" if kind == "joint" else "jog_coord", n, 1 if d > 0 else 0, speed)

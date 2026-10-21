@@ -72,10 +72,10 @@ import { RunError, SelfCollision, Stop, createWorld, emptyStats, instantAnimate,
 import { demoFits, demoFor, demoStepAt } from '@/engine/simulator/demos';
 import { runPython, warmPython } from '@/engine/python/client';
 import type { PyOutput, PyResult } from '@/engine/python/types';
-import { buildChain, forwardKinematicsFrames, liftChain, solveIk, type ChainSegment } from '@/engine/robot/kinematics';
+import { buildChain, forwardKinematics, forwardKinematicsFrames, liftChain, solveIk, type ChainSegment } from '@/engine/robot/kinematics';
 import { jointMax, jointMin } from '@/engine/robot/limits';
 import { tcpPositionMm } from '@/engine/robot/motion';
-import { currentOrientation, shiftTool, solveToolPose } from '@/engine/robot/tool';
+import { currentOrientation, shiftTool, solveToolPose, turnTool } from '@/engine/robot/tool';
 import { parseUrdf, type UrdfRobot } from '@/engine/robot/urdf';
 import type { ImageLike } from '@/engine/vision/color';
 import { Divergence, findColor, offCentre, probeJacobian, stepTowards, type Seen } from '@/engine/vision/track';
@@ -161,11 +161,16 @@ const CAM_ROLES_KEY = 'robot-console-cam-roles';
 /** What the side panel shows: direct control, or the editor of one language. */
 type PanelTab = 'direct' | 'process' | Level;
 const PANEL_TABS: { id: PanelTab; name: string; sub: string; icon: string }[] = [
-  { id: 'direct', name: '수동 제어', sub: '기본', icon: 'move' },
-  { id: 'process', name: '공정 짜기', sub: '티칭', icon: 'flag' },
+  { id: 'direct', name: '수동 제어', sub: '조그', icon: 'move' },
+  { id: 'process', name: '공정 짜기', sub: '점 · 순서', icon: 'flag' },
   { id: 'basic', name: LEVEL_TAB.basic.name, sub: LEVEL_TAB.basic.sub, icon: 'grid' },
   { id: 'python', name: LEVEL_TAB.python.name, sub: LEVEL_TAB.python.sub, icon: 'code' },
   { id: 'ros', name: LEVEL_TAB.ros.name, sub: LEVEL_TAB.ros.sub, icon: 'joints' },
+];
+/** The tabs in two groups: teaching a process on the arm, and writing a program. */
+const TAB_GROUPS: { name: string; ids: PanelTab[] }[] = [
+  { name: '공정 · 티칭', ids: ['direct', 'process'] },
+  { name: '코딩', ids: ['basic', 'python', 'ros'] },
 ];
 /** A picture of each arm family (rendered from its 3D model, tools/build/part-thumbs.mjs). */
 const MODEL_PIC: Record<string, string> = {
@@ -362,7 +367,7 @@ export default function Console() {
   const [ringJoint, setRingJoint] = useState<number | null>(null);
   // Joint jog: the joint the keys and the 3D dial turn (0..5), and whether the jog panel shows joints.
   const [jogJoint, setJogJoint] = useState(0);
-  const [jogView, setJogView] = useState<Frame>('joint');
+  const [jogView, setJogView] = useState<Frame>('base');
   // The joint points show only while joints are being adjusted: the pointer or the keyboard in the jog
   // panel, the pointer on a point or its dial, a joint moving — and for a few seconds after.
   const [jointsLive, setJointsLive] = useState(false);
@@ -1899,6 +1904,11 @@ export default function Console() {
   const tipStep = (axis: Axis, delta: number) => {
     if (!loaded || busy) return;
     const base = basePose();
+    if (axis === 'rx' || axis === 'ry' || axis === 'rz') {
+      const turned = turnTool(loaded.chain, base, tcpNow, axis[1] as 'x' | 'y' | 'z', delta, 0.2);
+      if (!turned.converged) return addLog('err', `도구를 ${axis.toUpperCase()} ${delta > 0 ? '+' : ''}${delta}° 더 돌릴 수 없어요 (손끝 자리를 지킨 채 닿지 않아요).`, '반대로 돌리거나 손끝을 로봇 쪽으로 옮긴 뒤 돌려 주세요.');
+      return void goJoints(turned.anglesDeg, `${axis.toUpperCase()} ${delta > 0 ? '+' : ''}${delta}°`, true);
+    }
     const here = tcpPositionMm(loaded.chain, base, tcpNow);
     const to = { x: here.x, y: here.y, z: here.z, [axis]: here[axis] + delta };
     // First the tool kept exactly as it is held; then pointing down (it may turn to get there).
@@ -1975,6 +1985,11 @@ export default function Console() {
       const limit = j.dir > 0 ? jointMax()[i] : jointMin()[i];
       if (j.cmd[i] * j.dir >= limit * j.dir) return endJog(`J${i + 1} 이 한계(${limit}°)에 닿았어요.`);
       next[i] = Math.min(jointMax()[i], Math.max(jointMin()[i], next[i] + j.dir * deg * dt));
+    } else if (j.axis === 'rx' || j.axis === 'ry' || j.axis === 'rz') {
+      // Turning about a base axis, the tip kept: about as many °/s as the joints turn.
+      const sol = turnTool(loaded.chain, j.cmd, tcpNow, j.axis[1] as 'x' | 'y' | 'z', j.dir * deg * 0.75 * dt);
+      if (!sol.converged || sol.anglesDeg.some((a, i) => Math.abs(a - j.cmd[i]) > 6)) return endJog('도구를 이 방향으로 더 돌릴 수 없어요 (손끝 자리를 지킬 수 없거나 자세가 크게 바뀌어요).');
+      next = sol.anglesDeg.map((a, i) => Math.min(jointMax()[i], Math.max(jointMin()[i], a)));
     } else if (j.axis) {
       const sol = shiftTool(loaded.chain, j.cmd, { x: 0, y: 0, z: 0, [j.axis]: j.dir * mm * dt });
       if (!sol.converged || sol.anglesDeg.some((a, i) => Math.abs(a - j.cmd[i]) > 6)) return endJog('도구를 이 방향으로 더 움직일 수 없어요 (닿지 않거나 자세가 크게 바뀌어요).');
@@ -2034,6 +2049,13 @@ export default function Console() {
     if (j.joint !== undefined) {
       const i = j.joint;
       ahead[i] = Math.min(jointMax()[i], Math.max(jointMin()[i], ahead[i] + j.dir * 8));
+    } else if (j.axis === 'rx' || j.axis === 'ry' || j.axis === 'rz') {
+      // How the tool will be turned a moment from now, as the robot's own coordinate jog (rx / ry / rz) turns it.
+      const about = j.axis[1] as 'x' | 'y' | 'z';
+      let sol = turnTool(loaded.chain, r.angles, tcpNow, about, j.dir * 8, 0.5);
+      if (!sol.converged) sol = turnTool(loaded.chain, r.angles, tcpNow, about, j.dir * 3, 0.5);
+      if (!sol.converged) return endJog('도구를 이 방향으로 더 돌릴 수 없어요.');
+      ahead = sol.anglesDeg;
     } else if (j.axis) {
       // Where the tool will be a moment from now, held as it is now — as the robot's coordinate jog moves it.
       // Near a joint limit the exact tool angle may not be kept for 25 mm: look less far, and at last solve
@@ -2454,7 +2476,8 @@ export default function Console() {
     (angles: readonly number[]) => {
       if (!loaded) return null;
       const p = tcpPositionMm(loaded.chain, angles, tcpNow);
-      return { ...p, z: p.z - mountMm };
+      const r = forwardKinematics(loaded.chain, angles).rpyDeg;
+      return { ...p, z: p.z - mountMm, rx: r.x, ry: r.y, rz: r.z };
     },
     [loaded, tcpNow, mountMm],
   );
@@ -3479,20 +3502,27 @@ export default function Console() {
                   </button>
                 </div>
                 <nav className={css.sideTabs} role="tablist" aria-label="패널 모드">
-                  {PANEL_TABS.map((t) => (
-                    <button
-                      key={t.id}
-                      type="button"
-                      role="tab"
-                      aria-selected={shownTab === t.id}
-                      disabled={busy && t.id !== 'direct' && t.id !== shownTab}
-                      onClick={() => openTab(t.id)}
-                      title={t.id === 'direct' ? '로봇을 손으로 직접 움직여요 (관절 · 좌표 · 도구 · 자세)' : `${t.name} (${t.sub}) 로 프로그램을 만들어요`}
-                    >
-                      <Icon name={t.icon} size={15} />
-                      <b>{t.name}</b>
-                      <small>{t.sub}</small>
-                    </button>
+                  {TAB_GROUPS.map((g) => (
+                    <div key={g.name} className={css.tabGroup} role="presentation">
+                      <span className={css.tabGroupName}>{g.name}</span>
+                      <div className={css.tabGroupTabs} role="presentation">
+                        {PANEL_TABS.filter((t) => g.ids.includes(t.id)).map((t) => (
+                          <button
+                            key={t.id}
+                            type="button"
+                            role="tab"
+                            aria-selected={shownTab === t.id}
+                            disabled={busy && t.id !== 'direct' && t.id !== shownTab}
+                            onClick={() => openTab(t.id)}
+                            title={t.id === 'direct' ? '로봇을 손으로 직접 움직여요 (좌표 · 관절 · 도구 · 자세)' : t.id === 'process' ? '점을 찍어 공정 순서를 만들어요 (BEGIN–END)' : `${t.name} (${t.sub}) 로 프로그램을 만들어요`}
+                          >
+                            <Icon name={t.icon} size={15} />
+                            <b>{t.name}</b>
+                            <small>{t.sub}</small>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </nav>
                 {shownTab === 'direct' ? (

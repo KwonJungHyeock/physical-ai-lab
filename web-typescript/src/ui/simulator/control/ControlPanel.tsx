@@ -2,7 +2,8 @@
 
 /**
  * Jog panel of the control dock, laid out like a robot teach pendant:
- * a coordinate frame switch (joints / base XYZ), speed override, step size,
+ * a coordinate frame switch (base coordinates — position X·Y·Z and rotation
+ * RX·RY·RZ, the default as on industrial pendants — or joints), speed override, step size,
  * jog keys (tap = one step, hold = continuous motion at the set speed), and
  * per-joint position bars with the joint limits marked.
  *
@@ -20,13 +21,23 @@ import { activeArm } from '@/engine/robot/arms';
 import { useLive, type Live } from '../liveStore';
 import css from '../console.module.css';
 
-export type Axis = 'x' | 'y' | 'z';
+/** Base-frame jog: along x / y / z (mm), or turning the tool about x / y / z (rx / ry / rz, °) with its tip kept. */
+export type Axis = 'x' | 'y' | 'z' | 'rx' | 'ry' | 'rz';
+/** The tool now: tip position (mm) and orientation about the base axes (°, as the monitor shows). */
+export interface ToolNow {
+  x: number;
+  y: number;
+  z: number;
+  rx?: number;
+  ry?: number;
+  rz?: number;
+}
 
 interface Props {
   /** Live joint angles (read here: the jog panel redraws, not the whole console). */
   live: Live;
   /** Tool tip position for given angles, mm. */
-  tipOf(angles: readonly number[]): { x: number; y: number; z: number } | null;
+  tipOf(angles: readonly number[]): ToolNow | null;
   busy: boolean;
   /** Controls move the real robot. */
   real: boolean;
@@ -38,7 +49,8 @@ interface Props {
   /** Slider let go: on the robot, send the pose. */
   onJointCommit(i: number, deg: number): void;
   onJointStep(i: number, delta: number): void;
-  onTipStep(axis: Axis, deltaMm: number): void;
+  /** One step: mm along x / y / z, ° about rx / ry / rz. */
+  onTipStep(axis: Axis, delta: number): void;
   /** Key held: move continuously (joint or tool tip along a base axis) until onJogStop. */
   onJointJog(i: number, dir: -1 | 1): void;
   onTipJog(axis: Axis, dir: -1 | 1, scale?: number): void;
@@ -59,10 +71,17 @@ interface Props {
 export type Frame = 'joint' | 'base';
 const JOINT_STEPS = [0.5, 1, 5, 10];
 const TIP_STEPS = [1, 5, 10, 20];
+/** The rotation step that goes with each position step (same chip). */
+const TURN_STEPS = [1, 2, 5, 10];
 const AXES: { axis: Axis; minus: string; plus: string; color: string }[] = [
   { axis: 'x', minus: '뒤', plus: '앞', color: '#e5484d' },
   { axis: 'y', minus: '오른쪽', plus: '왼쪽', color: '#30a46c' },
   { axis: 'z', minus: '아래', plus: '위', color: '#3e63dd' },
+];
+const TURNS: { axis: Axis; color: string }[] = [
+  { axis: 'rx', color: '#e5484d' },
+  { axis: 'ry', color: '#30a46c' },
+  { axis: 'rz', color: '#3e63dd' },
 ];
 
 /** A press shorter than this is a tap (one step); held longer, the axis moves continuously. */
@@ -211,7 +230,7 @@ export default function ControlPanel(p: Props) {
   const angles = useLive(p.live, (v) => v.angles);
   const { tipOf } = p;
   const tip = useMemo(() => tipOf(angles), [tipOf, angles]);
-  const [frame, setFrame] = useState<Frame>('joint');
+  const [frame, setFrame] = useState<Frame>('base');
   const [jStep, setJStep] = useState(5);
   const [tStep, setTStep] = useState(10);
   // The how-to lines stay behind [?] (the panel stays short; the keys say what they do on hover).
@@ -297,13 +316,13 @@ export default function ControlPanel(p: Props) {
     >
       <div className={css.pendantBar}>
         <span className={css.frameSeg} role="group" aria-label="좌표계">
-          <button type="button" aria-pressed={frame === 'joint'} onClick={() => chooseFrame('joint')} title="모터(관절)를 하나씩 돌려요">
-            <b>관절별로</b>
-            <small>모터 하나씩</small>
+          <button type="button" aria-pressed={frame === 'base'} onClick={() => chooseFrame('base')} title="베이스 좌표: 손끝 위치(X·Y·Z)를 곧게 옮기거나, 손끝은 그대로 두고 도구 방향(RX·RY·RZ)을 돌려요">
+            <b>좌표</b>
+            <small>위치 · 회전</small>
           </button>
-          <button type="button" aria-pressed={frame === 'base'} onClick={() => chooseFrame('base')} title="손끝을 앞뒤·좌우·위아래로 곧게 움직여요">
-            <b>좌표로</b>
-            <small>손끝 X·Y·Z</small>
+          <button type="button" aria-pressed={frame === 'joint'} onClick={() => chooseFrame('joint')} title="모터(관절)를 하나씩 돌려요">
+            <b>관절</b>
+            <small>J1 ~ J6</small>
           </button>
         </span>
         <span className={css.stepSeg} role="group" aria-label="한 번 누를 때 움직이는 양">
@@ -313,7 +332,7 @@ export default function ControlPanel(p: Props) {
               {v}
             </button>
           ))}
-          <i>{frame === 'joint' ? '°' : 'mm'}</i>
+          <i>{frame === 'joint' ? '°' : `mm · ${TURN_STEPS[TIP_STEPS.indexOf(tStep)]}°`}</i>
         </span>
         <button type="button" className={css.helpBtn} aria-pressed={help} onClick={() => setHelp((h) => !h)} title={help ? '도움말 닫기' : '쓰는 방법 보기'} aria-label="쓰는 방법">
           ?
@@ -435,6 +454,9 @@ export default function ControlPanel(p: Props) {
         </div>
       ) : (
         <div className={css.axisRows}>
+          <p className={css.axisGroup}>
+            위치 <small>X · Y · Z (mm)</small>
+          </p>
           {AXES.map(({ axis, minus, plus, color }) => (
             <div key={axis} className={css.axisRow}>
               <span className={css.axisName} style={{ color }}>
@@ -442,7 +464,7 @@ export default function ControlPanel(p: Props) {
               </span>
               <JogKey dir={-1} label={`${axis.toUpperCase()}− ${minus}`} disabled={p.busy} onStep={() => p.onTipStep(axis, -tStep)} onStart={() => p.onTipJog(axis, -1)} onStop={p.onJogStop} />
               <span className={css.axisValue}>
-                <b>{tip ? tip[axis].toFixed(1) : '—'}</b>
+                <b>{tip ? (tip[axis as 'x'] ?? 0).toFixed(1) : '—'}</b>
                 <small>mm</small>
                 <em>
                   − {minus} · + {plus}
@@ -458,7 +480,30 @@ export default function ControlPanel(p: Props) {
               <JogKey dir={1} label={`${axis.toUpperCase()}+ ${plus}`} disabled={p.busy} onStep={() => p.onTipStep(axis, tStep)} onStart={() => p.onTipJog(axis, 1)} onStop={p.onJogStop} />
             </div>
           ))}
-          <p className={css.subNote}>로봇 베이스 기준. 도구는 지금 향한 방향 그대로 곧게 움직여요. 가운데 손잡이를 끌면 끄는 만큼 빠르게 움직이고, 놓으면 멈춰요.</p>
+          <p className={css.axisGroup}>
+            회전 <small>RX · RY · RZ (°) · 손끝은 그 자리</small>
+          </p>
+          {TURNS.map(({ axis, color }) => {
+            const name = axis.toUpperCase();
+            const turn = TURN_STEPS[TIP_STEPS.indexOf(tStep)] ?? 5;
+            const v = tip?.[axis as 'rx'];
+            return (
+              <div key={axis} className={css.axisRow}>
+                <span className={css.axisName} style={{ color }}>
+                  {name}
+                </span>
+                <JogKey turn dir={-1} label={`${name}− (${name.slice(1)}축 둘레로 돌리기)`} disabled={p.busy} onStep={() => p.onTipStep(axis, -turn)} onStart={() => p.onTipJog(axis, -1)} onStop={p.onJogStop} />
+                <span className={css.axisValue}>
+                  <b>{v === undefined ? '—' : v.toFixed(1)}</b>
+                  <small>°</small>
+                  <em>도구 방향을 {name.slice(1)}축 둘레로</em>
+                  <SlideJog label={`${name} 밀어서 돌리기`} disabled={p.busy} onStart={(dir, scale) => p.onTipJog(axis, dir, scale)} onScale={p.onJogScale} onStop={p.onJogStop} />
+                </span>
+                <JogKey turn dir={1} label={`${name}+ (${name.slice(1)}축 둘레로 돌리기)`} disabled={p.busy} onStep={() => p.onTipStep(axis, turn)} onStart={() => p.onTipJog(axis, 1)} onStop={p.onJogStop} />
+              </div>
+            );
+          })}
+          <p className={css.subNote}>로봇 베이스 기준. 위치는 도구 방향 그대로 곧게, 회전은 손끝 자리 그대로 도구만 돌아요. 가운데 손잡이를 끌면 끄는 만큼 빠르게, 놓으면 멈춰요.</p>
         </div>
       )}
 

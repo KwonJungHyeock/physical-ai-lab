@@ -18,7 +18,7 @@
  * The first orientation that solves wins, so the simplest pose is always used.
  */
 
-import { Euler, Matrix4, Vector3 } from 'three';
+import { Euler, Matrix4, Quaternion, Vector3 } from 'three';
 
 import {
   DEG2RAD,
@@ -195,6 +195,38 @@ export function shiftTool(chain: readonly ChainSegment[], anglesDeg: readonly nu
       positionToleranceM: toleranceMm / 1000,
       orientationToleranceRad: 0.5 * DEG2RAD,
       // Light damping: the target is a few millimetres away, so fast convergence matters more than robustness far off.
+      damping: 0.01,
+      maxIterations: 100,
+      restarts: 0,
+    });
+    if (!r.converged) return r;
+    seed = r.anglesDeg;
+  }
+  return r!;
+}
+
+/**
+ * Joint angles that turn the tool about a base axis (RX · RY · RZ) by `deltaDeg` while its tip
+ * stays where it is — a pendant's rotational jog in the base frame. The turn is walked in steps
+ * of at most 2°, each seeded from the one before, like shiftTool's line.
+ */
+export function turnTool(chain: readonly ChainSegment[], anglesDeg: readonly number[], tcpMm: number, axis: 'x' | 'y' | 'z', deltaDeg: number, toleranceMm = 0.05): IkResult {
+  const flange = forwardKinematicsFrames(chain, anglesDeg).at(-1)!;
+  const q0 = new Quaternion().setFromRotationMatrix(flange);
+  const tip = new Vector3(0, 0, tcpMm / 1000).applyMatrix4(flange);
+  const about = new Vector3(axis === 'x' ? 1 : 0, axis === 'y' ? 1 : 0, axis === 'z' ? 1 : 0);
+  const steps = Math.max(1, Math.ceil(Math.abs(deltaDeg) / 2));
+  let seed: readonly number[] = anglesDeg;
+  let r: IkResult | null = null;
+  for (let k = 1; k <= steps; k++) {
+    const q = new Quaternion().setFromAxisAngle(about, (deltaDeg * DEG2RAD * k) / steps).multiply(q0);
+    const target = tip.clone().addScaledVector(new Vector3(0, 0, 1).applyQuaternion(q), -tcpMm / 1000);
+    const e = new Euler().setFromQuaternion(q, URDF_EULER_ORDER);
+    r = solveIk(chain, target, seed, {
+      matchOrientation: true,
+      targetRpyDeg: [e.x * RAD2DEG, e.y * RAD2DEG, e.z * RAD2DEG],
+      positionToleranceM: toleranceMm / 1000,
+      orientationToleranceRad: 0.2 * DEG2RAD,
       damping: 0.01,
       maxIterations: 100,
       restarts: 0,

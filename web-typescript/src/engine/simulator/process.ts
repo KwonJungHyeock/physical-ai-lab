@@ -2,7 +2,7 @@
  * 공정 짜기 (BEGIN–END): a process as a pendant teaches it, without a PLC. Rows between BEGIN and
  * END run in order: MOVE J / MOVE L to a taught point (the arm's joint angles when [좌표 저장] was
  * pressed), the gripper, a wait. Smooth passes the points of consecutive MOVE rows without
- * stopping (blending); Tick stops at every point. A process is saved as a project file (.pal,
+ * stopping (blending); Tick stops at every point. A process is saved as a process file (.pal,
  * JSON) and run by sim.ts `runProcess`.
  */
 
@@ -114,10 +114,10 @@ export function processFromFile(text: string): { process: Process } | { error: s
   try {
     d = JSON.parse(text);
   } catch {
-    return { error: '프로젝트 파일(.pal)이 아니에요.' };
+    return { error: '공정 파일(.pal)이 아니에요.' };
   }
   const o = d as Record<string, unknown>;
-  if (!o || o.format !== PROCESS_FORMAT) return { error: '프로젝트 파일(.pal)이 아니에요.' };
+  if (!o || o.format !== PROCESS_FORMAT) return { error: '공정 파일(.pal)이 아니에요.' };
   if (o.version !== 1) return { error: '이 프로그램보다 새 버전에서 만든 파일이에요.' };
   if (!Array.isArray(o.rows)) return { error: '파일에 공정 줄이 없어요.' };
   const rows: ProcRow[] = [];

@@ -1723,13 +1723,28 @@ button.dockToggle:hover {
   cursor: not-allowed;
   background: var(--work);
 }
+.axisGroup {
+  margin: 6px 0 0;
+  font-size: 12px;
+  font-weight: 800;
+}
+.axisGroup:first-child {
+  margin-top: 0;
+}
+.axisGroup small {
+  margin-left: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.7;
+}
 .axisRow {
   display: grid;
-  grid-template-columns: 20px 34px minmax(0, 1fr) 34px;
+  grid-template-columns: 24px 34px minmax(0, 1fr) 34px;
   align-items: center;
   gap: 6px;
 }
-.axisRow .jogKey {
+.axisRow .jogKey,
+.axisRow .jpKey {
   width: 34px;
   height: 34px;
 }
@@ -6064,8 +6079,8 @@ button.jpRow:hover {
 /* tabs: one row, icon + name + level */
 .app .side .sideTabs {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 3px;
+  grid-template-columns: 2fr 3fr;
+  gap: 6px;
   margin: 0 10px 8px;
   padding: 4px;
   border-radius: 12px;
@@ -8932,4 +8947,28 @@ button.jpRow:hover {
   .context {
     overflow: hidden;
   }
+}
+
+/* Panel tabs in two groups: 공정 · 티칭 (수동 제어, 공정 짜기) and 코딩 (블록 · Python · ROS 2). */
+.tabGroup {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+.tabGroup + .tabGroup {
+  padding-left: 6px;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+.tabGroupName {
+  padding-left: 6px;
+  color: #6f7d94;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+.tabGroupTabs {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 3px;
 }
