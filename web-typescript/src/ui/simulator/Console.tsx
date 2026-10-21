@@ -67,7 +67,8 @@ import { usbAvailable } from '@/engine/simulator/usbKit';
 import { carryHash, loadLastPractice, loadProgram, readCarried, saveLastPractice, saveProgram } from '@/engine/simulator/programs';
 import { isStarter, newSession, placedBlocks, practiceFor, practicesFor, repeatability, starterFor, toolFits, toolNeeded, type Level, type PracticeId, type Session } from '@/engine/simulator/practices';
 import { check, parse, type CameraId, type Problem, type Step } from '@/engine/simulator/program';
-import { RunError, SelfCollision, Stop, createWorld, emptyStats, instantAnimate, jogTo, moveCheck, moveProblem, playTimeline, preflight, runProgram, type RobotAction, type RunHooks, type WorldState } from '@/engine/simulator/sim';
+import { checkProcess, compileProcess, emptyProcess, processFromFile, processListing, processToFile, type Process } from '@/engine/simulator/process';
+import { RunError, SelfCollision, Stop, createWorld, emptyStats, instantAnimate, jogTo, moveCheck, moveProblem, playTimeline, preflight, runProcess, runProgram, type RobotAction, type RunHooks, type WorldState } from '@/engine/simulator/sim';
 import { demoFits, demoFor, demoStepAt } from '@/engine/simulator/demos';
 import { runPython, warmPython } from '@/engine/python/client';
 import type { PyOutput, PyResult } from '@/engine/python/types';
@@ -97,6 +98,7 @@ import ModelPicker from './connect/ModelPicker';
 import ConnectDialog from './connect/ConnectDialog';
 import UsbMaker from './connect/UsbMaker';
 import PartsPanel from './control/PartsPanel';
+import ProcessPanel from './editors/ProcessPanel';
 import PyPanel from './editors/PyPanel';
 import RunBar from './tasks/RunBar';
 import { usePcApp } from './connect/usePcApp';
@@ -135,6 +137,8 @@ const Stage = memo(
 const URDF_URL = '/robot/rdkx5/mycobot_280_rdkx5.urdf';
 const GRIPPER_URDF_URL = '/robot/rdkx5/mycobot_280_rdkx5_adaptive_gripper.urdf';
 const TAB_KEY = 'robot-console-tab';
+/** The 공정 짜기 process being made (its project-file text). */
+const PROCESS_KEY = 'robot-console-process';
 const SIDE_KEY = 'robot-console-side';
 const QUALITY_KEY = 'robot-console-quality';
 const LEVEL_KEY = 'robot-console-level';
@@ -155,9 +159,10 @@ const PC_OFFER_KEY = 'robot-console-pc-offered';
 const CAM_ROLES_KEY = 'robot-console-cam-roles';
 
 /** What the side panel shows: direct control, or the editor of one language. */
-type PanelTab = 'direct' | Level;
+type PanelTab = 'direct' | 'process' | Level;
 const PANEL_TABS: { id: PanelTab; name: string; sub: string; icon: string }[] = [
   { id: 'direct', name: '수동 제어', sub: '기본', icon: 'move' },
+  { id: 'process', name: '공정 짜기', sub: '티칭', icon: 'flag' },
   { id: 'basic', name: LEVEL_TAB.basic.name, sub: LEVEL_TAB.basic.sub, icon: 'grid' },
   { id: 'python', name: LEVEL_TAB.python.name, sub: LEVEL_TAB.python.sub, icon: 'code' },
   { id: 'ros', name: LEVEL_TAB.ros.name, sub: LEVEL_TAB.ros.sub, icon: 'joints' },
@@ -280,6 +285,7 @@ export default function Console() {
   const [dockOpen, setDockOpen] = useState(true);
   /** The side panel's tab: direct control first, then one tab per language. */
   const [tab, setTab] = useState<PanelTab>('direct');
+  const [proc, setProc] = useState<Process>(() => emptyProcess());
   /** The side panel on the right (default) or the left of the window. */
   const [side, setSide] = useState<'right' | 'left'>('right');
   /** Each language keeps its own program while another tab is open. */
@@ -688,7 +694,10 @@ export default function Console() {
         addLog('info', '시뮬레이터에서 만들던 프로그램을 가져왔어요.');
       } else {
         const savedTab = localStorage.getItem(TAB_KEY);
-        if (savedTab === 'direct' || savedTab === 'basic' || savedTab === 'python' || savedTab === 'ros') setTab(savedTab === 'direct' || savedTab === savedLevel ? savedTab : 'direct');
+        if (savedTab === 'direct' || savedTab === 'process' || savedTab === 'basic' || savedTab === 'python' || savedTab === 'ros') setTab(savedTab === 'direct' || savedTab === 'process' || savedTab === savedLevel ? savedTab : 'direct');
+        const savedProcess = localStorage.getItem(PROCESS_KEY);
+        const back = savedProcess ? processFromFile(savedProcess) : null;
+        if (back && 'process' in back) setProc(back.process);
       }
     } catch {
       /* storage blocked: keep the defaults */
@@ -973,7 +982,14 @@ export default function Console() {
         return;
       }
       if (!actions.length) return addLog('info', '로봇에 보낼 명령이 없어요.');
-      await startReal(actions, level === 'ros' ? '로봇이 움직여요. 노드가 보낸 /joint_states 를 드라이버처럼 같은 시각에 보내요.' : '로봇이 움직여요. 프로그램의 명령을 시뮬레이션과 같은 시각에 보내요.');
+      await startReal(
+        actions,
+        tab === 'process'
+          ? '로봇이 움직여요. 공정을 시뮬레이션과 같은 순서로 실행해요.'
+          : level === 'ros'
+            ? '로봇이 움직여요. 노드가 보낸 /joint_states 를 드라이버처럼 같은 시각에 보내요.'
+            : '로봇이 움직여요. 프로그램의 명령을 시뮬레이션과 같은 시각에 보내요.',
+      );
       return;
     }
     if (!jointMoveSafe(robot.angles, HOME_DEG)) {
@@ -1537,8 +1553,53 @@ export default function Console() {
     setPassed(null);
   };
 
+  /* --- 공정 짜기 ------------------------------------------------------------ */
+  const changeProcess = (p: Process) => {
+    setProc(p);
+    setErrorLines([]);
+    try {
+      localStorage.setItem(PROCESS_KEY, processToFile(p));
+    } catch {
+      /* this session only */
+    }
+  };
+  const canGrip = EFFECTOR_BY_ID[effector].kind === 'grip';
+  /** The whole process from where the arm is now, as a pendant runs it; on passing, the robot step opens. */
+  const simulateProcess = async () => {
+    if (!loaded || busy) return;
+    const problems = checkProcess(proc, canGrip);
+    setErrorLines(problems.map((e) => e.line).filter((l) => l > 0));
+    if (problems.length) {
+      problems.forEach((e) => addLog('err', e.msg, e.fix));
+      setPassed(null);
+      return;
+    }
+    const items = compileProcess(proc);
+    const start = basePose();
+    const preWorld = createWorld(effector, cameraFlange, layout.current, theme);
+    preWorld.angles = start.slice();
+    const pre = await preflight((h) => runProcess(items, h, proc.speed), { chain: loaded.chain, world: preWorld, poses });
+    if (pre) return refuseRun(pre);
+    setProgramRun(true);
+    setBadge({ kind: 'sim', text: '시뮬레이션' });
+    addLog('sim', `공정을 시뮬레이션해요 (${proc.blend === 'smooth' ? 'Smooth: 점을 이어서 지나가요' : 'Tick: 점마다 멈춰요'}).`);
+    const text = procText;
+    const { ok, actions } = await execute((h) => runProcess(items, h, proc.speed), { reset: true, label: true, start });
+    if (ok) passedRun(text, actions, start);
+    else setPassed(null);
+  };
+  /** 한 줄씩: one row from where the arm is (the simulated arm only). */
+  const runProcessRow = async (i: number) => {
+    if (!loaded || busy) return;
+    const row = proc.rows[i];
+    if (row.kind === 'move' && !row.joints) return addLog('err', `${i + 1}번 줄: 좌표가 아직 없어요.`, '[좌표 저장]을 눌러 주세요.');
+    if (robotMode) return addLog('info', '실제 로봇에서는 [가 보기]로 점을 확인하고, 공정 전체는 [로봇 실행]으로 돌려요.');
+    await execute((h) => runProcess(compileProcess({ ...proc, blend: 'tick' }, i), h, proc.speed), { reset: false, onLine: setRunningLine });
+  };
+
   const simulate = async () => {
     if (busy) return;
+    if (tab === 'process') return simulateProcess();
     if (level !== 'basic') return simulatePy();
     const text = code;
     const { steps, errors, warnings } = problemsFor(text);
@@ -1631,7 +1692,9 @@ export default function Console() {
     return () => document.removeEventListener('keydown', onKey);
   }, [stop]);
 
-  const gateOpen = passed !== null && passed.code === code && !busy;
+  /** What a passed run is tied to: the program text, or (공정 짜기) the process listing. */
+  const procText = processListing(proc);
+  const gateOpen = passed !== null && passed.code === (tab === 'process' ? procText : code) && !busy;
 
   /** Switch level or environment, staying on the same acceptance check when the new place has it. */
   const openKeeping = (lv: Level, th: Theme) => {
@@ -1651,7 +1714,7 @@ export default function Console() {
   };
   /** A language tab: that language's program as it was left, or the same task in the new language. */
   const openTab = (t: PanelTab) => {
-    if (t === 'direct' || t === level) return chooseTab(t);
+    if (t === 'direct' || t === 'process' || t === level) return chooseTab(t);
     if (busy) return;
     const back = kept.current[t];
     if (back && back.theme === theme) selectPractice(t, theme, back.id, back.code);
@@ -1743,7 +1806,7 @@ export default function Console() {
   const openExport = () => {
     if (!passed) return;
     note(7, `로봇용 ${level === 'basic' ? '파이썬 API(pymycobot) 코드' : level === 'ros' ? 'ROS 2 노드' : '파이썬 파일'} 받기`, false);
-    setExportText(adaptPython(level === 'basic' ? toPymycobot(passed.actions, effector, passed.code, theme) : passed.code, arm));
+    setExportText(adaptPython(level === 'basic' || tab === 'process' ? toPymycobot(passed.actions, effector, passed.code, theme) : passed.code, arm));
   };
 
   /* --- direct control ------------------------------------------------------ */
@@ -2508,7 +2571,7 @@ export default function Console() {
   );
 
   /** The panel tab as shown: a language tab always shows the language in use. */
-  const shownTab: PanelTab = tab === 'direct' ? 'direct' : level;
+  const shownTab: PanelTab = tab === 'direct' || tab === 'process' ? tab : level;
   const canPick = ['grip', 'suction'].includes(kind);
   /** The 실습 환경 whose ▶ 데모 this arm can play. */
   const demoOk = (id: SceneId) => demoFits(id, arm);
@@ -2530,6 +2593,24 @@ export default function Console() {
       : robotMode
         ? { text: '실제 로봇 연결', tone: 'real' }
         : { text: '정상 · 시뮬레이션', tone: 'ok' };
+
+  const runBar = (
+    <RunBar
+      passed={gateOpen}
+      robotDone={!!progress[markKey(here)]?.robot}
+      robotMode={robotMode}
+      busy={busy}
+      ready={!!loaded}
+      realProgress={realRun && robot && robot.step >= 0 ? `${robot.step + 1}/${robot.total}` : null}
+      realDisabled={!gateOpen || (robotMode && !robot?.connected)}
+      realBlocked={robotMode && !robot?.connected ? '로봇 연결 필요' : !gateOpen ? '시뮬레이션 통과 후' : null}
+      onSim={simulate}
+      simRate={simRate}
+      onSimRate={chooseSimRate}
+      onReal={robotMode ? runReal : openExport}
+      onStop={stop}
+    />
+  );
 
   const controlPanel = (
     <ControlPanel
@@ -2868,6 +2949,7 @@ export default function Console() {
                 world={world}
                 session={session}
                 demo={!!demo?.playing}
+                process={tab === 'process' ? { name: proc.name || '공정', rows: proc.rows.length } : undefined}
                 onGoal={() => {
                   // A demo is shown, not done by the student.
                   if (demo) return;
@@ -3245,7 +3327,7 @@ export default function Console() {
                   key={replay.duration}
                   replay={replay}
                   autoplay={replayPlay}
-                  lineLabel={(line) => lineName(code.split('\n')[line - 1] ?? '')}
+                  lineLabel={(line) => (tab === 'process' ? (procText.split('\n')[line - 1] ?? '') : lineName(code.split('\n')[line - 1] ?? ''))}
                   onSeek={(f, line) => {
                     applyFrame(world.current, f, replay.trail);
                     setAnglesView(world.current.angles.slice());
@@ -3403,7 +3485,7 @@ export default function Console() {
                       type="button"
                       role="tab"
                       aria-selected={shownTab === t.id}
-                      disabled={busy && t.id !== 'direct' && t.id !== level}
+                      disabled={busy && t.id !== 'direct' && t.id !== shownTab}
                       onClick={() => openTab(t.id)}
                       title={t.id === 'direct' ? '로봇을 손으로 직접 움직여요 (관절 · 좌표 · 도구 · 자세)' : `${t.name} (${t.sub}) 로 프로그램을 만들어요`}
                     >
@@ -3484,6 +3566,23 @@ export default function Console() {
                       </div>
                     )}
                   </div>
+                ) : shownTab === 'process' ? (
+                  <div className={css.codeTab} role="tabpanel" aria-label="공정 짜기">
+                    <ProcessPanel
+                      process={proc}
+                      onProcess={changeProcess}
+                      pose={basePose}
+                      tipOf={tipOf}
+                      busy={busy}
+                      canGrip={canGrip}
+                      runningLine={runningLine}
+                      errorLines={errorLines}
+                      onGo={(j, what) => void goJoints(j, what)}
+                      onRunRow={(i) => void runProcessRow(i)}
+                      onNote={(kind, msg) => addLog(kind, msg)}
+                      runBar={runBar}
+                    />
+                  </div>
                 ) : (
                   <div className={css.codeTab} role="tabpanel" aria-label={LEVEL_TAB[level].name}>
                     <MissionCard
@@ -3537,21 +3636,7 @@ export default function Console() {
                         <PyPanel level={level} status={pyStatus} output={pyOut} ros={pyRos} />
                       </div>
                     )}
-                    <RunBar
-                      passed={gateOpen}
-                      robotDone={!!progress[markKey(here)]?.robot}
-                      robotMode={robotMode}
-                      busy={busy}
-                      ready={!!loaded}
-                      realProgress={realRun && robot && robot.step >= 0 ? `${robot.step + 1}/${robot.total}` : null}
-                      realDisabled={!gateOpen || (robotMode && !robot?.connected)}
-                      realBlocked={robotMode && !robot?.connected ? '로봇 연결 필요' : !gateOpen ? '시뮬레이션 통과 후' : null}
-                      onSim={simulate}
-                      simRate={simRate}
-                      onSimRate={chooseSimRate}
-                      onReal={robotMode ? runReal : openExport}
-                      onStop={stop}
-                    />
+                    {runBar}
                   </div>
                 )}
               </>
@@ -3561,7 +3646,7 @@ export default function Console() {
                   <Icon name="chevron" size={16} />
                 </button>
                 {PANEL_TABS.map((t) => (
-                  <button key={t.id} type="button" className={css.railTab} aria-current={shownTab === t.id || undefined} disabled={busy && t.id !== 'direct' && t.id !== level} onClick={() => openTab(t.id)} title={`${t.name} 열기`}>
+                  <button key={t.id} type="button" className={css.railTab} aria-current={shownTab === t.id || undefined} disabled={busy && t.id !== 'direct' && t.id !== shownTab} onClick={() => openTab(t.id)} title={`${t.name} 열기`}>
                     <Icon name={t.icon} size={17} />
                     <span>{t.name}</span>
                   </button>

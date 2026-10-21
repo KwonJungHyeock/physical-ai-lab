@@ -14,9 +14,9 @@
  * the same time scaling.
  */
 
-import { Vector3 } from 'three';
+import { Euler, Quaternion, Vector3 } from 'three';
 
-import { forwardKinematicsFrames, type ChainSegment } from './kinematics';
+import { RAD2DEG, URDF_EULER_ORDER, forwardKinematicsFrames, solveIk, type ChainSegment } from './kinematics';
 import { STRAIGHT_DOWN, solveToolPose, type PointMm, type ToolOrientation } from './tool';
 
 /** Quintic time scaling. Position, 0..1. */
@@ -167,6 +167,62 @@ export function linearPath(
     worstErrorMm,
     largestStepDeg,
   };
+}
+
+/**
+ * MOVE L between two saved poses (공정 짜기): the TCP goes in a straight line and the tool turns
+ * evenly from the first pose's orientation to the second's (slerp), as a pendant's linear move
+ * does. Same waypoint spacing, seeding and flip check as `linearPath`; the last waypoint is the
+ * saved pose itself, so the arm ends exactly where it was taught.
+ */
+export function linearPosePath(chain: readonly ChainSegment[], fromDeg: readonly number[], toDeg: readonly number[], tcpMm: number, speed: number): LinearPlan {
+  const pose = (deg: readonly number[]) => {
+    const f = forwardKinematicsFrames(chain, deg).at(-1)!;
+    const q = new Quaternion().setFromRotationMatrix(f);
+    const tip = new Vector3(0, 0, tcpMm / 1000).applyMatrix4(f);
+    return { q, tip };
+  };
+  const a = pose(fromDeg);
+  const b = pose(toDeg);
+  const length = a.tip.distanceTo(b.tip) * 1000;
+  const turnDeg = a.q.angleTo(b.q) * RAD2DEG;
+  // A pure turn on the spot still gets waypoints (about one per 2°), or IK could swing the arm.
+  const steps = Math.max(1, Math.ceil(length / LINEAR_STEP_MM), Math.ceil(turnDeg / 2));
+  const waypoints: number[][] = [fromDeg.slice()];
+  let seed = fromDeg.slice();
+  let worstErrorMm = 0;
+  let largestStepDeg = 0;
+  let ok = true;
+  const q = new Quaternion();
+  for (let k = 1; k <= steps; k += 1) {
+    const f = k / steps;
+    q.slerpQuaternions(a.q, b.q, f);
+    const tip = a.tip.clone().lerp(b.tip, f);
+    const axis = new Vector3(0, 0, 1).applyQuaternion(q);
+    const flange = tip.addScaledVector(axis, -tcpMm / 1000);
+    const e = new Euler().setFromQuaternion(q, URDF_EULER_ORDER);
+    const r =
+      k === steps
+        ? null
+        : solveIk(chain, flange, seed, {
+            matchOrientation: true,
+            targetRpyDeg: [e.x * RAD2DEG, e.y * RAD2DEG, e.z * RAD2DEG],
+            positionToleranceM: 0.0005,
+            orientationToleranceRad: 0.01,
+            restarts: 0,
+          });
+    if (r && !r.converged) ok = false;
+    if (r) worstErrorMm = Math.max(worstErrorMm, r.positionErrorM * 1000);
+    const next = r ? r.anglesDeg : toDeg.slice();
+    const jump = Math.max(...next.map((v, i) => Math.abs(v - seed[i])));
+    largestStepDeg = Math.max(largestStepDeg, jump);
+    if (jump > MAX_WAYPOINT_JUMP_DEG) ok = false;
+    waypoints.push(next);
+    seed = next;
+  }
+  const toolS = (QUINTIC_PEAK_RATE * length) / peakToolSpeedMmS(speed);
+  const jointS = jointMoveDuration(fromDeg, toDeg, speed);
+  return { ok, trajectory: waypointTrajectory(waypoints, Math.max(MIN_MOVE_S, toolS, jointS)), worstErrorMm, largestStepDeg };
 }
 
 /** TCP position (mm) for joint angles, tool pointing along the flange axis. */

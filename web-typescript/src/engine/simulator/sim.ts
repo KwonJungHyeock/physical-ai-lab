@@ -25,6 +25,8 @@ import {
   jointMoveDuration,
   jointTrajectory,
   linearPath,
+  QUINTIC_PEAK_RATE,
+  linearPosePath,
   tcpPositionMm,
   type Trajectory,
 } from '../robot/motion';
@@ -309,6 +311,152 @@ async function runStep(s: Step, rt: Runtime): Promise<void> {
     case 'push':
       return cylinderPush(rt);
   }
+}
+
+/* --- 공정 짜기: MOVE J / MOVE L rows, Smooth or Tick ----------------------- */
+
+/** One MOVE row of a process: J = all joints together (a curve), L = the tool in a straight line. */
+export interface Leg {
+  mode: 'J' | 'L';
+  joints: number[];
+  line: number;
+}
+
+/** A run of MOVE rows (played as one path when `blend`), or an ordinary step (그리퍼 · 대기). */
+export type ProcessItem = { type: 'path'; legs: Leg[]; blend: boolean } | Step;
+
+/** How far before and after a passed point Smooth starts rounding the corner, degrees of joint travel. */
+export const BLEND_DEG = 12;
+
+/**
+ * Run a process (공정 짜기, see process.ts). Tick: every point is a stop. Smooth: the arm passes
+ * the points between two MOVE rows without stopping, the corner rounded within BLEND_DEG, as a
+ * pendant's blending does; the real robot gets those points as via targets (it goes on near them).
+ */
+export async function runProcess(items: readonly ProcessItem[], hooks: RunHooks, speed = DEFAULT_SPEED): Promise<void> {
+  const rt: Runtime = { ...hooks, speed: Math.min(SPEED_CAP, speed), vars: new Map(), line: 0 };
+  for (const it of items) {
+    if (it.type !== 'path') {
+      await runList([it], rt);
+      continue;
+    }
+    try {
+      if (it.blend && it.legs.length > 1) await runBlended(rt, it.legs);
+      else for (const leg of it.legs) await runLeg(rt, leg);
+    } catch (err) {
+      if (err instanceof RunError && !err.line) err.line = rt.line;
+      throw err;
+    }
+  }
+}
+
+function legTrajectory(rt: Runtime, from: readonly number[], leg: Leg): Trajectory {
+  const v = effectiveSpeed(rt);
+  if (leg.mode === 'J') return jointTrajectory(from, leg.joints, v);
+  const plan = linearPosePath(rt.chain, from, leg.joints, tcp(rt), v);
+  if (!plan.ok) {
+    const err = new RunError(`${leg.line}번 줄 MOVE L: 손끝이 곧게 갈 수 없어요 (가는 길에 팔 자세가 뒤집혀요).`, 'MOVE J 로 바꾸거나, 사이에 점을 하나 더 넣어 주세요.');
+    err.line = leg.line;
+    throw err;
+  }
+  return plan.trajectory;
+}
+
+/** What the real robot gets for one leg: its end, and for L the line as joint targets every ~15 mm. */
+function recordLeg(rt: Runtime, leg: Leg, traj: Trajectory, from: readonly number[], via: boolean): void {
+  const speed = effectiveSpeed(rt);
+  let pieces = 1;
+  if (leg.mode === 'L') {
+    const a = tcpPositionMm(rt.chain, from, tcp(rt));
+    const b = tcpPositionMm(rt.chain, leg.joints, tcp(rt));
+    pieces = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z) / 15));
+  }
+  for (let k = 1; k <= pieces; k += 1) {
+    const angles = k === pieces ? leg.joints.slice() : traj.sample((traj.durationS * k) / pieces);
+    rt.record?.({ type: 'angles', angles, speed, line: leg.line, via: k < pieces || via });
+  }
+}
+
+async function runLeg(rt: Runtime, leg: Leg): Promise<void> {
+  rt.line = leg.line;
+  rt.onLine?.(leg.line);
+  const from = rt.world.angles.slice();
+  const traj = legTrajectory(rt, from, leg);
+  await play(rt, traj);
+  recordLeg(rt, leg, traj, from, false);
+  noteArrival(rt);
+}
+
+async function runBlended(rt: Runtime, legs: readonly Leg[]): Promise<void> {
+  // Each leg's path, sampled densely; the time profile does not matter, only where it goes.
+  const pts: number[][] = [rt.world.angles.slice()];
+  const ends: number[] = [];
+  let durationS = 0;
+  const legDur: number[] = [];
+  let from = rt.world.angles.slice();
+  for (const leg of legs) {
+    rt.line = leg.line;
+    const traj = legTrajectory(rt, from, leg);
+    durationS += traj.durationS;
+    legDur.push(traj.durationS);
+    const n = Math.max(2, Math.ceil(traj.durationS / 0.02));
+    for (let k = 1; k <= n; k += 1) pts.push(traj.sample((traj.durationS * k) / n));
+    ends.push(pts.length - 1);
+    recordLeg(rt, leg, traj, from, leg !== legs[legs.length - 1]);
+    from = leg.joints.slice();
+  }
+  const cum = [0];
+  for (let i = 1; i < pts.length; i += 1) cum.push(cum[i - 1] + Math.hypot(...pts[i].map((v, j) => v - pts[i - 1][j])));
+  // Round each passed point: within r of it, a quadratic Bézier from the point r before to the point r after.
+  const at = (s: number): number[] => {
+    let k = 1;
+    while (k < pts.length - 1 && cum[k] < s) k += 1;
+    const span = cum[k] - cum[k - 1];
+    const f = span < 1e-12 ? 1 : (s - cum[k - 1]) / span;
+    return pts[k - 1].map((v, j) => v + (pts[k][j] - v) * f);
+  };
+  const corners = ends.slice(0, -1).map((i, n) => {
+    const before = cum[i] - (n === 0 ? 0 : cum[ends[n - 1]]);
+    const after = cum[ends[n + 1]] - cum[i];
+    const r = Math.min(BLEND_DEG, 0.4 * before, 0.4 * after);
+    return { s: cum[i], r, a: at(cum[i] - r), c: pts[i], b: at(cum[i] + r) };
+  });
+  const total = cum[cum.length - 1];
+  const legEnds = ends.map((i) => cum[i]);
+  // Timing: cruise along the whole path at the legs' own peak rate, with a smooth start and stop
+  // (velocity eased in over the first leg's half, out over the last leg's), never stopping between.
+  const V = total / Math.max(1e-6, durationS / QUINTIC_PEAK_RATE);
+  let Tr = Math.min(legDur[0], legDur[legDur.length - 1]) / 2;
+  if (total / V < Tr) Tr = total / V;
+  const T = Math.max(0.3, total / V + Tr);
+  const ease = (u: number) => u * u * u - (u * u * u * u) / 2;
+  const along = (t: number) => {
+    if (t <= 0) return 0;
+    if (t >= T) return total;
+    if (t < Tr) return V * Tr * ease(t / Tr);
+    if (t > T - Tr) return total - V * Tr * ease((T - t) / Tr);
+    return V * Tr * 0.5 + V * (t - Tr);
+  };
+  let shown = -1;
+  const traj: Trajectory = {
+    durationS: T,
+    end: legs[legs.length - 1].joints.slice(),
+    sample(tS) {
+      const s = along(tS);
+      const leg = legEnds.findIndex((e) => s <= e + 1e-9);
+      if (leg !== shown && leg >= 0) {
+        shown = leg;
+        rt.line = legs[leg].line;
+        rt.onLine?.(legs[leg].line);
+      }
+      const c = corners.find((q) => q.r > 1e-6 && Math.abs(s - q.s) < q.r);
+      if (!c) return at(s);
+      const u = (s - (c.s - c.r)) / (2 * c.r);
+      return c.a.map((v, j) => (1 - u) * (1 - u) * v + 2 * u * (1 - u) * c.c[j] + u * u * c.b[j]);
+    },
+  };
+  await play(rt, traj);
+  noteArrival(rt);
 }
 
 /* --- targets --------------------------------------------------------------- */

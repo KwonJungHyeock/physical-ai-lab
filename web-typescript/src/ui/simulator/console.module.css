@@ -4587,7 +4587,7 @@ button.jpRow:hover {
 .sideTabs {
   flex: 0 0 auto;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
   gap: 5px;
   padding: 7px;
   background: linear-gradient(180deg, var(--head-2), var(--head));
@@ -6064,7 +6064,7 @@ button.jpRow:hover {
 /* tabs: one row, icon + name + level */
 .app .side .sideTabs {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 3px;
   margin: 0 10px 8px;
   padding: 4px;

@@ -84,13 +84,31 @@ interface ChipProps {
   session: RefObject<Session>;
   /** A ▶ 데모 is playing: the goal does not move. */
   demo?: boolean;
+  /** The 공정 짜기 tab is open: the chip names the process instead (no task goal there). */
+  process?: { name: string; rows: number };
   onGoal(): void;
   onOpen(where: Where): void;
   onGallery(): void;
 }
 
-export function TaskChip({ mode, practice, level, theme, progress, busy, world, session, demo, onGoal, onOpen, onGallery }: ChipProps) {
+export function TaskChip({ mode, practice, level, theme, progress, busy, world, session, demo, process, onGoal, onOpen, onGallery }: ChipProps) {
   const here: Where = { level, theme, id: practice.id };
+  if (process) {
+    return (
+      <div className={css.taskChip} data-mode="practice">
+        <span className={css.taskPick} data-cat="free">
+          <span className={css.taskGlyph}>
+            <Icon name="flag" size={18} />
+          </span>
+          <span className={css.taskTag}>공정 짜기</span>
+          <b className={css.taskTitle}>{process.name}</b>
+        </span>
+        <span className={css.goal}>
+          <span className={css.goalText}>{process.rows}줄</span>
+        </span>
+      </div>
+    );
+  }
   return (
     <div className={css.taskChip} data-mode={mode}>
       <button

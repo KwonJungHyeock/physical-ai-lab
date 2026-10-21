@@ -48,6 +48,7 @@
 | [`11-roadmap.md`](reports/console/11-roadmap.md) | 보고 #11 — 실습/검수 시연 분리, 실시간 조그 · 3D 표시, 브랜드, 현장 세팅, 모델 확장 순서 |
 | [`13-check-audit.md`](reports/console/13-check-audit.md) | 보고 #13 — 검수항목 7종 실기 구현 가능성 점검과 반영 목록 |
 | [`27-acceptance-rehearsal.md`](reports/console/27-acceptance-rehearsal.md) | 보고 #27 — 전체 검수(중복 · 누락 · 실물 연동 · 화면 이동) 수정 목록, 검수 7종 전 경로 리허설(데모 로봇, 7/7), 실물로만 확인되는 것, 기초교육 자료 |
+| [`34-simulator-features.md`](reports/console/34-simulator-features.md) | 보고 #34 — 시뮬레이터 기능 정리(화면 · 탭 5개 · 겹치는 것 · 숨긴 것)와 공정 짜기(BEGIN–END · MOVE J/L · Tick/Smooth · 프로젝트 파일) 간소화 버전 |
 
 ### [`education/`](reports/education/) — 교육 과정 · 교재
 | 문서 | 내용 |
