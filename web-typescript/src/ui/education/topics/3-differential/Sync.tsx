@@ -113,7 +113,7 @@ export default function C3Sync({ chain, show, real, step, record }: TopicProps) 
         record(key, {
           '걸린 시간': `${p.T.toFixed(2)} s`,
           '관절이 멈춘 시각': key === 'A' ? `제각각 (${first.toFixed(2)}~${p.T.toFixed(2)} s)` : `동시에 (${p.T.toFixed(2)} s)`,
-          '손끝 자취': key === 'A' ? '꺾임' : '매끄러움',
+          '손끝 자취': key === 'A' ? '휘는 모양 바뀜' : '매끄러움',
         });
       },
     );
