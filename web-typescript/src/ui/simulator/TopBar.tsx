@@ -117,7 +117,7 @@ export default function TopBar({ view, onView, busy, context, settings, status, 
     <header className={css.topBar} data-panel="topbar">
       <button type="button" className={css.lockup} onClick={() => onView('sim')} title="ROBODYNE SYSTEMS · Physical AI 로봇 학습 시뮬레이터 (시뮬레이터로)">
         {/* eslint-disable-next-line @next/next/no-img-element -- a small fixed logo, also in the static export for the robot */}
-        <img src="/brand/robodyne-logo-ink.png" alt="ROBODYNE SYSTEMS" width={83} height={22} />
+        <img src="/brand/sim-logo-ink.svg" alt="ROBODYNE SYSTEMS" width={73} height={36} />
         <i aria-hidden="true" />
         <span className={css.product}>
           <em>PHYSICAL AI</em>

@@ -22,7 +22,7 @@ import Icon from '../Icon';
 import { useLive, type Live } from '../liveStore';
 import css from '../console.module.css';
 
-const JOINT_NAME = ['베이스', '어깨', '팔꿈치', '손목 1', '손목 2', '끝 원판'];
+const JOINT_NAME = ['베이스', '어깨', '팔꿈치', '손목 꺾기', '손목 돌리기', '끝 원판'];
 const STEPS = ['준비', '0° 자세', '관절', '저장', '확인'];
 const JOINTS = [1, 2, 3, 4, 5, 6];
 

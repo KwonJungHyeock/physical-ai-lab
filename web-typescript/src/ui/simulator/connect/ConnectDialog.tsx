@@ -330,7 +330,7 @@ function Radar({ scanning, found, progress, link, net }: { scanning: boolean; fo
     <aside className={css.radarSide} data-scanning={scanning || undefined} data-linked={linked || undefined} aria-hidden="true">
       <div className={css.radarBrand}>
         {/* eslint-disable-next-line @next/next/no-img-element -- the brand mark, also in the static export */}
-        <img src="/brand/robodyne-mark.png" alt="" />
+        <img src="/brand/sim-mark-white.svg" alt="" />
         <span>
           <b>ROBOT LINK</b>
           <small>교실 네트워크 · 로봇 연결</small>

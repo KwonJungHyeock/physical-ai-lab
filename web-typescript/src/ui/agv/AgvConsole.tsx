@@ -647,7 +647,7 @@ export default function AgvConsole() {
       <header className={css.top}>
         <div className={css.brand}>
           {/* eslint-disable-next-line @next/next/no-img-element -- fixed logo, also in the robot's static export */}
-          <img src="/brand/robodyne-logo-ink.png" alt="ROBODYNE SYSTEMS" width={105} height={28} />
+          <img src="/brand/sim-logo-ink.svg" alt="ROBODYNE SYSTEMS" width={73} height={36} />
           <b>이동 로봇 실습</b>
         </div>
         <div className={css.modelWrap}>

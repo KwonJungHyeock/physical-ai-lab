@@ -94,7 +94,7 @@ export default function ModelPicker({ current, onPick, onClose }: { current: Rob
       <div className={`${css.pickerBox} ${css.modelBox}`}>
         <header className={css.pickerHead}>
           {/* eslint-disable-next-line @next/next/no-img-element -- fixed logo, also in the robot's static export */}
-          <img src="/brand/robodyne-logo-ink.png" alt="ROBODYNE SYSTEMS" width={116} height={31} />
+          <img src="/brand/sim-logo-ink.svg" alt="ROBODYNE SYSTEMS" width={81} height={40} />
           <div>
             <h1>로봇 모델을 골라 주세요</h1>
             <p>제품의 보드를 고르고 [시작] 을 누르면 그 로봇팔의 3D 모델 · 관절 범위 · 실습이 열려요. 윗줄 설정의 [로봇 모델 바꾸기] 로 언제든 바꿀 수 있어요.</p>

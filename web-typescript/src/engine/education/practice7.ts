@@ -79,9 +79,9 @@ export const UNITS: readonly Unit[] = [
       { id: 'j1', label: 'J1 베이스', hint: '로봇 전체가 좌우로 돌아요' },
       { id: 'j2', label: 'J2 어깨', hint: '팔 전체가 앞뒤로 숙여져요' },
       { id: 'j3', label: 'J3 팔꿈치', hint: '아래팔이 접히고 펴져요' },
-      { id: 'j4', label: 'J4 손목 1', hint: '손목이 위아래로 꺾여요' },
-      { id: 'j5', label: 'J5 손목 2', hint: '손목이 좌우로 꺾여요' },
-      { id: 'j6', label: 'J6 손목 3', hint: '손끝이 제자리에서 돌아요' },
+      { id: 'j4', label: 'J4 손목 꺾기', hint: '손목이 위아래로 꺾여요' },
+      { id: 'j5', label: 'J5 손목 돌리기', hint: '손목이 좌우로 돌아요' },
+      { id: 'j6', label: 'J6 손끝 돌리기', hint: '손끝이 제자리에서 돌아요' },
     ],
     quiz: [
       { q: 'J1(베이스)을 돌리면 로봇팔 전체가 좌우로 돈다.', options: ['O', 'X'], answer: 0, why: 'J1 은 맨 아래 관절이에요. 그래서 그 위의 팔 전체가 함께 돌아요.' },

@@ -36,9 +36,11 @@ const openScreen = async (name) => {
   await settle(page, 1200);
 };
 const visible = (loc) => loc.first().isVisible().catch(() => false);
-const joint = ['베이스 (J1)', '어깨 (J2)', '팔꿈치 (J3)', '손목 1 (J4)', '손목 2 (J5)', '손목 3 (J6)'];
+const joint = ['베이스 (J1)', '어깨 (J2)', '팔꿈치 (J3)', '손목 꺾기 (J4)', '손목 돌리기 (J5)', '손끝 돌리기 (J6)'];
+/** The jog panel's parts (control/jog.module.css): a joint row, its middle, the keys. */
+const J = { modes: '[class*="__modes"]', chips: '[class*="__chips"]', speed: '[class*="__speed"]', row: '[class*="__row"]', key: 'button[class*="__key"]', head: '[class*="__head"]', bar: '[class*="__bar"]' };
 const setJoint = async (j, deg) => {
-  const row = page.locator(`[class*=jogMid][title^="${joint[j]}"] [class*=jogHead]`);
+  const row = page.locator(`[data-jog] [title^="${joint[j]}"] ${J.head}`);
   if (await visible(row)) await row.click();
   await page.waitForTimeout(700);
   await page.locator(`#j${j + 1}`).fill(String(deg));
@@ -175,24 +177,47 @@ if (want('monitor'))
     ],
   });
 
-// 4 · 수동 제어 (조그: 좌표가 먼저, 관절은 두 번째)
+// 4 · 수동 제어 (조그: 관절이 먼저, 좌표는 두 번째)
 await openScreen('조그');
 const jog = screen();
-await jog.locator('[class*=frameSeg] button').nth(1).click();
+await jog.locator(J.modes).getByRole('button', { name: /^관절/ }).click();
 await settle(page, 800);
 if (want('jog'))
   await save(page, out('14-jog.png'), {
     crop: jog,
     pad: 44,
     marks: [
-      { at: jog.locator('[class*=frameSeg]'), n: 1, pos: 'l' },
-      { at: jog.locator('[class*=stepSeg]'), n: 2, pos: 'l' },
-      { at: jog.locator('[class*=speedRow]'), n: 3, pos: 'l' },
-      { at: jog.locator('[class*=jogRow][data-sel] button[class*=bigKey]').first(), n: 4, pos: 'l' },
-      { at: jog.locator('[class*=jogRow][data-sel] [class*=jogValue]'), n: 5, pos: 'tr' },
-      { at: jog.locator('[class*=jogRow][data-sel] [class*=jpBar]'), n: 6, pos: 'b' },
+      { at: jog.locator(J.modes), n: 1, pos: 'l' },
+      { at: jog.locator(J.chips), n: 2, pos: 'l' },
+      { at: jog.locator(J.speed), n: 3, pos: 'l' },
+      { at: jog.locator(`${J.row}[data-sel] ${J.key}`).first(), n: 4, pos: 'l' },
+      { at: jog.locator(`${J.row}[data-sel] ${J.head} output`), n: 5, pos: 'tr' },
+      { at: jog.locator(`${J.row}[data-sel] ${J.bar}`), n: 6, pos: 'b' },
+      { at: jog.getByRole('button', { name: '관절 익히기' }), n: 7, pos: 'tr' },
     ],
   });
+if (want('lesson')) {
+  // 관절 익히기: the first joint turned 20°, the lesson on its second step.
+  await jog.getByRole('button', { name: '관절 익히기' }).click();
+  await settle(page, 800);
+  const plus = jog.getByRole('button', { name: /^베이스 \(J1\) \+/ });
+  for (let k = 0; k < 4; k++) {
+    await plus.click();
+    await page.waitForTimeout(400);
+  }
+  await settle(page, 3000);
+  await save(page, out('14b-lesson.png'), {
+    crop: jog,
+    pad: 44,
+    marks: [
+      { at: jog.locator('[role=status]').first(), n: 1, pos: 'l' },
+      { at: jog.locator(`${J.row}[data-focus] ${J.key}`).last(), n: 2, pos: 'r' },
+    ],
+  });
+  await jog.getByRole('button', { name: '관절 익히기 닫기' }).click();
+  await page.locator('[class*=poseDock]').getByRole('button', { name: /기본 자세/ }).click();
+  await settle(page, 6000);
+}
 if (want('self')) {
   // A pose the arm cannot take: the wrist would fold into the forearm. The arm stays, the card says which joint.
   await hold(true);
@@ -203,14 +228,14 @@ if (want('self')) {
     marks: [
       { at: page.locator('[data-panel=log] [class*=notice]').first(), n: 1, pos: 'r' },
       { at: hud.locator('section[aria-label="관절 각도"] h5'), n: 2, pos: 'r' },
-      { at: jog.locator('[class*=jogRow][data-sel]'), n: 3, pos: 'tl' },
+      { at: jog.locator(`${J.row}[data-sel]`), n: 3, pos: 'tl' },
     ],
   });
   await hold(false);
   await page.locator('button[aria-label="알림 닫기"]').click().catch(() => {});
   await page.locator('[class*=poseDock]').getByRole('button', { name: /기본 자세/ }).click();
   await settle(page, 8000);
-  await page.locator('[class*=jogMid][title^="베이스 (J1)"] [class*=jogHead]').click();
+  await page.locator(`[data-jog] [title^="베이스 (J1)"] ${J.head}`).click();
   await settle(page, 800);
 }
 if (want('monitor') || want('self')) {
@@ -218,19 +243,20 @@ if (want('monitor') || want('self')) {
   await settle(page, 1000);
 }
 if (want('jog-xyz')) {
-  await jog.locator('[class*=frameSeg] button').nth(0).click();
+  await jog.locator(J.modes).getByRole('button', { name: /^좌표/ }).click();
   await settle(page, 1500);
   await save(page, out('16-jog-xyz.png'), {
     crop: jog,
     pad: 44,
     marks: [
-      { at: jog.locator('button[class*=bigKey]').first(), n: 1, pos: 'l' },
-      { at: jog.locator('[class*=jogMid][data-axis]').first(), n: 2, pos: 't' },
-      { at: jog.locator('[class*=jogRow][data-turn] button[class*=bigKey]').first(), n: 3, pos: 'l' },
-      { at: jog.getByRole('button', { name: '손 아래로' }), n: 4, pos: 'tr' },
+      { at: jog.getByRole('button', { name: /^앞으로/ }), n: 1, pos: 'l' },
+      { at: jog.locator('[aria-label="손끝 위치 (mm)"]'), n: 2, pos: 't' },
+      { at: jog.getByRole('button', { name: /^위로/ }), n: 3, pos: 'r' },
+      { at: jog.getByRole('button', { name: /^좌우 기울기/ }).first(), n: 4, pos: 'l' },
+      { at: jog.getByRole('button', { name: '손 아래로' }), n: 5, pos: 'tr' },
     ],
   });
-  await jog.locator('[class*=frameSeg] button').nth(1).click();
+  await jog.locator(J.modes).getByRole('button', { name: /^관절/ }).click();
   await settle(page, 800);
 }
 await openScreen('도구');

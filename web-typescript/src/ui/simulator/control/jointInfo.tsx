@@ -1,18 +1,18 @@
 /**
- * The six joints as a teach pendant names them (the J numbers stay beside the
- * names, since programs use them), and a small side-view drawing of the arm
+ * The six joints named by what they do, so a beginner can tell the three wrist joints apart (the J
+ * numbers stay beside the names, since programs use them), and a small side-view drawing of the arm
  * in which only what the joint moves is coloured.
  */
 
 import { activeArm } from '@/engine/robot/arms';
 
 export const JOINTS: readonly { name: string; what: string }[] = [
-  { name: '베이스', what: '몸통 좌우로 돌리기' },
-  { name: '어깨', what: '팔 전체 앞뒤로 숙이기' },
-  { name: '팔꿈치', what: '아래팔 접고 펴기' },
-  { name: '손목 1', what: '손목 위아래로 꺾기' },
-  { name: '손목 2', what: '손목 좌우로 꺾기' },
-  { name: '손목 3', what: '손끝 돌리기' },
+  { name: '베이스', what: '몸통 좌우 돌리기' },
+  { name: '어깨', what: '팔 앞뒤로 숙이기' },
+  { name: '팔꿈치', what: '팔 굽히기 · 펴기' },
+  { name: '손목 꺾기', what: '손목 위아래' },
+  { name: '손목 돌리기', what: '손목 좌우' },
+  { name: '손끝 돌리기', what: '도구 돌리기' },
 ];
 
 /** The open arm's joints: its own names (a 4-axis arm has four), or the six above. */

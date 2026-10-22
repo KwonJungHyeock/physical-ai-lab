@@ -1,0 +1,721 @@
+/* The jog panel (ControlPanel) on the dark side panel: modest keys, large words, one clear "chosen" look
+   (blue fill + light ring) for the mode, the step and the joint row. */
+.jog {
+  container-type: inline-size;
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: #e8eef8;
+  outline: none;
+}
+
+/* 관절 | 좌표 */
+.modes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  background: #161e29;
+}
+.jog .modes button {
+  display: grid;
+  gap: 1px;
+  padding: 9px 4px 8px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #8fa1ba;
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+}
+.jog .modes button b {
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+.jog .modes button small {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #6f819b;
+  white-space: nowrap;
+}
+.jog .modes button:hover:not([aria-pressed='true']) {
+  background: rgba(255, 255, 255, 0.05);
+  color: #dbe5f3;
+}
+.jog .modes button[aria-pressed='true'] {
+  background: #2f5bea;
+  color: #fff;
+  box-shadow: 0 6px 16px -8px rgba(47, 91, 234, 0.9);
+}
+.jog .modes button[aria-pressed='true'] small {
+  color: #d6e2ff;
+}
+
+/* 한 번에 [0.5° 1° 5° 10°] · 속도 ━━●━━ 50% */
+.opts {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px 12px;
+}
+.optName {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #a9b8cf;
+  white-space: nowrap;
+}
+.chips {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+.jog .chips button {
+  padding: 7px 0;
+  border: 0;
+  border-radius: 8px;
+  background: #161e29;
+  color: #c3cfdf;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.jog .chips button i {
+  font-style: normal;
+  font-size: 12px;
+  margin-left: 1px;
+  color: inherit;
+  opacity: 0.75;
+}
+.jog .chips button:hover:not([aria-pressed='true']) {
+  background: #1f2938;
+}
+.jog .chips button[aria-pressed='true'] {
+  background: #23345a;
+  color: #fff;
+  box-shadow: inset 0 0 0 2px #6f9bff;
+}
+.speed {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 46px;
+  align-items: center;
+  gap: 10px;
+}
+.speed output {
+  text-align: right;
+  font-size: 16px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+}
+.speed input {
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  margin: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f5a524 var(--fill, 50%), #2a3446 var(--fill, 50%));
+  cursor: pointer;
+}
+.speed input::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 3px #f5a524;
+}
+.speed input::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 3px #f5a524;
+}
+
+/* --- the keys --------------------------------------------------------------------------------- */
+.jog .key {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid #33425f;
+  background: #24304a;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  transition: transform 0.06s, background 0.1s;
+}
+.jog .key b {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.1;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.jog .key:hover:not(:disabled) {
+  background: #2c3b5c;
+  border-color: #4a5f87;
+}
+.jog .key:active:not(:disabled) {
+  transform: translateY(1px);
+  background: #2f5bea;
+  border-color: #2f5bea;
+}
+.jog .key:focus-visible {
+  outline: 2px solid #a9c2ff;
+  outline-offset: 2px;
+}
+.jog .key:disabled {
+  color: #5f6f87;
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.07);
+  cursor: not-allowed;
+}
+/* the direction keys of the cross pad: blue, the arrow above its word */
+.jog .key[data-kind='pad'],
+.jog .key[data-kind='lift'] {
+  background: linear-gradient(#4a74f5, #2a55d6);
+  border-color: #2248bd;
+}
+.jog .key[data-kind='lift'] {
+  background: linear-gradient(#3fa5f2, #1f7fd1);
+  border-color: #1b6fb8;
+}
+.jog .key[data-kind='pad']:hover:not(:disabled) {
+  background: linear-gradient(#5a80f7, #2f5bea);
+}
+.jog .key[data-kind='lift']:hover:not(:disabled) {
+  background: linear-gradient(#55b2f5, #2b8ad8);
+}
+.jog .key[data-kind='pad']:active:not(:disabled),
+.jog .key[data-kind='lift']:active:not(:disabled) {
+  background: #1d3fa6;
+}
+.jog .key[data-kind='pad']:disabled,
+.jog .key[data-kind='lift']:disabled {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+.jog .key[data-kind='pad'] b,
+.jog .key[data-kind='lift'] b {
+  font-size: 16px;
+}
+
+/* --- 관절: one row per joint ------------------------------------------------------------------- */
+.rows {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.row {
+  flex: 1 1 0;
+  min-height: 60px;
+  max-height: 82px;
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) 58px;
+  gap: 8px;
+}
+.mid {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  min-width: 0;
+  padding: 6px 12px 4px;
+  border-radius: 12px;
+  background: #161e29;
+  cursor: pointer;
+}
+.row[data-sel] .mid {
+  background: linear-gradient(180deg, rgba(91, 140, 255, 0.22), rgba(91, 140, 255, 0.08));
+  box-shadow: inset 0 0 0 2px #6f9bff;
+}
+.head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+.head b {
+  font-size: 17px;
+  font-weight: 800;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.head output {
+  margin-left: auto;
+  font: 700 19px ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: -0.4px;
+  color: #fff;
+  white-space: nowrap;
+}
+.head output[data-near] {
+  color: #ffcf7a;
+}
+.what {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #8fa1ba;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.head em {
+  flex: none;
+  font: 700 11.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-style: normal;
+  color: #c3cfdf;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 0 4px;
+}
+.row[data-sel] .head em {
+  background: rgba(111, 155, 255, 0.4);
+  color: #fff;
+}
+/* the angle between the joint's limits, draggable */
+.bar {
+  position: relative;
+  height: 18px;
+}
+.track {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 6px;
+  height: 6px;
+  border-radius: 4px;
+  background: #2a3446;
+}
+.fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 4px;
+  background: rgba(111, 155, 255, 0.5);
+}
+.row[data-sel] .fill {
+  background: linear-gradient(90deg, #3f6fe6, #8fb2ff);
+}
+.zero {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  margin-left: -1px;
+  background: #6f819b;
+}
+.knob {
+  position: absolute;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  border-radius: 50%;
+  border: 3px solid #a9b8cf;
+  background: #0e141c;
+}
+.row[data-sel] .knob {
+  border-color: #6f9bff;
+  background: #fff;
+}
+.bar[data-near] .knob {
+  border-color: #f5a524;
+}
+.bar input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: grab;
+}
+.bar input:disabled {
+  cursor: not-allowed;
+}
+
+/* the joint lesson: its joint stands out, the others step back */
+.rows[data-lesson] .row:not([data-focus]) {
+  opacity: 0.4;
+}
+.row[data-focus] .key:not(:disabled) {
+  background: linear-gradient(#4a74f5, #2a55d6);
+  border-color: #2248bd;
+  animation: nudge 1.6s ease-in-out infinite;
+}
+@keyframes nudge {
+  50% {
+    box-shadow: 0 0 0 4px rgba(111, 155, 255, 0.35);
+  }
+}
+.lesson {
+  position: relative;
+  display: grid;
+  gap: 5px;
+  padding: 12px 34px 12px 14px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #1d2a48, #172238);
+  box-shadow: inset 0 0 0 1px rgba(111, 155, 255, 0.45);
+  font-size: 14px;
+  line-height: 1.45;
+  color: #c9d5e8;
+}
+.lesson b {
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+}
+.lesson b em {
+  font-style: normal;
+  color: #9bbcff;
+}
+.lessonDots {
+  display: flex;
+  gap: 4px;
+}
+.lessonDots i {
+  width: 18px;
+  height: 4px;
+  border-radius: 2px;
+  background: #33425f;
+}
+.lessonDots i[data-on] {
+  background: #ff5a4e;
+}
+.lessonMeter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+.lessonMeter i {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #4cd18a var(--got, 0%), #2a3446 var(--got, 0%));
+}
+.jog .lessonGo {
+  justify-self: start;
+  margin-top: 4px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 9px;
+  background: #2f5bea;
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.jog .lessonGo:disabled {
+  opacity: 0.5;
+}
+.jog .lessonClose {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #8fa1ba;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.jog .lessonClose:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+/* the line under the keys: how they work, and the lesson's button */
+.tip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #161e29;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #a9b8cf;
+}
+.tip b {
+  color: #fff;
+}
+.jog .learn {
+  flex: none;
+  margin-left: auto;
+  padding: 7px 12px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 90, 78, 0.6);
+  background: rgba(255, 90, 78, 0.14);
+  color: #ffd6d2;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.jog .learn::before {
+  content: '▶ ';
+  font-size: 11px;
+}
+.jog .learn:hover:not(:disabled) {
+  background: rgba(255, 90, 78, 0.26);
+  color: #fff;
+}
+.jog .learn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* --- 좌표 ----------------------------------------------------------------------------------- */
+.readout {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  align-items: center;
+  gap: 8px;
+}
+.readout span {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #161e29;
+}
+.readout b {
+  font-size: 17px;
+  font-weight: 900;
+}
+.readout output {
+  font: 700 18px ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: -0.4px;
+  color: #a7f3d0;
+}
+.readout small {
+  font-size: 12.5px;
+  color: #8696ae;
+}
+.cap {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+}
+.cap small {
+  font-size: 13px;
+  font-weight: 600;
+  color: #8696ae;
+}
+.jog .toolDown {
+  margin-left: auto;
+  align-self: center;
+  padding: 6px 12px;
+  border-radius: 9px;
+  border: 1px solid rgba(120, 160, 255, 0.5);
+  background: rgba(91, 140, 255, 0.16);
+  color: #dbe6ff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.jog .toolDown:hover:not(:disabled) {
+  background: rgba(91, 140, 255, 0.3);
+}
+.jog .toolDown:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.padWrap {
+  flex: 1 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(64px, 22%);
+  gap: 14px;
+  align-items: center;
+}
+.pad {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 84px));
+  grid-template-rows: repeat(3, clamp(56px, 7vh, 76px));
+  gap: 6px;
+  justify-content: center;
+}
+.padHub {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px dashed #33425f;
+  background: #161e29;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  color: #8696ae;
+}
+.lift {
+  display: grid;
+  grid-template-rows: clamp(56px, 7vh, 76px) auto clamp(56px, 7vh, 76px);
+  gap: 6px;
+}
+.liftName {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+  color: #8696ae;
+}
+.turns {
+  display: grid;
+  gap: 6px;
+}
+.turn {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) 52px;
+  gap: 8px;
+  height: 46px;
+}
+.turnMid {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 0 12px;
+  border-radius: 10px;
+  background: #161e29;
+}
+.turnMid b {
+  font-size: 15.5px;
+  font-weight: 800;
+  color: #fff;
+  white-space: nowrap;
+}
+.turnMid em {
+  font: 700 12.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-style: normal;
+}
+.turnMid output {
+  margin-left: auto;
+  font: 700 16px ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: -0.4px;
+  color: #cfe0ff;
+  white-space: nowrap;
+}
+
+/* a narrow panel (small laptops, a tablet across): the same layout, a little tighter */
+@container (max-width: 360px) {
+  .row {
+    grid-template-columns: 50px minmax(0, 1fr) 50px;
+    gap: 6px;
+  }
+  .mid {
+    padding: 5px 10px 3px;
+  }
+  .head b {
+    font-size: 15.5px;
+  }
+  .head output {
+    font-size: 17px;
+  }
+  .jog .key b {
+    font-size: 14px;
+  }
+  .jog .modes button small {
+    font-size: 11.5px;
+  }
+  .optName {
+    font-size: 13.5px;
+  }
+  .jog .chips button {
+    font-size: 14px;
+  }
+  .readout {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .readout small {
+    display: none;
+  }
+  .readout span {
+    padding: 7px 8px;
+  }
+  .turn {
+    grid-template-columns: 46px minmax(0, 1fr) 46px;
+  }
+  .turnMid em {
+    display: none;
+  }
+}
+/* a short window: rows and keys come down so everything fits without scrolling (the joint's job moves
+   to its tooltip, the hints under the keys go) */
+@media (max-height: 860px) {
+  .jog {
+    gap: 8px;
+  }
+  .row {
+    min-height: 50px;
+  }
+  .mid {
+    gap: 2px;
+    padding: 4px 10px 2px;
+  }
+  .what {
+    display: none;
+  }
+  .jog .modes button {
+    padding: 7px 4px 6px;
+  }
+  .jog .modes button small {
+    display: none;
+  }
+  .tip {
+    padding: 7px 10px;
+    font-size: 13px;
+  }
+  .readout span {
+    padding: 6px 10px;
+  }
+  .pad {
+    grid-template-rows: repeat(3, 48px);
+  }
+  .lift {
+    grid-template-rows: 48px auto 48px;
+  }
+  .turn {
+    height: 36px;
+  }
+  .readout + .cap,
+  .turns + .tip {
+    display: none;
+  }
+}
+@media (pointer: coarse) {
+  .row {
+    min-height: 58px;
+  }
+}

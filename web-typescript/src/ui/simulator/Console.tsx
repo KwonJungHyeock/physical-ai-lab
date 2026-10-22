@@ -83,7 +83,7 @@ import { Divergence, findColor, offCentre, probeJacobian, stepTowards, type Seen
 import BlockEditor from './editors/BlockEditor';
 import CameraViews, { analyse, type CameraView, type CameraViewsHandle, type Detection } from './stage/CameraViews';
 import CodeEditor from './editors/CodeEditor';
-import ControlPanel, { type Axis, type Frame } from './control/ControlPanel';
+import ControlPanel, { FIRST_FRAME, type Axis, type Frame } from './control/ControlPanel';
 import LeftRail, { type BarItem, type RailItem } from './stage/LeftRail';
 import MiniArmLabels from './stage/MiniArmLabels';
 import { createMonitor, type MiniRect } from './stage/MiniArm';
@@ -140,11 +140,12 @@ const GRIPPER_URDF_URL = '/robot/rdkx5/mycobot_280_rdkx5_adaptive_gripper.urdf';
 const TAB_KEY = 'robot-console-tab';
 /** The 공정 짜기 process being made (its project-file text). */
 const PROCESS_KEY = 'robot-console-process';
-/** The mini arm's corner, px: from the left menu bar's left edge, and its size. */
-/** The menu bar down the left edge (stage/LeftRail), px; the 3D view's things start right of it. */
-const BAR_W = 68;
-// Left of the arm's joints sit their angle chips (about 80 px): room for them right of the bar.
-const MINI = { left: BAR_W + 24, bottom: 64, width: 250, height: 300 };
+/** The menu bar down the left edge (stage/LeftRail), px (its width follows the window); the 3D view's things start right of it. */
+const barW = () => (typeof document === 'undefined' ? 96 : (document.querySelector<HTMLElement>('nav[aria-label="메뉴"]')?.offsetWidth ?? 96));
+/** The mini arm's corner, px: from the left menu bar's left edge, and its size. Left of the arm's joints
+ *  sit their angle chips (about 80 px): room for them right of the bar. */
+const MINI = { bottom: 64, width: 250, height: 300 };
+const miniLeft = () => barW() + 24;
 const QUALITY_KEY = 'robot-console-quality';
 const LEVEL_KEY = 'robot-console-level';
 const DISPLAY_KEY = 'robot-console-display';
@@ -355,7 +356,7 @@ export default function Console() {
   const [ringJoint, setRingJoint] = useState<number | null>(null);
   // Joint jog: the joint the keys and the 3D dial turn (0..5), and whether the jog panel shows joints.
   const [jogJoint, setJogJoint] = useState(0);
-  const [jogView, setJogView] = useState<Frame>('base');
+  const [jogView, setJogView] = useState<Frame>(FIRST_FRAME);
   // The joint points show only while joints are being adjusted: the pointer or the keyboard in the jog
   // panel, the pointer on a point or its dial, a joint moving — and for a few seconds after.
   const [jointsLive, setJointsLive] = useState(false);
@@ -553,9 +554,9 @@ export default function Console() {
     const v = vp.getBoundingClientRect();
     const p = panel.getBoundingClientRect();
     const onRight = p.left > v.left + v.width / 2;
-    let l = onRight ? BAR_W + 12 : Math.max(BAR_W + 12, p.right - v.left + 12);
+    let l = onRight ? barW() + 12 : Math.max(barW() + 12, p.right - v.left + 12);
     // The left menu bar and the mini arm beside it: the robot is framed to their right.
-    if (miniShown.current) l = Math.max(l, (onRight ? 12 : l) + MINI.left + MINI.width + 8);
+    if (miniShown.current) l = Math.max(l, (onRight ? 12 : l) + miniLeft() + MINI.width + 8);
     const r = onRight ? Math.max(0, v.right - p.left + 12) : 0;
     // The camera window opens in the free part's lower left: the robot is framed beside it.
     const camEl = sh.querySelector<HTMLElement>('[data-panel="camera"]');
@@ -2627,7 +2628,7 @@ export default function Console() {
       const v = vp?.getBoundingClientRect();
       const p = panel?.getBoundingClientRect();
       const dock = v && p && panel && getComputedStyle(panel).position === 'absolute' && p.left < v.left + v.width / 2 ? p.right - v.left + 12 : 12;
-      return { ...MINI, left: dock + MINI.left };
+      return { ...MINI, left: dock + miniLeft() };
     },
     [],
   );
@@ -2663,6 +2664,7 @@ export default function Console() {
       onJointStep={jointStep}
       onTipStep={tipStep}
       onToolDown={toolDown}
+      onHome={() => goPose('home')}
       onJointJog={(i, dir) => startJog({ joint: i, dir })}
       onTipJog={(axis, dir, scale) => startJog({ axis, dir, scale })}
       onJogStop={() => endJog()}

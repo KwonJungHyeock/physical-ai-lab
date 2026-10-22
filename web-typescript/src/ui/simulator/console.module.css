@@ -1084,28 +1084,6 @@ input.field {
   font-weight: 500;
   color: var(--faint);
 }
-.stepSeg {
-  display: inline-flex;
-  padding: 2px;
-  border-radius: 8px;
-  background: var(--soft);
-  box-shadow: inset 0 0 0 1px var(--line);
-}
-.stepSeg button {
-  border: none;
-  background: transparent;
-  border-radius: 6px;
-  padding: 2px 7px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--muted);
-  cursor: pointer;
-}
-.stepSeg button[aria-pressed='true'] {
-  background: var(--page);
-  color: var(--accent);
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.1);
-}
 
 .jog,
 .jogWide {
@@ -1548,101 +1526,6 @@ input.field {
   50% {
     opacity: 0.35;
   }
-}
-
-/* pendant jog */
-.pendant {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 9px;
-}
-.pendantBar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-}
-.frameSeg {
-  display: inline-flex;
-  padding: 2px;
-  border-radius: 9px;
-  background: var(--soft);
-  box-shadow: inset 0 0 0 1px var(--line);
-}
-.frameSeg button {
-  border: none;
-  background: transparent;
-  border-radius: 7px;
-  padding: 2px 8px;
-  cursor: pointer;
-  color: var(--muted);
-  line-height: 1.1;
-  text-align: center;
-}
-.frameSeg button b {
-  display: block;
-  font-family: inherit;
-  font-variant-numeric: tabular-nums;
-  font-size: 10.5px;
-  letter-spacing: 0.06em;
-}
-.frameSeg button small {
-  display: block;
-  font-size: 9.5px;
-}
-.frameSeg button[aria-pressed='true'] {
-  background: #111827;
-  color: #fff;
-  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.3);
-}
-.frameSeg button[aria-pressed='true'] small {
-  color: #93c5fd;
-}
-.stepSeg i {
-  font-style: normal;
-  font-size: 10.5px;
-  color: var(--faint);
-  padding: 0 5px 0 3px;
-  align-self: center;
-}
-.speedRow {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) 38px;
-  align-items: center;
-  gap: 8px;
-  font-size: 11.5px;
-  font-weight: 700;
-  color: var(--muted);
-}
-.speedRow output {
-  text-align: right;
-  font-family: inherit;
-  font-variant-numeric: tabular-nums;
-  color: var(--ink);
-}
-.speedRow input[type='range'] {
-  appearance: none;
-  height: 5px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #f59e0b var(--fill, 50%), #e4e7ec var(--fill, 50%));
-  cursor: pointer;
-}
-.speedRow input[type='range']::-webkit-slider-thumb {
-  appearance: none;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #fff;
-  border: 2px solid #f59e0b;
-  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.25);
-}
-.speedRow input[type='range']::-moz-range-thumb {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: #fff;
-  border: 2px solid #f59e0b;
 }
 
 .axisName {
@@ -2389,7 +2272,7 @@ div.zeroFlow {
   margin-bottom: 16px;
 }
 .pickerHead img {
-  width: 44px;
+  width: 81px;
   height: auto;
 }
 .pickerHead h1 {
@@ -2522,34 +2405,6 @@ div.zeroFlow {
 .robotCal,
 .subNote {
   font-size: 12.5px;
-}
-
-/* jog */
-.frameSeg button {
-  padding: 5px 12px;
-}
-.frameSeg button b {
-  font-size: 13px;
-  letter-spacing: 0.02em;
-}
-.frameSeg button small {
-  font-size: 11px;
-}
-.stepSeg button {
-  min-width: 34px;
-  height: 30px;
-  font-size: 13.5px;
-}
-.stepSeg i {
-  font-size: 12.5px;
-}
-.speedRow {
-  font-size: 13.5px;
-  grid-template-columns: auto minmax(0, 1fr) 46px;
-}
-.speedRow input[type='range']::-webkit-slider-thumb {
-  width: 18px;
-  height: 18px;
 }
 
 /* wide screens get a wider dock for the larger controls */
@@ -2722,10 +2577,6 @@ div.zeroFlow {
 }
 
 .brand small {
-  white-space: nowrap;
-}
-
-.frameSeg button {
   white-space: nowrap;
 }
 
@@ -3285,26 +3136,6 @@ div.zeroFlow {
 
 /* joint bars: an inset track and a round knob */
 
-.dock .speedRow input[type='range'] {
-  height: 8px;
-  box-shadow: inset 0 1px 3px rgba(16, 24, 40, 0.16);
-}
-.dock .speedRow input[type='range']::-webkit-slider-thumb {
-  width: 22px;
-  height: 22px;
-  border: none;
-  border-radius: 50%;
-  background: radial-gradient(circle at 40% 35%, #ffc15a, #f08c00 72%);
-  box-shadow: 0 3px 8px rgba(240, 140, 0, 0.4), inset 0 -2px 0 rgba(0, 0, 0, 0.16);
-}
-.dock .speedRow input[type='range']::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  border: none;
-  border-radius: 50%;
-  background: radial-gradient(circle at 40% 35%, #ffc15a, #f08c00 72%);
-}
-
 /* slide jog: pull the knob, it springs back when let go */
 
 /* the corner camera picture: the lens darkens towards the edges, as a real one does */
@@ -3735,95 +3566,6 @@ div.zeroFlow {
 }
 
 /* ---- Joint jog: the joint's glyph and its position bar (track, fill from 0°, knob, limits) ---- */
-
-.jpGlyph {
-  width: 30px;
-  height: 30px;
-  display: grid;
-  place-items: center;
-  border-radius: 8px;
-  background: linear-gradient(#fff, #f3f5f8);
-  border: 1px solid #e1e5ec;
-  box-shadow: inset 0 1px 0 #fff, 0 1px 2px rgba(16, 24, 40, 0.06);
-}
-
-.jpBar {
-  position: relative;
-  height: 34px;
-}
-.jpBar .jpTrack {
-  top: 9px;
-}
-.jpTrack {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 8px;
-  border-radius: 5px;
-  background: linear-gradient(#e3e7ee, #eef1f5);
-  box-shadow: inset 0 1px 2px rgba(16, 24, 40, 0.14);
-}
-.jpFill {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  border-radius: 5px;
-  background: linear-gradient(#c3cdf2, #aebcf0);
-}
-
-.jpZero {
-  position: absolute;
-  top: -4px;
-  width: 2px;
-  height: 16px;
-  margin-left: -1px;
-  border-radius: 1px;
-  background: #98a2b3;
-}
-.jpKnob {
-  position: absolute;
-  top: -6px;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  transform: translateX(-50%);
-  background: radial-gradient(circle at 35% 30%, #fff, #e6e9ef 70%);
-  border: 2px solid #475467;
-  box-shadow: 0 2px 5px rgba(16, 24, 40, 0.25);
-  pointer-events: none;
-}
-
-.jpBar[data-near] .jpKnob {
-  border-color: #f79009;
-}
-.jpBar input[type='range'] {
-  position: absolute;
-  inset: 0 0 12px;
-  width: 100%;
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-.jpBar input[type='range']:focus-visible + .jpLimits {
-  color: #2f5bea;
-}
-.jpLimits {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  justify-content: space-between;
-  pointer-events: none;
-}
-.jpLimits i {
-  font: 500 9.5px ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-style: normal;
-  color: #98a2b3;
-}
-.pendant:focus {
-  outline: none;
-}
 
 /* Joint points on the 3D arm: pick a joint; the picked one gets a turn dial */
 .jpt {
@@ -5639,14 +5381,6 @@ div.zeroFlow {
   border-top: 0;
   background: transparent;
 }
-.stepLabel {
-  font-style: normal;
-  font-size: 10.5px;
-  font-weight: 800;
-  color: #8696ae;
-  padding: 0 4px 0 2px;
-  align-self: center;
-}
 /* the pose row at the bottom */
 .app .side .poseDock {
   margin: auto -10px 0;
@@ -5670,118 +5404,6 @@ div.zeroFlow {
 }
 
 /* --- 수동 제어 (ControlPanel) in the dark panel ------------------------------ */
-.app .side .pendant {
-  gap: 8px;
-}
-.app .side .pendantBar {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 6px;
-}
-.app .side .frameSeg {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  padding: 3px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.04);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
-}
-.app .side .frameSeg button {
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 6px;
-  padding: 6px 8px;
-  color: #8696ae;
-}
-.app .side .frameSeg button b {
-  display: inline;
-  font-size: 12.5px;
-  letter-spacing: 0;
-}
-.app .side .frameSeg button small {
-  display: inline;
-  font-size: 10.5px;
-  color: #5f6f87;
-}
-.app .side .frameSeg button[aria-pressed='true'] {
-  color: #fff;
-  background: linear-gradient(180deg, rgba(91, 140, 255, 0.32), rgba(91, 140, 255, 0.14));
-  box-shadow: inset 0 0 0 1px rgba(120, 160, 255, 0.55);
-}
-.app .side .frameSeg button[aria-pressed='true'] small {
-  color: #a9c2ff;
-}
-.app .side .stepSeg {
-  display: flex;
-  align-items: center;
-  padding: 3px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.04);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
-}
-.app .side .stepSeg button {
-  flex: 1;
-  padding: 4px 0;
-  font-size: 12px;
-  font-weight: 700;
-  color: #8696ae;
-  font-variant-numeric: tabular-nums;
-}
-.app .side .stepSeg button[aria-pressed='true'] {
-  color: #fff;
-  background: rgba(91, 140, 255, 0.28);
-  box-shadow: inset 0 0 0 1px rgba(120, 160, 255, 0.5);
-}
-.app .side .stepSeg i {
-  color: #5f6f87;
-}
-.app .side .speedRow {
-  color: #8696ae;
-  font-size: 12px;
-}
-.app .side .speedRow input[type='range'] {
-  background: linear-gradient(90deg, #f5a524 var(--fill, 50%), rgba(255, 255, 255, 0.1) var(--fill, 50%));
-}
-.app .side .speedRow input[type='range']::-webkit-slider-thumb {
-  background: #0e141c;
-  border-color: #f5a524;
-  box-shadow: 0 0 8px rgba(245, 165, 36, 0.5);
-}
-.app .side .speedRow input[type='range']::-moz-range-thumb {
-  background: #0e141c;
-  border-color: #f5a524;
-}
-.app .side .jpGlyph {
-  background: #e9edf3;
-  border-color: transparent;
-  box-shadow: none;
-}
-
-.app .side .jpTrack {
-  background: rgba(255, 255, 255, 0.09);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
-}
-.app .side .jpFill {
-  background: rgba(111, 155, 255, 0.45);
-}
-
-.app .side .jpZero {
-  background: #8696ae;
-}
-.app .side .jpKnob {
-  background: #0e141c;
-  border-color: #a9b8cf;
-  box-shadow: none;
-}
-
-.app .side .jpBar[data-near] .jpKnob {
-  border-color: #ffad1f;
-}
-.app .side .jpLimits i {
-  color: #5f6f87;
-}
 
 /* --- code tabs in the dark panel ------------------------------------------- */
 /* block chips stay white on the coloured blocks, so their text stays dark */
@@ -6578,7 +6200,7 @@ div.zeroFlow {
   cursor: pointer;
 }
 .lockup img {
-  height: 22px;
+  height: 36px;
   width: auto;
 }
 .lockup > i {
@@ -7982,7 +7604,6 @@ div.zeroFlow {
     width: 40px;
     height: 36px;
   }
-  .stepSeg button,
   .undoBar button {
     min-height: 38px;
   }
@@ -8004,7 +7625,12 @@ div.zeroFlow {
 
 /* The menu bar down the left edge (stage/LeftRail): everything on the 3D view starts right of it. */
 .shell {
-  --bar-w: 68px;
+  --bar-w: 96px;
+}
+@media (max-width: 1280px), (max-height: 700px) {
+  .shell {
+    --bar-w: 80px;
+  }
 }
 .shell,
 .shell[data-dock] {
@@ -8027,268 +7653,9 @@ div.zeroFlow {
   }
 }
 
-/* --- 조그 (ControlPanel): the keys fill the panel's height, each says what it does ----------------- */
-.screen:has(> .pendant) {
+/* --- 조그 (ControlPanel, its own jog.module.css): the panel fills the side panel's height ------------ */
+.screen:has(> [data-jog]) {
   flex: 1 0 auto;
   display: flex;
   flex-direction: column;
-}
-.app .side .pendant {
-  flex: 1 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.app .side .pendant .frameSeg button {
-  padding: 9px 8px;
-}
-.app .side .pendant .frameSeg button b {
-  font-size: 14.5px;
-}
-.app .side .pendant .stepSeg button {
-  padding: 7px 0;
-  font-size: 13.5px;
-}
-.app .side .pendant .speedRow {
-  font-size: 13px;
-}
-.jogArea {
-  flex: 1 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.jogGroup {
-  margin: 6px 0 0;
-  font-size: 13px;
-  font-weight: 800;
-  color: #e8eef8;
-}
-.jogGroup small {
-  margin-left: 6px;
-  font-size: 11.5px;
-  font-weight: 600;
-  color: #8696ae;
-}
-.jogRow {
-  flex: 1 1 0;
-  min-height: 52px;
-  max-height: 112px;
-  display: grid;
-  grid-template-columns: minmax(56px, 24%) minmax(0, 1fr) minmax(56px, 24%);
-  align-items: stretch;
-  gap: 8px;
-}
-.jogRow[data-turn] {
-  min-height: 46px;
-  max-height: 72px;
-}
-.jogMid {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 6px;
-  min-width: 0;
-  padding: 6px 10px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
-  cursor: pointer;
-}
-.jogMid[data-axis] {
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-  cursor: default;
-}
-.jogMid[data-axis] b {
-  font-size: 18px;
-  font-weight: 900;
-}
-.jogName {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  line-height: 1.15;
-}
-.jogMid[data-axis] small {
-  font-size: 11.5px;
-  font-weight: 600;
-  color: #a9b8cf;
-  white-space: nowrap;
-}
-.jogMid[data-axis] output {
-  margin-left: auto;
-  font: 700 19px ui-monospace, SFMono-Regular, Menlo, monospace;
-  letter-spacing: -0.4px;
-  color: #a7f3d0;
-}
-.jogRow[data-turn] .jogMid[data-axis] output {
-  font-size: 16px;
-  color: #cfe0ff;
-}
-.jogRow[data-sel] .jogMid {
-  background: linear-gradient(180deg, rgba(91, 140, 255, 0.18), rgba(91, 140, 255, 0.06));
-  box-shadow: inset 0 0 0 1px rgba(120, 160, 255, 0.5);
-}
-.jogHead {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-.jogHead .jpGlyph {
-  width: 26px;
-  height: 26px;
-  flex: none;
-  background: #e9edf3;
-  border: none;
-}
-.jogHead b {
-  font-size: clamp(13px, 1vw, 14.5px);
-  font-weight: 800;
-  color: #e8eef8;
-  white-space: nowrap;
-}
-.jogHead em {
-  font: 600 11px ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-style: normal;
-  color: #a9b8cf;
-  background: rgba(255, 255, 255, 0.07);
-  border-radius: 4px;
-  padding: 1px 5px;
-}
-.jogRow[data-sel] .jogHead em {
-  background: rgba(91, 140, 255, 0.3);
-  color: #fff;
-}
-.jogValue {
-  margin-left: auto;
-  font: 700 clamp(14px, 1.1vw, 17px) ui-monospace, SFMono-Regular, Menlo, monospace;
-  letter-spacing: -0.4px;
-  color: #fff;
-  white-space: nowrap;
-}
-.jogValue i {
-  font-style: normal;
-  color: #8696ae;
-}
-.jogValue[data-near] {
-  color: #ffcf7a;
-}
-.jogMid .jpBar {
-  height: 26px;
-}
-.jogMid .jpBar .jpTrack {
-  top: 6px;
-}
-.jogMid .jpBar input[type='range'] {
-  inset: 0;
-}
-.jogMid .jpLimits {
-  bottom: -3px;
-}
-.jogRow:not([data-sel]) .jpFill {
-  background: rgba(111, 155, 255, 0.55);
-}
-.jogRow[data-sel] .jpFill {
-  background: linear-gradient(90deg, #3f6fe6, #8fb2ff);
-}
-.jogRow[data-sel] .jpKnob {
-  background: #fff;
-  border-color: #6f9bff;
-}
-
-/* the key: raised, blue, its direction word in large type */
-.bigKey {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  min-width: 0;
-  padding: 4px;
-  border-radius: 12px;
-  color: #fff;
-  background: linear-gradient(#4a74f5, #2a55d6);
-  border: 1px solid #2248bd;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 2px 0 #1d3fa6, 0 8px 14px -8px rgba(47, 91, 234, 0.7);
-  cursor: pointer;
-  touch-action: none;
-  user-select: none;
-  transition: transform 0.06s, box-shadow 0.06s, background 0.1s;
-}
-.bigKey b {
-  font-size: 15px;
-  font-weight: 800;
-  line-height: 1.1;
-  white-space: nowrap;
-}
-.bigKey small {
-  font: 700 12px ui-monospace, SFMono-Regular, Menlo, monospace;
-  color: rgba(255, 255, 255, 0.78);
-}
-/* a turning key (a joint, the hand's direction): the turn sign large, its step under it */
-.jogRow:has(.jogHead) .bigKey small,
-.jogRow[data-turn] .bigKey small {
-  font-size: 13px;
-  color: #fff;
-}
-.jogGroup {
-  display: flex;
-  align-items: baseline;
-  gap: 0 6px;
-}
-.toolDown {
-  margin-left: auto;
-  align-self: center;
-  padding: 5px 10px;
-  border-radius: 8px;
-  border: 1px solid rgba(120, 160, 255, 0.5);
-  background: rgba(91, 140, 255, 0.16);
-  color: #dbe6ff;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 800;
-  cursor: pointer;
-}
-.toolDown:hover:not(:disabled) {
-  background: rgba(91, 140, 255, 0.3);
-}
-.toolDown:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-.bigKey:hover:not(:disabled) {
-  background: linear-gradient(#5a80f7, #2f5bea);
-}
-.bigKey:active:not(:disabled) {
-  transform: translateY(2px);
-  background: linear-gradient(#3c66e6, #2348c4);
-  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.35);
-}
-.bigKey:focus-visible {
-  outline: 2px solid #a9c2ff;
-  outline-offset: 2px;
-}
-.bigKey:disabled {
-  color: #5f6f87;
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.08);
-  box-shadow: none;
-  cursor: not-allowed;
-}
-.bigKey:disabled small {
-  color: #5f6f87;
-}
-@media (max-height: 820px) {
-  .jogRow {
-    min-height: 44px;
-  }
-  .jogRow[data-turn] {
-    min-height: 40px;
-  }
-  .bigKey b {
-    font-size: 14px;
-  }
 }

@@ -50,6 +50,7 @@
 | [`27-acceptance-rehearsal.md`](reports/console/27-acceptance-rehearsal.md) | 보고 #27 — 전체 검수(중복 · 누락 · 실물 연동 · 화면 이동) 수정 목록, 검수 7종 전 경로 리허설(데모 로봇, 7/7), 실물로만 확인되는 것, 기초교육 자료 |
 | [`34-simulator-features.md`](reports/console/34-simulator-features.md) | 보고 #34 — 시뮬레이터 기능 정리(화면 · 탭 5개 · 겹치는 것 · 숨긴 것)와 공정 짜기(BEGIN–END · MOVE J/L · Tick/Smooth · 프로젝트 파일) 간소화 버전 |
 | [`38-jog-physics-review.md`](reports/console/38-jog-physics-review.md) | 보고 #38 — 조그 패널 크게 · 좌표 조그 검토(이 팔에 맞음, 쓰는 자리) · 메뉴 제어/작업/보기 · 공정 예제가 실제로 블록을 옮기게 · 물리 늘 켜기와 책상에서 멈춤 |
+| [`39-easy-jog-logo-intro.md`](reports/console/39-easy-jog-logo-intro.md) | 보고 #39 — 쉬운 조그 패널(관절 기본 · 하는 일로 이름 · 작은 버튼 큰 글자) · 관절 익히기 · 왼쪽 메뉴 구분 · 시뮬레이터 로고 C · 실사 사진 인트로 |
 
 ### [`education/`](reports/education/) — 교육 과정 · 교재
 | 문서 | 내용 |
