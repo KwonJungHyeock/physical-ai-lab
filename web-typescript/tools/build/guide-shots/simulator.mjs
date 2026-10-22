@@ -201,7 +201,8 @@ if (want('lesson')) {
   await jog.getByRole('button', { name: '관절 익히기' }).click();
   await settle(page, 800);
   const plus = jog.getByRole('button', { name: /^베이스 \(J1\) \+/ });
-  for (let k = 0; k < 4; k++) {
+  // Three taps of 5° make the 15° the lesson asks for; a fourth would land on J1 after the lesson moved on.
+  for (let k = 0; k < 3; k++) {
     await plus.click();
     await page.waitForTimeout(400);
   }
@@ -250,7 +251,7 @@ if (want('jog-xyz')) {
     pad: 44,
     marks: [
       { at: jog.getByRole('button', { name: /^앞으로/ }), n: 1, pos: 'l' },
-      { at: jog.locator('[aria-label="손끝 위치 (mm)"]'), n: 2, pos: 't' },
+      { at: jog.locator('[aria-label="손끝 위치 (mm)"]'), n: 2, pos: 'l' },
       { at: jog.getByRole('button', { name: /^위로/ }), n: 3, pos: 'r' },
       { at: jog.getByRole('button', { name: /^좌우 기울기/ }).first(), n: 4, pos: 'l' },
       { at: jog.getByRole('button', { name: '손 아래로' }), n: 5, pos: 'tr' },
@@ -550,6 +551,14 @@ if (want('learn')) {
       { at: page.locator('nav[aria-label="기술 키워드로 찾기"]'), n: 5, pos: 'tr' },
     ],
   });
+}
+
+// 공정 짜기: the example 「집어서 옮기기」 loaded, the side panel alone.
+if (want('process')) {
+  await openScreen('공정');
+  await page.locator('select[aria-label="공정 예제"]').selectOption({ index: 1 });
+  await settle(page, 1500);
+  await save(page, out('24b-process.png'), { crop: page.locator('aside[aria-label="작업 패널"]'), pad: 8 });
 }
 
 await browser.close();

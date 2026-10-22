@@ -222,7 +222,8 @@
   gap: 8px;
 }
 .row {
-  flex: 1 1 0;
+  /* grows into spare height, never shrinks below its words (name · job · bar) */
+  flex: 1 0 auto;
   min-height: 60px;
   max-height: 82px;
   display: grid;
@@ -673,7 +674,7 @@
 }
 /* a short window: rows and keys come down so everything fits without scrolling (the joint's job moves
    to its tooltip, the hints under the keys go) */
-@media (max-height: 860px) {
+@media (max-height: 960px) {
   .jog {
     gap: 8px;
   }
@@ -709,7 +710,12 @@
   .turn {
     height: 36px;
   }
-  .readout + .cap,
+  .readout + .cap {
+    display: none;
+  }
+}
+/* 좌표 is the taller view: its closing hint goes first */
+@media (max-height: 1000px) {
   .turns + .tip {
     display: none;
   }

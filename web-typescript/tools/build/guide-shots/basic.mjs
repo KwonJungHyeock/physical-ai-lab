@@ -109,14 +109,14 @@ await shot('status', async () => {
 await shot('jog', async () => {
   await openScreen('조그');
   const jog = screen();
-  await jog.locator('[class*="__modes"]').getByRole('button', { name: /^관절/ }).click();
+  await jog.getByRole('group', { name: '움직이는 방법' }).getByRole('button', { name: /^관절/ }).click();
   await settle(page, 1200);
   await save(page, out('b-jog.png'), { crop: jog, pad: 10 });
 });
 await shot('jog-xyz', async () => {
   await openScreen('조그');
   const jog = screen();
-  await jog.locator('[class*="__modes"]').getByRole('button', { name: /^좌표/ }).click();
+  await jog.getByRole('group', { name: '움직이는 방법' }).getByRole('button', { name: /^좌표/ }).click();
   await settle(page, 1500);
   await save(page, out('b-jog-xyz.png'), { crop: jog, pad: 10 });
 });
