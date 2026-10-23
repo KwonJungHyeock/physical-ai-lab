@@ -18,8 +18,8 @@
  * only), so the vision pipeline sees the same colours as before.
  */
 
-import { Canvas, createPortal, useFrame, useThree } from '@react-three/fiber';
-import { CameraControls, Grid, Html, useGLTF } from '@react-three/drei';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { CameraControls, Grid, useGLTF } from '@react-three/drei';
 import { EffectComposer, N8AO, SMAA, ToneMapping } from '@react-three/postprocessing';
 import { ToneMappingMode } from 'postprocessing';
 import type CameraControlsImpl from 'camera-controls';
@@ -82,15 +82,11 @@ import { workspaceProfile } from '@/engine/physics/workspace';
 import type { UrdfRobot } from '@/engine/robot/urdf';
 import type { CameraId } from '@/engine/simulator/program';
 import type { ImageLike, PinholeCamera } from '@/engine/vision/color';
-import { jointMax, jointMin } from '@/engine/robot/limits';
 
 import { baseDressing, buildArm, buildTool, partMesh, type GlbNodes } from './robotModel';
 import { ALERT_COLOR, MiniArm, type MiniRect, type MonitorOut } from './MiniArm';
 import { AlertTracker } from '@/engine/robot/jointAlert';
 import StudioLight from './StudioLight';
-import { jointLabels } from '../control/jointInfo';
-import { useLive, type Live } from '../liveStore';
-import css from '../console.module.css';
 import { DESK_M, SCENE, TOOL_LAYER, addJointAxes, axesTriad, deskSpot, framing, meshBox, reachDisc, type DisplayOpts, type FreeFrame } from './sceneHelpers';
 import { workspaceEnvelope } from '../../education/stage/learn3d';
 import type { ArmSpec } from '@/engine/robot/arms';
@@ -209,8 +205,6 @@ interface StageProps {
   frameInsets?: () => { l: number; r: number; t: number; b: number } | null;
   /** Changes when panels open or fold: the view is framed again (unless the user moved it). */
   layoutKey?: string;
-  /** Joint points on the arm (joint jog): pick a joint, turn the picked one on its dial; null hides them. */
-  jointPick?: JointPick | null;
   /** The robot stands on a base (G base) this many mm above the table; 0 = on the table. */
   mountMm?: number;
   /** 작업대 (arm-only theme): the scene, the objects on the desk, the practice mat, editing. */
@@ -221,19 +215,6 @@ interface StageProps {
   monitor?: RefObject<MonitorOut>;
   /** The see-through side-view arm: where its corner is now; null hides it. */
   miniRect?: (() => MiniRect) | null;
-}
-
-export interface JointPick {
-  live: Live;
-  /** Picked joint, 0..5. */
-  selected: number;
-  busy: boolean;
-  onSelect(i: number): void;
-  /** The dial is being turned: the joint's new angle, degrees (like dragging its slider). */
-  onDrag(i: number, deg: number): void;
-  onDragEnd(i: number, deg: number): void;
-  /** The pointer is on a point or the dial (true) or has left it (false): keeps the points shown. */
-  onHover(on: boolean): void;
 }
 
 /**
@@ -390,7 +371,6 @@ function World({
   display,
   frameInsets,
   layoutKey,
-  jointPick,
   mountMm = 0,
   desk,
   ghost,
@@ -696,7 +676,6 @@ function World({
         {display.baseAxes && <primitive object={baseAxes} />}
         {display.reach && shell && <primitive object={shell.group} />}
       </group>
-      {jointPick && arm.joints.map((j, i) => <Fragment key={i}>{createPortal(<JointPoint i={i} axis={j.axis} group={j.group} pick={jointPick} />, j.group)}</Fragment>)}
       {display.reach && <primitive object={reach} />}
       {display.path && <ToolPath world={world} flange={arm.flange} tcpMm={tcpMm} root={root} />}
       <CameraRig
@@ -905,164 +884,6 @@ function readBaseLuminance(gl: WebGLRenderer, camera: Camera, base: Object3D): (
     }
     return darkest;
   };
-}
-
-const DIAL_R = 62;
-/** Screen point at `deg` (counter-clockwise from 3 o'clock) on a circle of radius r around (80, 80). */
-const dialAt = (deg: number, r = DIAL_R) => [80 + r * Math.cos((deg * Math.PI) / 180), 80 - r * Math.sin((deg * Math.PI) / 180)] as const;
-
-/**
- * A joint's point on the arm (a page element that follows the joint on screen). The picked
- * joint gets a dial facing the viewer: drag round the ring and the joint turns the same way
- * as the drag goes round (the joint's axis decides which way that is from this viewpoint);
- * seen edge-on, where turning round would be ambiguous, drag sideways instead.
- */
-function JointPoint({ i, axis, group, pick }: { i: number; axis: Vector3; group: Group; pick: JointPick }) {
-  const sel = i === pick.selected;
-  const deg = useLive(pick.live, (v) => v.angles[i] ?? 0);
-  const camera = useThree((s) => s.camera);
-  // +1: the axis points at the viewer (counter-clockwise on screen = +), −1: away, 0: edge-on.
-  const [facing, setFacing] = useState<-1 | 0 | 1>(1);
-  const tmp = useRef<{ a: Vector3; p: Vector3 } | null>(null);
-  useFrame(() => {
-    if (!sel) return;
-    const t = (tmp.current ??= { a: new Vector3(), p: new Vector3() });
-    t.a.copy(axis).transformDirection(group.matrixWorld);
-    group.getWorldPosition(t.p);
-    const d = t.a.dot(t.p.sub(camera.position).negate().normalize());
-    const f = Math.abs(d) < 0.3 ? 0 : d > 0 ? 1 : -1;
-    if (f !== facing) setFacing(f);
-  });
-  // A point that goes away under the pointer (hidden, another view) no longer holds the points.
-  const hovered = useRef(false);
-  const hoverRef = useRef(pick.onHover);
-  useEffect(() => {
-    hoverRef.current = pick.onHover;
-  });
-  useEffect(
-    () => () => {
-      if (hovered.current) hoverRef.current(false);
-    },
-    [],
-  );
-  const hover = (on: boolean) => {
-    hovered.current = on;
-    pick.onHover(on);
-  };
-  const svg = useRef<SVGSVGElement>(null);
-  const drag = useRef<{ id: number; cx: number; cy: number; last: number; turned: number; x0: number; start: number; to: number; raf: number } | null>(null);
-  const [dragging, setDragging] = useState(false);
-  const lo = jointMin()[i];
-  const hi = jointMax()[i];
-  const screenAngle = (x: number, y: number, d: { cx: number; cy: number }) => Math.atan2(-(y - d.cy), x - d.cx);
-  const finish = (e: React.PointerEvent) => {
-    const d = drag.current;
-    if (!d || d.id !== e.pointerId) return;
-    cancelAnimationFrame(d.raf);
-    drag.current = null;
-    setDragging(false);
-    pick.onDrag(i, d.to);
-    pick.onDragEnd(i, d.to);
-  };
-  // J1's point sits on the base body, below the shoulder (their centres coincide on screen).
-  const at: [number, number, number] = i === 0 ? [-axis.x * 0.07, -axis.y * 0.07, -axis.z * 0.07] : [0, 0, 0];
-  const shownAngle = facing === 0 ? 0 : facing * deg;
-  const [hx, hy] = dialAt(shownAngle);
-  const [zx, zy] = dialAt(0);
-  const big = Math.abs(shownAngle) > 180 ? 1 : 0;
-  return (
-    <Html position={at} zIndexRange={[4, 1]} pointerEvents="none" eps={0.5}>
-      <div className={css.jpt} data-sel={sel || undefined}>
-        {sel && (
-          <>
-            <svg ref={svg} className={css.jptDial} viewBox="0 0 160 160" data-drag={dragging || undefined} aria-hidden="true">
-              <circle cx="80" cy="80" r={DIAL_R} fill="#e5322d" fillOpacity="0.05" stroke="#e5322d" strokeWidth="2" />
-              {Array.from({ length: 36 }, (_, k) => {
-                const long = k % 3 === 0;
-                const [x1, y1] = dialAt(k * 10);
-                const [x2, y2] = dialAt(k * 10, DIAL_R + (long ? 7 : 3.5));
-                return <line key={k} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#e5322d" strokeWidth={long ? 1.4 : 0.8} opacity="0.65" />;
-              })}
-              <line x1="80" y1="80" x2={zx} y2={zy} stroke="#e5322d" strokeWidth="1.2" strokeDasharray="3 3" />
-              {shownAngle !== 0 && <path d={`M80 80 L${zx} ${zy} A${DIAL_R} ${DIAL_R} 0 ${big} ${shownAngle > 0 ? 0 : 1} ${hx} ${hy} Z`} fill="#e5322d" fillOpacity="0.16" />}
-              <circle cx={hx} cy={hy} r="8" fill="#e5322d" stroke="#fff" strokeWidth="3" />
-              <circle
-                className={css.jptHit}
-                cx="80"
-                cy="80"
-                r={DIAL_R}
-                fill="none"
-                stroke="transparent"
-                strokeWidth="22"
-                onPointerDown={(e) => {
-                  if (pick.busy || e.button !== 0 || !svg.current) return;
-                  e.stopPropagation();
-                  const r = svg.current.getBoundingClientRect();
-                  const d = { id: e.pointerId, cx: r.left + r.width / 2, cy: r.top + r.height / 2, last: 0, turned: 0, x0: e.clientX, start: deg, to: deg, raf: 0 };
-                  d.last = screenAngle(e.clientX, e.clientY, d);
-                  e.currentTarget.setPointerCapture(e.pointerId);
-                  drag.current = d;
-                  setDragging(true);
-                }}
-                onPointerMove={(e) => {
-                  const d = drag.current;
-                  if (!d || d.id !== e.pointerId) return;
-                  let delta: number;
-                  if (facing === 0) delta = (e.clientX - d.x0) * 0.5;
-                  else {
-                    const a = screenAngle(e.clientX, e.clientY, d);
-                    let da = a - d.last;
-                    if (da > Math.PI) da -= 2 * Math.PI;
-                    if (da < -Math.PI) da += 2 * Math.PI;
-                    d.last = a;
-                    d.turned += da;
-                    delta = (facing * d.turned * 180) / Math.PI;
-                  }
-                  d.to = Math.round(Math.min(hi, Math.max(lo, d.start + delta)) * 10) / 10;
-                  if (!d.raf)
-                    d.raf = requestAnimationFrame(() => {
-                      d.raf = 0;
-                      pick.onDrag(i, d.to);
-                    });
-                }}
-                onPointerUp={finish}
-                onPointerCancel={finish}
-                onPointerEnter={() => hover(true)}
-                onPointerLeave={() => hover(false)}
-              />
-            </svg>
-            <div className={css.jptChip}>
-              <small>
-                J{i + 1} · {jointLabels()[i].name}
-              </small>
-              <b>
-                {deg >= 0 ? '+' : '−'}
-                {Math.abs(deg).toFixed(1)}°
-              </b>
-              <span>{pick.busy ? '움직이는 중' : facing === 0 ? '링을 좌우로 끌어 회전' : '링을 돌려 끌어 회전'}</span>
-            </div>
-          </>
-        )}
-        <button
-          type="button"
-          className={css.jptDot}
-          aria-pressed={sel}
-          aria-label={`관절 ${i + 1} ${jointLabels()[i].name} 고르기`}
-          onClick={() => pick.onSelect(i)}
-          onPointerEnter={() => hover(true)}
-          onPointerLeave={() => hover(false)}
-        >
-          {i + 1}
-        </button>
-        {!sel && (
-          <span className={css.jptTag}>
-            <em>J{i + 1}</em>
-            {jointLabels()[i].name}
-          </span>
-        )}
-      </div>
-    </Html>
-  );
 }
 
 /** One ring per arm, around the joint being zero-calibrated (drawn over the arm, screen only). */

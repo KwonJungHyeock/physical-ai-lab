@@ -66,7 +66,7 @@ await ctx.addInitScript(() => {
     localStorage.setItem('console-guide-done', '1');
     localStorage.setItem('robot-console-pc-offered', '1');
     // No axes, joint points or see-through arm over the robot; the panels stay put while a program runs.
-    localStorage.setItem('robot-console-display', JSON.stringify({ baseAxes: false, jointPoints: false, ghost: false, autoFold: false }));
+    localStorage.setItem('robot-console-display', JSON.stringify({ baseAxes: false, ghost: false, autoFold: false }));
     // 드래그 티칭 plays back three recorded poses (joint angles, °).
     const poses = { '내 자세 1': [35, 20, -70, -30, 0, 0], '내 자세 2': [-35, 10, -45, -50, 20, 0], '내 자세 3': [0, 45, -95, -20, -20, 30] };
     if (!localStorage.getItem('robot-console-poses')) localStorage.setItem('robot-console-poses', JSON.stringify(poses));

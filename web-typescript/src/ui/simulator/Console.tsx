@@ -83,7 +83,7 @@ import { Divergence, findColor, offCentre, probeJacobian, stepTowards, type Seen
 import BlockEditor from './editors/BlockEditor';
 import CameraViews, { analyse, type CameraView, type CameraViewsHandle, type Detection } from './stage/CameraViews';
 import CodeEditor from './editors/CodeEditor';
-import ControlPanel, { FIRST_FRAME, type Axis, type Frame } from './control/ControlPanel';
+import ControlPanel, { type Axis } from './control/ControlPanel';
 import LeftRail, { type BarItem, type RailItem } from './stage/LeftRail';
 import MiniArmLabels from './stage/MiniArmLabels';
 import { createMonitor, type MiniRect } from './stage/MiniArm';
@@ -227,8 +227,6 @@ function lineName(src: string): string {
 const JOG_LEAD = 8;
 /** Dragging a joint's slider or dial on the robot: the target may run this far ahead of the arm (server allows 15°). */
 const FOLLOW_LEAD = 12;
-/** Joint points stay on screen this long after the last touch of the joint controls. */
-const JOINT_POINTS_LINGER_MS = 5000;
 
 /** `chain` stands on the base (G base) when one is fitted; `rawChain` is the arm alone, for drawing it. */
 type Loaded = { robot: UrdfRobot; chain: ChainSegment[]; rawChain: ChainSegment[]; gripper: UrdfRobot };
@@ -358,24 +356,6 @@ export default function Console() {
   const [jogJoint, setJogJoint] = useState(0);
   /** The tool move that could not be made last: its jog key shows red until the next move. */
   const [tipBlocked, setTipBlocked] = useState<{ axis: Axis; dir: -1 | 1 } | null>(null);
-  const [jogView, setJogView] = useState<Frame>(FIRST_FRAME);
-  // The joint points show only while joints are being adjusted: the pointer or the keyboard in the jog
-  // panel, the pointer on a point or its dial, a joint moving — and for a few seconds after.
-  const [jointsLive, setJointsLive] = useState(false);
-  const jointsTimer = useRef(0);
-  // While the pointer rests on the jog panel or on a point, they stay; the countdown starts when it leaves.
-  const jointsHeld = useRef({ panel: false, point: false });
-  const pokeJoints = () => {
-    window.clearTimeout(jointsTimer.current);
-    setJointsLive(true);
-    const h = jointsHeld.current;
-    // A tablet has no hover to keep them up while a finger aims at one: there they stay.
-    if (!h.panel && !h.point && !isTouch()) jointsTimer.current = window.setTimeout(() => setJointsLive(false), JOINT_POINTS_LINGER_MS);
-  };
-  const holdJoints = (who: 'panel' | 'point', on: boolean) => {
-    jointsHeld.current[who] = on;
-    pokeJoints();
-  };
   /** Classes ('learn': practices by topic) or the delivery demonstration of the seven checks ('check'). */
   const [mode, setMode] = useState<ConsoleMode>('learn');
   /** The robot model; null until chosen on the first screen (the robot's own server picks it). */
@@ -2682,9 +2662,6 @@ export default function Console() {
       onJogStop={() => endJog()}
       selected={jogJoint}
       onSelect={setJogJoint}
-      onFrame={setJogView}
-      onActivity={pokeJoints}
-      onHold={(on) => holdJoints('panel', on)}
     />
   );
 
@@ -3298,25 +3275,6 @@ export default function Console() {
                   smoothFollow={robotMode && (!busy || realRun || !!tracking)}
                   tcpMm={tcpNow}
                   ringJoint={ringJoint}
-                  jointPick={
-                    !zeroMode && shownTab === 'direct' && dockShown && jogView === 'joint' && display.jointPoints && jointsLive && !busy
-                      ? {
-                          live,
-                          selected: jogJoint,
-                          busy: busy || (robotMode && (!robot?.connected || !!robot?.released)),
-                          onSelect: setJogJoint,
-                          onDrag: (i, deg) => {
-                            pokeJoints();
-                            setJoint(i, deg);
-                          },
-                          onDragEnd: (i, deg) => {
-                            pokeJoints();
-                            jointCommit(i, deg);
-                          },
-                          onHover: (on) => holdJoints('point', on),
-                        }
-                      : null
-                  }
                   display={display}
                   frameInsets={frameInsets}
                   layoutKey={`${dockShown}:${side}:${camOpen}:${display.mini}`}

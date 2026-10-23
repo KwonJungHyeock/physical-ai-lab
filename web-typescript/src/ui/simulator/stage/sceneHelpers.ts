@@ -52,11 +52,9 @@ export interface DisplayOpts {
   mini: boolean;
   /** Before a run (블록 코딩): where the program will leave the arm, as a see-through arm. */
   ghost: boolean;
-  /** Joint points ①~⑥ on the arm while jogging joints (pick a joint, turn it on its dial). */
-  jointPoints: boolean;
 }
 
-export const DEFAULT_DISPLAY: DisplayOpts = { baseAxes: true, toolAxes: false, jointAxes: false, path: true, grid: true, reach: false, autoFold: true, jointPoints: true, ghost: true, mini: true };
+export const DEFAULT_DISPLAY: DisplayOpts = { baseAxes: true, toolAxes: false, jointAxes: false, path: true, grid: true, reach: false, autoFold: true, ghost: true, mini: true };
 
 /** Horizontal reach of the myCobot 280 from the J1 axis, mm. */
 export const REACH_MM = 280;

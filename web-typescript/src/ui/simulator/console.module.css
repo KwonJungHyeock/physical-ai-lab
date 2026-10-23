@@ -3567,125 +3567,6 @@ div.zeroFlow {
 
 /* ---- Joint jog: the joint's glyph and its position bar (track, fill from 0°, knob, limits) ---- */
 
-/* Joint points on the 3D arm: pick a joint; the picked one gets a turn dial */
-.jpt {
-  position: relative;
-  width: 0;
-  height: 0;
-  animation: jptIn 0.18s ease-out;
-}
-@keyframes jptIn {
-  from {
-    opacity: 0;
-    transform: scale(0.85);
-  }
-}
-.jptDot {
-  position: absolute;
-  left: -12px;
-  top: -12px;
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font: 700 11.5px ui-monospace, SFMono-Regular, Menlo, monospace;
-  color: #101828;
-  background: rgba(255, 255, 255, 0.93);
-  border: 2px solid #101828;
-  box-shadow: 0 2px 6px rgba(16, 24, 40, 0.28), 0 0 0 4px rgba(255, 255, 255, 0.55);
-  cursor: pointer;
-  pointer-events: auto;
-  transition: transform 0.1s;
-}
-.jptDot:hover {
-  transform: scale(1.12);
-}
-.jptTag {
-  position: absolute;
-  left: 18px;
-  top: -11px;
-  white-space: nowrap;
-  font-size: 11.5px;
-  font-weight: 600;
-  color: #344054;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid #dde2ea;
-  border-radius: 6px;
-  padding: 2px 7px 2px 5px;
-  box-shadow: 0 2px 6px rgba(16, 24, 40, 0.08);
-  opacity: 0;
-  transform: translateX(-4px);
-  transition: opacity 0.12s, transform 0.12s;
-  pointer-events: none;
-}
-.jptTag em {
-  font: 600 10px ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-style: normal;
-  color: #667085;
-  margin-right: 4px;
-}
-.jpt:hover .jptTag {
-  opacity: 1;
-  transform: none;
-}
-.jpt[data-sel] .jptDot {
-  left: -16px;
-  top: -16px;
-  width: 32px;
-  height: 32px;
-  font-size: 13.5px;
-  color: #fff;
-  background: #e5322d;
-  border-color: #fff;
-  box-shadow: 0 0 0 5px rgba(229, 50, 45, 0.22), 0 4px 12px rgba(229, 50, 45, 0.5);
-}
-.jptDial {
-  position: absolute;
-  left: -80px;
-  top: -80px;
-  width: 160px;
-  height: 160px;
-  overflow: visible;
-  pointer-events: none;
-}
-.jptDial .jptHit {
-  pointer-events: stroke;
-  cursor: grab;
-}
-.jptDial[data-drag] .jptHit {
-  cursor: grabbing;
-}
-.jptChip {
-  position: absolute;
-  right: 72px;
-  top: -84px;
-  min-width: 108px;
-  padding: 6px 10px 7px;
-  border-radius: 9px;
-  background: rgba(42, 52, 65, 0.94);
-  color: #fff;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.09), 0 8px 20px rgba(0, 0, 0, 0.3);
-  pointer-events: none;
-  white-space: nowrap;
-}
-.jptChip small {
-  display: block;
-  font-size: 10.5px;
-  font-weight: 600;
-  color: #ff9a95;
-}
-.jptChip b {
-  font: 700 16px ui-monospace, SFMono-Regular, Menlo, monospace;
-  letter-spacing: -0.3px;
-}
-.jptChip span {
-  display: block;
-  font-size: 10.5px;
-  color: #98a2b3;
-}
-
 .pumpWarn {
   grid-column: 1 / -1;
   margin: 2px 0 0;
@@ -6591,8 +6472,14 @@ div.zeroFlow {
   font-size: 12px;
   white-space: nowrap;
   transform: translateY(-50%);
-  animation: jptIn 0.18s ease-out;
+  animation: objTagIn 0.18s ease-out;
   user-select: none;
+}
+@keyframes objTagIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.85);
+  }
 }
 .objTag b {
   font-weight: 700;
@@ -7544,12 +7431,8 @@ div.zeroFlow {
 }
 
 /*
- * Tablets (fingers, no mouse): every control at least about 40 px, the 3D joint ring held by the
- * finger (not taken over as a page pan), and the hover-only names shown.
+ * Tablets (fingers, no mouse): every control at least about 40 px and the hover-only names shown.
  */
-.jptDial .jptHit {
-  touch-action: none;
-}
 @media (pointer: coarse) {
   /* Only the picked block's keys (a tap picks it): all of them at finger size would cover the program. */
   .blockKeys {
@@ -7578,18 +7461,6 @@ div.zeroFlow {
   .loopSlot {
     padding: 10px 12px;
     font-size: 13px;
-  }
-  .jptDot {
-    left: -18px;
-    top: -18px;
-    width: 36px;
-    height: 36px;
-    font-size: 13px;
-  }
-  .jptTag {
-    left: 24px;
-    opacity: 1;
-    transform: none;
   }
   .app .objDelete {
     width: 34px;

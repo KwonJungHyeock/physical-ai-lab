@@ -65,15 +65,9 @@ interface Props {
   onJogStop(): void;
   /** The tool move that could not be made last (its key shows red), cleared by the next move. */
   blocked?: { axis: Axis; dir: -1 | 1 } | null;
-  /** The joint the jog keys work on (0..5), also picked from its point on the 3D arm. */
+  /** The joint the jog keys work on (0..5). */
   selected: number;
   onSelect(i: number): void;
-  /** Joints or tool frame shown (the 3D view shows the joint points in the joint frame). */
-  onFrame?(f: Frame): void;
-  /** Pointer or keyboard in the panel: the joints are being adjusted (the 3D view shows their points). */
-  onActivity?(): void;
-  /** The pointer is on the panel (true) or has left it (false). */
-  onHold?(on: boolean): void;
 }
 
 export type Frame = 'joint' | 'base';
@@ -272,10 +266,7 @@ export default function ControlPanel(p: Props) {
   const step = frame === 'joint' ? jStep : tStep;
   const unit = frame === 'joint' ? '°' : 'mm';
   const turnStep = TURN_STEPS[TIP_STEPS.indexOf(tStep)] ?? 5;
-  const chooseFrame = (f: Frame) => {
-    setFrame(f);
-    p.onFrame?.(f);
-  };
+  const chooseFrame = (f: Frame) => setFrame(f);
 
   // The joint lesson: which step (dof = all done), and the joint's angle when the step began.
   const [lesson, setLesson] = useState<{ at: number; from: number } | null>(null);
@@ -298,19 +289,6 @@ export default function ControlPanel(p: Props) {
     chooseFrame('joint');
     setLesson({ at: 0, from: angles[0] });
   };
-
-  // The panel may go away under the pointer (folded): then it no longer holds the joint points.
-  const hovered = useRef(false);
-  const holdRef = useRef(p.onHold);
-  useEffect(() => {
-    holdRef.current = p.onHold;
-  });
-  useEffect(
-    () => () => {
-      if (hovered.current) holdRef.current?.(false);
-    },
-    [],
-  );
 
   // Keyboard in the joint frame: ↑ ↓ pick the joint, ← → turn it (tap = one step, hold = keep turning).
   const keyHold = useRef<{ key: string; timer: number; holding: boolean } | null>(null);
@@ -437,22 +415,9 @@ export default function ControlPanel(p: Props) {
       className={css.jog}
       data-jog
       tabIndex={-1}
-      onKeyDown={(e) => {
-        p.onActivity?.();
-        onKeyDown(e);
-      }}
+      onKeyDown={onKeyDown}
       onKeyUp={onKeyUp}
       onBlur={() => endKey(false)}
-      onPointerEnter={() => {
-        hovered.current = true;
-        p.onHold?.(true);
-      }}
-      onPointerLeave={() => {
-        hovered.current = false;
-        p.onHold?.(false);
-      }}
-      onPointerMove={p.onActivity}
-      onPointerDown={p.onActivity}
     >
       <div className={css.modes} role="group" aria-label="움직이는 방법">
         <button type="button" aria-pressed={frame === 'joint'} onClick={() => chooseFrame('joint')} title="관절: 모터(J1 ~ J6)를 하나씩 돌려요">
@@ -555,7 +520,7 @@ export default function ControlPanel(p: Props) {
                   }}
                 >
                   <JogKey dir={-1} word={`−${jStep}°`} label={`${names[i].name} (J${i + 1}) −${jStep}°`} disabled={p.busy} onStep={() => p.onJointStep(i, -jStep)} onStart={() => p.onJointJog(i, -1)} onStop={p.onJogStop} />
-                  <div className={css.mid} title={`${names[i].name} (J${i + 1}) · ${lo}° ~ ${hi}°. 3D 의 관절 점 ${i + 1} 을 눌러도 골라져요`}>
+                  <div className={css.mid} title={`${names[i].name} (J${i + 1}) · ${lo}° ~ ${hi}°`}>
                     <span className={css.head}>
                       <b>{names[i].name}</b>
                       <em>J{i + 1}</em>
