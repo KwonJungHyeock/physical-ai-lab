@@ -16,7 +16,7 @@ const DISPLAY_ITEMS: { key: keyof DisplayOpts; label: string; note: string; swat
   { key: 'mini', label: '관절 각도 (작은 로봇)', note: '왼쪽 아래 반투명 로봇에 J1~J6 각도 · 손끝 위치와 회전', swatch: ['#e8eefc'] },
   { key: 'baseAxes', label: '베이스 좌표축', note: 'X 앞 · Y 왼쪽 · Z 위', swatch: [AXIS_COLORS.x, AXIS_COLORS.y, AXIS_COLORS.z] },
   { key: 'toolAxes', label: '도구 좌표축', note: '도구 끝의 방향', swatch: [AXIS_COLORS.x, AXIS_COLORS.y, AXIS_COLORS.z] },
-  { key: 'jointPoints', label: '관절 선택 점', note: '관절 조그: 점 ①~⑥ 으로 고르고 링으로 돌리기', swatch: ['#2f5bea'] },
+  { key: 'jointPoints', label: '관절 선택 점', note: '관절 조그: 점 ①~⑥ 으로 고르고 링으로 돌리기', swatch: ['#e5322d'] },
   { key: 'jointAxes', label: '관절 회전축', note: 'J1~J6 이 도는 축', swatch: ['#f08c00'] },
   { key: 'path', label: '도구 궤적', note: '도구 끝이 지나간 길', swatch: ['#3e63dd'] },
   { key: 'reach', label: '작업 범위', note: '팔이 닿는 3D 공간', swatch: ['#3454d1'] },

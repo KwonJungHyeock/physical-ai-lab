@@ -1,12 +1,13 @@
-/* The jog panel (ControlPanel) on the dark side panel: modest keys, large words, one clear "chosen" look
-   (blue fill + light ring) for the mode, the step and the joint row. */
+/* The jog panel (ControlPanel) on the slate side panel: modest keys, large words. What is chosen is a
+   raised, lighter tile with a short red mark (the step, the joint row); only 관절 | 좌표, a key while it
+   is pressed and 정지 are filled red (see the 4안+ block before the size rules). */
 .jog {
   container-type: inline-size;
   flex: 1 0 auto;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  color: #e8eef8;
+  color: #f1f4f9;
   outline: none;
 }
 
@@ -17,7 +18,7 @@
   gap: 4px;
   padding: 4px;
   border-radius: 12px;
-  background: #161e29;
+  background: #313c4a;
 }
 .jog .modes button {
   display: grid;
@@ -26,7 +27,7 @@
   border: 0;
   border-radius: 9px;
   background: transparent;
-  color: #8fa1ba;
+  color: #a3afc1;
   font: inherit;
   text-align: center;
   cursor: pointer;
@@ -39,20 +40,20 @@
 .jog .modes button small {
   font-size: 12.5px;
   font-weight: 600;
-  color: #6f819b;
+  color: #8b97aa;
   white-space: nowrap;
 }
 .jog .modes button:hover:not([aria-pressed='true']) {
   background: rgba(255, 255, 255, 0.05);
-  color: #dbe5f3;
+  color: #e6ebf2;
 }
 .jog .modes button[aria-pressed='true'] {
-  background: #2f5bea;
+  background: #e5322d;
   color: #fff;
-  box-shadow: 0 6px 16px -8px rgba(47, 91, 234, 0.9);
+  box-shadow: 0 6px 16px -8px rgba(255, 255, 255, 0.405);
 }
 .jog .modes button[aria-pressed='true'] small {
-  color: #d6e2ff;
+  color: #ffd9d6;
 }
 
 /* 한 번에 [0.5° 1° 5° 10°] · 속도 ━━●━━ 50% */
@@ -65,7 +66,7 @@
 .optName {
   font-size: 14.5px;
   font-weight: 700;
-  color: #a9b8cf;
+  color: #b4bfcf;
   white-space: nowrap;
 }
 .chips {
@@ -77,8 +78,8 @@
   padding: 7px 0;
   border: 0;
   border-radius: 8px;
-  background: #161e29;
-  color: #c3cfdf;
+  background: #313c4a;
+  color: #d0d8e4;
   font: inherit;
   font-size: 15px;
   font-weight: 700;
@@ -93,12 +94,12 @@
   opacity: 0.75;
 }
 .jog .chips button:hover:not([aria-pressed='true']) {
-  background: #1f2938;
+  background: #2c3644;
 }
 .jog .chips button[aria-pressed='true'] {
-  background: #23345a;
+  background: #3a4657;
   color: #fff;
-  box-shadow: inset 0 0 0 2px #6f9bff;
+  box-shadow: inset 0 0 0 2px #ff6b62;
 }
 .speed {
   display: grid;
@@ -119,7 +120,7 @@
   height: 8px;
   margin: 0;
   border-radius: 999px;
-  background: linear-gradient(90deg, #f5a524 var(--fill, 50%), #2a3446 var(--fill, 50%));
+  background: linear-gradient(90deg, #f5a524 var(--fill, 50%), #3a4656 var(--fill, 50%));
   cursor: pointer;
 }
 .speed input::-webkit-slider-thumb {
@@ -149,8 +150,8 @@
   min-width: 0;
   padding: 4px;
   border-radius: 12px;
-  border: 1px solid #33425f;
-  background: #24304a;
+  border: 1px solid #4a5769;
+  background: #3a4657;
   color: #fff;
   font: inherit;
   cursor: pointer;
@@ -166,20 +167,20 @@
   font-variant-numeric: tabular-nums;
 }
 .jog .key:hover:not(:disabled) {
-  background: #2c3b5c;
-  border-color: #4a5f87;
+  background: #44526a;
+  border-color: #5a687e;
 }
 .jog .key:active:not(:disabled) {
   transform: translateY(1px);
-  background: #2f5bea;
-  border-color: #2f5bea;
+  background: #e5322d;
+  border-color: #e5322d;
 }
 .jog .key:focus-visible {
-  outline: 2px solid #a9c2ff;
+  outline: 2px solid #ffb3ad;
   outline-offset: 2px;
 }
 .jog .key:disabled {
-  color: #5f6f87;
+  color: #7d899c;
   background: rgba(255, 255, 255, 0.03);
   border-color: rgba(255, 255, 255, 0.07);
   cursor: not-allowed;
@@ -187,8 +188,8 @@
 /* a key pressed from the keyboard or moving while held; a key whose last move could not be made */
 .jog .key[data-state='on'],
 .jog .key[data-state='hold'] {
-  background: #2f5bea;
-  border-color: #6f9bff;
+  background: #e5322d;
+  border-color: #ff6b62;
 }
 .jog .key[data-state='blocked'] {
   background: #3e1a24;
@@ -220,12 +221,12 @@
   min-width: 0;
   padding: 6px 12px 4px;
   border-radius: 12px;
-  background: #161e29;
+  background: #313c4a;
   cursor: pointer;
 }
 .row[data-sel] .mid {
-  background: linear-gradient(180deg, rgba(91, 140, 255, 0.22), rgba(91, 140, 255, 0.08));
-  box-shadow: inset 0 0 0 2px #6f9bff;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.099), rgba(255, 255, 255, 0.036));
+  box-shadow: inset 0 0 0 2px #ff6b62;
 }
 .head {
   display: flex;
@@ -254,7 +255,7 @@
 .what {
   font-size: 12.5px;
   font-weight: 600;
-  color: #8fa1ba;
+  color: #a3afc1;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -263,13 +264,13 @@
   flex: none;
   font: 700 11.5px ui-monospace, SFMono-Regular, Menlo, monospace;
   font-style: normal;
-  color: #c3cfdf;
+  color: #d0d8e4;
   background: rgba(255, 255, 255, 0.08);
   border-radius: 4px;
   padding: 0 4px;
 }
 .row[data-sel] .head em {
-  background: rgba(111, 155, 255, 0.4);
+  background: rgba(229, 50, 45, 0.4);
   color: #fff;
 }
 /* the angle between the joint's limits, draggable */
@@ -284,17 +285,17 @@
   top: 6px;
   height: 6px;
   border-radius: 4px;
-  background: #2a3446;
+  background: #3a4656;
 }
 .fill {
   position: absolute;
   top: 0;
   bottom: 0;
   border-radius: 4px;
-  background: rgba(111, 155, 255, 0.5);
+  background: rgba(229, 50, 45, 0.5);
 }
 .row[data-sel] .fill {
-  background: linear-gradient(90deg, #3f6fe6, #8fb2ff);
+  background: linear-gradient(90deg, #e5322d, #ff9a95);
 }
 .zero {
   position: absolute;
@@ -302,7 +303,7 @@
   bottom: -3px;
   width: 2px;
   margin-left: -1px;
-  background: #6f819b;
+  background: #8b97aa;
 }
 .knob {
   position: absolute;
@@ -311,11 +312,11 @@
   height: 16px;
   margin: -8px 0 0 -8px;
   border-radius: 50%;
-  border: 3px solid #a9b8cf;
-  background: #0e141c;
+  border: 3px solid #b4bfcf;
+  background: #2a3441;
 }
 .row[data-sel] .knob {
-  border-color: #6f9bff;
+  border-color: #ff6b62;
   background: #fff;
 }
 .bar[data-near] .knob {
@@ -338,13 +339,13 @@
   opacity: 0.4;
 }
 .row[data-focus] .key:not(:disabled) {
-  background: linear-gradient(#4a74f5, #2a55d6);
-  border-color: #2248bd;
+  background: linear-gradient(#ef3f39, #cf2a25);
+  border-color: #b8241f;
   animation: nudge 1.6s ease-in-out infinite;
 }
 @keyframes nudge {
   50% {
-    box-shadow: 0 0 0 4px rgba(111, 155, 255, 0.35);
+    box-shadow: 0 0 0 4px rgba(229, 50, 45, 0.35);
   }
 }
 .lesson {
@@ -353,11 +354,11 @@
   gap: 5px;
   padding: 12px 34px 12px 14px;
   border-radius: 12px;
-  background: linear-gradient(180deg, #1d2a48, #172238);
-  box-shadow: inset 0 0 0 1px rgba(111, 155, 255, 0.45);
+  background: linear-gradient(180deg, #333e4d, #313c4a);
+  box-shadow: inset 0 0 0 1px rgba(229, 50, 45, 0.45);
   font-size: 14px;
   line-height: 1.45;
-  color: #c9d5e8;
+  color: #d8dfe8;
 }
 .lesson b {
   font-size: 16px;
@@ -366,7 +367,7 @@
 }
 .lesson b em {
   font-style: normal;
-  color: #9bbcff;
+  color: #ffb3ad;
 }
 .lessonDots {
   display: flex;
@@ -376,7 +377,7 @@
   width: 18px;
   height: 4px;
   border-radius: 2px;
-  background: #33425f;
+  background: #4a5769;
 }
 .lessonDots i[data-on] {
   background: #ff5a4e;
@@ -394,7 +395,7 @@
   flex: 1;
   height: 6px;
   border-radius: 3px;
-  background: linear-gradient(90deg, #4cd18a var(--got, 0%), #2a3446 var(--got, 0%));
+  background: linear-gradient(90deg, #4cd18a var(--got, 0%), #3a4656 var(--got, 0%));
 }
 .jog .lessonGo {
   justify-self: start;
@@ -402,7 +403,7 @@
   padding: 8px 14px;
   border: 0;
   border-radius: 9px;
-  background: #2f5bea;
+  background: #e5322d;
   color: #fff;
   font: inherit;
   font-size: 14px;
@@ -421,7 +422,7 @@
   border: 0;
   border-radius: 7px;
   background: transparent;
-  color: #8fa1ba;
+  color: #a3afc1;
   font-size: 18px;
   line-height: 1;
   cursor: pointer;
@@ -438,10 +439,10 @@
   gap: 10px;
   padding: 10px 12px;
   border-radius: 10px;
-  background: #161e29;
+  background: #313c4a;
   font-size: 14px;
   line-height: 1.45;
-  color: #a9b8cf;
+  color: #b4bfcf;
 }
 .tip b {
   color: #fff;
@@ -487,7 +488,7 @@
   gap: 6px;
   padding: 8px 12px;
   border-radius: 10px;
-  background: #161e29;
+  background: #313c4a;
 }
 .readout b {
   font-size: 17px;
@@ -500,7 +501,7 @@
 }
 .readout small {
   font-size: 12.5px;
-  color: #8696ae;
+  color: #9eaabd;
 }
 .cap {
   display: flex;
@@ -514,23 +515,23 @@
 .cap small {
   font-size: 13px;
   font-weight: 600;
-  color: #8696ae;
+  color: #9eaabd;
 }
 .jog .toolDown {
   margin-left: auto;
   align-self: center;
   padding: 6px 12px;
   border-radius: 9px;
-  border: 1px solid rgba(120, 160, 255, 0.5);
-  background: rgba(91, 140, 255, 0.16);
-  color: #dbe6ff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.072);
+  color: #e6ebf2;
   font: inherit;
   font-size: 14px;
   font-weight: 800;
   cursor: pointer;
 }
 .jog .toolDown:hover:not(:disabled) {
-  background: rgba(91, 140, 255, 0.3);
+  background: rgba(255, 255, 255, 0.135);
 }
 .jog .toolDown:disabled {
   opacity: 0.45;
@@ -552,8 +553,8 @@
   max-width: var(--pad);
   aspect-ratio: 1;
   border-radius: 50%;
-  background: #121a26;
-  box-shadow: 0 12px 26px -12px rgba(0, 0, 0, 0.8), 0 0 0 4px #121a26;
+  background: #222b36;
+  box-shadow: 0 12px 26px -12px rgba(0, 0, 0, 0.8), 0 0 0 4px #222b36;
 }
 /* each key is the whole square, cut to its quarter (and to the circle); its words sit in the ring */
 .jog .key[data-kind='wedge'] {
@@ -564,7 +565,7 @@
   border-radius: 50%;
   padding: 0;
   gap: 0;
-  background: radial-gradient(circle, #2d4378 30%, #22345e 70%);
+  background: radial-gradient(circle, #465366 30%, #36414f 70%);
   transition: background 0.1s;
 }
 .jog .key[data-side='up'] {
@@ -584,23 +585,23 @@
   padding-right: 68%;
 }
 .jog .key[data-kind='wedge']:hover:not(:disabled) {
-  background: radial-gradient(circle, #3a5592 30%, #2b4274 70%);
+  background: radial-gradient(circle, #4f5d72 30%, #3f4b5c 70%);
 }
 .jog .key[data-kind='wedge']:active:not(:disabled),
 .jog .key[data-kind='wedge'][data-state='on'],
 .jog .key[data-kind='wedge'][data-state='hold'] {
   transform: none;
-  background: radial-gradient(circle, #4f7cff 30%, #2f5bea 70%);
+  background: radial-gradient(circle, #f2443e 30%, #e5322d 70%);
 }
 .jog .key[data-kind='wedge'][data-state='blocked'] {
   background: radial-gradient(circle, #5a2430 30%, #3e1a24 70%);
 }
 .jog .key[data-kind='wedge']:disabled {
-  background: #182130;
+  background: #313c4a;
 }
 .jog .key[data-kind='wedge']:focus-visible {
   outline: none;
-  background: radial-gradient(circle, #3a5592 30%, #2b4274 70%);
+  background: radial-gradient(circle, #4f5d72 30%, #3f4b5c 70%);
 }
 .jog .key[data-kind='wedge'] b,
 .jog .key[data-kind='lift'] b {
@@ -608,7 +609,7 @@
 }
 .jog .key[data-kind='wedge'] small {
   font: 700 10.5px ui-monospace, SFMono-Regular, Menlo, monospace;
-  color: #9fb3d6;
+  color: #b4bfcf;
 }
 .jog .key[data-kind='wedge'][data-state='blocked'] small {
   color: #ffb3ad;
@@ -624,7 +625,7 @@
   fill: none;
 }
 .padRing path:first-child {
-  stroke: #121a26;
+  stroke: #222b36;
   stroke-width: 2.4;
 }
 .padRing path[data-axis] {
@@ -639,7 +640,7 @@
   stroke: #5ad895;
 }
 .padRing path[data-state='hold'] {
-  stroke: #cfe0ff;
+  stroke: #e6ebf2;
   stroke-width: 1.8;
   stroke-dasharray: 4 3;
   animation: padRun 0.6s linear infinite;
@@ -663,8 +664,8 @@
   justify-content: center;
   gap: 1px;
   border-radius: 50%;
-  border: 2px solid #2a3446;
-  background: #0e141c;
+  border: 2px solid #3a4656;
+  background: #2a3441;
   pointer-events: none;
 }
 .padHub svg {
@@ -673,7 +674,7 @@
 .padHub small {
   font-size: 9.5px;
   font-weight: 700;
-  color: #8696ae;
+  color: #9eaabd;
   white-space: nowrap;
 }
 
@@ -692,12 +693,12 @@
   gap: 4px;
   padding: 5px;
   border-radius: 37px;
-  background: #121a26;
+  background: #222b36;
 }
 .jog .key[data-kind='lift'] {
   height: auto;
   border: 0;
-  background: linear-gradient(#3fa5f2, #1f7fd1);
+  background: linear-gradient(#465366, #36414f);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 .jog .key[data-kind='lift']:first-child {
@@ -707,13 +708,13 @@
   border-radius: 12px 12px 32px 32px;
 }
 .jog .key[data-kind='lift']:hover:not(:disabled) {
-  background: linear-gradient(#55b2f5, #2b8ad8);
+  background: linear-gradient(#4f5d72, #3f4b5c);
 }
 .jog .key[data-kind='lift']:active:not(:disabled),
 .jog .key[data-kind='lift'][data-state='on'],
 .jog .key[data-kind='lift'][data-state='hold'] {
-  background: #5bb6f6;
-  box-shadow: 0 0 0 2px #cfe9ff inset;
+  background: #f2443e;
+  box-shadow: 0 0 0 2px #ffd9d6 inset;
 }
 .jog .key[data-kind='lift'][data-state='blocked'] {
   background: #3e1a24;
@@ -727,7 +728,7 @@
   padding: 2px 0;
   font-size: 11.5px;
   font-weight: 700;
-  color: #8696ae;
+  color: #9eaabd;
 }
 .liftName output {
   font: 700 15px ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -738,7 +739,7 @@
   width: 8px;
   margin: 12px 0;
   border-radius: 4px;
-  background: #1b2433;
+  background: #333e4d;
 }
 .gauge i {
   position: absolute;
@@ -746,7 +747,7 @@
   right: 0;
   bottom: 0;
   border-radius: 4px;
-  background: #3fa5f2;
+  background: #465366;
   opacity: 0.55;
 }
 .gauge b {
@@ -768,18 +769,18 @@
   margin: 0;
   font-size: 12.5px;
   font-weight: 600;
-  color: #8696ae;
+  color: #9eaabd;
 }
 .keys kbd {
   min-width: 20px;
   padding: 1px 5px;
   border-radius: 5px;
-  border: 1px solid #33425f;
+  border: 1px solid #4a5769;
   border-bottom-width: 2px;
-  background: #24304a;
+  background: #3a4657;
   font: 700 11.5px ui-monospace, SFMono-Regular, Menlo, monospace;
   text-align: center;
-  color: #dbe5f3;
+  color: #e6ebf2;
 }
 .turns {
   display: grid;
@@ -798,7 +799,7 @@
   min-width: 0;
   padding: 0 12px;
   border-radius: 10px;
-  background: #161e29;
+  background: #313c4a;
 }
 .turnMid b {
   font-size: 15.5px;
@@ -814,8 +815,296 @@
   margin-left: auto;
   font: 700 16px ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: -0.4px;
-  color: #cfe0ff;
+  color: #e6ebf2;
   white-space: nowrap;
+}
+
+/* --- 4안+ (2026-10-23): slate surfaces, raised keys, chosen = a raised tile + a red mark --------- */
+/* 관절 | 좌표: an inset groove; the chosen one filled in brand red */
+.modes {
+  background: #222b36;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+.jog .modes button[aria-pressed='true'] {
+  background: linear-gradient(180deg, #ef3f39, #e5322d);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    0 6px 16px -8px rgba(229, 50, 45, 0.6);
+}
+/* 한 번에: one groove, the chosen step raised with a red underline (no box, no tint) */
+.chips {
+  gap: 3px;
+  padding: 3px;
+  border-radius: 10px;
+  background: #222b36;
+  box-shadow: inset 0 0 0 1px #3a4656;
+}
+.jog .chips button {
+  position: relative;
+  /* the groove's 3 px each side come out of the key's own padding: the row keeps its height */
+  padding: 4px 0;
+  background: transparent;
+  color: #d0d8e4;
+}
+.jog .chips button:hover:not([aria-pressed='true']) {
+  background: rgba(255, 255, 255, 0.05);
+}
+.jog .chips button[aria-pressed='true'] {
+  background: linear-gradient(180deg, #4d5a6d, #3f4b5c);
+  color: #fff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 3px 8px -2px rgba(0, 0, 0, 0.55);
+}
+.jog .chips button[aria-pressed='true']::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 3px;
+  width: 18px;
+  height: 3px;
+  margin-left: -9px;
+  border-radius: 2px;
+  background: #e5322d;
+}
+/* 속도: a red line on an inset track, ticks at a quarter, a half and three quarters */
+.speed input {
+  background:
+    linear-gradient(90deg, #b8241f, #e5322d var(--fill, 50%), #222b36 var(--fill, 50%));
+  box-shadow: inset 0 0 0 1px #3a4656;
+}
+.speed input::-webkit-slider-thumb {
+  box-shadow:
+    0 0 0 3px #e5322d,
+    0 0 0 7px rgba(229, 50, 45, 0.18),
+    0 2px 6px rgba(0, 0, 0, 0.4);
+}
+.speed input::-moz-range-thumb {
+  box-shadow:
+    0 0 0 3px #e5322d,
+    0 0 0 7px rgba(229, 50, 45, 0.18);
+}
+/* keys: a lit top edge and a shadow under, pressed = red */
+.jog .key {
+  border-color: transparent;
+  background: linear-gradient(180deg, #3e4a5b, #343f4e);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    inset 0 0 0 1px #4a5769,
+    0 2px 0 rgba(0, 0, 0, 0.25);
+}
+.jog .key:hover:not(:disabled) {
+  border-color: transparent;
+  background: linear-gradient(180deg, #485569, #3c4859);
+}
+.jog .key:active:not(:disabled),
+.jog .key[data-state='on'],
+.jog .key[data-state='hold'] {
+  border-color: transparent;
+  background: linear-gradient(180deg, #ef3f39, #cf2a25);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 0 0 3px rgba(229, 50, 45, 0.22);
+}
+.jog .key:disabled {
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+/* the chosen joint: its middle raised and lighter, a red mark on its left, the J badge red */
+.row {
+  position: relative;
+}
+.row[data-sel] .mid {
+  position: relative;
+  background: linear-gradient(180deg, #45526a, #3a4657);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 6px 16px -8px rgba(0, 0, 0, 0.6);
+}
+.row[data-sel] .mid::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: #e5322d;
+}
+.row[data-sel] .head em {
+  background: #e5322d;
+  color: #fff;
+}
+.fill {
+  background: rgba(208, 216, 228, 0.35);
+}
+.row[data-sel] .fill {
+  background: linear-gradient(90deg, #b8241f, #e5322d);
+}
+.track {
+  background: #222b36;
+  box-shadow: inset 0 0 0 1px #3a4656;
+}
+.knob {
+  border-color: #d0d8e4;
+  background: #2a3441;
+}
+/* the lines under the keys and the lesson button: the main action is white on slate */
+.jog .learn {
+  border: 0;
+  background: #f1f4f9;
+  color: #101828;
+  box-shadow: 0 4px 12px -6px rgba(0, 0, 0, 0.6);
+}
+.jog .learn:hover:not(:disabled) {
+  background: #fff;
+  color: #101828;
+}
+.lesson {
+  background: linear-gradient(180deg, #45526a, #3a4657);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+/* 손끝 위치: each cell with its axis colour as a bar on the left, the numbers in white */
+.readout span {
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.readout span::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: #ff7a72;
+}
+.readout span:nth-child(2)::before {
+  background: #5ad895;
+}
+.readout span:nth-child(3)::before {
+  background: #86abff;
+}
+.readout output {
+  color: #fff;
+}
+.jog .toolDown {
+  border: 0;
+  background: linear-gradient(180deg, #3e4a5b, #343f4e);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    inset 0 0 0 1px #4a5769;
+}
+.jog .toolDown:hover:not(:disabled) {
+  background: linear-gradient(180deg, #485569, #3c4859);
+}
+/* the round pad: a bezel with a scale around the four keys */
+.pad {
+  background: radial-gradient(circle, #2a3441 60%, #222b36);
+  box-shadow:
+    0 12px 26px -12px rgba(0, 0, 0, 0.8),
+    inset 0 0 0 1.5px #3a4656;
+}
+.jog .key[data-kind='wedge'] {
+  inset: 5%;
+  background: radial-gradient(circle at 50% 40%, #4a5769 25%, #36414f 75%);
+  box-shadow: none;
+}
+.jog .key[data-kind='wedge']:hover:not(:disabled),
+.jog .key[data-kind='wedge']:focus-visible {
+  background: radial-gradient(circle at 50% 40%, #56657c 25%, #3f4b5c 75%);
+}
+.jog .key[data-kind='wedge']:active:not(:disabled),
+.jog .key[data-kind='wedge'][data-state='on'],
+.jog .key[data-kind='wedge'][data-state='hold'] {
+  background: radial-gradient(circle at 50% 40%, #f2443e 25%, #c92823 75%);
+  box-shadow: none;
+}
+.jog .key[data-kind='wedge'][data-state='blocked'] {
+  background: radial-gradient(circle at 50% 40%, #5a2430 25%, #3e1a24 75%);
+}
+.jog .key[data-kind='wedge'] small {
+  color: #b4bfcf;
+}
+.jog .key[data-kind='wedge']:active:not(:disabled) small,
+.jog .key[data-kind='wedge'][data-state='on'] small,
+.jog .key[data-kind='wedge'][data-state='hold'] small {
+  color: #ffd9d6;
+}
+.padRing path:first-child {
+  stroke: #2a3441;
+}
+.padRing path[data-tick] {
+  stroke: #56657c;
+  stroke-width: 0.5;
+}
+.padRing path[data-tick='big'] {
+  stroke: #97a3b5;
+  stroke-width: 0.8;
+}
+.padHub {
+  background: radial-gradient(circle at 50% 35%, #2e3946, #1f2731);
+  border-color: #4a5769;
+}
+/* 위 · 아래: raised slate halves in a groove, pressed = red; the axis under the word */
+.rocker {
+  background: #222b36;
+  box-shadow:
+    inset 0 0 0 1.5px #3a4656,
+    0 8px 18px -10px rgba(0, 0, 0, 0.5);
+}
+.jog .key[data-kind='lift'] {
+  background: linear-gradient(180deg, #4a5769, #36414f);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 2px 0 rgba(0, 0, 0, 0.25);
+}
+.jog .key[data-kind='lift']:hover:not(:disabled) {
+  background: linear-gradient(180deg, #56657c, #3f4b5c);
+}
+.jog .key[data-kind='lift']:active:not(:disabled),
+.jog .key[data-kind='lift'][data-state='on'],
+.jog .key[data-kind='lift'][data-state='hold'] {
+  background: linear-gradient(180deg, #f2443e, #c92823);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+.jog .key[data-kind='lift'] small {
+  font: 700 10px ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: #97a3b5;
+}
+.liftName output {
+  color: #fff;
+}
+/* the height gauge: a scale every 50 mm beside an inset track, the tip's height as a red-ringed mark */
+.gauge {
+  margin-right: 10px;
+  background: #222b36;
+  box-shadow: inset 0 0 0 1px #3a4656;
+}
+.gauge::after {
+  content: '';
+  position: absolute;
+  left: 11px;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  background: repeating-linear-gradient(0deg, #6d798c 0 1px, transparent 1px 12.5%);
+  opacity: 0.8;
+}
+.gauge i {
+  background: linear-gradient(0deg, rgba(229, 50, 45, 0.25), #e5322d);
+  opacity: 1;
+}
+.gauge b {
+  box-shadow: 0 0 0 2px #e5322d;
+}
+.keys kbd {
+  border: 0;
+  background: linear-gradient(#3f4b5c, #36414f);
+  box-shadow:
+    inset 0 -2px 0 rgba(0, 0, 0, 0.35),
+    inset 0 0 0 1px #4d5a6c;
 }
 
 /* a narrow panel (small laptops, a tablet across): the same layout, a little tighter */

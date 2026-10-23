@@ -18,7 +18,7 @@ export const JOINTS: readonly { name: string; what: string }[] = [
 /** The open arm's joints: its own names (a 4-axis arm has four), or the six above. */
 export const jointLabels = (): readonly { name: string; what: string }[] => activeArm().jointNames ?? JOINTS;
 
-const ACCENT = '#2f5bea';
+const ACCENT = '#e5322d';
 const IDLE = '#b3bac7';
 /** Base, shoulder, elbow, wrist, tool tip of the drawing (44 × 44 box). */
 const P: readonly (readonly [number, number])[] = [

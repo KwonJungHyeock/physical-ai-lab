@@ -106,13 +106,22 @@ const PAD_KEYS: Record<string, { axis: 'x' | 'y' | 'z'; dir: -1 | 1 }> = {
   Shift: { axis: 'z', dir: 1 },
   ' ': { axis: 'z', dir: -1 },
 };
-/** Where the edge of each pad key is drawn (viewBox 0..100): a quarter of the ring, centred on its side. */
+/** Where the edge of each pad key is drawn on the bezel (viewBox 0..100): a quarter of the ring, centred on its side. */
 const ARC: Record<(typeof PAD)[number]['side'], string> = {
-  up: 'M17.4 17.4A46 46 0 0 1 82.6 17.4',
-  right: 'M82.6 17.4A46 46 0 0 1 82.6 82.6',
-  down: 'M82.6 82.6A46 46 0 0 1 17.4 82.6',
-  left: 'M17.4 82.6A46 46 0 0 1 17.4 17.4',
+  up: 'M16.5 16.5A47.4 47.4 0 0 1 83.5 16.5',
+  right: 'M83.5 16.5A47.4 47.4 0 0 1 83.5 83.5',
+  down: 'M83.5 83.5A47.4 47.4 0 0 1 16.5 83.5',
+  left: 'M16.5 83.5A47.4 47.4 0 0 1 16.5 16.5',
 };
+/** The bezel's scale: a tick every 5°, longer every 30° and at the four directions. */
+const TICKS = Array.from({ length: 72 }, (_, k) => {
+  const a = (k * 5 * Math.PI) / 180;
+  const r2 = k % 18 === 0 ? 47.6 : k % 6 === 0 ? 48.4 : 49;
+  const at = (r: number) => [50 + r * Math.cos(a), 50 + r * Math.sin(a)].map((v) => v.toFixed(2));
+  const [x1, y1] = at(49.8);
+  const [x2, y2] = at(r2);
+  return { d: `M${x1} ${y1}L${x2} ${y2}`, big: k % 6 === 0 };
+});
 
 /** The joint lesson: one joint at a time, what to look at while it turns (6-axis arms). */
 const LESSON: { see: string }[] = [
@@ -404,7 +413,7 @@ export default function ControlPanel(p: Props) {
       dir={dir}
       arrow={arrow}
       word={word}
-      sub={kind === 'wedge' ? `${axis.toUpperCase()}${dir > 0 ? '+' : '−'}` : undefined}
+      sub={`${axis.toUpperCase()}${dir > 0 ? '+' : '−'}`}
       state={stateOf(axis, dir)}
       label={`${toward(word)} ${tStep}mm (${axis.toUpperCase()}${dir > 0 ? '+' : '−'})`}
       disabled={p.busy}
@@ -618,6 +627,9 @@ export default function ControlPanel(p: Props) {
               {PAD.map((k) => tipKey(k.axis, k.dir, k.word, k.side, 'wedge', k.side))}
               <svg className={css.padRing} viewBox="0 0 100 100" aria-hidden="true">
                 <path d="M17.4 17.4L82.6 82.6M82.6 17.4L17.4 82.6" />
+                {TICKS.map((t, k) => (
+                  <path key={k} d={t.d} data-tick={t.big ? 'big' : ''} />
+                ))}
                 {PAD.map((k) => (
                   <path key={k.side} d={ARC[k.side]} data-axis={k.axis} data-state={stateOf(k.axis, k.dir)} />
                 ))}

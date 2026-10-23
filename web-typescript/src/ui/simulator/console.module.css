@@ -1652,7 +1652,7 @@ div.zeroFlow {
   color: var(--ink);
 }
 .zeroSteps li[data-state='now']::before {
-  background: #2f5bea;
+  background: #e5322d;
   color: #fff;
 }
 .zeroLead {
@@ -3637,9 +3637,9 @@ div.zeroFlow {
   height: 32px;
   font-size: 13.5px;
   color: #fff;
-  background: #2f5bea;
+  background: #e5322d;
   border-color: #fff;
-  box-shadow: 0 0 0 5px rgba(47, 91, 234, 0.22), 0 4px 12px rgba(47, 91, 234, 0.5);
+  box-shadow: 0 0 0 5px rgba(229, 50, 45, 0.22), 0 4px 12px rgba(229, 50, 45, 0.5);
 }
 .jptDial {
   position: absolute;
@@ -3664,9 +3664,9 @@ div.zeroFlow {
   min-width: 108px;
   padding: 6px 10px 7px;
   border-radius: 9px;
-  background: rgba(16, 24, 40, 0.92);
+  background: rgba(42, 52, 65, 0.94);
   color: #fff;
-  box-shadow: 0 8px 20px rgba(16, 24, 40, 0.25);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.09), 0 8px 20px rgba(0, 0, 0, 0.3);
   pointer-events: none;
   white-space: nowrap;
 }
@@ -3674,7 +3674,7 @@ div.zeroFlow {
   display: block;
   font-size: 10.5px;
   font-weight: 600;
-  color: #a4b8ff;
+  color: #ff9a95;
 }
 .jptChip b {
   font: 700 16px ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -5012,16 +5012,16 @@ div.zeroFlow {
  * status popover stay light (white surfaces, dark text), like the windows over the console.
  * ======================================================================== */
 .app .side {
-  --page: #131a24;
-  --soft: #18212d;
-  --work: #0f151e;
-  --line: #263142;
-  --ink: #e8eef8;
-  --muted: #8f9db3;
-  --faint: #5f6f87;
-  --accent: #6f9bff;
-  --accent-soft: rgba(91, 140, 255, 0.16);
-  --head: #0e141c;
+  --page: #2a3441;
+  --soft: #313c4a;
+  --work: #222b36;
+  --line: #3a4656;
+  --ink: #f1f4f9;
+  --muted: #a3afc1;
+  --faint: #7d899c;
+  --accent: #ff6b62;
+  --accent-soft: rgba(255, 255, 255, 0.072);
+  --head: #2a3441;
   --sim-soft: rgba(61, 220, 132, 0.12);
   --real-soft: rgba(255, 173, 31, 0.12);
   --stop-soft: rgba(255, 90, 78, 0.12);
@@ -5063,8 +5063,8 @@ div.zeroFlow {
     border-bottom: 1px solid #e4e7ec;
     background: rgba(255, 255, 255, 0.97);
     box-shadow:
-      0 1px 2px rgba(16, 24, 40, 0.04),
-      0 6px 18px rgba(16, 24, 40, 0.05);
+      0 1px 2px rgba(37, 46, 58, 0.04),
+      0 6px 18px rgba(37, 46, 58, 0.05);
     padding: 8px 14px 8px 16px;
   }
 }
@@ -5083,7 +5083,7 @@ div.zeroFlow {
 .app .topBar .conn {
   background: #fff;
   border-color: #e4e7ec;
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+  box-shadow: 0 1px 2px rgba(37, 46, 58, 0.04);
 }
 .app .topBar .menuChipBtn:hover {
   background: #f9fafb;
@@ -5098,8 +5098,8 @@ div.zeroFlow {
   background: #fff;
   border: 1px solid #e4e7ec;
   box-shadow:
-    0 18px 40px rgba(16, 24, 40, 0.16),
-    0 2px 6px rgba(16, 24, 40, 0.06);
+    0 18px 40px rgba(37, 46, 58, 0.16),
+    0 2px 6px rgba(37, 46, 58, 0.06);
 }
 .app .menuPop button:hover {
   background: #f4f5f7;
@@ -5114,8 +5114,8 @@ div.zeroFlow {
     --side-w: clamp(440px, 30vw, 540px);
   }
   .app .shell .side {
-    background: #0e141c;
-    border: 1px solid rgba(160, 190, 255, 0.14);
+    background: #2a3441;
+    border: 1px solid rgba(255, 255, 255, 0.084);
     border-radius: 16px;
     box-shadow:
       0 18px 50px rgba(0, 0, 0, 0.45),
@@ -5124,7 +5124,7 @@ div.zeroFlow {
   }
 }
 .app .side {
-  background: #0e141c;
+  background: #2a3441;
 }
 /* header: model, status lights, fold */
 .sideHeader {
@@ -5149,7 +5149,7 @@ div.zeroFlow {
   height: 36px;
   object-fit: contain;
   flex: none;
-  background: radial-gradient(circle, rgba(160, 190, 255, 0.22), transparent 70%);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.132), transparent 70%);
 }
 .sideModel span {
   display: grid;
@@ -5165,15 +5165,15 @@ div.zeroFlow {
 }
 .sideModel small {
   font-size: 10.5px;
-  color: #7f8ea8;
+  color: #97a3b5;
   white-space: nowrap;
 }
 .sideModel em {
   font-style: normal;
   font-size: 10px;
   font-weight: 800;
-  color: #a9c2ff;
-  border: 1px solid rgba(91, 140, 255, 0.35);
+  color: #ffb3ad;
+  border: 1px solid rgba(255, 255, 255, 0.158);
   border-radius: 999px;
   padding: 1px 7px;
   flex: none;
@@ -5183,7 +5183,7 @@ div.zeroFlow {
   opacity: 1;
 }
 .app .sideModel:hover em {
-  background: rgba(91, 140, 255, 0.18);
+  background: rgba(255, 255, 255, 0.081);
 }
 .lights {
   position: relative;
@@ -5208,14 +5208,14 @@ div.zeroFlow {
   gap: 3px;
   font-size: 9.5px;
   font-weight: 800;
-  color: #5f6f87;
+  color: #7d899c;
   white-space: nowrap;
 }
 .light i {
   width: 11px;
   height: 11px;
   border-radius: 50%;
-  background: #1f2733;
+  background: #2a3441;
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
 }
@@ -5237,11 +5237,11 @@ div.zeroFlow {
   box-shadow: 0 0 10px #ffad1f;
 }
 .light[data-on][data-tone='run'] {
-  color: #a9c2ff;
+  color: #e6ebf2;
 }
 .light[data-on][data-tone='run'] i {
-  background: #5b8cff;
-  box-shadow: 0 0 10px #5b8cff;
+  background: #e6ebf2;
+  box-shadow: 0 0 10px #e6ebf2;
   animation: lightBlink 1s ease-in-out infinite;
 }
 .light[data-on][data-tone='err'] {
@@ -5303,8 +5303,8 @@ div.zeroFlow {
   box-shadow: 0 0 8px #ffad1f;
 }
 .statusRow[data-on][data-tone='run'] i {
-  background: #5b8cff;
-  box-shadow: 0 0 8px #5b8cff;
+  background: #e6ebf2;
+  box-shadow: 0 0 8px #e6ebf2;
   animation: lightBlink 1s ease-in-out infinite;
 }
 .statusRow[data-on][data-tone='servo'] i {
@@ -5336,8 +5336,8 @@ div.zeroFlow {
   background: #fff;
   border: 1px solid #e4e7ec;
   box-shadow:
-    0 18px 40px rgba(16, 24, 40, 0.18),
-    0 2px 6px rgba(16, 24, 40, 0.06);
+    0 18px 40px rgba(37, 46, 58, 0.18),
+    0 2px 6px rgba(37, 46, 58, 0.06);
 }
 .app .sideHeader .sideFold {
   position: static;
@@ -5347,7 +5347,7 @@ div.zeroFlow {
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: transparent;
-  color: #6f7f97;
+  color: #8b97aa;
   display: grid;
   place-items: center;
 }
@@ -5367,8 +5367,8 @@ div.zeroFlow {
   height: 28px;
   padding: 6px;
   border-radius: 8px;
-  background: rgba(91, 140, 255, 0.14);
-  color: #8fb2ff;
+  background: rgba(255, 255, 255, 0.063);
+  color: #ff9a95;
   flex: none;
 }
 .app .side .dockAside {
@@ -5385,12 +5385,12 @@ div.zeroFlow {
 .app .side .poseDock {
   margin: auto -10px 0;
   padding: 14px 10px 0;
-  background: linear-gradient(rgba(14, 20, 28, 0), #0e141c 12px);
+  background: linear-gradient(rgba(42, 52, 65, 0.0), #2a3441 12px);
 }
 .app .side .poseDock button {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.09);
-  color: #dfe7f3;
+  color: #e6ebf2;
   box-shadow: none;
 }
 .app .side .poseDock button:hover:not(:disabled) {
@@ -5416,25 +5416,25 @@ div.zeroFlow {
 }
 /* the editor: a dark IDE */
 .app .side .ide {
-  background: #0b1017;
+  background: #1f2833;
 }
 .app .side .fileTabs {
-  background: #0e141c;
+  background: #2a3441;
   border-bottom-color: rgba(255, 255, 255, 0.07);
 }
 .app .side .fileTab {
-  background: #0b1017;
+  background: #1f2833;
   border-right-color: rgba(255, 255, 255, 0.07);
-  box-shadow: inset 0 2px 0 #6f9bff;
-  color: #dfe7f3;
+  box-shadow: inset 0 2px 0 #ff6b62;
+  color: #e6ebf2;
 }
 .app .side .ide .gutter {
-  background: #0b1017;
+  background: #1f2833;
   border-right-color: rgba(255, 255, 255, 0.06);
-  color: #3d4a5c;
+  color: #5a687e;
 }
 .app .side .ide .gutter .gCursor {
-  color: #a9b8cf;
+  color: #b4bfcf;
 }
 .app .side .lineMark {
   background: rgba(255, 255, 255, 0.04);
@@ -5454,7 +5454,7 @@ div.zeroFlow {
   caret-color: #e6edf3;
 }
 .app .side .ide .code::selection {
-  background: rgba(111, 155, 255, 0.3);
+  background: rgba(229, 50, 45, 0.3);
 }
 .app .side .tkKeyword {
   color: #ff7b72;
@@ -5479,25 +5479,25 @@ div.zeroFlow {
   color: #ffa657;
 }
 .app .side .statusBar {
-  background: #0e141c;
+  background: #2a3441;
   border-top-color: rgba(255, 255, 255, 0.07);
-  color: #6f7f97;
+  color: #8b97aa;
 }
 .app .side .kbd {
   background: rgba(255, 255, 255, 0.05);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 .app .side .termPanel {
-  background: #0b1017;
+  background: #1f2833;
   border-top-color: rgba(255, 255, 255, 0.07);
 }
 .app .side .termTabs {
-  background: #0e141c;
+  background: #2a3441;
   border-bottom-color: rgba(255, 255, 255, 0.07);
 }
 .app .side .termTabs button[aria-selected='true'] {
-  color: #e8eef8;
-  box-shadow: inset 0 -2px 0 #6f9bff;
+  color: #f1f4f9;
+  box-shadow: inset 0 -2px 0 #ff6b62;
 }
 .app .side .termTabs i {
   background: rgba(255, 255, 255, 0.07);
@@ -5506,7 +5506,7 @@ div.zeroFlow {
   color: #e6edf3;
 }
 .app .side .termText i {
-  color: #5f6f87;
+  color: #7d899c;
 }
 .app .side .termText b {
   color: #3ddc84;
@@ -5518,7 +5518,7 @@ div.zeroFlow {
 .app .side .runRate button,
 .app .side .runRate > button {
   background: rgba(255, 255, 255, 0.04);
-  color: #8696ae;
+  color: #9eaabd;
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: none;
 }
@@ -5526,13 +5526,13 @@ div.zeroFlow {
   background: rgba(255, 255, 255, 0.09);
 }
 .app .side .runRate button[aria-pressed='true'] {
-  background: rgba(91, 140, 255, 0.28);
+  background: rgba(255, 255, 255, 0.126);
   color: #fff;
-  border-color: rgba(120, 160, 255, 0.55);
+  border-color: rgba(255, 255, 255, 0.22);
 }
 .app .side .runReal:disabled {
   background: rgba(255, 255, 255, 0.04);
-  color: #6f7f97;
+  color: #8b97aa;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 /* the practice needs a tool that is not on: one amber line with [끼우기] */
@@ -5588,7 +5588,7 @@ div.zeroFlow {
   display: block;
   object-fit: contain;
   border-radius: 10px;
-  background: radial-gradient(circle at 50% 42%, #4a5b76 0%, #232e3e 58%, #161e29 100%);
+  background: radial-gradient(circle at 50% 42%, #56657c 0%, #2c3644 58%, #313c4a 100%);
 }
 .toolHero {
   display: flex;
@@ -5596,8 +5596,8 @@ div.zeroFlow {
   gap: 12px;
   padding: 8px;
   border-radius: 12px;
-  background: linear-gradient(180deg, rgba(91, 140, 255, 0.14), rgba(91, 140, 255, 0.04));
-  border: 1px solid rgba(120, 160, 255, 0.35);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.063), rgba(255, 255, 255, 0.018));
+  border: 1px solid rgba(255, 255, 255, 0.14);
 }
 .toolHero img {
   width: 76px;
@@ -5612,7 +5612,7 @@ div.zeroFlow {
 .toolHero small {
   font-size: 10.5px;
   font-weight: 800;
-  color: #8fb2ff;
+  color: #ff9a95;
   letter-spacing: 0.04em;
 }
 .toolHero b {
@@ -5623,14 +5623,14 @@ div.zeroFlow {
 .toolHero em {
   font-style: normal;
   font-size: 11.5px;
-  color: #8f9db3;
+  color: #a3afc1;
 }
 .partsHead {
   margin: 4px 2px 0;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.04em;
-  color: #6f7f97;
+  color: #8b97aa;
 }
 .toolCards {
   display: grid;
@@ -5645,7 +5645,7 @@ div.zeroFlow {
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.07);
   background: rgba(255, 255, 255, 0.03);
-  color: #b9c6d8;
+  color: #c8d1de;
   font: inherit;
   cursor: pointer;
   transition:
@@ -5666,19 +5666,19 @@ div.zeroFlow {
   word-break: keep-all;
 }
 .app .toolCard:hover:not(:disabled) {
-  border-color: rgba(120, 160, 255, 0.35);
-  background: rgba(91, 140, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.032);
 }
 .app .toolCard:active:not(:disabled) {
   transform: translateY(1px);
 }
 .app .toolCard[aria-pressed='true'] {
   color: #fff;
-  border-color: #6f9bff;
-  background: rgba(91, 140, 255, 0.16);
+  border-color: #ff6b62;
+  background: rgba(255, 255, 255, 0.072);
   box-shadow:
-    0 0 0 1px #6f9bff,
-    0 0 14px rgba(91, 140, 255, 0.25);
+    0 0 0 1px #ff6b62,
+    0 0 14px rgba(255, 255, 255, 0.113);
 }
 .app .toolCard:disabled {
   opacity: 0.5;
@@ -5700,8 +5700,8 @@ div.zeroFlow {
   cursor: pointer;
 }
 .accCard[data-on] {
-  border-color: rgba(120, 160, 255, 0.4);
-  background: rgba(91, 140, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.036);
 }
 .accCard img {
   width: 52px;
@@ -5715,11 +5715,11 @@ div.zeroFlow {
 .accText b {
   font-size: 13px;
   font-weight: 800;
-  color: #e8eef8;
+  color: #f1f4f9;
 }
 .accText small {
   font-size: 11px;
-  color: #8696ae;
+  color: #9eaabd;
 }
 .accCard input[role='switch'] {
   appearance: none;
@@ -5727,7 +5727,7 @@ div.zeroFlow {
   height: 21px;
   margin: 0;
   border-radius: 999px;
-  background: #2a3442;
+  background: #3a4656;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
   position: relative;
   cursor: pointer;
@@ -5741,14 +5741,14 @@ div.zeroFlow {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #8696ae;
+  background: #9eaabd;
   transition:
     transform 0.15s,
     background 0.15s;
 }
 .app .accCard input[role='switch']:checked {
-  background: #4a74f5;
-  box-shadow: 0 0 10px rgba(91, 140, 255, 0.45);
+  background: #ef3f39;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.203);
 }
 .accCard input[role='switch']:checked::after {
   transform: translateX(14px);
@@ -5771,13 +5771,13 @@ div.zeroFlow {
   border: 0;
   border-radius: 7px;
   background: rgba(255, 255, 255, 0.06);
-  color: #dfe7f3;
+  color: #e6ebf2;
   font-size: 15px;
   font-weight: 800;
   cursor: pointer;
 }
 .app .stepper button:hover:not(:disabled) {
-  background: rgba(91, 140, 255, 0.3);
+  background: rgba(255, 255, 255, 0.135);
 }
 .app .stepper button:disabled {
   opacity: 0.4;
@@ -5802,7 +5802,7 @@ div.zeroFlow {
 .stepper i {
   font-style: normal;
   font-size: 11px;
-  color: #8696ae;
+  color: #9eaabd;
   padding: 0 6px 0 2px;
 }
 
@@ -5829,8 +5829,8 @@ div.zeroFlow {
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(15, 21, 30, 0.55) 0 58%, transparent 60%);
-  box-shadow: inset 0 0 0 1px rgba(160, 190, 255, 0.14);
+  background: radial-gradient(circle, rgba(37, 46, 58, 0.55) 0 58%, transparent 60%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.084);
   perspective: 600px;
 }
 .cubeBody {
@@ -5845,10 +5845,10 @@ div.zeroFlow {
   display: grid;
   place-items: center;
   padding: 0;
-  border: 1px solid rgba(160, 190, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.27);
   border-radius: 6px;
   background: linear-gradient(180deg, rgba(40, 56, 82, 0.96), rgba(22, 31, 46, 0.96));
-  color: #cfe0ff;
+  color: #e6ebf2;
   font: inherit;
   font-size: 11px;
   font-weight: 800;
@@ -5860,12 +5860,12 @@ div.zeroFlow {
   cursor: pointer;
 }
 .app button.cubeFace:hover {
-  background: linear-gradient(180deg, #4a74f5, #2a55d6);
-  border-color: #8fb2ff;
+  background: linear-gradient(180deg, #ef3f39, #cf2a25);
+  border-color: #ff9a95;
   color: #fff;
 }
 .app span.cubeFace {
-  color: #6f7f97;
+  color: #8b97aa;
 }
 .viewRail {
   display: flex;
@@ -5873,8 +5873,8 @@ div.zeroFlow {
   gap: 2px;
   padding: 4px;
   border-radius: 12px;
-  background: rgba(15, 21, 30, 0.82);
-  border: 1px solid rgba(160, 190, 255, 0.14);
+  background: rgba(37, 46, 58, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.084);
   backdrop-filter: blur(12px);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
 }
@@ -5888,7 +5888,7 @@ div.zeroFlow {
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: #a9b8cf;
+  color: #b4bfcf;
   cursor: pointer;
 }
 .app .viewRail button:hover {
@@ -5898,8 +5898,8 @@ div.zeroFlow {
 .app .viewRail button[aria-pressed='true'],
 .app .viewRail button[aria-expanded='true'] {
   color: #fff;
-  background: rgba(91, 140, 255, 0.3);
-  box-shadow: inset 0 0 0 1px rgba(120, 160, 255, 0.55);
+  background: rgba(255, 255, 255, 0.135);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
 }
 .railSep {
   height: 1px;
@@ -5917,19 +5917,19 @@ div.zeroFlow {
   margin: 0;
   padding: 0;
   border-radius: 50%;
-  background: #6f9bff;
+  background: #ff6b62;
 }
 .viewRail .displayMenu {
   top: -6px;
   right: calc(100% + 10px);
-  background: #131a24;
-  border-color: rgba(160, 190, 255, 0.18);
+  background: #2a3441;
+  border-color: rgba(255, 255, 255, 0.108);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
-  color: #e8eef8;
-  --ink: #e8eef8;
-  --muted: #8f9db3;
+  color: #f1f4f9;
+  --ink: #f1f4f9;
+  --muted: #a3afc1;
   --soft: rgba(255, 255, 255, 0.06);
-  --accent: #6f9bff;
+  --accent: #ff6b62;
 }
 /* top bar: the practice chip's [과제 고르기] and goal bar on the light bar */
 
@@ -5953,7 +5953,7 @@ div.zeroFlow {
 }
 .viewRail .displayItem small {
   font-size: 10.5px;
-  color: #7f8ea8;
+  color: #97a3b5;
 }
 .viewRail .displayItem:hover {
   background: rgba(255, 255, 255, 0.05);
@@ -5978,12 +5978,12 @@ div.zeroFlow {
   gap: 4px 9px;
   padding: 10px 8px 6px 11px;
   border-radius: 12px;
-  background: rgba(15, 21, 30, 0.9);
-  border: 1px solid rgba(160, 190, 255, 0.18);
-  border-left: 3px solid #6f9bff;
+  background: rgba(37, 46, 58, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.108);
+  border-left: 3px solid #ff6b62;
   backdrop-filter: blur(12px);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
-  color: #e8eef8;
+  color: #f1f4f9;
   animation: noticeIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 .notice[data-kind='ok'],
@@ -6016,7 +6016,7 @@ div.zeroFlow {
   display: block;
   margin-top: 3px;
   font-size: 11.5px;
-  color: #a9b8cf;
+  color: #b4bfcf;
 }
 .app .noticeClose {
   width: 22px;
@@ -6026,7 +6026,7 @@ div.zeroFlow {
   border: 0;
   border-radius: 6px;
   background: transparent;
-  color: #8696ae;
+  color: #9eaabd;
   font-size: 16px;
   line-height: 1;
   cursor: pointer;
@@ -6049,7 +6049,7 @@ div.zeroFlow {
   border: 0;
   border-radius: 7px;
   background: transparent;
-  color: #8696ae;
+  color: #9eaabd;
   font-size: 11px;
   font-weight: 700;
   cursor: pointer;
@@ -6057,14 +6057,14 @@ div.zeroFlow {
 .app .noticeLog:hover,
 .app .noticeLog[aria-expanded='true'] {
   background: rgba(255, 255, 255, 0.07);
-  color: #dfe7f3;
+  color: #e6ebf2;
 }
 .app .notices[data-idle] > .noticeLog {
   height: 30px;
   padding: 0 10px;
   border-radius: 9px;
-  background: rgba(15, 21, 30, 0.8);
-  border: 1px solid rgba(160, 190, 255, 0.14);
+  background: rgba(37, 46, 58, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.084);
   backdrop-filter: blur(12px);
 }
 .noticeHistory {
@@ -6075,13 +6075,13 @@ div.zeroFlow {
   max-width: calc(100vw - 40px);
   border-radius: 12px;
   overflow: hidden;
-  background: #131a24;
-  border: 1px solid rgba(160, 190, 255, 0.18);
+  background: #2a3441;
+  border: 1px solid rgba(255, 255, 255, 0.108);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
-  --ink: #e8eef8;
-  --muted: #8f9db3;
+  --ink: #f1f4f9;
+  --muted: #a3afc1;
   --line: rgba(255, 255, 255, 0.07);
-  color: #e8eef8;
+  color: #f1f4f9;
 }
 .noticeHistory .log {
   max-height: 320px;
@@ -6097,7 +6097,7 @@ div.zeroFlow {
 }
 :is(.notice, .noticeHistory) .tag_info {
   background: rgba(255, 255, 255, 0.08);
-  color: #b9c6d8;
+  color: #c8d1de;
 }
 :is(.notice, .noticeHistory) :is(.tag_sim, .tag_ok) {
   background: rgba(61, 220, 132, 0.14);
@@ -6114,23 +6114,23 @@ div.zeroFlow {
 /* 자세 저장 · 불러오기 in the dark panel */
 .app .side .dock .jogWide,
 .app .side .jogWide {
-  color: #dfe7f3;
-  background: rgba(91, 140, 255, 0.14);
-  border: 1px solid rgba(120, 160, 255, 0.4);
+  color: #e6ebf2;
+  background: rgba(255, 255, 255, 0.063);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   box-shadow: none;
 }
 .app .side .dock .jogWide:hover:not(:disabled) {
-  background: rgba(91, 140, 255, 0.26);
-  border-color: #6f9bff;
+  background: rgba(255, 255, 255, 0.117);
+  border-color: #ff6b62;
 }
 .app .side .dock .jogWide:active:not(:disabled) {
   color: #fff;
-  background: rgba(91, 140, 255, 0.34);
-  border-color: #6f9bff;
+  background: rgba(255, 255, 255, 0.153);
+  border-color: #ff6b62;
   box-shadow: none;
 }
 .app .side .dock .jogWide:disabled {
-  color: #5f6f87;
+  color: #7d899c;
   background: rgba(255, 255, 255, 0.03);
   border-color: rgba(255, 255, 255, 0.08);
 }
@@ -6153,18 +6153,18 @@ div.zeroFlow {
 .app .side .poseGo {
   background: rgba(255, 255, 255, 0.04);
   border-color: rgba(255, 255, 255, 0.08);
-  color: #e8eef8;
+  color: #f1f4f9;
 }
 .app .side .poseGo:hover:not(:disabled) {
-  background: rgba(91, 140, 255, 0.16);
-  border-color: rgba(120, 160, 255, 0.45);
+  background: rgba(255, 255, 255, 0.072);
+  border-color: rgba(255, 255, 255, 0.18);
 }
 .app .side .poseName {
-  color: #e8eef8;
+  color: #f1f4f9;
 }
 .app .side .poseDel {
   background: transparent;
-  color: #8696ae;
+  color: #9eaabd;
   border-color: rgba(255, 255, 255, 0.08);
 }
 
@@ -6254,7 +6254,7 @@ div.zeroFlow {
   color: #101828;
 }
 .app .screens button[aria-selected='true'] {
-  color: #3454d1;
+  color: #e5322d;
 }
 .app .screens button[aria-selected='true']::after {
   content: '';
@@ -6264,7 +6264,7 @@ div.zeroFlow {
   bottom: 0;
   height: 3px;
   border-radius: 3px 3px 0 0;
-  background: #3454d1;
+  background: #e5322d;
 }
 .app .screens button:disabled {
   opacity: 0.4;
@@ -6499,7 +6499,7 @@ div.zeroFlow {
   background: #fff;
   color: var(--ink);
   border: 1px solid var(--line);
-  box-shadow: 0 14px 34px rgba(16, 24, 40, 0.22);
+  box-shadow: 0 14px 34px rgba(37, 46, 58, 0.22);
 }
 .demoBadge {
   flex: none;
@@ -6587,7 +6587,7 @@ div.zeroFlow {
   background: rgba(13, 19, 28, 0.86);
   border: 1px solid rgba(143, 178, 255, 0.45);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
-  color: #e8eef8;
+  color: #f1f4f9;
   font-size: 12px;
   white-space: nowrap;
   transform: translateY(-50%);
@@ -6995,9 +6995,9 @@ div.zeroFlow {
   gap: 12px;
   padding: 8px 10px 8px 10px;
   border-radius: 16px;
-  color: #e8eef8;
-  background: rgba(15, 21, 30, 0.86);
-  border: 1px solid rgba(160, 190, 255, 0.16);
+  color: #f1f4f9;
+  background: rgba(37, 46, 58, 0.86);
+  border: 1px solid rgba(255, 255, 255, 0.096);
   backdrop-filter: blur(12px);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.32);
   animation: noticeIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -7010,10 +7010,10 @@ div.zeroFlow {
   place-items: center;
   border: 0;
   border-radius: 50%;
-  background: linear-gradient(180deg, #4a74f5, #2a55d6);
+  background: linear-gradient(180deg, #ef3f39, #cf2a25);
   color: #fff;
   cursor: pointer;
-  box-shadow: 0 0 14px rgba(91, 140, 255, 0.4);
+  box-shadow: 0 0 14px rgba(255, 255, 255, 0.18);
 }
 .tlTrack {
   position: relative;
@@ -7039,7 +7039,7 @@ div.zeroFlow {
   background: rgba(255, 255, 255, 0.09);
 }
 .tlDone {
-  background: linear-gradient(90deg, #5b8cff, #5ee0e6);
+  background: linear-gradient(90deg, #e5322d, #5ee0e6);
   box-shadow: 0 0 10px rgba(94, 224, 230, 0.45);
 }
 .tlMark {
@@ -7050,12 +7050,12 @@ div.zeroFlow {
   margin-left: -5.5px;
   border-radius: 3px;
   background: #1a2333;
-  border: 1.5px solid #8696ae;
+  border: 1.5px solid #9eaabd;
   transform: rotate(45deg);
 }
 .tlMark[data-past] {
-  background: #6f9bff;
-  border-color: #cfe0ff;
+  background: #ff6b62;
+  border-color: #e6ebf2;
 }
 .tlHead {
   position: absolute;
@@ -7079,13 +7079,13 @@ div.zeroFlow {
   font-weight: 700;
   white-space: nowrap;
   color: #fff;
-  background: #2a55d6;
+  background: #cf2a25;
 }
 .tlTime {
   flex: none;
   font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
   font-size: 11.5px;
-  color: #8f9db3;
+  color: #a3afc1;
 }
 .tlRate {
   display: flex;
@@ -7099,7 +7099,7 @@ div.zeroFlow {
   border: 0;
   border-radius: 6px;
   background: none;
-  color: #8696ae;
+  color: #9eaabd;
   font: inherit;
   font-size: 11px;
   font-weight: 800;
@@ -7107,7 +7107,7 @@ div.zeroFlow {
 }
 .app .tlRate button[aria-pressed='true'] {
   color: #fff;
-  background: rgba(91, 140, 255, 0.3);
+  background: rgba(255, 255, 255, 0.135);
 }
 .app .tlClose,
 .app .resultClose {
@@ -7118,7 +7118,7 @@ div.zeroFlow {
   border: 0;
   border-radius: 7px;
   background: transparent;
-  color: #8696ae;
+  color: #9eaabd;
   font-size: 17px;
   line-height: 1;
   cursor: pointer;
@@ -7139,7 +7139,7 @@ div.zeroFlow {
   gap: 14px;
   padding: 10px 12px 10px 12px;
   border-radius: 16px;
-  color: #e8eef8;
+  color: #f1f4f9;
   background: linear-gradient(135deg, rgba(18, 48, 34, 0.94), rgba(12, 20, 28, 0.94));
   border: 1px solid rgba(61, 220, 132, 0.45);
   box-shadow:
@@ -7191,7 +7191,7 @@ div.zeroFlow {
 }
 .resultStat small {
   font-size: 10.5px;
-  color: #8f9db3;
+  color: #a3afc1;
 }
 .app .resultGhost,
 .app .resultNext {
@@ -7206,13 +7206,13 @@ div.zeroFlow {
 .app .resultGhost {
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.06);
-  color: #dfe7f3;
+  color: #e6ebf2;
 }
 .app .resultNext {
   border: 0;
-  background: linear-gradient(180deg, #4a74f5, #2a55d6);
+  background: linear-gradient(180deg, #ef3f39, #cf2a25);
   color: #fff;
-  box-shadow: 0 0 14px rgba(91, 140, 255, 0.35);
+  box-shadow: 0 0 14px rgba(255, 255, 255, 0.158);
 }
 
 /* ===========================================================================
@@ -7658,4 +7658,224 @@ div.zeroFlow {
   flex: 1 0 auto;
   display: flex;
   flex-direction: column;
+}
+
+/* ===========================================================================
+ * 4안+ (2026-10-23): the panel, the menu bar and the overlays on the 3D view in the 3D view's own slate,
+ * one point colour (the brand red #E5322D). What is chosen is a raised, lighter tile with a short red
+ * mark — no tinted boxes, no coloured rings. Filled red is only for 관절 | 좌표, a key while pressed
+ * and 정지. The light top bar keeps its white, its open screen marked in red.
+ * ======================================================================== */
+.app .side {
+  --raised: linear-gradient(180deg, #414e60, #36424f);
+  --raised-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 6px 14px -6px rgba(0, 0, 0, 0.6);
+  --key: linear-gradient(180deg, #3e4a5b, #343f4e);
+  --key-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), inset 0 0 0 1px #4a5769, 0 2px 0 rgba(0, 0, 0, 0.25);
+}
+@media (min-width: 1000px) and (min-height: 600px) {
+  .app .shell .side {
+    background: linear-gradient(180deg, #2e3946, #2a3441 30%, #252e3a);
+    border: 1px solid #3a4656;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      0 18px 44px -18px rgba(0, 0, 0, 0.65);
+  }
+}
+.app .sideHeader {
+  box-shadow: inset 0 -1px 0 #3a4656;
+}
+.sideModel small {
+  color: #97a3b5;
+}
+.app .side .dockIcon {
+  background: rgba(229, 50, 45, 0.16);
+  color: #ff6b62;
+  box-shadow: inset 0 0 0 1px rgba(229, 50, 45, 0.45);
+}
+/* the pose row: raised keys; 정지 red with its key (Esc) */
+.app .side .poseDock {
+  background: linear-gradient(rgba(37, 46, 58, 0), #252e3a 12px);
+  border-top: 1px solid #3a4656;
+}
+.app .side .poseDock button {
+  border: 0;
+  background: var(--key);
+  box-shadow: var(--key-shadow);
+  color: #f1f4f9;
+}
+.app .side .poseDock button:hover:not(:disabled) {
+  background: linear-gradient(180deg, #485569, #3c4859);
+}
+.app .side .poseDock .poseStop {
+  background: linear-gradient(180deg, #ef3f39, #cf2a25);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    0 0 0 3px rgba(229, 50, 45, 0.22),
+    0 8px 18px -8px rgba(229, 50, 45, 0.6);
+}
+.poseStop kbd {
+  margin-left: 2px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.22);
+  font: 700 10.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: #ffe1df;
+}
+/* buttons in the panel (자세 저장 · 불러오기 and the like): raised slate */
+.app .side .dock .jogWide,
+.app .side .jogWide {
+  border: 0;
+  background: var(--key);
+  box-shadow: var(--key-shadow);
+  color: #f1f4f9;
+}
+.app .side .dock .jogWide:hover:not(:disabled) {
+  border: 0;
+  background: linear-gradient(180deg, #485569, #3c4859);
+}
+.app .side .dock .jogWide:active:not(:disabled) {
+  border: 0;
+  background: linear-gradient(180deg, #ef3f39, #cf2a25);
+}
+.app .side .dock .jogWide:disabled {
+  border: 0;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+.app .side .poseList li,
+.app .side .poseGo {
+  background: #313c4a;
+  border-color: transparent;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.app .side .poseGo:hover:not(:disabled) {
+  background: #3a4657;
+  border-color: transparent;
+}
+/* 도구: the tool on now as a raised card; the chosen picture raised with a red underline */
+.toolHero {
+  background: var(--raised, linear-gradient(180deg, #414e60, #36424f));
+  border: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 6px 14px -6px rgba(0, 0, 0, 0.6);
+}
+.toolHero small {
+  color: #ff9a95;
+}
+.toolHero img,
+.toolCard img,
+.accCard img {
+  background: radial-gradient(circle at 50% 42%, #56657c 0%, #36414f 58%, #2c3644 100%);
+}
+.app .toolCard {
+  position: relative;
+  border: 0;
+  background: #313c4a;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.app .toolCard:hover:not(:disabled) {
+  border: 0;
+  background: #3a4657;
+}
+.app .toolCard[aria-pressed='true'] {
+  border: 0;
+  background: linear-gradient(180deg, #4d5a6d, #3f4b5c);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 6px 14px -6px rgba(0, 0, 0, 0.6);
+}
+.app .toolCard[aria-pressed='true']::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 3px;
+  width: 22px;
+  height: 3px;
+  margin-left: -11px;
+  border-radius: 2px;
+  background: #e5322d;
+}
+.accCard {
+  border: 0;
+  background: #313c4a;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.accCard[data-on] {
+  border: 0;
+  background: linear-gradient(180deg, #45526a, #3a4657);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.accCard input[role='switch'] {
+  background: #222b36;
+}
+.app .accCard input[role='switch']:checked {
+  background: #e5322d;
+  box-shadow: 0 0 10px rgba(229, 50, 45, 0.4);
+}
+.stepper {
+  background: #222b36;
+  border-color: #3a4656;
+}
+.app .stepper button {
+  background: var(--key);
+  box-shadow: var(--key-shadow);
+}
+.app .stepper button:hover:not(:disabled) {
+  background: linear-gradient(180deg, #485569, #3c4859);
+}
+/* run bar: the chosen speed raised, not tinted */
+.app .side .runRate {
+  background: #222b36;
+}
+.app .side .runRate button[aria-pressed='true'] {
+  background: linear-gradient(180deg, #4d5a6d, #3f4b5c);
+  border-color: transparent;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 3px 8px -2px rgba(0, 0, 0, 0.55);
+}
+/* the 3D view's tools: slate glass; the one on raised, its icon red, a red mark beside it */
+.viewCube {
+  background: radial-gradient(circle, rgba(37, 46, 58, 0.6) 0 58%, transparent 60%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+.app .cubeFace {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: linear-gradient(180deg, rgba(70, 83, 102, 0.96), rgba(46, 57, 70, 0.96));
+}
+.app button.cubeFace:hover {
+  background: linear-gradient(180deg, #ef3f39, #cf2a25);
+  border-color: #ff9a95;
+}
+.viewRail {
+  background: rgba(37, 46, 58, 0.9);
+  border-color: rgba(255, 255, 255, 0.09);
+}
+.app .viewRail button[aria-pressed='true'],
+.app .viewRail button[aria-expanded='true'] {
+  color: #ff6b62;
+  background: linear-gradient(180deg, #414e60, #36424f);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 4px 10px -4px rgba(0, 0, 0, 0.6);
+}
+.app .viewRail button[aria-pressed='true']::after,
+.app .viewRail button[aria-expanded='true']::after {
+  content: '';
+  position: absolute;
+  right: -4px;
+  top: 9px;
+  bottom: 9px;
+  width: 3px;
+  border-radius: 3px;
+  background: #e5322d;
+}
+.viewRail .displayCount {
+  background: #e5322d;
+}
+/* notices: neutral unless they say something is wrong */
+.notice {
+  border-left-color: #97a3b5;
+}
+.viewRail .displayCount {
+  border-color: #2a3441;
+}
+/* the practice's tag on its card over the 3D view: neutral, not blue */
+.missionTagTopic {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e6ebf2;
 }

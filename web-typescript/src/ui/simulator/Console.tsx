@@ -3604,8 +3604,8 @@ export default function Console() {
                         <button type="button" disabled={busy} onClick={() => goPose('zero')} title="모든 관절 0° (팔이 위로 곧게)">
                           <Icon name="zero" size={15} /> 일자로 펴기
                         </button>
-                        <button type="button" className={css.poseStop} onClick={() => void stop()} title="움직임을 바로 멈춰요">
-                          <Icon name="stop" size={14} /> 정지
+                        <button type="button" className={css.poseStop} onClick={() => void stop()} title="움직임을 바로 멈춰요 (Esc)">
+                          <Icon name="stop" size={14} /> 정지 <kbd>Esc</kbd>
                         </button>
                       </div>
                     )}

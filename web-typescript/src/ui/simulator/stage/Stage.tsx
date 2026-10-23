@@ -976,16 +976,16 @@ function JointPoint({ i, axis, group, pick }: { i: number; axis: Vector3; group:
         {sel && (
           <>
             <svg ref={svg} className={css.jptDial} viewBox="0 0 160 160" data-drag={dragging || undefined} aria-hidden="true">
-              <circle cx="80" cy="80" r={DIAL_R} fill="#2f5bea" fillOpacity="0.05" stroke="#2f5bea" strokeWidth="2" />
+              <circle cx="80" cy="80" r={DIAL_R} fill="#e5322d" fillOpacity="0.05" stroke="#e5322d" strokeWidth="2" />
               {Array.from({ length: 36 }, (_, k) => {
                 const long = k % 3 === 0;
                 const [x1, y1] = dialAt(k * 10);
                 const [x2, y2] = dialAt(k * 10, DIAL_R + (long ? 7 : 3.5));
-                return <line key={k} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#2f5bea" strokeWidth={long ? 1.4 : 0.8} opacity="0.65" />;
+                return <line key={k} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#e5322d" strokeWidth={long ? 1.4 : 0.8} opacity="0.65" />;
               })}
-              <line x1="80" y1="80" x2={zx} y2={zy} stroke="#2f5bea" strokeWidth="1.2" strokeDasharray="3 3" />
-              {shownAngle !== 0 && <path d={`M80 80 L${zx} ${zy} A${DIAL_R} ${DIAL_R} 0 ${big} ${shownAngle > 0 ? 0 : 1} ${hx} ${hy} Z`} fill="#2f5bea" fillOpacity="0.16" />}
-              <circle cx={hx} cy={hy} r="8" fill="#2f5bea" stroke="#fff" strokeWidth="3" />
+              <line x1="80" y1="80" x2={zx} y2={zy} stroke="#e5322d" strokeWidth="1.2" strokeDasharray="3 3" />
+              {shownAngle !== 0 && <path d={`M80 80 L${zx} ${zy} A${DIAL_R} ${DIAL_R} 0 ${big} ${shownAngle > 0 ? 0 : 1} ${hx} ${hy} Z`} fill="#e5322d" fillOpacity="0.16" />}
+              <circle cx={hx} cy={hy} r="8" fill="#e5322d" stroke="#fff" strokeWidth="3" />
               <circle
                 className={css.jptHit}
                 cx="80"
@@ -1071,7 +1071,7 @@ const RINGS = new WeakMap<object, Mesh>();
 function setJointRing(arm: ReturnType<typeof buildArm>, joint: number | null): void {
   let ring = RINGS.get(arm);
   if (!ring) {
-    ring = new Mesh(new TorusGeometry(0.048, 0.0032, 12, 72), new MeshBasicMaterial({ color: '#3454d1', transparent: true, opacity: 0.9, depthTest: false }));
+    ring = new Mesh(new TorusGeometry(0.048, 0.0032, 12, 72), new MeshBasicMaterial({ color: '#e5322d', transparent: true, opacity: 0.9, depthTest: false }));
     ring.renderOrder = 10;
     ring.layers.set(SCREEN_ONLY);
     RINGS.set(arm, ring);
