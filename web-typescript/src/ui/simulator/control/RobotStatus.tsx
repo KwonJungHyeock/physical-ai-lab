@@ -27,7 +27,7 @@ interface Props {
   onZero(): void;
 }
 
-function calibratedText(c: Record<string, number> | undefined): string {
+export function calibratedText(c: Record<string, number> | undefined): string {
   const entries = Object.entries(c ?? {});
   if (!entries.length) return '영점 맞춘 기록 없음';
   const last = Math.max(...entries.map(([, t]) => t));

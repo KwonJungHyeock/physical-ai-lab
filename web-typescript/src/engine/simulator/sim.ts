@@ -323,6 +323,8 @@ export interface Leg {
   mode: 'J' | 'L';
   joints: number[];
   line: number;
+  /** This row's own speed (the movement rules); else the process's. */
+  speed?: number;
 }
 
 /** A run of MOVE rows (played as one path when `blend`), or an ordinary step (그리퍼 · 대기). */
@@ -354,7 +356,7 @@ export async function runProcess(items: readonly ProcessItem[], hooks: RunHooks,
 }
 
 function legTrajectory(rt: Runtime, from: readonly number[], leg: Leg): Trajectory {
-  const v = effectiveSpeed(rt);
+  const v = effectiveSpeed(rt, leg.speed);
   if (leg.mode === 'J') return jointTrajectory(from, leg.joints, v);
   const plan = linearPosePath(rt.chain, from, leg.joints, tcp(rt), v);
   if (!plan.ok) {
@@ -367,7 +369,7 @@ function legTrajectory(rt: Runtime, from: readonly number[], leg: Leg): Trajecto
 
 /** What the real robot gets for one leg: its end, and for L the line as joint targets every ~15 mm. */
 function recordLeg(rt: Runtime, leg: Leg, traj: Trajectory, from: readonly number[], via: boolean): void {
-  const speed = effectiveSpeed(rt);
+  const speed = effectiveSpeed(rt, leg.speed);
   let pieces = 1;
   if (leg.mode === 'L') {
     const a = tcpPositionMm(rt.chain, from, tcp(rt));

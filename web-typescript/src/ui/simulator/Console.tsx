@@ -67,7 +67,8 @@ import { usbAvailable } from '@/engine/simulator/usbKit';
 import { carryHash, loadLastPractice, loadProgram, readCarried, saveLastPractice, saveProgram } from '@/engine/simulator/programs';
 import { isStarter, newSession, placedBlocks, practiceFor, practicesFor, repeatability, starterFor, toolFits, toolNeeded, type Level, type PracticeId, type Session } from '@/engine/simulator/practices';
 import { check, parse, type CameraId, type Problem, type Step } from '@/engine/simulator/program';
-import { checkProcess, compileProcess, emptyProcess, processFromFile, processListing, processToFile, type Process } from '@/engine/simulator/process';
+import { checkProcess, compileProcess, emptyProcess, processFromFile, processListing, processToFile, PROCESS_EXT, type Process } from '@/engine/simulator/process';
+import { blockLayout, buildPlan, carryTargets, freshPlan, makeSolver, practiceOf, type Built, type PlanKind, type Solver, type Spot } from '@/engine/simulator/plan';
 import { RunError, SelfCollision, Stop, createWorld, emptyStats, instantAnimate, jogTo, moveCheck, moveProblem, playTimeline, preflight, runProcess, runProgram, type RobotAction, type RunHooks, type WorldState } from '@/engine/simulator/sim';
 import { demoFits, demoFor, demoStepAt } from '@/engine/simulator/demos';
 import { runPython, warmPython } from '@/engine/python/client';
@@ -101,6 +102,7 @@ import ConnectDialog from './connect/ConnectDialog';
 import UsbMaker from './connect/UsbMaker';
 import PartsPanel from './control/PartsPanel';
 import ProcessPanel from './editors/ProcessPanel';
+import ProcessFlow, { activePlan, initialFlow, REF_MARK, type FlowState } from './editors/ProcessFlow';
 import PyPanel from './editors/PyPanel';
 import RunBar from './tasks/RunBar';
 import { usePcApp } from './connect/usePcApp';
@@ -119,7 +121,7 @@ import Library, { type LibrarySection } from './pages/Library';
 import Archive, { type ArchiveSection } from './pages/Archive';
 import ZeroPanel from './control/ZeroPanel';
 import Icon from './Icon';
-import RobotStatus from './control/RobotStatus';
+import RobotStatus, { calibratedText } from './control/RobotStatus';
 import StatusLights from './control/StatusLights';
 import type { CameraFrame, StageApi } from './stage/Stage';
 import { DEFAULT_DISPLAY, type DisplayOpts } from './stage/sceneHelpers';
@@ -140,6 +142,8 @@ const GRIPPER_URDF_URL = '/robot/rdkx5/mycobot_280_rdkx5_adaptive_gripper.urdf';
 const TAB_KEY = 'robot-console-tab';
 /** The 공정 짜기 process being made (its project-file text). */
 const PROCESS_KEY = 'robot-console-process';
+/** 공정 짜기: the step, the practice, the taught places and the rules. */
+const FLOW_KEY = 'robot-console-process-flow';
 /** The menu bar down the left edge (stage/LeftRail), px (its width follows the window); the 3D view's things start right of it. */
 const barW = () => (typeof document === 'undefined' ? 96 : (document.querySelector<HTMLElement>('nav[aria-label="메뉴"]')?.offsetWidth ?? 96));
 /** The mini arm's corner, px: from the left menu bar's left edge, and its size. Left of the arm's joints
@@ -278,6 +282,18 @@ export default function Console() {
   /** The side panel's tab: direct control first, then one tab per language. */
   const [tab, setTab] = useState<PanelTab>('direct');
   const [proc, setProc] = useState<Process>(() => emptyProcess());
+  const [flow, setFlowState] = useState<FlowState>(() => initialFlow(activeArm().home));
+  const setFlow = (f: FlowState) => {
+    setFlowState(f);
+    try {
+      localStorage.setItem(FLOW_KEY, JSON.stringify(f));
+    } catch {
+      /* this session only */
+    }
+  };
+  /** The last simulated run of the process (실행 · 확인). */
+  const [lastRun, setLastRun] = useState<{ ok: boolean; seconds: number; placed?: number; total?: number } | null>(null);
+  const procFile = useRef<HTMLInputElement>(null);
   /** The side panel stays on the right: the menu bar holds the left edge. */
   const side = 'right';
   /** Each language keeps its own program while another tab is open. */
@@ -680,6 +696,12 @@ export default function Console() {
         const savedProcess = localStorage.getItem(PROCESS_KEY);
         const back = savedProcess ? processFromFile(savedProcess) : null;
         if (back && 'process' in back) setProc(back.process);
+        const savedFlow = localStorage.getItem(FLOW_KEY);
+        const f = savedFlow ? (JSON.parse(savedFlow) as Partial<FlowState>) : null;
+        if (f && typeof f === 'object' && typeof f.kind === 'string') {
+          const base = initialFlow(activeArm().home);
+          setFlowState({ ...base, ...f, rules: { ...base.rules, ...f.rules }, startJoints: Array.isArray(f.startJoints) && f.startJoints.length === base.startJoints.length ? f.startJoints : base.startJoints });
+        }
       }
     } catch {
       /* storage blocked: keep the defaults */
@@ -1527,6 +1549,68 @@ export default function Console() {
   };
 
   /* --- 공정 짜기 ------------------------------------------------------------ */
+  // The practice-led process (plan.ts): the places and rules make the rows. Places are the tip as
+  // the robot reports it (from its base), the solver works on the table: a base under the robot lifts them.
+  const solver = useMemo<Solver | null>(() => {
+    if (!loaded) return null;
+    const solve = makeSolver(loaded.chain, tcpFor(effector, cameraFlange));
+    return (at, seed, keep) => solve({ ...at, z: at.z + mountMm }, seed, keep);
+  }, [loaded, effector, cameraFlange, mountMm]);
+  const plan = activePlan(flow);
+  const planKey = JSON.stringify([plan, flow.rules, flow.startJoints]);
+  const built = useMemo<Built>(
+    () => (solver ? buildPlan(plan, flow.rules, solver, flow.startJoints) : { rows: [], cycle: [], times: 0, blend: 'tick', problems: [], notes: [], marks: [], path: [] }),
+    // planKey stands for the plan, the rules and the start pose.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [solver, planKey],
+  );
+  // Not 직접 짜기: the rows are the plan's (kept in the process, so it runs, exports and is saved as ever).
+  useEffect(() => {
+    if (!restored || flow.mode === 'free') return;
+    const next: Process = { name: practiceOf(flow.kind).name, blend: built.blend, speed: proc.speed, rows: built.rows };
+    if (processToFile(next) !== processToFile(proc)) changeProcess(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [built, flow.mode, flow.kind, restored]);
+  /** The practice's blocks where the plan picks them (simulator, arm-only desk). */
+  const placePracticeBlocks = () => {
+    if (busy || practiceOf(flow.kind).group !== 'carry') return;
+    layout.current = blockLayout(activePlan(flow));
+    resetWorld();
+  };
+  /** 이 실습으로 시작: the practice's tool on (simulator) and its blocks where it picks them. */
+  const startPractice = (kind: PlanKind) => {
+    if (busy) return;
+    const prac = practiceOf(kind);
+    if (prac.group === 'carry') layout.current = blockLayout(flow.plans[kind] ?? freshPlan(kind));
+    const fits = prac.tool === 'grip' ? EFFECTOR_BY_ID[effector].kind === 'grip' : effector === 'pen';
+    if (!robotMode && !fits) changeTool(prac.tool === 'grip' ? 'adaptive' : 'pen', cameraFlange);
+    else resetWorld();
+  };
+  const goTip = (at: Spot, what: string) => {
+    if (!solver) return;
+    const r = solver(at, basePose());
+    if (!r) return addLog('err', `${what}: 도구를 아래로 향한 채 닿을 수 없어요.`, '로봇에 더 가까운 곳이나 더 높은 곳으로 바꿔 주세요.');
+    void goJoints(r.joints, what);
+  };
+  const saveProcessFile = () => {
+    const blob = new Blob([processToFile(proc)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${proc.name.replace(/[\\/:*?"<>|]/g, '_') || '공정'}${PROCESS_EXT}`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    addLog('info', `공정 파일로 저장했어요: ${a.download}`);
+  };
+  const openProcessFile = async (file: File | undefined) => {
+    if (!file) return;
+    const r = processFromFile(await file.text());
+    if ('error' in r) return addLog('err', `${file.name}: ${r.error}`);
+    changeProcess(r.process);
+    // Rows from a file are not made from places: they are edited as rows.
+    setFlow({ ...flow, mode: 'free', step: 3 });
+    addLog('info', `공정 파일을 열었어요: ${r.process.name} (${r.process.rows.length}줄) · 직접 짜기에서 고칠 수 있어요.`);
+  };
+
   const changeProcess = (p: Process) => {
     setProc(p);
     setErrorLines([]);
@@ -1540,6 +1624,13 @@ export default function Console() {
   /** The whole process from where the arm is now, as a pendant runs it; on passing, the robot step opens. */
   const simulateProcess = async () => {
     if (!loaded || busy) return;
+    if (flow.mode !== 'free' && built.problems.length) {
+      built.problems.forEach((e) => addLog('err', e.msg, e.fix));
+      setPassed(null);
+      return;
+    }
+    const carry = flow.mode !== 'free' && practiceOf(flow.kind).group === 'carry';
+    if (carry && theme === 'arm') layout.current = blockLayout(plan);
     const problems = checkProcess(proc, canGrip);
     setErrorLines(problems.map((e) => e.line).filter((l) => l > 0));
     if (problems.length) {
@@ -1557,9 +1648,28 @@ export default function Console() {
     setBadge({ kind: 'sim', text: '시뮬레이션' });
     addLog('sim', `공정을 시뮬레이션해요 (${proc.blend === 'smooth' ? 'Smooth: 점을 이어서 지나가요' : 'Tick: 점마다 멈춰요'}).`);
     const text = procText;
-    const { ok, actions } = await execute((h) => runProcess(items, h, proc.speed), { reset: true, label: true, start });
+    let simT = 0;
+    const { ok, actions } = await execute(
+      (h) =>
+        runProcess(
+          items,
+          {
+            ...h,
+            animate: (d, frame) => {
+              simT += d;
+              return h.animate(d, frame);
+            },
+          },
+          proc.speed,
+        ),
+      { reset: true, label: true, start },
+    );
+    const targets = carry ? carryTargets(plan) : [];
+    const placed = targets.filter((t) => world.current.blocks.some((b) => Math.hypot(b.x - t.x, b.y - t.y) < 8 && Math.abs(b.z - (t.z - 1.5)) < 4)).length;
+    setLastRun({ ok, seconds: simT, ...(carry ? { placed, total: targets.length } : {}) });
     if (ok) passedRun(text, actions, start);
     else setPassed(null);
+    if (ok && flow.step === 3) setFlow({ ...flow, step: 4 });
   };
   /** 한 줄씩: one row from where the arm is (the simulated arm only). */
   const runProcessRow = async (i: number) => {
@@ -2624,6 +2734,21 @@ export default function Console() {
     [],
   );
 
+  // 공정 짜기 in 3D: the base frame and the + mark while checking the zero; the taught places and the path after.
+  const planMarks =
+    view === 'sim' && shownTab === 'process' && dockShown && !zeroMode && (flow.step === 1 || flow.step >= 3)
+      ? flow.step === 1
+        ? {
+            spots: [
+              { tag: '0', label: '위치 기준 (0, 0, 0)', at: { x: 0, y: 0, z: 0 } },
+              { tag: '+', label: `기준점 X ${REF_MARK.x} · Y ${REF_MARK.y}`, at: REF_MARK },
+            ],
+            path: [],
+          }
+        : flow.mode === 'free'
+          ? null
+          : { spots: built.marks, path: built.path }
+      : null;
   const runBar = (
     <RunBar
       passed={gateOpen}
@@ -2721,7 +2846,7 @@ export default function Console() {
     {
       name: '작업',
       items: [
-        work('process', '공정', 'flag', '공정 짜기: 자세(점)를 순서대로'),
+        work('process', '공정', 'flag', '공정 짜기: 위치를 가르쳐 옮기기 · 그리기'),
         work('basic', '블록', 'grid', `블록 코딩 (${LEVEL_TAB.basic.sub})`),
         work('python', 'Python', 'code', `Python (${LEVEL_TAB.python.sub})`),
         work('ros', 'ROS 2', 'joints', `ROS 2 (${LEVEL_TAB.ros.sub})`),
@@ -3275,6 +3400,7 @@ export default function Console() {
                   smoothFollow={robotMode && (!busy || realRun || !!tracking)}
                   tcpMm={tcpNow}
                   ringJoint={ringJoint}
+                  planMarks={planMarks}
                   display={display}
                   frameInsets={frameInsets}
                   layoutKey={`${dockShown}:${side}:${camOpen}:${display.mini}`}
@@ -3570,19 +3696,61 @@ export default function Console() {
                   </div>
                 ) : shownTab === 'process' ? (
                   <div className={css.codeTab} role="region" aria-label="공정 짜기">
-                    <ProcessPanel
+                    <ProcessFlow
+                      flow={flow}
+                      onFlow={setFlow}
+                      built={built}
                       process={proc}
-                      onProcess={changeProcess}
+                      live={live}
+                      robotMode={robotMode}
+                      busy={busy}
                       pose={basePose}
                       tipOf={tipOf}
-                      busy={busy}
-                      canGrip={canGrip}
+                      armHome={arm.home}
+                      armZero={arm.zero}
+                      poses={poses}
+                      calibrated={calibratedText(robot?.calibrated)}
+                      toolKind={EFFECTOR_BY_ID[effector].kind}
+                      toolName={EFFECTOR_BY_ID[effector].name}
+                      onStart={startPractice}
+                      onGoJoints={(j, what) => void goJoints(j, what)}
+                      onGoTip={goTip}
+                      onZero={() => {
+                        setZeroMode(true);
+                        stageApi.current?.view('tall');
+                      }}
+                      onResetDesk={placePracticeBlocks}
                       runningLine={runningLine}
-                      errorLines={errorLines}
-                      onGo={(j, what) => void goJoints(j, what)}
-                      onRunRow={(i) => void runProcessRow(i)}
-                      onNote={(kind, msg) => addLog(kind, msg)}
+                      lastRun={lastRun}
+                      onSaveFile={saveProcessFile}
+                      onOpenFile={() => procFile.current?.click()}
                       runBar={runBar}
+                      editor={
+                        <ProcessPanel
+                          process={proc}
+                          onProcess={changeProcess}
+                          pose={basePose}
+                          tipOf={tipOf}
+                          busy={busy}
+                          canGrip={canGrip}
+                          runningLine={runningLine}
+                          errorLines={errorLines}
+                          onGo={(j, what) => void goJoints(j, what)}
+                          onRunRow={(i) => void runProcessRow(i)}
+                          onNote={(kind, msg) => addLog(kind, msg)}
+                          runBar={null}
+                        />
+                      }
+                    />
+                    <input
+                      ref={procFile}
+                      type="file"
+                      accept={`${PROCESS_EXT},application/json`}
+                      hidden
+                      onChange={(e) => {
+                        void openProcessFile(e.target.files?.[0]);
+                        e.target.value = '';
+                      }}
                     />
                   </div>
                 ) : (

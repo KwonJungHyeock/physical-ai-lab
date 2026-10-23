@@ -14,11 +14,15 @@ export type MoveMode = 'J' | 'L';
 /** Smooth = blend through the points (이어서), Tick = stop at every point (점마다 멈춤). */
 export type Blend = 'smooth' | 'tick';
 
+/**
+ * `note`: what the row does in words (rows made from a practice, plan.ts: "A 위로 가기"); `speed`:
+ * this row's own speed (the movement rules: fast J, slow L), else the process's.
+ */
 export type ProcRow =
   /** `joints`: the taught point; null until [좌표 저장]. */
-  | { kind: 'move'; mode: MoveMode; joints: number[] | null }
-  | { kind: 'grip'; open: boolean }
-  | { kind: 'wait'; sec: number };
+  | { kind: 'move'; mode: MoveMode; joints: number[] | null; note?: string; speed?: number }
+  | { kind: 'grip'; open: boolean; note?: string }
+  | { kind: 'wait'; sec: number; note?: string };
 
 export interface Process {
   name: string;
@@ -53,7 +57,7 @@ export function compileProcess(p: Process, only?: number): ProcessItem[] {
     const line = i + 1;
     if (r.kind === 'move') {
       if (!r.joints) return;
-      const leg: Leg = { mode: r.mode, joints: r.joints.slice(), line };
+      const leg: Leg = { mode: r.mode, joints: r.joints.slice(), line, speed: r.speed };
       if (path) path.push(leg);
       else items.push({ type: 'path', legs: (path = [leg]), blend: p.blend === 'smooth' });
       return;
@@ -97,7 +101,7 @@ export function checkProcess(p: Process, canGrip = true): Problem[] {
 export function processListing(p: Process): string {
   const names = pointNames(p.rows);
   const rows = p.rows.map((r, i) =>
-    r.kind === 'move' ? `MOVE ${r.mode} ${names[i]} [${r.joints ? r.joints.map(round1).join(', ') : ''}]` : r.kind === 'grip' ? `그리퍼 ${r.open ? '열기' : '닫기'}` : `대기 ${r.sec}초`,
+    (r.kind === 'move' ? `MOVE ${r.mode} ${names[i]} [${r.joints ? r.joints.map(round1).join(', ') : ''}]${r.speed ? ` 속도 ${r.speed}` : ''}` : r.kind === 'grip' ? `그리퍼 ${r.open ? '열기' : '닫기'}` : `대기 ${r.sec}초`) + (r.note ? `  # ${r.note}` : ''),
   );
   return [...rows, `# ${p.blend === 'smooth' ? 'Smooth' : 'Tick'} · 속도 ${p.speed}`].join('\n');
 }
@@ -124,13 +128,15 @@ export function processFromFile(text: string): { process: Process } | { error: s
   for (const [i, raw] of (o.rows as unknown[]).entries()) {
     const r = raw as Record<string, unknown>;
     const bad = { error: `${i + 1}번 줄을 읽을 수 없어요.` };
+    const note = typeof r?.note === 'string' && r.note ? { note: r.note.slice(0, 40) } : {};
     if (r?.kind === 'move') {
       if (r.mode !== 'J' && r.mode !== 'L') return bad;
       const j = r.joints;
       if (j !== null && !(Array.isArray(j) && j.length === jointMin().length && j.every((v) => typeof v === 'number' && Number.isFinite(v)))) return bad;
-      rows.push({ kind: 'move', mode: r.mode, joints: j === null ? null : (j as number[]).slice() });
-    } else if (r?.kind === 'grip' && typeof r.open === 'boolean') rows.push({ kind: 'grip', open: r.open });
-    else if (r?.kind === 'wait' && typeof r.sec === 'number' && Number.isFinite(r.sec)) rows.push({ kind: 'wait', sec: r.sec });
+      const speed = typeof r.speed === 'number' && r.speed >= 1 ? { speed: Math.min(SPEED_CAP, r.speed) } : {};
+      rows.push({ kind: 'move', mode: r.mode, joints: j === null ? null : (j as number[]).slice(), ...note, ...speed });
+    } else if (r?.kind === 'grip' && typeof r.open === 'boolean') rows.push({ kind: 'grip', open: r.open, ...note });
+    else if (r?.kind === 'wait' && typeof r.sec === 'number' && Number.isFinite(r.sec)) rows.push({ kind: 'wait', sec: r.sec, ...note });
     else return bad;
   }
   const speed = typeof o.speed === 'number' && o.speed >= 1 ? Math.min(SPEED_CAP, o.speed) : DEFAULT_SPEED;

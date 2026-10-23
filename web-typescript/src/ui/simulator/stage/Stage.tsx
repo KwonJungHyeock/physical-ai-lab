@@ -92,6 +92,7 @@ import { workspaceEnvelope } from '../../education/stage/learn3d';
 import type { ArmSpec } from '@/engine/robot/arms';
 import { DeskObjects, DeskPhysics, type DeskEdit } from './DeskObjects';
 import { ScenePreset } from './ScenePreset';
+import PlanMarks, { type PlanMarksData } from './PlanMarks';
 
 export const MODEL_URL = '/robot/rdkx5/rdkx5.glb';
 /** The AI Kit, from Elephant Robotics' own kit model (robot-python/tools/convert_meshes.py kit). */
@@ -215,6 +216,8 @@ interface StageProps {
   monitor?: RefObject<MonitorOut>;
   /** The see-through side-view arm: where its corner is now; null hides it. */
   miniRect?: (() => MiniRect) | null;
+  /** 공정 짜기: the taught places and the planned tool path; null for none. */
+  planMarks?: PlanMarksData | null;
 }
 
 /**
@@ -377,6 +380,7 @@ function World({
   monitor,
   miniRect,
   quality,
+  planMarks,
 }: StageProps & { lights: Lights }) {
   // Every node of the arm's model files, by name (a later file wins a shared name).
   const gltfs = useGLTF(spec.glbs as string[], DRACO_PATH) as unknown as { nodes: GlbNodes }[];
@@ -675,6 +679,7 @@ function World({
         )}
         {display.baseAxes && <primitive object={baseAxes} />}
         {display.reach && shell && <primitive object={shell.group} />}
+        {planMarks && <PlanMarks marks={planMarks} layer={SCREEN_ONLY} />}
       </group>
       {display.reach && <primitive object={reach} />}
       {display.path && <ToolPath world={world} flange={arm.flange} tcpMm={tcpMm} root={root} />}

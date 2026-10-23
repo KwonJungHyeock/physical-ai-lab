@@ -7750,3 +7750,29 @@ div.zeroFlow {
   background: rgba(255, 255, 255, 0.1);
   color: #e6ebf2;
 }
+
+/* 공정 짜기: a taught place's pin label in 3D (PlanMarks.tsx). */
+.planMark {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px 3px 4px;
+  border-radius: 8px;
+  background: rgba(31, 39, 49, 0.9);
+  box-shadow: inset 3px 0 0 #e5322d, 0 6px 16px -6px rgba(0, 0, 0, 0.6);
+  color: #f1f4f9;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  transform: translateY(-60%);
+  user-select: none;
+}
+.planMark b {
+  min-width: 20px;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: #e5322d;
+  color: #fff;
+  text-align: center;
+  font-size: 11px;
+}
