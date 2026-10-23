@@ -45,7 +45,8 @@ function LogList({ entries }: { entries: LogEntry[] }) {
   );
 }
 
-export default function Notices({ entries }: { entries: LogEntry[] }) {
+/** `beside`: 실습 셀's column holds the left edge, so the card sits to its right. */
+export default function Notices({ entries, beside = false }: { entries: LogEntry[]; beside?: boolean }) {
   const last = entries[entries.length - 1];
   /** The id of the message the card shows; null when it has hidden or been closed. */
   const [shown, setShown] = useState<number | null>(last?.id ?? null);
@@ -109,7 +110,7 @@ export default function Notices({ entries }: { entries: LogEntry[] }) {
     </button>
   );
   return (
-    <div className={css.notices} ref={box} data-panel="log" data-idle={!open || undefined}>
+    <div className={css.notices} ref={box} data-panel="log" data-idle={!open || undefined} data-beside={beside || undefined}>
       {open && last ? (
         <div className={css.notice} data-kind={last.kind} role={last.kind === 'err' ? 'alert' : 'status'}>
           <span className={`${css.tag} ${css[`tag_${last.kind}`]}`}>{TAGS[last.kind]}</span>

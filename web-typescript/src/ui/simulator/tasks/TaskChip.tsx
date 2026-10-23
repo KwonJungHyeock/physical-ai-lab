@@ -86,13 +86,31 @@ interface ChipProps {
   demo?: boolean;
   /** The 공정 짜기 tab is open: the chip names the process instead (no task goal there). */
   process?: { name: string; rows: number };
+  /** A 실습 셀 is open: the chip names its step (the goal is on the cell's card). */
+  cell?: { name: string; note: string };
   onGoal(): void;
   onOpen(where: Where): void;
   onGallery(): void;
 }
 
-export function TaskChip({ mode, practice, level, theme, progress, busy, world, session, demo, process, onGoal, onOpen, onGallery }: ChipProps) {
+export function TaskChip({ mode, practice, level, theme, progress, busy, world, session, demo, process, cell, onGoal, onOpen, onGallery }: ChipProps) {
   const here: Where = { level, theme, id: practice.id };
+  if (cell) {
+    return (
+      <div className={css.taskChip} data-mode="practice">
+        <span className={css.taskPick} data-cat="free">
+          <span className={css.taskGlyph}>
+            <Icon name="flag" size={18} />
+          </span>
+          <span className={css.taskTag}>실습 셀</span>
+          <b className={css.taskTitle}>{cell.name}</b>
+        </span>
+        <span className={css.goal}>
+          <span className={css.goalText}>{cell.note}</span>
+        </span>
+      </div>
+    );
+  }
   if (process) {
     return (
       <div className={css.taskChip} data-mode="practice">

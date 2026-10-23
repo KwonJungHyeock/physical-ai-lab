@@ -87,8 +87,8 @@ export function repairCell(run: CellRun): void {
   run.alerts.push({ t: run.line.t, level: 'info', kind: 'order', title: '점검 · 복구', msg: '고장 난 곳을 고치고 다시 쓸 수 있게 했어요.' });
 }
 
-/** One frame of the cell, `dt` seconds of cell time. */
-export function stepCell(w: WorldState, phys: PhysicsWorld, dt: number, chain: readonly ChainSegment[], tcpMm: number): void {
+/** One frame of the cell, `dt` seconds of cell time; `angles`: the arm's pose for this step when a long frame is cut into steps. */
+export function stepCell(w: WorldState, phys: PhysicsWorld, dt: number, chain: readonly ChainSegment[], tcpMm: number, angles: readonly number[] = w.angles): void {
   const run = w.cell;
   if (!run) return;
   const ls = stepLine(run.layout, run.line, w.objects, dt, w.carry?.id ?? null);
@@ -103,7 +103,7 @@ export function stepCell(w: WorldState, phys: PhysicsWorld, dt: number, chain: r
   phys.setBelts(ls.belts);
   ls.alerts.forEach((a) => raise(run, a));
 
-  stepDesk(w, phys, dt);
+  stepDesk(w, phys, dt, angles);
   w.version += 1;
 
   const t = run.line.t;
@@ -120,7 +120,7 @@ export function stepCell(w: WorldState, phys: PhysicsWorld, dt: number, chain: r
   }
 
   // The tool tip's speed (a collision's severity) and the motors' load and heat.
-  const tip = tcpPositionMm(chain, w.angles, tcpMm);
+  const tip = tcpPositionMm(chain, angles, tcpMm);
   if (run.lastTip && dt > 0) {
     const v = Math.hypot(tip.x - run.lastTip.x, tip.y - run.lastTip.y, tip.z - run.lastTip.z) / dt;
     run.health.tipSpeed += (v - run.health.tipSpeed) * Math.min(1, dt / 0.08);
@@ -128,7 +128,7 @@ export function stepCell(w: WorldState, phys: PhysicsWorld, dt: number, chain: r
   }
   run.lastTip = { x: tip.x, y: tip.y, z: tip.z };
   const held = w.carry ? w.objects.find((o) => o.id === w.carry!.id) : undefined;
-  for (const a of watchLoad(run.health, chain, w.angles, held ? held.massG / 1000 : 0, tcpMm, t)) raise(run, a);
+  for (const a of watchLoad(run.health, chain, angles, held ? held.massG / 1000 : 0, tcpMm, t)) raise(run, a);
 }
 
 /** The mission's checks now. */

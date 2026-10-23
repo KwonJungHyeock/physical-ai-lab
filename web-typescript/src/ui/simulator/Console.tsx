@@ -71,7 +71,10 @@ import { checkProcess, compileProcess, emptyProcess, processFromFile, processLis
 import { findSlots, tutorialFor } from '@/engine/simulator/tutorials';
 import { blockLayout, buildPlan, carryTargets, freshPlan, makeSolver, practiceOf, type Built, type PlanKind, type Solver, type Spot } from '@/engine/simulator/plan';
 import { CELL_BY_ID, type CellId } from '@/engine/simulator/cell/cells';
-import { missionById } from '@/engine/simulator/cell/missions';
+import { missionById, missionsOf } from '@/engine/simulator/cell/missions';
+import { LEVEL_NAME, type CellAlert } from '@/engine/simulator/cell/faults';
+import { cellChecks, repairCell } from '@/engine/simulator/cell/run';
+import CellHud from './stage/CellHud';
 import { RunError, SelfCollision, Stop, createCellWorld, createWorld, emptyStats, instantAnimate, jogTo, moveCheck, moveProblem, playTimeline, preflight, runProcess, runProgram, type RobotAction, type RunHooks, type WorldState } from '@/engine/simulator/sim';
 import { demoFits, demoFor, demoStepAt } from '@/engine/simulator/demos';
 import { runPython, warmPython } from '@/engine/python/client';
@@ -156,6 +159,28 @@ const miniLeft = () => barW() + 24;
 const QUALITY_KEY = 'robot-console-quality';
 const LEVEL_KEY = 'robot-console-level';
 const DISPLAY_KEY = 'robot-console-display';
+/** 실습 셀: the steps passed, and the program kept for each step (and for 자유 실습). */
+const CELL_PASSED_KEY = 'robot-console-cell-passed';
+const CELL_PROG_KEY = 'robot-console-cell-prog';
+/** A cell program's start: the import line and the arm to its home pose. */
+const CELL_START = 'from edu import robot, cell\n\nrobot.home()\n';
+/** Equipment whose name tags show for a ladder step (by its place in the ladder). */
+const cellStepTags = (n: number) => (n <= 5 ? ['소재 판', '적재 판'] : n <= 9 ? ['매거진', '끝 센서', '적재 판'] : ['공급 실린더', '컨베이어', '끝 센서']);
+const loadCellProgram = (mission: string | null): string | null => {
+  try {
+    return localStorage.getItem(`${CELL_PROG_KEY}:${mission ?? 'free'}`);
+  } catch {
+    return null;
+  }
+};
+const saveCellProgram = (mission: string | null, c: string) => {
+  try {
+    if (c === CELL_START) localStorage.removeItem(`${CELL_PROG_KEY}:${mission ?? 'free'}`);
+    else localStorage.setItem(`${CELL_PROG_KEY}:${mission ?? 'free'}`, c);
+  } catch {
+    /* this session only */
+  }
+};
 const MODE_KEY = 'robot-console-mode';
 const DOCK_KEY = 'robot-console-dock-open';
 const SIM_RATE_KEY = 'robot-console-sim-rate';
@@ -511,6 +536,26 @@ export default function Console() {
   const [cellAt, setCellAt] = useState<{ cell: CellId; mission: string | null } | null>(null);
   const cellRef = useRef(cellAt);
   const [cellTags, setCellTags] = useState<string[]>([]);
+  /** Steps passed (kept in this browser) and the last finished run of the open step. */
+  const [cellPassed, setCellPassed] = useState<Record<string, boolean>>({});
+  const [cellResult, setCellResult] = useState<boolean | null>(null);
+  useEffect(() => {
+    try {
+      const v = JSON.parse(localStorage.getItem(CELL_PASSED_KEY) ?? '{}') as Record<string, boolean>;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- read once from this browser
+      if (v && typeof v === 'object') setCellPassed(v);
+    } catch {
+      /* none kept */
+    }
+  }, []);
+  /** Leave the cell (another practice, arm or demo takes the world). */
+  const dropCell = () => {
+    if (!cellRef.current) return;
+    saveCellProgram(cellRef.current.mission, code);
+    cellRef.current = null;
+    setCellAt(null);
+    setCellResult(null);
+  };
   const stageApi = useRef<StageApi | null>(null);
   const getStage = useCallback(() => stageApi.current, []);
   // The small camera picture comes back after the camera window closes: draw it once now
@@ -738,6 +783,7 @@ export default function Console() {
 
   /** Keep the open program in this browser (an untouched example is forgotten). */
   const keepProgram = (c: string) => {
+    if (cellRef.current) return saveCellProgram(cellRef.current.mission, c);
     // Not before the saved ones are read: the first render holds only the defaults.
     if (restored && practice.id !== 'demo') saveProgram(arm.id, level, theme, practice.id, isStarter(c) ? null : c);
   };
@@ -1106,6 +1152,7 @@ export default function Console() {
     setCode(restore ?? loadProgram(activeArm().id, lv, th, p.id) ?? starterFor(p, effector, th));
     layout.current = BLOCK_START;
     setMatNeeded(practiceUsesMat(p.id));
+    dropCell();
     world.current = createWorld(effector, flange, layout.current, th);
     setDemo(null);
     setReplay(null);
@@ -1137,6 +1184,7 @@ export default function Console() {
     const kept = p.id === 'demo' ? null : loadProgram(to.id, level, th, p.id);
     if (kept !== null || untouched) setCode(kept ?? starterFor(p, e, th));
     layout.current = BLOCK_START;
+    dropCell();
     world.current = createWorld(e, false, layout.current, th);
     setDemo(null);
     setReplay(null);
@@ -1153,11 +1201,11 @@ export default function Console() {
     setEffector(next);
     setCameraFlange(flange);
     fitCamView(theme, flange);
-    world.current = createWorld(next, flange, layout.current, theme);
+    world.current = cellRef.current ? createCellWorld(cellRef.current.cell, cellRef.current.mission, next) : createWorld(next, flange, layout.current, theme);
     setDemo(null);
     setReplay(null);
     setAnglesView(world.current.angles.slice());
-    if (unchanged) setCode(starterFor(practice, next, theme));
+    if (unchanged && !cellRef.current) setCode(starterFor(practice, next, theme));
     setPassed(null);
     setErrorLines([]);
     setBadge(null);
@@ -1278,6 +1326,7 @@ export default function Console() {
     layout.current = BLOCK_START;
     // The demo's own desk: no practice mat or blocks in the way.
     setMatNeeded(false);
+    dropCell();
     world.current = createWorld(d.effector, false, BLOCK_START, th);
     setReplay(null);
     setPassed(null);
@@ -1337,10 +1386,14 @@ export default function Console() {
     // Simulation speed (×1 ×2 ×4): the simulated time runs that much faster than the clock.
     const rate = simRateRef.current;
     return new Promise<void>((resolve, reject) => {
-      const t0 = performance.now();
+      // Time runs with the clock, but at most a quarter second a frame: on a slow computer the
+      // motion slows down rather than jumps (the cell's physics keeps the same pace).
+      let t = 0;
+      let last = performance.now();
       const step = (now: number) => {
         if (tk?.aborted) return reject(new Stop());
-        const t = Math.min(durationS, ((now - t0) / 1000) * rate);
+        t = Math.min(durationS, t + (Math.min(now - last, 250) / 1000) * rate);
+        last = now;
         try {
           frame(t);
         } catch (err) {
@@ -1454,7 +1507,9 @@ export default function Console() {
 
   // The see-through end pose (블록 코딩): the program run at once on a copy of the world, a moment
   // after the last edit. Programs that look with a camera stop at the first look.
-  // 실습 셀 (not on screen yet): the step's reference program, run from the page's console.
+  // 실습 셀: hooks for the page's console (screen captures and checks): run the step's reference
+  // program, read the world, turn the view, load a recorded state, show name tags.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- the hooks take this render's functions
   useEffect(() => {
     if (!cellAt) return;
     const w = window as unknown as { __cellRun?: (text?: string) => void; __cellWorld?: () => WorldState };
@@ -1742,6 +1797,8 @@ export default function Console() {
     if (busy) return;
     if (tab === 'process') return simulateProcess();
     if (level !== 'basic') return simulatePy();
+    const fault = cellRef.current && world.current.cell?.health.fault;
+    if (fault) return addLog('err', `고장 · ${fault.title}: [점검 · 복구]를 먼저 눌러 주세요.`, fault.fix);
     const text = code;
     const { steps, errors, warnings } = problemsFor(text);
     setErrorLines(errors.map((e) => e.line));
@@ -1756,10 +1813,89 @@ export default function Console() {
     if (pre) return refuseRun(pre);
     setBadge({ kind: 'sim', text: '시뮬레이션' });
     addLog('sim', '시뮬레이션을 시작해요.');
+    if (cellRef.current) setCellResult(null);
     const { ok, actions } = await runSteps(steps, { reset: true, label: true });
+    if (cellRef.current) return finishCellRun(ok);
     if (ok) passedRun(text, actions);
     else setPassed(null);
   };
+  /** A cell run is over: the last part comes to rest, then the step's checks decide. */
+  const finishCellRun = async (ok: boolean) => {
+    const c = cellRef.current;
+    const run = world.current.cell;
+    if (!c || !run) return;
+    run.endT = run.line.t;
+    if (!c.mission) return;
+    await new Promise((r) => window.setTimeout(r, 1200));
+    if (cellRef.current !== c || world.current.cell !== run) return;
+    const res = cellChecks(world.current);
+    if (!res) return;
+    const all = ok && res.items.every((i) => i.ok);
+    setCellResult(all);
+    if (all) {
+      addLog('ok', `${res.mission.id} ${res.mission.title} 통과!`);
+      setCellPassed((prev) => {
+        const next = { ...prev, [res.mission.id]: true };
+        try {
+          localStorage.setItem(CELL_PASSED_KEY, JSON.stringify(next));
+        } catch {
+          /* this session only */
+        }
+        return next;
+      });
+    } else {
+      const miss = res.items.filter((i) => !i.ok).map((i) => i.label);
+      addLog('warn', `${res.mission.id} 아직이에요: ${miss.join(' · ') || '프로그램이 끝까지 가지 못했어요'}`);
+    }
+  };
+  /** Open a cell on a ladder step (or 자유 실습): its world, the gripper, the step's program. */
+  const openCell = (cell: CellId, mission: string | null) => {
+    if (busy) return;
+    if (cellRef.current) saveCellProgram(cellRef.current.mission, code);
+    else keepProgram(code);
+    const c = { cell, mission };
+    cellRef.current = c;
+    setCellAt(c);
+    setCellResult(null);
+    setDemo(null);
+    setReplay(null);
+    setDeskSel(null);
+    if (theme === 'kit') setTheme('arm');
+    let e = effector;
+    const k = EFFECTOR_BY_ID[e].kind;
+    if (k !== 'grip' && k !== 'suction') {
+      e = 'adaptive';
+      setEffector(e);
+      setCameraFlange(false);
+      addLog('info', '실습 셀은 부품을 집어야 해서 적응형 그리퍼를 달았어요.');
+    }
+    world.current = createCellWorld(cell, mission, e);
+    setAnglesView(world.current.angles.slice());
+    setLevel('basic');
+    setTab('basic');
+    setCode(loadCellProgram(mission) ?? CELL_START);
+    setErrorLines([]);
+    setPassed(null);
+    const m = mission ? missionById(mission) : null;
+    addLog('info', m ? `${m.id} ${m.title}: ${m.goal}` : '자유 실습: 채점 없이 셀을 움직여 봐요.');
+  };
+  /** Back to the desk: the practice's program as it was left. */
+  const leaveCell = () => {
+    if (busy || !cellRef.current) return;
+    dropCell();
+    world.current = createWorld(effector, cameraFlange, layout.current, theme);
+    setAnglesView(world.current.angles.slice());
+    setCode(loadProgram(activeArm().id, level, theme, practice.id) ?? starterFor(practice, effector, theme));
+  };
+  const onCellAlert = useCallback(
+    (a: CellAlert) => {
+      if (a.level === 'info' && a.kind === 'order') return;
+      // A 정지 or 고장 during a run stops the program, which reports it on its own.
+      if ((a.level === 'stop' || a.level === 'fault') && busyRef.current) return;
+      addLog(a.level === 'info' ? 'info' : a.level === 'warn' ? 'warn' : 'err', `${LEVEL_NAME[a.level]} · ${a.title}: ${a.msg}`, a.fix);
+    },
+    [addLog],
+  );
 
   const stop = useCallback(() => {
     if (token.current) token.current.aborted = true;
@@ -1847,7 +1983,7 @@ export default function Console() {
   const chooseTab = (t: PanelTab) => {
     setTab(t);
     // Into 공정 on a bare desk: the practice mat and its blocks come out, the arm stays where it is.
-    if (t === 'process' && !busy && theme === 'arm' && !world.current.blocks.length) {
+    if (t === 'process' && !busy && theme === 'arm' && !world.current.blocks.length && !cellRef.current) {
       setMatNeeded(true);
       const at = world.current.angles.slice();
       world.current = createWorld(effector, cameraFlange, layout.current, theme);
@@ -3232,6 +3368,14 @@ export default function Console() {
                 session={session}
                 demo={!!demo?.playing}
                 process={tab === 'process' ? { name: proc.name || '공정', rows: proc.rows.length } : undefined}
+                cell={
+                  cellAt
+                    ? {
+                        name: cellAt.mission ? `${cellAt.mission} ${missionById(cellAt.mission)?.title ?? ''}` : '자유 실습',
+                        note: `${CELL_BY_ID[cellAt.cell].letter} ${CELL_BY_ID[cellAt.cell].name} · ${missionsOf(cellAt.cell).filter((m) => cellPassed[m.id]).length}/${missionsOf(cellAt.cell).length} 통과`,
+                      }
+                    : undefined
+                }
                 onGoal={() => {
                   // A demo is shown, not done by the student.
                   if (demo) return;
@@ -3440,7 +3584,7 @@ export default function Console() {
                   mountMm={mountMm}
                   ghost={ghostWanted && !replay && ghost && ghost.code === code ? ghost.angles : null}
                   monitor={monitor}
-                  miniRect={display.mini && view === 'sim' && !railOpen ? miniPlace : null}
+                  miniRect={display.mini && view === 'sim' && !railOpen && !cellAt ? miniPlace : null}
                   desk={{
                     scene: desk.scene,
                     objects: desk.objects,
@@ -3463,7 +3607,7 @@ export default function Console() {
                   planMarks={planMarks}
                   cell={cellAt?.cell ?? null}
                   simRate={simRateRef}
-                  cellTags={cellTags}
+                  cellTags={cellTags.length ? cellTags : cellAt?.mission && !busy ? cellStepTags(missionById(cellAt.mission)?.n ?? 1) : []}
                   display={display}
                   frameInsets={frameInsets}
                   layoutKey={`${dockShown}:${side}:${camOpen}:${display.mini}`}
@@ -3571,7 +3715,38 @@ export default function Console() {
               {loaded && view === 'sim' && railOpen === 'monitor' && (
                 <Hud world={world} chain={loaded.chain} tcpMm={tcpNow} mountMm={mountMm} loadModel={arm.family === 'mycobot280'} status={hudStatus} onClose={() => setRailOpen(null)} />
               )}
-              {loaded && view === 'sim' && display.mini && !railOpen && <MiniArmLabels monitor={monitor} live={live} tipOf={tipOf} side="right" />}
+              {loaded && view === 'sim' && cellAt && railOpen !== 'monitor' && (
+                <CellHud
+                  world={world}
+                  cell={cellAt.cell}
+                  mission={cellAt.mission}
+                  passed={cellPassed}
+                  allOpen={account.role === 'teacher' || account.role === 'operator'}
+                  busy={busy}
+                  result={cellResult}
+                  onMission={(id) => openCell(cellAt.cell, id)}
+                  onRepair={() => {
+                    const run = world.current.cell;
+                    if (!run) return;
+                    repairCell(run);
+                    addLog('info', '점검 · 복구했어요. 고친 점을 프로그램에 넣고 다시 실행해 보세요.');
+                  }}
+                  onExample={
+                    (account.role === 'teacher' || account.role === 'operator') && cellAt.mission
+                      ? () => {
+                          const sol = missionById(cellAt.mission!)?.solution;
+                          if (sol && (code === CELL_START || window.confirm('지금 프로그램 대신 이 단계의 예시 프로그램을 불러올까요?'))) setCode(sol);
+                        }
+                      : undefined
+                  }
+                  onAlert={onCellAlert}
+                  onReset={() => {
+                    resetWorld();
+                    setBadge(null);
+                  }}
+                />
+              )}
+              {loaded && view === 'sim' && display.mini && !railOpen && !cellAt && <MiniArmLabels monitor={monitor} live={live} tipOf={tipOf} side="right" />}
               {loaded && view === 'sim' && (
                 <LeftRail groups={barGroups} foot={barFoot} sheetOpen={railOpen !== null} onCloseSheet={() => setRailOpen(null)}>
                   {(railOpen === 'env' || railOpen === 'objects') && (
@@ -3593,7 +3768,17 @@ export default function Console() {
                       canPick={canPick}
                       selected={deskSel}
                       onSelect={setDeskSel}
-                      onScene={deskScene}
+                      onScene={(id) => {
+                        if (cellAt) leaveCell();
+                        deskScene(id);
+                      }}
+                      cell={cellAt?.cell ?? null}
+                      onCell={(id) => {
+                        setRailOpen(null);
+                        const steps = missionsOf(id);
+                        const first = steps.find((m) => !cellPassed[m.id]) ?? steps[0];
+                        openCell(id, first?.id ?? null);
+                      }}
                       onMat={deskMat}
                       onShuffle={shuffle}
                       onReset={() => {
@@ -3610,7 +3795,7 @@ export default function Console() {
                   )}
                 </LeftRail>
               )}
-              <Notices entries={log} />
+              <Notices entries={log} beside={!!loaded && !!cellAt && railOpen !== 'monitor'} />
               {goalCard && view === 'sim' && (
                 <ResultCard
                   title={practice.title}
@@ -3818,7 +4003,18 @@ export default function Console() {
                   </div>
                 ) : (
                   <div className={css.codeTab} role="region" aria-label={LEVEL_TAB[level].name}>
-                    <LangSeg level={level} busy={busy} onLevel={(lv) => openTab(lv)} />
+                    <LangSeg level={level} busy={busy} onLevel={(lv) => (cellAt && lv !== 'basic' ? addLog('info', '실습 셀은 지금은 블록 코딩으로 해요. Python은 다음에 열려요.') : openTab(lv))} />
+                    {cellAt ? (
+                      <div className={css.cellCodeHead}>
+                        <b>
+                          실습 셀 · {cellAt.mission ? `${cellAt.mission} ${missionById(cellAt.mission)?.title ?? ''}` : '자유 실습'}
+                        </b>
+                        <small>블록으로 로봇과 장비를 움직여요. 목표와 채점은 3D 왼쪽 카드에 있어요.</small>
+                        <button type="button" className={css.cellLeave} disabled={busy} onClick={leaveCell}>
+                          셀에서 나가기
+                        </button>
+                      </div>
+                    ) : (
                     <TutorialCard
                       practice={practice}
                       sub={`${LEVEL_TAB[level].sub} · ${mode === 'check' && practice.check ? `검수 ${practice.check}` : categoryOf(practice.id)} · 라이브러리 튜토리얼`}
@@ -3841,6 +4037,7 @@ export default function Console() {
                         }
                       }}
                     />
+                    )}
                     {level === 'basic' ? (
                       <div className={css.pane}>
                         <BlockEditor
@@ -3856,7 +4053,8 @@ export default function Console() {
                           live={live}
                           runningLine={runningLine}
                           onError={(m, f) => addLog('err', m, f)}
-                          hotLines={findSlots(code, tut)
+                          cell={cellAt?.cell ?? null}
+                          hotLines={cellAt ? [] : findSlots(code, tut)
                             .filter((h) => tut.steps[tutStep]?.slots.includes(h.index))
                             .map((h) => h.line)}
                         />
@@ -3899,15 +4097,17 @@ export default function Console() {
                         <PyPanel level={level} status={pyStatus} output={pyOut} ros={pyRos} />
                       </div>
                     )}
-                    <Snippets
-                      tut={tut}
-                      code={code}
-                      busy={busy}
-                      onCode={(c) => {
-                        setCode(c);
-                        setErrorLines([]);
-                      }}
-                    />
+                    {!cellAt && (
+                      <Snippets
+                        tut={tut}
+                        code={code}
+                        busy={busy}
+                        onCode={(c) => {
+                          setCode(c);
+                          setErrorLines([]);
+                        }}
+                      />
+                    )}
                     {runBar}
                   </div>
                 )}

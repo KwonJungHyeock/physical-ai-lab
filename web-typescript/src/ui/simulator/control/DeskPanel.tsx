@@ -9,6 +9,7 @@
 
 import { useState, type ReactNode } from 'react';
 
+import { CELLS, type CellId } from '@/engine/simulator/cell/cells';
 import { OBJECT_KINDS, OBJECT_ORDER, SCENES, SWATCHES, type Desk, type DeskObject, type ObjectKind, type SceneId } from '@/engine/simulator/desk';
 
 import css from './desk.module.css';
@@ -119,6 +120,9 @@ interface Props {
   initialTab?: Tab;
   /** Opened from the left menu bar (a window beside it) rather than above the bottom dock. */
   docked?: boolean;
+  /** The 실습 셀 open (it replaces the desk's scene), or null. */
+  cell?: CellId | null;
+  onCell?: (id: CellId) => void;
 }
 
 export type Tab = 'scene' | 'objects';
@@ -146,14 +150,15 @@ function Num({ label, value, unit, min, max, step = 1, onChange, disabled }: { l
 
 export default function DeskPanel(p: Props) {
   const [tab, setTab] = useState<Tab>(p.initialTab ?? 'scene');
-  const kit = p.scene === 'kit';
+  const kit = p.scene === 'kit' && !p.cell;
+  const inCell = !!p.cell;
   const sel = p.desk.objects.find((o) => o.id === p.selected) ?? null;
-  const shownTab: Tab = kit && tab !== 'scene' ? 'scene' : tab;
+  const shownTab: Tab = (kit || p.cell) && tab !== 'scene' ? 'scene' : tab;
   return (
     <section className={css.panel} aria-label="실습 환경" data-docked={p.docked || undefined}>
       <header className={css.head}>
         <b>실습 환경</b>
-        <small>{SCENES.find((s) => s.id === p.scene)?.name}</small>
+        <small>{inCell ? CELLS.find((c) => c.id === p.cell)?.name : SCENES.find((s) => s.id === p.scene)?.name}</small>
         <button type="button" className={css.x} onClick={p.onClose} aria-label="닫기">
           ✕
         </button>
@@ -165,7 +170,7 @@ export default function DeskPanel(p: Props) {
             ['objects', `물건${p.desk.objects.length ? ` ${p.desk.objects.length}` : ''}`],
           ] as const
         ).map(([id, name]) => (
-          <button key={id} type="button" role="tab" aria-selected={shownTab === id} disabled={kit && id !== 'scene'} onClick={() => setTab(id)}>
+          <button key={id} type="button" role="tab" aria-selected={shownTab === id} disabled={(kit || inCell) && id !== 'scene'} onClick={() => setTab(id)}>
             {name}
           </button>
         ))}
@@ -178,9 +183,9 @@ export default function DeskPanel(p: Props) {
               환경
             </h4>
             <div className={css.scenes}>
-              {SCENES.filter((s) => s.id !== 'kit' || p.kitAvailable).map((s) => (
+              {SCENES.filter((s) => s.id === 'empty' || (s.id === 'kit' && p.kitAvailable)).map((s) => (
                 <span key={s.id} className={css.sceneItem}>
-                  <button type="button" className={css.scene} aria-pressed={p.scene === s.id} disabled={p.busy} onClick={() => p.onScene(s.id)}>
+                  <button type="button" className={css.scene} aria-pressed={!inCell && p.scene === s.id} disabled={p.busy} onClick={() => p.onScene(s.id)}>
                     <span className={css.im} data-scene={s.id} style={THUMB[s.id] ? { backgroundImage: `url(${THUMB[s.id]})` } : undefined}>
                       {s.id === 'kit' ? 'AI 키트' : s.id === 'empty' ? '' : null}
                     </span>
@@ -192,6 +197,24 @@ export default function DeskPanel(p: Props) {
               ))}
             </div>
           </div>
+          {p.onCell && (
+            <div className={css.sec}>
+              <h4>
+                실습 셀
+                <em>단계마다 조건이 하나씩</em>
+              </h4>
+              <div className={css.cells}>
+                {CELLS.map((c) => (
+                  <button key={c.id} type="button" className={css.cellCard} aria-pressed={p.cell === c.id} disabled={p.busy || !c.built} onClick={() => p.onCell?.(c.id)}>
+                    <i>{c.letter}</i>
+                    <b>{c.name}</b>
+                    <small>{c.built ? c.note : '준비 중'}</small>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {!inCell && (
           <div className={css.sec}>
             <h4>
               {kit ? 'AI 키트 블록' : '실습 매트 · 블록 4개'}
@@ -213,6 +236,7 @@ export default function DeskPanel(p: Props) {
             </div>
             {!p.canPick && <p className={css.note}>이 도구로는 블록을 집을 수 없어요</p>}
           </div>
+          )}
         </>
       )}
 

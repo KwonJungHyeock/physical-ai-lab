@@ -31,6 +31,7 @@ import {
   type Step,
   type Target,
 } from '@/engine/simulator/program';
+import { cellLayout, type CellId } from '@/engine/simulator/cell/cells';
 
 import { useLive, type Live } from '../liveStore';
 import css from '../console.module.css';
@@ -58,6 +59,8 @@ interface Props {
   /** Live joint angles (the robot's present pose), read when a block needs it. */
   live: Live;
   runningLine: number;
+  /** 실습 셀 open: its commands (places, signals) instead of the desk's camera and carry blocks. */
+  cell?: CellId | null;
   onError(msg: string, fix?: string): void;
   /** 고칠 곳 (tutorial): the blocks on these lines blink yellow. */
   hotLines?: readonly number[];
@@ -105,7 +108,7 @@ function toolProtos(effector: EffectorId): Proto[] {
   }
 }
 
-export default function BlockEditor({ code, onCode, effector, cameraFlange, theme, poseNames, live, runningLine, onError, hotLines }: Props) {
+export default function BlockEditor({ code, onCode, effector, cameraFlange, theme, poseNames, live, runningLine, onError, hotLines, cell }: Props) {
   const drag = useRef<Drag | null>(null);
   const [dropKey, setDropKey] = useState<string | null>(null);
   const [draggingKey, setDraggingKey] = useState<string | null>(null);
@@ -159,7 +162,15 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
   const picks = kindNow === 'grip' || kindNow === 'suction';
   // 한 번에 하는 동작: one block that does a whole job, for the fitted tool (first, for beginners).
   const macros: Proto[] = [...(picks ? [{ type: 'carry' } as Proto, ...(theme === 'arm' ? [{ type: 'sort' } as Proto] : [])] : []), ...(kindNow === 'pen' ? [{ type: 'shape' } as Proto] : [])];
-  const palette: [string, Proto[]][] = [
+  const palette: [string, Proto[]][] = cell
+    ? [
+        ['셀 · 로봇', [{ type: 'cellPick' }, { type: 'cellPlace' }, { type: 'home' }, { type: 'speed' }]],
+        ['셀 · 장비', [{ type: 'cellFeed' }, { type: 'cellWait' }, { type: 'cellSet' }]],
+        ['흐름', [{ type: 'wait' }, { type: 'repeat' }]],
+        [EFFECTOR_BY_ID[effector].name, toolProtos(effector)],
+        ['고급', [{ type: 'joint' }, { type: 'moveTo' }, { type: 'move' }]],
+      ]
+    : [
     ...(macros.length ? [['한 번에 하는 동작', macros] as [string, Proto[]]] : []),
     ['움직이기', [{ type: 'home' }, ...(poseNames.length ? [{ type: 'pose' } as Proto] : []), { type: 'joint' }, { type: 'joint', timed: true }, { type: 'speed' }]],
     ['카메라', [{ type: 'find' }]],
@@ -167,7 +178,12 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
     [EFFECTOR_BY_ID[effector].name, toolProtos(effector)],
     ['흐름', [{ type: 'wait' }, { type: 'repeat' }]],
     ['고급', [{ type: 'moveTo' }, { type: 'move' }]],
-  ];
+      ];
+  // A cell's places and signals for its blocks.
+  const lay = cell ? cellLayout(cell) : null;
+  const pickPlaces = lay ? [...Object.keys(lay.places).filter((n) => n !== '기준 자리'), ...Object.keys(lay.grids).filter((g) => g !== '적재 판').map((g) => `${g} 다음 칸`)] : [];
+  const placePlaces = lay ? ['기준 자리', ...Object.keys(lay.grids).filter((g) => g !== '소재 판').map((g) => `${g} 다음 칸`)] : [];
+  const opts = (list: readonly string[], now: string): [string, string][] => [...new Set([now, ...list])].map((n) => [n, n]);
 
   const makeStep = (proto: Proto): Step => {
     const line = 0;
@@ -473,6 +489,52 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
           <>
             <span className={css.macroIcon} aria-hidden="true">◧</span>
             <span>블록을 색깔별로 자리 1~4 에 정리하기</span>
+          </>
+        );
+      case 'cellPick':
+        return (
+          <>
+            <span className={css.macroIcon} aria-hidden="true">✋</span>
+            {preview ? <span>{s.place} ▾</span> : sel({ label: '집을 곳', value: s.place, options: opts(pickPlaces, s.place), onChange: (v) => ((s.place = v), commit()) })}
+            <span>에서 집기</span>
+          </>
+        );
+      case 'cellPlace':
+        return (
+          <>
+            <span className={css.macroIcon} aria-hidden="true">⤓</span>
+            {preview ? <span>{s.place} ▾</span> : sel({ label: '놓을 곳', value: s.place, options: opts(placePlaces, s.place), onChange: (v) => ((s.place = v), commit()) })}
+            <span>에 놓기</span>
+            {preview ? (
+              <span>· 비켜 x 0 y 0 z 0</span>
+            ) : (
+              <>
+                <span>· 비켜 x</span>
+                {num({ label: '비켜 놓기 x (앞뒤, mm)', value: s.dx, min: -1000, max: 1000, step: 5, unit: 'mm', onChange: (v) => ((s.dx = v), commit()) })}
+                <span>y</span>
+                {num({ label: '비켜 놓기 y (좌우, mm)', value: s.dy, min: -1000, max: 1000, step: 5, unit: 'mm', onChange: (v) => ((s.dy = v), commit()) })}
+                <span>z</span>
+                {num({ label: '비켜 놓기 z (높이, mm)', value: s.dz, min: -1000, max: 1000, step: 5, unit: 'mm', onChange: (v) => ((s.dz = v), commit()) })}
+              </>
+            )}
+          </>
+        );
+      case 'cellFeed':
+        return <span>공급 요청하기 (부품 1개)</span>;
+      case 'cellWait':
+        return (
+          <>
+            {preview ? <span>{s.signal} ▾</span> : sel({ label: '기다릴 신호', value: s.signal, options: opts(lay?.inputs ?? [], s.signal), onChange: (v) => ((s.signal = v), commit()) })}
+            <span>이</span>
+            {preview ? <span>켜질 ▾</span> : sel({ label: '켜질 때 · 꺼질 때', value: s.on ? 'on' : 'off', options: [['켜질', 'on'], ['꺼질', 'off']], onChange: (v) => ((s.on = v === 'on'), commit()) })}
+            <span>때까지 기다리기</span>
+          </>
+        );
+      case 'cellSet':
+        return (
+          <>
+            {preview ? <span>{s.signal} ▾</span> : sel({ label: '장비', value: s.signal, options: opts(lay?.outputs ?? [], s.signal), onChange: (v) => ((s.signal = v), commit()) })}
+            {preview ? <span>켜기 ▾</span> : sel({ label: '켜기 · 끄기', value: s.on ? 'on' : 'off', options: [['켜기', 'on'], ['끄기', 'off']], onChange: (v) => ((s.on = v === 'on'), commit()) })}
           </>
         );
     }

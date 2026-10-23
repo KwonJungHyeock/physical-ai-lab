@@ -417,7 +417,7 @@ const yawQ = (deg: number): [number, number, number, number] => [0, 0, Math.sin(
  */
 export function CellPhysics({ world, chain, tcpMm, effector, rate }: { world: RefObject<WorldState | null>; chain: readonly ChainSegment[]; tcpMm: number; effector: EffectorId; rate?: RefObject<number> }) {
   const phys = useRef<PhysicsWorld | null>(null);
-  const built = useRef<{ run: unknown; reach: number; loading: boolean; debt: number }>({ run: null, reach: -1, loading: false, debt: 0 });
+  const built = useRef<{ run: unknown; reach: number; loading: boolean; debt: number; prev: number[] | null }>({ run: null, reach: -1, loading: false, debt: 0, prev: null });
   useEffect(
     () => () => {
       phys.current?.dispose();
@@ -444,14 +444,19 @@ export function CellPhysics({ world, chain, tcpMm, effector, rate }: { world: Re
       });
       return;
     }
-    // The cell keeps the clock's time (the arm's moves do) in steps of 1/60 s, at most 8 a frame:
-    // a slow computer runs more steps a frame, not a slower line.
-    b.debt = Math.min(b.debt + dt * (rate?.current ?? 1), 8 / 60);
-    while (b.debt >= 1 / 120) {
+    // The cell keeps the arm's time (the clock's, at most a quarter second a frame) in steps of
+    // 1/60 s; the arm goes through the steps on its way to this frame's pose, so it never jumps
+    // into a part.
+    b.debt = Math.min(b.debt + Math.min(dt, 0.25) * (rate?.current ?? 1), 1);
+    const n = Math.floor(b.debt * 60 + 0.5);
+    const from = b.prev && b.prev.length === w.angles.length ? b.prev : w.angles;
+    for (let k = 1; k <= n; k += 1) {
       const h = Math.min(1 / 60, b.debt);
       b.debt -= h;
-      stepCell(w, phys.current, h, chain, tcpMm);
+      const f = k / n;
+      stepCell(w, phys.current, h, chain, tcpMm, w.angles.map((a, i) => from[i] + (a - from[i]) * f));
     }
+    if (n > 0) b.prev = w.angles.slice();
   });
   return null;
 }

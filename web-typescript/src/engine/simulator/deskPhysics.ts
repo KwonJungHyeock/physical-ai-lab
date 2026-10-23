@@ -31,12 +31,15 @@ export function objectSpec(o: DeskObject): BlockSpec {
   };
 }
 
-/** One frame: the carried object where the simulator put it, the arm to its angles, the objects back from the physics. */
-export function stepDesk(w: WorldState, p: PhysicsWorld, dt: number): void {
+/**
+ * One frame: the carried object where the simulator put it, the arm to its angles (or to `angles`,
+ * a pose on its way there when a long frame is cut into steps), the objects back from the physics.
+ */
+export function stepDesk(w: WorldState, p: PhysicsWorld, dt: number, angles: readonly number[] = w.angles): void {
   const carried = w.carry ? w.objects.find((k) => k.id === w.carry!.id) : undefined;
   if (carried) p.pin(carried.id, [carried.x, carried.y, carried.z + carried.size[2] / 2], carried.q ?? yawQ(carried.yawDeg));
   else p.pin(null);
-  p.stepTo(w.angles, dt);
+  p.stepTo(angles, dt);
   for (const pose of p.blocks()) {
     if (pose.id === carried?.id) continue;
     const o = w.objects.find((k) => k.id === pose.id);
