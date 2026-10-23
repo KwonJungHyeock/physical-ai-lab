@@ -510,6 +510,7 @@ export default function Console() {
   /** 실습 셀 open (its world replaces the desk's), or null. */
   const [cellAt, setCellAt] = useState<{ cell: CellId; mission: string | null } | null>(null);
   const cellRef = useRef(cellAt);
+  const [cellTags, setCellTags] = useState<string[]>([]);
   const stageApi = useRef<StageApi | null>(null);
   const getStage = useCallback(() => stageApi.current, []);
   // The small camera picture comes back after the camera window closes: draw it once now
@@ -1465,6 +1466,7 @@ export default function Console() {
     w.__cellWorld = () => world.current;
     (w as { __cellView?: (n: ViewName) => void }).__cellView = (n) => stageApi.current?.view(n);
     (w as { __cellZoom?: (d: 1 | -1) => void }).__cellZoom = (d) => stageApi.current?.zoom(d);
+    (w as { __cellTags?: (t: string[]) => void }).__cellTags = setCellTags;
     // A cell state recorded elsewhere (tests/simulator), shown as it was: for still pictures.
     (w as { __cellLoad?: (s: { angles: number[]; gap: number; objects: WorldState['objects']; carry: WorldState['carry']; line: object; alerts: object[]; halt: unknown; fault: unknown; load: number[] }) => void }).__cellLoad = (s) => {
       const cw = world.current;
@@ -3461,6 +3463,7 @@ export default function Console() {
                   planMarks={planMarks}
                   cell={cellAt?.cell ?? null}
                   simRate={simRateRef}
+                  cellTags={cellTags}
                   display={display}
                   frameInsets={frameInsets}
                   layoutKey={`${dockShown}:${side}:${camOpen}:${display.mini}`}

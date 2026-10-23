@@ -165,7 +165,7 @@ function Puck({ o, world }: { o: DeskObject; world: RefObject<WorldState | null>
   return (
     <group>
       <Turned at={[0, 0, -h / 2]} profile={[[0, 0], [r - 1.2, 0], [r, 1.2], [r, h - 1.2], [r - 1.2, h], [r * 0.35, h], [r * 0.3, h - 0.6], [0, h - 0.6]]}>
-        <meshStandardMaterial ref={mat} color={o.color} metalness={0.85} roughness={0.3} map={brushed()} />
+        <meshStandardMaterial ref={mat} color={o.color} metalness={0.6} roughness={0.32} map={brushed()} />
       </Turned>
     </group>
   );

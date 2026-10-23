@@ -13,9 +13,10 @@
  * What moves is read from the world every frame (the pusher, the belt, the beam, the lamps).
  */
 
+import { Html } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useEffect, useMemo, useRef, type ReactNode, type RefObject } from 'react';
-import { CanvasTexture, CatmullRomCurve3, Color, ExtrudeGeometry, Fog, SRGBColorSpace, Shape, TubeGeometry, Vector3, type Group, type Mesh, type MeshStandardMaterial, type Texture } from 'three';
+import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { CanvasTexture, CatmullRomCurve3, Color, ExtrudeGeometry, Fog, SRGBColorSpace, Shape, TubeGeometry, Vector3, type Group, type Mesh, type MeshStandardMaterial, type PointLight, type Texture } from 'three';
 
 import { CELL_FLOOR_Z, cellLayout, gridPlace, type CellId } from '@/engine/simulator/cell/cells';
 import type { WorldState } from '@/engine/simulator/sim';
@@ -429,7 +430,7 @@ function Conveyor({ world }: { world: RefObject<WorldState | null> }) {
 }
 
 /** Feed table, magazine tower and feed cylinder with its air lines; the pusher follows the line's cylinder travel. */
-function Feeder({ world }: { world: RefObject<WorldState | null> }) {
+function Feeder({ world, onHover }: { world: RefObject<WorldState | null>; onHover: (n: string | null) => void }) {
   const l = cellLayout('feed');
   const pu = l.line.pusher!;
   const mag = l.line.magazine!;
@@ -476,6 +477,7 @@ function Feeder({ world }: { world: RefObject<WorldState | null> }) {
       <RBox at={[425, -270, -40 + 35]} size={[68, 42, 2]} radius={1}>
         <meshStandardMaterial color="#c7ccd3" metalness={0.3} roughness={0.4} />
       </RBox>
+      <Tagged name="매거진" onHover={onHover}>
       {/* Magazine tower: four profile posts with rails, a clear tube, a cap and the "있음" sensor at the slot. */}
       {[
         [t.x0, t.y0],
@@ -501,6 +503,8 @@ function Feeder({ world }: { world: RefObject<WorldState | null> }) {
       <RBox at={[t.x0 - 6, mag.y, mag.floorZ + 10]} size={[8, 10, 10]} radius={1.2}>
         <Paint color="#1f2a36" rough={0.35} />
       </RBox>
+      </Tagged>
+      <Tagged name="공급 실린더" onHover={onHover}>
       {/* Cylinder: a blue body with end caps on a bracket, two air hoses down to the valve. */}
       <group position={[m(445), m(cy), m(cz + 6)]}>
         <RBox size={[58, 22, 22]} radius={2.5}>
@@ -534,6 +538,7 @@ function Feeder({ world }: { world: RefObject<WorldState | null> }) {
       </group>
       <Hose pts={[[423, cy, cz + 21], [420, cy + 10, cz + 34], [440, -330, cz + 20], [462, -330, mag.floorZ - 8]]} />
       <Hose pts={[[467, cy, cz + 21], [474, cy + 8, cz + 32], [480, -330, cz + 16], [478, -330, mag.floorZ - 8]]} />
+      </Tagged>
       <mesh ref={rod} position={[0, m(cy), m(cz + 6)]} rotation={[0, 0, Math.PI / 2]}>
         <cylinderGeometry args={[m(3), m(3), m(1), 16]} />
         <meshStandardMaterial color="#e8ecf0" metalness={0.7} roughness={0.12} />
@@ -820,7 +825,51 @@ function Backdrop() {
   return null;
 }
 
-export default function CellScene({ world, cell }: { world: RefObject<WorldState | null>; cell: CellId }) {
+/** Where each piece of equipment's name tag floats (mm), cell A. */
+const TAGS: Record<string, { at: [number, number, number]; note: string }> = {
+  매거진: { at: [310, -370, 285], note: '부품을 쌓아 두는 통 · 있음 센서' },
+  '공급 실린더': { at: [445, -370, 80], note: '맨 아래 부품을 벨트로 밀어요' },
+  컨베이어: { at: [225, -200, 60], note: '부품을 끝까지 실어 날라요' },
+  '끝 센서': { at: [225, 12, 70], note: '빛이 끊기면 부품이 도착한 거예요' },
+  '소재 판': { at: [130, -140, 45], note: '번호 칸 1~9' },
+  '적재 판': { at: [130, 130, 45], note: '빨간 칸이 기준 자리' },
+  제어함: { at: [-80, -300, 130], note: '경광등 · 신호 램프 · 비상 정지' },
+};
+
+/** A piece of equipment that shows its name tag while the pointer is over it. */
+function Tagged({ name, onHover, children }: { name: string; onHover: (n: string | null) => void; children: ReactNode }) {
+  return (
+    <group
+      onPointerOver={(e) => {
+        e.stopPropagation();
+        onHover(name);
+      }}
+      onPointerOut={() => onHover(null)}
+    >
+      {children}
+    </group>
+  );
+}
+
+/** The stack light's glow on the floor and the cabinet, in its colour. */
+function StackGlow({ world }: { world: RefObject<WorldState | null> }) {
+  const light = useRef<PointLight>(null);
+  useFrame(() => {
+    const run = world.current?.cell;
+    const l = light.current;
+    if (!run || !l) return;
+    const recent = run.alerts.length ? run.alerts[run.alerts.length - 1] : null;
+    const red = !!run.halt || !!run.health.fault;
+    const amber = !red && !!recent && recent.level === 'warn' && run.line.t - recent.t < 4;
+    l.color.set(red ? '#ff3b30' : amber ? '#ffb020' : '#2fd36f');
+    l.intensity = red && Math.floor(run.line.t * 3) % 2 ? 0.01 : red || amber ? 0.06 : 0.025;
+  });
+  return <pointLight ref={light} position={[m(-80), m(-274), m(F + 260)]} distance={0.45} decay={2} />;
+}
+
+export default function CellScene({ world, cell, tags = [] }: { world: RefObject<WorldState | null>; cell: CellId; tags?: readonly string[] }) {
+  const [hover, setHover] = useState<string | null>(null);
+  const shown = [...new Set([...tags, ...(hover ? [hover] : [])])].filter((n) => TAGS[n]);
   return (
     <group>
       <Backdrop />
@@ -829,13 +878,30 @@ export default function CellScene({ world, cell }: { world: RefObject<WorldState
       <Pedestal />
       {cell === 'feed' && (
         <>
-          <Conveyor world={world} />
-          <Feeder world={world} />
-          <MarkedPlate grid="source" label="소재 판" origin={false} />
-          <MarkedPlate grid="pallet" label="적재 판" origin />
+          <Tagged name="컨베이어" onHover={setHover}>
+            <Conveyor world={world} />
+          </Tagged>
+          <Feeder world={world} onHover={setHover} />
+          <Tagged name="소재 판" onHover={setHover}>
+            <MarkedPlate grid="source" label="소재 판" origin={false} />
+          </Tagged>
+          <Tagged name="적재 판" onHover={setHover}>
+            <MarkedPlate grid="pallet" label="적재 판" origin />
+          </Tagged>
         </>
       )}
-      <Cabinet world={world} cell={cell} />
+      <Tagged name="제어함" onHover={setHover}>
+        <Cabinet world={world} cell={cell} />
+      </Tagged>
+      <StackGlow world={world} />
+      {shown.map((n) => (
+        <Html key={n} position={[m(TAGS[n].at[0]), m(TAGS[n].at[1]), m(TAGS[n].at[2])]} center zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
+          <div data-celltag style={{ background: 'rgba(24,32,29,0.92)', color: '#fff', borderRadius: 7, padding: '4px 9px', font: '700 12.5px Pretendard, sans-serif', whiteSpace: 'nowrap', boxShadow: '0 2px 8px rgba(0,0,0,0.25)' }}>
+            {n}
+            <span style={{ display: 'block', fontWeight: 500, fontSize: 11, opacity: 0.8 }}>{TAGS[n].note}</span>
+          </div>
+        </Html>
+      ))}
     </group>
   );
 }

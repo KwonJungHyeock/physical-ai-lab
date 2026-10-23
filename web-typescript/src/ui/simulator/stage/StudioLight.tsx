@@ -30,14 +30,37 @@ function softboxStudio(): Scene {
 }
 
 /**
+ * A workshop hall (`factory`, the 실습 셀): light grey walls, a high ceiling with rows of long light
+ * fittings and bright windows down one side, so machined metal and painted equipment read as on a
+ * shop floor.
+ */
+function factoryHall(): Scene {
+  const scene = new Scene();
+  const room = new Mesh(new BoxGeometry(14, 7, 14), new MeshStandardMaterial({ color: '#9aa1a8', side: BackSide, roughness: 1 }));
+  room.position.y = 2.5;
+  scene.add(room);
+  const panel = (w: number, h: number, d: number, x: number, y: number, z: number, k: number) => {
+    const m = new Mesh(new BoxGeometry(w, h, d), new MeshBasicMaterial());
+    m.material.color.setScalar(k);
+    m.position.set(x, y, z);
+    scene.add(m);
+  };
+  for (const x of [-3, 0, 3]) for (const z of [-3.5, 0, 3.5]) panel(0.25, 0.06, 2.4, x, 5.6, z, 7); // light fittings
+  panel(0.1, 1.6, 9, -6.8, 3.2, 0, 2.6); // windows, left
+  panel(9, 1.6, 0.1, 0, 3.2, -6.8, 2); // windows, back
+  panel(14, 0.05, 14, 0, -0.95, 0, 0.55); // pale floor bounce
+  return scene;
+}
+
+/**
  * Studio light for reflections and soft fill, prefiltered once (no download): three's procedural room,
  * or with `softbox` the photo studio above (the robot arm's screen).
  */
-export default function StudioLight({ intensity = 0.42, softbox = false }: { intensity?: number; softbox?: boolean }) {
+export default function StudioLight({ intensity = 0.42, softbox = false, factory = false }: { intensity?: number; softbox?: boolean; factory?: boolean }) {
   const gl = useThree((st) => st.gl);
   const env = useMemo(() => {
     const pmrem = new PMREMGenerator(gl);
-    const room = softbox ? softboxStudio() : new RoomEnvironment();
+    const room = factory ? factoryHall() : softbox ? softboxStudio() : new RoomEnvironment();
     const texture = pmrem.fromScene(room, 0.04).texture;
     room.traverse((o) => {
       const m = o as Mesh;
@@ -47,7 +70,7 @@ export default function StudioLight({ intensity = 0.42, softbox = false }: { int
     });
     pmrem.dispose();
     return texture;
-  }, [gl, softbox]);
+  }, [gl, softbox, factory]);
   useEffect(() => () => env.dispose(), [env]);
   return <Environment map={env} environmentIntensity={intensity} />;
 }

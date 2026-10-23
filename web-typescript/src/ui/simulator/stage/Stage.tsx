@@ -224,6 +224,8 @@ interface StageProps {
   cell?: CellId | null;
   /** The simulation's speed (×1 ×2 ×4): the cell's line runs that much faster, as the arm does. */
   simRate?: RefObject<number>;
+  /** Equipment whose name tags show (the step's equipment); others show while pointed at. */
+  cellTags?: readonly string[];
 }
 
 /**
@@ -296,7 +298,7 @@ export default function Stage(props: StageProps) {
       }}
     >
       <color attach="background" args={[SCENE.sky]} />
-      <StudioLight intensity={0.5} softbox />
+      <StudioLight intensity={props.cell ? 0.75 : 0.5} softbox={!props.cell} factory={!!props.cell} />
       <hemisphereLight ref={hemi} args={['#ffffff', '#cfd6de', 0.3]} />
       <directionalLight
         ref={key}
@@ -304,10 +306,10 @@ export default function Stage(props: StageProps) {
         intensity={2.5}
         castShadow
         shadow-mapSize={high ? [4096, 4096] : [2048, 2048]}
-        shadow-camera-left={-0.55}
-        shadow-camera-right={0.55}
-        shadow-camera-top={0.55}
-        shadow-camera-bottom={-0.55}
+        shadow-camera-left={props.cell ? -0.8 : -0.55}
+        shadow-camera-right={props.cell ? 0.8 : 0.55}
+        shadow-camera-top={props.cell ? 0.8 : 0.55}
+        shadow-camera-bottom={props.cell ? -0.8 : -0.55}
         shadow-camera-near={0.3}
         shadow-camera-far={3}
         shadow-bias={-0.0003}
@@ -321,7 +323,7 @@ export default function Stage(props: StageProps) {
       <Suspense fallback={null}>
         <World {...props} lights={lights} />
       </Suspense>
-      {props.display.grid && (
+      {props.display.grid && !props.cell && (
         <Grid
           onUpdate={(g) => g.layers.set(SCREEN_ONLY)}
           position={[0.14, (props.theme === 'kit' ? DESK_Z : 0) / 1000 + 0.0001, 0]}
@@ -389,6 +391,7 @@ function World({
   planMarks,
   cell,
   simRate,
+  cellTags,
 }: StageProps & { lights: Lights }) {
   // Every node of the arm's model files, by name (a later file wins a shared name).
   const gltfs = useGLTF(spec.glbs as string[], DRACO_PATH) as unknown as { nodes: GlbNodes }[];
@@ -663,7 +666,7 @@ function World({
       {!cell && <Desk z={theme === 'kit' ? DESK_Z : 0} />}
       {cell ? (
         <>
-          <CellScene world={world} cell={cell} />
+          <CellScene world={world} cell={cell} tags={cellTags} />
           <CellObjects world={world} />
           <CellPhysics world={world} chain={chain} tcpMm={tcpMm} effector={effector} rate={simRate} />
         </>
@@ -758,7 +761,7 @@ const WORK_AREA: Record<Theme, { min: [number, number, number]; max: [number, nu
   arm: { min: [40, -160, 0], max: [300, 160, 10] },
 };
 /** A 실습 셀's equipment (its floor left out: the view frames what is on it). */
-const CELL_AREA = { min: [-40, -410, -40], max: [500, 185, 150] } as const;
+const CELL_AREA = { min: [-60, -405, -30], max: [480, 180, 110] } as const;
 /** A cell's own home view (three.js direction): from the front right, the belt across the picture, the magazine behind. */
 const CELL_HOME: [number, number, number] = [1, 0.95, -0.55];
 /** The arm standing straight up (0° pose), robot frame, mm. */
