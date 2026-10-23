@@ -70,10 +70,11 @@ import { check, parse, type CameraId, type Problem, type Step } from '@/engine/s
 import { checkProcess, compileProcess, emptyProcess, processFromFile, processListing, processToFile, PROCESS_EXT, type Process } from '@/engine/simulator/process';
 import { findSlots, tutorialFor } from '@/engine/simulator/tutorials';
 import { blockLayout, buildPlan, carryTargets, freshPlan, makeSolver, practiceOf, type Built, type PlanKind, type Solver, type Spot } from '@/engine/simulator/plan';
-import { CELL_BY_ID, type CellId } from '@/engine/simulator/cell/cells';
+import { CELL_BY_ID, cellLayout, type CellId } from '@/engine/simulator/cell/cells';
 import { missionById, missionsOf } from '@/engine/simulator/cell/missions';
 import { LEVEL_NAME, type CellAlert } from '@/engine/simulator/cell/faults';
 import { cellChecks, repairCell } from '@/engine/simulator/cell/run';
+import CellCamera from './stage/CellCamera';
 import CellHud from './stage/CellHud';
 import { RunError, SelfCollision, Stop, createCellWorld, createWorld, emptyStats, instantAnimate, jogTo, moveCheck, moveProblem, playTimeline, preflight, runProcess, runProgram, type RobotAction, type RunHooks, type WorldState } from '@/engine/simulator/sim';
 import { demoFits, demoFor, demoStepAt } from '@/engine/simulator/demos';
@@ -165,7 +166,10 @@ const CELL_PROG_KEY = 'robot-console-cell-prog';
 /** A cell program's start: the import line and the arm to its home pose. */
 const CELL_START = 'from edu import robot, cell\n\nrobot.home()\n';
 /** Equipment whose name tags show for a ladder step (by its place in the ladder). */
-const cellStepTags = (n: number) => (n <= 5 ? ['소재 판', '적재 판'] : n <= 9 ? ['매거진', '끝 센서', '적재 판'] : ['공급 실린더', '컨베이어', '끝 센서']);
+const cellStepTags = (cell: CellId, n: number): string[] => {
+  if (cell === 'vision') return n <= 3 ? ['위 카메라', '분류함'] : n <= 6 ? ['위 카메라', '끝 센서', '분류함'] : ['위 카메라', '분류함', '불량 슈트'];
+  return n <= 5 ? ['소재 판', '적재 판'] : n <= 9 ? ['매거진', '끝 센서', '적재 판'] : ['공급 실린더', '컨베이어', '끝 센서'];
+};
 /** Where a step's program is kept: by the step, or each cell's 자유 실습 (cell A's under its first name). */
 const cellProgKey = (at: { cell: CellId; mission: string | null }) => `${CELL_PROG_KEY}:${at.mission ?? (at.cell === 'feed' ? 'free' : `free-${at.cell}`)}`;
 const loadCellProgram = (at: { cell: CellId; mission: string | null }): string | null => {
@@ -3610,7 +3614,7 @@ export default function Console() {
                   planMarks={planMarks}
                   cell={cellAt?.cell ?? null}
                   simRate={simRateRef}
-                  cellTags={cellTags.length ? cellTags : cellAt?.mission && !busy ? cellStepTags(missionById(cellAt.mission)?.n ?? 1) : []}
+                  cellTags={cellTags.length ? cellTags : cellAt?.mission && !busy ? cellStepTags(cellAt.cell, missionById(cellAt.mission)?.n ?? 1) : []}
                   display={display}
                   frameInsets={frameInsets}
                   layoutKey={`${dockShown}:${side}:${camOpen}:${display.mini}`}
@@ -3749,6 +3753,7 @@ export default function Console() {
                   }}
                 />
               )}
+              {loaded && view === 'sim' && cellAt && railOpen !== 'monitor' && cellLayout(cellAt.cell).line.camera && <CellCamera world={world} cell={cellAt.cell} />}
               {loaded && view === 'sim' && display.mini && !railOpen && !cellAt && <MiniArmLabels monitor={monitor} live={live} tipOf={tipOf} side="right" />}
               {loaded && view === 'sim' && (
                 <LeftRail groups={barGroups} foot={barFoot} sheetOpen={railOpen !== null} onCloseSheet={() => setRailOpen(null)}>

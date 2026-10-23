@@ -32,9 +32,13 @@ import {
   type Target,
 } from '@/engine/simulator/program';
 import { cellLayout, type CellId } from '@/engine/simulator/cell/cells';
+import { LIMIT_NAMES, OUTLINES, REJECT, SIZE_WORDS, VISION_COLORS } from '@/engine/simulator/cell/vision';
 
 import { useLive, type Live } from '../liveStore';
 import css from '../console.module.css';
+
+/** The variable a camera picture goes into (part = camera.look()). */
+const PART_VAR = 'part';
 
 type Proto =
   | { type: Exclude<Step['type'], 'grip' | 'pump' | 'pen'> }
@@ -90,6 +94,12 @@ const COLOR_CLASS: Record<Step['type'], string> = {
   cellFeed: css.c_flow,
   cellWait: css.c_flow,
   cellSet: css.c_flow,
+  cellLook: css.c_eye,
+  cellLearn: css.c_eye,
+  cellRule: css.c_eye,
+  cellLimit: css.c_eye,
+  cellPickVar: css.c_macro,
+  cellSortPlace: css.c_macro,
 };
 
 function toolProtos(effector: EffectorId): Proto[] {
@@ -165,7 +175,10 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
   const palette: [string, Proto[]][] = cell
     ? [
         ['셀 · 로봇', [{ type: 'cellPick' }, { type: 'cellPlace' }, { type: 'home' }, { type: 'speed' }]],
-        ['셀 · 장비', [...(cellLayout(cell).line.pusher ? [{ type: 'cellFeed' } as Proto] : []), { type: 'cellWait' }, { type: 'cellSet' }]],
+        ['셀 · 장비', [...(cellLayout(cell).line.pusher || cellLayout(cell).line.dispenser ? [{ type: 'cellFeed' } as Proto] : []), { type: 'cellWait' }, { type: 'cellSet' }]],
+        ...(cellLayout(cell).line.camera
+          ? ([['셀 · 카메라', [{ type: 'cellLook' }, { type: 'cellPickVar' }, { type: 'cellSortPlace' }, { type: 'cellRule' }, { type: 'cellLimit' }, { type: 'cellLearn' }]]] as [string, Proto[]][])
+          : []),
         ['흐름', [{ type: 'wait' }, { type: 'repeat' }]],
         [EFFECTOR_BY_ID[effector].name, toolProtos(effector)],
         ['고급', [{ type: 'joint' }, { type: 'moveTo' }, { type: 'move' }]],
@@ -186,6 +199,8 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
   const pickPlaces = lay ? (cell === 'feed' ? [...Object.keys(lay.places).filter((n) => n !== '기준 자리'), ...Object.keys(lay.grids).filter((g) => g !== '적재 판').map((g) => `${g} 다음 칸`)] : anyPlace) : [];
   const placePlaces = lay ? (cell === 'feed' ? ['기준 자리', ...Object.keys(lay.grids).filter((g) => g !== '소재 판').map((g) => `${g} 다음 칸`)] : anyPlace) : [];
   const opts = (list: readonly string[], now: string): [string, string][] => [...new Set([now, ...list])].map((n) => [n, n]);
+  // B's rule table sends parts to its bins or down the chute.
+  const ruleTargets = lay ? Object.keys(lay.places).filter((n) => n.startsWith('함 ') || n === REJECT) : [];
 
   const makeStep = (proto: Proto): Step => {
     const line = 0;
@@ -232,6 +247,18 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
         return { type: 'cellWait', signal: lay?.inputs[0] ?? '끝 센서', on: true, line };
       case 'cellSet':
         return { type: 'cellSet', signal: lay?.outputs[0] ?? '컨베이어', on: true, line };
+      case 'cellLook':
+        return { type: 'cellLook', variable: PART_VAR, line };
+      case 'cellLearn':
+        return { type: 'cellLearn', outline: '원', line };
+      case 'cellPickVar':
+        return { type: 'cellPickVar', variable: PART_VAR, line };
+      case 'cellSortPlace':
+        return { type: 'cellSortPlace', variable: PART_VAR, line };
+      case 'cellRule':
+        return { type: 'cellRule', when: ['빨강'], to: '함 1', line };
+      case 'cellLimit':
+        return { type: 'cellLimit', what: '지름', value: 110, line };
       case 'find':
         return { type: 'find', variable: DEFAULT_VARIABLE, camera: theme === 'arm' ? 'hand' : 'top', color: '빨강', line };
       case 'above':
@@ -537,6 +564,70 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
           <>
             {preview ? <span>{s.signal} ▾</span> : sel({ label: '장비', value: s.signal, options: opts(lay?.outputs ?? [], s.signal), onChange: (v) => ((s.signal = v), commit()) })}
             {preview ? <span>켜기 ▾</span> : sel({ label: '켜기 · 끄기', value: s.on ? 'on' : 'off', options: [['켜기', 'on'], ['끄기', 'off']], onChange: (v) => ((s.on = v === 'on'), commit()) })}
+          </>
+        );
+      case 'cellLook':
+        return (
+          <>
+            <span className={css.macroIcon} aria-hidden="true">📷</span>
+            <span>카메라로 찍기 → {s.variable}</span>
+          </>
+        );
+      case 'cellLearn':
+        return (
+          <>
+            <span className={css.macroIcon} aria-hidden="true">📷</span>
+            <span>카메라 아래 부품을</span>
+            {preview ? <span>원 ▾</span> : sel({ label: '모양 이름', value: s.outline, options: OUTLINES.map((o) => [o, o]), onChange: (v) => ((s.outline = v), commit()) })}
+            <span>사진으로 등록</span>
+          </>
+        );
+      case 'cellPickVar':
+        return (
+          <>
+            <span className={css.macroIcon} aria-hidden="true">✋</span>
+            <span>찍은 부품({s.variable}) 자리에서 집기</span>
+          </>
+        );
+      case 'cellSortPlace':
+        return (
+          <>
+            <span className={css.macroIcon} aria-hidden="true">⤓</span>
+            <span>찍은 부품({s.variable})을 규칙표대로 놓기</span>
+          </>
+        );
+      case 'cellRule': {
+        const slot = (words: readonly string[]) => s.when.find((w) => words.includes(w)) ?? '';
+        const set = (words: readonly string[], v: string) => {
+          const keep = s.when.filter((w) => !words.includes(w));
+          s.when = [...VISION_COLORS, ...SIZE_WORDS, ...OUTLINES].filter((w) => w === v || keep.includes(w));
+          commit();
+        };
+        const any = (label: string, words: readonly string[]) =>
+          preview ? <span>{slot(words) || '아무'} ▾</span> : sel({ label, value: slot(words), options: [['아무', ''], ...words.map((w): [string, string] => [w, w])], onChange: (v) => set(words, v) });
+        return (
+          <>
+            <span>규칙:</span>
+            {any('색', VISION_COLORS)}
+            {any('크기', SIZE_WORDS)}
+            {any('모양', OUTLINES)}
+            <span>→</span>
+            {preview ? <span>{s.to} ▾</span> : sel({ label: '보낼 곳', value: s.to, options: opts(ruleTargets, s.to), onChange: (v) => ((s.to = v), commit()) })}
+          </>
+        );
+      }
+      case 'cellLimit':
+        return (
+          <>
+            {preview ? <span>지름 ▾</span> : sel({ label: '기준', value: s.what, options: LIMIT_NAMES.map((n) => [n, n]), onChange: (v) => ((s.what = v), (s.value = v === '지름' ? 110 : 80), commit()) })}
+            <span>기준</span>
+            {preview ? (
+              <span>110 mm</span>
+            ) : s.what === '지름' ? (
+              num({ label: '지름 기준 (이상이면 큰)', value: s.value, min: 30, max: 300, step: 5, unit: 'mm', onChange: (v) => ((s.value = v), commit()) })
+            ) : (
+              num({ label: '확신도 기준 (미만이면 불량 슈트)', value: s.value, min: 0, max: 100, step: 5, unit: '%', onChange: (v) => ((s.value = v), commit()) })
+            )}
           </>
         );
     }

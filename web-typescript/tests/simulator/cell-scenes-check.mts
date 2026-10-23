@@ -21,7 +21,7 @@ const { createCellWorld } = await import('../../src/engine/simulator/sim');
 const { tcpFor, EFFECTOR_BY_ID } = await import('../../src/engine/simulator/effectors');
 const { objectSpec } = await import('../../src/engine/simulator/deskPhysics');
 const { makeSolver } = await import('../../src/engine/simulator/plan');
-const { CELLS, cellLayout, toShop } = await import('../../src/engine/simulator/cell/cells');
+const { B_BINS, CELLS, cellLayout, toShop } = await import('../../src/engine/simulator/cell/cells');
 const { CELL_ENV, cellSolids, stepCell } = await import('../../src/engine/simulator/cell/run');
 const { setOut } = await import('../../src/engine/simulator/cell/line');
 const { runProgram } = await import('../../src/engine/simulator/sim');
@@ -105,7 +105,9 @@ async function free(id: (typeof CELLS)[number]['id']) {
   run(1);
   assert.ok(!w.cell!.alerts.some((a) => a.level !== 'info'), alerts());
   const bin = w.cell!.layout.places['함 3'];
-  assert.ok(w.objects.some((o) => Math.hypot(o.x - bin.x, o.y - bin.y) < 15 && o.z < bin.z + 5), 'B: the part is in 함 3');
+  // Inside the tote's walls (the first drop goes to a corner) and below its rim.
+  const inBin = (o: { x: number; y: number; z: number }) => Math.abs(o.x - bin.x) < B_BINS.inner / 2 && Math.abs(o.y - bin.y) < B_BINS.inner / 2 && o.z < B_BINS.floor + B_BINS.wall;
+  assert.ok(w.objects.some(inBin), `B: the part is in 함 3 (${w.objects.map((o) => `${o.x.toFixed(0)},${o.y.toFixed(0)},${o.z.toFixed(0)}`).join(' ')})`);
   console.log(`  ok   B belt carries a part to the end sensor; picked under the camera, put in 함 3`);
 }
 

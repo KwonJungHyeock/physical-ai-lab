@@ -369,3 +369,44 @@
   font-weight: 700;
   color: #9aa49f;
 }
+
+/* 실습 셀 B's camera window (CellCamera.tsx): top right of the 3D view, left of the view tools. */
+.camera {
+  position: absolute;
+  right: calc(var(--inset-r, 12px) + 100px);
+  top: calc(var(--top, 0px) + 12px);
+  z-index: 4;
+  width: 272px;
+  background: rgba(24, 32, 29, 0.93);
+  color: #e9eeeb;
+  border-radius: 12px;
+  padding: 9px 12px 10px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.25);
+  font-size: 12.5px;
+  line-height: 1.45;
+  word-break: keep-all;
+}
+.camera header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+.camera header span {
+  font-size: 11px;
+  color: #9aa49f;
+}
+.camera canvas {
+  display: block;
+  width: 248px;
+  border-radius: 6px;
+  border: 1px solid #3a4440;
+}
+.camera p {
+  margin: 7px 0 0;
+}
+.camera em {
+  font-style: normal;
+  font-weight: 800;
+  color: #9fd8bf;
+}

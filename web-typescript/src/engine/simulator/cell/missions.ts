@@ -9,7 +9,9 @@
  */
 
 import { makeObject, type DeskObject } from '../desk';
-import { CELLS, fromShop, gridPlace, magazineParts, makePart, type CellId, type CellLayout } from './cells';
+import { COLOR_HEX, type ColorName } from '../board';
+import { CELLS, PART_HEIGHT, fromShop, gridPlace, magazineParts, makePart, type CellId, type CellLayout } from './cells';
+import { REJECT, outlineOf, type Outline, type VisionState } from './vision';
 import type { CellAlert } from './faults';
 import type { LineState } from './line';
 
@@ -22,6 +24,8 @@ export interface MissionSetup {
   refill?: number;
   /** Start with the belt running (a part already on its way). */
   beltOn?: boolean;
+  /** Parts waiting at the dispenser (B), in the order they drop. */
+  queue?(l: CellLayout): DeskObject[];
 }
 
 /** What a check needs: the parts where they are, the run's record. */
@@ -33,12 +37,16 @@ export interface Judge {
   events: readonly CellEvent[];
   /** Seconds from the first motion to now (or to the end of the run). */
   elapsed: number;
+  /** B's camera: what it was taught (for the 모양 학습 step). */
+  vision?: VisionState;
 }
 
 export type CellEvent =
   | { t: number; type: 'pick'; place: string; part: string | null; sensors: Record<string, boolean> }
   | { t: number; type: 'place'; place: string; part: string | null }
-  | { t: number; type: 'feed' };
+  | { t: number; type: 'feed' }
+  | { t: number; type: 'look'; part: string | null }
+  | { t: number; type: 'sort'; part: string; to: string };
 
 export interface CheckResult {
   ok: boolean;
@@ -325,17 +333,206 @@ const A: CellMission[] = [
 const ladder = (cell: CellId, letter: string, rows: [string, string, string][]): CellMission[] =>
   rows.map(([title, adds, goal], k) => ({ id: `${letter}${k + 1}`, cell, n: k + 1, title, adds, goal, hint: '' }));
 
-const B = ladder('vision', 'B', [
-  ['카메라로 색 읽기', '카메라 판정 결과로 놓을 곳 정하기', '판 위 부품 하나의 색을 카메라로 읽어 맞는 함에 넣어요.'],
-  ['세 가지 색', '판정을 여러 번', '빨강 · 파랑 · 노랑 부품 3개를 각각 맞는 함에 넣어요.'],
-  ['위치도 카메라로', '카메라 좌표 → 로봇 좌표', '아무 데나 놓인 부품을 카메라가 찾은 위치로 집어요.'],
-  ['크기 기준', '판정 기준값을 직접 정하기', '지름 기준을 정해 큰 것과 작은 것을 나눠요.'],
-  ['색 · 크기 두 조건', '규칙표 (조건 두 개)', '색과 크기 규칙표대로 함 1 · 2 · 3에 나눠요.'],
-  ['벨트 위에서 찍기', '끝 센서 → 촬영 → 집기', '벨트가 실어 오는 부품을 멈춘 뒤 찍고 분류해요.'],
-  ['모르는 것은 불량 슈트', '판정 확신도 기준', '확신도가 낮은 부품은 불량 슈트로 보내요.'],
-  ['모양 학습', '사진 등록으로 분류기 만들기', '원 · 사각 · 육각 사진을 등록해 섞인 부품을 나눠요.'],
-  ['연속 12개 · 시간 안에', '사이클 타임 목표', '섞인 부품 12개를 놓치지 않고 시간 안에 분류해요.'],
-]);
+/* --- B: 비전 분류 ------------------------------------------------------------- */
+
+const HEAD_B = 'from edu import robot, camera, cell\n\nrobot.home()\n';
+/** The colour rule every colour step starts from: 빨강 → 함 1, 파랑 → 함 2, 노랑 → 함 3. */
+const COLOR_RULES = 'cell.rule("빨강", "함 1")\ncell.rule("파랑", "함 2")\ncell.rule("노랑", "함 3")\n';
+const BIN_OF_COLOR: Record<string, string> = { 빨강: '함 1', 파랑: '함 2', 노랑: '함 3' };
+/** A worn part whose colour the camera can hardly tell (it should go down the chute). */
+const FADED = '#a8786a';
+const BIG = 25;
+const SMALL = 18;
+
+type Spec = { color: string; d?: number; outline?: Outline };
+/** A part as B's dispenser or belt has it: a colour, a size across, an outline. */
+function bPart(x: number, y: number, z: number, sp: Spec): DeskObject {
+  const color = COLOR_HEX[sp.color as ColorName] ?? sp.color;
+  const d = sp.d ?? BIG;
+  if (sp.outline === '사각') return makeObject('block', { x, y, z }, { size: [d - 3, d - 3, PART_HEIGHT], color, massG: 20 });
+  return makePart(x, y, z, { size: [d, d, PART_HEIGHT], color, ...(sp.outline === '육각' ? { sides: 6 } : {}) });
+}
+const queueOf = (specs: Spec[]) => () => specs.map((sp) => bPart(0, 0, 0, sp));
+const onBeltAt = (list: [number, number, Spec][]) => (l: CellLayout) => list.map(([x, y, sp]) => bPart(x, y, l.line.belt!.topZ, sp));
+
+/** Where a part lies now: in which bin, down the chute, or nowhere yet. */
+function whereIs(j: Judge, o: DeskObject): string | null {
+  for (const [name, p] of Object.entries(j.l.places)) {
+    if (name.startsWith('함 ') && Math.abs(o.x - p.x) < 28 && Math.abs(o.y - p.y) < 28 && o.z < p.z - 4) return name;
+  }
+  const c = j.l.places[REJECT];
+  if (c && Math.abs(o.x - c.x) < 24 && Math.abs(o.y - c.y) < 24 && o.z < c.z - 2) return REJECT;
+  return null;
+}
+
+/** All `n` parts where they belong (`want` says where, by what the part really is). */
+function sortedRight(label: string, n: number, want: (o: DeskObject) => string): Check {
+  return {
+    label,
+    judge: (j) => {
+      const parts = j.parts.filter((o) => o.kind === 'puck' || o.kind === 'block');
+      let ok = 0;
+      let wrong = '';
+      for (const o of parts) {
+        const at = whereIs(j, o);
+        if (at === want(o)) ok += 1;
+        else if (at && !wrong) wrong = `${want(o)}에 갈 부품이 ${at}에 있어요`;
+      }
+      return ok >= n ? { ok: true, detail: `${ok} / ${n}개` } : { ok: false, detail: wrong || `${ok} / ${n}개` };
+    },
+  };
+}
+
+const hexName = (o: DeskObject) => Object.entries(COLOR_HEX).find(([, h]) => h.toLowerCase() === o.color.toLowerCase())?.[0] ?? '?';
+const byColor = (o: DeskObject) => BIN_OF_COLOR[hexName(o)] ?? REJECT;
+
+const looked = (n: number): Check => ({
+  label: n > 1 ? `카메라로 ${n}번 찍었어요` : '카메라로 찍었어요',
+  judge: (j) => {
+    const c = j.events.filter((e) => e.type === 'look' && e.part).length;
+    return { ok: c >= n, detail: `${c}번` };
+  },
+});
+
+const pickedWhereSeen = (n: number): Check => ({
+  label: '찍은 자리에서 집었어요',
+  judge: (j) => {
+    const c = j.events.filter((e) => e.type === 'pick' && e.place === '찍은 자리' && e.part).length;
+    return { ok: c >= n, detail: c ? `${c}번` : '정한 자리에서만 집었어요' };
+  },
+});
+
+const beltStoppedAtSensor: Check = {
+  label: '끝 센서가 켜지면 컨베이어를 껐어요',
+  judge: (j) => (j.alerts.some((a) => a.kind === 'jam') ? { ok: false, detail: '벨트가 부품 밑에서 미끄러졌어요' } : { ok: true }),
+};
+
+const taught = (n: number): Check => ({
+  label: `모양 사진을 ${n}가지 등록했어요`,
+  judge: (j) => {
+    const c = new Set((j.vision?.learned ?? []).map((l) => l.label)).size;
+    return { ok: c >= n, detail: `${c}가지` };
+  },
+});
+
+const B: CellMission[] = [
+  {
+    id: 'B1',
+    cell: 'vision',
+    n: 1,
+    title: '카메라로 색 읽기',
+    adds: '카메라 판정 결과로 놓을 곳 정하기',
+    goal: '벨트 끝의 부품 하나를 카메라로 찍고, 규칙표(빨강 → 함 1, 파랑 → 함 2, 노랑 → 함 3)대로 넣어요.',
+    hint: 'part = camera.look() 으로 찍으면 part 에 색 · 지름 · 위치가 들어가요. cell.rule 세 줄로 규칙표를 만들고, 집은 뒤 robot.place_by_rule(part) 로 놓아요.',
+    setup: { parts: onBeltAt([[225, 7.5, { color: '빨강' }]]), auto: true },
+    checks: [looked(1), sortedRight('색에 맞는 함에 넣었어요', 1, byColor), safe],
+    solution: `${HEAD_B}${COLOR_RULES}part = camera.look()\nrobot.pick("끝 위치")\nrobot.place_by_rule(part)\nrobot.home()\n`,
+  },
+  {
+    id: 'B2',
+    cell: 'vision',
+    n: 2,
+    title: '세 가지 색',
+    adds: '공급 → 찍기 → 분류를 여러 번',
+    goal: '투입기에서 오는 부품 3개(색이 모두 달라요)를 하나씩 찍어 맞는 함에 넣어요.',
+    hint: 'cell.feed() 로 한 개 공급하고 cell.wait("끝 센서") 로 기다린 뒤 찍어요. 이 묶음을 3번 반복해요.',
+    setup: { parts: () => [], auto: true, queue: queueOf([{ color: '파랑' }, { color: '빨강' }, { color: '노랑' }]) },
+    checks: [looked(3), sortedRight('3개 모두 색에 맞는 함에', 3, byColor), safe],
+    solution: `${HEAD_B}${COLOR_RULES}for _ in range(3):\n    cell.feed()\n    cell.wait("끝 센서")\n    part = camera.look()\n    robot.pick("끝 위치")\n    robot.place_by_rule(part)\nrobot.home()\n`,
+  },
+  {
+    id: 'B3',
+    cell: 'vision',
+    n: 3,
+    title: '위치도 카메라로',
+    adds: '카메라가 찾은 위치로 집기',
+    goal: '벨트 위 아무 데나 놓인 부품 2개를 카메라가 찾은 자리에서 집어 분류해요.',
+    hint: '부품이 끝 위치에 있지 않아요. robot.pick("끝 위치") 대신 robot.pick(part) 를 쓰면 카메라가 본 자리로 가요.',
+    setup: { parts: onBeltAt([[214, -62, { color: '노랑' }], [237, -24, { color: '빨강' }]]), auto: true },
+    checks: [pickedWhereSeen(2), sortedRight('2개 모두 색에 맞는 함에', 2, byColor), safe],
+    solution: `${HEAD_B}${COLOR_RULES}for _ in range(2):\n    part = camera.look()\n    robot.pick(part)\n    robot.place_by_rule(part)\nrobot.home()\n`,
+  },
+  {
+    id: 'B4',
+    cell: 'vision',
+    n: 4,
+    title: '크기 기준',
+    adds: '판정 기준값을 직접 정하기',
+    goal: '지름 125 mm(큰)와 90 mm(작은) 부품이 섞여 와요. 지름 기준을 정해 큰 것은 함 1, 작은 것은 함 2에 넣어요.',
+    hint: 'cell.limit("지름", 기준) 의 기준보다 크거나 같으면 "큰"이에요. 두 크기 사이 값을 골라요. 규칙은 cell.rule("큰", "함 1") 처럼 써요.',
+    setup: { parts: () => [], auto: true, queue: queueOf([{ color: '파랑', d: BIG }, { color: '노랑', d: SMALL }, { color: '빨강', d: SMALL }, { color: '초록', d: BIG }]) },
+    checks: [sortedRight('큰 것은 함 1, 작은 것은 함 2', 4, (o) => (o.size[0] >= 22 ? '함 1' : '함 2')), safe],
+    solution: `${HEAD_B}cell.limit("지름", 110)\ncell.rule("큰", "함 1")\ncell.rule("작은", "함 2")\nfor _ in range(4):\n    cell.feed()\n    cell.wait("끝 센서")\n    part = camera.look()\n    robot.pick("끝 위치")\n    robot.place_by_rule(part)\nrobot.home()\n`,
+  },
+  {
+    id: 'B5',
+    cell: 'vision',
+    n: 5,
+    title: '색 · 크기 두 조건',
+    adds: '규칙표 (조건 두 개, 위에서부터)',
+    goal: '빨강이면서 큰 것 → 함 1, 빨강이면서 작은 것 → 함 2, 나머지 모두 → 함 3 으로 나눠요.',
+    hint: '규칙은 위에서부터 맞는 첫 줄을 따라요. 조건을 둘 쓰면 둘 다 맞아야 해요. 조건 없이 cell.rule("함 3") 이라고 쓰면 "나머지 모두"예요.',
+    setup: { parts: () => [], auto: true, queue: queueOf([{ color: '빨강', d: SMALL }, { color: '파랑', d: BIG }, { color: '빨강', d: BIG }, { color: '노랑', d: SMALL }]) },
+    checks: [sortedRight('규칙표대로 함 1 · 2 · 3에', 4, (o) => (hexName(o) === '빨강' ? (o.size[0] >= 22 ? '함 1' : '함 2') : '함 3')), safe],
+    solution: `${HEAD_B}cell.limit("지름", 110)\ncell.rule("빨강", "큰", "함 1")\ncell.rule("빨강", "작은", "함 2")\ncell.rule("함 3")\nfor _ in range(4):\n    cell.feed()\n    cell.wait("끝 센서")\n    part = camera.look()\n    robot.pick("끝 위치")\n    robot.place_by_rule(part)\nrobot.home()\n`,
+  },
+  {
+    id: 'B6',
+    cell: 'vision',
+    n: 6,
+    title: '벨트 위에서 찍기',
+    adds: '투입 · 컨베이어 · 끝 센서를 직접 (자동 운전 꺼짐)',
+    goal: '투입 → 컨베이어 운전 → 끝 센서가 켜지면 정지 → 찍기 → 분류를 3개에 해요.',
+    hint: 'cell.set("투입", True) 다음에 False 로 되돌려야 다음 부품을 또 넣을 수 있어요. 끝 센서가 켜지면 바로 컨베이어를 꺼요.',
+    setup: { parts: () => [], auto: false, queue: queueOf([{ color: '노랑' }, { color: '빨강' }, { color: '파랑' }]) },
+    checks: [beltStoppedAtSensor, sortedRight('3개 모두 색에 맞는 함에', 3, byColor), safe],
+    solution: `${HEAD_B}${COLOR_RULES}for _ in range(3):\n    cell.set("투입", True)\n    cell.set("투입", False)\n    cell.set("컨베이어", True)\n    cell.wait("끝 센서")\n    cell.set("컨베이어", False)\n    part = camera.look()\n    robot.pick("끝 위치")\n    robot.place_by_rule(part)\nrobot.home()\n`,
+  },
+  {
+    id: 'B7',
+    cell: 'vision',
+    n: 7,
+    title: '모르는 것은 불량 슈트',
+    adds: '판정 확신도 기준',
+    goal: '색이 바랜 부품이 하나 섞여 있어요. 카메라가 확실하지 않은 부품은 불량 슈트로 보내고, 나머지는 색대로 넣어요.',
+    hint: '찍은 결과의 확신도를 보세요(카메라 창). cell.limit("확신도", 기준) 보다 낮으면 규칙표보다 먼저 불량 슈트로 가요.',
+    setup: { parts: () => [], auto: true, queue: queueOf([{ color: '빨강' }, { color: FADED }, { color: '파랑' }, { color: '노랑' }]) },
+    checks: [sortedRight('바랜 부품은 불량 슈트, 나머지는 색대로', 4, byColor), safe],
+    solution: `${HEAD_B}cell.limit("확신도", 80)\n${COLOR_RULES}for _ in range(4):\n    cell.feed()\n    cell.wait("끝 센서")\n    part = camera.look()\n    robot.pick("끝 위치")\n    robot.place_by_rule(part)\nrobot.home()\n`,
+  },
+  {
+    id: 'B8',
+    cell: 'vision',
+    n: 8,
+    title: '모양 학습',
+    adds: '사진 등록으로 분류기 만들기',
+    goal: '처음 3개(원 · 사각 · 육각)를 사진으로 등록하고 함 1 · 2 · 3에 넣은 뒤, 섞여 오는 3개를 모양대로 나눠요.',
+    hint: '부품이 카메라 아래에 있을 때 camera.learn("원") 처럼 이름을 붙여 등록해요. 등록하지 않은 모양은 "모양 모름"이라 불량 슈트로 가요.',
+    setup: { parts: () => [], auto: true, queue: queueOf([{ color: '파랑', outline: '원' }, { color: '파랑', outline: '사각' }, { color: '파랑', outline: '육각' }, { color: '파랑', outline: '육각' }, { color: '파랑', outline: '원' }, { color: '파랑', outline: '사각' }]) },
+    checks: [taught(3), sortedRight('모양대로 원 → 함 1, 사각 → 함 2, 육각 → 함 3', 6, (o) => ({ 원: '함 1', 사각: '함 2', 육각: '함 3' })[outlineOf(o)]), safe],
+    solution:
+      `${HEAD_B}cell.rule("원", "함 1")\ncell.rule("사각", "함 2")\ncell.rule("육각", "함 3")\n` +
+      ['원', '사각', '육각'].map((o, k) => `cell.feed()\ncell.wait("끝 센서")\ncamera.learn("${o}")\nrobot.pick("끝 위치")\nrobot.place("함 ${k + 1}")\n`).join('') +
+      'for _ in range(3):\n    cell.feed()\n    cell.wait("끝 센서")\n    part = camera.look()\n    robot.pick("끝 위치")\n    robot.place_by_rule(part)\nrobot.home()\n',
+  },
+  {
+    id: 'B9',
+    cell: 'vision',
+    n: 9,
+    title: '연속 12개 · 시간 안에',
+    adds: '사이클 타임 목표',
+    goal: '섞여 오는 12개(바랜 부품 2개 포함)를 하나도 틀리지 않고 240초 안에 분류해요.',
+    hint: '속도를 올리고(robot.set_speed), 반복 안에는 꼭 필요한 줄만 두세요. 기준값과 규칙표는 반복 밖에서 한 번만 정해요.',
+    setup: {
+      parts: () => [],
+      auto: true,
+      queue: queueOf(['빨강', '파랑', '노랑', FADED, '노랑', '빨강', '파랑', '파랑', FADED, '빨강', '노랑', '빨강'].map((color) => ({ color }))),
+    },
+    checks: [sortedRight('12개 모두 맞는 곳에', 12, byColor), timeWithin(240), safe],
+    timeS: 240,
+    solution: `${HEAD_B}robot.set_speed(50)\ncell.limit("확신도", 80)\n${COLOR_RULES}for _ in range(12):\n    cell.feed()\n    cell.wait("끝 센서")\n    part = camera.look()\n    robot.pick("끝 위치")\n    robot.place_by_rule(part)\nrobot.home()\n`,
+  },
+];
 
 const C = ladder('inspect', 'C', [
   ['스토퍼에서 집기', '스토퍼가 세운 부품 집기', '스토퍼에 멈춘 부품을 집어 트레이에 놓아요.'],
@@ -374,10 +571,8 @@ function sampleParts(l: CellLayout): DeskObject[] {
   const P = (x: number, y: number, z: number, over: Partial<DeskObject> = {}) => makePart(x, y, z, over);
   const top = l.line.belt?.topZ ?? 30;
   switch (l.id) {
-    case 'vision': {
-      const cols = ['#e5484d', '#2f6fed', '#f5b400'];
-      return [-380, -330, -280, -230, -180, -130].map((y, k) => P(225 + ((k * 7) % 3) * 6 - 6, y, top, { color: cols[k % 3], ...(k === 4 ? { size: [18, 18, 20] as [number, number, number] } : {}) }));
-    }
+    case 'vision':
+      return [-380, -330, -280, -230, -180, -130].map((y, k) => bPart(225, y, top, { color: ['빨강', '파랑', '노랑'][k % 3], d: k === 4 ? SMALL : BIG }));
     case 'inspect':
       return [-410, -360, -200, -120].map((y, k) => P(225, y, top, k === 2 ? { size: [25, 25, 12], color: '#9aa3ab' } : {}));
     case 'tend': {
@@ -399,7 +594,12 @@ function sampleParts(l: CellLayout): DeskObject[] {
 
 /** 자유 실습: the cell with a full magazine, parts on the source plate, the line on 자동 운전 (B ~ E: their sample parts). */
 export function freeSetup(): MissionSetup {
-  return { parts: (l) => (l.id === 'feed' ? [...(l.line.magazine ? magazineParts(l, 9) : []), ...onSourcePlate(9)(l)] : sampleParts(l)), auto: true, refill: 99 };
+  return {
+    parts: (l) => (l.id === 'feed' ? [...(l.line.magazine ? magazineParts(l, 9) : []), ...onSourcePlate(9)(l)] : sampleParts(l)),
+    auto: true,
+    refill: 99,
+    queue: (l) => (l.line.dispenser ? ['빨강', '파랑', '노랑', FADED, '빨강', '노랑'].map((color, k) => bPart(0, 0, 0, { color, d: k % 2 ? SMALL : BIG, outline: (['원', '사각', '육각'] as const)[k % 3] })) : []),
+  };
 }
 
 /** The checks, now. */

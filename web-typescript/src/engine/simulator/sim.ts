@@ -71,10 +71,11 @@ import {
   type EffectorId,
 } from './effectors';
 import { DEFAULT_SPEED, SPEED_CAP, type CameraId, type Step, type Target } from './program';
-import { PART_HEIGHT, fromShop, gridPlace, type CellId, type CellPlace } from './cell/cells';
+import { CELL_BY_ID, PART_HEIGHT, fromShop, gridPlace, type CellId, type CellPlace } from './cell/cells';
 import { collisionAlert } from './cell/faults';
 import { setOut } from './cell/line';
 import { cellFixed, newCellRun, raise, type CellRun } from './cell/run';
+import { REJECT, decide, describe, look, newVision, outlineOf, type LimitName, type Outline, type Shot } from './cell/vision';
 
 export interface BlockState {
   color: ColorName;
@@ -265,6 +266,9 @@ interface Runtime extends RunHooks {
 
 export async function runProgram(steps: readonly Step[], hooks: RunHooks): Promise<void> {
   const rt: Runtime = { ...hooks, speed: DEFAULT_SPEED, vars: new Map(), line: 0 };
+  // A cell's camera starts each run with an empty rule table and nothing taught (its last picture stays on screen).
+  const run = hooks.world.cell;
+  if (run) run.vision = { ...newVision(), shot: run.vision.shot };
   await runList(steps, rt);
 }
 
@@ -365,6 +369,46 @@ async function runStep(s: Step, rt: Runtime): Promise<void> {
     }
     case 'cellWait':
       return cellWait(rt, s.signal, s.on);
+    case 'cellLook': {
+      const run = needCell(rt);
+      const d = (await snap(rt, run)).chosen;
+      run.events.push({ t: run.line.t, type: 'look', part: d?.part ?? null });
+      if (!d) throw new RunError('카메라 화면에 부품이 없어요.', 'cell.wait("끝 센서")로 부품이 카메라 아래에 올 때까지 기다린 뒤 찍어 주세요.');
+      run.vision.seen[s.variable] = d;
+      rt.log?.('info', `찍었어요: ${describe(run.vision, d)}`);
+      return;
+    }
+    case 'cellLearn': {
+      const run = needCell(rt);
+      const d = (await snap(rt, run)).chosen;
+      const o = d && rt.world.objects.find((p) => p.id === d.part);
+      if (!o) throw new RunError('카메라 화면에 가르칠 부품이 없어요.', '가르칠 모양의 부품이 카메라 아래에 왔을 때 등록해 주세요.');
+      run.vision.learned.push({ label: s.outline as Outline, truth: outlineOf(o) });
+      rt.log?.('info', `사진 등록: "${s.outline}" (지금까지 ${run.vision.learned.filter((l) => l.label === s.outline).length}장)`);
+      return;
+    }
+    case 'cellPickVar': {
+      const run = needCell(rt);
+      const d = run.vision.seen[s.variable];
+      if (!d) throw new RunError(`'${s.variable}'에는 찍은 부품이 없어요.`, `먼저 ${s.variable} = camera.look() 으로 찍어 주세요.`);
+      return cellPickAt(rt, run, '찍은 자리', { x: d.x, y: d.y, z: d.z });
+    }
+    case 'cellSortPlace': {
+      const run = needCell(rt);
+      const d = run.vision.seen[s.variable];
+      if (!d) throw new RunError(`'${s.variable}'에는 찍은 부품이 없어요.`, `먼저 ${s.variable} = camera.look() 으로 찍어 주세요.`);
+      const { to, why } = decide(run.vision, d);
+      rt.log?.(to === REJECT ? 'warn' : 'info', `판정: ${to} (${why})`);
+      const held = rt.world.carry?.id;
+      if (held) run.events.push({ t: run.line.t, type: 'sort', part: held, to });
+      return cellPlace(rt, to, 0, 0, 0);
+    }
+    case 'cellRule':
+      needCell(rt).vision.rules.push({ when: s.when, to: s.to });
+      return;
+    case 'cellLimit':
+      needCell(rt).vision.limits[s.what as LimitName] = s.value;
+      return;
     case 'cellSet': {
       const run = needCell(rt);
       if (run.line.auto) throw new RunError('자동 운전 중에는 장비 신호를 직접 바꿀 수 없어요.', '이 단계는 cell.feed()로 공급을 요청해요.');
@@ -400,10 +444,29 @@ function cellPlaceAt(run: CellRun, name: string): { p: CellPlace; grid?: string 
 /** Height the tool travels at between places: over the belt's guides and the plates' parts, mm. */
 const CELL_TRAVEL_Z = 80;
 
+/** The camera takes a picture (its ring light flashes); the cell keeps it for the screen. */
+async function snap(rt: Runtime, run: CellRun): Promise<Shot> {
+  const area = run.layout.line.camera;
+  if (!area) throw new RunError(`${CELL_BY_ID[run.id].name}에는 위 카메라가 없어요.`);
+  if (run.halt) throw haltError(run);
+  const lit = !!run.line.out['조명'];
+  run.line.out['조명'] = true;
+  await rt.animate(0.4, () => {});
+  const shot = look(area, rt.world.objects, rt.world.carry?.id ?? null, run.vision, run.line.t);
+  run.line.out['조명'] = lit;
+  run.vision.shot = shot;
+  return shot;
+}
+
 async function cellPick(rt: Runtime, place: string): Promise<void> {
-  const w = rt.world;
   const run = needCell(rt);
   const { p, grid } = cellPlaceAt(run, place);
+  return cellPickAt(rt, run, place, p, grid);
+}
+
+/** Pick the part standing at p (a named place, a grid's place, or where the camera saw one). */
+async function cellPickAt(rt: Runtime, run: CellRun, place: string, p: CellPlace, grid?: string): Promise<void> {
+  const w = rt.world;
   const kind = EFFECTOR_BY_ID[w.effector].kind;
   // The part standing there now (the top one), or where one would be.
   const here = w.objects.filter((o) => o.id !== w.carry?.id && Math.hypot(o.x - p.x, o.y - p.y) < 10 && o.z >= p.z - 2 && o.z < p.z + 60).sort((a, b) => b.z - a.z)[0];
@@ -429,9 +492,12 @@ async function cellPlace(rt: Runtime, place: string, dxShop: number, dyShop: num
   const w = rt.world;
   const run = needCell(rt);
   const { p, grid } = cellPlaceAt(run, place);
-  const x = p.x + fromShop(dxShop);
-  const y = p.y + fromShop(dyShop);
-  const surface = p.z + fromShop(dzShop);
+  // Into a bin: the next corner, a layer up once the four are used.
+  const k = p.spread ? (run.next[place] ?? 0) : 0;
+  const [sx, sy] = p.spread ? [[-1, -1], [1, 1], [-1, 1], [1, -1]][k % 4].map((v) => v * p.spread!) : [0, 0];
+  const x = p.x + sx + fromShop(dxShop);
+  const y = p.y + sy + fromShop(dyShop);
+  const surface = p.z + Math.floor(k / 4) * PART_HEIGHT + fromShop(dzShop);
   const kind = EFFECTOR_BY_ID[w.effector].kind;
   const held = w.carry ? w.objects.find((o) => o.id === w.carry!.id) : undefined;
   if (!held) throw new RunError('놓을 부품을 들고 있지 않아요.', '먼저 robot.pick(...)로 집어 주세요.');
@@ -442,6 +508,7 @@ async function cellPlace(rt: Runtime, place: string, dxShop: number, dyShop: num
   await release(rt, kind === 'suction' ? 'suction' : 'grip');
   run.events.push({ t: run.line.t, type: 'place', place, part: held.id });
   if (grid) run.next[grid] = (run.next[grid] ?? 0) + 1;
+  if (p.spread) run.next[place] = k + 1;
   await moveTool(rt, { x, y, z: travel });
 }
 

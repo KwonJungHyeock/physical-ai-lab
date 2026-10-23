@@ -22,6 +22,7 @@ import { activeArm } from '../robot/arms';
 import { BIN_NAMES, COLORS, COLOR_TO_BIN, SPOT_NAMES, type BinName, type ColorName, type SpotName, type Theme } from './board';
 import { EFFECTOR_BY_ID, fittedPhrase, type EffectorId, type EffectorKind } from './effectors';
 import { CELL_BY_ID, cellLayout, type CellId } from './cell/cells';
+import { LIMIT_NAMES, OUTLINES, REJECT, RULE_WORDS, VISION_COLORS } from './cell/vision';
 
 export type CameraId = 'top' | 'hand';
 
@@ -71,7 +72,19 @@ export type Step =
   /** Wait until an input is on (or off). */
   | { type: 'cellWait'; signal: string; on: boolean; line: number }
   /** Switch an output (when 자동 운전 is off). */
-  | { type: 'cellSet'; signal: string; on: boolean; line: number };
+  | { type: 'cellSet'; signal: string; on: boolean; line: number }
+  /** 실습 셀 B: the camera reads the part nearest the belt's end (part = camera.look()). */
+  | { type: 'cellLook'; variable: string; line: number }
+  /** Teach the outline classifier: the part under the camera is this outline (camera.learn("육각")). */
+  | { type: 'cellLearn'; outline: string; line: number }
+  /** Pick the part where the camera saw it (robot.pick(part)). */
+  | { type: 'cellPickVar'; variable: string; line: number }
+  /** Put the held part where the rule table says for what the camera saw (robot.place_by_rule(part)). */
+  | { type: 'cellSortPlace'; variable: string; line: number }
+  /** A line of the rule table: these words (colour · 큰/작은 · outline, all optional) → a bin (cell.rule("빨강", "함 1")). */
+  | { type: 'cellRule'; when: string[]; to: string; line: number }
+  /** A set point: 지름 (shop mm, from it up is 큰) or 확신도 (%, below it the chute) (cell.limit("지름", 110)). */
+  | { type: 'cellLimit'; what: string; value: number; line: number };
 
 export const SHAPE_NAMES = ['네모', '원', '삼각형', '별'] as const;
 export type ShapeName = (typeof SHAPE_NAMES)[number];
@@ -132,6 +145,12 @@ const RE = {
   cellFeed: /^cell\.feed\(\s*\)$/,
   cellWait: new RegExp(String.raw`^cell\.wait\(\s*${STR}\s*(?:,\s*(True|False)\s*)?\)$`),
   cellSet: new RegExp(String.raw`^cell\.set\(\s*${STR}\s*,\s*(True|False)\s*\)$`),
+  cellLook: new RegExp(String.raw`^${IDENT}\s*=\s*camera\.look\(\s*\)$`),
+  cellLearn: new RegExp(String.raw`^camera\.learn\(\s*${STR}\s*\)$`),
+  cellPickVar: new RegExp(String.raw`^robot\.pick\(\s*${IDENT}\s*\)$`),
+  cellSortPlace: new RegExp(String.raw`^robot\.place_by_rule\(\s*${IDENT}\s*\)$`),
+  cellRule: /^cell\.rule\(\s*((?:["'][^"']+["']\s*,\s*)*["'][^"']+["'])\s*\)$/,
+  cellLimit: new RegExp(String.raw`^cell\.limit\(\s*${STR}\s*,\s*(${NUM})\s*\)$`),
 };
 
 /** "분류함 A" -> bin A, "버튼" -> button, "자리 1" -> spot, "빨강 블록" -> that block. */
@@ -183,6 +202,15 @@ function parseLine(body: string, line: number, errors: Problem[]): Step | null {
   if (RE.cellFeed.test(body)) return { type: 'cellFeed', line };
   if ((m = body.match(RE.cellWait))) return { type: 'cellWait', signal: m[1], on: m[2] !== 'False', line };
   if ((m = body.match(RE.cellSet))) return { type: 'cellSet', signal: m[1], on: m[2] === 'True', line };
+  if ((m = body.match(RE.cellLook))) return { type: 'cellLook', variable: m[1], line };
+  if ((m = body.match(RE.cellLearn))) return { type: 'cellLearn', outline: m[1], line };
+  if ((m = body.match(RE.cellPickVar))) return { type: 'cellPickVar', variable: m[1], line };
+  if ((m = body.match(RE.cellSortPlace))) return { type: 'cellSortPlace', variable: m[1], line };
+  if ((m = body.match(RE.cellRule))) {
+    const words = [...m[1].matchAll(/["']([^"']+)["']/g)].map((w) => w[1]);
+    return { type: 'cellRule', when: words.slice(0, -1), to: words[words.length - 1], line };
+  }
+  if ((m = body.match(RE.cellLimit))) return { type: 'cellLimit', what: m[1], value: Number(m[2]), line };
   if ((m = body.match(RE.shape))) {
     if (!(SHAPE_NAMES as readonly string[]).includes(m[1])) {
       errors.push({ line, msg: `'${m[1]}' 모양은 그릴 수 없어요.`, fix: `${SHAPE_NAMES.map((n) => `"${n}"`).join(', ')} 중에서 골라 주세요.` });
@@ -329,6 +357,18 @@ function serializeOne(s: Step): string {
       return `cell.wait("${s.signal}"${s.on ? '' : ', False'})`;
     case 'cellSet':
       return `cell.set("${s.signal}", ${s.on ? 'True' : 'False'})`;
+    case 'cellLook':
+      return `${s.variable} = camera.look()`;
+    case 'cellLearn':
+      return `camera.learn("${s.outline}")`;
+    case 'cellPickVar':
+      return `robot.pick(${s.variable})`;
+    case 'cellSortPlace':
+      return `robot.place_by_rule(${s.variable})`;
+    case 'cellRule':
+      return `cell.rule(${[...s.when, s.to].map((w) => `"${w}"`).join(', ')})`;
+    case 'cellLimit':
+      return `cell.limit("${s.what}", ${s.value})`;
     case 'repeat':
       return '';
   }
@@ -339,6 +379,7 @@ export function serialize(steps: readonly Step[]): string {
   const scan = (list: readonly Step[]) =>
     list.forEach((s) => {
       if (s.type === 'find') uses.add(s.camera === 'hand' ? 'hand_camera' : 'camera');
+      if (s.type === 'cellLook' || s.type === 'cellLearn') uses.add('camera');
       // A 실습 셀 program imports the cell with the robot.
       if (s.type.startsWith('cell')) uses.add('cell');
       if (s.type === 'repeat') scan(s.body);
@@ -476,6 +517,15 @@ export function check(steps: readonly Step[], ctx: CheckContext): { errors: Prob
             });
           assigned.add(s.variable);
           break;
+        case 'cellLook':
+        case 'cellLearn':
+        case 'cellPickVar':
+        case 'cellSortPlace':
+        case 'cellRule':
+        case 'cellLimit':
+          errors.push(...checkVision(s, ctx, assigned, picks));
+          if (s.type === 'cellLook') assigned.add(s.variable);
+          break;
         case 'above':
         case 'down':
           if (s.target.kind === 'bin' && ctx.theme === 'arm')
@@ -499,6 +549,40 @@ export function check(steps: readonly Step[], ctx: CheckContext): { errors: Prob
 
   walk(steps);
   return { errors, warnings };
+}
+
+/** 실습 셀 B's camera commands, the rule table and the set points. */
+function checkVision(s: Step, ctx: CheckContext, assigned: ReadonlySet<string>, picks: boolean): Problem[] {
+  const out: Problem[] = [];
+  if (!ctx.cell) return [{ line: s.line, msg: '이 명령은 실습 셀에서만 써요.', fix: '왼쪽 [환경]에서 실습 셀을 골라 주세요.' }];
+  const l = cellLayout(ctx.cell);
+  const name = CELL_BY_ID[ctx.cell].name;
+  switch (s.type) {
+    case 'cellLook':
+    case 'cellLearn':
+      if (!l.line.camera) out.push({ line: s.line, msg: `${name}에는 위 카메라가 없어요.`, fix: '카메라 명령은 B 비전 분류 셀에서 써요.' });
+      if (s.type === 'cellLearn' && !(OUTLINES as readonly string[]).includes(s.outline)) out.push({ line: s.line, msg: `'${s.outline}' 모양은 가르칠 수 없어요.`, fix: `${OUTLINES.map((o) => `"${o}"`).join(', ')} 중에서 골라 주세요.` });
+      break;
+    case 'cellPickVar':
+    case 'cellSortPlace':
+      if (!assigned.has(s.variable)) out.push({ line: s.line, msg: `'${s.variable}'에는 찍은 부품이 없어요.`, fix: `이 줄보다 위에 ${s.variable} = camera.look() 으로 먼저 찍어 주세요.` });
+      if (!picks) out.push({ line: s.line, msg: `집기 · 놓기인데 ${fittedPhrase(ctx.effector)}.`, fix: '위의 [도구]에서 그리퍼나 흡착 펌프를 달아 주세요.' });
+      break;
+    case 'cellRule': {
+      const bad = s.when.filter((w) => !RULE_WORDS.includes(w));
+      if (bad.length) out.push({ line: s.line, msg: `규칙에 쓸 수 없는 말이에요: '${bad[0]}'`, fix: `색(${VISION_COLORS.join(' · ')}), 크기(큰 · 작은), 모양(${OUTLINES.join(' · ')})만 써요.` });
+      if (s.when.length > 3) out.push({ line: s.line, msg: '규칙 한 줄의 조건은 3개까지예요.' });
+      const bins = Object.keys(l.places).filter((n) => n.startsWith('함 ') || n === REJECT);
+      if (!bins.includes(s.to)) out.push({ line: s.line, msg: `'${s.to}'에는 보낼 수 없어요.`, fix: `${bins.map((n) => `"${n}"`).join(', ')} 중에서 골라 주세요.` });
+      break;
+    }
+    case 'cellLimit':
+      if (!(LIMIT_NAMES as readonly string[]).includes(s.what)) out.push({ line: s.line, msg: `'${s.what}' 기준은 없어요.`, fix: '"지름" 또는 "확신도"를 써 주세요.' });
+      else if (s.what === '지름' && (s.value < 30 || s.value > 300)) out.push({ line: s.line, msg: `지름 기준 ${s.value} mm는 쓸 수 없어요.`, fix: '30에서 300 mm 사이로 정해 주세요.' });
+      else if (s.what === '확신도' && (s.value < 0 || s.value > 100)) out.push({ line: s.line, msg: `확신도 기준 ${s.value}%는 쓸 수 없어요.`, fix: '0에서 100 사이로 정해 주세요.' });
+      break;
+  }
+  return out;
 }
 
 /** A timed move ("2초 동안 …") may take this long, seconds. */

@@ -11,7 +11,7 @@ import { useFrame } from '@react-three/fiber';
 import { useRef, type RefObject } from 'react';
 import type { MeshStandardMaterial, PointLight } from 'three';
 
-import { B_CAMERA, cellLayout } from '@/engine/simulator/cell/cells';
+import { B_BINS, B_CAMERA, cellLayout } from '@/engine/simulator/cell/cells';
 import type { WorldState } from '@/engine/simulator/sim';
 
 import { RBox, Turned, pill } from '../sceneKit';
@@ -73,8 +73,8 @@ function Camera({ world }: { world: RefObject<WorldState | null> }) {
 
 export function VisionCell({ world, onHover }: { world: RefObject<WorldState | null>; onHover: (n: string | null) => void }) {
   const l = cellLayout('vision');
-  const bins = ['함 1', '함 2', '함 3'].map((n) => l.places[n]);
-  const chute = l.places['불량 슈트'];
+  const B = B_BINS;
+  const half = B.inner / 2;
   return (
     <group>
       <Tagged name="컨베이어" onHover={onHover}>
@@ -84,19 +84,19 @@ export function VisionCell({ world, onHover }: { world: RefObject<WorldState | n
         <Camera world={world} />
       </Tagged>
       <Tagged name="분류함" onHover={onHover}>
-        <Stand x0={102} x1={148} y0={62} y1={208} top={bins[0].z} s={8} />
-        {bins.map((b, i) => (
-          <Bin key={i} x0={b.x - 21} x1={b.x + 21} y0={b.y - 21} y1={b.y + 21} z0={b.z} z1={b.z + 22} color="#8d99a6" label={String(i + 1)} />
+        <Stand x0={B.x - half - 4} x1={B.x + half + 4} y0={B.ys[0] - half - 4} y1={B.ys[2] + half + 4} top={B.floor} s={8} />
+        {B.ys.map((y, i) => (
+          <Bin key={y} x0={B.x - half} x1={B.x + half} y0={y - half} y1={y + half} z0={B.floor} z1={B.floor + B.wall} color="#8d99a6" label={String(i + 1)} />
         ))}
       </Tagged>
       <Tagged name="불량 슈트" onHover={onHover}>
         {/* A yellow chute sloping down into a grey box on a low stand. */}
-        <Stand x0={88} x1={132} y0={-182} y1={-138} top={chute.z} s={8}>
-          <RBox at={[110, -160, chute.z - 2]} size={[44, 44, 4]} radius={0.6}>
+        <Stand x0={88} x1={132} y0={-182} y1={-138} top={-40} s={8}>
+          <RBox at={[110, -160, -42]} size={[44, 44, 4]} radius={0.6}>
             <Steel color="#6b737c" />
           </RBox>
         </Stand>
-        <Bin x0={89} x1={131} y0={-181} y1={-139} z0={chute.z} z1={chute.z + 26} color="#5d6670" />
+        <Bin x0={89} x1={131} y0={-181} y1={-139} z0={-40} z1={-14} color="#5d6670" />
         <group position={[m(110), m(-160), m(14)]} rotation={[0, 0.5, 0]}>
           <RBox size={[56, 46, 2.5]} radius={0.6}>
             <Paint color="#f2c200" />

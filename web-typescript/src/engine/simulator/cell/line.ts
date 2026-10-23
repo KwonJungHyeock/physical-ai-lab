@@ -43,13 +43,16 @@ export interface LineState {
   act: Record<string, number>;
   /** The machine cycle's time so far, s (null: not running). */
   cycleT: number | null;
+  /** Parts waiting at the dispenser (B), in order; and how many times its output has turned on so far (a part drops each time, however short the pulse). */
+  queue: DeskObject[];
+  gate: number;
 }
 
 export function newLine(l: CellLayout, auto: boolean, refill = 0): LineState {
   const out = Object.fromEntries(l.outputs.map((n) => [n, false]));
   const inputs = Object.fromEntries(l.inputs.map((n) => [n, false]));
   const act = Object.fromEntries((l.line.actuators ?? []).map((a) => [a.output, 0]));
-  return { t: 0, auto, out, in: inputs, ext: 0, phase: 'idle', phaseT: 0, requests: 0, blockedT: 0, log: [], fed: 0, refill, halted: false, act, cycleT: null };
+  return { t: 0, auto, out, in: inputs, ext: 0, phase: 'idle', phaseT: 0, requests: 0, blockedT: 0, log: [], fed: 0, refill, halted: false, act, cycleT: null, queue: [], gate: 0 };
 }
 
 /** A part's footprint radius and height, mm. */
@@ -86,6 +89,8 @@ export interface LineStep {
   alerts: CellAlert[];
   /** Parts the operator put back into the magazine (the caller adds them to the world). */
   refilled: number;
+  /** Parts the dispenser dropped onto the belt (the caller adds them to the world). */
+  spawned: DeskObject[];
 }
 
 const onBelt = (l: CellLayout, o: DeskObject) => {
@@ -100,6 +105,7 @@ export function stepLine(l: CellLayout, s: LineState, parts: readonly DeskObject
   const alerts: CellAlert[] = [];
   const free = parts.filter((p) => p.id !== carried);
   let refilled = 0;
+  const spawned: DeskObject[] = [];
 
   // Sensors.
   for (const sd of l.line.sensors) setIn(s, sd.name, free.some((p) => sees(sd, p)));
@@ -113,9 +119,29 @@ export function stepLine(l: CellLayout, s: LineState, parts: readonly DeskObject
     alerts.push({ t: s.t, level: 'info', kind: 'empty', title: '매거진 채움', msg: `매거진이 비어서 작업자가 부품 ${refilled}개를 채웠어요.` });
   }
 
+  // The dispenser (B): the next part waiting drops onto the belt's start, when the way is clear.
+  const dsp = l.line.dispenser;
+  const drop = (): CellAlert | null => {
+    if (!dsp || !l.line.belt) return null;
+    if (free.some((p) => Math.hypot(p.x - dsp.x, p.y - dsp.y) < 22)) return { t: s.t, level: 'warn', kind: 'jam', title: '투입구 막힘', msg: '벨트 입구에 앞 부품이 아직 있어서 넣지 못했어요.', fix: '컨베이어로 앞 부품을 먼저 보내 주세요.' };
+    const next = s.queue.shift();
+    if (!next) return { t: s.t, level: 'info', kind: 'empty', title: '투입할 부품 없음', msg: '투입기에 남은 부품이 없어요.' };
+    spawned.push({ ...next, x: dsp.x, y: dsp.y, z: l.line.belt.topZ + 0.5 });
+    s.fed += 1;
+    return null;
+  };
+  if (dsp && !s.auto && !s.halted) {
+    const pulses = s.log.filter((e) => e.name === dsp.output && e.on).length;
+    if (pulses > s.gate) {
+      const a = drop();
+      if (a) alerts.push(a);
+    }
+    s.gate = pulses;
+  }
+
   // The line controller (자동 운전).
   const end = l.line.endPlace ? l.line.sensors.find((x) => x.kind === 'beam')?.name : undefined;
-  if (s.auto && !s.halted && pu) {
+  if (s.auto && !s.halted && (pu || dsp)) {
     const go = (phase: LineState['phase']) => {
       s.phase = phase;
       s.phaseT = 0;
@@ -123,6 +149,20 @@ export function stepLine(l: CellLayout, s: LineState, parts: readonly DeskObject
     switch (s.phase) {
       case 'idle': {
         const beltClear = !free.some((p) => onBelt(l, p));
+        if (!pu) {
+          // A dispenser line: drop the next part and run the belt to the end.
+          if (s.requests > 0 && beltClear && !(end && s.in[end]) && l.line.beltOutput) {
+            const a = drop();
+            if (a) {
+              alerts.push(a);
+              s.requests = 0;
+              break;
+            }
+            setOut(s, l.line.beltOutput, true);
+            go('convey');
+          }
+          break;
+        }
         if (s.requests > 0 && beltClear && !(end && s.in[end])) {
           if (mag && !s.in[mag.sensor]) {
             if (s.phaseT > 1 && s.refill === 0) {
@@ -137,13 +177,13 @@ export function stepLine(l: CellLayout, s: LineState, parts: readonly DeskObject
         break;
       }
       case 'push':
-        if (s.in[pu.outEnd]) {
+        if (pu && s.in[pu.outEnd]) {
           setOut(s, pu.output, false);
           go('back');
         }
         break;
       case 'back':
-        if (s.in[pu.backEnd] && l.line.beltOutput) {
+        if (pu && s.in[pu.backEnd] && l.line.beltOutput) {
           setOut(s, l.line.beltOutput, true);
           go('convey');
         }
@@ -237,5 +277,5 @@ export function stepLine(l: CellLayout, s: LineState, parts: readonly DeskObject
     }
   } else s.blockedT = 0;
 
-  return { movers, belts, alerts, refilled };
+  return { movers, belts, alerts, refilled, spawned };
 }

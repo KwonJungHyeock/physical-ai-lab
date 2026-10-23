@@ -18,6 +18,7 @@ import { CELL_FLOOR_Z, cellLayout, magazineParts, type CellId, type CellLayout }
 import { knockAlert, newHealth, repair, watchLoad, type CellAlert, type Health } from './faults';
 import { newLine, stepLine, type LineState } from './line';
 import { freeSetup, judge, missionById, type CellEvent, type CellMission } from './missions';
+import { newVision, type VisionState } from './vision';
 
 export interface CellRun {
   id: CellId;
@@ -39,6 +40,8 @@ export interface CellRun {
   endT: number | null;
   /** The tool tip a frame ago, for its speed. */
   lastTip: { x: number; y: number; z: number } | null;
+  /** B's camera: its rule table, set points, what it was taught, its last picture. */
+  vision: VisionState;
 }
 
 /** The cell's start: its run state and the parts it begins with. */
@@ -46,14 +49,15 @@ export function newCellRun(id: CellId, missionId: string | null): { run: CellRun
   const layout = cellLayout(id);
   const m = missionId ? missionById(missionId) : null;
   const setup = m?.setup ?? freeSetup();
-  // 자동 운전 feeds from a magazine; a cell without one is run by hand.
-  const line = newLine(layout, setup.auto && !!layout.line.pusher, setup.refill ?? 0);
+  // 자동 운전 feeds from a magazine or a dispenser; a cell without either is run by hand.
+  const line = newLine(layout, setup.auto && !!(layout.line.pusher || layout.line.dispenser), setup.refill ?? 0);
   if (setup.beltOn && layout.line.beltOutput) {
     line.out[layout.line.beltOutput] = true;
     line.phase = 'convey';
     line.requests = 1;
   }
-  const run: CellRun = { id, layout, mission: m?.id ?? null, line, health: newHealth(), alerts: [], fresh: [], halt: null, events: [], next: {}, startT: null, endT: null, lastTip: null };
+  line.queue = setup.queue?.(layout) ?? [];
+  const run: CellRun = { id, layout, mission: m?.id ?? null, line, health: newHealth(), alerts: [], fresh: [], halt: null, events: [], next: {}, startT: null, endT: null, lastTip: null, vision: newVision() };
   return { run, parts: setup.parts(layout) };
 }
 
@@ -93,13 +97,12 @@ export function stepCell(w: WorldState, phys: PhysicsWorld, dt: number, chain: r
   const run = w.cell;
   if (!run) return;
   const ls = stepLine(run.layout, run.line, w.objects, dt, w.carry?.id ?? null);
-  if (ls.refilled) {
-    for (const o of magazineParts(run.layout, ls.refilled)) {
-      w.objects.push(o);
-      phys.add(objectSpec(o));
-    }
-    w.version += 1;
+  const added = [...(ls.refilled ? magazineParts(run.layout, ls.refilled) : []), ...ls.spawned];
+  for (const o of added) {
+    w.objects.push(o);
+    phys.add(objectSpec(o));
   }
+  if (added.length) w.version += 1;
   phys.setMovers(ls.movers);
   phys.setBelts(ls.belts);
   ls.alerts.forEach((a) => raise(run, a));
@@ -114,6 +117,8 @@ export function stepCell(w: WorldState, phys: PhysicsWorld, dt: number, chain: r
     if (!o || o.damaged) continue;
     // A magazine's stack drops one part's height each push: that is how it feeds, not a knock.
     if (mag && Math.hypot(o.x - mag.x, o.y - mag.y) < 20) continue;
+    // Down a chute: it slides, nothing breaks.
+    if (run.layout.line.soft?.some((z) => o.x > z.min[0] && o.x < z.max[0] && o.y > z.min[1] && o.y < z.max[1] && o.z > z.min[2] && o.z < z.max[2])) continue;
     const a = knockAlert(k.dv, t, [o.x, o.y, o.z + o.size[2]]);
     if (!a) continue;
     if (a.kind === 'damage') o.damaged = true;
@@ -139,6 +144,6 @@ export function cellChecks(w: WorldState): { mission: CellMission; items: Return
   if (!run || !m) return null;
   const end = run.endT ?? run.line.t;
   // A part still in the tool is not placed anywhere.
-  const items = judge(m, { parts: w.objects.filter((o) => o.id !== w.carry?.id), l: run.layout, line: run.line, alerts: run.alerts, events: run.events, elapsed: run.startT === null ? 0 : end - run.startT });
+  const items = judge(m, { parts: w.objects.filter((o) => o.id !== w.carry?.id), l: run.layout, line: run.line, alerts: run.alerts, events: run.events, elapsed: run.startT === null ? 0 : end - run.startT, vision: run.vision });
   return { mission: m, items };
 }

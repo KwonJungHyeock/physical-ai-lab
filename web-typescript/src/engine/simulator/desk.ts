@@ -69,6 +69,8 @@ export interface DeskObject {
   q?: [number, number, number, number];
   /** 실습 셀: broken by a hard knock (it counts as a reject). */
   damaged?: boolean;
+  /** 실습 셀: a workpiece's outline seen from above, when not round — a prism of this many sides (6: 육각). */
+  sides?: number;
 }
 
 /** A fixed part of a scene the arm must keep off, mm. */

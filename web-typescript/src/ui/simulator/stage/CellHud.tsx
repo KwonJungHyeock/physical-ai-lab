@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 /**
  * 실습 셀 on the 3D view: the step ladder (one condition more each step), the mission card with its
@@ -9,30 +9,24 @@
  * notices as they happen.
  */
 
-import { useEffect, useState, type RefObject } from "react";
+import { useEffect, useState, type RefObject } from 'react';
 
-import {
-  CELL_BY_ID,
-  cellLayout,
-  gridPlace,
-  type CellId,
-} from "@/engine/simulator/cell/cells";
-import type { CellAlert } from "@/engine/simulator/cell/faults";
-import { setOut } from "@/engine/simulator/cell/line";
-import { missionById, missionsOf } from "@/engine/simulator/cell/missions";
-import { cellChecks } from "@/engine/simulator/cell/run";
-import type { WorldState } from "@/engine/simulator/sim";
+import { CELL_BY_ID, cellLayout, gridPlace, type CellId } from '@/engine/simulator/cell/cells';
+import type { CellAlert } from '@/engine/simulator/cell/faults';
+import { setOut } from '@/engine/simulator/cell/line';
+import { missionById, missionsOf } from '@/engine/simulator/cell/missions';
+import { cellChecks } from '@/engine/simulator/cell/run';
+import type { WorldState } from '@/engine/simulator/sim';
 
-import css from "./cellHud.module.css";
+import css from './cellHud.module.css';
 
 /** The ladder's bands: robot only, the line on 자동 운전, the signals by hand. */
 const BAND: Record<string, { name: string; note: string }> = {
-  basic: { name: "기초", note: "로봇만" },
-  applied: { name: "응용", note: "장비 자동 운전" },
-  challenge: { name: "도전", note: "신호 직접" },
+  basic: { name: '기초', note: '로봇만' },
+  applied: { name: '응용', note: '장비 자동 운전' },
+  challenge: { name: '도전', note: '신호 직접' },
 };
-const bandOf = (n: number) =>
-  n <= 5 ? "basic" : n <= 9 ? "applied" : "challenge";
+const bandOf = (n: number) => (n <= 5 ? 'basic' : n <= 9 ? 'applied' : 'challenge');
 
 interface Snap {
   inputs: [string, boolean][];
@@ -49,20 +43,12 @@ function snapOf(w: WorldState | null): Snap | null {
   const run = w?.cell;
   if (!w || !run) return null;
   const l = run.layout;
-  const pallet = l.grids["적재 판"];
+  const pallet = l.grids['적재 판'];
   let stacked = 0;
   if (pallet)
     for (let k = 0; k < pallet.rows * pallet.cols * pallet.layers; k += 1) {
       const p = gridPlace(pallet, k);
-      if (
-        w.objects.some(
-          (o) =>
-            o.id !== w.carry?.id &&
-            Math.hypot(o.x - p.x, o.y - p.y) < 8 &&
-            Math.abs(o.z - p.z) < 6,
-        )
-      )
-        stacked += 1;
+      if (w.objects.some((o) => o.id !== w.carry?.id && Math.hypot(o.x - p.x, o.y - p.y) < 8 && Math.abs(o.z - p.z) < 6)) stacked += 1;
     }
   const end = run.endT ?? run.line.t;
   return {
@@ -116,11 +102,8 @@ export default function CellHud(p: CellHudProps) {
   // A cell whose ladder is still to come: its steps stay shut, its equipment is run by hand.
   const built = CELL_BY_ID[p.cell].built;
   const layout = cellLayout(p.cell);
-  const keys = (name: string): [string, string] =>
-    layout.keys?.[name] ??
-    (name.includes("실린더") ? ["전진", "후진"] : ["운전", "정지"]);
-  const open = (i: number) =>
-    built && (p.allOpen || i === 0 || !!p.passed[steps[i - 1].id]);
+  const keys = (name: string): [string, string] => layout.keys?.[name] ?? (name.includes('실린더') ? ['전진', '후진'] : ['운전', '정지']);
+  const open = (i: number) => built && (p.allOpen || i === 0 || !!p.passed[steps[i - 1].id]);
   const run = () => p.world.current?.cell ?? null;
   const out = (name: string, on: boolean) => {
     const r = run();
@@ -132,15 +115,12 @@ export default function CellHud(p: CellHudProps) {
       {/* Step ladder. */}
       <nav className={css.ladder} aria-label="단계">
         <b className={css.cellName}>
-          {CELL_BY_ID[p.cell].letter}{" "}
-          {CELL_BY_ID[p.cell].name.replace(" 셀", "")}
+          {CELL_BY_ID[p.cell].letter} {CELL_BY_ID[p.cell].name.replace(' 셀', '')}
           {!built && <small className={css.soon}>단계 준비 중</small>}
         </b>
         {steps.map((s, i) => (
           <span key={s.id} className={css.tileWrap}>
-            {i > 0 && bandOf(s.n) !== bandOf(steps[i - 1].n) && (
-              <i className={css.sep} />
-            )}
+            {i > 0 && bandOf(s.n) !== bandOf(steps[i - 1].n) && <i className={css.sep} />}
             <button
               type="button"
               className={css.tile}
@@ -148,13 +128,7 @@ export default function CellHud(p: CellHudProps) {
               data-done={p.passed[s.id] || undefined}
               disabled={p.busy || !open(i)}
               onClick={() => p.onMission(s.id)}
-              title={
-                open(i)
-                  ? `${s.id} ${s.title}: ${s.adds}`
-                  : built
-                    ? "앞 단계를 통과하면 열려요"
-                    : `${s.id} ${s.title}: 준비 중이에요`
-              }
+              title={open(i) ? `${s.id} ${s.title}: ${s.adds}` : built ? '앞 단계를 통과하면 열려요' : `${s.id} ${s.title}: 준비 중이에요`}
               aria-pressed={s.id === p.mission}
             >
               {s.id}
@@ -163,16 +137,7 @@ export default function CellHud(p: CellHudProps) {
           </span>
         ))}
         <i className={css.sep} />
-        <button
-          type="button"
-          className={css.tile}
-          data-cur={p.mission === null || undefined}
-          data-free
-          disabled={p.busy}
-          onClick={() => p.onMission(null)}
-          aria-pressed={p.mission === null}
-          title="채점 없이 셀을 자유롭게 움직여 봐요"
-        >
+        <button type="button" className={css.tile} data-cur={p.mission === null || undefined} data-free disabled={p.busy} onClick={() => p.onMission(null)} aria-pressed={p.mission === null} title="채점 없이 셀을 자유롭게 움직여 봐요">
           자유
         </button>
       </nav>
@@ -182,9 +147,7 @@ export default function CellHud(p: CellHudProps) {
         <section className={css.fault} role="alert">
           <b>고장 · {snap.fault.title}</b>
           <p>{snap.fault.msg}</p>
-          {snap.fault.fix && (
-            <p className={css.fix}>고칠 점: {snap.fault.fix}</p>
-          )}
+          {snap.fault.fix && <p className={css.fix}>고칠 점: {snap.fault.fix}</p>}
           <button type="button" className={css.repair} onClick={p.onRepair}>
             점검 · 복구
           </button>
@@ -214,7 +177,7 @@ export default function CellHud(p: CellHudProps) {
             <ul className={css.checks}>
               {snap.checks.map((c) => (
                 <li key={c.label} data-ok={c.ok || undefined}>
-                  <i aria-hidden="true">{c.ok ? "✓" : "·"}</i>
+                  <i aria-hidden="true">{c.ok ? '✓' : '·'}</i>
                   <span>{c.label}</span>
                   {c.detail && <em>{c.detail}</em>}
                 </li>
@@ -223,28 +186,17 @@ export default function CellHud(p: CellHudProps) {
           )}
           {p.result !== null && !p.busy && (
             <p className={css.result} data-ok={p.result || undefined}>
-              {p.result
-                ? `통과! ${steps[m.n] ? `다음 단계 ${steps[m.n].id}가 열렸어요.` : "이 셀의 마지막 단계예요."}`
-                : "아직이에요. ✓가 안 된 항목을 고쳐 다시 실행해 보세요."}
+              {p.result ? `통과! ${steps[m.n] ? `다음 단계 ${steps[m.n].id}가 열렸어요.` : '이 셀의 마지막 단계예요.'}` : '아직이에요. ✓가 안 된 항목을 고쳐 다시 실행해 보세요.'}
             </p>
           )}
           <div className={css.row}>
             {m.hint && (
-              <button
-                type="button"
-                className={css.link}
-                onClick={() => setHint((h) => !h)}
-              >
-                {hint ? "힌트 접기" : "힌트 보기"}
+              <button type="button" className={css.link} onClick={() => setHint((h) => !h)}>
+                {hint ? '힌트 접기' : '힌트 보기'}
               </button>
             )}
             {p.onExample && (
-              <button
-                type="button"
-                className={css.link}
-                disabled={p.busy}
-                onClick={p.onExample}
-              >
+              <button type="button" className={css.link} disabled={p.busy} onClick={p.onExample}>
                 예시 프로그램 (선생님)
               </button>
             )}
@@ -254,15 +206,11 @@ export default function CellHud(p: CellHudProps) {
       ) : (
         <section className={css.card}>
           <header>
-            <b>{built ? "자유 실습" : "장비 미리 보기"}</b>
+            <b>{built ? '자유 실습' : '장비 미리 보기'}</b>
             <span>채점 없음</span>
           </header>
-          <p className={css.goal}>
-            {built
-              ? "조그 · 블록 · Python으로 로봇을 움직이고, 아래 조작판으로 장비를 직접 켜고 꺼 봐요. 알림 규칙은 같아요."
-              : "단계 실습은 준비 중이에요. 아래 조작판으로 장비를 움직여 보고, 조그 · 블록으로 로봇을 데려가 봐요."}
-          </p>
-          {layout.line.pusher && (
+          <p className={css.goal}>{built ? '조그 · 블록 · Python으로 로봇을 움직이고, 아래 조작판으로 장비를 직접 켜고 꺼 봐요. 알림 규칙은 같아요.' : '단계 실습은 준비 중이에요. 아래 조작판으로 장비를 움직여 보고, 조그 · 블록으로 로봇을 데려가 봐요.'}</p>
+          {(layout.line.pusher || layout.line.dispenser) && (
             <div className={css.seg} role="group" aria-label="운전">
               <button
                 type="button"
@@ -283,7 +231,7 @@ export default function CellHud(p: CellHudProps) {
                   const r = run();
                   if (r) {
                     r.line.auto = false;
-                    r.line.phase = "idle";
+                    r.line.phase = 'idle';
                   }
                 }}
               >
@@ -312,22 +260,10 @@ export default function CellHud(p: CellHudProps) {
               {(snap?.outputs ?? []).map(([name, on]) => (
                 <div key={name} className={css.ctl}>
                   <span>{name}</span>
-                  <button
-                    type="button"
-                    className={css.key}
-                    data-on={on || undefined}
-                    disabled={p.busy || !!snap?.fault}
-                    onClick={() => out(name, true)}
-                  >
+                  <button type="button" className={css.key} data-on={on || undefined} disabled={p.busy || !!snap?.fault} onClick={() => out(name, true)}>
                     {keys(name)[0]}
                   </button>
-                  <button
-                    type="button"
-                    className={css.key}
-                    data-on={!on || undefined}
-                    disabled={p.busy || !!snap?.fault}
-                    onClick={() => out(name, false)}
-                  >
+                  <button type="button" className={css.key} data-on={!on || undefined} disabled={p.busy || !!snap?.fault} onClick={() => out(name, false)}>
                     {keys(name)[1]}
                   </button>
                 </div>
@@ -336,12 +272,7 @@ export default function CellHud(p: CellHudProps) {
           )}
           <div className={css.ctl}>
             <span>셀</span>
-            <button
-              type="button"
-              className={css.key}
-              disabled={p.busy}
-              onClick={p.onReset}
-            >
+            <button type="button" className={css.key} disabled={p.busy} onClick={p.onReset}>
               처음 상태로
             </button>
           </div>
@@ -363,12 +294,7 @@ export default function CellHud(p: CellHudProps) {
           <span className={css.grp}>
             <b>출력</b>
             {snap.outputs.map(([n, on]) => (
-              <span
-                key={n}
-                className={css.lamp}
-                data-out
-                data-on={on || undefined}
-              >
+              <span key={n} className={css.lamp} data-out data-on={on || undefined}>
                 <i />
                 {n}
               </span>
@@ -376,7 +302,7 @@ export default function CellHud(p: CellHudProps) {
           </span>
           <span className={css.kpi}>
             <small>사이클</small>
-            {snap.cycle === null ? "-" : `${snap.cycle.toFixed(1)} s`}
+            {snap.cycle === null ? '-' : `${snap.cycle.toFixed(1)} s`}
           </span>
           <span className={css.kpi}>
             <small>적재</small>
