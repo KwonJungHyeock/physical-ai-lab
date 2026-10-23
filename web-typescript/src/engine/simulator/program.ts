@@ -52,7 +52,19 @@ export type Step =
   | { type: 'pump'; on: boolean; line: number }
   | { type: 'pen'; down: boolean; line: number }
   | { type: 'push'; line: number }
-  | { type: 'repeat'; times: number; body: Step[]; line: number };
+  | { type: 'repeat'; times: number; body: Step[]; line: number }
+  /* 한 번에 하는 동작 (blocks for beginners): one line, many motions. */
+  /** 집어서 옮기기: above, down, grip / suction, up, above the place, down, release, up. */
+  | { type: 'carry'; from: Target; to: Target; line: number }
+  /** 도형 그리기 (pen): a shape `cm` across around the mat's middle. */
+  | { type: 'shape'; shape: ShapeName; cm: number; line: number }
+  /** 색깔별로 정리하기: every block onto its own place, 빨강 → 자리 1 … 파랑 → 자리 4 (arm-only mat). */
+  | { type: 'sort'; line: number };
+
+export const SHAPE_NAMES = ['네모', '원', '삼각형', '별'] as const;
+export type ShapeName = (typeof SHAPE_NAMES)[number];
+/** 도형 그리기: the size can be this many cm across. */
+export const SHAPE_CM = { min: 2, max: 12 } as const;
 
 export type StepType = Step['type'];
 
@@ -100,6 +112,9 @@ const RE = {
   downStr: new RegExp(String.raw`^robot\.move_down\(\s*${STR}\s*\)$`),
   downVar: new RegExp(String.raw`^robot\.move_down\(\s*${IDENT}\s*\)$`),
   find: new RegExp(String.raw`^${IDENT}\s*=\s*(camera|hand_camera)\.find\(\s*${STR}\s*\)$`),
+  carry: new RegExp(String.raw`^robot\.pick_place\(\s*${STR}\s*,\s*${STR}\s*\)$`),
+  shape: new RegExp(String.raw`^robot\.draw_shape\(\s*${STR}\s*,\s*(${NUM})\s*\)$`),
+  sort: /^robot\.sort_blocks\(\s*\)$/,
 };
 
 /** "분류함 A" -> bin A, "버튼" -> button, "자리 1" -> spot, "빨강 블록" -> that block. */
@@ -141,6 +156,23 @@ function parseLine(body: string, line: number, errors: Problem[]): Step | null {
   if ((m = body.match(RE.pose))) return { type: 'pose', name: m[1], line };
   if ((m = body.match(RE.joint))) return { type: 'joint', j: Number(m[1]), deg: Number(m[2]), sec: m[3] !== undefined ? Number(m[3]) : null, line };
   if ((m = body.match(RE.moveTo))) return { type: 'moveTo', x: Number(m[1]), y: Number(m[2]), z: Number(m[3]), line };
+  if (RE.sort.test(body)) return { type: 'sort', line };
+  if ((m = body.match(RE.shape))) {
+    if (!(SHAPE_NAMES as readonly string[]).includes(m[1])) {
+      errors.push({ line, msg: `'${m[1]}' 모양은 그릴 수 없어요.`, fix: `${SHAPE_NAMES.map((n) => `"${n}"`).join(', ')} 중에서 골라 주세요.` });
+      return null;
+    }
+    return { type: 'shape', shape: m[1] as ShapeName, cm: Number(m[2]), line };
+  }
+  if ((m = body.match(RE.carry))) {
+    const from = parsePlaceName(m[1]);
+    const to = parsePlaceName(m[2]);
+    if (!from || !to) {
+      errors.push({ line, msg: `'${!from ? m[1] : m[2]}'이라는 곳은 없어요.`, fix: '"빨강 블록" 같은 블록과 "자리 1" 같은 곳을 써 주세요.' });
+      return null;
+    }
+    return { type: 'carry', from, to, line };
+  }
   if ((m = body.match(RE.find))) {
     if (!COLOR_NAMES.includes(m[3])) {
       errors.push({ line, msg: `'${m[3]}' 색은 찾을 수 없어요.`, fix: `${COLOR_NAMES.join(', ')} 중에서 골라 주세요.` });
@@ -253,6 +285,12 @@ function serializeOne(s: Step): string {
       return `robot.move_down(${targetCode(s.target)})`;
     case 'find':
       return `${s.variable} = ${s.camera === 'hand' ? 'hand_camera' : 'camera'}.find("${s.color}")`;
+    case 'carry':
+      return `robot.pick_place(${targetCode(s.from)}, ${targetCode(s.to)})`;
+    case 'shape':
+      return `robot.draw_shape("${s.shape}", ${s.cm})`;
+    case 'sort':
+      return 'robot.sort_blocks()';
     case 'repeat':
       return '';
   }
@@ -312,7 +350,22 @@ export function check(steps: readonly Step[], ctx: CheckContext): { errors: Prob
           fix: `위의 [도구]에서 ${tool.what}${tool.kind === 'grip' ? '(어댑티브·평행·플렉서블)' : ''}를 달거나 이 줄을 지워 주세요.`,
         });
       }
+      const picks = effector.kind === 'grip' || effector.kind === 'suction';
       switch (s.type) {
+        case 'carry':
+          if (!picks) errors.push({ line: s.line, msg: `집어서 옮기기인데 ${fittedPhrase(ctx.effector)}.`, fix: '위의 [도구]에서 그리퍼나 흡착 펌프를 달아 주세요.' });
+          if ((s.from.kind === 'spot' || s.to.kind === 'spot' || s.from.kind === 'block' || s.to.kind === 'block') && ctx.theme !== 'arm')
+            errors.push({ line: s.line, msg: '"빨강 블록" · "자리 1" 은 로봇팔 단독 실습 환경의 매트에만 있어요.', fix: 'AI 키트에서는 카메라로 찾은 블록과 "분류함 A" 를 써 주세요.' });
+          if (s.from.kind === 'var' && !assigned.has(s.from.name)) errors.push({ line: s.line, msg: `'${s.from.name}'을 아직 찾지 않았어요.`, fix: `이 줄보다 위에 ${s.from.name} = camera.find("빨강") 처럼 먼저 찾아 주세요.` });
+          break;
+        case 'sort':
+          if (!picks) errors.push({ line: s.line, msg: `색깔별로 정리하기인데 ${fittedPhrase(ctx.effector)}.`, fix: '위의 [도구]에서 그리퍼나 흡착 펌프를 달아 주세요.' });
+          if (ctx.theme !== 'arm') errors.push({ line: s.line, msg: '색깔별로 정리하기는 로봇팔 단독 실습 환경의 매트에서 해요.', fix: 'AI 키트에서는 카메라로 찾아 분류함에 넣어 주세요.' });
+          break;
+        case 'shape':
+          if (effector.kind !== 'pen') errors.push({ line: s.line, msg: `도형 그리기인데 ${fittedPhrase(ctx.effector)}.`, fix: '위의 [도구]에서 펜 홀더를 달아 주세요.' });
+          if (!(s.cm >= SHAPE_CM.min && s.cm <= SHAPE_CM.max)) errors.push({ line: s.line, msg: `${s.cm}cm 는 그릴 수 없어요.`, fix: `${SHAPE_CM.min}에서 ${SHAPE_CM.max}cm 사이로 정해 주세요.` });
+          break;
         case 'repeat':
           if (s.times < 1 || s.times > 20)
             errors.push({ line: s.line, msg: `${s.times}번 반복은 쓸 수 없어요.`, fix: '1에서 20 사이로 정해 주세요.' });

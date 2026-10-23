@@ -51,6 +51,7 @@ import {
   DROP_CLEARANCE_MM,
   BLOCK_STORED,
   SPOTS,
+  SPOT_NAMES,
   STAND_BOXES,
   STORAGE_BOX,
   binAt,
@@ -282,6 +283,12 @@ async function runStep(s: Step, rt: Runtime): Promise<void> {
       return;
     case 'moveTo':
       return moveTool(rt, { x: s.x, y: s.y, z: s.z });
+    // 한 번에 하는 동작: run as the plain steps they stand for (on the same line).
+    case 'carry':
+    case 'sort':
+    case 'shape':
+      for (const step of expandMacro(s, w)) await runStep(step, rt);
+      return;
     case 'above':
     case 'down': {
       const place = resolveTarget(rt, s.target);
@@ -472,6 +479,48 @@ interface Place {
   /** Height of the surface the tool works on (a bin: its rim), mm. */
   top: number;
   bin?: Bin;
+}
+
+/** The middle of the mat, where 도형 그리기 draws, mm. */
+export const SHAPE_CENTRE = { x: 190, y: 0 };
+
+/** A 한 번에 하는 동작 step as the plain steps it is made of, for the fitted tool. */
+export function expandMacro(s: Extract<Step, { type: 'carry' | 'sort' | 'shape' }>, w: Pick<WorldState, 'effector'>): Step[] {
+  const line = s.line;
+  const grip = EFFECTOR_BY_ID[w.effector].kind === 'grip';
+  const take: Step = grip ? { type: 'grip', open: false, line } : { type: 'pump', on: true, line };
+  const drop: Step = grip ? { type: 'grip', open: true, line } : { type: 'pump', on: false, line };
+  const carry = (from: Target, to: Target): Step[] => [
+    drop,
+    { type: 'above', target: from, line },
+    { type: 'down', target: from, line },
+    take,
+    { type: 'above', target: from, line },
+    { type: 'above', target: to, line },
+    { type: 'down', target: to, line },
+    drop,
+    { type: 'above', target: to, line },
+  ];
+  if (s.type === 'carry') return carry(s.from, s.to);
+  if (s.type === 'sort') return COLORS.flatMap(({ name }, k) => carry({ kind: 'block', color: name }, { kind: 'spot', spot: SPOT_NAMES[k] }));
+  const r = (s.cm * 10) / 2;
+  const c = SHAPE_CENTRE;
+  const at = (a: number, rr = r) => ({ x: Math.round((c.x + rr * Math.cos(a)) * 10) / 10, y: Math.round((c.y + rr * Math.sin(a)) * 10) / 10 });
+  const pts =
+    s.shape === '네모'
+      ? [[r, r], [r, -r], [-r, -r], [-r, r]].map(([dx, dy]) => ({ x: c.x + dx, y: c.y + dy }))
+      : s.shape === '원'
+        ? Array.from({ length: 36 }, (_, k) => at((-k * 2 * Math.PI) / 36))
+        : s.shape === '삼각형'
+          ? [0, 1, 2].map((k) => at((k * 2 * Math.PI) / 3))
+          : [0, 2, 4, 1, 3].map((k) => at((k * 2 * Math.PI) / 5));
+  const path = [...pts, pts[0]];
+  return [
+    { type: 'moveTo', x: path[0].x, y: path[0].y, z: 20, line },
+    { type: 'pen', down: true, line },
+    ...path.map((p): Step => ({ type: 'moveTo', x: p.x, y: p.y, z: 0, line })),
+    { type: 'pen', down: false, line },
+  ];
 }
 
 function resolveTarget(rt: Runtime, t: Target): Place {

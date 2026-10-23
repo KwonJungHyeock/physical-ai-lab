@@ -1,0 +1,460 @@
+/*
+ * 코딩 탭 (Tutorial.tsx) on the dark side panel: language row, tutorial card, 지금 할 일,
+ * the program with its yellow places, mission snippets. Same rules as the rest of the panel:
+ * chosen = raised tile + red mark, a place to change = yellow, locked lines dimmed.
+ */
+
+.langs {
+  flex: 0 0 auto;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 3px;
+  margin: 10px 12px 0;
+  padding: 3px;
+  border-radius: 11px;
+  background: #222b36;
+  box-shadow: inset 0 0 0 1px #3a4656;
+}
+.langs button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 6px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: #d0d8e4;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.langs button small {
+  font-size: 11px;
+  font-weight: 600;
+  color: #97a3b5;
+}
+.langs button[aria-selected='true'] {
+  color: #fff;
+  background: linear-gradient(180deg, #4d5a6d, #3f4b5c);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 3px 8px -2px rgba(0, 0, 0, 0.55);
+}
+.langs button[aria-selected='true']::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 3px;
+  width: 18px;
+  height: 3px;
+  margin-left: -9px;
+  border-radius: 2px;
+  background: #e5322d;
+}
+.langs button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  background: linear-gradient(#3e4a5b, #343f4e);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), inset 0 0 0 1px #4a5769;
+  cursor: pointer;
+}
+.btn:hover:not(:disabled) {
+  background: linear-gradient(#475569, #3b4757);
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.link {
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #97a3b5;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.link:hover:not(:disabled) {
+  color: #fff;
+}
+
+/* tutorial card */
+.card {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 4px 11px;
+  align-items: center;
+  margin: 8px 12px 0;
+  padding: 10px 11px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #3a4657, #333e4d);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  color: #f1f4f9;
+}
+.cardIcon {
+  grid-row: span 2;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: rgba(229, 50, 45, 0.16);
+  color: #ff6b62;
+}
+.cardText {
+  min-width: 0;
+}
+.cardText b {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cardText small {
+  display: block;
+  font-size: 11.5px;
+  color: #97a3b5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cardActs {
+  display: flex;
+  gap: 5px;
+}
+.steps {
+  grid-column: 2 / 4;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.steps > button {
+  flex: 1;
+  height: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: #222b36;
+  cursor: pointer;
+}
+.steps > button[data-state='done'] {
+  background: #56657c;
+}
+.steps > button[data-state='now'] {
+  background: #e5322d;
+}
+.steps small {
+  margin-left: 4px;
+  font-size: 11px;
+  color: #97a3b5;
+  white-space: nowrap;
+}
+.steps .link {
+  margin-left: 8px;
+  white-space: nowrap;
+}
+.need {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 4px 0 0;
+  padding-top: 7px;
+  box-shadow: inset 0 1px 0 #4a5769;
+  font-size: 12px;
+  color: #ffd9d6;
+}
+
+.now {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin: 8px 12px 0;
+  padding: 8px 10px;
+  border-radius: 11px;
+  background: rgba(245, 165, 36, 0.14);
+  box-shadow: inset 3px 0 0 #f5a524;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.now b {
+  flex: none;
+  color: #ffd58a;
+  font-weight: 800;
+}
+.now span {
+  flex: 1;
+  color: #f3e4c4;
+}
+.next {
+  flex: none;
+  padding: 3px 9px;
+  border: 0;
+  border-radius: 7px;
+  background: rgba(245, 165, 36, 0.22);
+  color: #ffe2a8;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* the program with its yellow places */
+.ed {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  margin: 8px 12px 0;
+  border-radius: 12px;
+  background: #1f2731;
+  box-shadow: inset 0 0 0 1px #3a4656;
+  overflow: hidden;
+}
+.edBar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  box-shadow: inset 0 -1px 0 #3a4656;
+  font-size: 11.5px;
+  color: #97a3b5;
+}
+.edBar b {
+  color: #f1f4f9;
+  font: 700 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.toggle {
+  margin-left: auto;
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 8px;
+  background: #222b36;
+}
+.toggle button {
+  padding: 3px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: #97a3b5;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.toggle button[aria-pressed='true'] {
+  color: #fff;
+  background: linear-gradient(180deg, #4d5a6d, #3f4b5c);
+  box-shadow: inset 0 -2px 0 #e5322d;
+}
+.code {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 8px 0 14px;
+  font: 500 13px/1.75 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: #c8d1de;
+  scrollbar-width: thin;
+}
+.ln {
+  display: grid;
+  grid-template-columns: 34px 16px 1fr;
+  align-items: center;
+  min-height: 22.75px;
+}
+.ln code {
+  white-space: pre;
+  font: inherit;
+}
+.no {
+  padding-right: 7px;
+  text-align: right;
+  font-size: 11px;
+  color: #56657c;
+}
+.lock {
+  font-size: 9px;
+  opacity: 0.6;
+}
+.ln:not([data-edit]) code {
+  opacity: 0.55;
+}
+.ln[data-edit] {
+  background: linear-gradient(90deg, rgba(245, 165, 36, 0.09), transparent 70%);
+}
+.ln[data-edit] .no {
+  color: #ffd58a;
+}
+.ln[data-run] {
+  background: rgba(61, 220, 132, 0.12);
+  box-shadow: inset 3px 0 0 #3ddc84;
+}
+.ln[data-err] {
+  background: rgba(229, 50, 45, 0.16);
+  box-shadow: inset 3px 0 0 #e5322d;
+}
+.slot {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin: 0 1px;
+  padding: 0 4px 0 3px;
+  border-radius: 6px;
+  background: rgba(245, 165, 36, 0.14);
+  box-shadow: inset 0 -1.5px 0 rgba(245, 165, 36, 0.7);
+  vertical-align: baseline;
+}
+.slot sup {
+  font: 800 9px Pretendard, system-ui, sans-serif;
+  color: #1a1204;
+  background: #f5a524;
+  border-radius: 4px;
+  padding: 0 3px;
+  line-height: 1.4;
+}
+.slot input,
+.slot select {
+  min-width: 2ch;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: none;
+  color: #ffe2a8;
+  font: inherit;
+  font-weight: 700;
+}
+.slot select option {
+  color: #101828;
+}
+.slot[data-hot] {
+  background: rgba(245, 165, 36, 0.24);
+  box-shadow: inset 0 0 0 1.5px #f5a524;
+  animation: slotBlink 1.4s ease-in-out infinite;
+}
+@keyframes slotBlink {
+  50% {
+    box-shadow: inset 0 0 0 1.5px #f5a524, 0 0 0 4px rgba(245, 165, 36, 0.25);
+  }
+}
+
+.fullBar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 8px 12px 0;
+  padding: 6px 8px 6px 11px;
+  border-radius: 10px;
+  background: #222b36;
+  font-size: 12px;
+  color: #97a3b5;
+}
+
+/* mission snippets: one row of chips, each puts its code in */
+.snips {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  margin: 8px 12px 0;
+  padding: 7px 9px;
+  border-radius: 12px;
+  background: #313c4a;
+}
+.snips h4 {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #f1f4f9;
+  white-space: nowrap;
+}
+.snips h4 small {
+  font-size: 11px;
+  font-weight: 600;
+  color: #97a3b5;
+}
+.snipList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.snip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px 5px 6px;
+  border: 0;
+  border-radius: 8px;
+  background: #222b36;
+  box-shadow: inset 0 0 0 1px #4a5769;
+  color: #f1f4f9;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.snip i {
+  font-style: normal;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  display: grid;
+  place-items: center;
+  background: rgba(245, 165, 36, 0.2);
+  color: #ffd58a;
+}
+.snip:hover:not(:disabled) {
+  background: #2a3441;
+}
+.snip:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+@media (max-height: 820px) {
+  .snips h4 small {
+    display: none;
+  }
+  .card {
+    padding: 7px 10px;
+    gap: 3px 10px;
+  }
+  .cardIcon {
+    width: 30px;
+    height: 30px;
+  }
+  .now {
+    padding: 6px 9px;
+  }
+}

@@ -39,7 +39,7 @@ const TOKEN =
   /("""[\s\S]*?(?:"""|$)|'''[\s\S]*?(?:'''|$))|([rbfuRBFU]{0,2}(?:"(?:\\.|[^"\\\n])*"?|'(?:\\.|[^'\\\n])*'?))|(#[^\n]*)|(\b\d+(?:\.\d+)?(?:[eE][+-]?\d+)?\b)|(@[A-Za-z_][\w.]*)|([A-Za-z_]\w*)/g;
 
 /** Python source -> coloured spans (the same characters, so it lines up with the textarea). */
-function highlight(code: string): ReactNode[] {
+export function highlight(code: string): ReactNode[] {
   const out: ReactNode[] = [];
   let last = 0;
   let prevWord = '';

@@ -7776,3 +7776,80 @@ div.zeroFlow {
   text-align: center;
   font-size: 11px;
 }
+
+/* --- 블록 코딩 (2026-10-23): a plain workspace, bigger blocks, 한 번에 하는 동작 ----------------- */
+.app .side .workspace {
+  background: #283240;
+  background-image: none;
+  box-shadow: inset 0 0 0 1px #3a4656;
+  border-radius: 12px;
+}
+.app .side .workspace .block {
+  padding: 10px 14px;
+  border-radius: 11px;
+  font-size: 14.5px;
+  font-weight: 700;
+  gap: 7px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 3px 0 rgba(0, 0, 0, 0.25);
+}
+.app .side .palette .block {
+  padding: 9px 11px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 800;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 2px 0 rgba(0, 0, 0, 0.25);
+}
+.app .side .grp {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #97a3b5;
+}
+.c_macro {
+  background: #e5622d;
+}
+.macroIcon {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.2);
+  font-size: 13px;
+  line-height: 1;
+}
+/* 고칠 곳 (tutorial): the blocks holding a value this step asks to change */
+.workspace .block[data-hot] {
+  box-shadow:
+    0 0 0 2.5px #f5a524,
+    0 0 0 6px rgba(245, 165, 36, 0.28);
+  animation: hotBlink 1.4s ease-in-out infinite;
+}
+@keyframes hotBlink {
+  50% {
+    box-shadow:
+      0 0 0 2.5px #f5a524,
+      0 0 0 2px rgba(245, 165, 36, 0);
+  }
+}
+.app .side .workspace .block[data-hot] {
+  box-shadow:
+    0 0 0 2.5px #f5a524,
+    0 0 0 6px rgba(245, 165, 36, 0.28);
+}
+/* 코딩 튜토리얼: the output under the program is smaller, the program gets the room */
+.app .side .codeTab .termPanel {
+  flex: 0 0 24%;
+  min-height: 96px;
+  margin-top: 8px;
+}
+@media (max-height: 820px) {
+  .app .side .codeTab .termPanel {
+    flex: 0 0 18%;
+    min-height: 64px;
+  }
+}

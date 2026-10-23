@@ -21,10 +21,13 @@ import {
   DEFAULT_VARIABLE,
   MOVE_TIME_MAX,
   MOVE_TIME_MIN,
+  SHAPE_CM,
+  SHAPE_NAMES,
   SPEEDS,
   parse,
   serialize,
   targetLabel,
+  type ShapeName,
   type Step,
   type Target,
 } from '@/engine/simulator/program';
@@ -56,6 +59,8 @@ interface Props {
   live: Live;
   runningLine: number;
   onError(msg: string, fix?: string): void;
+  /** 고칠 곳 (tutorial): the blocks on these lines blink yellow. */
+  hotLines?: readonly number[];
 }
 
 const COLOR_CLASS: Record<Step['type'], string> = {
@@ -74,6 +79,9 @@ const COLOR_CLASS: Record<Step['type'], string> = {
   repeat: css.c_flow,
   move: css.c_adv,
   moveTo: css.c_adv,
+  carry: css.c_macro,
+  shape: css.c_macro,
+  sort: css.c_macro,
 };
 
 function toolProtos(effector: EffectorId): Proto[] {
@@ -92,7 +100,7 @@ function toolProtos(effector: EffectorId): Proto[] {
   }
 }
 
-export default function BlockEditor({ code, onCode, effector, cameraFlange, theme, poseNames, live, runningLine, onError }: Props) {
+export default function BlockEditor({ code, onCode, effector, cameraFlange, theme, poseNames, live, runningLine, onError, hotLines }: Props) {
   const drag = useRef<Drag | null>(null);
   const [dropKey, setDropKey] = useState<string | null>(null);
   const [draggingKey, setDraggingKey] = useState<string | null>(null);
@@ -142,7 +150,12 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
   const { steps, errors } = parse(code);
   const variables = collectVariables(steps);
 
+  const kindNow = EFFECTOR_BY_ID[effector].kind;
+  const picks = kindNow === 'grip' || kindNow === 'suction';
+  // 한 번에 하는 동작: one block that does a whole job, for the fitted tool (first, for beginners).
+  const macros: Proto[] = [...(picks ? [{ type: 'carry' } as Proto, ...(theme === 'arm' ? [{ type: 'sort' } as Proto] : [])] : []), ...(kindNow === 'pen' ? [{ type: 'shape' } as Proto] : [])];
   const palette: [string, Proto[]][] = [
+    ...(macros.length ? [['한 번에 하는 동작', macros] as [string, Proto[]]] : []),
     ['움직이기', [{ type: 'home' }, ...(poseNames.length ? [{ type: 'pose' } as Proto] : []), { type: 'joint' }, { type: 'joint', timed: true }, { type: 'speed' }]],
     ['카메라', [{ type: 'find' }]],
     ['옮기기', [{ type: 'above' }, { type: 'down' }]],
@@ -178,6 +191,14 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
         return { type: 'move', joints: live.getAngles().map((a) => Math.round(a)), speed: null, line };
       case 'moveTo':
         return { type: 'moveTo', x: 200, y: 0, z: 80, line };
+      case 'carry':
+        return theme === 'arm'
+          ? { type: 'carry', from: { kind: 'block', color: '빨강' }, to: { kind: 'spot', spot: SPOT_NAMES[0] }, line }
+          : { type: 'carry', from: variables.length ? { kind: 'var', name: variables[0] } : { kind: 'var', name: DEFAULT_VARIABLE }, to: { kind: 'bin', bin: 'A' }, line };
+      case 'shape':
+        return { type: 'shape', shape: '네모', cm: 6, line };
+      case 'sort':
+        return { type: 'sort', line };
       case 'find':
         return { type: 'find', variable: DEFAULT_VARIABLE, camera: theme === 'arm' ? 'hand' : 'top', color: '빨강', line };
       case 'above':
@@ -261,7 +282,7 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
     ...(theme === 'arm' ? SPOT_NAMES.map((n): [string, string] => [n, `spot:${n}`]) : BIN_NAMES.map((b): [string, string] => [`분류함 ${b}`, `bin:${b}`])),
     ...(EFFECTOR_BY_ID[effector].kind === 'press' ? ([['버튼', 'button']] as [string, string][]) : []),
   ];
-  const targetValue = (t: Target) => (t.kind === 'var' ? `var:${t.name}` : t.kind === 'bin' ? `bin:${t.bin}` : t.kind === 'spot' ? `spot:${t.spot}` : 'button');
+  const targetValue = (t: Target) => (t.kind === 'var' ? `var:${t.name}` : t.kind === 'bin' ? `bin:${t.bin}` : t.kind === 'spot' ? `spot:${t.spot}` : t.kind === 'block' ? `block:${t.color}` : 'button');
   const parseTargetValue = (v: string): Target =>
     v === 'button'
       ? { kind: 'button' }
@@ -269,7 +290,9 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
         ? { kind: 'var', name: v.slice(4) }
         : v.startsWith('spot:')
           ? { kind: 'spot', spot: v.slice(5) as SpotName }
-          : { kind: 'bin', bin: v.slice(4) as BinName };
+          : v.startsWith('block:')
+            ? { kind: 'block', color: v.slice(6) as ColorName }
+            : { kind: 'bin', bin: v.slice(4) as BinName };
 
   /** Editable content for a placed block; `preview` = palette look. */
   const content = (s: Step, preview: boolean): ReactNode => {
@@ -408,6 +431,35 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
         );
       case 'repeat':
         return <span>{preview ? '2번 반복하기' : ''}</span>;
+      case 'carry': {
+        const fromOpts: [string, string][] = theme === 'arm' ? COLORS.map((c): [string, string] => [`${c.name} 블록`, `block:${c.name}`]) : variables.map((v): [string, string] => [targetLabel({ kind: 'var', name: v }), `var:${v}`]);
+        return (
+          <>
+            <span className={css.macroIcon} aria-hidden="true">✋</span>
+            {preview ? <span>빨강 블록 ▾</span> : sel({ label: '옮길 블록', value: targetValue(s.from), options: withCurrent(fromOpts, s.from), onChange: (v) => ((s.from = parseTargetValue(v)), commit()) })}
+            <span>을</span>
+            {preview ? <span>{theme === 'arm' ? SPOT_NAMES[0] : '분류함 A'} ▾</span> : sel({ label: '놓을 곳', value: targetValue(s.to), options: withCurrent(targetOptions().filter(([, v]) => !v.startsWith('var:')), s.to), onChange: (v) => ((s.to = parseTargetValue(v)), commit()) })}
+            <span>로 옮기기</span>
+          </>
+        );
+      }
+      case 'shape':
+        return (
+          <>
+            <span className={css.macroIcon} aria-hidden="true">✎</span>
+            {preview ? <span>네모 ▾</span> : sel({ label: '모양', value: s.shape, options: SHAPE_NAMES.map((n) => [n, n]), onChange: (v) => ((s.shape = v as ShapeName), commit()) })}
+            <span>크기</span>
+            {preview ? <span>6cm</span> : num({ label: '도형 크기', value: s.cm, unit: 'cm', min: SHAPE_CM.min, max: SHAPE_CM.max, step: 1, onChange: (v) => ((s.cm = v), commit()) })}
+            <span>그리기</span>
+          </>
+        );
+      case 'sort':
+        return (
+          <>
+            <span className={css.macroIcon} aria-hidden="true">◧</span>
+            <span>블록을 색깔별로 자리 1~4 에 정리하기</span>
+          </>
+        );
     }
   };
 
@@ -575,7 +627,7 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
       );
     }
     return (
-      <div key={path.join()} className={classes(s, path)} {...dragProps(path)} {...pick(path)}>
+      <div key={path.join()} className={classes(s, path)} data-hot={hotLines?.includes(s.line) || undefined} {...dragProps(path)} {...pick(path)}>
         {content(s, false)}
         {del(path)}
       </div>

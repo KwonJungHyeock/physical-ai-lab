@@ -68,6 +68,7 @@ import { carryHash, loadLastPractice, loadProgram, readCarried, saveLastPractice
 import { isStarter, newSession, placedBlocks, practiceFor, practicesFor, repeatability, starterFor, toolFits, toolNeeded, type Level, type PracticeId, type Session } from '@/engine/simulator/practices';
 import { check, parse, type CameraId, type Problem, type Step } from '@/engine/simulator/program';
 import { checkProcess, compileProcess, emptyProcess, processFromFile, processListing, processToFile, PROCESS_EXT, type Process } from '@/engine/simulator/process';
+import { findSlots, tutorialFor } from '@/engine/simulator/tutorials';
 import { blockLayout, buildPlan, carryTargets, freshPlan, makeSolver, practiceOf, type Built, type PlanKind, type Solver, type Spot } from '@/engine/simulator/plan';
 import { RunError, SelfCollision, Stop, createWorld, emptyStats, instantAnimate, jogTo, moveCheck, moveProblem, playTimeline, preflight, runProcess, runProgram, type RobotAction, type RunHooks, type WorldState } from '@/engine/simulator/sim';
 import { demoFits, demoFor, demoStepAt } from '@/engine/simulator/demos';
@@ -96,12 +97,12 @@ import Intro from './connect/Intro';
 import FirstGuide, { resetFirstGuide } from './connect/FirstGuide';
 import HelpSheet from './connect/HelpSheet';
 import { announceRobotStop } from './connect/robotStop';
-import MissionCard from './tasks/MissionCard';
 import ModelPicker from './connect/ModelPicker';
 import ConnectDialog from './connect/ConnectDialog';
 import UsbMaker from './connect/UsbMaker';
 import PartsPanel from './control/PartsPanel';
 import ProcessPanel from './editors/ProcessPanel';
+import { FullBar, LangSeg, Snippets, SlotCode, TutorialCard } from './editors/Tutorial';
 import ProcessFlow, { activePlan, initialFlow, REF_MARK, type FlowState } from './editors/ProcessFlow';
 import PyPanel from './editors/PyPanel';
 import RunBar from './tasks/RunBar';
@@ -291,6 +292,9 @@ export default function Console() {
       /* this session only */
     }
   };
+  /** 코딩 튜토리얼: the step each tutorial is on (level:practice), and 전체 편집 (Python · ROS 2). */
+  const [tutSteps, setTutSteps] = useState<Record<string, number>>({});
+  const [fullEdit, setFullEdit] = useState(false);
   /** The last simulated run of the process (실행 · 확인). */
   const [lastRun, setLastRun] = useState<{ ok: boolean; seconds: number; placed?: number; total?: number } | null>(null);
   const procFile = useRef<HTMLInputElement>(null);
@@ -1469,7 +1473,13 @@ export default function Console() {
   const runSteps = (steps: Step[], opts: { reset: boolean; label?: boolean; quiet?: boolean }) => execute((h) => runProgram(steps, h), opts);
 
   /** After a run passed: the gate opens and the practice reports. */
+  const tut = tutorialFor(level, theme, practice.id);
+  const tutKey = `${level}:${practice.id}`;
+  const tutStep = Math.min(tutSteps[tutKey] ?? 0, tut.steps.length - 1);
+  const setTutStep = (k: number) => setTutSteps((m) => ({ ...m, [tutKey]: Math.max(0, Math.min(tut.steps.length - 1, k)) }));
   const passedRun = (text: string, actions: RobotAction[], start?: number[]) => {
+    // A passed run of a coding tutorial moves it on to its next step.
+    if (tab !== 'process' && tutStep < tut.steps.length - 1) setTutStep(tutStep + 1);
     setBadge(null);
     setPassed({ code: text, actions, start });
     if (placedBlocks(world.current) > 0) session.current.pickTools.add(effector);
@@ -2808,6 +2818,10 @@ export default function Console() {
       openSection(id);
       return openTab('direct');
     }
+    if (id === 'code') {
+      if (dockShown && (workScreen === 'basic' || workScreen === 'python' || workScreen === 'ros')) return toggleDock();
+      return openTab(level);
+    }
     openTab(id as PanelTab);
   };
   const work = (id: string, label: string, icon: string, title: string, free = false): BarItem => ({
@@ -2847,9 +2861,7 @@ export default function Console() {
       name: '작업',
       items: [
         work('process', '공정', 'flag', '공정 짜기: 위치를 가르쳐 옮기기 · 그리기'),
-        work('basic', '블록', 'grid', `블록 코딩 (${LEVEL_TAB.basic.sub})`),
-        work('python', 'Python', 'code', `Python (${LEVEL_TAB.python.sub})`),
-        work('ros', 'ROS 2', 'joints', `ROS 2 (${LEVEL_TAB.ros.sub})`),
+        { ...work('code', '코딩', 'code', '코딩: 블록 · Python · ROS 2 (튜토리얼)'), on: dockShown && (workScreen === 'basic' || workScreen === 'python' || workScreen === 'ros') },
       ],
     },
     {
@@ -2863,7 +2875,7 @@ export default function Console() {
     },
   ];
   const barFoot: BarItem[] = [{ ...work('zero', '영점', 'zero', robotMode ? '영점 맞추기' : '로봇을 연결하면 영점을 맞춰요'), disabled: !robotMode || (busy && !zeroMode) }];
-  const SCREEN_TITLE: Record<string, string> = { jog: '조그', parts: '도구', pose: '자세', zero: '영점', process: '공정', basic: LEVEL_TAB.basic.name, python: LEVEL_TAB.python.name, ros: LEVEL_TAB.ros.name };
+  const SCREEN_TITLE: Record<string, string> = { jog: '조그', parts: '도구', pose: '자세', zero: '영점', process: '공정', basic: '코딩', python: '코딩', ros: '코딩' };
 
   const zeroPanel = (
     <ZeroPanel
@@ -3755,18 +3767,26 @@ export default function Console() {
                   </div>
                 ) : (
                   <div className={css.codeTab} role="region" aria-label={LEVEL_TAB[level].name}>
-                    <MissionCard
+                    <LangSeg level={level} busy={busy} onLevel={(lv) => openTab(lv)} />
+                    <TutorialCard
                       practice={practice}
-                      need={toolAsk}
-                      tag={mode === 'check' && practice.check ? `검수 ${practice.check}` : categoryOf(practice.id)}
-                      check={mode === 'check'}
+                      sub={`${LEVEL_TAB[level].sub} · ${mode === 'check' && practice.check ? `검수 ${practice.check}` : categoryOf(practice.id)} · 라이브러리 튜토리얼`}
+                      tut={tut}
+                      step={tutStep}
+                      onStep={setTutStep}
                       busy={busy}
                       action={practiceAction}
+                      need={toolAsk}
+                      onLibrary={() => {
+                        setLibSection('tasks');
+                        chooseView('library');
+                      }}
                       onReload={() => {
                         if (code === starterFor(practice, effector, theme) || window.confirm('지금 프로그램 대신 이 실습의 예제 프로그램을 다시 불러올까요?')) {
                           setCode(starterFor(practice, effector, theme));
                           setErrorLines([]);
                           setPassed(null);
+                          setTutStep(0);
                         }
                       }}
                     />
@@ -3785,10 +3805,32 @@ export default function Console() {
                           live={live}
                           runningLine={runningLine}
                           onError={(m, f) => addLog('err', m, f)}
+                          hotLines={findSlots(code, tut)
+                            .filter((h) => tut.steps[tutStep]?.slots.includes(h.index))
+                            .map((h) => h.line)}
                         />
+                      </div>
+                    ) : !fullEdit ? (
+                      <div className={css.pane}>
+                        <SlotCode
+                          code={code}
+                          onCode={(c) => {
+                            setCode(c);
+                            setErrorLines([]);
+                          }}
+                          tut={tut}
+                          step={tutStep}
+                          runningLine={runningLine}
+                          errorLines={errorLines}
+                          fileName={level === 'ros' ? 'my_node.py' : 'my_robot.py'}
+                          full={fullEdit}
+                          onFull={setFullEdit}
+                        />
+                        <PyPanel level={level} status={pyStatus} output={pyOut} ros={pyRos} />
                       </div>
                     ) : (
                       <div className={css.pane}>
+                        <FullBar onFull={setFullEdit} />
                         <CodeEditor
                           code={code}
                           onCode={(c) => {
@@ -3806,6 +3848,15 @@ export default function Console() {
                         <PyPanel level={level} status={pyStatus} output={pyOut} ros={pyRos} />
                       </div>
                     )}
+                    <Snippets
+                      tut={tut}
+                      code={code}
+                      busy={busy}
+                      onCode={(c) => {
+                        setCode(c);
+                        setErrorLines([]);
+                      }}
+                    />
                     {runBar}
                   </div>
                 )}
