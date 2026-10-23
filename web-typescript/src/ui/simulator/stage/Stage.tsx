@@ -557,7 +557,7 @@ function World({
     const req = fitReq.current;
     if (!req || !controls || !root.current) return;
     fitReq.current = null;
-    const f = fitView(req.name, root.current, arm.root, cell ? CELL_AREA : WORK_AREA[theme], camera as PerspectiveCamera, freeFrame(frameInsets?.() ?? null, gl.domElement.clientWidth, gl.domElement.clientHeight));
+    const f = fitView(req.name, root.current, arm.root, cell ? CELL_AREA : WORK_AREA[theme], camera as PerspectiveCamera, cell && req.name === 'home' ? CELL_HOME : null, freeFrame(frameInsets?.() ?? null, gl.domElement.clientWidth, gl.domElement.clientHeight));
     void controls.setLookAt(f.position.x, f.position.y, f.position.z, f.target.x, f.target.y, f.target.z, req.animate);
     if (req.name !== 'fit') lastView.current = req.name;
     userMoved.current = false;
@@ -758,7 +758,9 @@ const WORK_AREA: Record<Theme, { min: [number, number, number]; max: [number, nu
   arm: { min: [40, -160, 0], max: [300, 160, 10] },
 };
 /** A 실습 셀's equipment (its floor left out: the view frames what is on it). */
-const CELL_AREA = { min: [-60, -400, -60], max: [480, 190, 120] } as const;
+const CELL_AREA = { min: [-40, -410, -40], max: [500, 185, 150] } as const;
+/** A cell's own home view (three.js direction): from the front right, the belt across the picture, the magazine behind. */
+const CELL_HOME: [number, number, number] = [1, 0.95, -0.55];
 /** The arm standing straight up (0° pose), robot frame, mm. */
 const UPRIGHT = { min: [-60, -60, 0] as const, max: [60, 60, 470] as const };
 
@@ -773,7 +775,7 @@ function freeFrame(insets: { l: number; r: number; t: number; b: number } | null
 }
 
 /** Camera position and target for a view: its direction, framed on the arm (as posed now) and the work area. */
-function fitView(name: ViewName, root: Group, arm: Group, area: { min: readonly number[]; max: readonly number[] }, camera: PerspectiveCamera, free?: FreeFrame): { position: Vector3; target: Vector3 } {
+function fitView(name: ViewName, root: Group, arm: Group, area: { min: readonly number[]; max: readonly number[] }, camera: PerspectiveCamera, home: readonly number[] | null, free?: FreeFrame): { position: Vector3; target: Vector3 } {
   root.updateWorldMatrix(true, false);
   const toWorld = (min: readonly number[], max: readonly number[]) =>
     new Box3(new Vector3(min[0], min[1], min[2]).multiplyScalar(0.001), new Vector3(max[0], max[1], max[2]).multiplyScalar(0.001)).applyMatrix4(root.matrixWorld);
@@ -782,6 +784,7 @@ function fitView(name: ViewName, root: Group, arm: Group, area: { min: readonly 
   if (name === 'tall') box.union(toWorld(UPRIGHT.min, UPRIGHT.max));
   let dir: Vector3;
   if (name === 'fit') dir = camera.getWorldDirection(new Vector3()).negate();
+  else if (home) dir = new Vector3(home[0], home[1], home[2]);
   else {
     const v = VIEWS[name];
     dir = new Vector3(...v.pos).sub(new Vector3(...v.target));
