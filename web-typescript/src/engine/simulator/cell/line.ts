@@ -39,12 +39,17 @@ export interface LineState {
   refill: number;
   /** Stopped by a 정지 or 고장: nothing moves until reset. */
   halted: boolean;
+  /** Each actuator's travel, 0 (off) .. 1 (on), by its output. */
+  act: Record<string, number>;
+  /** The machine cycle's time so far, s (null: not running). */
+  cycleT: number | null;
 }
 
 export function newLine(l: CellLayout, auto: boolean, refill = 0): LineState {
   const out = Object.fromEntries(l.outputs.map((n) => [n, false]));
   const inputs = Object.fromEntries(l.inputs.map((n) => [n, false]));
-  return { t: 0, auto, out, in: inputs, ext: 0, phase: 'idle', phaseT: 0, requests: 0, blockedT: 0, log: [], fed: 0, refill, halted: false };
+  const act = Object.fromEntries((l.line.actuators ?? []).map((a) => [a.output, 0]));
+  return { t: 0, auto, out, in: inputs, ext: 0, phase: 'idle', phaseT: 0, requests: 0, blockedT: 0, log: [], fed: 0, refill, halted: false, act, cycleT: null };
 }
 
 /** A part's footprint radius and height, mm. */
@@ -182,6 +187,38 @@ export function stepLine(l: CellLayout, s: LineState, parts: readonly DeskObject
     const x0 = pu.retracted[0] + (pu.extended[0] - pu.retracted[0]) * s.ext;
     const x1 = pu.retracted[1] + (pu.extended[1] - pu.retracted[1]) * s.ext;
     movers.push({ id: pu.output, min: [x0, pu.y[0], pu.z[0]], max: [x1, pu.y[1], pu.z[1]] });
+  }
+
+  // Doors, chucks, clamps, stoppers, ejectors: each travels to where its output says (and stays put while the line is halted).
+  for (const a of l.line.actuators ?? []) {
+    const cur = s.act[a.output] ?? 0;
+    const want = s.halted ? cur : s.out[a.output] ? 1 : 0;
+    const step = dt / a.timeS;
+    const v = want > cur ? Math.min(want, cur + step) : Math.max(want, cur - step);
+    s.act[a.output] = v;
+    if (a.onEnd) setIn(s, a.onEnd, v >= 1);
+    if (a.offEnd) setIn(s, a.offEnd, v <= 0);
+    if (a.box) {
+      const lerp = (k: 0 | 1, i: number) => a.box!.off[k][i] + (a.box!.on[k][i] - a.box!.off[k][i]) * v;
+      movers.push({ id: a.output, min: [lerp(0, 0), lerp(0, 1), lerp(0, 2)], max: [lerp(1, 0), lerp(1, 1), lerp(1, 2)] });
+    }
+  }
+
+  // A machine's cycle: started by its output when what it needs is on (a closed door, a locked chuck), busy, then done.
+  const cy = l.line.cycle;
+  if (cy) {
+    const go = s.out[cy.output] && !s.halted;
+    if (!go) s.cycleT = null;
+    else if (s.cycleT === null) {
+      if (cy.needs.every((n) => s.in[n]) && !s.in[cy.done]) s.cycleT = 0;
+    } else {
+      s.cycleT += dt;
+      // The door opened or the chuck let go mid-cycle: the machine stops.
+      if (!cy.needs.every((n) => s.in[n])) s.cycleT = null;
+    }
+    setIn(s, cy.busy, s.cycleT !== null && s.cycleT < cy.timeS);
+    if (s.cycleT !== null && s.cycleT >= cy.timeS) setIn(s, cy.done, true);
+    if (!s.out[cy.output]) setIn(s, cy.done, false);
   }
 
   // The belt, and a part held at its end while it runs (it slips under the part).

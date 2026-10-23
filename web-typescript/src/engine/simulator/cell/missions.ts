@@ -8,7 +8,7 @@
  * is now and the run's record). Distances and heights the student reads are shop millimetres.
  */
 
-import type { DeskObject } from '../desk';
+import { makeObject, type DeskObject } from '../desk';
 import { CELLS, fromShop, gridPlace, magazineParts, makePart, type CellId, type CellLayout } from './cells';
 import type { CellAlert } from './faults';
 import type { LineState } from './line';
@@ -369,9 +369,37 @@ export const MISSIONS: readonly CellMission[] = [...A, ...B, ...C, ...D, ...E];
 export const missionsOf = (cell: CellId) => MISSIONS.filter((m) => m.cell === cell);
 export const missionById = (id: string) => MISSIONS.find((m) => m.id === id) ?? null;
 
-/** 자유 실습: the cell with a full magazine, parts on the source plate, the line on 자동 운전. */
+/** 자유 실습's parts in cells B ~ E (their ladders are still to come): enough to see the equipment work. */
+function sampleParts(l: CellLayout): DeskObject[] {
+  const P = (x: number, y: number, z: number, over: Partial<DeskObject> = {}) => makePart(x, y, z, over);
+  const top = l.line.belt?.topZ ?? 30;
+  switch (l.id) {
+    case 'vision': {
+      const cols = ['#e5484d', '#2f6fed', '#f5b400'];
+      return [-380, -330, -280, -230, -180, -130].map((y, k) => P(225 + ((k * 7) % 3) * 6 - 6, y, top, { color: cols[k % 3], ...(k === 4 ? { size: [18, 18, 20] as [number, number, number] } : {}) }));
+    }
+    case 'inspect':
+      return [-410, -360, -200, -120].map((y, k) => P(225, y, top, k === 2 ? { size: [25, 25, 12], color: '#9aa3ab' } : {}));
+    case 'tend': {
+      const g = l.grids['소재 트레이'];
+      return Array.from({ length: 9 }, (_, k) => {
+        const p = gridPlace(g, k);
+        return P(p.x, p.y, p.z, { size: [18, 18, 20], color: '#b9c0c8', massG: 30 });
+      });
+    }
+    case 'assembly': {
+      const nest = l.places['핀 집는 자리'];
+      const housing = (y: number) => makeObject('box', { x: 200, y, z: top }, { size: [30, 30, 16], color: '#3d4650', massG: 30 });
+      return [housing(300), housing(250), housing(200), P(nest.x, nest.y, nest.z, { size: [8, 8, 22], color: '#d4d9de', massG: 5 }), ...[-200, -186, -172, -158].map((y) => P(130, y, nest.z, { size: [8, 8, 22], color: '#d4d9de', massG: 5 }))];
+    }
+    default:
+      return [];
+  }
+}
+
+/** 자유 실습: the cell with a full magazine, parts on the source plate, the line on 자동 운전 (B ~ E: their sample parts). */
 export function freeSetup(): MissionSetup {
-  return { parts: (l) => [...(l.line.magazine ? magazineParts(l, 9) : []), ...onSourcePlate(9)(l)], auto: true, refill: 99 };
+  return { parts: (l) => (l.id === 'feed' ? [...(l.line.magazine ? magazineParts(l, 9) : []), ...onSourcePlate(9)(l)] : sampleParts(l)), auto: true, refill: 99 };
 }
 
 /** The checks, now. */

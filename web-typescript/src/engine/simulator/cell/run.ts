@@ -46,7 +46,8 @@ export function newCellRun(id: CellId, missionId: string | null): { run: CellRun
   const layout = cellLayout(id);
   const m = missionId ? missionById(missionId) : null;
   const setup = m?.setup ?? freeSetup();
-  const line = newLine(layout, setup.auto, setup.refill ?? 0);
+  // 자동 운전 feeds from a magazine; a cell without one is run by hand.
+  const line = newLine(layout, setup.auto && !!layout.line.pusher, setup.refill ?? 0);
   if (setup.beltOn && layout.line.beltOutput) {
     line.out[layout.line.beltOutput] = true;
     line.phase = 'convey';

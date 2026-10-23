@@ -205,10 +205,13 @@ export default function DeskPanel(p: Props) {
               </h4>
               <div className={css.cells}>
                 {CELLS.map((c) => (
-                  <button key={c.id} type="button" className={css.cellCard} aria-pressed={p.cell === c.id} disabled={p.busy || !c.built} onClick={() => p.onCell?.(c.id)}>
+                  <button key={c.id} type="button" className={css.cellCard} aria-pressed={p.cell === c.id} disabled={p.busy} onClick={() => p.onCell?.(c.id)}>
                     <i>{c.letter}</i>
                     <b>{c.name}</b>
-                    <small>{c.built ? c.note : '준비 중'}</small>
+                    <small>
+                      {c.note}
+                      {!c.built && <span className={css.soon}> · 단계 준비 중</span>}
+                    </small>
                   </button>
                 ))}
               </div>

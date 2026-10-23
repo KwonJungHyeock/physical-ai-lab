@@ -166,17 +166,19 @@ const CELL_PROG_KEY = 'robot-console-cell-prog';
 const CELL_START = 'from edu import robot, cell\n\nrobot.home()\n';
 /** Equipment whose name tags show for a ladder step (by its place in the ladder). */
 const cellStepTags = (n: number) => (n <= 5 ? ['소재 판', '적재 판'] : n <= 9 ? ['매거진', '끝 센서', '적재 판'] : ['공급 실린더', '컨베이어', '끝 센서']);
-const loadCellProgram = (mission: string | null): string | null => {
+/** Where a step's program is kept: by the step, or each cell's 자유 실습 (cell A's under its first name). */
+const cellProgKey = (at: { cell: CellId; mission: string | null }) => `${CELL_PROG_KEY}:${at.mission ?? (at.cell === 'feed' ? 'free' : `free-${at.cell}`)}`;
+const loadCellProgram = (at: { cell: CellId; mission: string | null }): string | null => {
   try {
-    return localStorage.getItem(`${CELL_PROG_KEY}:${mission ?? 'free'}`);
+    return localStorage.getItem(cellProgKey(at));
   } catch {
     return null;
   }
 };
-const saveCellProgram = (mission: string | null, c: string) => {
+const saveCellProgram = (at: { cell: CellId; mission: string | null }, c: string) => {
   try {
-    if (c === CELL_START) localStorage.removeItem(`${CELL_PROG_KEY}:${mission ?? 'free'}`);
-    else localStorage.setItem(`${CELL_PROG_KEY}:${mission ?? 'free'}`, c);
+    if (c === CELL_START) localStorage.removeItem(cellProgKey(at));
+    else localStorage.setItem(cellProgKey(at), c);
   } catch {
     /* this session only */
   }
@@ -551,7 +553,7 @@ export default function Console() {
   /** Leave the cell (another practice, arm or demo takes the world). */
   const dropCell = () => {
     if (!cellRef.current) return;
-    saveCellProgram(cellRef.current.mission, code);
+    saveCellProgram(cellRef.current, code);
     cellRef.current = null;
     setCellAt(null);
     setCellResult(null);
@@ -764,9 +766,9 @@ export default function Console() {
     // 실습 셀 (not on screen yet): ?cell=feed&mission=A8 opens the cell with the step's reference program.
     const q = new URLSearchParams(window.location.search);
     const qc = q.get('cell') as CellId | null;
-    if (qc && CELL_BY_ID[qc]?.built) {
+    if (qc && CELL_BY_ID[qc]) {
       const m = q.get('mission');
-      const c = { cell: qc, mission: m && missionById(m)?.cell === qc ? m : null };
+      const c = { cell: qc, mission: m && missionById(m)?.cell === qc && CELL_BY_ID[qc].built ? m : null };
       cellRef.current = c;
       setCellAt(c);
       setLevel('basic');
@@ -783,7 +785,7 @@ export default function Console() {
 
   /** Keep the open program in this browser (an untouched example is forgotten). */
   const keepProgram = (c: string) => {
-    if (cellRef.current) return saveCellProgram(cellRef.current.mission, c);
+    if (cellRef.current) return saveCellProgram(cellRef.current, c);
     // Not before the saved ones are read: the first render holds only the defaults.
     if (restored && practice.id !== 'demo') saveProgram(arm.id, level, theme, practice.id, isStarter(c) ? null : c);
   };
@@ -1851,7 +1853,7 @@ export default function Console() {
   /** Open a cell on a ladder step (or 자유 실습): its world, the gripper, the step's program. */
   const openCell = (cell: CellId, mission: string | null) => {
     if (busy) return;
-    if (cellRef.current) saveCellProgram(cellRef.current.mission, code);
+    if (cellRef.current) saveCellProgram(cellRef.current, code);
     else keepProgram(code);
     const c = { cell, mission };
     cellRef.current = c;
@@ -1873,11 +1875,12 @@ export default function Console() {
     setAnglesView(world.current.angles.slice());
     setLevel('basic');
     setTab('basic');
-    setCode(loadCellProgram(mission) ?? CELL_START);
+    setCode(loadCellProgram(c) ?? CELL_START);
     setErrorLines([]);
     setPassed(null);
     const m = mission ? missionById(mission) : null;
-    addLog('info', m ? `${m.id} ${m.title}: ${m.goal}` : '자유 실습: 채점 없이 셀을 움직여 봐요.');
+    const info = CELL_BY_ID[cell];
+    addLog('info', m ? `${m.id} ${m.title}: ${m.goal}` : info.built ? '자유 실습: 채점 없이 셀을 움직여 봐요.' : `${info.letter} ${info.name}: 단계 실습은 준비 중이에요. 왼쪽 조작판으로 장비를 직접 움직여 볼 수 있어요.`);
   };
   /** Back to the desk: the practice's program as it was left. */
   const leaveCell = () => {
@@ -3777,7 +3780,8 @@ export default function Console() {
                         setRailOpen(null);
                         const steps = missionsOf(id);
                         const first = steps.find((m) => !cellPassed[m.id]) ?? steps[0];
-                        openCell(id, first?.id ?? null);
+                        // A cell whose ladder is still to come opens to look round and run by hand.
+                        openCell(id, CELL_BY_ID[id].built ? (first?.id ?? null) : null);
                       }}
                       onMat={deskMat}
                       onShuffle={shuffle}

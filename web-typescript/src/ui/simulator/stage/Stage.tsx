@@ -91,7 +91,7 @@ import { DESK_M, SCENE, TOOL_LAYER, addJointAxes, axesTriad, deskSpot, framing, 
 import { workspaceEnvelope } from '../../education/stage/learn3d';
 import type { ArmSpec } from '@/engine/robot/arms';
 import { CellObjects, CellPhysics, DeskObjects, DeskPhysics, type DeskEdit } from './DeskObjects';
-import CellScene from './CellScene';
+import CellScene, { CELL_VIEW } from './CellScene';
 import type { CellId } from '@/engine/simulator/cell/cells';
 import { ScenePreset } from './ScenePreset';
 import PlanMarks, { type PlanMarksData } from './PlanMarks';
@@ -560,7 +560,7 @@ function World({
     const req = fitReq.current;
     if (!req || !controls || !root.current) return;
     fitReq.current = null;
-    const f = fitView(req.name, root.current, arm.root, cell ? CELL_AREA : WORK_AREA[theme], camera as PerspectiveCamera, cell && req.name === 'home' ? CELL_HOME : null, freeFrame(frameInsets?.() ?? null, gl.domElement.clientWidth, gl.domElement.clientHeight));
+    const f = fitView(req.name, root.current, arm.root, cell ? CELL_VIEW[cell] : WORK_AREA[theme], camera as PerspectiveCamera, cell && req.name === 'home' ? CELL_VIEW[cell].home : null, freeFrame(frameInsets?.() ?? null, gl.domElement.clientWidth, gl.domElement.clientHeight));
     void controls.setLookAt(f.position.x, f.position.y, f.position.z, f.target.x, f.target.y, f.target.z, req.animate);
     if (req.name !== 'fit') lastView.current = req.name;
     userMoved.current = false;
@@ -760,10 +760,6 @@ const WORK_AREA: Record<Theme, { min: [number, number, number]; max: [number, nu
   kit: { min: [-40, -215, -8], max: [320, 225, 40] },
   arm: { min: [40, -160, 0], max: [300, 160, 10] },
 };
-/** A 실습 셀's equipment (its floor left out: the view frames what is on it). */
-const CELL_AREA = { min: [-60, -405, -30], max: [480, 180, 110] } as const;
-/** A cell's own home view (three.js direction): from the front right, the belt across the picture, the magazine behind. */
-const CELL_HOME: [number, number, number] = [1, 0.95, -0.55];
 /** The arm standing straight up (0° pose), robot frame, mm. */
 const UPRIGHT = { min: [-60, -60, 0] as const, max: [60, 60, 470] as const };
 

@@ -437,3 +437,9 @@
 .cellCard:disabled i {
   background: #9aa49f;
 }
+
+/* A cell whose ladder is still to come (its scene opens to look round). */
+.soon {
+  color: #c2410c;
+  font-weight: 700;
+}
