@@ -374,7 +374,7 @@
 .camera {
   position: absolute;
   right: calc(var(--inset-r, 12px) + 100px);
-  top: calc(var(--top, 0px) + 12px);
+  top: calc(var(--top, 0px) + 84px);
   z-index: 4;
   width: 272px;
   background: rgba(24, 32, 29, 0.93);

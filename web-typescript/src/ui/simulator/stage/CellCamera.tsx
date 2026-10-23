@@ -2,8 +2,8 @@
 
 /**
  * 실습 셀 B's camera window in the corner of the 3D view: what the camera over the belt sees now
- * (looked at from above, the belt running left to right towards its end), the part its last picture
- * chose marked with a cross, and that reading in words — colour, diameter, outline, how sure — with
+ * (looked at from above, the belt running left to right towards its end); for a moment after each
+ * picture, that picture (a white frame) with the part it chose marked with a cross; and that reading in words — colour, diameter, outline, how sure — with
  * where the rule table sends it.
  */
 
@@ -11,17 +11,21 @@ import { useEffect, useRef, useState, type RefObject } from 'react';
 
 import { cellLayout, type CellId } from '@/engine/simulator/cell/cells';
 import { decide, describe, outlineOf, type Shot } from '@/engine/simulator/cell/vision';
+import type { DeskObject } from '@/engine/simulator/desk';
 import type { WorldState } from '@/engine/simulator/sim';
 
 import css from './cellHud.module.css';
 
 const W = 248;
+/** How long the window holds a picture after it is taken, simulator s. */
+const HOLD = 3;
 
 export default function CellCamera({ world, cell }: { world: RefObject<WorldState | null>; cell: CellId }) {
   const area = cellLayout(cell).line.camera;
   const canvas = useRef<HTMLCanvasElement>(null);
   const [shot, setShot] = useState<{ s: Shot; text: string; to: string | null; ago: number } | null>(null);
   const last = useRef<{ s: Shot; ago: number } | null>(null);
+  const photo = useRef<{ s: Shot; objs: DeskObject[] } | null>(null);
   const along = area ? area.max[1] - area.min[1] : 1;
   const across = area ? area.max[0] - area.min[0] : 1;
   const H = Math.round((W * across) / along);
@@ -45,10 +49,13 @@ export default function CellCamera({ world, cell }: { world: RefObject<WorldStat
         c.lineTo(x, H);
         c.stroke();
       }
-      const chosen = run.vision.shot?.chosen?.part;
-      for (const o of w.objects) {
-        if (o.id === w.carry?.id || o.x < area.min[0] - 15 || o.x > area.max[0] + 15 || o.y < area.min[1] - 15 || o.y > area.max[1] + 15) continue;
-        if (Math.abs(o.z - (run.layout.line.belt?.topZ ?? 30)) > 6) continue;
+      const s = run.vision.shot;
+      // For a moment after a picture the window holds that picture (the robot takes the part soon after).
+      const inView = w.objects.filter((o) => o.id !== w.carry?.id && o.x > area.min[0] - 15 && o.x < area.max[0] + 15 && o.y > area.min[1] - 15 && o.y < area.max[1] + 15 && Math.abs(o.z - (run.layout.line.belt?.topZ ?? 30)) <= 6);
+      if (s && s !== photo.current?.s) photo.current = { s, objs: inView.map((o) => ({ ...o })) };
+      const held = s && photo.current?.s === s && run.line.t - s.t < HOLD ? photo.current.objs : null;
+      const chosen = s?.chosen?.part;
+      for (const o of held ?? inView) {
         const [cx, cy] = at(o.x, o.y);
         const r = (o.size[0] / 2) * k;
         c.fillStyle = o.color;
@@ -67,7 +74,7 @@ export default function CellCamera({ world, cell }: { world: RefObject<WorldStat
         }
         c.fill();
         c.stroke();
-        if (o.id === chosen) {
+        if (held && o.id === chosen) {
           c.strokeStyle = '#34d399';
           c.lineWidth = 2;
           c.beginPath();
@@ -79,7 +86,11 @@ export default function CellCamera({ world, cell }: { world: RefObject<WorldStat
           c.strokeRect(cx - r - 3, cy - r - 3, 2 * r + 6, 2 * r + 6);
         }
       }
-      const s = run.vision.shot;
+      if (held) {
+        c.strokeStyle = '#f4f8ff';
+        c.lineWidth = 3;
+        c.strokeRect(1.5, 1.5, W - 3, H - 3);
+      }
       if (!s) return;
       const ago = Math.max(0, Math.round(run.line.t - s.t));
       if (s !== last.current?.s) {
