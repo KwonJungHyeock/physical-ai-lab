@@ -5,9 +5,12 @@
  * - 관절 (the default, what robotics starts with): one row per motor, named by what it does
  *   (베이스 · 어깨 · 팔꿈치 · 손목 꺾기 · 손목 돌리기 · 손끝 돌리기) with its J number, a − and a + key,
  *   the angle and where it sits between its limits. [관절 익히기] walks through the six joints once.
- * - 좌표: the tool tip moved in straight lines with a cross pad (앞 · 뒤 · 왼쪽 · 오른쪽) and a 위 · 아래
- *   column, then the hand's direction in three slim rows and [손 아래로].
+ * - 좌표: the tool tip moved in straight lines with a round pad (앞 · 뒤 · 왼쪽 · 오른쪽 around a top view
+ *   of the robot) and a 위 · 아래 rocker with the tip's height beside it, then the hand's direction in three
+ *   slim rows and [손 아래로]. The keyboard works the pad while it is shown: ↑ ↓ ← → = 앞 · 뒤 · 왼쪽 · 오른쪽,
+ *   Shift = 위, Space = 아래.
  * Every key: tap = one step of the size chosen under 「한 번에」, hold = keep moving at the set speed.
+ * A key whose last move could not be made (out of reach) stays red until the next move.
  *
  * The parent decides what a step means: in the simulator the arm moves on screen; on the robot the
  * same keys move the real arm (after the same collision check).
@@ -60,6 +63,8 @@ interface Props {
   onJointJog(i: number, dir: -1 | 1): void;
   onTipJog(axis: Axis, dir: -1 | 1, scale?: number): void;
   onJogStop(): void;
+  /** The tool move that could not be made last (its key shows red), cleared by the next move. */
+  blocked?: { axis: Axis; dir: -1 | 1 } | null;
   /** The joint the jog keys work on (0..5), also picked from its point on the 3D arm. */
   selected: number;
   onSelect(i: number): void;
@@ -86,6 +91,28 @@ const TURNS: { axis: Axis; color: string; what: string }[] = [
 ];
 /** The tip readout's axis colours: the 3D view's X (red) · Y (green) · Z (blue). */
 const AXIS_COLOR = { x: '#ff7a72', y: '#5ad895', z: '#86abff' } as const;
+/** The round pad's four keys, clockwise from the top, and the keyboard key for each (Shift / Space: 위 / 아래). */
+const PAD: { side: 'up' | 'right' | 'down' | 'left'; axis: 'x' | 'y'; dir: -1 | 1; word: string; key: string }[] = [
+  { side: 'up', axis: 'x', dir: 1, word: '앞', key: '↑' },
+  { side: 'right', axis: 'y', dir: -1, word: '오른쪽', key: '→' },
+  { side: 'down', axis: 'x', dir: -1, word: '뒤', key: '↓' },
+  { side: 'left', axis: 'y', dir: 1, word: '왼쪽', key: '←' },
+];
+const PAD_KEYS: Record<string, { axis: 'x' | 'y' | 'z'; dir: -1 | 1 }> = {
+  ArrowUp: { axis: 'x', dir: 1 },
+  ArrowDown: { axis: 'x', dir: -1 },
+  ArrowLeft: { axis: 'y', dir: 1 },
+  ArrowRight: { axis: 'y', dir: -1 },
+  Shift: { axis: 'z', dir: 1 },
+  ' ': { axis: 'z', dir: -1 },
+};
+/** Where the edge of each pad key is drawn (viewBox 0..100): a quarter of the ring, centred on its side. */
+const ARC: Record<(typeof PAD)[number]['side'], string> = {
+  up: 'M17.4 17.4A46 46 0 0 1 82.6 17.4',
+  right: 'M82.6 17.4A46 46 0 0 1 82.6 82.6',
+  down: 'M82.6 82.6A46 46 0 0 1 17.4 82.6',
+  left: 'M17.4 82.6A46 46 0 0 1 17.4 17.4',
+};
 
 /** The joint lesson: one joint at a time, what to look at while it turns (6-axis arms). */
 const LESSON: { see: string }[] = [
@@ -173,6 +200,9 @@ function JogKey({
   arrow,
   word,
   kind,
+  sub,
+  side,
+  state,
 }: {
   dir: -1 | 1;
   label: string;
@@ -182,11 +212,17 @@ function JogKey({
   onStop(): void;
   arrow?: keyof typeof ARROW;
   word?: string;
-  kind?: 'pad' | 'lift' | 'slim';
+  kind?: 'wedge' | 'lift' | 'slim';
+  /** A small line under the word (the axis: X+ · Y−). */
+  sub?: string;
+  side?: string;
+  /** Pressed from the keyboard, moving while held, or its last move could not be made. */
+  state?: 'on' | 'hold' | 'blocked';
 }) {
   const hold = usePressJog(onStep, onStart, onStop);
+  const why = state === 'blocked' ? ' · 이쪽으로는 더 못 가요' : '';
   return (
-    <button type="button" className={css.key} data-kind={kind} disabled={disabled} aria-label={label} title={`${label} · 짧게 누르면 한 칸, 누르고 있으면 계속`} {...hold}>
+    <button type="button" className={css.key} data-kind={kind} data-side={side} data-state={state} disabled={disabled} aria-label={label} title={`${label} · 짧게 누르면 한 칸, 누르고 있으면 계속${why}`} {...hold}>
       {arrow ? (
         <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
           <path d={ARROW[arrow]} fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
@@ -195,6 +231,7 @@ function JogKey({
         <TurnIcon dir={dir} size={kind === 'slim' ? 18 : 20} />
       )}
       {word && <b>{word}</b>}
+      {sub && <small>{sub}</small>}
     </button>
   );
 }
@@ -297,22 +334,97 @@ export default function ControlPanel(p: Props) {
     if (keyHold.current?.key === e.key) endKey(true);
   };
 
-  const tipKey = (axis: 'x' | 'y' | 'z', dir: -1 | 1, word: string, arrow: keyof typeof ARROW, kind: 'pad' | 'lift') => (
+  // The tool key being worked (from the keyboard: pressed or held; by pointer: held), for its look.
+  const [active, setActive] = useState<{ axis: Axis; dir: -1 | 1; hold: boolean } | null>(null);
+  const stateOf = (axis: Axis, dir: -1 | 1): 'on' | 'hold' | 'blocked' | undefined =>
+    active?.axis === axis && active.dir === dir ? (active.hold ? 'hold' : 'on') : p.blocked?.axis === axis && p.blocked.dir === dir ? 'blocked' : undefined;
+
+  // Keyboard on the round pad while 좌표 is shown (not while typing): ↑ ↓ ← → move the tip, Shift lifts it,
+  // Space lowers it. Tap = one step, hold = keep moving. Caught before the focused key sees it, so Space
+  // does not also press that key.
+  const root = useRef<HTMLDivElement>(null);
+  const keyFns = useRef({ step: p.onTipStep, jog: p.onTipJog, stop: p.onJogStop, tStep, busy: p.busy });
+  useEffect(() => {
+    keyFns.current = { step: p.onTipStep, jog: p.onTipJog, stop: p.onJogStop, tStep, busy: p.busy };
+  });
+  useEffect(() => {
+    if (frame !== 'base') return;
+    let held: { key: string; axis: Axis; dir: -1 | 1; timer: number; holding: boolean } | null = null;
+    const end = (tap: boolean) => {
+      const k = held;
+      if (!k) return;
+      held = null;
+      window.clearTimeout(k.timer);
+      setActive(null);
+      if (k.holding) keyFns.current.stop();
+      else if (tap) keyFns.current.step(k.axis, k.dir * keyFns.current.tStep);
+    };
+    const ours = (e: KeyboardEvent) => {
+      const el = document.activeElement as HTMLElement | null;
+      const typing = !!el && (/^(TEXTAREA|INPUT|SELECT)$/.test(el.tagName) || el.isContentEditable);
+      return !!PAD_KEYS[e.key] && !typing && !e.ctrlKey && !e.metaKey && !e.altKey && !!root.current?.getClientRects().length;
+    };
+    const down = (e: KeyboardEvent) => {
+      if (!ours(e) || keyFns.current.busy) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.repeat || held) return;
+      const { axis, dir } = PAD_KEYS[e.key];
+      const k = { key: e.key, axis, dir, timer: 0, holding: false };
+      k.timer = window.setTimeout(() => {
+        k.holding = true;
+        setActive({ axis, dir, hold: true });
+        keyFns.current.jog(axis, dir);
+      }, HOLD_MS);
+      held = k;
+      setActive({ axis, dir, hold: false });
+    };
+    const up = (e: KeyboardEvent) => {
+      if (held?.key === e.key) {
+        e.preventDefault();
+        end(true);
+      } else if (e.key === ' ' && ours(e)) e.preventDefault();
+    };
+    const lost = () => end(false);
+    window.addEventListener('keydown', down, true);
+    window.addEventListener('keyup', up, true);
+    window.addEventListener('blur', lost);
+    return () => {
+      end(false);
+      window.removeEventListener('keydown', down, true);
+      window.removeEventListener('keyup', up, true);
+      window.removeEventListener('blur', lost);
+    };
+  }, [frame]);
+
+  const tipKey = (axis: 'x' | 'y' | 'z', dir: -1 | 1, word: string, arrow: keyof typeof ARROW, kind: 'wedge' | 'lift', side?: string) => (
     <JogKey
       kind={kind}
+      side={side}
       dir={dir}
       arrow={arrow}
       word={word}
+      sub={kind === 'wedge' ? `${axis.toUpperCase()}${dir > 0 ? '+' : '−'}` : undefined}
+      state={stateOf(axis, dir)}
       label={`${toward(word)} ${tStep}mm (${axis.toUpperCase()}${dir > 0 ? '+' : '−'})`}
       disabled={p.busy}
       onStep={() => p.onTipStep(axis, dir * tStep)}
-      onStart={() => p.onTipJog(axis, dir)}
-      onStop={p.onJogStop}
+      onStart={() => {
+        setActive({ axis, dir, hold: true });
+        p.onTipJog(axis, dir);
+      }}
+      onStop={() => {
+        setActive(null);
+        p.onJogStop();
+      }}
     />
   );
+  const zTop = Math.round(activeArm().reachMm * 1.5);
+  const zFill = tip ? Math.max(0, Math.min(1, tip.z / zTop)) : 0;
 
   return (
     <div
+      ref={root}
       className={css.jog}
       data-jog
       tabIndex={-1}
@@ -502,26 +614,45 @@ export default function ControlPanel(p: Props) {
             손끝 옮기기 <small>로봇이 바라보는 쪽이 앞</small>
           </p>
           <div className={css.padWrap}>
-            <div className={css.pad}>
-              <span />
-              {tipKey('x', 1, '앞', 'up', 'pad')}
-              <span />
-              {tipKey('y', 1, '왼쪽', 'left', 'pad')}
-              <span className={css.padHub} aria-hidden="true">
-                로봇에서
-                <br />본 방향
+            <div className={css.pad} role="group" aria-label="손끝 옮기기 (키보드 ↑ ↓ ← → · Shift 위 · Space 아래)">
+              {PAD.map((k) => tipKey(k.axis, k.dir, k.word, k.side, 'wedge', k.side))}
+              <svg className={css.padRing} viewBox="0 0 100 100" aria-hidden="true">
+                <path d="M17.4 17.4L82.6 82.6M82.6 17.4L17.4 82.6" />
+                {PAD.map((k) => (
+                  <path key={k.side} d={ARC[k.side]} data-axis={k.axis} data-state={stateOf(k.axis, k.dir)} />
+                ))}
+              </svg>
+              <span className={css.padHub} aria-hidden="true" title="위에서 본 로봇: 빨간 점(손끝) 쪽이 앞">
+                <svg viewBox="-20 -28 40 44">
+                  <circle r="11" fill="#1b2433" stroke="#3a4a66" strokeWidth="1.6" />
+                  <rect x="-3.6" y="-21" width="7.2" height="19" rx="3.6" fill="#cfd8e6" />
+                  <circle cy="-21.5" r="4.4" fill="#e5322d" />
+                  <circle r="3.4" fill="#cfd8e6" />
+                </svg>
+                <small>위에서 본 로봇</small>
               </span>
-              {tipKey('y', -1, '오른쪽', 'right', 'pad')}
-              <span />
-              {tipKey('x', -1, '뒤', 'down', 'pad')}
-              <span />
             </div>
             <div className={css.lift}>
-              {tipKey('z', 1, '위', 'up', 'lift')}
-              <span className={css.liftName}>높이</span>
-              {tipKey('z', -1, '아래', 'down', 'lift')}
+              <div className={css.rocker}>
+                {tipKey('z', 1, '위', 'up', 'lift')}
+                <span className={css.liftName}>
+                  높이
+                  <output>{tip ? Math.round(tip.z) : '—'}</output>
+                </span>
+                {tipKey('z', -1, '아래', 'down', 'lift')}
+              </div>
+              <span className={css.gauge} title={`손끝 높이 ${tip ? tip.z.toFixed(1) : '—'} mm (아래 끝 = 0, 책상 높이)`} aria-hidden="true">
+                <i style={{ height: `${zFill * 100}%` }} />
+                <b style={{ bottom: `${zFill * 100}%` }} />
+              </span>
             </div>
           </div>
+          <p className={css.keys} aria-hidden="true">
+            키보드 <kbd>↑</kbd>
+            <kbd>↓</kbd>
+            <kbd>←</kbd>
+            <kbd>→</kbd> 방향 · <kbd>Shift</kbd> 위 · <kbd>Space</kbd> 아래
+          </p>
           <p className={css.cap}>
             손 방향 <small>손끝은 그 자리에서 {turnStep}°씩</small>
             {p.onToolDown && (
@@ -536,13 +667,13 @@ export default function ControlPanel(p: Props) {
               const v = tip?.[axis];
               return (
                 <div key={axis} className={css.turn}>
-                  <JogKey kind="slim" dir={-1} label={`${what} (${name}) −${turnStep}°`} disabled={p.busy} onStep={() => p.onTipStep(axis, -turnStep)} onStart={() => p.onTipJog(axis, -1)} onStop={p.onJogStop} />
+                  <JogKey kind="slim" dir={-1} state={stateOf(axis, -1)} label={`${what} (${name}) −${turnStep}°`} disabled={p.busy} onStep={() => p.onTipStep(axis, -turnStep)} onStart={() => p.onTipJog(axis, -1)} onStop={p.onJogStop} />
                   <span className={css.turnMid} title={`${name}: 베이스의 ${name.slice(1)}축 둘레로 손을 돌려요. 손끝 위치는 그대로예요`}>
                     <b>{what}</b>
                     <em style={{ color }}>{name}</em>
                     <output>{v === undefined ? '—' : `${v.toFixed(1)}°`}</output>
                   </span>
-                  <JogKey kind="slim" dir={1} label={`${what} (${name}) +${turnStep}°`} disabled={p.busy} onStep={() => p.onTipStep(axis, turnStep)} onStart={() => p.onTipJog(axis, 1)} onStop={p.onJogStop} />
+                  <JogKey kind="slim" dir={1} state={stateOf(axis, 1)} label={`${what} (${name}) +${turnStep}°`} disabled={p.busy} onStep={() => p.onTipStep(axis, turnStep)} onStart={() => p.onTipJog(axis, 1)} onStop={p.onJogStop} />
                 </div>
               );
             })}

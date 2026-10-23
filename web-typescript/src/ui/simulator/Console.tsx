@@ -356,6 +356,8 @@ export default function Console() {
   const [ringJoint, setRingJoint] = useState<number | null>(null);
   // Joint jog: the joint the keys and the 3D dial turn (0..5), and whether the jog panel shows joints.
   const [jogJoint, setJogJoint] = useState(0);
+  /** The tool move that could not be made last: its jog key shows red until the next move. */
+  const [tipBlocked, setTipBlocked] = useState<{ axis: Axis; dir: -1 | 1 } | null>(null);
   const [jogView, setJogView] = useState<Frame>(FIRST_FRAME);
   // The joint points show only while joints are being adjusted: the pointer or the keyboard in the jog
   // panel, the pointer on a point or its dial, a joint moving — and for a few seconds after.
@@ -1894,6 +1896,7 @@ export default function Console() {
   };
 
   const jointStep = (i: number, delta: number) => {
+    setTipBlocked(null);
     const t = basePose();
     t[i] += delta;
     void goJoints(t, `J${i + 1} ${delta > 0 ? '+' : ''}${delta}°`, true);
@@ -1911,9 +1914,14 @@ export default function Console() {
   const tipStep = (axis: Axis, delta: number) => {
     if (!loaded || busy) return;
     const base = basePose();
+    setTipBlocked(null);
+    const blocked = () => setTipBlocked({ axis, dir: delta < 0 ? -1 : 1 });
     if (axis === 'rx' || axis === 'ry' || axis === 'rz') {
       const turned = turnTool(loaded.chain, base, tcpNow, axis[1] as 'x' | 'y' | 'z', delta, 0.2);
-      if (!turned.converged) return addLog('err', `도구를 ${axis.toUpperCase()} ${delta > 0 ? '+' : ''}${delta}° 더 돌릴 수 없어요 (손끝 자리를 지킨 채 닿지 않아요).`, '반대로 돌리거나 손끝을 로봇 쪽으로 옮긴 뒤 돌려 주세요.');
+      if (!turned.converged) {
+        blocked();
+        return addLog('err', `도구를 ${axis.toUpperCase()} ${delta > 0 ? '+' : ''}${delta}° 더 돌릴 수 없어요 (손끝 자리를 지킨 채 닿지 않아요).`, '반대로 돌리거나 손끝을 로봇 쪽으로 옮긴 뒤 돌려 주세요.');
+      }
       return void goJoints(turned.anglesDeg, `${axis.toUpperCase()} ${delta > 0 ? '+' : ''}${delta}°`, true);
     }
     const here = tcpPositionMm(loaded.chain, base, tcpNow);
@@ -1924,6 +1932,7 @@ export default function Console() {
     let sol = kept.converged ? kept : orientation ? solveToolPose(loaded.chain, to, base, { tcpMm: tcpNow, orientation }) : null;
     if (!sol?.converged) sol = solveToolPose(loaded.chain, to, base, { tcpMm: tcpNow });
     if (!sol.converged) {
+      blocked();
       addLog('err', `(x ${Math.round(to.x)}, y ${Math.round(to.y)}, z ${Math.round(to.z)})에는 도구를 아래로 향한 채 닿을 수 없어요.`, '반대 방향으로 움직이거나 기본 자세로 돌아가 주세요.');
       return;
     }
@@ -1970,6 +1979,7 @@ export default function Console() {
       setAnglesView(world.current.angles.slice());
     }
     if (why) {
+      if (j.axis) setTipBlocked({ axis: j.axis, dir: j.dir });
       addLog('err', why, '반대 방향으로 움직이거나 먼저 [기본 자세]를 눌러 주세요.');
       setBadge({ kind: 'stop', text: why });
     }
@@ -2129,6 +2139,7 @@ export default function Console() {
       endJog();
     }
     setBadge(null);
+    setTipBlocked(null);
     // `last` 0: the first tick starts the clock.
     jog.current = { ...spec, cmd: basePose(), last: 0, sent: 0, inflight: false, raf: 0, timer: false, view: 0 };
     scheduleJog(jog.current);
@@ -2663,6 +2674,7 @@ export default function Console() {
       onJointCommit={jointCommit}
       onJointStep={jointStep}
       onTipStep={tipStep}
+      blocked={tipBlocked}
       onToolDown={toolDown}
       onHome={() => goPose('home')}
       onJointJog={(i, dir) => startJog({ joint: i, dir })}

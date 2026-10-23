@@ -184,34 +184,16 @@
   border-color: rgba(255, 255, 255, 0.07);
   cursor: not-allowed;
 }
-/* the direction keys of the cross pad: blue, the arrow above its word */
-.jog .key[data-kind='pad'],
-.jog .key[data-kind='lift'] {
-  background: linear-gradient(#4a74f5, #2a55d6);
-  border-color: #2248bd;
+/* a key pressed from the keyboard or moving while held; a key whose last move could not be made */
+.jog .key[data-state='on'],
+.jog .key[data-state='hold'] {
+  background: #2f5bea;
+  border-color: #6f9bff;
 }
-.jog .key[data-kind='lift'] {
-  background: linear-gradient(#3fa5f2, #1f7fd1);
-  border-color: #1b6fb8;
-}
-.jog .key[data-kind='pad']:hover:not(:disabled) {
-  background: linear-gradient(#5a80f7, #2f5bea);
-}
-.jog .key[data-kind='lift']:hover:not(:disabled) {
-  background: linear-gradient(#55b2f5, #2b8ad8);
-}
-.jog .key[data-kind='pad']:active:not(:disabled),
-.jog .key[data-kind='lift']:active:not(:disabled) {
-  background: #1d3fa6;
-}
-.jog .key[data-kind='pad']:disabled,
-.jog .key[data-kind='lift']:disabled {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.08);
-}
-.jog .key[data-kind='pad'] b,
-.jog .key[data-kind='lift'] b {
-  font-size: 16px;
+.jog .key[data-state='blocked'] {
+  background: #3e1a24;
+  border-color: #7a2a33;
+  color: #ffd2cf;
 }
 
 /* --- 관절: one row per joint ------------------------------------------------------------------- */
@@ -555,42 +537,249 @@
   cursor: default;
 }
 .padWrap {
+  /* the round pad's size: the panel's width, and a share of the window's height */
+  --pad: clamp(196px, calc(100vh - 780px), 296px);
   flex: 1 0 auto;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(64px, 22%);
-  gap: 14px;
-  align-items: center;
-}
-.pad {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 84px));
-  grid-template-rows: repeat(3, clamp(56px, 7vh, 76px));
-  gap: 6px;
+  display: flex;
   justify-content: center;
+  align-items: center;
+  gap: 12px;
+}
+/* --- the round pad: four quarter keys around a top view of the robot -------------------------- */
+.pad {
+  position: relative;
+  flex: 0 1 var(--pad);
+  max-width: var(--pad);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #121a26;
+  box-shadow: 0 12px 26px -12px rgba(0, 0, 0, 0.8), 0 0 0 4px #121a26;
+}
+/* each key is the whole square, cut to its quarter (and to the circle); its words sit in the ring */
+.jog .key[data-kind='wedge'] {
+  position: absolute;
+  inset: 0;
+  height: auto;
+  border: 0;
+  border-radius: 50%;
+  padding: 0;
+  gap: 0;
+  background: radial-gradient(circle, #2d4378 30%, #22345e 70%);
+  transition: background 0.1s;
+}
+.jog .key[data-side='up'] {
+  clip-path: polygon(50% 50%, 0 0, 100% 0);
+  padding-bottom: 68%;
+}
+.jog .key[data-side='right'] {
+  clip-path: polygon(50% 50%, 100% 0, 100% 100%);
+  padding-left: 68%;
+}
+.jog .key[data-side='down'] {
+  clip-path: polygon(50% 50%, 100% 100%, 0 100%);
+  padding-top: 68%;
+}
+.jog .key[data-side='left'] {
+  clip-path: polygon(50% 50%, 0 100%, 0 0);
+  padding-right: 68%;
+}
+.jog .key[data-kind='wedge']:hover:not(:disabled) {
+  background: radial-gradient(circle, #3a5592 30%, #2b4274 70%);
+}
+.jog .key[data-kind='wedge']:active:not(:disabled),
+.jog .key[data-kind='wedge'][data-state='on'],
+.jog .key[data-kind='wedge'][data-state='hold'] {
+  transform: none;
+  background: radial-gradient(circle, #4f7cff 30%, #2f5bea 70%);
+}
+.jog .key[data-kind='wedge'][data-state='blocked'] {
+  background: radial-gradient(circle, #5a2430 30%, #3e1a24 70%);
+}
+.jog .key[data-kind='wedge']:disabled {
+  background: #182130;
+}
+.jog .key[data-kind='wedge']:focus-visible {
+  outline: none;
+  background: radial-gradient(circle, #3a5592 30%, #2b4274 70%);
+}
+.jog .key[data-kind='wedge'] b,
+.jog .key[data-kind='lift'] b {
+  font-size: 16px;
+}
+.jog .key[data-kind='wedge'] small {
+  font: 700 10.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: #9fb3d6;
+}
+.jog .key[data-kind='wedge'][data-state='blocked'] small {
+  color: #ffb3ad;
+}
+/* the gaps between the quarters and the axis colour along each edge (X red, Y green) */
+.padRing {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  fill: none;
+}
+.padRing path:first-child {
+  stroke: #121a26;
+  stroke-width: 2.4;
+}
+.padRing path[data-axis] {
+  stroke-width: 1.3;
+  stroke-linecap: round;
+  opacity: 0.9;
+}
+.padRing path[data-axis='x'] {
+  stroke: #ff7a72;
+}
+.padRing path[data-axis='y'] {
+  stroke: #5ad895;
+}
+.padRing path[data-state='hold'] {
+  stroke: #cfe0ff;
+  stroke-width: 1.8;
+  stroke-dasharray: 4 3;
+  animation: padRun 0.6s linear infinite;
+}
+.padRing path[data-state='blocked'] {
+  stroke: #ff5a4e;
+  stroke-width: 2;
+  opacity: 1;
+}
+@keyframes padRun {
+  to {
+    stroke-dashoffset: -7;
+  }
 }
 .padHub {
+  position: absolute;
+  inset: 32%;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 1px;
   border-radius: 50%;
-  border: 1px dashed #33425f;
-  background: #161e29;
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1.25;
-  text-align: center;
-  color: #8696ae;
+  border: 2px solid #2a3446;
+  background: #0e141c;
+  pointer-events: none;
 }
+.padHub svg {
+  width: 52%;
+}
+.padHub small {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #8696ae;
+  white-space: nowrap;
+}
+
+/* --- 위 · 아래: a rocker with the tip's height between, a gauge beside it (bottom = 0, the desk) - */
 .lift {
+  display: flex;
+  gap: 7px;
+  height: var(--pad);
+  max-height: 100%;
+  align-self: center;
+}
+.rocker {
+  width: 74px;
   display: grid;
-  grid-template-rows: clamp(56px, 7vh, 76px) auto clamp(56px, 7vh, 76px);
-  gap: 6px;
+  grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 4px;
+  padding: 5px;
+  border-radius: 37px;
+  background: #121a26;
+}
+.jog .key[data-kind='lift'] {
+  height: auto;
+  border: 0;
+  background: linear-gradient(#3fa5f2, #1f7fd1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+.jog .key[data-kind='lift']:first-child {
+  border-radius: 32px 32px 12px 12px;
+}
+.jog .key[data-kind='lift']:last-child {
+  border-radius: 12px 12px 32px 32px;
+}
+.jog .key[data-kind='lift']:hover:not(:disabled) {
+  background: linear-gradient(#55b2f5, #2b8ad8);
+}
+.jog .key[data-kind='lift']:active:not(:disabled),
+.jog .key[data-kind='lift'][data-state='on'],
+.jog .key[data-kind='lift'][data-state='hold'] {
+  background: #5bb6f6;
+  box-shadow: 0 0 0 2px #cfe9ff inset;
+}
+.jog .key[data-kind='lift'][data-state='blocked'] {
+  background: #3e1a24;
+}
+.jog .key[data-kind='lift']:disabled {
+  background: rgba(255, 255, 255, 0.04);
 }
 .liftName {
-  text-align: center;
-  font-size: 13px;
-  font-weight: 800;
+  display: grid;
+  justify-items: center;
+  padding: 2px 0;
+  font-size: 11.5px;
+  font-weight: 700;
   color: #8696ae;
+}
+.liftName output {
+  font: 700 15px ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: #a7f3d0;
+}
+.gauge {
+  position: relative;
+  width: 8px;
+  margin: 12px 0;
+  border-radius: 4px;
+  background: #1b2433;
+}
+.gauge i {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 4px;
+  background: #3fa5f2;
+  opacity: 0.55;
+}
+.gauge b {
+  position: absolute;
+  left: -4px;
+  width: 16px;
+  height: 4px;
+  border-radius: 2px;
+  background: #fff;
+  transform: translateY(50%);
+}
+/* 키보드 ↑ ↓ ← → 방향 · Shift 위 · Space 아래 */
+.keys {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 3px;
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #8696ae;
+}
+.keys kbd {
+  min-width: 20px;
+  padding: 1px 5px;
+  border-radius: 5px;
+  border: 1px solid #33425f;
+  border-bottom-width: 2px;
+  background: #24304a;
+  font: 700 11.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-align: center;
+  color: #dbe5f3;
 }
 .turns {
   display: grid;
@@ -701,11 +890,16 @@
   .readout span {
     padding: 6px 10px;
   }
-  .pad {
-    grid-template-rows: repeat(3, 48px);
+  .padWrap {
+    /* what is left of the window's height under the other rows (1366 × 768: the smallest) */
+    --pad: clamp(166px, calc(100vh - 610px), 252px);
   }
-  .lift {
-    grid-template-rows: 48px auto 48px;
+  .jog .key[data-kind='wedge'] b,
+  .jog .key[data-kind='lift'] b {
+    font-size: 14.5px;
+  }
+  .rocker {
+    width: 66px;
   }
   .turn {
     height: 36px;
@@ -723,5 +917,8 @@
 @media (pointer: coarse) {
   .row {
     min-height: 58px;
+  }
+  .keys {
+    display: none;
   }
 }
