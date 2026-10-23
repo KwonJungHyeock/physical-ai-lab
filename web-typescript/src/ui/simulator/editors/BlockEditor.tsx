@@ -165,7 +165,7 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
   const palette: [string, Proto[]][] = cell
     ? [
         ['셀 · 로봇', [{ type: 'cellPick' }, { type: 'cellPlace' }, { type: 'home' }, { type: 'speed' }]],
-        ['셀 · 장비', [{ type: 'cellFeed' }, { type: 'cellWait' }, { type: 'cellSet' }]],
+        ['셀 · 장비', [...(cellLayout(cell).line.pusher ? [{ type: 'cellFeed' } as Proto] : []), { type: 'cellWait' }, { type: 'cellSet' }]],
         ['흐름', [{ type: 'wait' }, { type: 'repeat' }]],
         [EFFECTOR_BY_ID[effector].name, toolProtos(effector)],
         ['고급', [{ type: 'joint' }, { type: 'moveTo' }, { type: 'move' }]],
@@ -181,8 +181,10 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
       ];
   // A cell's places and signals for its blocks.
   const lay = cell ? cellLayout(cell) : null;
-  const pickPlaces = lay ? [...Object.keys(lay.places).filter((n) => n !== '기준 자리'), ...Object.keys(lay.grids).filter((g) => g !== '적재 판').map((g) => `${g} 다음 칸`)] : [];
-  const placePlaces = lay ? ['기준 자리', ...Object.keys(lay.grids).filter((g) => g !== '소재 판').map((g) => `${g} 다음 칸`)] : [];
+  // Cell A keeps its sides apart (picks from the source plate and the belt, places on the pallet); the others list every place.
+  const anyPlace = lay ? [...Object.keys(lay.places), ...Object.keys(lay.grids).map((g) => `${g} 다음 칸`)] : [];
+  const pickPlaces = lay ? (cell === 'feed' ? [...Object.keys(lay.places).filter((n) => n !== '기준 자리'), ...Object.keys(lay.grids).filter((g) => g !== '적재 판').map((g) => `${g} 다음 칸`)] : anyPlace) : [];
+  const placePlaces = lay ? (cell === 'feed' ? ['기준 자리', ...Object.keys(lay.grids).filter((g) => g !== '소재 판').map((g) => `${g} 다음 칸`)] : anyPlace) : [];
   const opts = (list: readonly string[], now: string): [string, string][] => [...new Set([now, ...list])].map((n) => [n, n]);
 
   const makeStep = (proto: Proto): Step => {
@@ -221,15 +223,15 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
       case 'sort':
         return { type: 'sort', line };
       case 'cellPick':
-        return { type: 'cellPick', place: '소재 1', line };
+        return { type: 'cellPick', place: pickPlaces[0] ?? '소재 1', line };
       case 'cellPlace':
-        return { type: 'cellPlace', place: '기준 자리', dx: 0, dy: 0, dz: 0, line };
+        return { type: 'cellPlace', place: placePlaces[0] ?? '기준 자리', dx: 0, dy: 0, dz: 0, line };
       case 'cellFeed':
         return { type: 'cellFeed', line };
       case 'cellWait':
-        return { type: 'cellWait', signal: '끝 센서', on: true, line };
+        return { type: 'cellWait', signal: lay?.inputs[0] ?? '끝 센서', on: true, line };
       case 'cellSet':
-        return { type: 'cellSet', signal: '컨베이어', on: true, line };
+        return { type: 'cellSet', signal: lay?.outputs[0] ?? '컨베이어', on: true, line };
       case 'find':
         return { type: 'find', variable: DEFAULT_VARIABLE, camera: theme === 'arm' ? 'hand' : 'top', color: '빨강', line };
       case 'above':
