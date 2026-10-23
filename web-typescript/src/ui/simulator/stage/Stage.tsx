@@ -90,7 +90,9 @@ import StudioLight from './StudioLight';
 import { DESK_M, SCENE, TOOL_LAYER, addJointAxes, axesTriad, deskSpot, framing, meshBox, reachDisc, type DisplayOpts, type FreeFrame } from './sceneHelpers';
 import { workspaceEnvelope } from '../../education/stage/learn3d';
 import type { ArmSpec } from '@/engine/robot/arms';
-import { DeskObjects, DeskPhysics, type DeskEdit } from './DeskObjects';
+import { CellObjects, CellPhysics, DeskObjects, DeskPhysics, type DeskEdit } from './DeskObjects';
+import CellScene from './CellScene';
+import type { CellId } from '@/engine/simulator/cell/cells';
 import { ScenePreset } from './ScenePreset';
 import PlanMarks, { type PlanMarksData } from './PlanMarks';
 
@@ -218,6 +220,10 @@ interface StageProps {
   miniRect?: (() => MiniRect) | null;
   /** 공정 짜기: the taught places and the planned tool path; null for none. */
   planMarks?: PlanMarksData | null;
+  /** 실습 셀: the cell around the arm instead of the desk (its equipment, floor and physics); null for the desk. */
+  cell?: CellId | null;
+  /** The simulation's speed (×1 ×2 ×4): the cell's line runs that much faster, as the arm does. */
+  simRate?: RefObject<number>;
 }
 
 /**
@@ -381,6 +387,8 @@ function World({
   miniRect,
   quality,
   planMarks,
+  cell,
+  simRate,
 }: StageProps & { lights: Lights }) {
   // Every node of the arm's model files, by name (a later file wins a shared name).
   const gltfs = useGLTF(spec.glbs as string[], DRACO_PATH) as unknown as { nodes: GlbNodes }[];
@@ -549,17 +557,18 @@ function World({
     const req = fitReq.current;
     if (!req || !controls || !root.current) return;
     fitReq.current = null;
-    const f = fitView(req.name, root.current, arm.root, theme, camera as PerspectiveCamera, freeFrame(frameInsets?.() ?? null, gl.domElement.clientWidth, gl.domElement.clientHeight));
+    const f = fitView(req.name, root.current, arm.root, cell ? CELL_AREA : WORK_AREA[theme], camera as PerspectiveCamera, freeFrame(frameInsets?.() ?? null, gl.domElement.clientWidth, gl.domElement.clientHeight));
     void controls.setLookAt(f.position.x, f.position.y, f.position.z, f.target.x, f.target.y, f.target.z, req.animate);
     if (req.name !== 'fit') lastView.current = req.name;
     userMoved.current = false;
   });
-  const themeSeen = useRef(theme);
+  const themeSeen = useRef(`${theme}:${cell ?? ''}`);
   useEffect(() => {
-    if (themeSeen.current === theme) return;
-    themeSeen.current = theme;
+    const key = `${theme}:${cell ?? ''}`;
+    if (themeSeen.current === key) return;
+    themeSeen.current = key;
     fitReq.current = { name: 'home', animate: true };
-  }, [theme]);
+  }, [theme, cell]);
   useEffect(() => {
     if (!userMoved.current && !fitReq.current) fitReq.current = { name: lastView.current, animate: true };
   }, [size.width, size.height, layoutKey]);
@@ -651,8 +660,14 @@ function World({
 
   return (
     <group ref={root} rotation={[-Math.PI / 2, 0, 0]}>
-      <Desk z={theme === 'kit' ? DESK_Z : 0} />
-      {theme === 'kit' ? (
+      {!cell && <Desk z={theme === 'kit' ? DESK_Z : 0} />}
+      {cell ? (
+        <>
+          <CellScene world={world} cell={cell} />
+          <CellObjects world={world} />
+          <CellPhysics world={world} chain={chain} tcpMm={tcpMm} effector={effector} rate={simRate} />
+        </>
+      ) : theme === 'kit' ? (
         <>
           <Kit />
           <CalibrationBoard />
@@ -669,7 +684,7 @@ function World({
       {effector === 'cylinder' && <PushButton world={world} />}
       <PenTrail world={world} />
       {mountMm > 0 && <MountBase mm={mountMm} />}
-      {theme === 'arm' && <primitive object={dressing} />}
+      {theme === 'arm' && !cell && <primitive object={dressing} />}
       {/* On a base the arm and its base axes stand mountMm above the table; the table, kit and blocks stay put. */}
       <group position={[0, 0, mountMm / 1000]}>
         <primitive object={arm.root} />
@@ -742,6 +757,8 @@ const WORK_AREA: Record<Theme, { min: [number, number, number]; max: [number, nu
   kit: { min: [-40, -215, -8], max: [320, 225, 40] },
   arm: { min: [40, -160, 0], max: [300, 160, 10] },
 };
+/** A 실습 셀's equipment (its floor left out: the view frames what is on it). */
+const CELL_AREA = { min: [-60, -400, -60], max: [480, 190, 120] } as const;
 /** The arm standing straight up (0° pose), robot frame, mm. */
 const UPRIGHT = { min: [-60, -60, 0] as const, max: [60, 60, 470] as const };
 
@@ -756,12 +773,11 @@ function freeFrame(insets: { l: number; r: number; t: number; b: number } | null
 }
 
 /** Camera position and target for a view: its direction, framed on the arm (as posed now) and the work area. */
-function fitView(name: ViewName, root: Group, arm: Group, theme: Theme, camera: PerspectiveCamera, free?: FreeFrame): { position: Vector3; target: Vector3 } {
+function fitView(name: ViewName, root: Group, arm: Group, area: { min: readonly number[]; max: readonly number[] }, camera: PerspectiveCamera, free?: FreeFrame): { position: Vector3; target: Vector3 } {
   root.updateWorldMatrix(true, false);
   const toWorld = (min: readonly number[], max: readonly number[]) =>
     new Box3(new Vector3(min[0], min[1], min[2]).multiplyScalar(0.001), new Vector3(max[0], max[1], max[2]).multiplyScalar(0.001)).applyMatrix4(root.matrixWorld);
   const box = meshBox(arm);
-  const area = WORK_AREA[theme];
   box.union(toWorld(area.min, area.max));
   if (name === 'tall') box.union(toWorld(UPRIGHT.min, UPRIGHT.max));
   let dir: Vector3;

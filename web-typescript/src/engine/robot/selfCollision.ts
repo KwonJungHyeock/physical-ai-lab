@@ -204,7 +204,7 @@ export function fixPhrase(fix: SelfFix, now: number): string {
 }
 
 /** 이 / 가 after a Korean word (by its last syllable's final consonant). */
-const subj = (w: string) => {
+export const subj = (w: string) => {
   const c = w.charCodeAt(w.length - 1) - 0xac00;
   return `${w}${c >= 0 && c < 11172 && c % 28 === 0 ? '가' : '이'}`;
 };

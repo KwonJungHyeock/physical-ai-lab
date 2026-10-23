@@ -11,13 +11,15 @@
 import { Html } from '@react-three/drei';
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
-import { Quaternion, Vector3, type Group } from 'three';
+import { Quaternion, Vector3, type Group, type MeshStandardMaterial } from 'three';
 
 import { EFFECTOR_BY_ID, type EffectorId } from '@/engine/simulator/effectors';
 import { OBJECT_KINDS, type DeskObject } from '@/engine/simulator/desk';
 import type { WorldState } from '@/engine/simulator/sim';
 import type { ChainSegment } from '@/engine/robot/kinematics';
 import { createPhysics, type BlockSpec, type PhysicsWorld } from '@/engine/physics/physics';
+import { objectSpec } from '@/engine/simulator/deskPhysics';
+import { CELL_ENV, cellSolids, stepCell } from '@/engine/simulator/cell/run';
 
 import css from '../console.module.css';
 import { RBox, Turned, brushed, cardboard, grain, pill, stripes, vessel } from './sceneKit';
@@ -142,6 +144,33 @@ function Shape({ o, selected }: { o: DeskObject; selected: boolean }) {
   }
 }
 
+/**
+ * 실습 셀's workpiece: a turned aluminium part with chamfered edges and a centre mark on top; a
+ * broken one turns dark with a red glow (the world's `damaged`, read every frame).
+ */
+function Puck({ o, world }: { o: DeskObject; world: RefObject<WorldState | null> }) {
+  const [d, , h] = o.size;
+  const mat = useRef<MeshStandardMaterial>(null);
+  useFrame(() => {
+    const now = world.current?.objects.find((k) => k.id === o.id);
+    const broken = !!now?.damaged;
+    if (mat.current && mat.current.userData.broken !== broken) {
+      mat.current.userData.broken = broken;
+      mat.current.color.set(broken ? '#5a3a36' : o.color);
+      mat.current.emissive.set(broken ? '#ff2a1f' : '#000000');
+      mat.current.emissiveIntensity = broken ? 0.35 : 0;
+    }
+  });
+  const r = d / 2;
+  return (
+    <group>
+      <Turned at={[0, 0, -h / 2]} profile={[[0, 0], [r - 1.2, 0], [r, 1.2], [r, h - 1.2], [r - 1.2, h], [r * 0.35, h], [r * 0.3, h - 0.6], [0, h - 0.6]]}>
+        <meshStandardMaterial ref={mat} color={o.color} metalness={0.85} roughness={0.3} map={brushed()} />
+      </Turned>
+    </group>
+  );
+}
+
 /** One object, posed from the world every frame (it may be moved by the physics). */
 function Item({ o, world, selected, edit, onDown }: { o: DeskObject; world: RefObject<WorldState | null>; selected: boolean; edit?: DeskEdit; onDown?: (e: ThreeEvent<PointerEvent>) => void }) {
   const g = useRef<Group>(null);
@@ -158,7 +187,7 @@ function Item({ o, world, selected, edit, onDown }: { o: DeskObject; world: RefO
   };
   return (
     <group ref={g} onPointerDown={onDown} onPointerOver={cursor('grab')} onPointerOut={cursor('')}>
-      <Shape o={o} selected={selected} />
+      {o.kind === 'puck' ? <Puck o={o} world={world} /> : <Shape o={o} selected={selected} />}
       {selected && edit && (
         // The selected object's own delete button, just above it (the Delete key does the same).
         <Html position={[0, 0, m(o.size[2] / 2) + 0.022]} center zIndexRange={[6, 5]}>
@@ -379,3 +408,60 @@ export function DeskPhysics({ world, chain, tcpMm, effector }: { world: RefObjec
 }
 
 const yawQ = (deg: number): [number, number, number, number] => [0, 0, Math.sin((deg * Math.PI) / 360), Math.cos((deg * Math.PI) / 360)];
+
+/**
+ * A 실습 셀's rigid-body world: the cell's solids, a floor below the pedestal, and the cell's own
+ * frame (engine/simulator/cell/run.ts stepCell: the equipment, the physics, knocks, load). Built
+ * again when the cell starts over (a new run state) or the tool changes. `rate`: the simulation
+ * speed (×1 ×2 ×4), so the line keeps time with a running program.
+ */
+export function CellPhysics({ world, chain, tcpMm, effector, rate }: { world: RefObject<WorldState | null>; chain: readonly ChainSegment[]; tcpMm: number; effector: EffectorId; rate?: RefObject<number> }) {
+  const phys = useRef<PhysicsWorld | null>(null);
+  const built = useRef<{ run: unknown; reach: number; loading: boolean; debt: number }>({ run: null, reach: -1, loading: false, debt: 0 });
+  useEffect(
+    () => () => {
+      phys.current?.dispose();
+      phys.current = null;
+    },
+    [],
+  );
+  const kind = EFFECTOR_BY_ID[effector].kind;
+  const reach = kind === 'grip' ? Math.max(0, tcpMm - 40) : kind === 'suction' ? Math.max(0, tcpMm - 3) : tcpMm;
+  useFrame((_, dt) => {
+    const w = world.current;
+    const run = w?.cell;
+    const b = built.current;
+    if (!w || !run || b.loading) return;
+    if (!phys.current || b.run !== run || b.reach !== reach) {
+      phys.current?.dispose();
+      phys.current = null;
+      b.run = run;
+      b.reach = reach;
+      b.loading = true;
+      void createPhysics(chain, reach, w.objects.map(objectSpec), cellSolids(run), w.angles, CELL_ENV).then((p) => {
+        phys.current = p;
+        b.loading = false;
+      });
+      return;
+    }
+    // The cell keeps the clock's time (the arm's moves do) in steps of 1/60 s, at most 8 a frame:
+    // a slow computer runs more steps a frame, not a slower line.
+    b.debt = Math.min(b.debt + dt * (rate?.current ?? 1), 8 / 60);
+    while (b.debt >= 1 / 120) {
+      const h = Math.min(1 / 60, b.debt);
+      b.debt -= h;
+      stepCell(w, phys.current, h, chain, tcpMm);
+    }
+  });
+  return null;
+}
+
+/** A cell's workpieces: the list grows when the operator refills the magazine, so it is read from the world. */
+export function CellObjects({ world }: { world: RefObject<WorldState | null> }) {
+  const [objects, setObjects] = useState<readonly DeskObject[]>(() => world.current?.objects.slice() ?? []);
+  useFrame(() => {
+    const now = world.current?.objects;
+    if (now && (now.length !== objects.length || now[0] !== objects[0])) setObjects(now.slice());
+  });
+  return <DeskObjects world={world} objects={objects} />;
+}

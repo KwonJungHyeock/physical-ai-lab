@@ -24,7 +24,7 @@ export const SCENES: readonly { id: SceneId; name: string; note: string }[] = [
   { id: 'kit', name: 'AI 키트 (공식)', note: '카메라 · 분류함 · 블록 4개' },
 ];
 
-export type ObjectKind = 'block' | 'cylinder' | 'box' | 'cup' | 'ball' | 'part' | 'bin' | 'tray' | 'obstacle';
+export type ObjectKind = 'block' | 'cylinder' | 'box' | 'cup' | 'ball' | 'part' | 'bin' | 'tray' | 'obstacle' | 'puck';
 export type ObjectShape = 'box' | 'cylinder' | 'cup' | 'ball' | 'bin';
 
 export interface ObjectKindInfo {
@@ -46,6 +46,8 @@ export const OBJECT_KINDS: Record<ObjectKind, ObjectKindInfo> = {
   bin: { name: '분류함', shape: 'bin', size: [120, 100, 60], color: '#1fae66', massG: 150 },
   tray: { name: '트레이', shape: 'box', size: [160, 100, 10], color: '#dfe4ea', massG: 80 },
   obstacle: { name: '장애물', shape: 'box', size: [40, 120, 160], color: '#f5c400', massG: 400 },
+  // 실습 셀's workpiece (Ø125 × 100 mm at shop size): not in the library (OBJECT_ORDER).
+  puck: { name: '부품', shape: 'cylinder', size: [25, 25, 20], color: '#c7ccd3', massG: 20 },
 };
 
 export const OBJECT_ORDER: readonly ObjectKind[] = ['block', 'cylinder', 'box', 'cup', 'ball', 'part', 'bin', 'tray', 'obstacle'];
@@ -65,6 +67,8 @@ export interface DeskObject {
   yawDeg: number;
   /** Physics only: the object's full orientation (quaternion x, y, z, w) once it has tipped. */
   q?: [number, number, number, number];
+  /** 실습 셀: broken by a hard knock (it counts as a reject). */
+  damaged?: boolean;
 }
 
 /** A fixed part of a scene the arm must keep off, mm. */
@@ -72,6 +76,8 @@ export interface FixedBox {
   name: string;
   min: [number, number, number];
   max: [number, number, number];
+  /** How far the arm keeps off it, mm (default 12; a 실습 셀's work tables and belt: less, the tool works there). */
+  pad?: number;
 }
 
 export interface Desk {

@@ -70,7 +70,9 @@ import { check, parse, type CameraId, type Problem, type Step } from '@/engine/s
 import { checkProcess, compileProcess, emptyProcess, processFromFile, processListing, processToFile, PROCESS_EXT, type Process } from '@/engine/simulator/process';
 import { findSlots, tutorialFor } from '@/engine/simulator/tutorials';
 import { blockLayout, buildPlan, carryTargets, freshPlan, makeSolver, practiceOf, type Built, type PlanKind, type Solver, type Spot } from '@/engine/simulator/plan';
-import { RunError, SelfCollision, Stop, createWorld, emptyStats, instantAnimate, jogTo, moveCheck, moveProblem, playTimeline, preflight, runProcess, runProgram, type RobotAction, type RunHooks, type WorldState } from '@/engine/simulator/sim';
+import { CELL_BY_ID, type CellId } from '@/engine/simulator/cell/cells';
+import { missionById } from '@/engine/simulator/cell/missions';
+import { RunError, SelfCollision, Stop, createCellWorld, createWorld, emptyStats, instantAnimate, jogTo, moveCheck, moveProblem, playTimeline, preflight, runProcess, runProgram, type RobotAction, type RunHooks, type WorldState } from '@/engine/simulator/sim';
 import { demoFits, demoFor, demoStepAt } from '@/engine/simulator/demos';
 import { runPython, warmPython } from '@/engine/python/client';
 import type { PyOutput, PyResult } from '@/engine/python/types';
@@ -124,7 +126,7 @@ import ZeroPanel from './control/ZeroPanel';
 import Icon from './Icon';
 import RobotStatus, { calibratedText } from './control/RobotStatus';
 import StatusLights from './control/StatusLights';
-import type { CameraFrame, StageApi } from './stage/Stage';
+import type { CameraFrame, StageApi, ViewName } from './stage/Stage';
 import { DEFAULT_DISPLAY, type DisplayOpts } from './stage/sceneHelpers';
 import css from './console.module.css';
 import { isTouch } from './touch';
@@ -505,6 +507,9 @@ export default function Console() {
 
   const layout = useRef<Record<ColorName, { x: number; y: number }>>(BLOCK_START);
   const world = useRef<WorldState>(createWorld('none', false, BLOCK_START, START_THEME));
+  /** 실습 셀 open (its world replaces the desk's), or null. */
+  const [cellAt, setCellAt] = useState<{ cell: CellId; mission: string | null } | null>(null);
+  const cellRef = useRef(cellAt);
   const stageApi = useRef<StageApi | null>(null);
   const getStage = useCallback(() => stageApi.current, []);
   // The small camera picture comes back after the camera window closes: draw it once now
@@ -709,6 +714,21 @@ export default function Console() {
       }
     } catch {
       /* storage blocked: keep the defaults */
+    }
+    // 실습 셀 (not on screen yet): ?cell=feed&mission=A8 opens the cell with the step's reference program.
+    const q = new URLSearchParams(window.location.search);
+    const qc = q.get('cell') as CellId | null;
+    if (qc && CELL_BY_ID[qc]?.built) {
+      const m = q.get('mission');
+      const c = { cell: qc, mission: m && missionById(m)?.cell === qc ? m : null };
+      cellRef.current = c;
+      setCellAt(c);
+      setLevel('basic');
+      setTheme('arm');
+      setTab('basic');
+      setEffector('adaptive');
+      world.current = createCellWorld(c.cell, c.mission, 'adaptive');
+      setCode((c.mission && missionById(c.mission)?.solution) || 'from edu import robot, cell\n\nrobot.home()\n');
     }
     setRestored(true);
     // Once, on opening: the saved choices are read with the first render's handlers.
@@ -1041,7 +1061,7 @@ export default function Console() {
   /* --- world ------------------------------------------------------------- */
   const resetWorld = useCallback(
     (e: EffectorId = effector, flange: boolean = cameraFlange, th: Theme = theme) => {
-      world.current = createWorld(e, flange, layout.current, th);
+      world.current = cellRef.current ? createCellWorld(cellRef.current.cell, cellRef.current.mission, e) : createWorld(e, flange, layout.current, th);
       setDemo(null);
       setReplay(null);
       setAnglesView(world.current.angles.slice());
@@ -1427,13 +1447,39 @@ export default function Console() {
 
   const problemsFor = (text: string): { steps: Step[]; errors: Problem[]; warnings: Problem[] } => {
     const { steps, errors: pe } = parse(text);
-    const { errors: ce, warnings } = check(steps, { theme, effector, cameraFlange, poses });
+    const { errors: ce, warnings } = check(steps, { theme, effector, cameraFlange, poses, cell: cellAt?.cell });
     return { steps, errors: [...pe, ...ce], warnings };
   };
 
   // The see-through end pose (블록 코딩): the program run at once on a copy of the world, a moment
   // after the last edit. Programs that look with a camera stop at the first look.
-  const ghostWanted = !!loaded && level === 'basic' && tab !== 'direct' && !busy && display.ghost;
+  // 실습 셀 (not on screen yet): the step's reference program, run from the page's console.
+  useEffect(() => {
+    if (!cellAt) return;
+    const w = window as unknown as { __cellRun?: (text?: string) => void; __cellWorld?: () => WorldState };
+    w.__cellRun = (text) => {
+      const { steps, errors } = problemsFor(text ?? ((cellAt.mission && missionById(cellAt.mission)?.solution) || ''));
+      if (!errors.length) void runSteps(steps, { reset: true, label: true });
+      else console.error(JSON.stringify(errors));
+    };
+    w.__cellWorld = () => world.current;
+    (w as { __cellView?: (n: ViewName) => void }).__cellView = (n) => stageApi.current?.view(n);
+    (w as { __cellZoom?: (d: 1 | -1) => void }).__cellZoom = (d) => stageApi.current?.zoom(d);
+    // A cell state recorded elsewhere (tests/simulator), shown as it was: for still pictures.
+    (w as { __cellLoad?: (s: { angles: number[]; gap: number; objects: WorldState['objects']; carry: WorldState['carry']; line: object; alerts: object[]; halt: unknown; fault: unknown; load: number[] }) => void }).__cellLoad = (s) => {
+      const cw = world.current;
+      if (!cw.cell) return;
+      cw.angles = s.angles.slice();
+      cw.gapMm = s.gap;
+      cw.objects = s.objects;
+      cw.carry = s.carry;
+      cw.cell = { ...cw.cell, line: s.line, alerts: s.alerts, halt: s.halt, health: { ...cw.cell.health, fault: s.fault, load: s.load } } as typeof cw.cell;
+      cw.version += 1;
+      setAnglesView(cw.angles.slice());
+    };
+  });
+
+  const ghostWanted = !!loaded && !cellAt && level === 'basic' && tab !== 'direct' && !busy && display.ghost;
   useEffect(() => {
     if (!ghostWanted || !loaded) return;
     const text = code;
@@ -1704,7 +1750,7 @@ export default function Console() {
       return;
     }
     warnings.forEach((w) => addLog('warn', `${w.line}번째 줄: ${w.msg}`));
-    const pre = loaded && (await preflight((h) => runProgram(steps, h), { chain: loaded.chain, world: createWorld(effector, cameraFlange, layout.current, theme), poses }));
+    const pre = loaded && !cellAt && (await preflight((h) => runProgram(steps, h), { chain: loaded.chain, world: createWorld(effector, cameraFlange, layout.current, theme), poses }));
     if (pre) return refuseRun(pre);
     setBadge({ kind: 'sim', text: '시뮬레이션' });
     addLog('sim', '시뮬레이션을 시작해요.');
@@ -3413,6 +3459,8 @@ export default function Console() {
                   tcpMm={tcpNow}
                   ringJoint={ringJoint}
                   planMarks={planMarks}
+                  cell={cellAt?.cell ?? null}
+                  simRate={simRateRef}
                   display={display}
                   frameInsets={frameInsets}
                   layoutKey={`${dockShown}:${side}:${camOpen}:${display.mini}`}

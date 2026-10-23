@@ -82,6 +82,11 @@ const COLOR_CLASS: Record<Step['type'], string> = {
   carry: css.c_macro,
   shape: css.c_macro,
   sort: css.c_macro,
+  cellPick: css.c_macro,
+  cellPlace: css.c_macro,
+  cellFeed: css.c_flow,
+  cellWait: css.c_flow,
+  cellSet: css.c_flow,
 };
 
 function toolProtos(effector: EffectorId): Proto[] {
@@ -199,6 +204,16 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
         return { type: 'shape', shape: '네모', cm: 6, line };
       case 'sort':
         return { type: 'sort', line };
+      case 'cellPick':
+        return { type: 'cellPick', place: '소재 1', line };
+      case 'cellPlace':
+        return { type: 'cellPlace', place: '기준 자리', dx: 0, dy: 0, dz: 0, line };
+      case 'cellFeed':
+        return { type: 'cellFeed', line };
+      case 'cellWait':
+        return { type: 'cellWait', signal: '끝 센서', on: true, line };
+      case 'cellSet':
+        return { type: 'cellSet', signal: '컨베이어', on: true, line };
       case 'find':
         return { type: 'find', variable: DEFAULT_VARIABLE, camera: theme === 'arm' ? 'hand' : 'top', color: '빨강', line };
       case 'above':

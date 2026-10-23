@@ -31,6 +31,12 @@ export function DemoPill({ name, ok, busy, onClick, className }: { name: string;
 
 /** Library icons (the same drawings as docs/mockup/sim-scenes.html). */
 const ICON: Record<ObjectKind, ReactNode> = {
+  puck: (
+    <>
+      <path d="M8 11v8c0 2 14 2 14 0v-8" fill="#9aa3ad" />
+      <ellipse cx="15" cy="11" rx="7" ry="3" fill="#c7ccd3" />
+    </>
+  ),
   block: (
     <>
       <path d="M8 9l7-4 7 4v8l-7 4-7-4z" fill="#e5484d" />

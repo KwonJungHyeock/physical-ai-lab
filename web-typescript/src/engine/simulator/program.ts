@@ -21,6 +21,7 @@ import { jointMax, jointMin } from '../robot/limits';
 import { activeArm } from '../robot/arms';
 import { BIN_NAMES, COLORS, COLOR_TO_BIN, SPOT_NAMES, type BinName, type ColorName, type SpotName, type Theme } from './board';
 import { EFFECTOR_BY_ID, fittedPhrase, type EffectorId, type EffectorKind } from './effectors';
+import { CELL_BY_ID, cellLayout, type CellId } from './cell/cells';
 
 export type CameraId = 'top' | 'hand';
 
@@ -59,7 +60,18 @@ export type Step =
   /** 도형 그리기 (pen): a shape `cm` across around the mat's middle. */
   | { type: 'shape'; shape: ShapeName; cm: number; line: number }
   /** 색깔별로 정리하기: every block onto its own place, 빨강 → 자리 1 … 파랑 → 자리 4 (arm-only mat). */
-  | { type: 'sort'; line: number };
+  | { type: 'sort'; line: number }
+  /* 실습 셀 (cell/): the arm works with the cell's places and its equipment's signals. */
+  /** 집기: down onto the part at a place ("소재 1", "끝 위치", "소재 판 다음 칸"), take it, up. */
+  | { type: 'cellPick'; place: string; line: number }
+  /** 놓기: over a place, offset by x · y · z shop mm (z: the layer it goes on), down, let go, up. */
+  | { type: 'cellPlace'; place: string; dx: number; dy: number; dz: number; line: number }
+  /** 공급 요청: 자동 운전 pushes one part out of the magazine and brings it to the end. */
+  | { type: 'cellFeed'; line: number }
+  /** Wait until an input is on (or off). */
+  | { type: 'cellWait'; signal: string; on: boolean; line: number }
+  /** Switch an output (when 자동 운전 is off). */
+  | { type: 'cellSet'; signal: string; on: boolean; line: number };
 
 export const SHAPE_NAMES = ['네모', '원', '삼각형', '별'] as const;
 export type ShapeName = (typeof SHAPE_NAMES)[number];
@@ -115,6 +127,11 @@ const RE = {
   carry: new RegExp(String.raw`^robot\.pick_place\(\s*${STR}\s*,\s*${STR}\s*\)$`),
   shape: new RegExp(String.raw`^robot\.draw_shape\(\s*${STR}\s*,\s*(${NUM})\s*\)$`),
   sort: /^robot\.sort_blocks\(\s*\)$/,
+  cellPick: new RegExp(String.raw`^robot\.pick\(\s*${STR}\s*\)$`),
+  cellPlace: new RegExp(String.raw`^robot\.place\(\s*${STR}\s*((?:,\s*[xyz]\s*=\s*${NUM}\s*)*)\)$`),
+  cellFeed: /^cell\.feed\(\s*\)$/,
+  cellWait: new RegExp(String.raw`^cell\.wait\(\s*${STR}\s*(?:,\s*(True|False)\s*)?\)$`),
+  cellSet: new RegExp(String.raw`^cell\.set\(\s*${STR}\s*,\s*(True|False)\s*\)$`),
 };
 
 /** "분류함 A" -> bin A, "버튼" -> button, "자리 1" -> spot, "빨강 블록" -> that block. */
@@ -157,6 +174,15 @@ function parseLine(body: string, line: number, errors: Problem[]): Step | null {
   if ((m = body.match(RE.joint))) return { type: 'joint', j: Number(m[1]), deg: Number(m[2]), sec: m[3] !== undefined ? Number(m[3]) : null, line };
   if ((m = body.match(RE.moveTo))) return { type: 'moveTo', x: Number(m[1]), y: Number(m[2]), z: Number(m[3]), line };
   if (RE.sort.test(body)) return { type: 'sort', line };
+  if ((m = body.match(RE.cellPick))) return { type: 'cellPick', place: m[1], line };
+  if ((m = body.match(RE.cellPlace))) {
+    const off = { x: 0, y: 0, z: 0 };
+    for (const kw of (m[2] ?? '').matchAll(new RegExp(String.raw`([xyz])\s*=\s*(${NUM})`, 'g'))) off[kw[1] as 'x' | 'y' | 'z'] = Number(kw[2]);
+    return { type: 'cellPlace', place: m[1], dx: off.x, dy: off.y, dz: off.z, line };
+  }
+  if (RE.cellFeed.test(body)) return { type: 'cellFeed', line };
+  if ((m = body.match(RE.cellWait))) return { type: 'cellWait', signal: m[1], on: m[2] !== 'False', line };
+  if ((m = body.match(RE.cellSet))) return { type: 'cellSet', signal: m[1], on: m[2] === 'True', line };
   if ((m = body.match(RE.shape))) {
     if (!(SHAPE_NAMES as readonly string[]).includes(m[1])) {
       errors.push({ line, msg: `'${m[1]}' 모양은 그릴 수 없어요.`, fix: `${SHAPE_NAMES.map((n) => `"${n}"`).join(', ')} 중에서 골라 주세요.` });
@@ -291,6 +317,18 @@ function serializeOne(s: Step): string {
       return `robot.draw_shape("${s.shape}", ${s.cm})`;
     case 'sort':
       return 'robot.sort_blocks()';
+    case 'cellPick':
+      return `robot.pick("${s.place}")`;
+    case 'cellPlace': {
+      const kw = (['x', 'y', 'z'] as const).filter((k) => s[`d${k}`] !== 0).map((k) => `, ${k}=${s[`d${k}`]}`);
+      return `robot.place("${s.place}"${kw.join('')})`;
+    }
+    case 'cellFeed':
+      return 'cell.feed()';
+    case 'cellWait':
+      return `cell.wait("${s.signal}"${s.on ? '' : ', False'})`;
+    case 'cellSet':
+      return `cell.set("${s.signal}", ${s.on ? 'True' : 'False'})`;
     case 'repeat':
       return '';
   }
@@ -301,10 +339,12 @@ export function serialize(steps: readonly Step[]): string {
   const scan = (list: readonly Step[]) =>
     list.forEach((s) => {
       if (s.type === 'find') uses.add(s.camera === 'hand' ? 'hand_camera' : 'camera');
+      // A 실습 셀 program imports the cell with the robot.
+      if (s.type.startsWith('cell')) uses.add('cell');
       if (s.type === 'repeat') scan(s.body);
     });
   scan(steps);
-  const order = ['robot', 'camera', 'hand_camera'].filter((n) => uses.has(n));
+  const order = ['robot', 'camera', 'hand_camera', 'cell'].filter((n) => uses.has(n));
   const out = [`from edu import ${order.join(', ')}`, ''];
   for (const s of steps) {
     if (s.type === 'repeat') {
@@ -322,6 +362,8 @@ export function serialize(steps: readonly Step[]): string {
 
 export interface CheckContext {
   theme?: Theme;
+  /** The 실습 셀 the program runs in (its places and signals), or none. */
+  cell?: CellId | null;
   effector: EffectorId;
   cameraFlange: boolean;
   poses: Record<string, readonly number[]>;
@@ -366,6 +408,27 @@ export function check(steps: readonly Step[], ctx: CheckContext): { errors: Prob
           if (effector.kind !== 'pen') errors.push({ line: s.line, msg: `도형 그리기인데 ${fittedPhrase(ctx.effector)}.`, fix: '위의 [도구]에서 펜 홀더를 달아 주세요.' });
           if (!(s.cm >= SHAPE_CM.min && s.cm <= SHAPE_CM.max)) errors.push({ line: s.line, msg: `${s.cm}cm 는 그릴 수 없어요.`, fix: `${SHAPE_CM.min}에서 ${SHAPE_CM.max}cm 사이로 정해 주세요.` });
           break;
+        case 'cellPick':
+        case 'cellPlace':
+        case 'cellFeed':
+        case 'cellWait':
+        case 'cellSet': {
+          if (!ctx.cell) {
+            errors.push({ line: s.line, msg: '이 명령은 실습 셀에서만 써요.', fix: '왼쪽 [환경]에서 실습 셀을 골라 주세요.' });
+            break;
+          }
+          const l = cellLayout(ctx.cell);
+          if ((s.type === 'cellPick' || s.type === 'cellPlace') && !picks) errors.push({ line: s.line, msg: `집기 · 놓기인데 ${fittedPhrase(ctx.effector)}.`, fix: '위의 [도구]에서 그리퍼나 흡착 펌프를 달아 주세요.' });
+          if (s.type === 'cellPick' || s.type === 'cellPlace') {
+            const grid = s.place.match(/^(.+) 다음 칸$/)?.[1];
+            if (grid ? !l.grids[grid] : !l.places[s.place])
+              errors.push({ line: s.line, msg: `'${s.place}'이라는 곳은 ${CELL_BY_ID[ctx.cell].name}에 없어요.`, fix: `${[...Object.keys(l.places).filter((n) => !/[2-9]$/.test(n)), ...Object.keys(l.grids).map((g) => `${g} 다음 칸`)].map((n) => `"${n}"`).join(', ')} 중에서 골라 주세요.` });
+          }
+          if (s.type === 'cellPlace' && [s.dx, s.dy, s.dz].some((v) => Math.abs(v) > 1000)) errors.push({ line: s.line, msg: '1000 mm보다 멀리 비켜 놓을 수 없어요.', fix: 'x · y · z는 -1000에서 1000 mm 사이로 정해 주세요.' });
+          if (s.type === 'cellWait' && !l.inputs.includes(s.signal)) errors.push({ line: s.line, msg: `'${s.signal}'이라는 입력 신호는 없어요.`, fix: `${l.inputs.map((n) => `"${n}"`).join(', ')} 중에서 골라 주세요.` });
+          if (s.type === 'cellSet' && !l.outputs.includes(s.signal)) errors.push({ line: s.line, msg: `'${s.signal}'이라는 출력 신호는 없어요.`, fix: `${l.outputs.map((n) => `"${n}"`).join(', ')} 중에서 골라 주세요.` });
+          break;
+        }
         case 'repeat':
           if (s.times < 1 || s.times > 20)
             errors.push({ line: s.line, msg: `${s.times}번 반복은 쓸 수 없어요.`, fix: '1에서 20 사이로 정해 주세요.' });

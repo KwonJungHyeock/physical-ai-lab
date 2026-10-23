@@ -32,7 +32,7 @@ import {
   tcpPositionMm,
   type Trajectory,
 } from '../robot/motion';
-import { SELF_SLACK_MM, selfContact, selfFix, selfMessage } from '../robot/selfCollision';
+import { SELF_SLACK_MM, selfContact, selfFix, selfMessage, subj } from '../robot/selfCollision';
 import { currentOrientation, solveToolPose, type PointMm } from '../robot/tool';
 import { ArmModel } from '../python/arm';
 import { activeArm } from '../robot/arms';
@@ -71,6 +71,10 @@ import {
   type EffectorId,
 } from './effectors';
 import { DEFAULT_SPEED, SPEED_CAP, type CameraId, type Step, type Target } from './program';
+import { PART_HEIGHT, fromShop, gridPlace, type CellId, type CellPlace } from './cell/cells';
+import { collisionAlert } from './cell/faults';
+import { setOut } from './cell/line';
+import { cellFixed, newCellRun, raise, type CellRun } from './cell/run';
 
 export interface BlockState {
   color: ColorName;
@@ -119,6 +123,8 @@ export interface WorldState {
   /** 0..1, how far the button cap is pushed in. */
   buttonDepth: number;
   stats: WorldStats;
+  /** 실습 셀: the cell around the arm (its equipment, alerts and record), or none. */
+  cell?: CellRun | null;
   /** Bumped on every change the renderer should pick up. */
   version: number;
 }
@@ -163,6 +169,19 @@ export function createWorld(effector: EffectorId, cameraFlange: boolean, layout 
   };
 }
 
+/** A 실습 셀 at its start (or a mission's): the arm-only world with the cell's furniture and parts. */
+export function createCellWorld(cell: CellId, mission: string | null, effector: EffectorId): WorldState {
+  const w = createWorld(effector, false, BLOCK_START, 'arm');
+  const { run, parts } = newCellRun(cell, mission);
+  w.scene = 'empty';
+  w.fixed = cellFixed(run);
+  w.objects = parts;
+  w.physics = true;
+  w.blocks = [];
+  w.cell = run;
+  return w;
+}
+
 /* -------------------------------------------------------------------------- */
 
 export class Stop extends Error {
@@ -186,6 +205,14 @@ export class RunError extends Error {
 
 /** The arm ran into itself, its base or (with its body) the table: found before the move is made. */
 export class SelfCollision extends RunError {}
+
+/** A 실습 셀's 정지 or 고장 stopped the program. */
+export class CellHalt extends RunError {}
+
+function haltError(run: CellRun): CellHalt {
+  const a = run.halt!;
+  return new CellHalt(`${a.level === 'fault' ? '고장' : '정지'}: ${a.title}. ${a.msg}`, a.level === 'fault' ? `${a.fix ? `${a.fix} ` : ''}[점검 · 복구]를 눌러야 다시 움직여요.` : a.fix);
+}
 
 
 export type LogKind = 'info' | 'ok' | 'warn' | 'err';
@@ -248,7 +275,12 @@ async function runList(list: readonly Step[], rt: Runtime): Promise<void> {
     try {
       await runStep(s, rt);
     } catch (err) {
-      if (err instanceof RunError && !err.line) err.line = s.line;
+      if (err instanceof RunError && !err.line) {
+        err.line = s.line;
+        // In a 실습 셀 a collision is the cell's 정지 (or 고장, when the arm was fast).
+        const run = rt.world.cell;
+        if (run && err.collision && !(err instanceof CellHalt)) raise(run, collisionAlert(run.health, err.message, run.line.t));
+      }
       throw err;
     }
   }
@@ -320,6 +352,109 @@ async function runStep(s: Step, rt: Runtime): Promise<void> {
       return penSet(rt, s.down);
     case 'push':
       return cylinderPush(rt);
+    case 'cellPick':
+      return cellPick(rt, s.place);
+    case 'cellPlace':
+      return cellPlace(rt, s.place, s.dx, s.dy, s.dz);
+    case 'cellFeed': {
+      const run = needCell(rt);
+      if (!run.line.auto) throw new RunError('자동 운전이 꺼져 있어서 공급 요청을 받을 장비가 없어요.', 'cell.set("공급 실린더", True) 처럼 신호를 직접 켜 주세요.');
+      run.line.requests += 1;
+      run.events.push({ t: run.line.t, type: 'feed' });
+      return;
+    }
+    case 'cellWait':
+      return cellWait(rt, s.signal, s.on);
+    case 'cellSet': {
+      const run = needCell(rt);
+      if (run.line.auto) throw new RunError('자동 운전 중에는 장비 신호를 직접 바꿀 수 없어요.', '이 단계는 cell.feed()로 공급을 요청해요.');
+      if (run.halt) throw haltError(run);
+      setOut(run.line, s.signal, s.on);
+      return;
+    }
+  }
+}
+
+/* --- 실습 셀: places and signals ------------------------------------------------ */
+
+function needCell(rt: Runtime): CellRun {
+  const run = rt.world.cell;
+  if (!run) throw new RunError('이 명령은 실습 셀에서만 써요.', '왼쪽 [환경]에서 실습 셀을 골라 주세요.');
+  return run;
+}
+
+/** Where a place name is: a named place, or a grid's next place (counted once the pick or place is done). */
+function cellPlaceAt(run: CellRun, name: string): { p: CellPlace; grid?: string } {
+  const grid = name.match(/^(.+) 다음 칸$/)?.[1];
+  if (grid) {
+    const g = run.layout.grids[grid];
+    const k = run.next[grid] ?? 0;
+    if (!g || k >= g.rows * g.cols * g.layers) throw new RunError(`${grid}에 남은 칸이 없어요.`, `${grid}는 ${g ? g.rows * g.cols * g.layers : 0}칸이에요.`);
+    return { p: gridPlace(g, k), grid };
+  }
+  const p = run.layout.places[name];
+  if (!p) throw new RunError(`'${name}'이라는 곳은 이 셀에 없어요.`);
+  return { p };
+}
+
+/** Height the tool travels at between places: over the belt's guides and the plates' parts, mm. */
+const CELL_TRAVEL_Z = 80;
+
+async function cellPick(rt: Runtime, place: string): Promise<void> {
+  const w = rt.world;
+  const run = needCell(rt);
+  const { p, grid } = cellPlaceAt(run, place);
+  const kind = EFFECTOR_BY_ID[w.effector].kind;
+  // The part standing there now (the top one), or where one would be.
+  const here = w.objects.filter((o) => o.id !== w.carry?.id && Math.hypot(o.x - p.x, o.y - p.y) < 10 && o.z >= p.z - 2 && o.z < p.z + 60).sort((a, b) => b.z - a.z)[0];
+  const h = here?.size[2] ?? PART_HEIGHT;
+  const top = here ? here.z + h : p.z + h;
+  const travel = Math.max(CELL_TRAVEL_Z, top + 40);
+  if (w.carry) throw new RunError('이미 부품을 들고 있어요.', '먼저 robot.place(...)로 놓아 주세요.');
+  if (kind === 'grip' && w.gapMm < (EFFECTOR_BY_ID[w.effector].gapMm?.open ?? 0) - 0.5) await release(rt, 'grip');
+  await moveTool(rt, { x: p.x, y: p.y, z: travel });
+  await moveTool(rt, { x: p.x, y: p.y, z: kind === 'suction' ? top : top - h / 2 });
+  const sensors = { ...run.line.in };
+  if (kind === 'grip') await gripClose(rt);
+  else await pumpOn(rt);
+  // (re-read: the grip changed it)
+  const took = rt.world.carry?.id ?? null;
+  run.events.push({ t: run.line.t, type: 'pick', place, part: took, sensors });
+  if (!took) raise(run, { t: run.line.t, level: 'warn', kind: 'order', title: '빈손', msg: `${place}에 집을 부품이 없었어요.`, fix: place === '끝 위치' ? 'cell.wait("끝 센서")로 부품이 올 때까지 기다려 주세요.' : undefined, at: [p.x, p.y, p.z + h] });
+  else if (grid) run.next[grid] = (run.next[grid] ?? 0) + 1;
+  await moveTool(rt, { x: p.x, y: p.y, z: travel });
+}
+
+async function cellPlace(rt: Runtime, place: string, dxShop: number, dyShop: number, dzShop: number): Promise<void> {
+  const w = rt.world;
+  const run = needCell(rt);
+  const { p, grid } = cellPlaceAt(run, place);
+  const x = p.x + fromShop(dxShop);
+  const y = p.y + fromShop(dyShop);
+  const surface = p.z + fromShop(dzShop);
+  const kind = EFFECTOR_BY_ID[w.effector].kind;
+  const held = w.carry ? w.objects.find((o) => o.id === w.carry!.id) : undefined;
+  if (!held) throw new RunError('놓을 부품을 들고 있지 않아요.', '먼저 robot.pick(...)로 집어 주세요.');
+  const h = held.size[2];
+  const travel = Math.max(CELL_TRAVEL_Z, surface + h + 40);
+  await moveTool(rt, { x, y, z: travel });
+  await moveTool(rt, { x, y, z: kind === 'suction' ? surface + h + 1 : surface + h / 2 + 1 });
+  await release(rt, kind === 'suction' ? 'suction' : 'grip');
+  run.events.push({ t: run.line.t, type: 'place', place, part: held.id });
+  if (grid) run.next[grid] = (run.next[grid] ?? 0) + 1;
+  await moveTool(rt, { x, y, z: travel });
+}
+
+/** Wait for an input, as the controller's "WAIT DI[…]": the cell runs on meanwhile. */
+async function cellWait(rt: Runtime, signal: string, on: boolean): Promise<void> {
+  const run = needCell(rt);
+  if (!(signal in run.line.in)) throw new RunError(`'${signal}'이라는 입력 신호는 없어요.`);
+  let waited = 0;
+  while (!!run.line.in[signal] !== on) {
+    if (run.halt) throw haltError(run);
+    if (waited > 60) throw new RunError(`'${signal}' 신호가 60초 동안 ${on ? '켜지지' : '꺼지지'} 않았어요.`, on ? '그 신호를 켜는 장비가 움직이는지(공급 요청 · 출력 신호) 확인해 주세요.' : undefined);
+    await rt.animate(0.05, () => {});
+    waited += 0.05;
   }
 }
 
@@ -745,6 +880,7 @@ function tcpMatrix(rt: Runtime, lengthMm = tcp(rt)): Matrix4 {
 
 function afterPoseChange(rt: Runtime): void {
   const w = rt.world;
+  if (w.cell?.halt) throw haltError(w.cell);
   w.version += 1;
   w.angles.forEach((a, i) => {
     if (a < w.stats.jointMin[i]) w.stats.jointMin[i] = a;
@@ -755,7 +891,7 @@ function afterPoseChange(rt: Runtime): void {
   const frames = forwardKinematicsFrames(rt.chain, w.angles);
   frames.forEach((f, i) => {
     if (i >= 1 && f.elements[14] < 0.005) {
-      throw new RunError(`${i + 1}번 관절이 책상에 닿아요.`, '팔이 덜 숙여지도록 각도나 위치를 바꿔 주세요.', true);
+      throw new RunError(w.cell ? `${i + 1}번 관절이 로봇 받침대 높이보다 내려가요.` : `${i + 1}번 관절이 책상에 닿아요.`, '팔이 덜 숙여지도록 각도나 위치를 바꿔 주세요.', true);
     }
   });
   // The links' own thickness too (a servo body is ~40 mm across): the arm stops on the desk, not in it.
@@ -779,7 +915,7 @@ function afterPoseChange(rt: Runtime): void {
   // when closed.
   const floor = kind === 'pen' ? -1 : kind === 'grip' ? 10 : -0.5;
   if (tip.z < floor) {
-    throw new RunError(`${EFFECTOR_BY_ID[w.effector].name}이(가) 판에 닿아요.`, '더 높은 곳에서 멈추도록 z 값을 키워 주세요.', true);
+    throw new RunError(`${subj(EFFECTOR_BY_ID[w.effector].name)} 판에 닿아요.`, '더 높은 곳에서 멈추도록 z 값을 키워 주세요.', true);
   }
   // The pen draws whenever its tip is on the paper.
   w.penDown = kind === 'pen' && tip.z <= 0.8;
@@ -840,7 +976,7 @@ function kitCollisions(w: WorldState, frames: readonly Matrix4[], tip: Vector3):
   // Bin walls: the tool tip may only go below a rim inside the opening.
   for (const { tub, label } of KIT_TUBS) {
     if (tip.z < wallTopAt(tub, tip.y) && hitsWalls(tip.x, tip.y, 0, tub)) {
-      throw new RunError(`${EFFECTOR_BY_ID[w.effector].name}이(가) ${label} 벽에 닿아요.`, `${label} 위로 충분히 올라간 뒤 옮겨 주세요.`, true);
+      throw new RunError(`${subj(EFFECTOR_BY_ID[w.effector].name)} ${label} 벽에 닿아요.`, `${label} 위로 충분히 올라간 뒤 옮겨 주세요.`, true);
     }
   }
 }
@@ -865,7 +1001,7 @@ function deskCollisions(w: WorldState, frames: readonly Matrix4[], tip: Vector3,
   const inBox = (p: Vector3, b: FixedBox, d: number) => p.x > b.min[0] - d && p.x < b.max[0] + d && p.y > b.min[1] - d && p.y < b.max[1] + d && p.z > b.min[2] - d && p.z < b.max[2] + d;
   const fix = '피해서 더 높게 움직여 주세요.';
   for (const b of w.fixed) {
-    if (pts.some(({ p }) => inBox(p, b, pad))) throw new RunError(`팔이 ${b.name}에 닿아요.`, fix, true);
+    if (pts.some(({ p }) => inBox(p, b, b.pad ?? pad))) throw new RunError(`팔이 ${b.name}에 닿아요.`, fix, true);
   }
   for (const o of w.objects) {
     if (o.id === w.carry?.id) continue;
@@ -951,6 +1087,12 @@ function suctionTarget(w: WorldState, tip: Vector3): DeskObject | null {
 
 /** Hold an object at the tool tip from now on. */
 function takeObject(rt: Runtime, o: DeskObject, tip: Vector3): void {
+  // In a 실습 셀 the closing jaws centre a round part on the tool (as a real gripper does).
+  const centre = !!rt.world.cell && EFFECTOR_BY_ID[rt.world.effector].kind === 'grip';
+  if (centre) {
+    o.x = tip.x;
+    o.y = tip.y;
+  }
   rt.world.carry = { id: o.id, dx: o.x - tip.x, dy: o.y - tip.y, dz: o.z - tip.z };
   rt.world.version += 1;
   rt.log?.('info', `${objectName(o)}을(를) 잡았어요.`);
@@ -989,9 +1131,9 @@ function carryObject(w: WorldState, tip: Vector3): void {
   const o = w.objects.find((k) => k.id === c.id);
   if (!o) return;
   const moved: DeskObject = { ...o, x: tip.x + c.dx, y: tip.y + c.dy, z: tip.z + c.dz, q: undefined };
-  if (moved.z < -0.5) throw new RunError(`잡은 ${objectName(o)}이(가) 책상에 부딪혀요.`, '조금 더 위에서 놓아 주세요.', true);
+  if (moved.z < -0.5) throw new RunError(`잡은 ${subj(objectName(o))} 책상에 부딪혀요.`, '조금 더 위에서 놓아 주세요.', true);
   const hit = objectHit(w, moved);
-  if (hit) throw new RunError(`잡은 ${objectName(o)}이(가) ${hit}에 부딪혀요.`, `${hit}보다 높이 들어서 옮겨 주세요.`, true);
+  if (hit) throw new RunError(`잡은 ${subj(objectName(o))} ${hit}에 부딪혀요.`, `${hit}보다 높이 들어서 옮겨 주세요.`, true);
   Object.assign(o, { x: moved.x, y: moved.y, z: moved.z, q: undefined });
 }
 
@@ -1027,7 +1169,7 @@ async function settleObject(rt: Runtime, o: DeskObject): Promise<void> {
   w.version += 1;
   const bin = binAround(w, o);
   if (bin) rt.log?.('info', `${objectName(o)}을(를) ${objectName(bin)}에 넣었어요.`);
-  else if (z0 - z1 > 8) rt.log?.('warn', `${objectName(o)}이(가) ${Math.round(z0 - z1)}mm 높이에서 떨어졌어요. 더 내려가서 놓아 주세요.`);
+  else if (z0 - z1 > 8) rt.log?.('warn', `${subj(objectName(o))} ${Math.round(z0 - z1)}mm 높이에서 떨어졌어요. 더 내려가서 놓아 주세요.`);
   else rt.log?.('info', `${objectName(o)}을(를) 내려놓았어요.`);
 }
 
@@ -1047,7 +1189,7 @@ function toolIntoBlocks(w: WorldState, tip: Vector3, kind: string): void {
         const e = EFFECTOR_BY_ID[w.effector];
         const tooNarrow = kind === 'grip' && (e.gapMm?.open ?? 0) < BLOCK_MM + 1;
         throw new RunError(
-          `${e.name}이(가) ${b.color} 블록에 부딪혀요.`,
+          `${subj(e.name)} ${b.color} 블록에 부딪혀요.`,
           tooNarrow
             ? `${e.name}는 최대 ${e.gapMm?.open}mm 까지만 벌어져서 ${BLOCK_MM}mm 블록을 잡을 수 없어요. 어댑티브 그리퍼나 흡착 펌프를 써 주세요.`
             : kind === 'grip'
