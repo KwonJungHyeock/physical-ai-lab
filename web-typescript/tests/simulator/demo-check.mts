@@ -139,7 +139,7 @@ assert.ok(
   const w = createWorld('pump', false, BLOCK_START, 'arm');
   await assert.rejects(
     runProgram(parse('robot.move_to(226, -150, 88)\nrobot.pump.on()\nrobot.move_to(226, -30, 88)\n').steps, { chain, world: w, poses: {}, animate: instantAnimate, see: async () => null }),
-    (e: unknown) => e instanceof RunError && /잡은 부품이\(가\) 부품에 부딪혀요/.test(e.message),
+    (e: unknown) => e instanceof RunError && /잡은 부품이 부품에 부딪혀요/.test(e.message),
   );
   const tip = tcpPositionMm(chain, w.angles, tcpFor('pump', false));
   assert.ok(tip.z > 80, 'the arm stopped above the belt');
