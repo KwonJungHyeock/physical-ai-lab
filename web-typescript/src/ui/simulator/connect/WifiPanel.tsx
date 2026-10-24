@@ -163,7 +163,9 @@ export default function WifiPanel({ onFind }: { onFind(): void }) {
                 ? `로봇 핫스팟 · ${status.ssid ?? ''}`
                 : status.mode === 'wifi'
                   ? `Wi-Fi · ${status.ssid ?? ''}`
-                  : '연결 안 됨'}
+                  : status.mode === 'off'
+                    ? 'Wi-Fi 꺼 둠 · 유선 LAN 으로 연결'
+                    : '연결 안 됨'}
           </b>
           {status?.ips?.[0] && (
             <span>

@@ -168,8 +168,12 @@ kit_update.UNIT_FILE = os.path.join(TMP, "robot-console.service")
 kit_update.systemctl = fake_systemctl
 kit_update.healthy = lambda port, wait_s=kit_update.HEALTH_S: HEALTH[0]
 usb_setup.nod = fake_nod
+REAL_APPLY_WIFI = usb_setup.apply_wifi
 usb_setup.apply_wifi = fake_wifi
 usb_setup.addresses = lambda: ["192.168.0.42"]
+# the LAN port is left alone (lan.py would add the direct address to this machine's own port)
+usb_setup.lan.ensure = lambda log=None: False
+usb_setup.lan.addresses = lambda: [("무선", "192.168.0.42"), ("직결", "169.254.127.10")]
 usb_setup.robot_name = lambda: "testbot-abcd"
 usb_setup.say = lambda text: None
 
@@ -435,6 +439,38 @@ def main():
         with open(os.path.join(m, "eduino_usb", "eduino", "wifi.txt"), "a", encoding="utf-8") as f:
             f.write("비밀번호=new-one\r\n")
         check(usb_setup.pending(m), "changed wifi.txt should be pending again")
+
+    @case("result: addresses by kind (무선 · 직결); 와이파이=끔 turns Wi-Fi off; an empty 와이파이= leaves it")
+    def _():
+        reset(V1)
+        m = stick("lan", {"eduino": {"wifi": WIFI_TXT}})
+        usb_setup.apply(m)
+        t = result_text(m)
+        check("주소: 무선 192.168.0.42 · 직결 169.254.127.10" in t, t)
+        offs = []
+
+        class FakeWifi:
+            def __init__(self, demo=False, log=None):
+                pass
+
+            def off(self):
+                offs.append(1)
+                return None
+
+        real_wifi, real_apply = usb_setup.wifi.Wifi, usb_setup.apply_wifi
+        usb_setup.wifi.Wifi, usb_setup.apply_wifi = FakeWifi, REAL_APPLY_WIFI
+        try:
+            path = os.path.join(TMP, "wifi-off.txt")
+            with open(path, "w", encoding="utf-8") as f:
+                f.write("와이파이=끔\r\n비밀번호=\r\n사용자=1조\r\n")
+            ok, msg, _ = usb_setup.apply_wifi(path)
+            check(ok is True and offs == [1] and "껐어요" in msg, f"{ok} {offs} {msg}")
+            with open(path, "w", encoding="utf-8") as f:
+                f.write("와이파이=\r\n비밀번호=\r\n사용자=\r\n")
+            ok, msg, _ = usb_setup.apply_wifi(path)
+            check(ok is None and offs == [1] and "그대로" in msg, f"{ok} {msg}")
+        finally:
+            usb_setup.wifi.Wifi, usb_setup.apply_wifi = real_wifi, real_apply
 
     @case("install.py's call (apply(mount)) still applies wifi.txt every time")
     def _():

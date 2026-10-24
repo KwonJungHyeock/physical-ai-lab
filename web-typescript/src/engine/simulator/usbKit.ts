@@ -62,7 +62,10 @@ export interface RobotResult {
   version: string;
   update: string;
   robotId: string;
+  /** The addresses to connect to, Wi-Fi first (not the fixed one for a LAN cable straight to a PC). */
   ips: string[];
+  /** Every address with where it is: 무선 (Wi-Fi), 유선 (LAN port), 직결 (the cable straight to a PC). */
+  addrs: { kind: AddrKind; ip: string }[];
   /** The file's time (ms), for the newest first. */
   time: number;
 }
@@ -95,10 +98,18 @@ export async function usbResults(drive: string): Promise<RobotResult[]> {
   return j.results.map((r) => parseResult(r.file, r.text, r.time)).sort((a, b) => b.time - a.time);
 }
 
+/** wifi.txt's 와이파이= words the robot reads as a choice, not a network name (usb_setup.py). */
+export const WIFI_HOTSPOT = '핫스팟';
+export const WIFI_OFF = '끔';
+/** The robot's fixed address on its LAN port, for a cable straight to a PC (robot-python/server/lan.py). */
+export const DIRECT_IP = '169.254.127.10';
+export type AddrKind = '무선' | '유선' | '직결' | '';
+
 /** The form's problem in words ("" when fine): the same rules as desktop-go/usbkit.go checkWifi. */
 export function checkWifi(w: WifiForm): string {
   const ssid = w.ssid.trim();
   if (!ssid) return 'Wi-Fi 이름을 적어 주세요.';
+  if (ssid === WIFI_HOTSPOT || ssid === WIFI_OFF) return [...w.label.trim()].length > 24 ? '사용자 이름은 24자까지예요.' : '';
   if (new TextEncoder().encode(ssid).length > 32) return 'Wi-Fi 이름이 너무 길어요 (32바이트까지).';
   if (ssid !== w.ssid) return 'Wi-Fi 이름 앞뒤에 빈칸이 있어요. 빈칸을 지워 주세요.';
   if (ssid.startsWith('#')) return 'Wi-Fi 이름이 # 로 시작하면 로봇이 읽지 못해요.';
@@ -121,7 +132,8 @@ export function checkWifi(w: WifiForm): string {
  *   결과: 성공 — 'EDUINO-LAB' 에 연결했어요.
  *   버전: 20261002-… → 20261014-…
  *   업데이트: 성공
- *   로봇 ID: 107   주소: 192.168.0.107
+ *   로봇 ID: 107   주소: 무선 192.168.0.107 · 직결 169.254.127.10
+ * (an older robot writes the addresses alone, with commas: 주소: 192.168.0.107, 10.0.0.5)
  */
 export function parseResult(file: string, text: string, time = 0): RobotResult {
   const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/).map((l) => l.trim());
@@ -136,6 +148,10 @@ export function parseResult(file: string, text: string, time = 0): RobotResult {
   const idLine = field('로봇 ID');
   const id = /^(\S+)/.exec(idLine)?.[1] ?? '';
   const addr = /주소:\s*(.+)$/.exec(idLine)?.[1] ?? '';
+  const addrs = (addr && addr !== '-' ? addr.split(/\s*[·,]\s*/).filter(Boolean) : []).map((t) => {
+    const m = /^(무선|유선|직결)\s+(\S+)$/.exec(t);
+    return m ? { kind: m[1] as AddrKind, ip: m[2] } : { kind: '' as AddrKind, ip: t };
+  });
   return {
     file,
     when: /^\d{4}-\d\d-\d\d \d\d:\d\d$/.test(lines[0] ?? '') ? lines[0] : '',
@@ -146,7 +162,8 @@ export function parseResult(file: string, text: string, time = 0): RobotResult {
     version: field('버전'),
     update: field('업데이트'),
     robotId: id === '-' ? '' : id,
-    ips: addr && addr !== '-' ? addr.split(/,\s*/).filter(Boolean) : [],
+    ips: addrs.filter((a) => a.kind !== '직결').map((a) => a.ip),
+    addrs,
     time,
   };
 }

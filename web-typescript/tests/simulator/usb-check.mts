@@ -5,7 +5,7 @@
  */
 import assert from 'node:assert/strict';
 
-const { parseResult, checkWifi, kitDate, formatBytes } = await import('../../src/engine/simulator/usbKit');
+const { parseResult, checkWifi, kitDate, formatBytes, WIFI_OFF, WIFI_HOTSPOT, DIRECT_IP } = await import('../../src/engine/simulator/usbKit');
 
 /* --- 1. A robot that joined and updated ----------------------------------- */
 {
@@ -67,6 +67,27 @@ const { parseResult, checkWifi, kitDate, formatBytes } = await import('../../src
   assert.match(ok('a', 'z'.repeat(64)), /8~63/);
   assert.match(ok('a', '', '가'.repeat(25)), /24자/);
   assert.match(ok('a', '', 'x\ny'), /보이지 않는/);
+}
+
+/* --- 4b. Wired: addresses by kind, Wi-Fi off --------------------------------- */
+{
+  const r = parseResult(
+    'result-ubuntu-77aa.txt',
+    `2026-10-24 10:00\r\n로봇: ubuntu-77aa\r\n결과: 성공 — Wi-Fi 를 껐어요 (유선 LAN 으로만 연결).\r\n로봇 ID: 61   주소: 유선 192.168.0.61 · 직결 ${DIRECT_IP}\r\n`,
+  );
+  assert.deepEqual(r.addrs, [
+    { kind: '유선', ip: '192.168.0.61' },
+    { kind: '직결', ip: DIRECT_IP },
+  ]);
+  assert.deepEqual(r.ips, ['192.168.0.61']);
+  const both = parseResult('r.txt', '로봇 ID: 52   주소: 무선 192.168.0.52 · 유선 192.168.0.61 · 직결 169.254.127.10\r\n');
+  assert.deepEqual(both.ips, ['192.168.0.52', '192.168.0.61']);
+  const direct = parseResult('r.txt', `로봇 ID: -   주소: 직결 ${DIRECT_IP}\r\n`);
+  assert.deepEqual(direct.ips, []);
+  assert.equal(direct.addrs[0].kind, '직결');
+  // the hotspot and Wi-Fi-off words need no password
+  assert.equal(checkWifi({ ssid: WIFI_OFF, password: '', label: '' }), '');
+  assert.equal(checkWifi({ ssid: WIFI_HOTSPOT, password: '', label: '3조' }), '');
 }
 
 /* --- 5. Words ------------------------------------------------------------------ */

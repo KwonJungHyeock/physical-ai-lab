@@ -297,7 +297,7 @@ export interface WifiStatus {
   ok: boolean;
   error?: string;
   /** 'hotspot' = the robot's own network, 'wifi' = joined a router, null = not connected. */
-  mode?: 'hotspot' | 'wifi' | null;
+  mode?: 'hotspot' | 'wifi' | 'off' | null;
   ssid?: string | null;
   device?: string;
   robotId?: string;

@@ -9,7 +9,8 @@ The stick carries a folder `eduino/` with `wifi.txt`:
 (`사용자` is optional: the name 로봇 찾기 shows next to the robot's address,
 kept by robot_label.py; the older `이름=` still means the Wi-Fi name.)
 
-(`이름=핫스팟` puts the robot back on its own hotspot.) Installed once by
+(`와이파이=핫스팟` puts the robot back on its own hotspot, `와이파이=끔` turns its Wi-Fi off
+for a classroom that uses only the LAN cable, and an empty `와이파이=` leaves the Wi-Fi as it is.) Installed once by
 eduino/install.py, the `eduino-usb` service (root) looks at the USB sticks
 every few seconds (mounting a stick itself when no desktop did); a stick whose
 wifi.txt this robot has not applied yet is applied with wifi.py, the arm (or
@@ -55,6 +56,7 @@ import time
 import urllib.request
 
 import kit_update
+import lan
 import robot_label
 import wifi
 
@@ -69,6 +71,7 @@ NAME_KEYS = ("이름", "와이파이", "wifi", "ssid", "name")
 PASS_KEYS = ("비밀번호", "암호", "password", "pass", "psk")
 LABEL_KEYS = ("사용자", "사용자이름", "사용자 이름", "로봇이름", "로봇 이름", "user", "label")
 HOTSPOT_WORDS = ("핫스팟", "hotspot")
+OFF_WORDS = ("끔", "끄기", "off")
 CHECK_LABEL = "확인값"
 KIT_LABEL = "키트"
 UPDATE_TEXT = {
@@ -337,11 +340,8 @@ def nod():
 
 
 def addresses():
-    try:
-        out = subprocess.run(["hostname", "-I"], capture_output=True, text=True).stdout.split()
-    except OSError:
-        return []
-    return [ip for ip in out if ip.count(".") == 3 and not ip.startswith("127.")]
+    """The robot's network addresses, Wi-Fi first; not the fixed one for a cable straight to a PC (lan.py)."""
+    return [ip for k, ip in lan.addresses() if k != "직결"]
 
 
 def _wait(w):
@@ -395,7 +395,11 @@ def apply_wifi(path):
     label = label or robot_label.read_label()
     w = wifi.Wifi(False, say)
     if not ssid:
-        ok, msg = False, "wifi.txt 의 '이름=' 뒤에 Wi-Fi 이름을 적어 주세요."
+        ok, msg = None, "wifi.txt 의 '와이파이=' 가 비어 있어 Wi-Fi 는 그대로예요."
+    elif ssid.lower() in OFF_WORDS:
+        err = w.off()
+        ok = err is None
+        msg = "Wi-Fi 를 껐어요 (유선 LAN 으로만 연결). 다시 켜려면 와이파이= 에 Wi-Fi 이름이나 '핫스팟'을 적어 꽂으세요." if ok else err
     elif ssid.lower() in HOTSPOT_WORDS:
         err = w.hotspot()
         last = {} if err else _wait(w)
@@ -437,6 +441,7 @@ def apply(mount, update=True, wifi_again=True, retry=True):
     else:
         ok, msg, label = apply_wifi(path)
         joined = True
+    lan.ensure(say)
     ips = []
     if ok and joined:
         for _ in range(10):                     # the new address comes a moment after the join
@@ -456,7 +461,7 @@ def apply(mount, update=True, wifi_again=True, retry=True):
         f"로봇: {robot_name()}" + (f"   사용자: {label}" if label else ""),
         f"결과: {wifi_word} — {msg}",
         *update_lines(upd),
-        f"로봇 ID: {rid}   주소: {', '.join(ips) or '-'}",
+        f"로봇 ID: {rid}   주소: {lan.describe()}",
         f"PC 브라우저: http://{ips[0]}:8080/console" if ips else "",
         "PC 프로그램: 이 USB 의 eduino/Physical AI Tool.html 을 PC 바탕화면에 복사 → 더블클릭 → 이 로봇 [열기]" if ok else "",
         "실패하면 로봇은 원래 연결로 돌아가요. wifi.txt 를 고쳐 저장하고 다시 꽂으면 다시 해요." if ok is False else "",
@@ -511,6 +516,7 @@ def watch():
 
     A stick already in at power-on is handled too; only a kit this robot could not update from
     before waits for the stick to be plugged in again (no stop-and-start of the server at every boot)."""
+    lan.ensure(say)                     # at once: a cable straight to a PC works from power-on
     time.sleep(BOOT_SETTLE_S)
     done = {}        # device -> what was handled while this stick is in
     own_done = set() # devices we mounted ourselves once during this plug-in
@@ -555,6 +561,7 @@ def watch():
                 own_done.discard(dev)
                 first_seen.pop(dev, None)
                 at_start.discard(dev)
+        lan.ensure(say)                         # the LAN port's address for a cable straight to a PC
         time.sleep(SCAN_S)
 
 

@@ -8,23 +8,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import {
-  checkWifi,
-  ejectUsb,
-  formatBytes,
-  INSTALL_LINE,
-  kitDate,
-  makeUsb,
-  pcWifi,
-  usbJob,
-  usbResults,
-  usbState,
-  type RobotResult,
-  type UsbDrive,
-  type UsbJob,
-  type UsbState,
-  type WifiForm,
-} from '@/engine/simulator/usbKit';
+import { checkWifi, ejectUsb, formatBytes, INSTALL_LINE, kitDate, makeUsb, pcWifi, usbJob, usbResults, usbState, type RobotResult, type UsbDrive, type UsbJob, type UsbState, type WifiForm, WIFI_HOTSPOT, WIFI_OFF, DIRECT_IP } from '@/engine/simulator/usbKit';
 import { ROBOT_PORT } from '@/engine/simulator/discover';
 
 import Icon from '../Icon';
@@ -98,6 +82,13 @@ export default function UsbMaker({ onClose, onConnect }: Props) {
       live = false;
     };
   }, [drive?.id, drive?.wifi?.ssid, drive?.wifi?.password, drive?.wifi?.label]);
+  /** How the robot is reached: the classroom Wi-Fi, its own hotspot, or the LAN cable only (Wi-Fi off). */
+  const way: 'wifi' | 'hotspot' | 'off' = form.ssid === WIFI_HOTSPOT ? 'hotspot' : form.ssid === WIFI_OFF ? 'off' : 'wifi';
+  const chooseWay = (w: typeof way) => {
+    touched.current = true;
+    setFormFrom('');
+    setForm((f) => ({ ...f, ssid: w === 'hotspot' ? WIFI_HOTSPOT : w === 'off' ? WIFI_OFF : '', password: '' }));
+  };
   const edit = (k: keyof WifiForm, v: string) => {
     touched.current = true;
     setFormFrom('');
@@ -109,7 +100,7 @@ export default function UsbMaker({ onClose, onConnect }: Props) {
   useEffect(() => {
     if (drive && opened.current !== drive.id) {
       opened.current = drive.id;
-       
+
       setTab(drive.results > 0 && !job ? 'results' : 'make');
     }
   }, [drive, job]);
@@ -213,7 +204,11 @@ export default function UsbMaker({ onClose, onConnect }: Props) {
                     <span className={u.chip} data-tone={d.need > 0 ? 'bad' : d.kitVersion ? 'ok' : 'none'}>
                       {d.need > 0 ? `${formatBytes(d.need)} 모자람` : d.kitVersion ? `키트 있음 ${kitDate(d.kitVersion)}` : '키트 없음'}
                     </span>
-                    {d.results > 0 && <span className={u.chip} data-tone="info">로봇 결과 {d.results}</span>}
+                    {d.results > 0 && (
+                      <span className={u.chip} data-tone="info">
+                        로봇 결과 {d.results}
+                      </span>
+                    )}
                   </button>
                 </li>
               ))}
@@ -239,32 +234,42 @@ export default function UsbMaker({ onClose, onConnect }: Props) {
 
         {drive && tab === 'make' && (
           <>
-            <section className={u.step} aria-label="Wi-Fi">
+            <section className={u.step} aria-label="연결 방법">
               <h2>
-                <b>2</b> 로봇이 붙을 Wi-Fi
+                <b>2</b> 로봇 연결 방법
               </h2>
+              <div className={u.ways} role="radiogroup" aria-label="연결 방법">
+                {(
+                  [
+                    ['wifi', '교실 Wi-Fi', '공유기 Wi-Fi 에 붙어요'],
+                    ['hotspot', '로봇 핫스팟', '로봇이 Wi-Fi 를 내보내요 (1대 1)'],
+                    ['off', '유선만 (Wi-Fi 끔)', '랜선으로만 연결해요'],
+                  ] as const
+                ).map(([id, name, sub]) => (
+                  <button key={id} type="button" role="radio" aria-checked={way === id} disabled={writing} onClick={() => chooseWay(id)}>
+                    <b>{name}</b>
+                    <small>{sub}</small>
+                  </button>
+                ))}
+              </div>
               <div className={u.form}>
-                <label>
-                  <span>Wi-Fi 이름</span>
-                  <input value={form.ssid} onChange={(e) => edit('ssid', e.target.value)} placeholder="예: EDUINO-LAB" spellCheck={false} autoComplete="off" disabled={writing} />
-                </label>
-                <label>
-                  <span>비밀번호</span>
-                  <span className={u.pass}>
-                    <input
-                      type={showPass ? 'text' : 'password'}
-                      value={form.password}
-                      onChange={(e) => edit('password', e.target.value)}
-                      placeholder="비밀번호가 없으면 비워 두기"
-                      spellCheck={false}
-                      autoComplete="off"
-                      disabled={writing}
-                    />
-                    <button type="button" onClick={() => setShowPass((s) => !s)} aria-pressed={showPass}>
-                      {showPass ? '숨기기' : '보기'}
-                    </button>
-                  </span>
-                </label>
+                {way === 'wifi' && (
+                  <>
+                    <label>
+                      <span>Wi-Fi 이름</span>
+                      <input value={form.ssid} onChange={(e) => edit('ssid', e.target.value)} placeholder="예: EDUINO-LAB" spellCheck={false} autoComplete="off" disabled={writing} />
+                    </label>
+                    <label>
+                      <span>비밀번호</span>
+                      <span className={u.pass}>
+                        <input type={showPass ? 'text' : 'password'} value={form.password} onChange={(e) => edit('password', e.target.value)} placeholder="비밀번호가 없으면 비워 두기" spellCheck={false} autoComplete="off" disabled={writing} />
+                        <button type="button" onClick={() => setShowPass((s) => !s)} aria-pressed={showPass}>
+                          {showPass ? '숨기기' : '보기'}
+                        </button>
+                      </span>
+                    </label>
+                  </>
+                )}
                 <label>
                   <span>
                     사용자 <i>(선택)</i>
@@ -273,11 +278,15 @@ export default function UsbMaker({ onClose, onConnect }: Props) {
                 </label>
               </div>
               <p className={u.note}>
-                {formFrom === 'pc'
-                  ? '이 PC 가 연결된 Wi-Fi 를 넣었어요. 로봇과 학생 PC 는 같은 Wi-Fi 여야 해요.'
-                  : formFrom === 'usb'
-                    ? '이 USB 에 적혀 있던 Wi-Fi 예요. 바꿀 것만 고치세요.'
-                    : '로봇과 학생 PC 는 같은 Wi-Fi 여야 해요. 이름은 대소문자 · 띄어쓰기까지 똑같이.'}
+                {way === 'hotspot'
+                  ? '로봇이 자기 Wi-Fi 를 내보내요. PC 를 그 Wi-Fi 에 붙여 로봇 1대와 연결해요.'
+                  : way === 'off'
+                    ? `로봇의 Wi-Fi 를 꺼요. 공유기 · 허브에 랜선으로 연결하거나, PC 와 랜선 하나로 바로 연결해요 (연결 창 [유선 직결], 주소 ${DIRECT_IP}).`
+                    : formFrom === 'pc'
+                      ? '이 PC 가 연결된 Wi-Fi 를 넣었어요. 로봇과 학생 PC 는 같은 Wi-Fi 여야 해요.'
+                      : formFrom === 'usb'
+                        ? '이 USB 에 적혀 있던 Wi-Fi 예요. 바꿀 것만 고치세요.'
+                        : '로봇과 학생 PC 는 같은 Wi-Fi 여야 해요. 이름은 대소문자 · 띄어쓰기까지 똑같이.'}
               </p>
             </section>
 
@@ -369,8 +378,7 @@ function Results({ drive, onConnect }: { drive: UsbDrive; onConnect(address: str
         <Icon name="table" size={28} />
         <p>
           <b>아직 로봇 결과가 없어요.</b>
-          <br />
-          이 USB 를 로봇에 꽂았다가 1~2분 뒤 빼서 이 PC 에 다시 꽂으면 여기 나와요.
+          <br />이 USB 를 로봇에 꽂았다가 1~2분 뒤 빼서 이 PC 에 다시 꽂으면 여기 나와요.
         </p>
       </div>
     );
@@ -393,11 +401,7 @@ function Results({ drive, onConnect }: { drive: UsbDrive; onConnect(address: str
                 {r.wifi === 'ok' ? '연결 성공' : r.wifi === 'fail' ? '연결 실패' : 'Wi-Fi 그대로'}
                 {r.message ? ` — ${r.message}` : ''}
               </small>
-              <small className={u.resMeta}>
-                {[r.ips.join(', '), r.update ? `업데이트: ${r.update}` : r.version ? `버전 ${kitDate(r.version.split('→').pop()?.trim()) || r.version}` : '', r.when, r.user ? r.robot : '']
-                  .filter(Boolean)
-                  .join(' · ')}
-              </small>
+              <small className={u.resMeta}>{[r.addrs.map((x) => (x.kind ? `${x.kind} ${x.ip}` : x.ip)).join(' · '), r.update ? `업데이트: ${r.update}` : r.version ? `버전 ${kitDate(r.version.split('→').pop()?.trim()) || r.version}` : '', r.when, r.user ? r.robot : ''].filter(Boolean).join(' · ')}</small>
             </span>
             {r.ips[0] && r.wifi !== 'fail' && (
               <button type="button" className={u.secondary} onClick={() => onConnect(`${r.ips[0]}:${ROBOT_PORT}`, r.robotId)}>

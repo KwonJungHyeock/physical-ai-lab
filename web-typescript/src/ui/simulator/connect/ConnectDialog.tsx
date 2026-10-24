@@ -28,6 +28,7 @@ import { remoteRobot, setRemoteRobot } from '@/engine/simulator/robotLink';
 import { identifyRobot, networkPrefix, pcNetworks, probeRobot, ROBOT_PORT, sameRobot, scanNetwork, type FoundRobot } from '@/engine/simulator/discover';
 
 import { sessionHandoff } from '@/engine/account';
+import { DIRECT_IP } from '@/engine/simulator/usbKit';
 
 import { useAccount } from '../../account/AccountProvider';
 import Icon from '../Icon';
@@ -51,7 +52,7 @@ export function robotAddress(input: string, prefix: string): string | null {
   return v.includes(':') ? v : `${v}:${PORT}`;
 }
 
-type Tab = 'find' | 'id' | 'wifi';
+type Tab = 'find' | 'id' | 'direct' | 'wifi';
 
 interface Props {
   /** On a robot's own console: its ID and address, to show and to switch away from. */
@@ -109,7 +110,7 @@ export default function ConnectDialog({ current, auto, carry, start, onUsb, onCl
   useEffect(() => {
     if (!start || started.current) return;
     started.current = true;
-     
+
     setLink({ label: start.label, addr: start.addr, step: 0 });
   }, [start]);
   // The latest program at the moment of leaving (the console redraws while the dialog is open).
@@ -137,7 +138,12 @@ export default function ConnectDialog({ current, auto, carry, start, onUsb, onCl
           ? l
           : r
             ? { ...l, robot: r, checked: true, step: 1 }
-            : { ...l, error: `로봇(${link.addr})이 대답하지 않아요. 로봇 전원이 켜져 있는지, PC 와 같은 Wi-Fi 인지, ID 가 맞는지 확인해 주세요.` },
+            : {
+                ...l,
+                error: link.addr.startsWith(DIRECT_IP)
+                  ? '랜선으로 이은 로봇이 대답하지 않아요. 랜선이 로봇의 LAN 포트에 꽂혔는지, 로봇을 켠 지 1분이 지났는지 확인하고 다시 눌러 주세요.'
+                  : `로봇(${link.addr})이 대답하지 않아요. 로봇 전원이 켜져 있는지, PC 와 같은 Wi-Fi 인지, ID 가 맞는지 확인해 주세요.`,
+              },
       );
     })();
   }, [link]);
@@ -145,20 +151,23 @@ export default function ConnectDialog({ current, auto, carry, start, onUsb, onCl
     if (!link || !link.checked || link.error) return;
     const quick = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     if (link.step >= LINK_STEPS.length) {
-      const t = window.setTimeout(() => {
-        // A newer robot: stay on this program's screens and drive the arm from here.
-        if (link.robot?.remote) {
-          setRemoteRobot(link.addr);
-          window.location.reload();
-          return;
-        }
-        // An older robot: open its own console. The class login goes along (a robot's page is
-        // another address with its own store).
-        const program = (carryNow.current?.() ?? '').replace(/^#/, '');
-        const login = sessionNow.current ? sessionHandoff(sessionNow.current) : '';
-        const hash = [login, program].filter(Boolean).join('&');
-        window.location.href = `http://${link.addr}/console${hash ? `#${hash}` : ''}`;
-      }, quick ? 0 : 450);
+      const t = window.setTimeout(
+        () => {
+          // A newer robot: stay on this program's screens and drive the arm from here.
+          if (link.robot?.remote) {
+            setRemoteRobot(link.addr);
+            window.location.reload();
+            return;
+          }
+          // An older robot: open its own console. The class login goes along (a robot's page is
+          // another address with its own store).
+          const program = (carryNow.current?.() ?? '').replace(/^#/, '');
+          const login = sessionNow.current ? sessionHandoff(sessionNow.current) : '';
+          const hash = [login, program].filter(Boolean).join('&');
+          window.location.href = `http://${link.addr}/console${hash ? `#${hash}` : ''}`;
+        },
+        quick ? 0 : 450,
+      );
       return () => window.clearTimeout(t);
     }
     const t = window.setTimeout(() => setLink((l) => (l ? { ...l, step: l.step + 1 } : l)), quick ? 0 : 380);
@@ -168,6 +177,7 @@ export default function ConnectDialog({ current, auto, carry, start, onUsb, onCl
   const tabs: { key: Tab; label: string; icon: string }[] = [
     { key: 'find', label: '로봇 찾기', icon: 'search' },
     { key: 'id', label: 'ID 로 연결', icon: 'link' },
+    { key: 'direct', label: '유선 직결', icon: 'pc' },
     ...(current ? [{ key: 'wifi' as Tab, label: '로봇 Wi-Fi', icon: 'wifi' }] : []),
   ];
 
@@ -187,7 +197,7 @@ export default function ConnectDialog({ current, auto, carry, start, onUsb, onCl
                   ? '로봇이 붙을 Wi-Fi 를 정해요. 교실 공유기에 한 번 연결해 두면 다음부터 켜기만 하면 돼요.'
                   : current
                     ? '다른 로봇으로 바꾸려면 찾거나 ID 를 넣어요.'
-                    : '[로봇 찾기] 로 같은 Wi-Fi 의 로봇을 찾아 연결해요. 로봇 없이 연습하려면 [시뮬레이션만] 을 눌러요.'}
+                    : '[로봇 찾기] 는 같은 공유기(Wi-Fi · 랜선)의 로봇을, [유선 직결] 은 랜선 하나로 이은 로봇을 연결해요. 로봇 없이 연습하려면 [시뮬레이션만].'}
               </p>
             </div>
             <button type="button" className={css.pickerClose} onClick={onClose} aria-label="닫기">
@@ -253,16 +263,37 @@ export default function ConnectDialog({ current, auto, carry, start, onUsb, onCl
 
               <ol className={css.connectSteps}>
                 <li>
-                  <b>로봇 ID 찾기</b>: 로봇을 켜고 서버가 켜지면 터미널에 <code>★ 로봇 ID: 252</code> 가 나와요. 연결한 뒤에는 이 화면 오른쪽 위에도 보여요. (IP 주소의 마지막 숫자예요. 로봇마다 번호
-                  스티커를 붙여 두면 편해요)
+                  <b>로봇 ID 찾기</b>: 로봇을 켜고 서버가 켜지면 터미널에 <code>★ 로봇 ID: 252</code> 가 나와요. 연결한 뒤에는 이 화면 오른쪽 위에도 보여요. (IP 주소의 마지막 숫자예요. 로봇마다 번호 스티커를 붙여 두면 편해요)
                 </li>
                 <li>
-                  <b>같은 공유기</b>: PC 와 로봇이 같은 와이파이(공유기)에 있어야 해요. 앞부분(192.168.0.)은 교실 공유기에 맞게 한 번만 고치면 기억해요.
+                  <b>같은 공유기</b>: PC 와 로봇이 같은 공유기에 있어야 해요 (Wi-Fi 든 랜선이든). 공유기 없이 랜선 하나로 이었다면 [유선 직결]. 앞부분(192.168.0.)은 교실 공유기에 맞게 한 번만 고치면 기억해요.
                 </li>
                 <li>
                   <b>안 열리면</b> 로봇 전원, 서버가 켜져 있는지(자동 시작), ID 가 맞는지 확인해요.
                 </li>
               </ol>
+            </>
+          )}
+
+          {!link && tab === 'direct' && (
+            <>
+              <ol className={css.connectSteps}>
+                <li>
+                  <b>랜선 하나로 잇기</b>: PC 의 랜 포트와 로봇의 LAN 포트를 랜선으로 바로 이어요. 공유기 · 허브는 없어도 돼요.
+                </li>
+                <li>
+                  <b>1분 기다리기</b>: 로봇을 켜고 1분쯤 기다려요. PC 가 이 연결의 주소를 스스로 잡아요 (설정할 것 없음).
+                </li>
+                <li>
+                  <b>[유선 직결로 연결]</b>: 로봇은 늘 <code>{DIRECT_IP}</code> 에 있어요.
+                </li>
+              </ol>
+              <div className={css.connectForm}>
+                <button type="button" className={css.connectGo} onClick={() => go(`${DIRECT_IP}:${PORT}`, '유선 직결')}>
+                  유선 직결로 연결
+                </button>
+              </div>
+              <p className={css.connectHint}>안 되면: 랜선이 로봇의 LAN 포트에 꽂혔는지, PC 의 랜 포트가 학교망 대신 로봇에 이어졌는지 확인하고 30초 뒤 다시 눌러요. 공유기 · 허브에 함께 꽂았다면 [로봇 찾기] 를 써요.</p>
             </>
           )}
 
@@ -469,8 +500,11 @@ function FindRobots({
   const [filter, setFilter] = useState('');
   /** The PC's own networks (desktop simulator), searched together. */
   const [pcNets, setPcNets] = useState<string[]>([]);
-  const scan = async (nets: string[] = net ? [net] : []) => {
-    if (!nets.length) return;
+  const scan = async (asked: string[] = net ? [net] : []) => {
+    // A PC on a LAN cable straight to a robot has only a 169.254.x.y address: no network to sweep,
+    // the robot answers at its fixed direct address instead (asked below, whatever the networks).
+    const nets = asked.filter((n) => !n.startsWith('169.254.'));
+    if (!asked.length) return;
     abort.current?.abort();
     const ctl = new AbortController();
     abort.current = ctl;
@@ -478,7 +512,7 @@ function FindRobots({
     setNotes({});
     setProgress(0);
     try {
-      localStorage.setItem(PREFIX_KEY, nets[0]);
+      if (nets[0]) localStorage.setItem(PREFIX_KEY, nets[0]);
     } catch {
       /* ignore */
     }
@@ -498,7 +532,12 @@ function FindRobots({
           }),
         ),
       );
-    await pass(1500, 0, 1);
+    const direct = probeRobot(DIRECT_IP, 2500).then((r) => {
+      if (!r || ctl.signal.aborted) return;
+      any += 1;
+      setFound((f) => [...f.filter((x) => !sameRobot(x, r)), r].sort(byName));
+    });
+    await Promise.all([pass(1500, 0, 1), direct]);
     // Nothing answered: once more, waiting longer (a robot's Wi-Fi dozing, a crowded network).
     if (!any && !ctl.signal.aborted) {
       setSlow(true);
@@ -577,9 +616,7 @@ function FindRobots({
         </button>
       )}
 
-      {found.length > 4 && (
-        <input className={css.findFilter} value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="이름 · ID · IP 로 찾기" aria-label="찾은 로봇 거르기" spellCheck={false} />
-      )}
+      {found.length > 4 && <input className={css.findFilter} value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="이름 · ID · IP 로 찾기" aria-label="찾은 로봇 거르기" spellCheck={false} />}
       {found.length > 0 && (
         <ul className={css.foundList} aria-label="찾은 로봇">
           {found

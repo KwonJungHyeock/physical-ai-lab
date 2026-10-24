@@ -1030,8 +1030,8 @@ def lan_ips():
     ips = [ip for ip in os.popen("hostname -I 2>/dev/null").read().split() if ip.count(".") == 3 and not ip.startswith("127.")]
     route = os.popen("ip -4 route get 1.1.1.1 2>/dev/null").read().split()
     main = route[route.index("src") + 1] if "src" in route[:-1] else ""
-    # Container bridges (docker 172.17.x) last.
-    ips.sort(key=lambda ip: (ip != main, ip.startswith("172.17.")))
+    # Container bridges (docker 172.17.x) and the fixed address for a LAN cable straight to a PC (lan.py) last.
+    ips.sort(key=lambda ip: (ip.startswith("169.254."), ip != main, ip.startswith("172.17.")))
     return ips
 
 
