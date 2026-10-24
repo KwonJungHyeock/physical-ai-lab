@@ -172,7 +172,7 @@ exe(`desktop-go`)는 `/api/*` 에 404 를 돌려 시뮬레이터로 두고, `GET
 
 ## 문서 · 배포
 
-- 배포용 문서: [`시뮬레이터 사용 매뉴얼.pdf`](manuals/simulator/) · [`교사용 교육 가이드라인.pdf`](manuals/course/) — 원고와 다시 만들기는 [`manuals/README.md`](manuals/README.md)
+- 배포용 문서: [`기초 사용 매뉴얼 (교사용 · 학생용).pdf`](manuals/basic/) · [`교사용 교육 가이드라인.pdf`](manuals/course/) — 원고와 다시 만들기는 [`manuals/README.md`](manuals/README.md)
 - PC 시뮬레이터 설치: [`manuals/setup/pc-simulator.md`](manuals/setup/pc-simulator.md) · 실제 로봇 점검: [`manuals/robot-arm/robot-check.md`](manuals/robot-arm/robot-check.md)
 - 교육 과정: [`manuals/course/robotics-course.md`](manuals/course/robotics-course.md) · 원고 형식: [`content-markdown/README.md`](content-markdown/README.md)
 - 개발 중 exe 는 zip 을 둘로 나눠(`zip -s 30m`) 보내고, 확정본은 `release` 브랜치에 `PhysicalAI-Simulator.zip` + README 하나로 둡니다.

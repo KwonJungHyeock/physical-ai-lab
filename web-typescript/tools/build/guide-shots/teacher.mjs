@@ -38,6 +38,16 @@ await btn('시뮬레이션만 (로봇 없이)').click({ timeout: 20000 }).catch(
 await page.getByRole('tab', { name: '교육' }).click();
 await settle(page, 4000);
 // The 교육 tab opens on the 로봇 시티: the course home is behind 전체 차시.
+if (want('city')) {
+  await settle(page, 9000);
+  await save(page, out('b-map.jpg'), {
+    marks: [
+      { at: page.locator('ol[aria-label="로드맵: 배우는 순서"]'), n: 1, pos: 'b' },
+      { at: page.locator('section[aria-label="로봇 시티 3D 지도"]'), n: 2, pos: 'tl' },
+      { at: page.locator('nav[aria-label="기술 키워드로 찾기"]'), n: 3, pos: 'tl' },
+    ],
+  });
+}
 await page.getByRole('button', { name: '전체 차시', exact: true }).click().catch(() => {});
 await settle(page, 3000);
 

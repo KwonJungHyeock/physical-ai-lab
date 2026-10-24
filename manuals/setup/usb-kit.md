@@ -40,6 +40,9 @@
    - **사용자**: PC 시뮬레이터의 [로봇 찾기] 목록에 IP 와 함께 크게 보이는 이름(24자까지). 여러 명이 같은 교실에서 써도
      자기 로봇을 바로 고릅니다. 비워 두면 전에 정한 이름 그대로. USB 하나로 여러 대를 맞출 때는 로봇마다 이름을 바꿔 저장하고 꽂습니다.
    - `와이파이=핫스팟` 으로 저장하면 로봇이 **자기 핫스팟으로 돌아갑니다**. (예전 양식의 `이름=` 도 와이파이 이름으로 읽습니다.)
+   - `와이파이=끔` 으로 저장하면 로봇의 **Wi-Fi 를 끕니다**. 랜선으로만 씁니다(공유기 · 허브에 꽂거나, PC 와 랜선 하나로 직결).
+     직결 주소는 늘 `169.254.127.10` 입니다 (PC 프로그램의 로봇 연결 → [유선 직결]). Wi-Fi 를 다시 켜려면 교실 Wi-Fi 이름이나 `핫스팟` 으로 만들어 꽂습니다.
+   - 결과 파일의 주소는 종류를 붙여 적습니다: `주소: 무선 192.168.0.52 · 유선 192.168.0.61 · 직결 169.254.127.10`.
 
 직접 만들 때 (저장소에서):
 ```bash
@@ -140,4 +143,4 @@ python3 robot-python/tools/make_usb_kit.py -o dist # dist/eduino_usb.zip, dist/r
   - `eduino` 폴더가 USB **맨 위**에 있는지, 파일 이름이 `wifi.txt` 인지 (메모장이 `wifi.txt.txt` 로 저장하지 않았는지)
   - 로봇 터미널에서: `systemctl status eduino-usb`, 기록 `sudo tail /var/log/eduino-wifi.log`
 - 설치 되돌리기: `sudo systemctl disable --now eduino-usb && sudo rm /etc/systemd/system/eduino-usb.service`
-  (Wi-Fi 는 `wifi.txt` 에 `이름=핫스팟`, 자동 시작은 `sudo python3 ~/robot_console/autostart.py --off`)
+  (Wi-Fi 는 `wifi.txt` 에 `와이파이=핫스팟`, 자동 시작은 `sudo python3 ~/robot_console/autostart.py --off`)

@@ -1,4 +1,4 @@
-"""Put together the delivery bundle: the PC simulator, the robot USB stick, the two guides and the class PDFs.
+"""Put together the delivery bundle: the PC simulator, the robot USB stick, the guides and the class PDFs.
 
 Development tool, not run on the robot. Build the pieces first:
 
@@ -13,7 +13,7 @@ The bundle:
       읽어보세요.txt
       1-시뮬레이터 (Windows PC)/   Physical AI 시뮬레이터.exe, 읽어보세요.txt
       2-로봇 USB/                  eduino/ — copy this folder to the top of a USB stick as it is
-      3-사용 설명서/               시뮬레이터 사용 매뉴얼.pdf, 교사용 교육 가이드라인.pdf
+      3-사용 설명서/               기초 사용 매뉴얼 (교사용 · 학생용).pdf, 교사용 교육 가이드라인.pdf
       4-수업 자료 PDF/             이론 교재 · OX 문항지 · 객관식 문항지 (학문 1~8), 전체 문항집, 용어 사전
 """
 
@@ -31,7 +31,8 @@ REPO = os.path.dirname(os.path.dirname(HERE))
 EXE = os.path.join(REPO, "desktop-go", "dist", "Physical AI 시뮬레이터.exe")
 EXE_README = os.path.join(REPO, "desktop-go", "README.txt")
 GUIDES = [
-    os.path.join(REPO, "manuals", "simulator", "시뮬레이터 사용 매뉴얼.pdf"),
+    os.path.join(REPO, "manuals", "basic", "기초 사용 매뉴얼 (교사용).pdf"),
+    os.path.join(REPO, "manuals", "basic", "기초 사용 매뉴얼 (학생용).pdf"),
     os.path.join(REPO, "manuals", "course", "교사용 교육 가이드라인.pdf"),
 ]
 MATERIALS = os.path.join(REPO, "web-typescript", "public", "materials")
@@ -50,13 +51,15 @@ TOP_README = """Physical AI 학습 프로그램 — 배포 묶음 ({date})
    이 폴더째 학생 PC 바탕화면에 복사해 쓰면 돼요.
 
 2-로봇 USB
-   안의 eduino 폴더를 USB 메모리 맨 위에 그대로 복사하고, eduino/wifi.txt 에
-   교실 Wi-Fi 이름 · 비밀번호 · 사용자 이름을 적어 로봇에 꽂아요.
-   로봇마다 처음 한 번은 로봇 터미널에서 설치 명령 한 줄 (eduino/읽어보세요.txt 의 A).
-   그 뒤로는 꽂기만 하면 돼요: Wi-Fi 를 바꾸고, 새 키트면 로봇이 스스로 업데이트해요.
+   보통은 시뮬레이터의 ⚙ → [로봇 USB 만들기] 로 USB 를 만들어요 (기초 사용 매뉴얼 2 · 4장).
+   손으로 만들 때: 안의 eduino 폴더를 USB 메모리 맨 위에 복사하고, eduino/wifi.txt 의 와이파이 = 뒤에
+   교실 Wi-Fi 이름, 핫스팟, 끔(랜선만) 중 하나를 적어 로봇에 꽂아요.
+   로봇마다 처음 한 번은 eduino 폴더의 설치하기 (eduino/읽어보세요.txt).
+   그 뒤로는 꽂기만 하면 돼요: 연결 방법을 바꾸고, 새 키트면 로봇이 스스로 업데이트해요.
 
 3-사용 설명서
-   시뮬레이터 사용 매뉴얼.pdf   — 설치부터 화면, 코딩, 실제 로봇 연결까지 그림으로
+   기초 사용 매뉴얼 (교사용).pdf — 구성품, 로봇 설치, 프로그램 설치, 무선 · 유선 연결, 기초 조작
+   기초 사용 매뉴얼 (학생용).pdf — 안전 약속, 켜기 · 연결, 버튼으로 움직이기 따라 하기
    교사용 교육 가이드라인.pdf   — 28차시 수업 운영, 평가, 자료실 활용
 
 4-수업 자료 PDF

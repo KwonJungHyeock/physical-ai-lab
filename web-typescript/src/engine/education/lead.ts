@@ -3,7 +3,7 @@
  * shared step). A lesson is a few steps; every step has what the projector shows (headline, one line,
  * 지금 할 일), what the teacher says and asks (with the expected answer, shown only on the teacher's
  * rail), what each student's screen asks for, and the activity that makes a student's mark (a pick, a
- * question, the 3D steps, the real robot). The 기초교육 1~2차시 (manuals/course/basic-training.md) are
+ * question, the 3D steps, the real robot). The 기초교육 1~2차시 (manuals/course/teacher-guide.md, 로봇 실습 7) are
  * lessons 7-1 + 7-2 and 7-5 + 7-3 + 7-7.
  *
  * Plain data and checks, no React.

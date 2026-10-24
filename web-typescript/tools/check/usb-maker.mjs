@@ -7,7 +7,7 @@
 //   1. the program with its kit:  KIT=… sh desktop-go/build.sh, or a Linux build of desktop-go with kit/eduino_usb.zip
 //   2. run it on a folder:        PAI_USB_ROOTS="$USB" PAI_PC_WIFI=EDUINO-LAB ./program
 //   3. USB="$USB" OUT=dir node tools/check/usb-maker.mjs
-//      MANUAL=manuals/simulator/img also writes the manual's pictures (40–43-usb-*.png, cropped).
+//      MANUAL=manuals/basic/img also writes the manuals' pictures (u-*.png, cropped).
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -57,24 +57,38 @@ const openMaker = async (shot) => {
 };
 
 /* --- 1. make the stick ------------------------------------------------------------------------- */
-let dlg = await openMaker("40-usb-menu.png");
+let dlg = await openMaker("u-menu.png");
 const ssid = dlg.getByRole("textbox").first();
 check((await ssid.inputValue()) === "EDUINO-LAB", `Wi-Fi 이름이 이 PC 의 Wi-Fi 로 채워짐 ("${await ssid.inputValue()}")`);
-check((await dlg.getByRole("radio").count()) === 1 && (await dlg.getByRole("radio").first().getAttribute("aria-checked")) === "true", "USB 하나 → 저절로 골라짐");
+const drives = dlg.getByRole("radiogroup", { name: "USB" }).getByRole("radio");
+check((await drives.count()) === 1 && (await drives.first().getAttribute("aria-checked")) === "true", "USB 하나 → 저절로 골라짐");
 await dlg.getByPlaceholder("비밀번호가 없으면 비워 두기").fill("1234567");
 check(await dlg.getByRole("button", { name: "USB 만들기", exact: true }).isDisabled(), "비밀번호 7자 → [USB 만들기] 잠김");
 check((await dlg.innerText()).includes("8~63자"), "비밀번호 7자 → 이유가 보임");
 await dlg.getByPlaceholder("비밀번호가 없으면 비워 두기").fill("eduino2026");
 await dlg.getByPlaceholder(/예: 3조/).fill("1조");
 await page.screenshot({ path: path.join(OUT, "usb-1-form.png") });
-await manual("41-usb-make.png", dlg.locator("[class*=pickerBox]"));
+await manual("u-make.png", dlg.locator("[class*=pickerBox]"));
+// The other two ways: the robot's own hotspot, and the LAN cable only (Wi-Fi off).
+const ways = dlg.getByRole("radiogroup", { name: "연결 방법" });
+await ways.getByRole("radio", { name: /유선만/ }).click();
+await page.waitForTimeout(400);
+check((await dlg.innerText()).includes("169.254.127.10"), "[유선만] → 직결 주소 안내");
+await manual("u-way-off.png", dlg.locator("section[aria-label=\"연결 방법\"]"));
+await ways.getByRole("radio", { name: /로봇 핫스팟/ }).click();
+await page.waitForTimeout(400);
+await manual("u-way-hotspot.png", dlg.locator("section[aria-label=\"연결 방법\"]"));
+await ways.getByRole("radio", { name: /교실 Wi-Fi/ }).click();
+await page.waitForTimeout(400);
+await dlg.getByPlaceholder("예: EDUINO-LAB").fill("EDUINO-LAB");
+await dlg.getByPlaceholder("비밀번호가 없으면 비워 두기").fill("eduino2026");
 await dlg.getByRole("button", { name: "USB 만들기", exact: true }).click();
 await dlg.getByText("USB 를 만들었어요").waitFor({ timeout: 120000 });
 await page.waitForTimeout(500);
 const over = await dlg.evaluate((el) => { const box = el.querySelector("[class*=pickerBox]"); return box.scrollWidth - box.clientWidth; });
 check(over <= 0, `다 됐어요 화면이 창 안에 들어옴 (넘침 ${over}px)`);
 await page.screenshot({ path: path.join(OUT, "usb-2-done.png") });
-await manual("42-usb-done.png", dlg.locator("[class*=pickerBox]"));
+await manual("u-done.png", dlg.locator("[class*=pickerBox]"));
 
 /* --- 2. the stick as a robot reads it ---------------------------------------------------------- */
 const folder = path.join(USB, "eduino");
@@ -101,7 +115,7 @@ writeFileSync(
     "결과: 성공 — 'EDUINO-LAB' 에 연결했어요.",
     "버전: 20261002-101500-aaaaaaa → 20261014-051829-c782f72",
     "업데이트: 성공",
-    "로봇 ID: 107   주소: 192.168.0.107",
+    "로봇 ID: 107   주소: 무선 192.168.0.107 · 직결 169.254.127.10",
     "PC 브라우저: http://192.168.0.107:8080/console",
     "확인값: 3f9c0a1b22e4",
   ]),
@@ -118,7 +132,7 @@ check(text.includes("로봇 2대 · 연결 1대 · 실패 1대"), "결과 요약
 check(text.includes("1조") && text.includes("로봇 ID 107") && text.includes("192.168.0.107"), "성공한 로봇: 사용자 · ID · 주소");
 check(text.includes("비밀번호가 맞지 않아요"), "실패한 로봇: 이유");
 await page.screenshot({ path: path.join(OUT, "usb-3-results.png") });
-await manual("43-usb-results.png", dlg.locator("[class*=pickerBox]"));
+await manual("u-results.png", dlg.locator("[class*=pickerBox]"));
 await dlg.getByRole("button", { name: "연결" }).click();
 const connect = page.getByRole("dialog", { name: "로봇 연결" });
 await connect.waitFor({ timeout: 10000 });

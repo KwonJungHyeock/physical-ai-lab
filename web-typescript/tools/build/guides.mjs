@@ -1,11 +1,11 @@
 // The guides in manuals/ → print-ready PDFs (A4), with a layout check of the printed pages.
-//   node tools/build/guides.mjs [simulator|teacher|basic ...]
+//   node tools/build/guides.mjs [basic-teacher|basic-student|teacher ...]
 //
 // Source: Markdown with a few extra blocks (see manuals/README.md "배포용 PDF 만들기"):
 //   front matter (title, subtitle, audience, version, cover), `# ` = chapter (new page), `## ` · `### `,
 //   `![캡션](img/x.png)` = numbered figure (`{w=60}` after it = 60 % wide), `> 팁:` / `> 주의:` / `> 참고:` boxes,
 //   `::: step 제목` … `:::` numbered step cards, `::: marks` numbered list matching the badges on a screenshot,
-//   `::: cols` … `+++` … `:::` side by side, `[버튼 이름]` = a key cap, GFM tables, ``` code.
+//   `::: cols` … `+++` … `:::` side by side, `::: newpage` = a page break, `[버튼 이름]` = a key cap, GFM tables, ``` code.
 // Printing keeps a heading with what follows it, figures and cards whole, table rows whole, and Korean
 // words unbroken. After printing it checks every page: a heading left at the bottom of a page, a page that
 // is mostly empty, characters the font lacks. Problems → exit 1.
@@ -17,13 +17,13 @@ import { launch } from './guide-shots/lib.mjs';
 
 const web = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const repo = path.dirname(web);
+// pub: the copy for the console's 자료실 (pages/archiveTree.ts), served at /guides/<pub>.pdf.
 const GUIDES = {
-  simulator: { src: 'manuals/simulator/simulator-guide.md', out: 'manuals/simulator/시뮬레이터 사용 매뉴얼.pdf' },
-  teacher: { src: 'manuals/course/teacher-guide.md', out: 'manuals/course/교사용 교육 가이드라인.pdf' },
-  basic: { src: 'manuals/course/basic-training.md', out: 'manuals/course/로봇 기초교육 자료.pdf' },
+  'basic-teacher': { src: 'manuals/basic/teacher.md', out: 'manuals/basic/기초 사용 매뉴얼 (교사용).pdf', pub: 'basic-teacher' },
+  'basic-student': { src: 'manuals/basic/student.md', out: 'manuals/basic/기초 사용 매뉴얼 (학생용).pdf', pub: 'basic-student' },
+  teacher: { src: 'manuals/course/teacher-guide.md', out: 'manuals/course/교사용 교육 가이드라인.pdf', pub: 'teacher-guide' },
 };
-// A copy for the console's 자료실 (pages/Archive.tsx), served at /guides/<name>-guide.pdf.
-const publicCopy = (name) => path.join(web, 'public', 'guides', `${name}-guide.pdf`);
+const publicCopy = (name) => path.join(web, 'public', 'guides', `${GUIDES[name].pub}.pdf`);
 const pick = process.argv.slice(2);
 // SENTENCES=1: also list every sentence that prints on more than one line.
 
@@ -94,6 +94,7 @@ function blocks(lines, ctx) {
       const lv = m[1].length;
       const text = m[2].trim();
       const id = `h${ctx.hid++}`;
+      if (ctx.keep) ctx.breakHeads.push(text.replace(/\*\*|`|\[|\]/g, '').replace(/\s+/g, ''));
       if (lv === 1) {
         ctx.chapter++;
         ctx.section = 0;
@@ -113,7 +114,9 @@ function blocks(lines, ctx) {
       const src = path.resolve(ctx.dir, m[2]);
       if (!existsSync(src)) ctx.problems.push(`그림 파일 없음: ${m[2]}`);
       const w = m[4] ? `style="width:${m[4]}%"` : '';
-      const grp = ctx.nested ? '' : ` data-grp="g${ctx.groups.push({ text: m[1] }) - 1}"`;
+      // A picture right after `::: newpage` has its page to itself: never made smaller to fill the page before.
+      const grp = ctx.nested || ctx.keep ? '' : ` data-grp="g${ctx.groups.push({ text: m[1] }) - 1}"`;
+      ctx.keep = false;
       out.push({ t: 'fig', html: `<figure data-fig="${n}"${grp}><img src="file://${src}" ${w}/>${m[1] ? `<figcaption><b>그림 ${n}</b> ${inline(m[1])}</figcaption>` : ''}</figure>` });
       i++;
       continue;
@@ -125,6 +128,14 @@ function blocks(lines, ctx) {
       while (i < lines.length && !lines[i].startsWith('```')) body.push(lines[i++]);
       i++;
       out.push({ t: 'code', html: `<pre>${esc(body.join('\n'))}</pre>` });
+      continue;
+    }
+    // `::: newpage` on its own line: the next block starts a new page (a big screen picture kept whole).
+    if (/^:::\s*newpage\s*$/.test(line)) {
+      flush();
+      out.push({ t: 'p', html: '<div class="newpage"></div>' });
+      ctx.keep = true;
+      i++;
       continue;
     }
     if ((m = line.match(/^::: ?(\w+)\s*(.*)$/))) {
@@ -169,7 +180,9 @@ function blocks(lines, ctx) {
           } else cur.push(l);
         }
         parts.push(cur);
-        const grp = ctx.nested ? '' : ` data-grp="g${ctx.groups.push({ text: body.join(' ') }) - 1}"`;
+        const kept = ctx.keep;
+        ctx.keep = false;
+        const grp = ctx.nested || kept ? '' : ` data-grp="g${ctx.groups.push({ text: body.join(' ') }) - 1}"`;
         out.push({ t: 'card', html: `<div class="cols cols${parts.length}"${grp}>${parts.map((p) => `<div>${inner(p)}</div>`).join('')}</div>` });
       } else if (kind === 'box') {
         out.push({ t: 'card', html: `<div class="box"><div class="boxtitle">${inline(arg)}</div>${inner(body)}</div>` });
@@ -298,6 +311,7 @@ kbd{font-family:Pretendard,Sym;font-weight:600;font-size:.88em;white-space:nowra
 .toc .fill{flex:1;border-bottom:1px dotted #b9c1d2;transform:translateY(-3pt)}
 .toc .pg{font-variant-numeric:tabular-nums;color:var(--muted);min-width:16pt;text-align:right}
 /* headings */
+.newpage{break-before:page;height:0;margin:0}
 h1{break-before:auto;font-size:21pt;line-height:1.3;margin:26pt 0 12pt;padding-bottom:10pt;border-bottom:2.5pt solid var(--accent);display:flex;align-items:baseline;gap:12pt}
 h1 .chno{font-size:30pt;color:var(--accent);font-weight:700;letter-spacing:-.02em}
 h2{font-size:14pt;line-height:1.4;margin:16pt 0 7pt;display:flex;align-items:baseline;gap:8pt}
@@ -406,7 +420,7 @@ async function build(name) {
   const dir = path.dirname(srcFile);
   const [meta, body] = parseFront(readFileSync(srcFile, 'utf8'));
   meta.dir = dir;
-  const ctx = { dir, chapter: 0, section: 0, fig: 0, step: 0, hid: 0, toc: [], problems: [], groups: [], nested: false };
+  const ctx = { dir, chapter: 0, section: 0, fig: 0, step: 0, hid: 0, toc: [], problems: [], groups: [], nested: false, keep: false, breakHeads: [] };
   // Steps count from 1 again in every section.
   const lines = body.split('\n');
   const list = [];
@@ -562,8 +576,9 @@ async function build(name) {
       if (hh.length > 3 && tail.endsWith(hh) && body.length > 3) problems.push(`p.${p}: 제목이 쪽 맨 아래에 홀로 — "${h}"`);
     }
     const fill = fillOf(outFile, p, tmp);
-    // A page that ends early is fine when the next page starts a chapter.
-    if (fill < 0.62 && p < n) sparse.push(`p.${p}: 쪽의 ${Math.round(fill * 100)}% 만 채움`);
+    // A page that ends early is fine when the next page starts after a `::: newpage`.
+    const next = p < n ? pageText(outFile, p + 1).replace(/\s+/g, '').slice(0, 60) : '';
+    if (fill < 0.62 && p < n && !ctx.breakHeads.some((h) => h.length > 3 && next.includes(h))) sparse.push(`p.${p}: 쪽의 ${Math.round(fill * 100)}% 만 채움`);
   }
   problems.push(...sparse);
   // Characters the font does not have.
@@ -576,6 +591,10 @@ async function build(name) {
   if (missing.length) problems.push(`글꼴에 없는 글자: ${missing.join(' ')}`);
   mkdirSync(path.dirname(publicCopy(name)), { recursive: true });
   copyFileSync(outFile, publicCopy(name));
+  // The 자료실 preview: the cover, 240 px wide.
+  const thumb = path.join(web, 'public', 'guides', 'thumbs', GUIDES[name].pub);
+  mkdirSync(path.dirname(thumb), { recursive: true });
+  execFileSync('pdftoppm', ['-jpeg', '-jpegopt', 'quality=82', '-f', '1', '-l', '1', '-scale-to-x', '240', '-scale-to-y', '-1', '-singlefile', outFile, thumb]);
   console.log(`${path.basename(outFile)}: ${n}쪽, 그림 ${ctx.fig}${problems.length ? `, 문제 ${problems.length}` : ', 문제 없음'}`);
   console.log(`  문장 ${wraps.n}개 중 두 줄 넘는 문장 ${wraps.out.length}개${process.env.SENTENCES ? '' : ' (SENTENCES=1 로 목록)'}`);
   if (process.env.SENTENCES) for (const [k, t] of wraps.out) console.log(`    ${k}줄  ${t}`);
