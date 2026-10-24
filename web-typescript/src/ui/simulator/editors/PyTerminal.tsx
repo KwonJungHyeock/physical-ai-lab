@@ -55,7 +55,7 @@ export function PyTerminal(p: Props) {
             steps={[
               { cmd: 'cd ~/robot', what: '프로그램 폴더로 가요' },
               { cmd: 'cat my_robot.py', what: '프로그램을 읽어요' },
-              { cmd: 'nano my_robot.py', what: '값을 고쳐요 (Ctrl+O 저장, Ctrl+X 나가기)', key: true },
+              { cmd: 'nano my_robot.py', what: '각도 · 속도 같은 값 하나를 바꿔요 (Ctrl+O 저장, Ctrl+X 나가기)', key: true },
               { cmd: 'python3 my_robot.py', what: '실행해요. 3D 로봇이 움직이고 print 는 여기에 찍혀요' },
             ]}
           />

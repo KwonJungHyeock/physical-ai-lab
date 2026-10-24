@@ -2009,6 +2009,12 @@ export default function Console() {
   };
 
   /** Open a cell on a ladder step (or 자유 실습): its world, the gripper, the step's program. */
+  /** Into a cell at its first step not passed yet (a cell whose ladder is still to come: to look round and run by hand). */
+  const enterCell = (id: CellId) => {
+    const steps = missionsOf(id);
+    const first = steps.find((m) => !cellPassed[m.id]) ?? steps[0];
+    openCell(id, CELL_BY_ID[id].built ? (first?.id ?? null) : null);
+  };
   const openCell = (cell: CellId, mission: string | null) => {
     if (busy) return;
     if (cellRef.current) saveCellProgram(cellRef.current, code);
@@ -3028,6 +3034,32 @@ export default function Console() {
       <button className={css.jogWide} type="button" disabled={busy} onClick={recordPose}>
         <Icon name="save" size={15} /> 지금 자세 저장하기
       </button>
+      {poseNames.length === 0 && (
+        <>
+          <p className={css.poseHelp}>
+            <b>자세</b> = 관절 {arm.home.length}개의 각도에 이름을 붙여 저장해 둔 것이에요. [조그]로 팔을 옮기고 위 버튼을 누르면 이름을 붙여 여기에 쌓여요.
+          </p>
+          <ul aria-label="고정 자세">
+            {(
+              [
+                ['home', '기본 자세', arm.home],
+                ['zero', '일자', arm.zero],
+              ] as const
+            ).map(([id, name, angles]) => (
+              <li key={id}>
+                <span className={css.poseName}>
+                  <b>{name}</b>
+                  <small>{angles.map((a) => `${Math.round(a * 10) / 10}°`).join(' ')}</small>
+                </span>
+                <button type="button" className={css.poseGo} disabled={busy} onClick={() => goPose(id)}>
+                  이 자세로
+                </button>
+                <em className={css.poseFixed}>고정</em>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
       {poseNames.length > 0 && (
         <ul>
           {poseNames.map((n) => (
@@ -3696,7 +3728,13 @@ export default function Console() {
             }}
             scene={theme === 'kit' ? 'kit' : desk.scene}
             kitAvailable={arm.kit}
+            cell={cellAt?.cell ?? null}
+            onCell={(id) => {
+              enterCell(id);
+              chooseView('sim');
+            }}
             onScene={(id) => {
+              if (cellAt) leaveCell();
               deskScene(id);
               chooseView('sim');
             }}
@@ -3937,10 +3975,7 @@ export default function Console() {
                       cell={cellAt?.cell ?? null}
                       onCell={(id) => {
                         setRailOpen(null);
-                        const steps = missionsOf(id);
-                        const first = steps.find((m) => !cellPassed[m.id]) ?? steps[0];
-                        // A cell whose ladder is still to come opens to look round and run by hand.
-                        openCell(id, CELL_BY_ID[id].built ? (first?.id ?? null) : null);
+                        enterCell(id);
                       }}
                       onMat={deskMat}
                       onShuffle={shuffle}
@@ -4194,6 +4229,7 @@ export default function Console() {
                       busy={busy}
                       action={practiceAction}
                       need={toolAsk}
+                      noSteps={armTermOn}
                       onLibrary={() => {
                         setLibSection('tasks');
                         chooseView('library');

@@ -9,6 +9,7 @@
 //
 // What each kind shows, as a time-lapse of a program run in the simulator ([시뮬레이션], up to 90 s):
 //   practice-* · check-*  the practice's own program
+//   cell-*                the cell's first step, its reference program (opened with ?cell=…&mission=…)
 //   scene-* · tool-* · model-*  전 축 구동 (practice-joints: every joint turned both ways) with that
 //                         environment, tool or robot model loaded
 //   model-myagv           the /agv simulator driven with the keyboard
@@ -43,6 +44,8 @@ const H = 200;
 const FPS = 12;
 const FRAMES = 36; // 3 s
 const MAX_KB = 300;
+/** A 실습 셀 card shows the cell's first step. */
+const CELL_FIRST = { feed: 'A1', vision: 'B1', inspect: 'C1', tend: 'D1', assembly: 'E1' };
 /** Cards that cannot be opened: a still from this picture (public/...). */
 const STILLS = { 'model-four-axis': 'robot/thumbs/ultraarm-p340.png' };
 
@@ -77,8 +80,13 @@ await ctx.addInitScript(() => {
 const page = await ctx.newPage();
 page.setDefaultTimeout(120000);
 
-async function openConsole() {
-  await page.goto(`${base}/console?from=sim`, { waitUntil: 'load', timeout: 300000 });
+async function openConsole(query = '') {
+  await page.goto(`${base}/console?from=sim${query}`, { waitUntil: 'load', timeout: 300000 });
+  // The intro: [시뮬레이터로 시작], then its card fades away.
+  await page
+    .getByRole('button', { name: '시뮬레이터로 시작' })
+    .click({ timeout: 300000 })
+    .catch(() => {});
   await page.waitForFunction(() => document.querySelector('[class*=splash][data-done]'), null, { timeout: 300000 }).catch(() => {});
   await page
     .getByRole('button', { name: '시뮬레이션만 (로봇 없이)' })
@@ -290,6 +298,16 @@ for (const c of todo) {
   try {
     if (STILLS[c.id]) {
       still(c.id, STILLS[c.id]);
+      continue;
+    }
+    // A 실습 셀: its first step with the step's reference program, the whole cell in view.
+    if (c.id.startsWith('cell-')) {
+      const cell = c.id.slice(5);
+      await openConsole(`&cell=${cell}&mission=${CELL_FIRST[cell]}`);
+      await toSim();
+      await page.waitForTimeout(4000);
+      await run(c.id, CROP.wide);
+      await openConsole();
       continue;
     }
     // An environment, a tool or a model is shown doing 전 축 구동: that practice first, then the card.

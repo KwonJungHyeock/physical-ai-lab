@@ -46,6 +46,8 @@ interface CardProps {
   onReload(): void;
   action?: { label: string; run(): void; disabled?: boolean };
   need?: { text: string; fit(): void };
+  /** The terminal mode: no yellow-slot steps (they point into the code editor). */
+  noSteps?: boolean;
 }
 
 export function TutorialCard(p: CardProps) {
@@ -75,12 +77,12 @@ export function TutorialCard(p: CardProps) {
           </button>
         </div>
         <div className={css.steps} role="group" aria-label="단계">
-          {p.tut.steps.map((s, k) => (
-            <button key={k} type="button" title={`${k + 1}. ${s.title}`} data-state={k < p.step ? 'done' : k === p.step ? 'now' : undefined} onClick={() => p.onStep(k)} aria-label={`${k + 1}단계 ${s.title}`} />
-          ))}
-          <small>
-            {Math.min(p.step, n - 1) + 1} / {n}
-          </small>
+          {!p.noSteps && p.tut.steps.map((s, k) => <button key={k} type="button" title={`${k + 1}. ${s.title}`} data-state={k < p.step ? 'done' : k === p.step ? 'now' : undefined} onClick={() => p.onStep(k)} aria-label={`${k + 1}단계 ${s.title}`} />)}
+          {!p.noSteps && (
+            <small>
+              {Math.min(p.step, n - 1) + 1} / {n}
+            </small>
+          )}
           <button type="button" className={css.link} disabled={p.busy} onClick={p.onReload} title="편집기의 프로그램을 이 실습의 처음 예제로 되돌려요 (고친 내용은 사라져요)">
             처음 예제로
           </button>
@@ -88,7 +90,8 @@ export function TutorialCard(p: CardProps) {
         {p.need && (
           <p className={css.need} role="status">
             <span>
-              이 실습은 <b>{p.need.text}</b>{subjOf(p.need.text).slice(p.need.text.length)} 있어야 해요
+              이 실습은 <b>{p.need.text}</b>
+              {subjOf(p.need.text).slice(p.need.text.length)} 있어야 해요
             </span>
             <button type="button" className={css.btn} disabled={p.busy} onClick={p.need.fit}>
               끼우기
@@ -96,23 +99,45 @@ export function TutorialCard(p: CardProps) {
           </p>
         )}
       </section>
-      <div className={css.now}>
-        <b>
-          {Math.min(p.step, n - 1) + 1}단계 · {st.title}
-        </b>
-        <span>{st.text}</span>
-        {p.step < n - 1 && (
-          <button type="button" className={css.next} onClick={() => p.onStep(p.step + 1)}>
-            다음 ▶
-          </button>
-        )}
-      </div>
+      {!p.noSteps && (
+        <div className={css.now}>
+          <b>
+            {Math.min(p.step, n - 1) + 1}단계 · {st.title}
+          </b>
+          <span>{st.text}</span>
+          {p.step < n - 1 && (
+            <button type="button" className={css.next} onClick={() => p.onStep(p.step + 1)}>
+              다음 ▶
+            </button>
+          )}
+        </div>
+      )}
     </>
   );
 }
 
 /** The program with only the tutorial's places open; the current step's places blink. */
-export function SlotCode({ code, onCode, tut, step, runningLine, errorLines, fileName, full, onFull }: { code: string; onCode(c: string): void; tut: Tutorial; step: number; runningLine: number; errorLines: number[]; fileName: string; full: boolean; onFull(full: boolean): void }) {
+export function SlotCode({
+  code,
+  onCode,
+  tut,
+  step,
+  runningLine,
+  errorLines,
+  fileName,
+  full,
+  onFull,
+}: {
+  code: string;
+  onCode(c: string): void;
+  tut: Tutorial;
+  step: number;
+  runningLine: number;
+  errorLines: number[];
+  fileName: string;
+  full: boolean;
+  onFull(full: boolean): void;
+}) {
   const hits = findSlots(code, tut);
   const hot = new Set(tut.steps[step]?.slots ?? []);
   // The step's places come into view (a long program scrolls to them).

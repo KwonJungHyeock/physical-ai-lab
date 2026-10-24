@@ -214,8 +214,8 @@ export default function Archive({ section, onSection, programs, checks }: Props)
   const shown = chosen ?? null;
   return (
     <div className={`${css.page} ${css.explorer}`}>
-      <nav className={css.pageNav} aria-label="DOWNLOADS">
-        <h5>DOWNLOADS</h5>
+      <nav className={css.pageNav} aria-label="자료실">
+        <h5>자료실</h5>
         <ul className={css.tree} role="tree" aria-label="폴더">
           {tree(root, 0)}
         </ul>

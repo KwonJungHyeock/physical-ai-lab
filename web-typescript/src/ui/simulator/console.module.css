@@ -2531,6 +2531,23 @@ div.zeroFlow {
 .poseName {
   min-width: 0;
 }
+.poseHelp {
+  margin: 2px 2px 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--muted);
+  word-break: keep-all;
+}
+.poseHelp b {
+  color: var(--ink);
+}
+.poseFixed {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--faint);
+  padding: 0 6px;
+}
 .poseName b {
   display: block;
   font-size: 14px;

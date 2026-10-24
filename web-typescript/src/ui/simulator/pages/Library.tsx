@@ -16,13 +16,15 @@ import { loadEvidence, onRealRobot, realMissing, type Evidence } from '@/engine/
 import { CATEGORIES, CHECKS, checkState, markKey, openCheck, type ConsoleMode, type Progress, type Where } from '@/engine/simulator/modules';
 import { LEVELS, practiceFor, practicesFor, type Level, type Practice, type PracticeId } from '@/engine/simulator/practices';
 import { MODELS, type RobotModelId } from '@/engine/robot/catalog';
+import { CELLS, type CellId } from '@/engine/simulator/cell/cells';
+import { missionsOf } from '@/engine/simulator/cell/missions';
 
 import Icon from '../Icon';
 import PageShell, { type PageSection } from './PageShell';
 import css from './pages.module.css';
 
 export type LibrarySection = 'all' | 'tasks' | 'checks' | 'scenes' | 'models' | 'tools';
-type Kind = 'practice' | 'check' | 'scene' | 'model' | 'tool';
+type Kind = 'practice' | 'check' | 'scene' | 'cell' | 'model' | 'tool';
 
 /** The card's moving picture: public/library/<kind>-<id>.gif (tools/build/library-gifs.mjs). */
 export const libraryGif = (kind: Kind, id: string) => `/library/${kind}-${id}.gif`;
@@ -47,7 +49,9 @@ const TOOL_USE: Record<Effector['kind'], string> = {
   none: '도구를 뺀 끝 플랜지만으로 움직여요',
 };
 const STATE_LABEL = ['아직', '시뮬레이션 완료', '실제 로봇 완료'];
-const KIND_ICON: Record<Kind, string> = { practice: 'flag', check: 'check', scene: 'scene', model: 'robot', tool: 'tool' };
+const KIND_ICON: Record<Kind, string> = { practice: 'flag', check: 'check', scene: 'scene', cell: 'scene', model: 'robot', tool: 'tool' };
+/** The environments on offer, as in the simulator's 실습 환경 sheet: the empty desk and the AI kit (the cells follow). */
+const SCENES_SHOWN: readonly SceneId[] = ['empty', 'kit'];
 
 interface Props {
   section: LibrarySection;
@@ -70,6 +74,9 @@ interface Props {
   scene: SceneId;
   kitAvailable: boolean;
   onScene(id: SceneId): void;
+  /** The 실습 셀 open (null: none). */
+  cell: CellId | null;
+  onCell(id: CellId): void;
   effector: EffectorId;
   tools: readonly EffectorId[];
   onTool(id: EffectorId): void;
@@ -155,7 +162,7 @@ function practiceEntries(level: Level, theme: Theme) {
 
 export default function Library(p: Props) {
   const practices = practiceEntries(p.level, p.theme);
-  const scenes = SCENES.filter((s) => s.id !== 'kit' || p.kitAvailable);
+  const scenes = SCENES.filter((s) => SCENES_SHOWN.includes(s.id) && (s.id !== 'kit' || p.kitAvailable));
   const tools = EFFECTORS.filter((e) => p.tools.includes(e.id)).sort((a, b) => Number(b.kind === 'none') - Number(a.kind === 'none'));
   const models = MODELS.filter((m) => m.status !== 'planned');
   // The 검수 record (the result sheet's lines) is shared with 로봇 실습 7 on the 교육 tab: a check
@@ -230,10 +237,15 @@ export default function Library(p: Props) {
       id: 'scenes',
       name: '실습 환경',
       icon: 'scene',
-      sub: '같은 로봇을 다른 현장에 놓아 봐요. 고르면 시뮬레이터에 바로 놓여요.',
-      cards: scenes.map((s) => (
-        <Card key={s.id} kind="scene" id={s.id} title={s.name} desc={s.note} tags={[SCENE_USE[s.id]]} current={p.scene === s.id} disabled={p.busy} onOpen={() => p.onScene(s.id)} />
-      )),
+      sub: '빈 화면 · AI 키트와 실습 셀 A ~ E. 셀은 단계마다 조건이 하나씩 늘어요. 고르면 시뮬레이터에 바로 열려요.',
+      cards: [
+        ...scenes.map((s) => (
+          <Card key={s.id} kind="scene" id={s.id} title={s.name} desc={s.note} tags={[SCENE_USE[s.id]]} current={!p.cell && p.scene === s.id} disabled={p.busy} onOpen={() => p.onScene(s.id)} />
+        )),
+        ...CELLS.map((c) => (
+          <Card key={c.id} kind="cell" id={c.id} title={`${c.letter} ${c.name}`} desc={c.note} badge="실습 셀" tags={[`단계 ${missionsOf(c.id).length}개`, '블록 · Python']} current={p.cell === c.id} disabled={p.busy} onOpen={() => p.onCell(c.id)} />
+        )),
+      ],
     },
     {
       id: 'models',
@@ -282,7 +294,7 @@ export default function Library(p: Props) {
   const open = shownGroups.find((g) => g.id === p.section);
   return (
     <PageShell
-      label="LIBRARY"
+      label="라이브러리"
       sections={sections}
       current={p.section}
       onSection={p.onSection}

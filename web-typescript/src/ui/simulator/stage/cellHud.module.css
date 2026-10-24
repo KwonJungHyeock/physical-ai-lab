@@ -21,30 +21,29 @@
   flex: none;
 }
 
-/* Ladder: light tiles; the step open is raised with a red bar under it. */
+/* Ladder: dark glass like the cards below it; the step open is raised with a red bar under it. */
 .ladder {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
   gap: 5px 4px;
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid #d9dedb;
-  border-radius: 11px;
-  padding: 8px 9px 11px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+  background: rgba(24, 32, 29, 0.93);
+  border-radius: 12px;
+  padding: 9px 10px 12px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.25);
 }
 .cellName {
   width: 100%;
   font-size: 13px;
-  color: #18201d;
+  color: #fff;
   margin-bottom: 2px;
 }
 .soon {
   margin-left: 8px;
   font-size: 11px;
   font-weight: 700;
-  color: #c2410c;
-  border: 1px solid #f3c7ad;
+  color: #fb923c;
+  border: 1px solid #7c3a1d;
   border-radius: 5px;
   padding: 0 6px;
 }
@@ -56,7 +55,7 @@
 .sep {
   width: 1px;
   height: 26px;
-  background: #d9dedb;
+  background: #3f4c46;
   margin: 0 2px;
   align-self: center;
 }
@@ -66,16 +65,16 @@
   height: 32px;
   padding: 0 6px;
   border-radius: 7px;
-  border: 1.5px solid #cfd6d2;
-  background: #eef1ef;
-  color: #18201d;
+  border: 1.5px solid #3f4c46;
+  background: #26302c;
+  color: #e9eeeb;
   font-weight: 800;
   font-size: 12.5px;
   cursor: pointer;
   transition: transform 0.12s;
 }
 .tile[data-done] {
-  color: #0f6b4c;
+  color: #6ee7a8;
 }
 .tile[data-done]::after {
   content: '✓';
@@ -86,9 +85,10 @@
 }
 .tile[data-cur] {
   transform: translateY(-4px);
-  background: #fff;
-  border-color: #18201d;
-  box-shadow: 0 4px 0 #c9cfcc;
+  background: #3a4741;
+  border-color: #e9eeeb;
+  color: #fff;
+  box-shadow: 0 4px 0 #0e1311;
 }
 .tile[data-cur]::before {
   content: '';
@@ -101,8 +101,8 @@
   background: #dc2626;
 }
 .tile:disabled {
-  color: #9aa49f;
-  background: #f6f7f6;
+  color: #7d8a84;
+  background: #1f2825;
   cursor: default;
 }
 .tile small {
