@@ -20,6 +20,7 @@ import type { ChainSegment } from '@/engine/robot/kinematics';
 import { createPhysics, type BlockSpec, type PhysicsWorld } from '@/engine/physics/physics';
 import { objectSpec } from '@/engine/simulator/deskPhysics';
 import { CELL_ENV, cellSolids, stepCell } from '@/engine/simulator/cell/run';
+import { cellLayout } from '@/engine/simulator/cell/cells';
 
 import css from '../console.module.css';
 import { RBox, Turned, brushed, cardboard, grain, pill, stripes, vessel } from './sceneKit';
@@ -171,6 +172,54 @@ function Puck({ o, world }: { o: DeskObject; world: RefObject<WorldState | null>
   );
 }
 
+/**
+ * 실습 셀 E's housing: a dark anodised block with its four holes, and a pin standing in each hole
+ * filled so far (the world's `pins`, read every frame).
+ */
+function Housing({ o, world }: { o: DeskObject; world: RefObject<WorldState | null> }) {
+  const [sx, sy, sz] = o.size;
+  const ins = cellLayout('assembly').line.insert!;
+  const pins = useRef<(Group | null)[]>([]);
+  useFrame(() => {
+    const now = world.current?.objects.find((k) => k.id === o.id);
+    ins.holes.forEach((_, k) => {
+      const g = pins.current[k];
+      if (g) g.visible = !!now?.pins?.includes(k);
+    });
+  });
+  const pinH = 22;
+  return (
+    <group>
+      <RBox size={[sx, sy, sz]} radius={1.5}>
+        <meshStandardMaterial color={o.color} metalness={0.55} roughness={0.38} map={brushed()} />
+      </RBox>
+      {ins.holes.map(([x, y], k) => (
+        <group key={k}>
+          {/* The hole: a dark bore with a bright chamfer ring. */}
+          <mesh position={[m(x), m(y), m(sz / 2 + 0.05)]}>
+            <circleGeometry args={[m(4.6), 28]} />
+            <meshStandardMaterial color="#c7ccd2" metalness={0.8} roughness={0.3} />
+          </mesh>
+          <mesh position={[m(x), m(y), m(sz / 2 + 0.1)]}>
+            <circleGeometry args={[m(3.9), 28]} />
+            <meshStandardMaterial color="#14181c" roughness={0.9} />
+          </mesh>
+          <group
+            ref={(g) => {
+              pins.current[k] = g;
+            }}
+            visible={false}
+          >
+            <Turned at={[x, y, sz / 2 - ins.depth]} segments={32} profile={[[0, 0], [4, 0], [4, pinH - 1.2], [2.8, pinH], [0, pinH]]}>
+              <meshStandardMaterial color="#d4d9de" metalness={0.8} roughness={0.28} map={brushed()} />
+            </Turned>
+          </group>
+        </group>
+      ))}
+    </group>
+  );
+}
+
 /** One object, posed from the world every frame (it may be moved by the physics). */
 function Item({ o, world, selected, edit, onDown }: { o: DeskObject; world: RefObject<WorldState | null>; selected: boolean; edit?: DeskEdit; onDown?: (e: ThreeEvent<PointerEvent>) => void }) {
   const g = useRef<Group>(null);
@@ -187,7 +236,7 @@ function Item({ o, world, selected, edit, onDown }: { o: DeskObject; world: RefO
   };
   return (
     <group ref={g} onPointerDown={onDown} onPointerOver={cursor('grab')} onPointerOut={cursor('')}>
-      {o.kind === 'puck' ? <Puck o={o} world={world} /> : <Shape o={o} selected={selected} />}
+      {o.kind === 'puck' ? <Puck o={o} world={world} /> : o.pins ? <Housing o={o} world={world} /> : <Shape o={o} selected={selected} />}
       {selected && edit && (
         // The selected object's own delete button, just above it (the Delete key does the same).
         <Html position={[0, 0, m(o.size[2] / 2) + 0.022]} center zIndexRange={[6, 5]}>

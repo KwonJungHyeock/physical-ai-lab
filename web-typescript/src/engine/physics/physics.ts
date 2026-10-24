@@ -133,6 +133,8 @@ export interface PhysicsWorld {
   heldMassKg(): number;
   /** Put one more block in the world (a part that comes in during a run). */
   add(block: BlockSpec): void;
+  /** Take a block out of the world (a pin pressed into a housing becomes part of it). */
+  remove(id: string): void;
   /** Start over with these blocks (and the arm at `armAngles`, when given; `env` kept when not given). */
   reset(blocks: readonly BlockSpec[], obstacles?: readonly Box[], armAngles?: readonly number[], env?: PhysicsEnv): void;
   /** The machines' moving parts where they are now (a new id is added, a missing one taken away). */
@@ -470,6 +472,14 @@ export async function createPhysics(
     },
     add(spec) {
       addBody(spec);
+    },
+    remove(id) {
+      const b = bodies.get(id);
+      if (!b) return;
+      if (pinned === id) pinned = null;
+      if (hold?.id === id) hold = null;
+      world.removeRigidBody(b.body);
+      bodies.delete(id);
     },
     dispose() {
       world.free();

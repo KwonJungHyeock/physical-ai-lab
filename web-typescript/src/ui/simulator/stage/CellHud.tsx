@@ -38,6 +38,8 @@ interface Snap {
   record: { passed: number; ejected: number } | null;
   /** D's record: cycles finished and cut short (null on cells without a machine). */
   made: { done: number; cut: number } | null;
+  /** E's record: housings with all their pins, pins caught (null on cells without insertion). */
+  built: { done: number; jams: number } | null;
   /** C: a part waits at the station for 보내기 or 밀어내기. */
   held: boolean;
   fault: CellAlert | null;
@@ -65,6 +67,7 @@ function snapOf(w: WorldState | null): Snap | null {
     stacked,
     record: l.line.inspect ? { passed: run.line.passed, ejected: run.line.ejected } : null,
     made: l.line.cycle ? { done: run.line.machined, cut: run.line.cut } : null,
+    built: l.line.insert ? { done: w.objects.filter((o) => (o.pins?.length ?? 0) >= l.line.insert!.holes.length).length, jams: run.events.filter((e) => e.type === 'insert' && !e.ok).length } : null,
     held: run.line.phase === 'held' && !run.line.ask,
     fault: run.health.fault,
     halt: run.halt,
@@ -341,6 +344,17 @@ export default function CellHud(p: CellHudProps) {
               <span className={css.kpi}>
                 <small>불량률</small>
                 {snap.record.passed + snap.record.ejected ? `${Math.round((100 * snap.record.ejected) / (snap.record.passed + snap.record.ejected))}%` : '-'}
+              </span>
+            </>
+          ) : snap.built ? (
+            <>
+              <span className={css.kpi}>
+                <small>조립 완료</small>
+                {snap.built.done}
+              </span>
+              <span className={css.kpi}>
+                <small>걸림</small>
+                {snap.built.jams}
               </span>
             </>
           ) : snap.made ? (

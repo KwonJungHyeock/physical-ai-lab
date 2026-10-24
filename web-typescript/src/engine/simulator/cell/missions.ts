@@ -50,7 +50,9 @@ export type CellEvent =
   | { t: number; type: 'look'; part: string | null }
   | { t: number; type: 'sort'; part: string; to: string }
   /** C: a part at the station sent on or ejected, with what the inspection sensors held then. */
-  | { t: number; type: 'send' | 'eject'; part: string | null; reads: Record<string, boolean> };
+  | { t: number; type: 'send' | 'eject'; part: string | null; reads: Record<string, boolean> }
+  /** E: a pin pressed into a hole of the housing in the jig (0-based), in or caught, and the tool's error then (shop mm). */
+  | { t: number; type: 'insert'; hole: number; part: string | null; ok: boolean; err: number };
 
 export interface CheckResult {
   ok: boolean;
@@ -333,9 +335,6 @@ const A: CellMission[] = [
 ];
 
 /* --- B ~ E: the ladders (cells still to build) ---------------------------------- */
-
-const ladder = (cell: CellId, letter: string, rows: [string, string, string][]): CellMission[] =>
-  rows.map(([title, adds, goal], k) => ({ id: `${letter}${k + 1}`, cell, n: k + 1, title, adds, goal, hint: '' }));
 
 /* --- B: 비전 분류 ------------------------------------------------------------- */
 
@@ -895,14 +894,157 @@ const D: CellMission[] = [
   },
 ];
 
-const E = ladder('assembly', 'E', [
-  ['핀 하나 꽂기', '위에서 수직으로 넣기', '핀 하나를 구멍(여유 2 mm)에 수직으로 꽂아요.'],
-  ['클램프 뒤에 꽂기', '클램프 닫힘 신호', '클램프가 하우징을 잡은 뒤에 꽂아요.'],
-  ['구멍 4개', '순서대로 되풀이', '구멍 4개를 차례로 채워요.'],
-  ['여유 0.5 mm', '느린 접근 · 정밀 위치', '여유가 0.5 mm인 구멍에 걸리지 않게 꽂아요.'],
-  ['걸리면 다시', '걸림 감지 → 들었다 다시', '걸림을 느끼면 들어 올렸다가 다시 꽂아요.'],
-  ['하우징 연속', '컨베이어로 오는 하우징마다', '들어오는 하우징마다 핀 4개를 꽂아 내보내요.'],
-]);
+/* --- E: 조립 · 삽입 ------------------------------------------------------------- */
+
+/** E4 · E6's targets, s: between the reference program's time and the slower ways (cell-e-check measures both). */
+const E4_TIME = 180;
+const E6_TIME = 260;
+
+const HEAD_E = 'from edu import robot, cell\n\nrobot.home()\n';
+const HOUSING = '#3d4650';
+const PIN = '#d4d9de';
+/** A housing on the belt at y (its holes empty), its holes' play `clearance` shop mm. */
+const housing = (l: CellLayout, y: number, clearance?: number) =>
+  makeObject('box', { x: l.places['하우징'].x, y, z: l.line.belt!.topZ }, { size: [30, 30, 16], color: HOUSING, massG: 30, pins: [], ...(clearance ? { clearance } : {}) });
+/** One housing standing in the jig. */
+const inJig = (clearance?: number) => (l: CellLayout) => [housing(l, l.places['하우징'].y, clearance)];
+/** Pins waiting in the feeder's bowl, in order (those numbered in `rough`, 0-based, with a burr). */
+const pinQueue = (n: number, rough: number[] = []) => () => Array.from({ length: n }, (_, k) => makePart(0, 0, 0, { size: [8, 8, 22], color: PIN, massG: 5, ...(rough.includes(k) ? { rough: true } : {}) }));
+/** The equipment at the start: the stopper down in front of the jig, the clamp closed or open. */
+const jigSet = (clamped: boolean) => (s: LineState) => {
+  s.out['스토퍼'] = true;
+  s.act['스토퍼'] = 1;
+  if (clamped) {
+    s.out['클램프'] = true;
+    s.act['클램프'] = 1;
+  }
+};
+
+/** The housing in the jig now. */
+const jigHousing = (j: Judge) => {
+  const p = j.l.places['하우징'];
+  return j.parts.find((o) => o.pins && Math.hypot(o.x - p.x, o.y - p.y) < 12) ?? null;
+};
+/** The holes (1-based) filled in the housing in the jig. */
+function pinsIn(holes: number[], label: string): Check {
+  return {
+    label,
+    judge: (j) => {
+      const h = jigHousing(j);
+      if (!h) return { ok: false, detail: '지그에 하우징이 없어요' };
+      const got = holes.filter((k) => h.pins!.includes(k - 1)).length;
+      return { ok: got === holes.length, detail: `${got} / ${holes.length}개` };
+    },
+  };
+}
+const noJam: Check = {
+  label: '핀 걸림 없이',
+  judge: (j) => {
+    const n = j.events.filter((e) => e.type === 'insert' && !e.ok).length;
+    return n ? { ok: false, detail: `걸림 ${n}번` } : { ok: true };
+  },
+};
+/** Housings with all their pins in the box at the belt's end. */
+function assembled(n: number): Check {
+  return {
+    label: `핀 4개를 다 꽂은 하우징 ${n}개를 완성 상자에`,
+    judge: (j) => {
+      const box = j.parts.filter((o) => o.pins && o.x > 165 && o.x < 235 && o.y > -205 && o.y < -115 && o.z < 10);
+      const full = box.filter((o) => o.pins!.length >= 4).length;
+      const short = box.length - full;
+      return short ? { ok: false, detail: `핀이 빠진 하우징 ${short}개` } : { ok: full >= n, detail: `${full} / ${n}개` };
+    },
+  };
+}
+
+const FEED = 'cell.set("피더", True)\n';
+const CLAMP = 'cell.set("클램프", True)\ncell.wait("클램프 닫힘")\n';
+const ONE = 'cell.wait("핀 있음")\nrobot.pick("핀 집는 자리")\n';
+const indE = (code: string) => code.replace(/^(?=.)/gm, '    ');
+const RETRY = 'robot.place("구멍 다음 칸")\nif cell.is_on("걸림"):\n    robot.place("구멍 다음 칸")\n';
+
+const E: CellMission[] = [
+  {
+    id: 'E1',
+    cell: 'assembly',
+    n: 1,
+    title: '핀 하나 꽂기',
+    adds: '핀 있음 확인',
+    goal: '피더를 켜고 핀 있음을 기다린 뒤, 지그에 고정된 하우징의 구멍 1에 핀을 꽂아요.',
+    hint: '피더는 cell.set("피더", True) 로 켜요. 핀이 트랙을 따라 집는 자리까지 오는 데 4초쯤 걸려요. cell.wait("핀 있음") 으로 기다린 뒤 집어서 robot.place("구멍 1") 로 꽂아요.',
+    setup: { parts: inJig(), auto: false, queue: pinQueue(4), line: jigSet(true) },
+    checks: [pinsIn([1], '구멍 1에 핀'), safe],
+    solution: `${HEAD_E}${FEED}${ONE}robot.place("구멍 1")\nrobot.home()\n`,
+  },
+  {
+    id: 'E2',
+    cell: 'assembly',
+    n: 2,
+    title: '클램프 뒤에 꽂기',
+    adds: '클램프 닫힘 신호',
+    goal: '클램프를 닫아 하우징을 붙잡고, 클램프 닫힘을 확인한 뒤 구멍 1에 꽂아요.',
+    hint: '클램프가 열려 있으면 하우징이 벨트 위에서 조금씩 틀어져 있어서 핀이 구멍 가장자리에 걸려요. cell.set("클램프", True) 뒤 cell.wait("클램프 닫힘").',
+    setup: { parts: inJig(), auto: false, queue: pinQueue(4), line: jigSet(false) },
+    checks: [pinsIn([1], '구멍 1에 핀'), noJam, safe],
+    solution: `${HEAD_E}${FEED}${CLAMP}${ONE}robot.place("구멍 1")\nrobot.home()\n`,
+  },
+  {
+    id: 'E3',
+    cell: 'assembly',
+    n: 3,
+    title: '구멍 4개',
+    adds: '반복 + 구멍 다음 칸',
+    goal: '구멍 1~4에 핀을 하나씩 차례로 꽂아요.',
+    hint: '핀 하나를 꽂는 순서를 4번 반복 안에 넣어요. 놓는 곳은 "구멍 다음 칸": 비어 있는 다음 구멍이에요.',
+    setup: { parts: inJig(), auto: false, queue: pinQueue(6), line: jigSet(false) },
+    checks: [pinsIn([1, 2, 3, 4], '구멍 1~4에 핀'), noJam, safe],
+    solution: `${HEAD_E}${FEED}${CLAMP}for _ in range(4):\n${indE(`${ONE}robot.place("구멍 다음 칸")\n`)}robot.home()\n`,
+  },
+  {
+    id: 'E4',
+    cell: 'assembly',
+    n: 4,
+    title: '여유 0.5 mm',
+    adds: '꽂기 직전만 느리게 (속도)',
+    goal: `여유가 0.5 mm인 정밀 하우징에 핀 4개를 걸리지 않게 꽂고, ${E4_TIME}초 안에 끝내요.`,
+    hint: '손끝 오차는 속도에 비례해요 (속도 10 → 0.4 mm, 35 → 1.4 mm). 꽂기 바로 전에 robot.set_speed(10), 꽂은 뒤 다시 빠르게. 내내 느리면 시간이 모자라요.',
+    setup: { parts: inJig(0.5), auto: false, queue: pinQueue(6), line: jigSet(false) },
+    timeS: E4_TIME,
+    checks: [pinsIn([1, 2, 3, 4], '구멍 1~4에 핀'), noJam, timeWithin(E4_TIME), safe],
+    solution: `${HEAD_E}robot.set_speed(50)\n${FEED}${CLAMP}for _ in range(4):\n${indE(`${ONE}robot.set_speed(10)\nrobot.place("구멍 다음 칸")\nrobot.set_speed(50)\n`)}robot.home()\n`,
+  },
+  {
+    id: 'E5',
+    cell: 'assembly',
+    n: 5,
+    title: '걸리면 다시',
+    adds: '걸림이면 다시 꽂기 (조건)',
+    goal: '거스러미가 있는 핀이 섞여 와서 한 번 걸려요. 걸림이 켜지면 같은 구멍에 다시 꽂아 구멍 4개를 채워요.',
+    hint: '걸린 핀은 손에 그대로 있어요. 꽂은 뒤 만약 cell.is_on("걸림") 이면 robot.place("구멍 다음 칸") 을 한 번 더 해요. 그냥 넘어가면 다음 집기에서 "이미 부품을 들고 있어요" 로 멈춰요.',
+    setup: { parts: inJig(), auto: false, queue: pinQueue(6, [1]), line: jigSet(false) },
+    checks: [pinsIn([1, 2, 3, 4], '구멍 1~4에 핀'), safe],
+    solution: `${HEAD_E}${FEED}${CLAMP}for _ in range(4):\n${indE(`${ONE}${RETRY}`)}robot.home()\n`,
+  },
+  {
+    id: 'E6',
+    cell: 'assembly',
+    n: 6,
+    title: '하우징 연속',
+    adds: '받기 · 내보내기 · 시간 목표',
+    goal: `컨베이어로 오는 하우징 3개에 핀을 4개씩 꽂아 완성 상자로 내보내요. ${E6_TIME}초 안에.`,
+    hint: '스토퍼를 내리고 컨베이어를 돌려 하우징 도착을 기다려요 → 컨베이어 끄고 클램프 → 핀 4개 → 클램프 풀고 스토퍼를 올려 컨베이어로 내보내요. 다 나가면(하우징 도착 꺼짐) 스토퍼를 다시 내려 다음 하우징을 받아요. 마지막 하우징이 상자에 들어갈 때까지 몇 초 기다리고 끝내요.',
+    setup: { parts: (l) => [housing(l, 120), housing(l, 210), housing(l, 300)], auto: false, queue: pinQueue(14, [5]) },
+    timeS: E6_TIME,
+    checks: [assembled(3), timeWithin(E6_TIME), safe],
+    solution:
+      `${HEAD_E}${FEED}cell.set("스토퍼", True)\ncell.set("컨베이어", True)\nfor _ in range(3):\n` +
+      indE(
+        `cell.wait("하우징 도착")\nrobot.wait(0.5)\ncell.set("컨베이어", False)\n${CLAMP}for _ in range(4):\n${indE(`${ONE}${RETRY}`)}robot.home()\n` +
+          `cell.set("클램프", False)\ncell.wait("클램프 열림")\ncell.set("스토퍼", False)\ncell.set("컨베이어", True)\ncell.wait("하우징 도착", False)\ncell.set("스토퍼", True)\n`,
+      ) +
+      'robot.wait(5)\n',
+  },
+];
 
 export const MISSIONS: readonly CellMission[] = [...A, ...B, ...C, ...D, ...E];
 
@@ -922,8 +1064,7 @@ function sampleParts(l: CellLayout): DeskObject[] {
       return blanks(9)(l);
     case 'assembly': {
       const nest = l.places['핀 집는 자리'];
-      const housing = (y: number) => makeObject('box', { x: 200, y, z: top }, { size: [30, 30, 16], color: '#3d4650', massG: 30 });
-      return [housing(300), housing(250), housing(200), P(nest.x, nest.y, nest.z, { size: [8, 8, 22], color: '#d4d9de', massG: 5 }), ...[-200, -186, -172, -158].map((y) => P(130, y, nest.z, { size: [8, 8, 22], color: '#d4d9de', massG: 5 }))];
+      return [housing(l, l.places['하우징'].y), housing(l, 300), housing(l, 255), P(nest.x, nest.y, nest.z, { size: [8, 8, 22], color: PIN, massG: 5 })];
     }
     default:
       return [];
@@ -939,7 +1080,9 @@ export function freeSetup(): MissionSetup {
     queue: (l) =>
       l.line.inspect
         ? cQueue('MPmMPpMMPmPM')()
-        : l.line.dispenser
+        : l.line.insert
+          ? pinQueue(40)()
+          : l.line.dispenser
           ? ['빨강', '파랑', '노랑', FADED, '빨강', '노랑'].map((color, k) => bPart(0, 0, 0, { color, d: k % 2 ? SMALL : BIG, outline: (['원', '사각', '육각'] as const)[k % 3] }))
           : [],
   };

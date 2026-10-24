@@ -247,8 +247,10 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
   const lay = cell ? cellLayout(cell) : null;
   // Cell A keeps its sides apart (picks from the source plate and the belt, places on the pallet); the others list every place.
   const anyPlace = lay ? [...Object.keys(lay.places), ...Object.keys(lay.grids).map((g) => `${g} 다음 칸`)] : [];
-  const pickPlaces = lay ? (cell === 'feed' ? [...Object.keys(lay.places).filter((n) => n !== '기준 자리'), ...Object.keys(lay.grids).filter((g) => g !== '적재 판').map((g) => `${g} 다음 칸`)] : anyPlace) : [];
-  const placePlaces = lay ? (cell === 'feed' ? ['기준 자리', ...Object.keys(lay.grids).filter((g) => g !== '소재 판').map((g) => `${g} 다음 칸`)] : anyPlace) : [];
+  // E: pins are picked at the nest and pressed into the holes.
+  const holes = lay?.line.insert ? [...Object.keys(lay.places).filter((n) => n.startsWith('구멍 ')), '구멍 다음 칸'] : null;
+  const pickPlaces = lay ? (cell === 'feed' ? [...Object.keys(lay.places).filter((n) => n !== '기준 자리'), ...Object.keys(lay.grids).filter((g) => g !== '적재 판').map((g) => `${g} 다음 칸`)] : holes ? anyPlace.filter((n) => !holes.includes(n)) : anyPlace) : [];
+  const placePlaces = lay ? (cell === 'feed' ? ['기준 자리', ...Object.keys(lay.grids).filter((g) => g !== '소재 판').map((g) => `${g} 다음 칸`)] : (holes ?? anyPlace)) : [];
   const opts = (list: readonly string[], now: string): [string, string][] => [...new Set([now, ...list])].map((n) => [n, n]);
   // B's rule table sends parts to its bins or down the chute.
   const ruleTargets = lay ? Object.keys(lay.places).filter((n) => n.startsWith('함 ') || n === REJECT) : [];

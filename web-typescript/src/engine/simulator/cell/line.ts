@@ -57,13 +57,16 @@ export interface LineState {
   machined: number;
   cut: number;
   refused: boolean;
+  /** E: how long the feeder has been bringing the next pin up, s; and whether it has said it ran out. */
+  feedT: number;
+  feedEmpty: boolean;
 }
 
 export function newLine(l: CellLayout, auto: boolean, refill = 0): LineState {
   const out = Object.fromEntries(l.outputs.map((n) => [n, false]));
   const inputs = Object.fromEntries(l.inputs.map((n) => [n, false]));
   const act = Object.fromEntries((l.line.actuators ?? []).map((a) => [a.output, 0]));
-  return { t: 0, auto, out, in: inputs, ext: 0, phase: 'idle', phaseT: 0, requests: 0, blockedT: 0, log: [], fed: 0, refill, halted: false, act, cycleT: null, queue: [], gate: 0, inspected: null, ask: null, passed: 0, ejected: 0, machined: 0, cut: 0, refused: false };
+  return { t: 0, auto, out, in: inputs, ext: 0, phase: 'idle', phaseT: 0, requests: 0, blockedT: 0, log: [], fed: 0, refill, halted: false, act, cycleT: null, queue: [], gate: 0, inspected: null, ask: null, passed: 0, ejected: 0, machined: 0, cut: 0, refused: false, feedT: 0, feedEmpty: false };
 }
 
 /** A part's footprint radius and height, mm. */
@@ -82,7 +85,7 @@ function sees(s: SensorDef, o: DeskObject): boolean {
   return Math.hypot(o.x - (s.a[0] + ax * f), o.y - (s.a[1] + ay * f)) < r;
 }
 
-function setIn(s: LineState, name: string, on: boolean): void {
+export function setIn(s: LineState, name: string, on: boolean): void {
   if (s.in[name] === on) return;
   s.in[name] = on;
   s.log.push({ t: s.t, name, on });
@@ -166,6 +169,22 @@ export function stepLine(l: CellLayout, s: LineState, parts: readonly DeskObject
     }
     s.gate = pulses;
   }
+
+  // E's vibratory feeder: on, it brings the next pin (of the queue) up the track to the empty nest.
+  const fd = l.line.insert?.feeder;
+  if (fd && s.out[fd.output] && !s.halted && !s.in[fd.sensor]) {
+    s.feedT += dt;
+    if (s.feedT >= fd.timeS) {
+      s.feedT = 0;
+      const nest = l.places[fd.nest];
+      const next = s.queue.shift();
+      if (next) spawned.push({ ...next, x: nest.x, y: nest.y, z: nest.z + 0.3 });
+      else if (!s.feedEmpty) {
+        s.feedEmpty = true;
+        alerts.push({ t: s.t, level: 'info', kind: 'empty', title: '핀 없음', msg: '피더에 남은 핀이 없어요.' });
+      }
+    }
+  } else s.feedT = 0;
 
   // The line controller (자동 운전).
   const end = l.line.endPlace ? l.line.sensors.find((x) => x.kind === 'beam')?.name : undefined;

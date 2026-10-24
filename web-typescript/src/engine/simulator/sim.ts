@@ -73,7 +73,7 @@ import {
 import { DEFAULT_SPEED, SPEED_CAP, type CameraId, type Cond, type Step, type Target } from './program';
 import { CELL_BY_ID, PART_HEIGHT, fromShop, gridPlace, type CellId, type CellPlace } from './cell/cells';
 import { collisionAlert } from './cell/faults';
-import { setOut } from './cell/line';
+import { setIn, setOut } from './cell/line';
 import { cellFixed, newCellRun, raise, type CellRun } from './cell/run';
 import { REJECT, decide, describe, look, newVision, outlineOf, type LimitName, type Outline, type Shot } from './cell/vision';
 
@@ -118,6 +118,8 @@ export interface WorldState {
   held: { color: ColorName; offset: Matrix4 } | null;
   /** A desk object the tool carries: it hangs this far from the tool tip and keeps its turn, mm. */
   carry?: { id: string; dx: number; dy: number; dz: number } | null;
+  /** 실습 셀 E: the housing a carried pin is being pressed into (it may go inside that one). */
+  inserting?: string | null;
   /** Pen strokes on the board, each a list of [x, y] mm. */
   trail: [number, number][][];
   buttonPresses: number;
@@ -517,7 +519,7 @@ async function cellPickAt(rt: Runtime, run: CellRun, place: string, p: CellPlace
   const h = here?.size[2] ?? PART_HEIGHT;
   const top = here ? here.z + h : p.z + h;
   const travel = Math.max(CELL_TRAVEL_Z, top + 40);
-  if (w.carry) throw new RunError('이미 부품을 들고 있어요.', '먼저 robot.place(...)로 놓아 주세요.');
+  if (w.carry) throw new RunError('이미 부품을 들고 있어요.', run.line.in[run.layout.line.insert?.jam ?? ''] ? '핀이 걸려서 아직 손에 있어요. 걸림이면 같은 구멍에 다시 꽂아 주세요.' : '먼저 robot.place(...)로 놓아 주세요.');
   clampFree(run, place, 'pick', p);
   if (kind === 'grip' && w.gapMm < (EFFECTOR_BY_ID[w.effector].gapMm?.open ?? 0) - 0.5) await release(rt, 'grip');
   if (p.via) await moveTool(rt, { ...p.via, z: travel });
@@ -538,6 +540,8 @@ async function cellPickAt(rt: Runtime, run: CellRun, place: string, p: CellPlace
 async function cellPlace(rt: Runtime, place: string, dxShop: number, dyShop: number, dzShop: number): Promise<void> {
   const w = rt.world;
   const run = needCell(rt);
+  const hole = holeOf(w, run, place);
+  if (hole !== null) return cellInsert(rt, run, hole, dxShop, dyShop);
   const { p, grid } = cellPlaceAt(run, place);
   // Into a bin: the next corner, a layer up once the four are used.
   const k = p.spread ? (run.next[place] ?? 0) : 0;
@@ -560,6 +564,102 @@ async function cellPlace(rt: Runtime, place: string, dxShop: number, dyShop: num
   if (p.spread) run.next[place] = k + 1;
   await moveTool(rt, { x, y, z: travel });
   if (p.via) await moveTool(rt, { ...p.via, z: travel });
+}
+
+/** E: the housing standing in the jig now. */
+function housingInJig(w: WorldState, run: CellRun): DeskObject | undefined {
+  const ins = run.layout.line.insert;
+  const j = ins ? run.layout.places[ins.housing] : null;
+  return j ? w.objects.find((o) => o.pins && o.id !== w.carry?.id && Math.hypot(o.x - j.x, o.y - j.y) < 12 && Math.abs(o.z + o.size[2] - j.z) < 6) : undefined;
+}
+
+/** E: the hole (0-based) a place names — 구멍 N, or 구멍 다음 칸 (the housing's first empty one); null for any other place. */
+function holeOf(w: WorldState, run: CellRun, place: string): number | null {
+  const ins = run.layout.line.insert;
+  if (!ins) return null;
+  const n = place.match(/^구멍 (\d+)$/)?.[1];
+  if (n) {
+    const k = Number(n) - 1;
+    if (k < 0 || k >= ins.holes.length) throw new RunError(`'${place}'은 없어요.`, `구멍은 1 ~ ${ins.holes.length}번이에요.`);
+    return k;
+  }
+  if (place !== '구멍 다음 칸') return null;
+  const h = housingInJig(w, run);
+  if (!h) return 0;
+  const k = ins.holes.findIndex((_, i) => !h.pins!.includes(i));
+  if (k < 0) throw new RunError('하우징의 구멍이 다 찼어요.', '다 꽂은 하우징은 클램프를 풀고 내보내 주세요.');
+  return k;
+}
+
+/**
+ * E: press the held pin into a hole of the housing in the jig. It goes in when the tool's error there
+ * — the hand's (it grows with the speed), the housing's own when the clamp is open, an aim off the
+ * hole — is within the housing's clearance, and a rough pin catches once whatever. In: the pin is
+ * part of the housing. Caught: it stays in the gripper, the 걸림 input lights, the arm backs up.
+ */
+async function cellInsert(rt: Runtime, run: CellRun, hole: number, dxShop: number, dyShop: number): Promise<void> {
+  const w = rt.world;
+  const ins = run.layout.line.insert!;
+  const pin = w.carry ? w.objects.find((o) => o.id === w.carry!.id) : undefined;
+  if (!pin) throw new RunError('꽂을 핀을 들고 있지 않아요.', '먼저 robot.pick("핀 집는 자리")로 핀을 집어 주세요.');
+  const h = housingInJig(w, run);
+  if (!h) throw new RunError('지그에 하우징이 없어요.', '컨베이어로 하우징을 지그까지 가져와 주세요.');
+  if (h.pins!.includes(hole)) throw new RunError(`구멍 ${hole + 1}에는 이미 핀이 있어요.`, '다른 구멍에 꽂아 주세요.');
+  setIn(run.line, ins.jam, false);
+  const j = run.layout.places[ins.housing];
+  const [ox, oy] = ins.holes[hole];
+  const x = j.x + ox + fromShop(dxShop);
+  const y = j.y + oy + fromShop(dyShop);
+  const top = h.z + h.size[2];
+  const ph = pin.size[2];
+  const travel = Math.max(CELL_TRAVEL_Z, top + ph + 40);
+  // The tool point for the pin's bottom at a height (the gripper holds it by its middle).
+  const held = (bottom: number) => bottom + ph / 2;
+  await moveTool(rt, { x, y, z: travel });
+  await moveTool(rt, { x, y, z: held(top + 3) });
+  const clamped = !!run.line.in[ins.clamped];
+  const speed = effectiveSpeed(rt);
+  const err = speed * ins.perSpeed + (clamped ? 0 : ins.loose) + Math.hypot(dxShop, dyShop);
+  const clear = h.clearance ?? 2;
+  const fmt = (v: number) => v.toFixed(1);
+  if (pin.rough || err > clear) {
+    // It catches on the hole's edge: the force sensor feels it, the arm backs up with the pin still held.
+    pin.rough = false;
+    await moveTool(rt, { x, y, z: held(top + 0.5) });
+    setIn(run.line, ins.jam, true);
+    run.events.push({ t: run.line.t, type: 'insert', hole, part: pin.id, ok: false, err });
+    const why = err > clear ? `위치 오차 ${fmt(err)} mm 가 구멍 여유 ${fmt(clear)} mm 보다 커서` : '핀 끝에 거스러미가 있어서';
+    const fix = err > clear ? (clamped ? `꽂기 전에 속도를 낮춰 주세요 (속도 ${speed} → 오차 ${fmt(speed * ins.perSpeed)} mm).` : '클램프를 닫고 클램프 닫힘을 확인한 뒤 꽂아 주세요.') : '걸림이 켜지면 핀을 든 채로 같은 구멍에 다시 꽂아 주세요.';
+    raise(run, { t: run.line.t, level: 'warn', kind: 'jam', title: '핀 걸림', msg: `구멍 ${hole + 1}: ${why} 핀이 걸렸어요. 핀은 아직 손에 있어요.`, fix, at: [x, y, top + 12] });
+    rt.log?.('warn', `구멍 ${hole + 1}에 핀이 걸렸어요.`);
+    await moveTool(rt, { x, y, z: travel });
+    return;
+  }
+  // In: pressed down to its depth, let go — it is now part of the housing.
+  w.inserting = h.id;
+  try {
+    await moveTool(rt, { x, y, z: held(top - ins.depth) });
+  } finally {
+    w.inserting = null;
+  }
+  w.carry = null;
+  w.objects.splice(w.objects.indexOf(pin), 1);
+  h.pins = [...h.pins!, hole];
+  w.version += 1;
+  run.events.push({ t: run.line.t, type: 'insert', hole, part: pin.id, ok: true, err });
+  if (EFFECTOR_BY_ID[w.effector].kind === 'grip') {
+    const from = w.gapMm;
+    const to = EFFECTOR_BY_ID[w.effector].gapMm!.open;
+    await rt.animate(0.45, (t) => {
+      w.gapMm = from + (to - from) * Math.min(1, t / 0.45);
+      w.version += 1;
+    });
+  } else {
+    w.pump = false;
+    await rt.animate(0.25, () => {});
+  }
+  rt.log?.('info', `핀을 구멍 ${hole + 1}에 꽂았어요.`);
+  await moveTool(rt, { x, y, z: travel });
 }
 
 /** What C's inspection sensors hold now (by input name). */
@@ -1296,7 +1396,7 @@ function objectHit(w: WorldState, o: DeskObject): string | null {
   for (const b of w.fixed) if (over(b.min, b.max)) return b.name;
   const bin = binAround(w, o);
   for (const k of w.objects) {
-    if (k.id === o.id || k === bin) continue;
+    if (k.id === o.id || k === bin || k.id === w.inserting) continue;
     const g = footprint(k);
     if (over([k.x - g.hx, k.y - g.hy, k.z], [k.x + g.hx, k.y + g.hy, k.z + k.size[2]])) return objectName(k);
   }

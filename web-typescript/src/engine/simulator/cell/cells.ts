@@ -71,7 +71,7 @@ export const CELLS: readonly CellInfo[] = [
     letter: 'E',
     name: '조립 · 삽입 셀',
     note: '핀 피더 · 클램프 지그 · 하우징',
-    built: false,
+    built: true,
   },
 ];
 
@@ -220,6 +220,31 @@ export interface LineDef {
   inspect?: InspectDef;
   /** A place a clamp holds (D's chuck): nothing goes in or out there while `locked` is on. */
   clamp?: { place: string; locked: string };
+  /** E's pin insertion into the housing at the jig. */
+  insert?: InsertDef;
+}
+
+/**
+ * E: pins into a housing's holes. A pin goes in when the tool's error at the hole is within the
+ * housing's clearance (its `clearance`, shop mm; 2 by default): the hand's error grows with the
+ * speed, an unclamped housing sits off by `loose`, a rough pin catches once whatever. A caught pin
+ * stays in the gripper and `jam` lights (the wrist's force sensor) until the next try.
+ */
+export interface InsertDef {
+  /** The jig's place: the middle of a housing standing there, on the belt. */
+  housing: string;
+  /** The holes, 구멍 1 ~ 4 (the grid "구멍"): offsets from the housing's middle, mm. */
+  holes: [number, number][];
+  /** How deep a pin goes in, mm. */
+  depth: number;
+  jam: string;
+  /** The clamp's closed input; unclamped, the housing sits off by `loose` (shop mm). */
+  clamped: string;
+  loose: number;
+  /** The hand's error at the tool, shop mm per speed (%). */
+  perSpeed: number;
+  /** The vibratory feeder: on, it brings the next pin up the track to the nest in `timeS` (when the nest is empty). */
+  feeder: { output: string; timeS: number; nest: string; sensor: string };
 }
 
 /**
@@ -374,7 +399,7 @@ function binWalls(name: string, x0: number, x1: number, y0: number, y1: number, 
 }
 
 /** A belt's fixed boxes: the belt, guide rails (a lane `lane` wide down the middle, with gaps), the end stop at the downstream end. */
-function beltBoxes(b: BeltDef, lane: number, gaps: [number, number][] = []): FixedBox[] {
+function beltBoxes(b: BeltDef, lane: number, gaps: [number, number][] = [], endStop = true): FixedBox[] {
   const cx = (b.min[0] + b.max[0]) / 2;
   const out: FixedBox[] = [box('컨베이어 벨트', [b.min[0], b.min[1], b.topZ - 8], [b.max[0], b.max[1], b.topZ], 3)];
   const runs: [number, number][] = [];
@@ -389,6 +414,7 @@ function beltBoxes(b: BeltDef, lane: number, gaps: [number, number][] = []): Fix
       const x = cx + sd * (lane / 2 + 1.5);
       out.push(box('컨베이어 가이드', [x - 1.5, y0, b.topZ], [x + 1.5, y1, b.topZ + 10], 3));
     }
+  if (!endStop) return out;
   const downstream = b.dir[1] > 0 ? b.max[1] : b.min[1];
   const s = b.dir[1] > 0 ? 1 : -1;
   out.push(box('끝 멈춤판', [cx - lane / 2 - 3, Math.min(downstream, downstream + s * 4), b.topZ - 8], [cx + lane / 2 + 3, Math.max(downstream, downstream + s * 4), b.topZ + 16], 4));
@@ -720,6 +746,8 @@ export const E_AT = {
   nest: { x: 130, y: -130 },
   jig: { x: 200, y: 40 },
   housing: [30, 30, 16] as V3,
+  /** The holes' offset from the housing's middle, along and across the belt, mm. */
+  hole: 7,
   pin: [8, 8, 22] as V3,
 };
 
@@ -735,16 +763,19 @@ function assemblyLayout(): CellLayout {
   const J = E_AT.jig;
   const H = E_AT.housing;
   const stopY = J.y - H[1] / 2;
+  // The housing's four holes, 구멍 1 ~ 4: along the belt, then across (the grid's order).
+  const holes = { name: '구멍', origin: { x: J.x - E_AT.hole, y: J.y - E_AT.hole, z: BELT_TOP + H[2] }, rows: 2, cols: 2, pitch: 2 * E_AT.hole, layers: 1, layerH: 0 };
   const fixed: FixedBox[] = [
     box('작업대', [T.x0, T.y0, 0], [T.x1, T.y1, T.top], 3),
     box('진동 피더', [E_AT.bowl.x - E_AT.bowl.r, E_AT.bowl.y - E_AT.bowl.r, T.top], [E_AT.bowl.x + E_AT.bowl.r, E_AT.bowl.y + E_AT.bowl.r, E_AT.bowl.top], 6),
     box('핀 트랙', [122, -212, T.top], [138, -140, T.top + 8], 3),
     box('핀 받침', [120, -140, T.top], [140, -120, T.top + 8], 3),
-    ...beltBoxes(belt, 32, [[J.y - 15, J.y + 15]]),
+    // No end stop: a finished housing runs off the belt's end into the box.
+    ...beltBoxes(belt, 32, [[J.y - 15, J.y + 15]], false),
     box('클램프 실린더', [238, J.y - 10, 28], [272, J.y + 10, 50], 6),
-    ...binWalls('완성 상자', 170, 230, -178, -124, -40, 22),
+    ...binWalls('완성 상자', 168, 232, -200, -124, -80, 22),
   ];
-  const solids: Box[] = [PED, under('작업대 다리', [T.x0 + 6, T.y0 + 6], [T.x1 - 6, T.y1 - 6], 0), under('컨베이어 프레임', belt.min, belt.max, belt.topZ - 8), under('완성 상자 받침', [170, -178], [230, -124], -40)];
+  const solids: Box[] = [PED, under('작업대 다리', [T.x0 + 6, T.y0 + 6], [T.x1 - 6, T.y1 - 6], 0), under('컨베이어 프레임', belt.min, belt.max, belt.topZ - 8), under('완성 상자 받침', [168, -200], [232, -124], -80)];
   return {
     id: 'assembly',
     fixed,
@@ -752,10 +783,12 @@ function assemblyLayout(): CellLayout {
     places: {
       '핀 집는 자리': { x: E_AT.nest.x, y: E_AT.nest.y, z: T.top + 8 },
       하우징: { x: J.x, y: J.y, z: BELT_TOP + H[2] },
+      ...Object.fromEntries([0, 1, 2, 3].map((k) => [`구멍 ${k + 1}`, (({ x, y, z }) => ({ x, y, z }))(gridPlace(holes, k))])),
     },
-    grids: {},
+    grids: { 구멍: holes },
     line: {
-      belt,
+      // It carries a housing on past its end (by its middle), so the housing tips off into the box.
+      belt: { ...belt, min: [belt.min[0], belt.min[1] - 25] },
       beltOutput: '컨베이어',
       sensors: [
         {
@@ -772,6 +805,21 @@ function assemblyLayout(): CellLayout {
         },
       ],
       endPlace: '하우징',
+      // Off the belt's end into the box: a soft landing.
+      soft: [{ min: [166, -202, -85], max: [234, -112, 40] }],
+      insert: {
+        housing: '하우징',
+        holes: [0, 1, 2, 3].map((k) => {
+          const p = gridPlace(holes, k);
+          return [p.x - J.x, p.y - J.y] as [number, number];
+        }),
+        depth: 10,
+        jam: '걸림',
+        clamped: '클램프 닫힘',
+        loose: 2.5,
+        perSpeed: 0.04,
+        feeder: { output: '피더', timeS: 4, nest: '핀 집는 자리', sensor: '핀 있음' },
+      },
       actuators: [
         // The stopper's bar drops across the lane in front of the jig (on) and lifts to let the housing out (off).
         {
@@ -808,7 +856,7 @@ function assemblyLayout(): CellLayout {
         { output: '피더', timeS: 0.1 },
       ],
     },
-    inputs: ['하우징 도착', '클램프 닫힘', '클램프 열림', '핀 있음'],
+    inputs: ['하우징 도착', '클램프 닫힘', '클램프 열림', '핀 있음', '걸림'],
     outputs: ['컨베이어', '스토퍼', '클램프', '피더'],
     keys: { 스토퍼: ['막기', '열기'], 클램프: ['닫기', '열기'] },
   };

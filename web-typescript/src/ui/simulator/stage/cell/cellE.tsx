@@ -134,8 +134,8 @@ export function AssemblyCell({ world, onHover }: { world: RefObject<WorldState |
         <JigStation world={world} />
       </Tagged>
       <Tagged name="완성 상자" onHover={onHover}>
-        <Stand x0={172} x1={228} y0={-176} y1={-126} top={-40} s={8} />
-        <Bin x0={171} x1={229} y0={-177} y1={-125} z0={-40} z1={22} color="#5d6670" />
+        <Stand x0={170} x1={230} y0={-198} y1={-126} top={-80} s={8} />
+        <Bin x0={168} x1={232} y0={-200} y1={-124} z0={-80} z1={22} color="#5d6670" />
       </Tagged>
     </group>
   );

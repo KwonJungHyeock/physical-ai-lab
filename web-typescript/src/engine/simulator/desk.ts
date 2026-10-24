@@ -75,6 +75,11 @@ export interface DeskObject {
   metal?: boolean;
   /** 실습 셀 D: machined (a bright turned finish). */
   machined?: boolean;
+  /** 실습 셀 E: a housing — the holes (0-based) with a pin in, and how much play its holes leave (shop mm; 2 by default). */
+  pins?: number[];
+  clearance?: number;
+  /** 실습 셀 E: a pin with a burr: it catches the first time it is pushed in. */
+  rough?: boolean;
 }
 
 /** A fixed part of a scene the arm must keep off, mm. */

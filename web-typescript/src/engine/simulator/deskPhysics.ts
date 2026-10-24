@@ -43,7 +43,11 @@ export function stepDesk(w: WorldState, p: PhysicsWorld, dt: number, angles: rea
   for (const pose of p.blocks()) {
     if (pose.id === carried?.id) continue;
     const o = w.objects.find((k) => k.id === pose.id);
-    if (!o) continue;
+    // Gone from the scene (a pin pressed into a housing): out of the physics world too.
+    if (!o) {
+      p.remove(pose.id);
+      continue;
+    }
     o.x = pose.at.x;
     o.y = pose.at.y;
     o.z = pose.at.z - o.size[2] / 2;
