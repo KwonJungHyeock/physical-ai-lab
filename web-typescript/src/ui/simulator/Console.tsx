@@ -89,6 +89,9 @@ import type { ImageLike } from '@/engine/vision/color';
 import { Divergence, findColor, offCentre, probeJacobian, stepTowards, type Seen } from '@/engine/vision/track';
 
 import BlockEditor from './editors/BlockEditor';
+import { CellTerminal, type PyEnd } from './editors/CellTerminal';
+import { labAt } from '@/engine/simulator/terminal/labs';
+import type { TermLine } from '@/engine/simulator/terminal/shell';
 import CameraViews, { analyse, type CameraView, type CameraViewsHandle, type Detection } from './stage/CameraViews';
 import CodeEditor from './editors/CodeEditor';
 import ControlPanel, { type Axis } from './control/ControlPanel';
@@ -548,6 +551,8 @@ export default function Console() {
   /** Steps passed (kept in this browser) and the last finished run of the open step. */
   const [cellPassed, setCellPassed] = useState<Record<string, boolean>>({});
   const [cellResult, setCellResult] = useState<boolean | null>(null);
+  /** 실습 셀's Python tab: the terminal (the blocks otherwise). */
+  const [cellTerm, setCellTerm] = useState(false);
   useEffect(() => {
     try {
       const v = JSON.parse(localStorage.getItem(CELL_PASSED_KEY) ?? '{}') as Record<string, boolean>;
@@ -640,7 +645,10 @@ export default function Console() {
   const token = useRef<{ aborted: boolean } | null>(null);
   const logId = useRef(0);
 
+  /** While a terminal python3 runs: the run's messages are printed there too. */
+  const termSink = useRef<((kind: LogKind, msg: string, fix?: string) => void) | null>(null);
   const addLog = useCallback((kind: LogKind, msg: string, fix?: string) => {
+    termSink.current?.(kind, msg, fix);
     logId.current += 1;
     const id = logId.current;
     // The log opens only when the user asks; an error shows in red on its one-line bar.
@@ -1857,6 +1865,78 @@ export default function Console() {
       addLog('warn', `${res.mission.id} 아직이에요: ${miss.join(' · ') || '프로그램이 끝까지 가지 못했어요'}`);
     }
   };
+  /**
+   * 터미널: python3 a file on the open cell — the same run and checks as the blocks, printed in the
+   * terminal as it goes. A terminal run shows its result there and does not open the next step.
+   */
+  const runTermPython = async (path: string, text: string, print: (l: TermLine) => void): Promise<PyEnd | null> => {
+    const c = cellRef.current;
+    if (!c || busy) return null;
+    const name = path.slice(path.lastIndexOf('/') + 1);
+    const lab = labAt(path);
+    if (lab && lab.cell !== c.cell) {
+      print({ text: `[연결] 이 파일은 셀 ${CELL_BY_ID[lab.cell].letter} 실습이에요. 지금 열린 셀은 ${CELL_BY_ID[c.cell].letter} 예요.`, tone: 'err' });
+      print({ text: '  왼쪽 [환경] → 실습 셀에서 그 셀을 열고 실행해 주세요.', tone: 'info' });
+      return null;
+    }
+    if (lab && lab.mission !== c.mission) {
+      print({ text: `[연결] 이 파일은 ${lab.mission} 단계 실습이에요. 지금 열린 단계는 ${c.mission ?? '자유 실습'} 예요.`, tone: 'err' });
+      print({ text: `  위 단계 버튼에서 ${lab.mission} 을 열고 다시 실행해 주세요.`, tone: 'info' });
+      return null;
+    }
+    const fault = world.current.cell?.health.fault;
+    if (fault) {
+      print({ text: `[오류] 고장 · ${fault.title}: 3D 아래 [점검 · 복구]를 먼저 눌러 주세요.`, tone: 'err' });
+      return 'error';
+    }
+    const { steps, errors } = problemsFor(text);
+    if (errors.length) {
+      for (const e of errors.slice(0, 3)) {
+        print({ text: `  File "${name}", line ${e.line}`, tone: 'err' });
+        print({ text: `SyntaxError: ${e.msg}`, tone: 'err' });
+        if (e.fix) print({ text: `  → ${e.fix}`, tone: 'info' });
+      }
+      setErrorLines(errors.map((e) => e.line));
+      return 'error';
+    }
+    const m = c.mission ? missionById(c.mission) : null;
+    print({ text: `[연결] 시뮬레이터 셀 ${CELL_BY_ID[c.cell].letter} · ${m ? `${m.id} ${m.title}` : '자유 실습'}`, tone: 'dim' });
+    termSink.current = (kind, raw, fix) => {
+      // A cell alert comes as "주의 · 핀 걸림: …": the terminal's own [주의] / [오류] says the level.
+      const msg = raw.replace(/^(알림|주의|정지|고장) · /, '');
+      if (kind === 'err') {
+        print({ text: `[오류] ${msg}`, tone: 'err' });
+        if (fix) print({ text: `  → ${fix}`, tone: 'info' });
+      } else print({ text: kind === 'warn' ? `[주의] ${msg}` : msg, tone: kind === 'warn' ? 'warn' : kind === 'ok' ? 'ok' : 'out' });
+    };
+    setBadge({ kind: 'sim', text: 'python3' });
+    setCellResult(null);
+    let res: Awaited<ReturnType<typeof runSteps>>;
+    try {
+      res = await runSteps(steps, { reset: true, label: true });
+    } finally {
+      termSink.current = null;
+    }
+    if (res.stopped) {
+      print({ text: 'KeyboardInterrupt', tone: 'warn' });
+      return 'stopped';
+    }
+    const run = world.current.cell;
+    if (run) run.endT = run.line.t;
+    if (!c.mission) {
+      print({ text: res.ok ? '[끝]' : '[멈춤]', tone: res.ok ? 'ok' : 'warn' });
+      return res.ok ? 'pass' : 'error';
+    }
+    // The last part comes to rest, then the step's checks decide.
+    await new Promise((r) => window.setTimeout(r, 1200));
+    const checks = cellChecks(world.current);
+    if (!checks) return res.ok ? 'pass' : 'error';
+    for (const i of checks.items) print({ text: `  ${i.ok ? '✓' : '✗'} ${i.label}${i.detail ? ` (${i.detail})` : ''}`, tone: i.ok ? 'ok' : 'err' });
+    const all = res.ok && checks.items.every((i) => i.ok);
+    print({ text: `[결과] ${all ? '통과' : res.ok ? '목표를 다 채우지 못했어요' : '도중에 멈췄어요'}`, tone: all ? 'ok' : 'warn' });
+    return all ? 'pass' : res.ok ? 'fail' : 'error';
+  };
+
   /** Open a cell on a ladder step (or 자유 실습): its world, the gripper, the step's program. */
   const openCell = (cell: CellId, mission: string | null) => {
     if (busy) return;
@@ -4015,13 +4095,17 @@ export default function Console() {
                   </div>
                 ) : (
                   <div className={css.codeTab} role="region" aria-label={LEVEL_TAB[level].name}>
-                    <LangSeg level={level} busy={busy} onLevel={(lv) => (cellAt && lv !== 'basic' ? addLog('info', '실습 셀은 지금은 블록 코딩으로 해요. Python은 다음에 열려요.') : openTab(lv))} />
+                    <LangSeg
+                      level={cellAt ? (cellTerm ? 'python' : 'basic') : level}
+                      busy={busy}
+                      onLevel={(lv) => (cellAt ? (lv === 'ros' ? addLog('info', '실습 셀의 ROS 2 터미널 실습은 다음 차례에 열려요.') : setCellTerm(lv === 'python')) : openTab(lv))}
+                    />
                     {cellAt ? (
                       <div className={css.cellCodeHead}>
                         <b>
                           실습 셀 · {cellAt.mission ? `${cellAt.mission} ${missionById(cellAt.mission)?.title ?? ''}` : '자유 실습'}
                         </b>
-                        <small>블록으로 로봇과 장비를 움직여요. 목표와 채점은 3D 왼쪽 카드에 있어요.</small>
+                        <small>{cellTerm ? '터미널에서 명령으로 파이썬 파일을 실행해요. 목표와 채점은 3D 왼쪽 카드에 있어요.' : '블록으로 로봇과 장비를 움직여요. 목표와 채점은 3D 왼쪽 카드에 있어요.'}</small>
                         <button type="button" className={css.cellLeave} disabled={busy} onClick={leaveCell}>
                           셀에서 나가기
                         </button>
@@ -4050,7 +4134,11 @@ export default function Console() {
                       }}
                     />
                     )}
-                    {level === 'basic' ? (
+                    {cellAt && cellTerm ? (
+                      <div className={css.pane}>
+                        <CellTerminal cell={cellAt.cell} mission={cellAt.mission} busy={busy} onPython={runTermPython} onStop={stop} onOpenStep={(m) => openCell(cellAt.cell, m)} />
+                      </div>
+                    ) : level === 'basic' ? (
                       <div className={css.pane}>
                         <BlockEditor
                           code={code}
@@ -4120,7 +4208,7 @@ export default function Console() {
                         }}
                       />
                     )}
-                    {runBar}
+                    {!(cellAt && cellTerm) && runBar}
                   </div>
                 )}
               </>

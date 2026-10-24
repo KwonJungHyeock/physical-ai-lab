@@ -1,0 +1,335 @@
+/* 실습 셀 터미널: the command card, the terminal (dark, monospace) and nano over it. */
+.term {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  flex: 1;
+}
+.card {
+  flex: none;
+  max-height: 48%;
+  overflow-y: auto;
+  background: var(--panel-2, #2a3138);
+  border-radius: 10px;
+  padding: 8px 10px;
+  color: #e6ebef;
+  font-size: 12.5px;
+  word-break: keep-all;
+}
+.card header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.card header b {
+  font-size: 13.5px;
+}
+.reset {
+  font-size: 11px;
+  border: 1px solid #56626c;
+  background: transparent;
+  color: #c9d2da;
+  border-radius: 5px;
+  padding: 2px 7px;
+  cursor: pointer;
+}
+.cmds {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: c;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.cmds li {
+  counter-increment: c;
+  display: grid;
+  grid-template-columns: 20px 1fr auto;
+  grid-template-areas: 'n cmd btn' '. what what' '. pred pred';
+  column-gap: 7px;
+  align-items: center;
+  padding: 2px 4px;
+  border-radius: 7px;
+}
+.cmds li::before {
+  content: counter(c);
+  grid-area: n;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #0f6b4c;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+}
+.cmds li[data-key] {
+  background: #1d3a2e;
+}
+.cmds li[data-done]::before {
+  content: '✓';
+}
+.cmds code {
+  grid-area: cmd;
+  font: 700 12.3px ui-monospace, 'D2Coding', monospace;
+  color: #9ff0c4;
+  background: #141a1f;
+  border-radius: 5px;
+  padding: 3px 7px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.cmds li > button {
+  grid-area: btn;
+  font-size: 11px;
+  border: 1px solid #56626c;
+  background: #20262c;
+  color: #e6ebef;
+  border-radius: 5px;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+.cmds small {
+  grid-area: what;
+  color: #aab5be;
+  font-size: 11px;
+  line-height: 1.35;
+}
+.predict {
+  grid-area: pred;
+  margin-top: 3px;
+  font-size: 11.8px;
+  color: #d6dde3;
+}
+.predict b {
+  color: #ffd166;
+}
+.predict span {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 3px;
+}
+.predict button {
+  font-size: 11.5px;
+  border: 1px solid #56626c;
+  background: transparent;
+  color: #d6dde3;
+  border-radius: 5px;
+  padding: 2px 7px;
+  cursor: pointer;
+}
+.predict button[data-on] {
+  border-color: #ffd166;
+  color: #ffd166;
+}
+.read {
+  margin-top: 6px;
+  font-size: 11.8px;
+  color: #c9d2da;
+}
+.read summary {
+  cursor: pointer;
+  color: #9fb4c5;
+}
+.read ul {
+  margin: 4px 0 0;
+  padding-left: 16px;
+}
+.read li {
+  margin: 3px 0;
+}
+.read code {
+  display: block;
+  font: 600 11.5px ui-monospace, monospace;
+  color: #e6ebef;
+}
+.verdict {
+  margin-top: 6px;
+  border-left: 3px solid #c2410c;
+  background: #2f2620;
+  border-radius: 6px;
+  padding: 6px 9px;
+  font-size: 12px;
+}
+.verdict[data-right] {
+  border-left-color: #0f6b4c;
+  background: #1d3a2e;
+}
+.verdict p {
+  margin: 3px 0 0;
+  color: #c9d2da;
+}
+.note {
+  margin: 0 0 6px;
+  color: #c9d2da;
+}
+.go {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.go button {
+  font-size: 12px;
+  border: 1px solid #0f6b4c;
+  background: #1d3a2e;
+  color: #e6ebef;
+  border-radius: 6px;
+  padding: 4px 9px;
+  cursor: pointer;
+}
+.screen {
+  flex: 1;
+  min-height: 230px;
+  overflow-y: auto;
+  background: #0c1013;
+  border-radius: 10px;
+  padding: 9px 11px;
+  font: 500 12.4px/1.55 ui-monospace, 'D2Coding', 'Noto Sans Mono CJK KR', monospace;
+  color: #d9e1e7;
+  white-space: pre-wrap;
+  word-break: break-all;
+  cursor: text;
+}
+.out {
+  color: #d9e1e7;
+}
+.dim {
+  color: #7f8b95;
+}
+.err {
+  color: #ff8c7a;
+}
+.ok {
+  color: #7ee2a8;
+}
+.warn {
+  color: #ffd166;
+}
+.info {
+  color: #9fb4c5;
+}
+.cmd {
+  color: #e6ebef;
+}
+.inputLine {
+  display: flex;
+  gap: 7px;
+}
+.prompt {
+  color: #7ee2a8;
+  white-space: nowrap;
+}
+.inputLine input,
+.inputLine input:focus,
+.inputLine input:focus-visible {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  box-shadow: none;
+  color: #fff;
+  font: inherit;
+  caret-color: #7ee2a8;
+  padding: 0;
+}
+.running {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #ffd166;
+}
+.running kbd,
+.nanoKeys kbd {
+  font: 700 10.5px ui-monospace, monospace;
+  border: 1px solid #56626c;
+  border-radius: 3px;
+  padding: 0 3px;
+}
+.running button {
+  margin-left: auto;
+  font-size: 11.5px;
+  border: 1px solid #c2410c;
+  background: transparent;
+  color: #ffb39b;
+  border-radius: 5px;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+.ghost {
+  width: 1px;
+  opacity: 0;
+  border: 0;
+  padding: 0;
+}
+.nano {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  background: #0c1013;
+  border-radius: 10px;
+  overflow: hidden;
+  font: 500 12.4px/1.55 ui-monospace, 'D2Coding', 'Noto Sans Mono CJK KR', monospace;
+}
+.nanoHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  background: #d9e1e7;
+  color: #0c1013;
+  padding: 3px 10px;
+}
+.nano textarea:focus,
+.nano textarea:focus-visible {
+  outline: 0;
+  box-shadow: none;
+}
+.nano textarea {
+  flex: 1;
+  resize: none;
+  background: #0c1013;
+  color: #e6ebef;
+  border: 0;
+  outline: 0;
+  padding: 8px 11px;
+  font: inherit;
+  white-space: pre;
+  caret-color: #7ee2a8;
+}
+.nanoKeys,
+.nanoAsk {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-top: 1px solid #2a3138;
+  color: #c9d2da;
+  font-size: 12px;
+}
+.nanoKeys button,
+.nanoAsk button {
+  background: transparent;
+  border: 1px solid #56626c;
+  color: #e6ebef;
+  border-radius: 5px;
+  padding: 2px 8px;
+  cursor: pointer;
+  font: inherit;
+}
+.nanoAsk {
+  background: #d9e1e7;
+  color: #0c1013;
+}
+.nanoAsk button {
+  color: #0c1013;
+  border-color: #0c1013;
+}
