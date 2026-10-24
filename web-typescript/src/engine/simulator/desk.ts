@@ -71,6 +71,8 @@ export interface DeskObject {
   damaged?: boolean;
   /** 실습 셀: a workpiece's outline seen from above, when not round — a prism of this many sides (6: 육각). */
   sides?: number;
+  /** 실습 셀 C: a metal workpiece (the inductive sensor feels it); otherwise plastic. */
+  metal?: boolean;
 }
 
 /** A fixed part of a scene the arm must keep off, mm. */

@@ -34,6 +34,10 @@ interface Snap {
   auto: boolean;
   cycle: number | null;
   stacked: number;
+  /** C's record: parts passed on and ejected (null on other lines). */
+  record: { passed: number; ejected: number } | null;
+  /** C: a part waits at the station for 보내기 or 밀어내기. */
+  held: boolean;
   fault: CellAlert | null;
   halt: CellAlert | null;
   checks: { label: string; ok: boolean; detail?: string }[] | null;
@@ -57,6 +61,8 @@ function snapOf(w: WorldState | null): Snap | null {
     auto: run.line.auto,
     cycle: run.startT === null ? null : end - run.startT,
     stacked,
+    record: l.line.inspect ? { passed: run.line.passed, ejected: run.line.ejected } : null,
+    held: run.line.phase === 'held' && !run.line.ask,
     fault: run.health.fault,
     halt: run.halt,
     checks: cellChecks(w)?.items ?? null,
@@ -108,6 +114,10 @@ export default function CellHud(p: CellHudProps) {
   const out = (name: string, on: boolean) => {
     const r = run();
     if (r) setOut(r.line, name, on);
+  };
+  const ask = (what: 'send' | 'eject') => {
+    const r = run();
+    if (r && r.line.phase === 'held') r.line.ask = what;
   };
 
   return (
@@ -252,8 +262,19 @@ export default function CellHud(p: CellHudProps) {
                   if (r) r.line.requests += 1;
                 }}
               >
-                1개 공급
+                {layout.line.inspect ? '1개 투입' : '1개 공급'}
               </button>
+              {layout.line.inspect && (
+                <>
+                  {/* C: the part held at the station goes on to the stopper, or into the reject bin. */}
+                  <button type="button" className={css.key} disabled={p.busy || !!snap?.fault || !snap?.held} onClick={() => ask('send')}>
+                    보내기
+                  </button>
+                  <button type="button" className={css.key} disabled={p.busy || !!snap?.fault || !snap?.held} onClick={() => ask('eject')}>
+                    밀어내기
+                  </button>
+                </>
+              )}
             </div>
           ) : (
             <>
@@ -304,10 +325,27 @@ export default function CellHud(p: CellHudProps) {
             <small>사이클</small>
             {snap.cycle === null ? '-' : `${snap.cycle.toFixed(1)} s`}
           </span>
-          <span className={css.kpi}>
-            <small>적재</small>
-            {snap.stacked}
-          </span>
+          {snap.record ? (
+            <>
+              <span className={css.kpi}>
+                <small>양품</small>
+                {snap.record.passed}
+              </span>
+              <span className={css.kpi}>
+                <small>불량</small>
+                {snap.record.ejected}
+              </span>
+              <span className={css.kpi}>
+                <small>불량률</small>
+                {snap.record.passed + snap.record.ejected ? `${Math.round((100 * snap.record.ejected) / (snap.record.passed + snap.record.ejected))}%` : '-'}
+              </span>
+            </>
+          ) : (
+            <span className={css.kpi}>
+              <small>적재</small>
+              {snap.stacked}
+            </span>
+          )}
         </footer>
       )}
     </div>

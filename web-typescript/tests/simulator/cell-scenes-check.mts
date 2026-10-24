@@ -114,7 +114,12 @@ async function free(id: (typeof CELLS)[number]['id']) {
 // C: the stopper holds a part at the pick place; the ejector reaches its end and comes back.
 {
   const { w, run, line, set, alerts } = await free('inspect');
+  // By hand: the stopper down, one part dropped from the hopper, the belt on.
+  line.auto = false;
   set('스토퍼', true);
+  set('투입', true);
+  run(0.2);
+  set('투입', false);
   run(0.5);
   set('컨베이어', true);
   for (let t = 0; t < 14 && !line.in['부품 도착']; t += 0.5) run(0.5);

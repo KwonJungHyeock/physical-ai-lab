@@ -25,6 +25,7 @@
   --blk-eye: #e0457b;
   --blk-flow: #1ea7df;
   --blk-adv: #7d8996;
+  --blk-cond: #c98a0c;
   --stage: #f4f6f9;
   --run: var(--sim);
   color-scheme: light;
@@ -589,6 +590,9 @@
 .c_adv {
   background: var(--blk-adv);
 }
+.c_cond {
+  background: var(--blk-cond);
+}
 .palette .block {
   width: 100%;
   font-size: 13px;
@@ -663,6 +667,10 @@ input.field {
 }
 .cFoot {
   height: 12px;
+}
+/* 조건 블록: a loop's shape with two lists (맞을 때 · 아닐 때). */
+.repeat.ifBlock {
+  background: var(--blk-cond);
 }
 .advJoints {
   display: inline-flex;

@@ -15,7 +15,7 @@
 import type { Belt, Mover } from '../../physics/physics';
 import { OBJECT_KINDS, type DeskObject } from '../desk';
 import type { CellAlert } from './faults';
-import { type CellLayout, type SensorDef } from './cells';
+import { PART_HEIGHT, type CellLayout, type InspectDef, type SensorDef } from './cells';
 
 export interface LineState {
   /** Cell time, s. */
@@ -25,7 +25,8 @@ export interface LineState {
   in: Record<string, boolean>;
   /** The pusher's travel, 0 (back) .. 1 (out). */
   ext: number;
-  phase: 'idle' | 'push' | 'back' | 'convey';
+  /** C's inspection line adds 'held' (a part stopped at the station), 'send' (on to the stopper) and 'eject'. */
+  phase: 'idle' | 'push' | 'back' | 'convey' | 'held' | 'send' | 'eject';
   phaseT: number;
   /** Parts asked for with cell.feed() and not yet at the end. */
   requests: number;
@@ -46,13 +47,19 @@ export interface LineState {
   /** Parts waiting at the dispenser (B), in order; and how many times its output has turned on so far (a part drops each time, however short the pulse). */
   queue: DeskObject[];
   gate: number;
+  /** C: the part the inspection sensors read last, what they read, and the program's asks (send on / eject). */
+  inspected: string | null;
+  ask: 'send' | 'eject' | null;
+  /** C's record: parts passed on and ejected so far. */
+  passed: number;
+  ejected: number;
 }
 
 export function newLine(l: CellLayout, auto: boolean, refill = 0): LineState {
   const out = Object.fromEntries(l.outputs.map((n) => [n, false]));
   const inputs = Object.fromEntries(l.inputs.map((n) => [n, false]));
   const act = Object.fromEntries((l.line.actuators ?? []).map((a) => [a.output, 0]));
-  return { t: 0, auto, out, in: inputs, ext: 0, phase: 'idle', phaseT: 0, requests: 0, blockedT: 0, log: [], fed: 0, refill, halted: false, act, cycleT: null, queue: [], gate: 0 };
+  return { t: 0, auto, out, in: inputs, ext: 0, phase: 'idle', phaseT: 0, requests: 0, blockedT: 0, log: [], fed: 0, refill, halted: false, act, cycleT: null, queue: [], gate: 0, inspected: null, ask: null, passed: 0, ejected: 0 };
 }
 
 /** A part's footprint radius and height, mm. */
@@ -111,6 +118,21 @@ export function stepLine(l: CellLayout, s: LineState, parts: readonly DeskObject
   for (const sd of l.line.sensors) setIn(s, sd.name, free.some((p) => sees(sd, p)));
   const pu = l.line.pusher;
 
+  // C's inspection sensors: a part coming to the first one starts a new reading; each sensor holds what it read.
+  const ins = l.line.inspect;
+  if (ins) {
+    const inZone = (r: InspectDef['reads'][number], o: DeskObject) => o.x > r.min[0] && o.x < r.max[0] && o.y > r.min[1] && o.y < r.max[1] && onBelt(l, o);
+    const first = free.find((o) => inZone(ins.reads[0], o));
+    if (first && first.id !== s.inspected) {
+      s.inspected = first.id;
+      for (const r of ins.reads) setIn(s, r.name, false);
+    }
+    for (const r of ins.reads) {
+      const o = free.find((p) => p.id === s.inspected && inZone(r, p));
+      if (o && (r.sees === 'tall' ? o.size[2] >= PART_HEIGHT - 2 : r.sees === 'metal' ? !!o.metal : !o.metal)) setIn(s, r.name, true);
+    }
+  }
+
   // The magazine ran empty: the operator fills it (when the mission has parts to spare).
   const mag = l.line.magazine;
   if (mag && !s.in[mag.sensor] && s.ext === 0 && s.refill > 0 && !free.some((p) => Math.hypot(p.x - mag.x, p.y - mag.y) < 15)) {
@@ -146,7 +168,8 @@ export function stepLine(l: CellLayout, s: LineState, parts: readonly DeskObject
       s.phase = phase;
       s.phaseT = 0;
     };
-    switch (s.phase) {
+    if (ins && l.line.beltOutput) inspectLine(s, ins, l.line.beltOutput, alerts, drop, go);
+    else switch (s.phase) {
       case 'idle': {
         const beltClear = !free.some((p) => onBelt(l, p));
         if (!pu) {
@@ -278,4 +301,69 @@ export function stepLine(l: CellLayout, s: LineState, parts: readonly DeskObject
   } else s.blockedT = 0;
 
   return { movers, belts, alerts, refilled, spawned };
+}
+
+/**
+ * C's controller (자동 운전): the stopper stays down; a part asked for drops and runs to the station,
+ * where the belt stops and the line waits for the program — cell.send() runs it on to the stopper
+ * (once the last one was taken from there), cell.eject() pushes it into the reject bin.
+ */
+function inspectLine(s: LineState, ins: InspectDef, belt: string, alerts: CellAlert[], drop: () => CellAlert | null, go: (p: LineState['phase']) => void): void {
+  setOut(s, ins.stopper, true);
+  const stall = (what: string) => {
+    setOut(s, belt, false);
+    alerts.push({ t: s.t, level: 'stop', kind: 'timeout', title: '부품 도착 안 함', msg: `20초 동안 부품이 ${what}에 오지 않았어요. 벨트에서 떨어졌을 수 있어요.`, fix: '벨트 위를 살펴보고 [처음 상태로] 다시 시작해 주세요.' });
+    s.requests = 0;
+    s.ask = null;
+    go('idle');
+  };
+  switch (s.phase) {
+    case 'idle':
+      if (s.requests > 0 && !s.in[ins.station]) {
+        const a = drop();
+        if (a) {
+          alerts.push(a);
+          s.requests = 0;
+          break;
+        }
+        setOut(s, belt, true);
+        go('convey');
+      }
+      break;
+    case 'convey':
+      if (s.in[ins.station]) {
+        setOut(s, belt, false);
+        s.requests = Math.max(0, s.requests - 1);
+        go('held');
+      } else if (s.phaseT > 20) stall(ins.station);
+      break;
+    case 'held':
+      if (s.ask === 'eject') {
+        setOut(s, ins.ejector, true);
+        go('eject');
+      } else if (s.ask === 'send' && !s.in[ins.arrived]) {
+        setOut(s, belt, true);
+        go('send');
+      }
+      break;
+    case 'send':
+      // On past the station's beam to the stopper, and a moment more so the part sits against it.
+      if (s.in[ins.arrived] && !s.in[ins.station] && s.phaseT > 0.5 && s.blockedT > 0.3) {
+        setOut(s, belt, false);
+        s.ask = null;
+        s.passed += 1;
+        go('idle');
+      } else if (s.phaseT > 20) stall(ins.arrived);
+      break;
+    case 'eject':
+      if (s.out[ins.ejector] && s.in[ins.ejected]) setOut(s, ins.ejector, false);
+      else if (!s.out[ins.ejector] && (s.act[ins.ejector] ?? 0) <= 0) {
+        s.ask = null;
+        s.ejected += 1;
+        go('idle');
+      }
+      break;
+    default:
+      go('idle');
+  }
 }

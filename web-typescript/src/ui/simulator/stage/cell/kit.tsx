@@ -636,7 +636,8 @@ export function Cabinet({ world, cell, at = { x: -80, y: -300 } }: { world: RefO
     const run = world.current?.cell;
     if (!run) return;
     const recent = run.alerts.length ? run.alerts[run.alerts.length - 1] : null;
-    const red = !!run.halt || !!run.health.fault;
+    // A 고장 or 정지, or the program's own 경광등 (C: 불량이 이어질 때).
+    const red = !!run.halt || !!run.health.fault || !!run.line.out['경광등'];
     const amber = !red && !!recent && recent.level === 'warn' && run.line.t - recent.t < 4;
     const green = !red && !amber;
     [green, amber, red].forEach((on, i) => {
@@ -807,7 +808,8 @@ export function StackGlow({ world, at = { x: -80, y: -300 } }: { world: RefObjec
     const l = light.current;
     if (!run || !l) return;
     const recent = run.alerts.length ? run.alerts[run.alerts.length - 1] : null;
-    const red = !!run.halt || !!run.health.fault;
+    // A 고장 or 정지, or the program's own 경광등 (C: 불량이 이어질 때).
+    const red = !!run.halt || !!run.health.fault || !!run.line.out['경광등'];
     const amber = !red && !!recent && recent.level === 'warn' && run.line.t - recent.t < 4;
     l.color.set(red ? '#ff3b30' : amber ? '#ffb020' : '#2fd36f');
     l.intensity = red && Math.floor(run.line.t * 3) % 2 ? 0.01 : red || amber ? 0.06 : 0.025;

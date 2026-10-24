@@ -10,7 +10,7 @@
 
 import { makeObject, type DeskObject } from '../desk';
 import { COLOR_HEX, type ColorName } from '../board';
-import { CELLS, PART_HEIGHT, fromShop, gridPlace, magazineParts, makePart, type CellId, type CellLayout } from './cells';
+import { CELLS, C_AT, PART_HEIGHT, fromShop, gridPlace, magazineParts, makePart, type CellId, type CellLayout } from './cells';
 import { REJECT, outlineOf, type Outline, type VisionState } from './vision';
 import type { CellAlert } from './faults';
 import type { LineState } from './line';
@@ -46,7 +46,9 @@ export type CellEvent =
   | { t: number; type: 'place'; place: string; part: string | null }
   | { t: number; type: 'feed' }
   | { t: number; type: 'look'; part: string | null }
-  | { t: number; type: 'sort'; part: string; to: string };
+  | { t: number; type: 'sort'; part: string; to: string }
+  /** C: a part at the station sent on or ejected, with what the inspection sensors held then. */
+  | { t: number; type: 'send' | 'eject'; part: string | null; reads: Record<string, boolean> };
 
 export interface CheckResult {
   ok: boolean;
@@ -402,10 +404,11 @@ const pickedWhereSeen = (n: number): Check => ({
   },
 });
 
-const beltStoppedAtSensor: Check = {
-  label: '끝 센서가 켜지면 컨베이어를 껐어요',
+const beltStopped = (sensor: string): Check => ({
+  label: `${sensor} 센서가 켜지면 컨베이어를 껐어요`,
   judge: (j) => (j.alerts.some((a) => a.kind === 'jam') ? { ok: false, detail: '벨트가 부품 밑에서 미끄러졌어요' } : { ok: true }),
-};
+});
+const beltStoppedAtSensor = beltStopped('끝');
 
 const taught = (n: number): Check => ({
   label: `모양 사진을 ${n}가지 등록했어요`,
@@ -534,14 +537,183 @@ const B: CellMission[] = [
   },
 ];
 
-const C = ladder('inspect', 'C', [
-  ['스토퍼에서 집기', '스토퍼가 세운 부품 집기', '스토퍼에 멈춘 부품을 집어 트레이에 놓아요.'],
-  ['높이 검사', '센서 값으로 양품만', '높이 센서 값이 정상인 부품만 트레이에 놓아요.'],
-  ['불량은 밀어내기', '배출 실린더 신호', '불량 부품은 배출 실린더로 불량함에 밀어내요.'],
-  ['금속 / 비금속', '유도형 센서로 재질 나누기', '금속과 비금속 부품을 트레이 두 곳에 나눠 담아요.'],
-  ['3번 연속 불량이면 정지', '경광등 · 라인 정지 조건', '불량이 3개 연이어 나오면 라인을 멈추고 빨간 불을 켜요.'],
-  ['연속 12개 · 불량률', '기록 남기기', '12개를 검사하고 불량률을 기록해요.'],
-]);
+/* --- C: 검사 · 불량 배출 ------------------------------------------------------- */
+
+const HEAD_C = 'from edu import robot, cell\n\nrobot.home()\n';
+/** A short part (12 high instead of 20): the height sensor reads it as 불량. */
+const SHORT_H = 12;
+const METAL = '#b4bcc6';
+const PLASTIC = '#3f7fd6';
+
+type CSpec = 'M' | 'P' | 'm' | 'p';
+/** C's parts by letter: M / P a good metal / plastic part, m / p a short (불량) one. */
+function cPart(k: CSpec): DeskObject {
+  const metal = k === 'M' || k === 'm';
+  const short = k === 'm' || k === 'p';
+  return makePart(0, 0, 0, { size: [25, 25, short ? SHORT_H : PART_HEIGHT], color: metal ? METAL : PLASTIC, metal });
+}
+const cQueue = (specs: string) => () => [...specs].map((k) => cPart(k as CSpec));
+const isShort = (o: DeskObject) => o.size[2] < PART_HEIGHT - 2;
+const cParts = (j: Judge) => j.parts.filter((o) => o.kind === 'puck');
+
+/** The parts in the reject bin (fallen into it, below its rim). */
+const inRejectBin = (o: DeskObject) => o.x > 264 && o.x < 330 && Math.abs(o.y - C_AT.eject) < 33 && o.z < 10;
+
+/** Good parts on a tray (counted on its marked places). */
+function onTray(grid: string, n: number, label: string, want: (o: DeskObject) => boolean = () => true): Check {
+  return {
+    label,
+    judge: (j) => {
+      const g = j.l.grids[grid];
+      let c = 0;
+      let wrong = '';
+      for (let k = 0; k < g.rows * g.cols * g.layers; k += 1) {
+        const p = gridPlace(g, k);
+        const o = partAt(j, p.x, p.y, p.z);
+        if (!o) continue;
+        if (!good(o)) wrong ||= o.damaged ? '깨진 부품이 있어요' : '넘어진 부품이 있어요';
+        else if (isShort(o)) wrong ||= '낮은(불량) 부품이 들어 있어요';
+        else if (!want(o)) wrong ||= o.metal ? '금속 부품이 들어 있어요' : '비금속 부품이 들어 있어요';
+        else c += 1;
+      }
+      return wrong ? { ok: false, detail: wrong } : { ok: c >= n, detail: `${c} / ${n}개` };
+    },
+  };
+}
+
+function rejected(n: number): Check {
+  return {
+    label: n > 1 ? `불량 ${n}개를 불량함으로` : '불량을 불량함으로',
+    judge: (j) => {
+      const inBin = cParts(j).filter(inRejectBin);
+      const goodOut = inBin.filter((o) => !isShort(o)).length;
+      if (goodOut) return { ok: false, detail: `양품 ${goodOut}개를 버렸어요` };
+      return { ok: inBin.length >= n, detail: `${inBin.length} / ${n}개` };
+    },
+  };
+}
+
+/** Nothing ran off the belt's end or fell to the floor. */
+const nothingLost: Check = {
+  label: '떨어진 부품 없이',
+  judge: (j) => {
+    const lost = cParts(j).filter((o) => o.z < -10 && !inRejectBin(o)).length;
+    return lost ? { ok: false, detail: `${lost}개가 떨어졌어요` } : { ok: true };
+  },
+};
+
+const C: CellMission[] = [
+  {
+    id: 'C1',
+    cell: 'inspect',
+    n: 1,
+    title: '스토퍼에서 집기',
+    adds: '검사 위치 → 스토퍼로 보내 집기',
+    goal: '부품 하나를 투입해 스토퍼까지 보내고, 집어서 양품 트레이에 놓아요.',
+    hint: 'cell.feed() 는 부품을 센서 아래로 지나 검사 위치에 세워요. cell.send() 로 스토퍼까지 보내면 부품 도착 신호가 켜져요. 그때 "스토퍼 앞"에서 집어요.',
+    setup: { parts: () => [], auto: true, queue: cQueue('M') },
+    checks: [onTray('양품 트레이', 1, '양품 트레이에 부품'), safe],
+    solution: `${HEAD_C}cell.feed()\ncell.send()\nrobot.pick("스토퍼 앞")\nrobot.place("양품 트레이 다음 칸")\nrobot.home()\n`,
+  },
+  {
+    id: 'C2',
+    cell: 'inspect',
+    n: 2,
+    title: '불량 밀어내기',
+    adds: '배출 실린더',
+    goal: '낮은 부품(불량) 하나가 와요. 검사 위치에서 배출 실린더로 불량함에 밀어내요.',
+    hint: '높이 센서 램프가 꺼져 있으면 불량이에요. cell.eject() 는 배출 실린더를 끝까지 밀었다가 되돌려요. 로봇은 움직이지 않아도 돼요.',
+    setup: { parts: () => [], auto: true, queue: cQueue('m') },
+    checks: [rejected(1), nothingLost, safe],
+    solution: `${HEAD_C}cell.feed()\ncell.eject()\n`,
+  },
+  {
+    id: 'C3',
+    cell: 'inspect',
+    n: 3,
+    title: '높이 검사',
+    adds: '만약 ~ 이면 / 아니면',
+    goal: '부품 4개 가운데 하나가 낮아요. 높이가 정상이면 보내서 양품 트레이에, 아니면 밀어내요.',
+    hint: 'if cell.is_on("높이 정상"): 아래에 정상일 때 할 일을, else: 아래에 아닐 때 할 일을 빈칸 4개 들여 써요. 반복 안에 조건이 들어가요.',
+    setup: { parts: () => [], auto: true, queue: cQueue('MMmM') },
+    checks: [onTray('양품 트레이', 3, '양품 3개를 트레이에'), rejected(1), safe],
+    solution: `${HEAD_C}for _ in range(4):\n    cell.feed()\n    if cell.is_on("높이 정상"):\n        cell.send()\n        robot.pick("스토퍼 앞")\n        robot.place("양품 트레이 다음 칸")\n    else:\n        cell.eject()\nrobot.home()\n`,
+  },
+  {
+    id: 'C4',
+    cell: 'inspect',
+    n: 4,
+    title: '금속 / 비금속',
+    adds: '조건 안의 조건',
+    goal: '낮은 것은 밀어내고, 정상인 것 가운데 금속은 양품 트레이에, 비금속은 비금속 트레이에 놓아요.',
+    hint: '금속 센서(유도형)는 금속만 느껴요. 집은 다음 if cell.is_on("금속"): 으로 놓을 곳을 골라요. 조건 블록 안에 조건 블록을 넣어요.',
+    setup: { parts: () => [], auto: true, queue: cQueue('MPmPM') },
+    checks: [onTray('양품 트레이', 2, '금속 2개를 양품 트레이에', (o) => !!o.metal), onTray('비금속 트레이', 2, '비금속 2개를 비금속 트레이에', (o) => !o.metal), rejected(1), safe],
+    solution:
+      `${HEAD_C}for _ in range(5):\n    cell.feed()\n    if not cell.is_on("높이 정상"):\n        cell.eject()\n    else:\n        cell.send()\n        robot.pick("스토퍼 앞")\n` +
+      '        if cell.is_on("금속"):\n            robot.place("양품 트레이 다음 칸")\n        else:\n            robot.place("비금속 트레이 다음 칸")\nrobot.home()\n',
+  },
+  {
+    id: 'C5',
+    cell: 'inspect',
+    n: 5,
+    title: '직접 제어',
+    adds: '자동 운전 꺼짐',
+    goal: '자동 운전 없이 신호를 직접 켜고 꺼서 부품 3개를 검사해요. 정상은 트레이에, 낮은 것은 밀어내요.',
+    hint: '스토퍼를 먼저 내려(cell.set("스토퍼", True)) 부품이 벨트 끝으로 떨어지지 않게 해요. 투입 → 컨베이어 켜기 → 검사 위치 기다리기 → 끄기 → 조건. 보낼 때는 다시 켜고 부품 도착을 기다려 꺼요.',
+    setup: { parts: () => [], auto: false, queue: cQueue('MmM') },
+    checks: [onTray('양품 트레이', 2, '양품 2개를 트레이에'), rejected(1), nothingLost, beltStopped('부품 도착'), safe],
+    solution:
+      `${HEAD_C}cell.set("스토퍼", True)\nfor _ in range(3):\n    cell.set("투입", True)\n    cell.set("투입", False)\n    cell.set("컨베이어", True)\n    cell.wait("검사 위치")\n    cell.set("컨베이어", False)\n` +
+      '    if cell.is_on("높이 정상"):\n        cell.set("컨베이어", True)\n        cell.wait("부품 도착")\n        robot.wait(0.5)\n        cell.set("컨베이어", False)\n        robot.pick("스토퍼 앞")\n        robot.place("양품 트레이 다음 칸")\n' +
+      '    else:\n        cell.set("배출 실린더", True)\n        cell.wait("배출 끝")\n        cell.set("배출 실린더", False)\nrobot.home()\n',
+  },
+  {
+    id: 'C6',
+    cell: 'inspect',
+    n: 6,
+    title: '3번 연속 불량이면 정지',
+    adds: '세기 (숫자 상자)',
+    goal: '불량이 3개 이어지면 경광등을 켜고 라인을 멈춰요. 양품이 오면 센 수를 다시 0 으로.',
+    hint: 'bad = 0 으로 시작해 불량일 때 bad += 1, 양품일 때 bad = 0. if bad >= 3: 이면 cell.set("경광등", True) 다음 break 로 반복을 멈춰요.',
+    setup: { parts: () => [], auto: true, queue: cQueue('MmMmmmMM') },
+    checks: [
+      {
+        label: '불량 3개가 이어지자 경광등을 켰어요',
+        judge: (j) => {
+          const on = j.line.log.find((e) => e.name === '경광등' && e.on);
+          if (!on) return { ok: false, detail: '경광등이 켜지지 않았어요' };
+          const ejects = j.events.filter((e) => e.type === 'eject' && e.t <= on.t).length;
+          return ejects === 4 ? { ok: true } : { ok: false, detail: ejects < 4 ? '연속이 아닌 불량까지 세었어요' : '너무 늦게 켰어요' };
+        },
+      },
+      {
+        label: '그 뒤로는 투입하지 않았어요',
+        judge: (j) => ({ ok: j.line.queue.length === 2 && j.line.fed === 6, detail: `투입 ${j.line.fed}개` }),
+      },
+      onTray('양품 트레이', 2, '양품 2개를 트레이에'),
+      safe,
+    ],
+    solution:
+      `${HEAD_C}bad = 0\nfor _ in range(8):\n    cell.feed()\n    if cell.is_on("높이 정상"):\n        bad = 0\n        cell.send()\n        robot.pick("스토퍼 앞")\n        robot.place("양품 트레이 다음 칸")\n` +
+      '    else:\n        bad += 1\n        cell.eject()\n        if bad >= 3:\n            cell.set("경광등", True)\n            break\nrobot.home()\n',
+  },
+  {
+    id: 'C7',
+    cell: 'inspect',
+    n: 7,
+    title: '연속 12개 · 시간 안에',
+    adds: '사이클 타임',
+    goal: '부품 12개를 240초 안에 검사해 나눠요. 불량률은 기록 카드에 나와요.',
+    hint: '속도를 올리고(robot.set_speed), 불량은 로봇이 움직이지 않으니 바로 다음 부품을 투입해요. 반복 안에는 꼭 필요한 줄만 두세요.',
+    setup: { parts: () => [], auto: true, queue: cQueue('MPMmPMPpMMPm') },
+    timeS: 240,
+    checks: [onTray('양품 트레이', 5, '금속 5개를 양품 트레이에', (o) => !!o.metal), onTray('비금속 트레이', 4, '비금속 4개를 비금속 트레이에', (o) => !o.metal), rejected(3), timeWithin(240), safe],
+    solution:
+      `${HEAD_C}robot.set_speed(50)\nfor _ in range(12):\n    cell.feed()\n    if not cell.is_on("높이 정상"):\n        cell.eject()\n    else:\n        cell.send()\n        robot.pick("스토퍼 앞")\n` +
+      '        if cell.is_on("금속"):\n            robot.place("양품 트레이 다음 칸")\n        else:\n            robot.place("비금속 트레이 다음 칸")\nrobot.home()\n',
+  },
+];
 
 const D = ladder('tend', 'D', [
   ['척에 넣기', '문 열림 확인 뒤 넣기', '소재 하나를 열린 선반의 척에 넣어요.'],
@@ -574,7 +746,7 @@ function sampleParts(l: CellLayout): DeskObject[] {
     case 'vision':
       return [-380, -330, -280, -230, -180, -130].map((y, k) => bPart(225, y, top, { color: ['빨강', '파랑', '노랑'][k % 3], d: k === 4 ? SMALL : BIG }));
     case 'inspect':
-      return [-410, -360, -200, -120].map((y, k) => P(225, y, top, k === 2 ? { size: [25, 25, 12], color: '#9aa3ab' } : {}));
+      return [];
     case 'tend': {
       const g = l.grids['소재 트레이'];
       return Array.from({ length: 9 }, (_, k) => {
@@ -598,7 +770,12 @@ export function freeSetup(): MissionSetup {
     parts: (l) => (l.id === 'feed' ? [...(l.line.magazine ? magazineParts(l, 9) : []), ...onSourcePlate(9)(l)] : sampleParts(l)),
     auto: true,
     refill: 99,
-    queue: (l) => (l.line.dispenser ? ['빨강', '파랑', '노랑', FADED, '빨강', '노랑'].map((color, k) => bPart(0, 0, 0, { color, d: k % 2 ? SMALL : BIG, outline: (['원', '사각', '육각'] as const)[k % 3] })) : []),
+    queue: (l) =>
+      l.line.inspect
+        ? cQueue('MPmMPpMMPmPM')()
+        : l.line.dispenser
+          ? ['빨강', '파랑', '노랑', FADED, '빨강', '노랑'].map((color, k) => bPart(0, 0, 0, { color, d: k % 2 ? SMALL : BIG, outline: (['원', '사각', '육각'] as const)[k % 3] }))
+          : [],
   };
 }
 

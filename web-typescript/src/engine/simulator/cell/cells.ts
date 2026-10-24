@@ -57,7 +57,7 @@ export const CELLS: readonly CellInfo[] = [
     letter: 'C',
     name: '검사 · 불량 배출 셀',
     note: '스토퍼 · 높이 · 금속 센서 · 배출 실린더',
-    built: false,
+    built: true,
   },
   {
     id: 'tend',
@@ -210,6 +210,24 @@ export interface LineDef {
   camera?: { min: [number, number]; max: [number, number] };
   /** Where parts fall softly (a chute's slide): a knock there does not count. */
   soft?: { min: V3; max: V3 }[];
+  /** C's inspection: what each passing part is read for, where the line stops it to decide, and how it goes on. */
+  inspect?: InspectDef;
+}
+
+/**
+ * An inspection line (C). Each sensor reads a passing part in its zone and holds what it read until
+ * the next part comes to the first one (the PLC's 검사 결과 기억), so the program decides at the
+ * station, past the sensors. 자동 운전: cell.feed() drops a part and stops it at the station;
+ * cell.send() runs it on to the stopper, cell.eject() pushes it off the belt into the reject bin.
+ */
+export interface InspectDef {
+  /** The beam input at the station (in front of the ejector). */
+  station: string;
+  reads: { name: string; min: [number, number]; max: [number, number]; sees: 'tall' | 'metal' | 'nonMetal' }[];
+  ejector: string;
+  ejected: string;
+  stopper: string;
+  arrived: string;
 }
 
 export interface CellLayout {
@@ -439,6 +457,8 @@ export const C_AT = {
   metal: -335,
   nonMetal: -305,
   eject: -250,
+  /** The station's beam: a part stops with its middle at the ejector's (the beam meets its leading edge). */
+  station: -250 + 12,
   stop: -6,
 };
 
@@ -482,6 +502,7 @@ function inspectLayout(): CellLayout {
     layerH: PART_H,
   };
   const stopY = C_AT.stop - 4 - 12.5;
+  const lane = (y: number, h: number): { min: [number, number]; max: [number, number] } => ({ min: [205, y - h], max: [245, y + h] });
   return {
     id: 'inspect',
     fixed,
@@ -498,14 +519,29 @@ function inspectLayout(): CellLayout {
           a: [205, stopY + 2, 40],
           b: [245, stopY + 2, 40],
         },
+        // The station's beam stops a part with its middle in front of the ejector's head.
         {
-          name: '높이 정상',
+          name: '검사 위치',
           kind: 'beam',
-          a: [205, C_AT.height, 46],
-          b: [245, C_AT.height, 46],
+          a: [205, C_AT.station, 40],
+          b: [245, C_AT.station, 40],
         },
       ],
       endPlace: '스토퍼 앞',
+      dispenser: { x: 225, y: -420, output: '투입' },
+      inspect: {
+        station: '검사 위치',
+        reads: [
+          { name: '높이 정상', ...lane(C_AT.height, 10), sees: 'tall' },
+          { name: '금속', ...lane(C_AT.metal, 8), sees: 'metal' },
+          { name: '비금속', ...lane(C_AT.nonMetal, 8), sees: 'nonMetal' },
+        ],
+        ejector: '배출 실린더',
+        ejected: '배출 끝',
+        stopper: '스토퍼',
+        arrived: '부품 도착',
+      },
+      soft: [{ min: [264, ej - 33, -60], max: [330, ej + 33, 30] }],
       actuators: [
         // The stopper's bar drops across the lane (on) and lifts to let the part go (off).
         {
@@ -540,9 +576,9 @@ function inspectLayout(): CellLayout {
         },
       ],
     },
-    inputs: ['부품 도착', '높이 정상', '금속', '비금속', '배출 끝'],
-    outputs: ['컨베이어', '스토퍼', '배출 실린더'],
-    keys: { 스토퍼: ['막기', '열기'] },
+    inputs: ['높이 정상', '금속', '비금속', '검사 위치', '배출 끝', '부품 도착'],
+    outputs: ['투입', '컨베이어', '배출 실린더', '스토퍼', '경광등'],
+    keys: { 투입: ['넣기', '닫기'], 스토퍼: ['막기', '열기'], 경광등: ['켜기', '끄기'] },
   };
 }
 

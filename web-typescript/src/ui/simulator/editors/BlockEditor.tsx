@@ -18,15 +18,19 @@ import { BIN_NAMES, COLORS, SPOT_NAMES, type BinName, type ColorName, type SpotN
 import { EFFECTOR_BY_ID, type EffectorId } from '@/engine/simulator/effectors';
 import { jointMax, jointMin } from '@/engine/robot/limits';
 import {
+  COMPARE_OPS,
   DEFAULT_VARIABLE,
   MOVE_TIME_MAX,
   MOVE_TIME_MIN,
   SHAPE_CM,
   SHAPE_NAMES,
   SPEEDS,
+  allSteps,
+  childLists,
   parse,
   serialize,
   targetLabel,
+  type CompareOp,
   type ShapeName,
   type Step,
   type Target,
@@ -48,9 +52,41 @@ type Proto =
   | { type: 'pump'; on: boolean }
   | { type: 'pen'; down: boolean };
 
+/**
+ * Where a block is: its index in the program, then for a block inside another, which of that
+ * block's lists (0: a loop's body or an if's 맞을 때, 1: an if's 아닐 때) and its index there, and so
+ * on deeper. A slot (a list) is the same without the last index: [] is the program itself.
+ */
 type Path = number[];
 type Drag = { kind: 'new'; proto: Proto } | { kind: 'move'; path: Path };
-type DropTarget = { where: 'end' } | { where: 'delete' } | { where: 'before'; path: Path } | { where: 'into'; i: number };
+type DropTarget = { where: 'end' } | { where: 'delete' } | { where: 'before'; path: Path } | { where: 'into'; slot: Path };
+
+/** The list a slot names, or null when there is no such list. */
+function listAt(root: Step[], slot: readonly number[]): Step[] | null {
+  let list = root;
+  for (let k = 0; k < slot.length; k += 2) {
+    const s = list[slot[k]];
+    const l = s ? childLists(s)[slot[k + 1]] : undefined;
+    if (!l) return null;
+    list = l;
+  }
+  return list;
+}
+const stepAt = (root: Step[], path: Path): Step | null => listAt(root, path.slice(0, -1))?.[path[path.length - 1]] ?? null;
+
+/** Take a step object out of the tree, wherever it is. */
+function removeStep(list: Step[], target: Step): boolean {
+  const i = list.indexOf(target);
+  if (i >= 0) {
+    list.splice(i, 1);
+    return true;
+  }
+  return list.some((s) => childLists(s).some((l) => removeStep(l, target)));
+}
+
+/** A number box's names on offer (the program's own come first). */
+const NUMBER_NAMES = ['bad', 'good', 'count', 'n'];
+const OP_LABEL: Record<CompareOp, string> = { '>=': '≥ (이상)', '>': '> (초과)', '<=': '≤ (이하)', '<': '< (미만)', '==': '= (같으면)', '!=': '≠ (다르면)' };
 
 interface Props {
   code: string;
@@ -100,6 +136,12 @@ const COLOR_CLASS: Record<Step['type'], string> = {
   cellLimit: css.c_eye,
   cellPickVar: css.c_macro,
   cellSortPlace: css.c_macro,
+  cellSend: css.c_flow,
+  cellEject: css.c_flow,
+  if: css.c_cond,
+  setVar: css.c_cond,
+  addVar: css.c_cond,
+  break: css.c_flow,
 };
 
 function toolProtos(effector: EffectorId): Proto[] {
@@ -175,11 +217,20 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
   const palette: [string, Proto[]][] = cell
     ? [
         ['셀 · 로봇', [{ type: 'cellPick' }, { type: 'cellPlace' }, { type: 'home' }, { type: 'speed' }]],
-        ['셀 · 장비', [...(cellLayout(cell).line.pusher || cellLayout(cell).line.dispenser ? [{ type: 'cellFeed' } as Proto] : []), { type: 'cellWait' }, { type: 'cellSet' }]],
+        [
+          '셀 · 장비',
+          [
+            ...(cellLayout(cell).line.pusher || cellLayout(cell).line.dispenser ? [{ type: 'cellFeed' } as Proto] : []),
+            ...(cellLayout(cell).line.inspect ? ([{ type: 'cellSend' }, { type: 'cellEject' }] as Proto[]) : []),
+            { type: 'cellWait' },
+            { type: 'cellSet' },
+          ],
+        ],
         ...(cellLayout(cell).line.camera
           ? ([['셀 · 카메라', [{ type: 'cellLook' }, { type: 'cellPickVar' }, { type: 'cellSortPlace' }, { type: 'cellRule' }, { type: 'cellLimit' }, { type: 'cellLearn' }]]] as [string, Proto[]][])
           : []),
-        ['흐름', [{ type: 'wait' }, { type: 'repeat' }]],
+        ['흐름', [{ type: 'wait' }, { type: 'repeat' }, { type: 'break' }]],
+        ['조건 · 숫자', [{ type: 'if' }, { type: 'setVar' }, { type: 'addVar' }]],
         [EFFECTOR_BY_ID[effector].name, toolProtos(effector)],
         ['고급', [{ type: 'joint' }, { type: 'moveTo' }, { type: 'move' }]],
       ]
@@ -201,6 +252,9 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
   const opts = (list: readonly string[], now: string): [string, string][] => [...new Set([now, ...list])].map((n) => [n, n]);
   // B's rule table sends parts to its bins or down the chute.
   const ruleTargets = lay ? Object.keys(lay.places).filter((n) => n.startsWith('함 ') || n === REJECT) : [];
+  // The number boxes the program fills (an if can ask about them).
+  const numberNames = [...new Set(allSteps(steps).flatMap((s) => (s.type === 'setVar' ? [s.name] : [])))];
+  const numberOptions = (now: string): [string, string][] => opts([...numberNames, ...NUMBER_NAMES], now);
 
   const makeStep = (proto: Proto): Step => {
     const line = 0;
@@ -259,6 +313,18 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
         return { type: 'cellRule', when: ['빨강'], to: '함 1', line };
       case 'cellLimit':
         return { type: 'cellLimit', what: '지름', value: 110, line };
+      case 'cellSend':
+        return { type: 'cellSend', line };
+      case 'cellEject':
+        return { type: 'cellEject', line };
+      case 'if':
+        return { type: 'if', cond: lay?.inputs.length ? { kind: 'signal', signal: lay.inputs[0], on: true } : { kind: 'compare', name: numberNames[0] ?? 'bad', op: '>=', value: 3 }, body: [], orelse: [], line };
+      case 'setVar':
+        return { type: 'setVar', name: numberNames[0] ?? 'bad', value: 0, line };
+      case 'addVar':
+        return { type: 'addVar', name: numberNames[0] ?? 'bad', by: 1, line };
+      case 'break':
+        return { type: 'break', line };
       case 'find':
         return { type: 'find', variable: DEFAULT_VARIABLE, camera: theme === 'arm' ? 'hand' : 'top', color: '빨강', line };
       case 'above':
@@ -273,42 +339,34 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
       onError('블록 프로그램을 읽지 못해서 블록을 바꿀 수 없어요.', '위의 [예제 코드 처음으로]를 눌러 다시 시작해 주세요.');
       return;
     }
-    const list0 = parsed.steps;
-    const at = (p: Path): Step => (p.length === 1 ? list0[p[0]] : (list0[p[0]] as Extract<Step, { type: 'repeat' }>).body[p[1]]);
-    // Decide whether the drop is allowed BEFORE taking the block out, so a
-    // refused drop never loses the block.
-    const intoLoop = target.where === 'into' || (target.where === 'before' && target.path.length === 2);
-    const movingType = d.kind === 'new' ? d.proto.type : at(d.path).type;
-    if (intoLoop && movingType === 'repeat') {
-      onError('반복 안에 반복은 넣을 수 없어요.');
-      return;
-    }
+    const root = parsed.steps;
     let item: Step;
-    let src: Path | null = null;
+    // A moved block's place is held by a marker until it is in its new place, so every path stays good.
+    const marker: Step = { type: 'break', line: -1 };
     if (d.kind === 'new') item = makeStep(d.proto);
     else {
-      src = d.path;
+      const src = d.path;
+      const from = listAt(root, src.slice(0, -1));
+      const k = src[src.length - 1];
+      if (!from?.[k]) return;
       if (target.where === 'before' && target.path.join() === src.join()) return;
-      if (src.length === 1 && at(src).type === 'repeat') {
-        if (target.where === 'into' && target.i === src[0]) return;
-        if (target.where === 'before' && target.path.length === 2 && target.path[0] === src[0]) return;
+      const to = target.where === 'into' ? target.slot : target.where === 'before' ? target.path : null;
+      if (to && to.length > src.length && src.every((v, i) => to[i] === v)) {
+        onError('블록을 그 블록 자기 안으로 옮길 수는 없어요.');
+        return;
       }
-      const list = src.length === 1 ? list0 : (list0[src[0]] as Extract<Step, { type: 'repeat' }>).body;
-      item = list.splice(src[src.length - 1], 1)[0];
+      item = from[k];
+      from[k] = marker;
     }
-    if (target.where === 'delete') {
-      edit(serialize(list0));
-      return;
+    if (target.where === 'end') root.push(item);
+    else if (target.where === 'into') listAt(root, target.slot)?.push(item);
+    else if (target.where === 'before') {
+      const list = listAt(root, target.path.slice(0, -1));
+      if (!list) return;
+      list.splice(Math.min(target.path[target.path.length - 1], list.length), 0, item);
     }
-    const path: Path =
-      target.where === 'end' ? [list0.length] : target.where === 'into' ? [target.i, Number.MAX_SAFE_INTEGER] : target.path.slice();
-    if (src) {
-      if (src.length === 1 && path[0] > src[0]) path[0] -= 1;
-      else if (src.length === 2 && path.length === 2 && path[0] === src[0] && path[1] > src[1]) path[1] -= 1;
-    }
-    const list = path.length === 1 ? list0 : (list0[path[0]] as Extract<Step, { type: 'repeat' }>).body;
-    list.splice(Math.min(path[path.length - 1], list.length), 0, item);
-    edit(serialize(list0));
+    removeStep(root, marker);
+    edit(serialize(root));
   };
 
   const endDrag = () => {
@@ -491,6 +549,34 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
         );
       case 'repeat':
         return <span>{preview ? '2번 반복하기' : ''}</span>;
+      case 'if':
+        return preview ? <span>만약 {s.cond.kind === 'signal' ? `${s.cond.signal} 이 켜져 있으면` : `${s.cond.name} ≥ ${s.cond.value} 이면`} · 아니면</span> : condView(s);
+      case 'setVar':
+        return (
+          <>
+            <span>숫자 상자</span>
+            {preview ? <span>{s.name} ▾</span> : sel({ label: '숫자 상자 이름', value: s.name, options: numberOptions(s.name), onChange: (v) => ((s.name = v), commit()) })}
+            <span>에</span>
+            {preview ? <span>0</span> : num({ label: '넣을 숫자', value: s.value, min: 0, max: 100, onChange: (v) => ((s.value = Math.round(v)), commit()) })}
+            <span>넣기</span>
+          </>
+        );
+      case 'addVar':
+        return (
+          <>
+            <span>숫자 상자</span>
+            {preview ? <span>{s.name} ▾</span> : sel({ label: '숫자 상자 이름', value: s.name, options: numberOptions(s.name), onChange: (v) => ((s.name = v), commit()) })}
+            <span>에</span>
+            {preview ? <span>1</span> : num({ label: '더하거나 뺄 숫자', value: Math.abs(s.by), min: 1, max: 100, onChange: (v) => ((s.by = Math.sign(s.by || 1) * Math.round(v)), commit()) })}
+            {preview ? <span>더하기 ▾</span> : sel({ label: '더하기 · 빼기', value: s.by < 0 ? 'sub' : 'add', options: [['더하기', 'add'], ['빼기', 'sub']], onChange: (v) => ((s.by = (v === 'sub' ? -1 : 1) * Math.abs(s.by)), commit()) })}
+          </>
+        );
+      case 'break':
+        return <span>반복 멈추기 (break)</span>;
+      case 'cellSend':
+        return <span>부품 보내기 (스토퍼까지)</span>;
+      case 'cellEject':
+        return <span>불량 밀어내기 (배출 실린더)</span>;
       case 'carry': {
         const fromOpts: [string, string][] = theme === 'arm' ? COLORS.map((c): [string, string] => [`${c.name} 블록`, `block:${c.name}`]) : variables.map((v): [string, string] => [targetLabel({ kind: 'var', name: v }), `var:${v}`]);
         return (
@@ -549,7 +635,7 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
           </>
         );
       case 'cellFeed':
-        return <span>공급 요청하기 (부품 1개)</span>;
+        return <span>{lay?.line.inspect ? '부품 투입하기 (검사 위치까지)' : '공급 요청하기 (부품 1개)'}</span>;
       case 'cellWait':
         return (
           <>
@@ -633,6 +719,34 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
     }
   };
 
+  /** An if's condition: an input on or off, or a number box against a number. */
+  const condView = (s: Extract<Step, { type: 'if' }>): ReactNode => {
+    const c = s.cond;
+    const value = c.kind === 'signal' ? `sig:${c.signal}` : `num:${c.name}`;
+    const options: [string, string][] = [...(lay?.inputs ?? []).map((n): [string, string] => [n, `sig:${n}`]), ...[...new Set([...numberNames, ...(c.kind === 'compare' ? [c.name] : [])])].map((n): [string, string] => [`숫자 상자 ${n}`, `num:${n}`])];
+    if (!options.some(([, v]) => v === value)) options.unshift([c.kind === 'signal' ? c.signal : `숫자 상자 ${c.name}`, value]);
+    return (
+      <>
+        <span>만약</span>
+        {sel({
+          label: '조건',
+          value,
+          options,
+          onChange: (v) => ((s.cond = v.startsWith('sig:') ? { kind: 'signal', signal: v.slice(4), on: true } : { kind: 'compare', name: v.slice(4), op: '>=', value: 3 }), commit()),
+        })}
+        {c.kind === 'signal' ? (
+          sel({ label: '켜짐 · 꺼짐', value: c.on ? 'on' : 'off', options: [['이 켜져 있으면', 'on'], ['이 꺼져 있으면', 'off']], onChange: (v) => ((c.on = v === 'on'), commit()) })
+        ) : (
+          <>
+            {sel({ label: '비교', value: c.op, options: COMPARE_OPS.map((o): [string, string] => [OP_LABEL[o], o]), onChange: (v) => ((c.op = v as CompareOp), commit()) })}
+            {num({ label: '비교할 숫자', value: c.value, min: 0, max: 100, onChange: (v) => ((c.value = Math.round(v)), commit()) })}
+            <span>이면</span>
+          </>
+        )}
+      </>
+    );
+  };
+
   const withCurrent = (opts: [string, string][], t: Target): [string, string][] => {
     const v = targetValue(t);
     return opts.some(([, o]) => o === v) ? opts : [[targetLabel(t), v], ...opts];
@@ -665,46 +779,50 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
   });
 
   const removeAt = (path: Path) => {
-    const list = path.length === 1 ? steps : (steps[path[0]] as Extract<Step, { type: 'repeat' }>).body;
-    list.splice(path[path.length - 1], 1);
+    listAt(steps, path.slice(0, -1))?.splice(path[path.length - 1], 1);
     commit();
   };
 
-  const listOf = (path: Path) => (path.length === 1 ? steps : (steps[path[0]] as Extract<Step, { type: 'repeat' }>).body);
   /**
-   * ↑ ↓ also go in and out of a loop (tablets cannot drag a block into one): the first block of a
-   * loop going up, or its last going down, leaves it; a block next to a loop going towards it goes in.
+   * ↑ ↓ also go in and out of a loop or an if (tablets cannot drag a block into one): the first
+   * block of a list going up, or its last going down, leaves it; a block next to a loop or an if
+   * going towards it goes in (the end of its last list going up, the start of its first going down).
    */
   const moveBy = (path: Path, dir: -1 | 1) => {
-    const list = listOf(path);
+    const parent = path.slice(0, -1);
+    const list = listAt(steps, parent);
+    if (!list) return;
     const k = path[path.length - 1];
     const to = k + dir;
-    if (path.length === 2 && (to < 0 || to >= list.length)) {
-      const i = path[0];
+    if (to < 0 || to >= list.length) {
+      if (!parent.length) return;
+      const outer = parent.slice(0, -2);
+      const ci = parent[parent.length - 2];
       const [item] = list.splice(k, 1);
-      steps.splice(dir < 0 ? i : i + 1, 0, item);
-      setPicked(String(dir < 0 ? i : i + 1));
+      const at = dir < 0 ? ci : ci + 1;
+      listAt(steps, outer)!.splice(at, 0, item);
+      setPicked([...outer, at].join());
       commit();
       return;
     }
-    if (to < 0 || to >= list.length) return;
-    const next = list[to];
-    if (path.length === 1 && next.type === 'repeat' && list[k].type !== 'repeat') {
+    const kids = childLists(list[to]);
+    if (kids.length && !childLists(list[k]).length) {
       const [item] = list.splice(k, 1);
-      const loop = dir < 0 ? k - 1 : k;
-      const body = (steps[loop] as Extract<Step, { type: 'repeat' }>).body;
-      if (dir < 0) body.push(item);
-      else body.unshift(item);
-      setPicked(`${loop},${dir < 0 ? body.length - 1 : 0}`);
+      const ci = dir < 0 ? to : k;
+      const b = dir < 0 ? kids.length - 1 : 0;
+      if (dir < 0) kids[b].push(item);
+      else kids[b].unshift(item);
+      setPicked([...parent, ci, b, dir < 0 ? kids[b].length - 1 : 0].join());
       commit();
       return;
     }
     [list[k], list[to]] = [list[to], list[k]];
-    setPicked([...path.slice(0, -1), to].join());
+    setPicked([...parent, to].join());
     commit();
   };
   const copyAt = (path: Path) => {
-    const list = listOf(path);
+    const list = listAt(steps, path.slice(0, -1));
+    if (!list) return;
     const k = path[path.length - 1];
     list.splice(k + 1, 0, JSON.parse(JSON.stringify(list[k])) as Step);
     setPicked([...path.slice(0, -1), k + 1].join());
@@ -752,46 +870,70 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
     },
   });
 
+  /** A list inside a loop or an if: its blocks, a drop zone, and the slot to tap before a palette block. */
+  const slotView = (slot: Path, list: Step[], more: string, first: string): ReactNode => {
+    const k = slot.join();
+    return (
+      <div
+        className={`${css.cBody} ${dropKey === `into:${k}` ? css.dropInto : ''}`}
+        onDragOver={(e) => {
+          if (!drag.current || e.target !== e.currentTarget) return;
+          e.preventDefault();
+          e.stopPropagation();
+          setDropKey(`into:${k}`);
+        }}
+        onDrop={(e) => {
+          if (e.target !== e.currentTarget) return;
+          e.preventDefault();
+          e.stopPropagation();
+          if (drag.current) applyDrop({ where: 'into', slot }, drag.current);
+          endDrag();
+        }}
+      >
+        {list.map((c, j) => build(c, [...slot, j]))}
+        {/* Tap here, then a block in the palette: it goes inside (no dragging needed). */}
+        <button
+          type="button"
+          className={`${css.loopSlot} ${picked === `in:${k}` ? css.loopSlotOn : ''}`}
+          aria-pressed={picked === `in:${k}`}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            setPicked((p) => (p === `in:${k}` ? null : `in:${k}`));
+          }}
+        >
+          ＋ {list.length ? more : first}
+        </button>
+      </div>
+    );
+  };
+
   const build = (s: Step, path: Path): ReactNode => {
     if (s.type === 'repeat') {
       return (
-        <div key={path.join()} className={classes(s, path, css.repeat)} {...dragProps(path)} {...pick(path)}>
+        <div key={path.join()} className={classes(s, path, css.repeat)} data-hot={hotLines?.includes(s.line) || undefined} {...dragProps(path)} {...pick(path)}>
           <div className={css.cHead}>
             {num({ label: '반복 횟수', value: s.times, unit: '번', min: 1, max: 20, onChange: (v) => ((s.times = Math.max(1, Math.round(v))), commit()) })}
             <span>반복하기</span>
             {del(path)}
           </div>
-          <div
-            className={`${css.cBody} ${dropKey === `into:${path[0]}` ? css.dropInto : ''}`}
-            onDragOver={(e) => {
-              if (!drag.current || e.target !== e.currentTarget) return;
-              e.preventDefault();
-              e.stopPropagation();
-              setDropKey(`into:${path[0]}`);
-            }}
-            onDrop={(e) => {
-              if (e.target !== e.currentTarget) return;
-              e.preventDefault();
-              e.stopPropagation();
-              if (drag.current) applyDrop({ where: 'into', i: path[0] }, drag.current);
-              endDrag();
-            }}
-          >
-            {s.body.map((c, j) => build(c, [path[0], j]))}
-            {/* Tap here, then a block in the palette: it goes inside the loop (no dragging needed). */}
-            <button
-              type="button"
-              className={`${css.loopSlot} ${picked === `in:${path[0]}` ? css.loopSlotOn : ''}`}
-              aria-pressed={picked === `in:${path[0]}`}
-              onMouseDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.stopPropagation();
-                setPicked((p) => (p === `in:${path[0]}` ? null : `in:${path[0]}`));
-              }}
-            >
-              ＋ {s.body.length ? '반복 안에 더 넣기' : '반복 안에 넣을 블록 고르기'}
-            </button>
+          {slotView([...path, 0], s.body, '반복 안에 더 넣기', '반복 안에 넣을 블록 고르기')}
+          <div className={css.cFoot} />
+        </div>
+      );
+    }
+    if (s.type === 'if') {
+      return (
+        <div key={path.join()} className={classes(s, path, `${css.repeat} ${css.ifBlock}`)} data-hot={hotLines?.includes(s.line) || undefined} {...dragProps(path)} {...pick(path)}>
+          <div className={css.cHead}>
+            {condView(s)}
+            {del(path)}
           </div>
+          {slotView([...path, 0], s.body, '맞을 때 할 일 더 넣기', '맞을 때 할 블록 고르기')}
+          <div className={css.cHead}>
+            <span>아니면</span>
+          </div>
+          {slotView([...path, 1], s.orelse, '아닐 때 할 일 더 넣기', '아닐 때 할 블록 고르기 (없어도 돼요)')}
           <div className={css.cFoot} />
         </div>
       );
@@ -822,26 +964,24 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
           endDrag();
         }}
       >
-        <p className={css.paletteTip}>{picked?.startsWith('in:') ? '누르면 반복 안에 들어가요' : picked ? '누르면 고른 블록 다음에 들어가요' : '누르면 맨 끝에 들어가요'}</p>
+        <p className={css.paletteTip}>{picked?.startsWith('in:') ? '누르면 고른 칸 안에 들어가요' : picked ? '누르면 고른 블록 다음에 들어가요' : '누르면 맨 끝에 들어가요'}</p>
         {palette.map(([name, items]) => (
           <PaletteGroup key={name} name={name} empty={items.length === 0}>
             {items.map((proto, k) => {
               const preview = makeStep(proto);
               const add = () => {
-                // Into a loop when its slot is picked (the end of its body).
+                // Into a loop's or an if's list when its slot is picked (at the end of it).
                 if (picked?.startsWith('in:')) {
-                  const i = Number(picked.slice(3));
-                  const loop = steps[i];
-                  if (loop?.type === 'repeat') {
+                  const slot = picked.slice(3).split(',').map(Number);
+                  if (listAt(steps, slot)) {
                     // The slot stays picked, so several blocks go in one after another.
-                    applyDrop({ where: 'into', i }, { kind: 'new', proto });
+                    applyDrop({ where: 'into', slot }, { kind: 'new', proto });
                     return;
                   }
                 }
-                // After the picked block (inside a loop when it is in one), else at the end.
-                const at = picked ? picked.split(',').map(Number) : null;
-                const valid = at && (at.length === 1 ? at[0] < steps.length : at[0] < steps.length && steps[at[0]].type === 'repeat');
-                if (valid && at) {
+                // After the picked block (inside a loop or an if when it is in one), else at the end.
+                const at = picked && !picked.startsWith('in:') ? picked.split(',').map(Number) : null;
+                if (at && stepAt(steps, at)) {
                   const next = [...at.slice(0, -1), at[at.length - 1] + 1];
                   applyDrop(next.length === 1 && next[0] >= steps.length ? { where: 'end' } : { where: 'before', path: next }, { kind: 'new', proto });
                   setPicked(next.join());
@@ -923,14 +1063,7 @@ function PaletteGroup({ name, empty, children }: { name: string; empty: boolean;
 }
 
 function collectVariables(steps: readonly Step[]): string[] {
-  const out: string[] = [];
-  const walk = (list: readonly Step[]) =>
-    list.forEach((s) => {
-      if (s.type === 'find' && !out.includes(s.variable)) out.push(s.variable);
-      if (s.type === 'repeat') walk(s.body);
-    });
-  walk(steps);
-  return out;
+  return [...new Set(allSteps(steps).flatMap((s) => (s.type === 'find' ? [s.variable] : [])))];
 }
 
 /**

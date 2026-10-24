@@ -70,7 +70,7 @@ import {
   tcpFor,
   type EffectorId,
 } from './effectors';
-import { DEFAULT_SPEED, SPEED_CAP, type CameraId, type Step, type Target } from './program';
+import { DEFAULT_SPEED, SPEED_CAP, type CameraId, type Cond, type Step, type Target } from './program';
 import { CELL_BY_ID, PART_HEIGHT, fromShop, gridPlace, type CellId, type CellPlace } from './cell/cells';
 import { collisionAlert } from './cell/faults';
 import { setOut } from './cell/line';
@@ -210,6 +210,9 @@ export class SelfCollision extends RunError {}
 /** A 실습 셀's 정지 or 고장 stopped the program. */
 export class CellHalt extends RunError {}
 
+/** `break`: leaves the loop it is in (caught by that loop). */
+class BreakLoop extends Error {}
+
 function haltError(run: CellRun): CellHalt {
   const a = run.halt!;
   return new CellHalt(`${a.level === 'fault' ? '고장' : '정지'}: ${a.title}. ${a.msg}`, a.level === 'fault' ? `${a.fix ? `${a.fix} ` : ''}[점검 · 복구]를 눌러야 다시 움직여요.` : a.fix);
@@ -259,13 +262,15 @@ export interface RunHooks {
 interface Runtime extends RunHooks {
   speed: number;
   vars: Map<string, { x: number; y: number }>;
+  /** 숫자 상자: the program's counters. */
+  nums: Map<string, number>;
   line: number;
   /** A move that starts with the arm already into itself may go on while it gets no deeper, mm. */
   selfSlack?: number;
 }
 
 export async function runProgram(steps: readonly Step[], hooks: RunHooks): Promise<void> {
-  const rt: Runtime = { ...hooks, speed: DEFAULT_SPEED, vars: new Map(), line: 0 };
+  const rt: Runtime = { ...hooks, speed: DEFAULT_SPEED, vars: new Map(), nums: new Map(), line: 0 };
   // A cell's camera starts each run with an empty rule table and nothing taught (its last picture stays on screen).
   const run = hooks.world.cell;
   if (run) run.vision = { ...newVision(), shot: run.vision.shot };
@@ -279,6 +284,7 @@ async function runList(list: readonly Step[], rt: Runtime): Promise<void> {
     try {
       await runStep(s, rt);
     } catch (err) {
+      if (err instanceof BreakLoop) throw err;
       if (err instanceof RunError && !err.line) {
         err.line = s.line;
         // In a 실습 셀 a collision is the cell's 정지 (or 고장, when the arm was fast).
@@ -314,9 +320,27 @@ async function runStep(s: Step, rt: Runtime): Promise<void> {
     case 'repeat':
       for (let k = 0; k < s.times; k += 1) {
         rt.onLine?.(s.line);
-        await runList(s.body, rt);
+        try {
+          await runList(s.body, rt);
+        } catch (err) {
+          if (err instanceof BreakLoop) return;
+          throw err;
+        }
       }
       return;
+    case 'if': {
+      const yes = holds(rt, s.cond);
+      rt.log?.('info', `${s.line}번 줄 조건: ${condText(s.cond)} → ${yes ? '맞아요' : '아니에요'}`);
+      return runList(yes ? s.body : s.orelse, rt);
+    }
+    case 'setVar':
+      rt.nums.set(s.name, s.value);
+      return;
+    case 'addVar':
+      rt.nums.set(s.name, (rt.nums.get(s.name) ?? 0) + s.by);
+      return;
+    case 'break':
+      throw new BreakLoop();
     case 'moveTo':
       return moveTool(rt, { x: s.x, y: s.y, z: s.z });
     // 한 번에 하는 동작: run as the plain steps they stand for (on the same line).
@@ -363,8 +387,25 @@ async function runStep(s: Step, rt: Runtime): Promise<void> {
     case 'cellFeed': {
       const run = needCell(rt);
       if (!run.line.auto) throw new RunError('자동 운전이 꺼져 있어서 공급 요청을 받을 장비가 없어요.', 'cell.set("공급 실린더", True) 처럼 신호를 직접 켜 주세요.');
+      const ins = run.layout.line.inspect;
+      if (ins && run.line.phase === 'held') throw new RunError('검사 위치에 부품이 아직 있어요.', '먼저 cell.send() 로 보내거나 cell.eject() 로 밀어내 주세요.');
       run.line.requests += 1;
       run.events.push({ t: run.line.t, type: 'feed' });
+      // C: the part is fed through the sensors to the station; the program goes on once it is there.
+      if (ins) await lineUntil(rt, run, () => run.line.phase === 'held', `부품이 ${ins.station}에 오지 않았어요.`);
+      return;
+    }
+    case 'cellSend':
+    case 'cellEject': {
+      const run = needCell(rt);
+      const ins = run.layout.line.inspect;
+      if (!ins) throw new RunError(`${CELL_BY_ID[run.id].name}에는 검사 위치가 없어요.`);
+      if (!run.line.auto) throw new RunError('자동 운전이 꺼져 있어요.', s.type === 'cellSend' ? 'cell.set("컨베이어", True) 로 직접 보내 주세요.' : 'cell.set("배출 실린더", True) 로 직접 밀어내 주세요.');
+      if (run.line.phase !== 'held') throw new RunError('검사 위치에 멈춘 부품이 없어요.', '먼저 cell.feed() 로 부품을 투입해 주세요.');
+      const part = run.line.inspected;
+      run.line.ask = s.type === 'cellSend' ? 'send' : 'eject';
+      run.events.push({ t: run.line.t, type: s.type === 'cellSend' ? 'send' : 'eject', part, reads: inspectReads(run) });
+      await lineUntil(rt, run, () => run.line.phase === 'idle' && !run.line.ask, s.type === 'cellSend' ? `부품이 ${ins.arrived}에 오지 않았어요.` : '배출이 끝나지 않았어요.');
       return;
     }
     case 'cellWait':
@@ -411,7 +452,10 @@ async function runStep(s: Step, rt: Runtime): Promise<void> {
       return;
     case 'cellSet': {
       const run = needCell(rt);
-      if (run.line.auto) throw new RunError('자동 운전 중에는 장비 신호를 직접 바꿀 수 없어요.', '이 단계는 cell.feed()로 공급을 요청해요.');
+      // 자동 운전 drives the line's own outputs; a lamp is the program's.
+      const ld = run.layout.line;
+      const owned = [ld.beltOutput, ld.pusher?.output, ld.dispenser?.output, ld.inspect?.ejector, ld.inspect?.stopper];
+      if (run.line.auto && owned.includes(s.signal)) throw new RunError('자동 운전 중에는 장비 신호를 직접 바꿀 수 없어요.', '이 단계는 cell.feed()로 공급을 요청해요.');
       if (run.halt) throw haltError(run);
       setOut(run.line, s.signal, s.on);
       return;
@@ -512,6 +556,51 @@ async function cellPlace(rt: Runtime, place: string, dxShop: number, dyShop: num
   await moveTool(rt, { x, y, z: travel });
 }
 
+/** What C's inspection sensors hold now (by input name). */
+function inspectReads(run: CellRun): Record<string, boolean> {
+  return Object.fromEntries((run.layout.line.inspect?.reads ?? []).map((r) => [r.name, !!run.line.in[r.name]]));
+}
+
+/** Let the cell run until `done` (a line command finishing), or fail after 30 s. */
+async function lineUntil(rt: Runtime, run: CellRun, done: () => boolean, late: string): Promise<void> {
+  let waited = 0;
+  while (!done()) {
+    if (run.halt) throw haltError(run);
+    if (waited > 30) throw new RunError(late, '벨트 위를 살펴보고 [처음 상태로] 다시 시작해 주세요.');
+    await rt.animate(0.05, () => {});
+    waited += 0.05;
+  }
+}
+
+/** Whether an if's condition holds now. */
+function holds(rt: Runtime, c: Cond): boolean {
+  if (c.kind === 'signal') {
+    const run = needCell(rt);
+    if (!(c.signal in run.line.in)) throw new RunError(`'${c.signal}'이라는 입력 신호는 없어요.`);
+    return !!run.line.in[c.signal] === c.on;
+  }
+  const v = rt.nums.get(c.name);
+  if (v === undefined) throw new RunError(`'${c.name}'에 아직 숫자를 넣지 않았어요.`, `먼저 ${c.name} = 0 처럼 숫자를 넣어 주세요.`);
+  switch (c.op) {
+    case '>=':
+      return v >= c.value;
+    case '>':
+      return v > c.value;
+    case '<=':
+      return v <= c.value;
+    case '<':
+      return v < c.value;
+    case '==':
+      return v === c.value;
+    case '!=':
+      return v !== c.value;
+  }
+}
+
+function condText(c: Cond): string {
+  return c.kind === 'signal' ? `${c.signal} ${c.on ? '켜짐' : '꺼짐'}` : `${c.name} ${c.op} ${c.value}`;
+}
+
 /** Wait for an input, as the controller's "WAIT DI[…]": the cell runs on meanwhile. */
 async function cellWait(rt: Runtime, signal: string, on: boolean): Promise<void> {
   const run = needCell(rt);
@@ -548,7 +637,7 @@ export const BLEND_DEG = 12;
  * pendant's blending does; the real robot gets those points as via targets (it goes on near them).
  */
 export async function runProcess(items: readonly ProcessItem[], hooks: RunHooks, speed = DEFAULT_SPEED): Promise<void> {
-  const rt: Runtime = { ...hooks, speed: Math.min(SPEED_CAP, speed), vars: new Map(), line: 0 };
+  const rt: Runtime = { ...hooks, speed: Math.min(SPEED_CAP, speed), vars: new Map(), nums: new Map(), line: 0 };
   for (const it of items) {
     if (it.type !== 'path') {
       await runList([it], rt);
@@ -1550,7 +1639,7 @@ export function moveCheck(chain: readonly ChainSegment[], world: WorldState, to:
     trail: [],
     stats: emptyStats(from),
   };
-  const rt: Runtime = { chain, world: copy, poses: {}, animate: async () => {}, see: async () => null, speed: DEFAULT_SPEED, vars: new Map(), line: 0, selfSlack: startSlack(chain, world, from) };
+  const rt: Runtime = { chain, world: copy, poses: {}, animate: async () => {}, see: async () => null, speed: DEFAULT_SPEED, vars: new Map(), nums: new Map(), line: 0, selfSlack: startSlack(chain, world, from) };
   try {
     for (let k = 1; k <= samples; k += 1) {
       copy.angles = from.map((a, i) => a + ((to[i] - a) * k) / samples);
@@ -1597,7 +1686,7 @@ export async function preflight(run: (hooks: RunHooks) => Promise<unknown>, hook
 export function jogTo(chain: readonly ChainSegment[], world: WorldState, to: readonly number[]): string | null {
   const why = moveProblem(chain, world, to, 1);
   if (why) return why;
-  const rt: Runtime = { chain, world, poses: {}, animate: async () => {}, see: async () => null, speed: DEFAULT_SPEED, vars: new Map(), line: 0, selfSlack: startSlack(chain, world, world.angles) };
+  const rt: Runtime = { chain, world, poses: {}, animate: async () => {}, see: async () => null, speed: DEFAULT_SPEED, vars: new Map(), nums: new Map(), line: 0, selfSlack: startSlack(chain, world, world.angles) };
   world.angles = to.slice();
   try {
     afterPoseChange(rt);
@@ -1626,7 +1715,7 @@ export const instantAnimate = async (durationS: number, frame: (tS: number) => v
  * blocks. Returns what the real robot has to do, with the same timing.
  */
 export async function playTimeline(run: { events: readonly PyEvent[]; endT: number }, hooks: RunHooks): Promise<RobotAction[]> {
-  const rt: Runtime = { ...hooks, speed: DEFAULT_SPEED, vars: new Map(), line: 0 };
+  const rt: Runtime = { ...hooks, speed: DEFAULT_SPEED, vars: new Map(), nums: new Map(), line: 0 };
   const tools: Runtime = { ...rt, animate: instantAnimate };
   const w = rt.world;
   const arm = new ArmModel(w.angles);

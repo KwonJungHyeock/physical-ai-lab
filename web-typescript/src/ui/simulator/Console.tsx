@@ -168,6 +168,7 @@ const CELL_START = 'from edu import robot, cell\n\nrobot.home()\n';
 /** Equipment whose name tags show for a ladder step (by its place in the ladder). */
 const cellStepTags = (cell: CellId, n: number): string[] => {
   if (cell === 'vision') return n <= 3 ? ['위 카메라', '분류함'] : n <= 6 ? ['위 카메라', '끝 센서', '분류함'] : ['위 카메라', '분류함', '불량 슈트'];
+  if (cell === 'inspect') return n <= 2 ? ['스토퍼', '배출 실린더', '불량함'] : n <= 4 ? ['높이 센서', '근접 센서', '배출 실린더'] : n === 5 ? ['스토퍼', '배출 실린더', '컨베이어'] : ['높이 센서', '불량함', '양품 트레이'];
   return n <= 5 ? ['소재 판', '적재 판'] : n <= 9 ? ['매거진', '끝 센서', '적재 판'] : ['공급 실린더', '컨베이어', '끝 센서'];
 };
 /** Where a step's program is kept: by the step, or each cell's 자유 실습 (cell A's under its first name). */

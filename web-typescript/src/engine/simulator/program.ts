@@ -84,7 +84,34 @@ export type Step =
   /** A line of the rule table: these words (colour · 큰/작은 · outline, all optional) → a bin (cell.rule("빨강", "함 1")). */
   | { type: 'cellRule'; when: string[]; to: string; line: number }
   /** A set point: 지름 (shop mm, from it up is 큰) or 확신도 (%, below it the chute) (cell.limit("지름", 110)). */
-  | { type: 'cellLimit'; what: string; value: number; line: number };
+  | { type: 'cellLimit'; what: string; value: number; line: number }
+  /** C: 검사 위치에 멈춘 부품을 스토퍼까지 보내기 / 불량함으로 밀어내기 (자동 운전; each returns when it is done). */
+  | { type: 'cellSend'; line: number }
+  | { type: 'cellEject'; line: number }
+  /* 조건 · 숫자 상자 (C onwards): if / elif / else, a counter, leaving a loop. */
+  /** `elif`: written as an elif of the if whose `orelse` it is the only step of. */
+  | { type: 'if'; cond: Cond; body: Step[]; orelse: Step[]; elif?: boolean; line: number }
+  | { type: 'setVar'; name: string; value: number; line: number }
+  | { type: 'addVar'; name: string; by: number; line: number }
+  | { type: 'break'; line: number };
+
+export const COMPARE_OPS = ['>=', '>', '<=', '<', '==', '!='] as const;
+export type CompareOp = (typeof COMPARE_OPS)[number];
+
+/** What an if asks: is a cell input on (or off), or how a number box compares with a number. */
+export type Cond = { kind: 'signal'; signal: string; on: boolean } | { kind: 'compare'; name: string; op: CompareOp; value: number };
+
+/** The steps a step holds (a loop's body, an if's two branches). */
+export function childLists(s: Step): Step[][] {
+  if (s.type === 'repeat') return [s.body];
+  if (s.type === 'if') return [s.body, s.orelse];
+  return [];
+}
+
+/** Every step, nested ones too, in program order. */
+export function allSteps(list: readonly Step[]): Step[] {
+  return list.flatMap((s) => [s, ...childLists(s).flatMap((l) => allSteps(l))]);
+}
 
 export const SHAPE_NAMES = ['네모', '원', '삼각형', '별'] as const;
 export type ShapeName = (typeof SHAPE_NAMES)[number];
@@ -151,7 +178,31 @@ const RE = {
   cellSortPlace: new RegExp(String.raw`^robot\.place_by_rule\(\s*${IDENT}\s*\)$`),
   cellRule: /^cell\.rule\(\s*((?:["'][^"']+["']\s*,\s*)*["'][^"']+["'])\s*\)$/,
   cellLimit: new RegExp(String.raw`^cell\.limit\(\s*${STR}\s*,\s*(${NUM})\s*\)$`),
+  cellSend: /^cell\.send\(\s*\)$/,
+  cellEject: /^cell\.eject\(\s*\)$/,
+  ifHead: /^(if|elif)\s+(.+?)\s*:$/,
+  elseHead: /^else\s*:$/,
+  condSignal: new RegExp(String.raw`^(not\s+)?cell\.is_on\(\s*${STR}\s*\)$`),
+  condCompare: new RegExp(String.raw`^${IDENT}\s*(>=|<=|==|!=|>|<)\s*(-?\d+)$`),
+  setVar: new RegExp(String.raw`^${IDENT}\s*=\s*(-?\d+)$`),
+  addVar: new RegExp(String.raw`^${IDENT}\s*(\+=|-=)\s*(\d+)$`),
+  brk: /^break$/,
 };
+
+/** Names a number box may not take (the program's own words). */
+const RESERVED = new Set(['robot', 'cell', 'camera', 'hand_camera', 'for', 'in', 'range', 'if', 'elif', 'else', 'not', 'and', 'or', 'break', 'pass', 'True', 'False', 'None']);
+
+function parseCond(text: string): Cond | null {
+  let m = text.match(RE.condSignal);
+  if (m) return { kind: 'signal', signal: m[2], on: !m[1] };
+  m = text.match(RE.condCompare);
+  if (m && !RESERVED.has(m[1])) return { kind: 'compare', name: m[1], op: m[2] as CompareOp, value: Number(m[3]) };
+  return null;
+}
+
+export function condCode(c: Cond): string {
+  return c.kind === 'signal' ? `${c.on ? '' : 'not '}cell.is_on("${c.signal}")` : `${c.name} ${c.op} ${c.value}`;
+}
 
 /** "분류함 A" -> bin A, "버튼" -> button, "자리 1" -> spot, "빨강 블록" -> that block. */
 export function parsePlaceName(name: string): Target | null {
@@ -211,6 +262,11 @@ function parseLine(body: string, line: number, errors: Problem[]): Step | null {
     return { type: 'cellRule', when: words.slice(0, -1), to: words[words.length - 1], line };
   }
   if ((m = body.match(RE.cellLimit))) return { type: 'cellLimit', what: m[1], value: Number(m[2]), line };
+  if (RE.cellSend.test(body)) return { type: 'cellSend', line };
+  if (RE.cellEject.test(body)) return { type: 'cellEject', line };
+  if (RE.brk.test(body)) return { type: 'break', line };
+  if ((m = body.match(RE.setVar)) && !RESERVED.has(m[1])) return { type: 'setVar', name: m[1], value: Number(m[2]), line };
+  if ((m = body.match(RE.addVar)) && !RESERVED.has(m[1])) return { type: 'addVar', name: m[1], by: m[2] === '-=' ? -Number(m[3]) : Number(m[3]), line };
   if ((m = body.match(RE.shape))) {
     if (!(SHAPE_NAMES as readonly string[]).includes(m[1])) {
       errors.push({ line, msg: `'${m[1]}' 모양은 그릴 수 없어요.`, fix: `${SHAPE_NAMES.map((n) => `"${n}"`).join(', ')} 중에서 골라 주세요.` });
@@ -279,7 +335,17 @@ function parseLine(body: string, line: number, errors: Problem[]): Step | null {
 export function parse(code: string): { steps: Step[]; errors: Problem[] } {
   const steps: Step[] = [];
   const errors: Problem[] = [];
-  let loop: Extract<Step, { type: 'repeat' }> | null = null;
+  // The blocks open now, innermost last: the indent of their lines and the list they go into.
+  const frames: { indent: number; list: Step[] }[] = [{ indent: 0, list: steps }];
+  /** A header (for · if · elif · else) waiting for its first indented line. */
+  let pending: { list: Step[]; indent: number; line: number } | null = null;
+  // The last if of the chain at the end of a list (where an elif or else goes).
+  const chainEnd = (list: Step[]): Extract<Step, { type: 'if' }> | null => {
+    let s = list[list.length - 1];
+    if (!s || s.type !== 'if') return null;
+    while (s.orelse.length === 1 && s.orelse[0].type === 'if' && s.orelse[0].elif) s = s.orelse[0];
+    return s;
+  };
   code.split('\n').forEach((raw, idx) => {
     const line = idx + 1;
     const noComment = raw.replace(/\s+#.*$/, '').replace(/^\s*#.*$/, '');
@@ -287,25 +353,67 @@ export function parse(code: string): { steps: Step[]; errors: Problem[] } {
     const indent = (noComment.match(/^ */) ?? [''])[0].length;
     const body = noComment.trim();
     if (RE.imp.test(body)) return;
-    if (indent === 0) loop = null;
-    else if (!loop) {
-      errors.push({ line, msg: '이 줄은 앞에 빈칸이 필요 없어요.', fix: '줄 앞의 빈칸을 지워 주세요.' });
+    if (pending) {
+      if (indent > pending.indent) {
+        frames.push({ indent, list: pending.list });
+        pending = null;
+      } else {
+        errors.push({ line: pending.line, msg: '이 줄 아래에 들여 쓴 줄이 없어요.', fix: '안에 넣을 줄을 빈칸 4개 들여 써 주세요 (넣을 것이 없으면 pass).' });
+        pending = null;
+      }
+    }
+    while (frames.length > 1 && indent < frames[frames.length - 1].indent) frames.pop();
+    const top = frames[frames.length - 1];
+    if (indent !== top.indent) {
+      errors.push(
+        frames.length === 1 ? { line, msg: '이 줄은 앞에 빈칸이 필요 없어요.', fix: '줄 앞의 빈칸을 지워 주세요.' } : { line, msg: '들여쓰기가 위 줄과 맞지 않아요.', fix: '같은 묶음의 줄은 빈칸 수를 똑같이 맞춰 주세요.' },
+      );
       return;
     }
+    const open = (list: Step[]) => {
+      pending = { list, indent, line };
+    };
     const rep = body.match(RE.repeat);
     if (rep) {
-      if (indent > 0) {
-        errors.push({ line, msg: '반복 안에 반복은 아직 쓸 수 없어요.' });
+      const loop: Step = { type: 'repeat', times: Number(rep[1]), body: [], line };
+      top.list.push(loop);
+      open(loop.body);
+      return;
+    }
+    const head = body.match(RE.ifHead);
+    if (head) {
+      const cond = parseCond(head[2]);
+      if (!cond) {
+        errors.push({ line, msg: `조건을 알 수 없어요: ${head[2]}`, fix: '예: if cell.is_on("높이 정상"):  ·  if not cell.is_on("금속"):  ·  if bad >= 3:' });
         return;
       }
-      loop = { type: 'repeat', times: Number(rep[1]), body: [], line };
-      steps.push(loop);
+      const step: Extract<Step, { type: 'if' }> = { type: 'if', cond, body: [], orelse: [], line };
+      if (head[1] === 'elif') {
+        const end = chainEnd(top.list);
+        if (!end || end.orelse.length) {
+          errors.push({ line, msg: 'elif 는 if 바로 다음에 써요.', fix: '위에 같은 칸에서 시작하는 if 를 먼저 써 주세요.' });
+          return;
+        }
+        step.elif = true;
+        end.orelse.push(step);
+      } else top.list.push(step);
+      open(step.body);
+      return;
+    }
+    if (RE.elseHead.test(body)) {
+      const end = chainEnd(top.list);
+      if (!end || end.orelse.length) {
+        errors.push({ line, msg: 'else 는 if 바로 다음에 써요.', fix: '위에 같은 칸에서 시작하는 if 를 먼저 써 주세요.' });
+        return;
+      }
+      open(end.orelse);
       return;
     }
     if (RE.pass.test(body)) return;
     const step = parseLine(body, line, errors);
-    if (step) (indent > 0 && loop ? loop.body : steps).push(step);
+    if (step) top.list.push(step);
   });
+  if (pending) errors.push({ line: (pending as { line: number }).line, msg: '이 줄 아래에 들여 쓴 줄이 없어요.', fix: '안에 넣을 줄을 빈칸 4개 들여 써 주세요 (넣을 것이 없으면 pass).' });
   return { steps, errors };
 }
 
@@ -369,31 +477,56 @@ function serializeOne(s: Step): string {
       return `cell.rule(${[...s.when, s.to].map((w) => `"${w}"`).join(', ')})`;
     case 'cellLimit':
       return `cell.limit("${s.what}", ${s.value})`;
+    case 'cellSend':
+      return 'cell.send()';
+    case 'cellEject':
+      return 'cell.eject()';
+    case 'setVar':
+      return `${s.name} = ${s.value}`;
+    case 'addVar':
+      return `${s.name} ${s.by < 0 ? '-=' : '+='} ${Math.abs(s.by)}`;
+    case 'break':
+      return 'break';
     case 'repeat':
+    case 'if':
       return '';
+  }
+}
+
+function serializeList(list: readonly Step[], pad: string, out: string[]): void {
+  if (!list.length) out.push(`${pad}pass`);
+  for (const s of list) {
+    if (s.type === 'repeat') {
+      out.push(`${pad}for _ in range(${s.times}):`);
+      serializeList(s.body, pad + '    ', out);
+    } else if (s.type === 'if') {
+      let at: Extract<Step, { type: 'if' }> = s;
+      out.push(`${pad}if ${condCode(at.cond)}:`);
+      serializeList(at.body, pad + '    ', out);
+      while (at.orelse.length === 1 && at.orelse[0].type === 'if' && at.orelse[0].elif) {
+        at = at.orelse[0];
+        out.push(`${pad}elif ${condCode(at.cond)}:`);
+        serializeList(at.body, pad + '    ', out);
+      }
+      if (at.orelse.length) {
+        out.push(`${pad}else:`);
+        serializeList(at.orelse, pad + '    ', out);
+      }
+    } else out.push(pad + serializeOne(s));
   }
 }
 
 export function serialize(steps: readonly Step[]): string {
   const uses = new Set<string>(['robot']);
-  const scan = (list: readonly Step[]) =>
-    list.forEach((s) => {
-      if (s.type === 'find') uses.add(s.camera === 'hand' ? 'hand_camera' : 'camera');
-      if (s.type === 'cellLook' || s.type === 'cellLearn') uses.add('camera');
-      // A 실습 셀 program imports the cell with the robot.
-      if (s.type.startsWith('cell')) uses.add('cell');
-      if (s.type === 'repeat') scan(s.body);
-    });
-  scan(steps);
+  for (const s of allSteps(steps)) {
+    if (s.type === 'find') uses.add(s.camera === 'hand' ? 'hand_camera' : 'camera');
+    if (s.type === 'cellLook' || s.type === 'cellLearn') uses.add('camera');
+    // A 실습 셀 program imports the cell with the robot (an if on a cell input too).
+    if (s.type.startsWith('cell') || (s.type === 'if' && s.cond.kind === 'signal')) uses.add('cell');
+  }
   const order = ['robot', 'camera', 'hand_camera', 'cell'].filter((n) => uses.has(n));
   const out = [`from edu import ${order.join(', ')}`, ''];
-  for (const s of steps) {
-    if (s.type === 'repeat') {
-      out.push(`for _ in range(${s.times}):`);
-      if (!s.body.length) out.push('    pass');
-      s.body.forEach((b) => out.push(`    ${serializeOne(b)}`));
-    } else out.push(serializeOne(s));
-  }
+  if (steps.length) serializeList(steps, '', out);
   return out.join('\n') + '\n';
 }
 
@@ -422,6 +555,9 @@ export function check(steps: readonly Step[], ctx: CheckContext): { errors: Prob
   const warnings: Problem[] = [];
   const effector = EFFECTOR_BY_ID[ctx.effector];
   const assigned = new Set<string>();
+  /** Number boxes given a value so far (in program order). */
+  const numbers = new Set<string>();
+  let loops = 0;
 
   const walk = (list: readonly Step[]) =>
     list.forEach((s) => {
@@ -473,7 +609,33 @@ export function check(steps: readonly Step[], ctx: CheckContext): { errors: Prob
         case 'repeat':
           if (s.times < 1 || s.times > 20)
             errors.push({ line: s.line, msg: `${s.times}번 반복은 쓸 수 없어요.`, fix: '1에서 20 사이로 정해 주세요.' });
+          loops += 1;
           walk(s.body);
+          loops -= 1;
+          break;
+        case 'if': {
+          const c = s.cond;
+          if (c.kind === 'signal') {
+            if (!ctx.cell) errors.push({ line: s.line, msg: '신호 조건은 실습 셀에서만 써요.', fix: '왼쪽 [환경]에서 실습 셀을 골라 주세요.' });
+            else if (!cellLayout(ctx.cell).inputs.includes(c.signal)) errors.push({ line: s.line, msg: `'${c.signal}'이라는 입력 신호는 없어요.`, fix: `${cellLayout(ctx.cell).inputs.map((n) => `"${n}"`).join(', ')} 중에서 골라 주세요.` });
+          } else if (!numbers.has(c.name)) errors.push({ line: s.line, msg: `'${c.name}'에 아직 숫자를 넣지 않았어요.`, fix: `이 줄보다 위에 ${c.name} = 0 처럼 먼저 숫자를 넣어 주세요.` });
+          walk(s.body);
+          walk(s.orelse);
+          break;
+        }
+        case 'setVar':
+          numbers.add(s.name);
+          break;
+        case 'addVar':
+          if (!numbers.has(s.name)) errors.push({ line: s.line, msg: `'${s.name}'에 아직 숫자를 넣지 않았어요.`, fix: `이 줄보다 위에 ${s.name} = 0 처럼 먼저 숫자를 넣어 주세요.` });
+          break;
+        case 'break':
+          if (!loops) errors.push({ line: s.line, msg: 'break 는 반복 안에서만 써요.', fix: '반복(for) 안에 넣어 주세요.' });
+          break;
+        case 'cellSend':
+        case 'cellEject':
+          if (!ctx.cell) errors.push({ line: s.line, msg: '이 명령은 실습 셀에서만 써요.', fix: '왼쪽 [환경]에서 실습 셀을 골라 주세요.' });
+          else if (!cellLayout(ctx.cell).line.inspect) errors.push({ line: s.line, msg: `${CELL_BY_ID[ctx.cell].name}에는 검사 위치가 없어요.`, fix: '부품 보내기 · 불량 밀어내기는 C 검사 · 불량 배출 셀에서 써요.' });
           break;
         case 'joint':
           if (s.j < 1 || s.j > activeArm().dof) errors.push({ line: s.line, msg: `${s.j}번 관절은 없어요.`, fix: `1번부터 ${activeArm().dof}번까지 있어요.` });
