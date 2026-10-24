@@ -64,7 +64,7 @@ export const CELLS: readonly CellInfo[] = [
     letter: 'D',
     name: '머신 텐딩 셀',
     note: 'CNC 선반 문 · 척 · 소재 · 완성품 트레이',
-    built: false,
+    built: true,
   },
   {
     id: 'assembly',
@@ -85,6 +85,8 @@ export interface CellPlace {
   z: number;
   /** A bin: parts let go there spread over its four corners (this far off its middle), then a layer up. */
   spread?: number;
+  /** Inside a machine: the tool goes in and out through this point in front of its door (at travel height), mm. */
+  via?: { x: number; y: number };
 }
 
 /** A grid of places (a plate's marked positions; a pallet pattern): `rows` along +x, `cols` along +y. */
@@ -173,6 +175,8 @@ export type SensorDef =
 export interface ActuatorDef {
   output: string;
   timeS: number;
+  /** The arm keeps off its box too (a door): the name a collision with it reports. */
+  guard?: string;
   /** Inputs: fully on (travel 1) and fully off (0). */
   onEnd?: string;
   offEnd?: string;
@@ -189,6 +193,8 @@ export interface CycleDef {
   busy: string;
   done: string;
   timeS: number;
+  /** Where the workpiece sits while it is machined (it comes out machined, or spoiled when the cycle is cut). */
+  place?: string;
 }
 
 export interface LineDef {
@@ -212,6 +218,8 @@ export interface LineDef {
   soft?: { min: V3; max: V3 }[];
   /** C's inspection: what each passing part is read for, where the line stops it to decide, and how it goes on. */
   inspect?: InspectDef;
+  /** A place a clamp holds (D's chuck): nothing goes in or out there while `locked` is on. */
+  clamp?: { place: string; locked: string };
 }
 
 /**
@@ -594,11 +602,14 @@ export const D_MACHINE = {
   x1: 380,
   y0: -125,
   y1: 190,
-  top: 210,
-  door: { y0: -62, y1: 62, z1: 150 },
+  top: 240,
+  /** The opening runs up into the roof (an auto door with a roof flap): a gripper reaching down to the chuck has its wrist high. */
+  door: { y0: -62, y1: 62, z1: 240 },
   chuck: { x: 245, y: 0, r: 20, top: 25 },
 };
 export const D_POSE = { dx: 65, dy: 15 };
+/** A stand in front of the door where the next blank waits while the machine works (D6), mm. */
+export const D_WAIT = { x: 80, y: -85 };
 /** A point of the machine's frame in the cell's. */
 export const dCell = (x: number, y: number): [number, number] => [y + D_POSE.dx, -x + D_POSE.dy];
 /** A box of the machine's frame in the cell's. */
@@ -614,18 +625,18 @@ function tendLayout(): CellLayout {
     dBox('CNC 머신', [290, M.y0, 0], [M.x1, M.y1, M.top], 8),
     dBox('CNC 머신', [M.x0, M.y0, 0], [290, M.door.y0, M.top], 8),
     dBox('CNC 머신', [M.x0, M.door.y1, 0], [290, M.y1, M.top], 8),
-    dBox('CNC 머신', [M.x0, M.door.y0, M.door.z1], [290, M.door.y1, M.top], 8),
     dBox('척', [M.chuck.x - M.chuck.r, M.chuck.y - M.chuck.r, 0], [M.chuck.x + M.chuck.r, M.chuck.y + M.chuck.r, M.chuck.top - 6], 3),
-    box('소재 트레이', [90, -60, 0], [170, 20, PLATE_TOP], 3),
-    box('완성품 트레이', [90, 60, 0], [170, 140, PLATE_TOP], 3),
+    box('소재 트레이', [90, 60, 0], [170, 140, PLATE_TOP], 3),
+    box('완성품 트레이', [90, -60, 0], [170, 20, PLATE_TOP], 3),
     box('라이트 커튼', [209, -86, CELL_FLOOR_Z], [221, -74, 110], 6),
     box('라이트 커튼', [209, 154, CELL_FLOOR_Z], [221, 166, 110], 6),
+    box('대기 자리', [D_WAIT.x - 15, D_WAIT.y - 15, 0], [D_WAIT.x + 15, D_WAIT.y + 15, PLATE_TOP], 3),
   ];
   const floorOf = dBox('', [M.x0, M.y0, CELL_FLOOR_Z], [M.x1, M.y1, 0]);
-  const solids: Box[] = [PED, { name: 'CNC 머신 바닥', min: floorOf.min, max: floorOf.max }, under('소재 트레이 받침', [100, -50], [160, 10], 0), under('완성품 트레이 받침', [100, 70], [160, 130], 0)];
+  const solids: Box[] = [PED, { name: 'CNC 머신 바닥', min: floorOf.min, max: floorOf.max }, under('소재 트레이 받침', [100, 70], [160, 130], 0), under('완성품 트레이 받침', [100, -50], [160, 10], 0), under('대기 자리 받침', [D_WAIT.x - 10, D_WAIT.y - 10], [D_WAIT.x + 10, D_WAIT.y + 10], 0)];
   const raw: CellGrid = {
     name: '소재 트레이',
-    origin: { x: 105, y: -45, z: PLATE_TOP },
+    origin: { x: 105, y: 75, z: PLATE_TOP },
     rows: 3,
     cols: 3,
     pitch: 25,
@@ -634,7 +645,7 @@ function tendLayout(): CellLayout {
   };
   const done: CellGrid = {
     name: '완성품 트레이',
-    origin: { x: 105, y: 75, z: PLATE_TOP },
+    origin: { x: 105, y: -45, z: PLATE_TOP },
     rows: 3,
     cols: 3,
     pitch: 25,
@@ -643,7 +654,9 @@ function tendLayout(): CellLayout {
   };
   const [cx, cy] = dCell(M.chuck.x, M.chuck.y);
   const places: Record<string, CellPlace> = {
-    척: { x: cx, y: cy, z: M.chuck.top },
+    // The workpiece stands on the chuck's body, between its jaws.
+    척: { x: cx, y: cy, z: M.chuck.top - 6, via: { x: cx, y: cy + 110 } },
+    '대기 자리': { x: D_WAIT.x, y: D_WAIT.y, z: PLATE_TOP },
   };
   for (let k = 0; k < 9; k += 1) {
     const a = gridPlace(raw, k);
@@ -664,10 +677,11 @@ function tendLayout(): CellLayout {
     line: {
       sensors: [],
       actuators: [
-        // The sliding door (on = open): a panel across the opening that runs aside.
+        // The sliding door (on = open): a panel across the opening that runs aside
         {
           output: '문',
           timeS: 1.6,
+          guard: '문',
           onEnd: '문 열림',
           offEnd: '문 닫힘',
           box: {
@@ -682,8 +696,10 @@ function tendLayout(): CellLayout {
         needs: ['문 닫힘', '척 잠김'],
         busy: '가공 중',
         done: '가공 끝',
-        timeS: 6,
+        timeS: 12,
+        place: '척',
       },
+      clamp: { place: '척', locked: '척 잠김' },
     },
     inputs: ['문 열림', '문 닫힘', '척 잠김', '척 풀림', '가공 중', '가공 끝'],
     outputs: ['문', '척', '가공 시작'],

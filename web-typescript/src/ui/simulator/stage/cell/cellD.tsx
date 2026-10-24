@@ -6,23 +6,27 @@
  * standing up on the spindle (the 척 output closes the jaws; it spins while 가공 중) under a lamp and a
  * coolant nozzle, the control panel on its side with a screen, and its own stack light — standing at
  * the robot's right with the door towards it; the raw-part jig and the finished-part tray on stands in
- * front, and a light curtain across the operator's way to them.
+ * front, a small waiting stand by the door (where the next blank waits, D6), and a light curtain across
+ * the operator's way to them.
  */
 
 import { useFrame } from '@react-three/fiber';
 import { useRef, type RefObject } from 'react';
 import type { Group, MeshStandardMaterial } from 'three';
 
-import { D_MACHINE, D_POSE } from '@/engine/simulator/cell/cells';
+import { D_MACHINE, D_POSE, D_WAIT, cellLayout } from '@/engine/simulator/cell/cells';
 import type { WorldState } from '@/engine/simulator/sim';
 
 import { RBox, Turned, pill } from '../sceneKit';
-import { F, Hose, MarkedPlate, Paint, Skin, Steel, Tagged, m, travel, useSheet } from './kit';
+import { F, Hose, MarkedPlate, Paint, Skin, Stand, Steel, Tagged, m, travel, useSheet } from './kit';
 
 const SKIN = '#d6dade';
 const DARK = '#4a5059';
 
-/** The door: a panel with a tinted window that slides along +y as 문 opens. */
+/** Lamp and nozzle height inside the work area, mm. */
+const INSIDE = 180;
+
+/** The door: a panel with a tinted window and a roof flap (the opening runs up into the roof), sliding along +y as 문 opens. */
 function Door({ world }: { world: RefObject<WorldState | null> }) {
   const M = D_MACHINE;
   const g = useRef<Group>(null);
@@ -33,6 +37,9 @@ function Door({ world }: { world: RefObject<WorldState | null> }) {
   return (
     <group ref={g}>
       <RBox at={[M.x0 - 2, 0, M.door.z1 / 2]} size={[4, w, M.door.z1]} radius={1}>
+        <Skin color={SKIN} />
+      </RBox>
+      <RBox at={[(M.x0 + 290) / 2, 0, M.top - 3]} size={[290 - M.x0, w, 4]} radius={1}>
         <Skin color={SKIN} />
       </RBox>
       <mesh position={[m(M.x0 - 4.2), 0, m(M.door.z1 * 0.58)]} rotation={[Math.PI / 2, -Math.PI / 2, 0]}>
@@ -163,12 +170,18 @@ function Machine() {
       </RBox>
       {side(M.y0, M.door.y0)}
       {side(M.door.y1, M.y1)}
-      <RBox at={[(M.x0 + 290) / 2, 0, (M.door.z1 + M.top - 2) / 2]} size={[290 - M.x0, M.door.y1 - M.door.y0, M.top - 2 - M.door.z1]} radius={2}>
-        <Skin color={SKIN} />
-      </RBox>
-      <RBox at={[(M.x0 + M.x1) / 2, 0, M.top - 8.5]} size={[M.x1 - M.x0 + 2, M.y1 - M.y0 + 2, 17]} radius={3}>
+      {/* The top band round the roof opening over the work area. */}
+      <RBox at={[(290 + M.x1) / 2, 0, M.top - 8.5]} size={[M.x1 - 290 + 2, M.y1 - M.y0 + 2, 17]} radius={3}>
         <Skin color={DARK} />
       </RBox>
+      {[
+        [M.y0 - 1, M.door.y0],
+        [M.door.y1, M.y1 + 1],
+      ].map(([y0, y1]) => (
+        <RBox key={y0} at={[(M.x0 + 290) / 2, (y0 + y1) / 2, M.top - 8.5]} size={[290 - M.x0, y1 - y0, 17]} radius={3}>
+          <Skin color={DARK} />
+        </RBox>
+      ))}
       {/* The work area inside: a dark bed and stainless walls, a lamp, a coolant nozzle. */}
       <RBox at={[(M.x0 + 290) / 2, 0, F + 18 + (-F - 18) / 2]} size={[290 - M.x0, M.door.y1 - M.door.y0, -F - 18]} radius={1}>
         <Paint color="#2f343b" rough={0.6} />
@@ -177,11 +190,11 @@ function Machine() {
         <planeGeometry args={[m(M.door.y1 - M.door.y0), m(M.door.z1)]} />
         <meshStandardMaterial color="#8d959e" metalness={0.6} roughness={0.35} />
       </mesh>
-      <pointLight position={[m(250), 0, m(M.door.z1 - 12)]} distance={0.22} decay={2} intensity={0.05} color="#fff3dc" />
-      <RBox at={[262, 0, M.door.z1 - 4]} size={[40, 10, 4]} radius={1}>
+      <pointLight position={[m(250), 0, m(INSIDE - 12)]} distance={0.22} decay={2} intensity={0.05} color="#fff3dc" />
+      <RBox at={[262, 0, INSIDE - 4]} size={[40, 10, 4]} radius={1}>
         <meshStandardMaterial color="#fff6e6" emissive="#fff1d6" emissiveIntensity={1.2} toneMapped={false} />
       </RBox>
-      <Hose pts={[[285, 40, M.door.z1 - 6], [270, 30, 95], [258, 14, 60], [253, 7, 44]]} r={1.6} color="#4aa3e0" />
+      <Hose pts={[[285, 40, INSIDE - 6], [270, 30, 95], [258, 14, 60], [253, 7, 44]]} r={1.6} color="#4aa3e0" />
       {/* Door rail along the top of the opening, out over the right cheek. */}
       <RBox at={[M.x0 - 3, (M.door.y0 + M.door.y1 + 124) / 2, M.door.z1 + 4]} size={[5, M.door.y1 - M.door.y0 + 124, 6]} radius={1}>
         <Steel color="#8c949d" />
@@ -242,6 +255,31 @@ function LightCurtain() {
   );
 }
 
+/** The waiting stand in front of the door: a small dark plate with a yellow square marking the spot. */
+function WaitStand() {
+  const b = cellLayout('tend').fixed.find((f) => f.name === '대기 자리')!;
+  const top = b.max[2];
+  const [x, y] = [D_WAIT.x, D_WAIT.y];
+  const S = b.max[0] - b.min[0];
+  return (
+    <Stand x0={b.min[0] + 3} x1={b.max[0] - 3} y0={b.min[1] + 3} y1={b.max[1] - 3} top={top - 6} s={6}>
+      <RBox at={[x, y, top - 4]} size={[S, S, 8]} radius={2}>
+        <meshStandardMaterial color="#454c55" roughness={0.6} />
+      </RBox>
+      {[
+        [x, y - 11, 24, 2],
+        [x, y + 11, 24, 2],
+        [x - 11, y, 2, 24],
+        [x + 11, y, 2, 24],
+      ].map(([cx, cy, sx, sy]) => (
+        <RBox key={`${cx},${cy}`} at={[cx, cy, top + 0.3]} size={[sx, sy, 0.6]} radius={0.2}>
+          <meshStandardMaterial color="#f2c230" roughness={0.5} />
+        </RBox>
+      ))}
+    </Stand>
+  );
+}
+
 export function TendCell({ world, onHover }: { world: RefObject<WorldState | null>; onHover: (n: string | null) => void }) {
   return (
     <group>
@@ -263,6 +301,9 @@ export function TendCell({ world, onHover }: { world: RefObject<WorldState | nul
       </Tagged>
       <Tagged name="완성품 트레이" onHover={onHover}>
         <MarkedPlate cell="tend" grid="완성품 트레이" />
+      </Tagged>
+      <Tagged name="대기 자리" onHover={onHover}>
+        <WaitStand />
       </Tagged>
       <Tagged name="라이트 커튼" onHover={onHover}>
         <LightCurtain />

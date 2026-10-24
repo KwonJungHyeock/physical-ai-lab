@@ -26,6 +26,8 @@ export interface MissionSetup {
   beltOn?: boolean;
   /** Parts waiting at the dispenser (B), in the order they drop. */
   queue?(l: CellLayout): DeskObject[];
+  /** The equipment's state at the start (D4: the machine already at work). */
+  line?(s: LineState): void;
 }
 
 /** What a check needs: the parts where they are, the run's record. */
@@ -715,14 +717,183 @@ const C: CellMission[] = [
   },
 ];
 
-const D = ladder('tend', 'D', [
-  ['척에 넣기', '문 열림 확인 뒤 넣기', '소재 하나를 열린 선반의 척에 넣어요.'],
-  ['척 잠김 뒤 손 빼기', '척 신호 기다리기', '척이 잠긴 신호를 받은 뒤 그리퍼를 열고 빠져나와요.'],
-  ['가공 시작 · 끝', '문 닫기 → 가공 → 끝 신호', '문을 닫고 가공을 시작해, 끝나면 꺼내 완성품 트레이에 놓아요.'],
-  ['같은 번호 칸에', '소재 칸 ↔ 완성품 칸 맞추기', '꺼낸 완성품을 소재와 같은 번호 칸에 놓아요.'],
-  ['인터록', '가공 중 들어가지 않기', '가공 중에는 기다렸다가, 끝 신호 뒤에만 들어가요.'],
-  ['6개 연속 · 미리 집기', '가공하는 동안 다음 소재 준비', '가공하는 동안 다음 소재를 미리 집어 사이클을 줄여요.'],
-]);
+/* --- D: 머신 텐딩 ------------------------------------------------------------ */
+
+/** D6's time, s: the reference program with the next blank brought ahead, with some room (measured). */
+const D6_TIME = 185;
+
+const HEAD_D = 'from edu import robot, cell\n\nrobot.home()\n';
+const RAW = '#9aa3ad';
+/** A blank on the raw-part tray's place k (0-based). */
+const blanks = (n: number) => (l: CellLayout) => Array.from({ length: n }, (_, k) => {
+  const p = gridPlace(l.grids['소재 트레이'], k);
+  return makePart(p.x, p.y, p.z, { size: [18, 18, 20], color: RAW, massG: 30 });
+});
+/** One full machining cycle with the door, the chuck and the start signal, from loading to unloading. */
+const OPEN = 'cell.set("문", True)\ncell.wait("문 열림")\n';
+const SHUT = 'cell.set("문", False)\ncell.wait("문 닫힘")\n';
+const LOCK = 'cell.set("척", True)\ncell.wait("척 잠김")\n';
+const FREE = 'cell.set("척", False)\ncell.wait("척 풀림")\n';
+const RUN = 'cell.set("가공 시작", True)\ncell.wait("가공 끝")\ncell.set("가공 시작", False)\n';
+const ind = (code: string) => code.replace(/^(?=.)/gm, '    ');
+
+/** A workpiece in the chuck now. */
+const chuckPart = (j: Judge) => {
+  const c = j.l.places['척'];
+  return partAt(j, c.x, c.y, c.z);
+};
+
+/** Machined parts on the finished-part tray (on its places 1..n, or anywhere on it). */
+function finished(n: number, label: string, places?: number[]): Check {
+  return {
+    label,
+    judge: (j) => {
+      const g = j.l.grids['완성품 트레이'];
+      let c = 0;
+      let wrong = '';
+      for (let k = 0; k < g.rows * g.cols; k += 1) {
+        if (places && !places.includes(k + 1)) continue;
+        const p = gridPlace(g, k);
+        const o = partAt(j, p.x, p.y, p.z);
+        if (!o) continue;
+        if (o.damaged) wrong ||= '가공 중단으로 불량이 된 부품이 있어요';
+        else if (!o.machined) wrong ||= '가공하지 않은 소재가 있어요';
+        else if (good(o)) c += 1;
+      }
+      return wrong ? { ok: false, detail: wrong } : { ok: c >= n, detail: `${c} / ${n}개` };
+    },
+  };
+}
+
+/** D6: the next blank taken while the machine was cutting and put on the waiting stand, n times. */
+const stagedWhileBusy = (n: number): Check => ({
+  label: '가공하는 동안 다음 소재를 대기 자리에',
+  judge: (j) => {
+    let c = 0;
+    let busy = false;
+    for (const e of j.events) {
+      if (e.type === 'pick') busy = !!e.sensors['가공 중'];
+      else if (e.type === 'place' && e.place === '대기 자리' && busy) c += 1;
+    }
+    return { ok: c >= n, detail: `${c} / ${n}번` };
+  },
+});
+
+const neverCut: Check = {
+  label: '가공 중에 문을 열지 않았어요',
+  judge: (j) => (j.line.cut ? { ok: false, detail: `가공 중단 ${j.line.cut}번` } : { ok: true }),
+};
+
+const D: CellMission[] = [
+  {
+    id: 'D1',
+    cell: 'tend',
+    n: 1,
+    title: '문 열고 넣기',
+    adds: '문 열림 확인',
+    goal: '기계 문을 열고, 열림 신호를 기다린 뒤 소재 1을 척에 넣어요.',
+    hint: '문은 cell.set("문", True) 로 열려요. 끝까지 열리는 데 시간이 걸리니 cell.wait("문 열림") 으로 기다린 뒤 들어가요. 닫힌 문으로 들어가면 부딪혀요.',
+    setup: { parts: blanks(1), auto: false },
+    checks: [
+      {
+        label: '척 위에 소재',
+        judge: (j) => {
+          const o = chuckPart(j);
+          return o ? (good(o) ? { ok: true } : { ok: false, detail: '넘어져 있어요' }) : { ok: false, detail: '아직 없어요' };
+        },
+      },
+      safe,
+    ],
+    solution: `${HEAD_D}${OPEN}robot.pick("소재 1")\nrobot.place("척")\nrobot.home()\n`,
+  },
+  {
+    id: 'D2',
+    cell: 'tend',
+    n: 2,
+    title: '가공 한 번',
+    adds: '문 닫힘 · 척 잠김 조건',
+    goal: '소재를 넣고 나와서 문을 닫고 척을 잠근 뒤, 가공을 시작해 끝날 때까지 기다려요.',
+    hint: '기계는 문 닫힘 · 척 잠김이 모두 켜져야 가공을 시작해요. 가공 시작을 켜고 cell.wait("가공 끝") 으로 기다린 뒤 가공 시작을 꺼요.',
+    setup: { parts: blanks(1), auto: false },
+    checks: [
+      {
+        label: '척 위의 부품을 가공했어요',
+        judge: (j) => {
+          const o = chuckPart(j);
+          return !o ? { ok: false, detail: '척에 부품이 없어요' } : o.damaged ? { ok: false, detail: '가공 중단으로 불량' } : { ok: !!o.machined, detail: o.machined ? undefined : '아직 소재 그대로예요' };
+        },
+      },
+      safe,
+    ],
+    solution: `${HEAD_D}${OPEN}robot.pick("소재 1")\nrobot.place("척")\nrobot.home()\n${SHUT}${LOCK}${RUN}`,
+  },
+  {
+    id: 'D3',
+    cell: 'tend',
+    n: 3,
+    title: '꺼내기까지',
+    adds: '척 풀기 · 꺼내기',
+    goal: '한 사이클을 끝까지 해요. 가공이 끝나면 척을 풀고 문을 열어 완성품을 꺼내 완성품 트레이 1번에 놓아요.',
+    hint: '잠긴 척에서는 부품이 빠지지 않아요. cell.set("척", False) 후 척 풀림을 기다리고, 문을 연 다음 robot.pick("척") 으로 꺼내요.',
+    setup: { parts: blanks(1), auto: false },
+    checks: [finished(1, '완성품 트레이 1번에 가공된 부품', [1]), safe],
+    solution: `${HEAD_D}${OPEN}robot.pick("소재 1")\nrobot.place("척")\nrobot.home()\n${SHUT}${LOCK}${RUN}${FREE}${OPEN}robot.pick("척")\nrobot.place("완성품 1")\nrobot.home()\n${SHUT}`,
+  },
+  {
+    id: 'D4',
+    cell: 'tend',
+    n: 4,
+    title: '인터록',
+    adds: '가공 중이면 기다리기 (조건)',
+    goal: '시작할 때 기계가 이미 가공 중이에요. 끝날 때까지 기다렸다가 꺼내 완성품 1번에 놓고, 소재 1을 가공해 완성품 2번에 놓아요.',
+    hint: 'if cell.is_on("가공 중"): 아래에 cell.wait("가공 끝") 을 넣어요. 가공 중에 문을 열면 기계가 멈추고 그 부품은 불량이 돼요.',
+    setup: {
+      parts: (l) => {
+        const c = l.places['척'];
+        return [makePart(c.x, c.y, c.z, { size: [18, 18, 20], color: RAW, massG: 30 }), ...blanks(1)(l)];
+      },
+      auto: false,
+      line: (s) => {
+        s.out['척'] = true;
+        s.act['척'] = 1;
+        s.out['가공 시작'] = true;
+        s.cycleT = 2;
+      },
+    },
+    checks: [neverCut, finished(2, '완성품 1 · 2번에 가공된 부품', [1, 2]), safe],
+    solution:
+      `${HEAD_D}if cell.is_on("가공 중"):\n    cell.wait("가공 끝")\ncell.set("가공 시작", False)\n${FREE}${OPEN}robot.pick("척")\nrobot.place("완성품 1")\n` +
+      `robot.pick("소재 1")\nrobot.place("척")\nrobot.home()\n${SHUT}${LOCK}${RUN}${FREE}${OPEN}robot.pick("척")\nrobot.place("완성품 2")\nrobot.home()\n${SHUT}`,
+  },
+  {
+    id: 'D5',
+    cell: 'tend',
+    n: 5,
+    title: '3개 연속',
+    adds: '반복 + 같은 번호 칸',
+    goal: '소재 1~3을 차례로 가공해 완성품 1~3번에 놓아요.',
+    hint: '한 사이클을 반복 안에 넣고, 집는 곳은 "소재 트레이 다음 칸", 놓는 곳은 "완성품 트레이 다음 칸" 으로 해요. 두 트레이의 칸 번호가 함께 늘어요.',
+    setup: { parts: blanks(3), auto: false },
+    checks: [finished(3, '완성품 1~3번에 가공된 부품', [1, 2, 3]), neverCut, safe],
+    solution: `${HEAD_D}for _ in range(3):\n${ind(`${OPEN}robot.pick("소재 트레이 다음 칸")\nrobot.place("척")\nrobot.home()\n${SHUT}${LOCK}${RUN}${FREE}${OPEN}robot.pick("척")\nrobot.place("완성품 트레이 다음 칸")\nrobot.home()\n${SHUT}`)}`,
+  },
+  {
+    id: 'D6',
+    cell: 'tend',
+    n: 6,
+    title: '기다리는 동안 미리',
+    adds: '가공 중에 다음 소재 준비 · 시간 목표',
+    goal: '소재 4개를 가공해 완성품 1~4번에 놓아요. 가공하는 동안 다음 소재를 문 앞 대기 자리에 갖다 두어 목표 시간 안에 끝내요.',
+    hint: '기계가 가공하는 12초 동안 로봇은 쉬고 있어요. 그동안 다음 소재를 "대기 자리" 에 옮겨 두면, 꺼낸 뒤 가까운 대기 자리에서 바로 집어 넣을 수 있어요. 문을 닫아 두는 것도 잊지 마세요.',
+    setup: { parts: blanks(4), auto: false },
+    timeS: D6_TIME,
+    checks: [finished(4, '완성품 1~4번에 가공된 부품', [1, 2, 3, 4]), stagedWhileBusy(3), neverCut, timeWithin(D6_TIME), safe],
+    solution:
+      `${HEAD_D}robot.set_speed(50)\n${OPEN}robot.pick("소재 트레이 다음 칸")\nrobot.place("척")\n${SHUT}${LOCK}cell.set("가공 시작", True)\n` +
+      `for _ in range(3):\n${ind(`robot.pick("소재 트레이 다음 칸")\nrobot.place("대기 자리")\ncell.wait("가공 끝")\ncell.set("가공 시작", False)\n${FREE}${OPEN}robot.pick("척")\nrobot.place("완성품 트레이 다음 칸")\nrobot.pick("대기 자리")\nrobot.place("척")\n${SHUT}${LOCK}cell.set("가공 시작", True)\n`)}` +
+      `cell.wait("가공 끝")\ncell.set("가공 시작", False)\n${FREE}${OPEN}robot.pick("척")\nrobot.place("완성품 트레이 다음 칸")\nrobot.home()\n${SHUT}`,
+  },
+];
 
 const E = ladder('assembly', 'E', [
   ['핀 하나 꽂기', '위에서 수직으로 넣기', '핀 하나를 구멍(여유 2 mm)에 수직으로 꽂아요.'],
@@ -747,13 +918,8 @@ function sampleParts(l: CellLayout): DeskObject[] {
       return [-380, -330, -280, -230, -180, -130].map((y, k) => bPart(225, y, top, { color: ['빨강', '파랑', '노랑'][k % 3], d: k === 4 ? SMALL : BIG }));
     case 'inspect':
       return [];
-    case 'tend': {
-      const g = l.grids['소재 트레이'];
-      return Array.from({ length: 9 }, (_, k) => {
-        const p = gridPlace(g, k);
-        return P(p.x, p.y, p.z, { size: [18, 18, 20], color: '#b9c0c8', massG: 30 });
-      });
-    }
+    case 'tend':
+      return blanks(9)(l);
     case 'assembly': {
       const nest = l.places['핀 집는 자리'];
       const housing = (y: number) => makeObject('box', { x: 200, y, z: top }, { size: [30, 30, 16], color: '#3d4650', massG: 30 });

@@ -13,7 +13,7 @@
  */
 
 import type { Belt, Mover } from '../../physics/physics';
-import { OBJECT_KINDS, type DeskObject } from '../desk';
+import { OBJECT_KINDS, type DeskObject, type FixedBox } from '../desk';
 import type { CellAlert } from './faults';
 import { PART_HEIGHT, type CellLayout, type InspectDef, type SensorDef } from './cells';
 
@@ -53,13 +53,17 @@ export interface LineState {
   /** C's record: parts passed on and ejected so far. */
   passed: number;
   ejected: number;
+  /** D: cycles finished and cut short so far; the start refused while the machine was not ready. */
+  machined: number;
+  cut: number;
+  refused: boolean;
 }
 
 export function newLine(l: CellLayout, auto: boolean, refill = 0): LineState {
   const out = Object.fromEntries(l.outputs.map((n) => [n, false]));
   const inputs = Object.fromEntries(l.inputs.map((n) => [n, false]));
   const act = Object.fromEntries((l.line.actuators ?? []).map((a) => [a.output, 0]));
-  return { t: 0, auto, out, in: inputs, ext: 0, phase: 'idle', phaseT: 0, requests: 0, blockedT: 0, log: [], fed: 0, refill, halted: false, act, cycleT: null, queue: [], gate: 0, inspected: null, ask: null, passed: 0, ejected: 0 };
+  return { t: 0, auto, out, in: inputs, ext: 0, phase: 'idle', phaseT: 0, requests: 0, blockedT: 0, log: [], fed: 0, refill, halted: false, act, cycleT: null, queue: [], gate: 0, inspected: null, ask: null, passed: 0, ejected: 0, machined: 0, cut: 0, refused: false };
 }
 
 /** A part's footprint radius and height, mm. */
@@ -98,6 +102,8 @@ export interface LineStep {
   refilled: number;
   /** Parts the dispenser dropped onto the belt (the caller adds them to the world). */
   spawned: DeskObject[];
+  /** D: the machine's cycle ended this frame, finished or cut short (the caller marks the workpiece). */
+  cycleEnd?: 'done' | 'cut';
 }
 
 const onBelt = (l: CellLayout, o: DeskObject) => {
@@ -269,18 +275,41 @@ export function stepLine(l: CellLayout, s: LineState, parts: readonly DeskObject
 
   // A machine's cycle: started by its output when what it needs is on (a closed door, a locked chuck), busy, then done.
   const cy = l.line.cycle;
+  let cycleEnd: LineStep['cycleEnd'];
   if (cy) {
     const go = s.out[cy.output] && !s.halted;
-    if (!go) s.cycleT = null;
-    else if (s.cycleT === null) {
-      if (cy.needs.every((n) => s.in[n]) && !s.in[cy.done]) s.cycleT = 0;
+    const ready = cy.needs.every((n) => s.in[n]);
+    // Once started the cycle runs to its end whatever the start signal does (a start is a push, not a hold).
+    const midCycle = s.cycleT !== null && s.cycleT < cy.timeS;
+    if ((!go && !midCycle) || s.halted) {
+      s.cycleT = null;
+      s.refused = false;
+    } else if (s.cycleT === null) {
+      if (ready && !s.in[cy.done]) s.cycleT = 0;
+      else if (!ready && !s.in[cy.done] && !s.refused) {
+        // Asked to start with the door open or the chuck loose: the machine does not start, and says why.
+        s.refused = true;
+        const why = cy.needs.filter((n) => !s.in[n]).join(' · ');
+        alerts.push({ t: s.t, level: 'info', kind: 'order', title: '가공 시작 안 함', msg: `가공 시작 신호가 왔지만 ${why}이 아니라서 기계가 시작하지 않았어요.`, fix: `${cy.needs.join(' · ')}이 모두 켜진 뒤에 가공을 시작해 주세요.` });
+      }
     } else {
       s.cycleT += dt;
-      // The door opened or the chuck let go mid-cycle: the machine stops.
-      if (!cy.needs.every((n) => s.in[n])) s.cycleT = null;
+      if (!ready) {
+        // The door opened or the chuck let go mid-cycle: the machine stops, and the piece is spoiled.
+        if (s.cycleT < cy.timeS) {
+          s.cut += 1;
+          cycleEnd = 'cut';
+          alerts.push({ t: s.t, level: 'warn', kind: 'damage', title: '가공 중단', msg: '가공 중에 문이 열리거나 척이 풀려서 기계가 멈췄어요. 그 부품은 불량이에요.', fix: `${cy.done} 신호를 기다린 뒤에 문을 열어 주세요.` });
+        }
+        s.cycleT = null;
+      }
     }
     setIn(s, cy.busy, s.cycleT !== null && s.cycleT < cy.timeS);
-    if (s.cycleT !== null && s.cycleT >= cy.timeS) setIn(s, cy.done, true);
+    if (s.cycleT !== null && s.cycleT >= cy.timeS && !s.in[cy.done]) {
+      setIn(s, cy.done, true);
+      s.machined += 1;
+      cycleEnd = 'done';
+    }
     if (!s.out[cy.output]) setIn(s, cy.done, false);
   }
 
@@ -300,7 +329,17 @@ export function stepLine(l: CellLayout, s: LineState, parts: readonly DeskObject
     }
   } else s.blockedT = 0;
 
-  return { movers, belts, alerts, refilled, spawned };
+  return { movers, belts, alerts, refilled, spawned, cycleEnd };
+}
+
+/** The boxes of guarded equipment (a door) where it is now: the arm keeps off them like furniture. */
+export function guardBoxes(l: CellLayout, s: LineState): FixedBox[] {
+  return (l.line.actuators ?? []).flatMap((a) => {
+    if (!a.guard || !a.box) return [];
+    const v = s.act[a.output] ?? 0;
+    const at = (k: 0 | 1) => a.box!.off[k].map((o, i) => o + (a.box!.on[k][i] - o) * v) as [number, number, number];
+    return [{ name: a.guard, min: at(0), max: at(1), pad: 0 }];
+  });
 }
 
 /**

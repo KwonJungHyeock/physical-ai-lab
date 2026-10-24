@@ -36,6 +36,8 @@ interface Snap {
   stacked: number;
   /** C's record: parts passed on and ejected (null on other lines). */
   record: { passed: number; ejected: number } | null;
+  /** D's record: cycles finished and cut short (null on cells without a machine). */
+  made: { done: number; cut: number } | null;
   /** C: a part waits at the station for 보내기 or 밀어내기. */
   held: boolean;
   fault: CellAlert | null;
@@ -62,6 +64,7 @@ function snapOf(w: WorldState | null): Snap | null {
     cycle: run.startT === null ? null : end - run.startT,
     stacked,
     record: l.line.inspect ? { passed: run.line.passed, ejected: run.line.ejected } : null,
+    made: l.line.cycle ? { done: run.line.machined, cut: run.line.cut } : null,
     held: run.line.phase === 'held' && !run.line.ask,
     fault: run.health.fault,
     halt: run.halt,
@@ -338,6 +341,17 @@ export default function CellHud(p: CellHudProps) {
               <span className={css.kpi}>
                 <small>불량률</small>
                 {snap.record.passed + snap.record.ejected ? `${Math.round((100 * snap.record.ejected) / (snap.record.passed + snap.record.ejected))}%` : '-'}
+              </span>
+            </>
+          ) : snap.made ? (
+            <>
+              <span className={css.kpi}>
+                <small>가공 완료</small>
+                {snap.made.done}
+              </span>
+              <span className={css.kpi}>
+                <small>가공 중단</small>
+                {snap.made.cut}
               </span>
             </>
           ) : (

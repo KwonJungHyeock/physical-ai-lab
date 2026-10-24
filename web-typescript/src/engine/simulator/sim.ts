@@ -518,7 +518,9 @@ async function cellPickAt(rt: Runtime, run: CellRun, place: string, p: CellPlace
   const top = here ? here.z + h : p.z + h;
   const travel = Math.max(CELL_TRAVEL_Z, top + 40);
   if (w.carry) throw new RunError('이미 부품을 들고 있어요.', '먼저 robot.place(...)로 놓아 주세요.');
+  clampFree(run, place, 'pick', p);
   if (kind === 'grip' && w.gapMm < (EFFECTOR_BY_ID[w.effector].gapMm?.open ?? 0) - 0.5) await release(rt, 'grip');
+  if (p.via) await moveTool(rt, { ...p.via, z: travel });
   await moveTool(rt, { x: p.x, y: p.y, z: travel });
   await moveTool(rt, { x: p.x, y: p.y, z: kind === 'suction' ? top : top - h / 2 });
   const sensors = { ...run.line.in };
@@ -530,6 +532,7 @@ async function cellPickAt(rt: Runtime, run: CellRun, place: string, p: CellPlace
   if (!took) raise(run, { t: run.line.t, level: 'warn', kind: 'order', title: '빈손', msg: `${place}에 집을 부품이 없었어요.`, fix: place === '끝 위치' ? 'cell.wait("끝 센서")로 부품이 올 때까지 기다려 주세요.' : undefined, at: [p.x, p.y, p.z + h] });
   else if (grid) run.next[grid] = (run.next[grid] ?? 0) + 1;
   await moveTool(rt, { x: p.x, y: p.y, z: travel });
+  if (p.via) await moveTool(rt, { ...p.via, z: travel });
 }
 
 async function cellPlace(rt: Runtime, place: string, dxShop: number, dyShop: number, dzShop: number): Promise<void> {
@@ -545,8 +548,10 @@ async function cellPlace(rt: Runtime, place: string, dxShop: number, dyShop: num
   const kind = EFFECTOR_BY_ID[w.effector].kind;
   const held = w.carry ? w.objects.find((o) => o.id === w.carry!.id) : undefined;
   if (!held) throw new RunError('놓을 부품을 들고 있지 않아요.', '먼저 robot.pick(...)로 집어 주세요.');
+  clampFree(run, place, 'place', p);
   const h = held.size[2];
   const travel = Math.max(CELL_TRAVEL_Z, surface + h + 40);
+  if (p.via) await moveTool(rt, { ...p.via, z: travel });
   await moveTool(rt, { x, y, z: travel });
   await moveTool(rt, { x, y, z: kind === 'suction' ? surface + h + 1 : surface + h / 2 + 1 });
   await release(rt, kind === 'suction' ? 'suction' : 'grip');
@@ -554,6 +559,7 @@ async function cellPlace(rt: Runtime, place: string, dxShop: number, dyShop: num
   if (grid) run.next[grid] = (run.next[grid] ?? 0) + 1;
   if (p.spread) run.next[place] = k + 1;
   await moveTool(rt, { x, y, z: travel });
+  if (p.via) await moveTool(rt, { ...p.via, z: travel });
 }
 
 /** What C's inspection sensors hold now (by input name). */
@@ -599,6 +605,22 @@ function holds(rt: Runtime, c: Cond): boolean {
 
 function condText(c: Cond): string {
   return c.kind === 'signal' ? `${c.signal} ${c.on ? '켜짐' : '꺼짐'}` : `${c.name} ${c.op} ${c.value}`;
+}
+
+/** D's chuck: nothing goes in or out while it is locked (the gripper would catch on its jaws). */
+function clampFree(run: CellRun, place: string, what: 'pick' | 'place', p: CellPlace): void {
+  const cl = run.layout.line.clamp;
+  if (!cl || place !== cl.place || !run.line.in[cl.locked]) return;
+  raise(run, {
+    t: run.line.t,
+    level: 'stop',
+    kind: 'order',
+    title: `${cl.locked} 상태`,
+    msg: what === 'pick' ? `${place}이 잠긴 채로 부품을 빼려 해서 그리퍼가 걸렸어요.` : `${place}이 잠겨 있어서 부품을 넣을 수 없어요.`,
+    fix: `cell.set("${place}", False) 로 풀고 ${place} 풀림을 기다린 뒤 해 주세요.`,
+    at: [p.x, p.y, p.z + 20],
+  });
+  throw haltError(run);
 }
 
 /** Wait for an input, as the controller's "WAIT DI[…]": the cell runs on meanwhile. */

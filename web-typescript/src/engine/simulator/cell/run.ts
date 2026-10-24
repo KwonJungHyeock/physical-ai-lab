@@ -16,9 +16,12 @@ import { objectSpec, stepDesk } from '../deskPhysics';
 import type { WorldState } from '../sim';
 import { CELL_FLOOR_Z, cellLayout, magazineParts, type CellId, type CellLayout } from './cells';
 import { knockAlert, newHealth, repair, watchLoad, type CellAlert, type Health } from './faults';
-import { newLine, stepLine, type LineState } from './line';
+import { guardBoxes, newLine, stepLine, type LineState } from './line';
 import { freeSetup, judge, missionById, type CellEvent, type CellMission } from './missions';
 import { newVision, type VisionState } from './vision';
+
+/** A machined workpiece's colour (D): bright turned steel. */
+export const MACHINED = '#e3e8ee';
 
 export interface CellRun {
   id: CellId;
@@ -57,12 +60,13 @@ export function newCellRun(id: CellId, missionId: string | null): { run: CellRun
     line.requests = 1;
   }
   line.queue = setup.queue?.(layout) ?? [];
+  setup.line?.(line);
   const run: CellRun = { id, layout, mission: m?.id ?? null, line, health: newHealth(), alerts: [], fresh: [], halt: null, events: [], next: {}, startT: null, endT: null, lastTip: null, vision: newVision() };
   return { run, parts: setup.parts(layout) };
 }
 
 /** The furniture the arm keeps off, and everything the physics world has as solid, and where its floor is. */
-export const cellFixed = (run: CellRun): FixedBox[] => run.layout.fixed;
+export const cellFixed = (run: CellRun): FixedBox[] => [...run.layout.fixed, ...guardBoxes(run.layout, run.line)];
 export const cellSolids = (run: CellRun): Box[] => [...run.layout.fixed, ...run.layout.solids];
 export const CELL_ENV: PhysicsEnv = { floorZ: CELL_FLOOR_Z, fine: true };
 
@@ -106,6 +110,19 @@ export function stepCell(w: WorldState, phys: PhysicsWorld, dt: number, chain: r
   phys.setMovers(ls.movers);
   phys.setBelts(ls.belts);
   ls.alerts.forEach((a) => raise(run, a));
+  // The door moves: the arm keeps off it where it is now.
+  if (run.layout.line.actuators?.some((a) => a.guard)) w.fixed = cellFixed(run);
+  // D: the workpiece in the machine comes out machined, or spoiled when its cycle was cut short.
+  const at = run.layout.line.cycle?.place ? run.layout.places[run.layout.line.cycle.place] : null;
+  if (ls.cycleEnd && at) {
+    const o = w.objects.find((p) => p.id !== w.carry?.id && Math.hypot(p.x - at.x, p.y - at.y) < 10 && Math.abs(p.z - at.z) < 8);
+    if (o && ls.cycleEnd === 'done') {
+      o.machined = true;
+      o.color = MACHINED;
+    }
+    if (o && ls.cycleEnd === 'cut') o.damaged = true;
+    w.version += 1;
+  }
 
   stepDesk(w, phys, dt, angles);
   w.version += 1;

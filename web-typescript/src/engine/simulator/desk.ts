@@ -73,6 +73,8 @@ export interface DeskObject {
   sides?: number;
   /** 실습 셀 C: a metal workpiece (the inductive sensor feels it); otherwise plastic. */
   metal?: boolean;
+  /** 실습 셀 D: machined (a bright turned finish). */
+  machined?: boolean;
 }
 
 /** A fixed part of a scene the arm must keep off, mm. */

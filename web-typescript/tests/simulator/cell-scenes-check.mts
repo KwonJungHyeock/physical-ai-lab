@@ -138,7 +138,7 @@ async function free(id: (typeof CELLS)[number]['id']) {
 
 // D: the door and the chuck; the machine runs only shut and locked, then reports done.
 {
-  const { run, line, set } = await free('tend');
+  const { w, run, line, set } = await free('tend');
   assert.ok(line.in['문 닫힘'] && line.in['척 풀림']);
   set('가공 시작', true);
   run(1);
@@ -154,7 +154,11 @@ async function free(id: (typeof CELLS)[number]['id']) {
   set('가공 시작', true);
   run(1);
   assert.ok(line.in['가공 중'], 'D: machining');
-  run(6);
+  set('가공 시작', false);
+  run(0.5);
+  assert.ok(line.in['가공 중'], 'D: a started cycle runs on with the start signal off');
+  set('가공 시작', true);
+  run(w.cell!.layout.line.cycle!.timeS);
   assert.ok(line.in['가공 끝'] && !line.in['가공 중'], 'D: done');
   set('가공 시작', false);
   run(0.1);
