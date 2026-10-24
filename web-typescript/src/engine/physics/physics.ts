@@ -135,6 +135,8 @@ export interface PhysicsWorld {
   add(block: BlockSpec): void;
   /** Take a block out of the world (a pin pressed into a housing becomes part of it). */
   remove(id: string): void;
+  /** Put a block somewhere at rest (mm, its centre; quaternion x, y, z, w). */
+  teleport(id: string, at: readonly [number, number, number], q: readonly [number, number, number, number]): void;
   /** Start over with these blocks (and the arm at `armAngles`, when given; `env` kept when not given). */
   reset(blocks: readonly BlockSpec[], obstacles?: readonly Box[], armAngles?: readonly number[], env?: PhysicsEnv): void;
   /** The machines' moving parts where they are now (a new id is added, a missing one taken away). */
@@ -472,6 +474,14 @@ export async function createPhysics(
     },
     add(spec) {
       addBody(spec);
+    },
+    teleport(id, at, q) {
+      const b = bodies.get(id);
+      if (!b) return;
+      b.body.setTranslation({ x: at[0] * M, y: at[1] * M, z: at[2] * M }, true);
+      b.body.setRotation({ x: q[0], y: q[1], z: q[2], w: q[3] }, true);
+      b.body.setLinvel({ x: 0, y: 0, z: 0 }, true);
+      b.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
     },
     remove(id) {
       const b = bodies.get(id);

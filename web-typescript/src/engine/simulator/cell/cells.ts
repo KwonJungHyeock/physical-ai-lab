@@ -218,6 +218,11 @@ export interface LineDef {
   soft?: { min: V3; max: V3 }[];
   /** C's inspection: what each passing part is read for, where the line stops it to decide, and how it goes on. */
   inspect?: InspectDef;
+  /**
+   * A box at the belt's end (E): a part carried past `past` (along the belt) drops straight down
+   * into the box's next free spot (x, y; from `z`), the right way up.
+   */
+  outBox?: { past: number; spots: [number, number][]; z: number };
   /** A place a clamp holds (D's chuck): nothing goes in or out there while `locked` is on. */
   clamp?: { place: string; locked: string };
   /** E's pin insertion into the housing at the jig. */
@@ -787,8 +792,9 @@ function assemblyLayout(): CellLayout {
     },
     grids: { 구멍: holes },
     line: {
-      // It carries a housing on past its end (by its middle), so the housing tips off into the box.
-      belt: { ...belt, min: [belt.min[0], belt.min[1] - 25] },
+      belt,
+      // A finished housing off the belt's end drops into the box: two by two, the right way up.
+      outBox: { past: belt.min[1] + 6, spots: [[184, -142], [216, -142], [184, -180], [216, -180]], z: 0 },
       beltOutput: '컨베이어',
       sensors: [
         {

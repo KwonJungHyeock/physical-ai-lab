@@ -61,9 +61,9 @@ export const LABS: readonly Lab[] = [
       { find: 'cell.wait("끝 센서")', note: '부품이 컨베이어 끝에 올 때까지 기다려요.' },
       { find: 'robot.place("적재 판 다음 칸")', note: '적재 판의 다음 빈 칸에 놓아요 (칸은 9개).' },
     ],
-    change: { from: 'range(9)', to: 'range(12)', what: '되풀이하는 횟수' },
-    predict: { q: '9 를 12 로 늘리면?', options: ['12개를 모두 쌓아요', '9개를 놓은 뒤 멈춰요', '처음부터 움직이지 않아요'], answer: 1, why: '매거진에 부품이 9개뿐이라 10번째 공급 때 부품이 오지 않아요. 60초를 기다린 뒤 멈춰요. 횟수는 준비된 부품 수에 맞춰야 해요.' },
-    expect: 'error',
+    change: { from: 'range(9)', to: 'range(5)', what: '되풀이하는 횟수' },
+    predict: { q: '9 를 5 로 줄이면?', options: ['9개를 모두 쌓아요', '5개만 쌓고 끝나서 목표를 못 채워요', '처음부터 움직이지 않아요'], answer: 1, why: '반복 횟수가 곧 만드는 개수예요. 목표 수(9개)와 반복 수가 맞아야 해요.' },
+    expect: 'fail',
   },
   {
     id: 'b4',

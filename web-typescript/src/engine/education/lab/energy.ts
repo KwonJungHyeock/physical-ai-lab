@@ -30,6 +30,7 @@ import { jointTrajectory } from '../../robot/motion';
 import { BINS, CAL_BOARD, DESK_Z, HOME_DEG, MARKERS, MARKER_MM, PLATE, binAt, type BinName } from '../../simulator/board';
 import { CAMERA, hsvCv, markerCalibration, poseAt, toPixel, toRobot, toolAt, type Picture } from './ai';
 import { CUP_R, PRESS_MM, type Mm } from './cell';
+import { obj, subj } from '../../robot/selfCollision';
 
 export type EnergyProblem = 1 | 2 | 3;
 
@@ -748,8 +749,8 @@ function pickPlace(sim: EnergySim, f: Found, plan: Plan): EnergyPick | null {
     } else sim.things[j].c = [c[0], c[1], 0];
   });
   const what = t.name + (f.k === k ? '' : ` (프로그램은 ${name}로 알아요)`);
-  sim.log('pick', `${what}: 집었어요${riders.length ? ` · 위에 ${riders.map((j) => sim.list[j].name).join(', ')}이(가) 얹혀 있어요` : ''}`, { at: [x, y, contact], thing: k });
-  if (riders.length) sim.log('ride', `${riders.map((j) => sim.list[j].name).join(', ')}이(가) ${t.name} 위에 얹혀 함께 올라가요`, { at: [x, y, contact + 10], thing: riders[0] });
+  sim.log('pick', `${what}: 집었어요${riders.length ? ` · 위에 ${subj(riders.map((j) => sim.list[j].name).join(', '))} 얹혀 있어요` : ''}`, { at: [x, y, contact], thing: k });
+  if (riders.length) sim.log('ride', `${subj(riders.map((j) => sim.list[j].name).join(', '))} ${t.name} 위에 얹혀 함께 올라가요`, { at: [x, y, contact + 10], thing: riders[0] });
 
   const pk: EnergyPick = { meant: f.k, k, speed: plan.carry(kind), aXY: 0, aZ: 0, needN: 0, holdN: t.holdN, dropped: false, riders, carryS: 0 };
   // Holding: the cup must give M(g + a_z) + M|a_xy| ÷ μ; riders slide off past μ_piece (g + a_z).
@@ -760,7 +761,7 @@ function pickPlace(sim: EnergySim, f: Found, plan: Plan): EnergyPick | null {
       if (axy > MU_PIECE * (G + acc[2])) {
         sim.riders = sim.riders.filter((x) => x !== r);
         const fl = sim.letGo(r.k, vel);
-        sim.log('drop', `${sim.list[r.k].name}이(가) 가속도 ${axy.toFixed(1)} m/s²에 ${t.name} 위에서 미끄러져 ${fl.where}에 떨어졌어요`, { at: fl.land.c, thing: r.k, value: axy });
+        sim.log('drop', `${subj(sim.list[r.k].name)} 가속도 ${axy.toFixed(1)} m/s²에 ${t.name} 위에서 미끄러져 ${fl.where}에 떨어졌어요`, { at: fl.land.c, thing: r.k, value: axy });
       }
     }
     const M = (t.massG + sim.riders.reduce((acc2, r) => acc2 + sim.list[r.k].massG, 0)) / 1000;
@@ -776,7 +777,7 @@ function pickPlace(sim: EnergySim, f: Found, plan: Plan): EnergyPick | null {
       const fl = sim.letGo(k, vel);
       for (const r of sim.riders) sim.letGo(r.k, vel);
       sim.riders = [];
-      sim.fail('drop', `${t.name}이(가) 흡착 컵에서 떨어졌어요. 가속도 ${axy.toFixed(1)} m/s²에 필요한 힘 ${need.toFixed(2)} N > 붙잡는 힘 ${t.holdN.toFixed(2)} N · ${fl.where}에 떨어짐`, { at: fl.land.c, thing: k, value: axy }, false);
+      sim.fail('drop', `${subj(t.name)} 흡착 컵에서 떨어졌어요. 가속도 ${axy.toFixed(1)} m/s²에 필요한 힘 ${need.toFixed(2)} N > 붙잡는 힘 ${t.holdN.toFixed(2)} N · ${fl.where}에 떨어짐`, { at: fl.land.c, thing: k, value: axy }, false);
     }
   };
   sim.moveJ(a, SPEED.down, hold);
@@ -803,7 +804,7 @@ function pickPlace(sim: EnergySim, f: Found, plan: Plan): EnergyPick | null {
     const c = sim.things[j].c;
     sim.things[j] = { c: [B.x + (c[0] - d[0]) * 0.3, B.y + (c[1] - d[1]) * 0.3, B.floorZ], mode: 'binned', bin };
     const own = BIN_OF[sim.list[j].kind] === bin;
-    const e = sim.log(own ? 'place' : 'wrong', own ? `${sim.list[j].name} → 분류함 ${bin} (${KIND_NAME[KIND_OF_BIN[bin]]})` : `${sim.list[j].name}이(가) 분류함 ${bin} (${KIND_NAME[KIND_OF_BIN[bin]]})에 섞여 들어갔어요 (제자리는 ${BIN_OF[sim.list[j].kind]})`, {
+    const e = sim.log(own ? 'place' : 'wrong', own ? `${sim.list[j].name} → 분류함 ${bin} (${KIND_NAME[KIND_OF_BIN[bin]]})` : `${subj(sim.list[j].name)} 분류함 ${bin} (${KIND_NAME[KIND_OF_BIN[bin]]})에 섞여 들어갔어요 (제자리는 ${BIN_OF[sim.list[j].kind]})`, {
       at: [B.x, B.y, B.rimZ],
       thing: j,
     });
@@ -852,7 +853,7 @@ function runJob(chain: readonly ChainSegment[], list: readonly Item[], vision: V
   }
   // What the camera never saw stays on the board.
   list.forEach((t, k) => {
-    if (sim.things[k].mode === 'board' && !seen.found.some((f) => f.k === k)) sim.fail('left', `${t.name}을(를) 찾지 못해 판에 남겼어요. 재활용되지 못해요`, { thing: k, at: [t.x, t.y, topOf(list, k)] }, false);
+    if (sim.things[k].mode === 'board' && !seen.found.some((f) => f.k === k)) sim.fail('left', `${obj(t.name)} 찾지 못해 판에 남겼어요. 재활용되지 못해요`, { thing: k, at: [t.x, t.y, topOf(list, k)] }, false);
   });
   return finish(sim, values, seen.found, seen.tooBig, picks);
 }

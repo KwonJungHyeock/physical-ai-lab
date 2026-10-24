@@ -124,6 +124,20 @@ export function stepCell(w: WorldState, phys: PhysicsWorld, dt: number, chain: r
     w.version += 1;
   }
 
+  // E: a housing carried off the belt's end drops into the box's next free spot.
+  const ob = run.layout.line.outBox;
+  const belt = run.layout.line.belt;
+  if (ob && belt) {
+    for (const o of w.objects) {
+      if (!o.pins || o.id === w.carry?.id || o.y > ob.past || o.z < belt.topZ - 6) continue;
+      const free = ob.spots.find(([x, y]) => !w.objects.some((k) => k !== o && k.pins && Math.hypot(k.x - x, k.y - y) < 14 && k.z < belt.topZ - 6));
+      const [x, y] = free ?? ob.spots[ob.spots.length - 1];
+      const z = ob.z + (free ? 0 : 20);
+      phys.teleport(o.id, [x, y, z + o.size[2] / 2], [0, 0, 0, 1]);
+      Object.assign(o, { x, y, z, q: [0, 0, 0, 1], yawDeg: 0 });
+    }
+  }
+
   stepDesk(w, phys, dt, angles);
   w.version += 1;
 

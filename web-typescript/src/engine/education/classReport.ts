@@ -22,6 +22,7 @@ import { TOPICS, TOPIC_BY_ID, type TopicId } from './catalog';
 import { FINAL_ITEMS, scoreFinal, type FinalRecord } from './lab/final';
 import { THEMES, type LabId, type ProblemNo } from './park';
 import { RUN_LOG_KEY } from './runLog';
+import { subj } from '../robot/selfCollision';
 
 export const REPORT_KIND = 'robot-city-report';
 export const REPORT_VERSION = 1;
@@ -250,10 +251,10 @@ function only(v: unknown, keys: readonly string[], what: string): Record<string,
   return v;
 }
 function str(v: unknown, max: number, what: string, empty = true): string {
-  if (typeof v !== 'string') return bad(`${what}이(가) 글자가 아니에요`);
-  if (v.length > max) bad(`${what}이(가) 너무 길어요`);
+  if (typeof v !== 'string') return bad(`${subj(what)} 글자가 아니에요`);
+  if (v.length > max) bad(`${subj(what)} 너무 길어요`);
   const s = cleanText(v, max);
-  if (!s && !empty) bad(`${what}이(가) 비어 있어요`);
+  if (!s && !empty) bad(`${subj(what)} 비어 있어요`);
   return s;
 }
 function int(v: unknown, max: number, what: string): number {

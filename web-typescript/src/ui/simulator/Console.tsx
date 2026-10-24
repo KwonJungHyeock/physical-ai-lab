@@ -90,6 +90,8 @@ import { Divergence, findColor, offCentre, probeJacobian, stepTowards, type Seen
 
 import BlockEditor from './editors/BlockEditor';
 import { CellTerminal, type PyEnd } from './editors/CellTerminal';
+import { PyTerminal } from './editors/PyTerminal';
+import { ModeSeg } from './editors/Terminal';
 import { labAt } from '@/engine/simulator/terminal/labs';
 import type { TermLine } from '@/engine/simulator/terminal/shell';
 import CameraViews, { analyse, type CameraView, type CameraViewsHandle, type Detection } from './stage/CameraViews';
@@ -138,6 +140,7 @@ import { DEFAULT_DISPLAY, type DisplayOpts } from './stage/sceneHelpers';
 import css from './console.module.css';
 import { isTouch } from './touch';
 import TouchTips from './TouchTips';
+import { obj } from '@/engine/robot/selfCollision';
 
 // memo: the 3D view re-renders only when one of its own props changes, not with every console update.
 const Stage = memo(
@@ -165,6 +168,9 @@ const LEVEL_KEY = 'robot-console-level';
 const DISPLAY_KEY = 'robot-console-display';
 /** 실습 셀: the steps passed, and the program kept for each step (and for 자유 실습). */
 const CELL_PASSED_KEY = 'robot-console-cell-passed';
+/** The Python tab's way (코드 / 터미널), kept apart for the cells and the arm alone. */
+const PY_MODE_KEY = 'robot-console-py-mode';
+type PyMode = 'code' | 'term';
 const CELL_PROG_KEY = 'robot-console-cell-prog';
 /** A cell program's start: the import line and the arm to its home pose. */
 const CELL_START = 'from edu import robot, cell\n\nrobot.home()\n';
@@ -513,8 +519,6 @@ export default function Console() {
     const id = window.setTimeout(() => setProgramRun(false), 3000);
     return () => window.clearTimeout(id);
   }, [programRun, busy, realRun]);
-  const runFold = display.autoFold && programRun;
-  const dockShown = dockOpen && !runFold;
   const chooseDisplay = (d: DisplayOpts) => {
     setDisplay(d);
     try {
@@ -551,8 +555,34 @@ export default function Console() {
   /** Steps passed (kept in this browser) and the last finished run of the open step. */
   const [cellPassed, setCellPassed] = useState<Record<string, boolean>>({});
   const [cellResult, setCellResult] = useState<boolean | null>(null);
-  /** 실습 셀's Python tab: the terminal (the blocks otherwise). */
+  /** 실습 셀's Python tab (the blocks otherwise). */
   const [cellTerm, setCellTerm] = useState(false);
+  /** The Python tab's way, in a cell and on the arm alone: write the code, or run it from a terminal. */
+  const [pyMode, setPyModeState] = useState<{ cell: PyMode; arm: PyMode }>({ cell: 'term', arm: 'code' });
+  useEffect(() => {
+    try {
+      const kept = JSON.parse(localStorage.getItem(PY_MODE_KEY) ?? 'null') as { cell?: PyMode; arm?: PyMode } | null;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- the browser's choice, read once after the first render
+      if (kept) setPyModeState((m) => ({ cell: kept.cell ?? m.cell, arm: kept.arm ?? m.arm }));
+    } catch {
+      /* the defaults */
+    }
+  }, []);
+  const setPyMode = (where: 'cell' | 'arm', m: PyMode) =>
+    setPyModeState((prev) => {
+      const next = { ...prev, [where]: m };
+      try {
+        localStorage.setItem(PY_MODE_KEY, JSON.stringify(next));
+      } catch {
+        /* this session only */
+      }
+      return next;
+    });
+  const cellTermOn = !!cellAt && cellTerm && pyMode.cell === 'term';
+  const armTermOn = !cellAt && level === 'python' && pyMode.arm === 'term';
+  // A run folds the panel away for the 3D, but not one from the terminal: its output is the point.
+  const runFold = display.autoFold && programRun && !cellTermOn && !armTermOn;
+  const dockShown = dockOpen && !runFold;
   useEffect(() => {
     try {
       const v = JSON.parse(localStorage.getItem(CELL_PASSED_KEY) ?? '{}') as Record<string, boolean>;
@@ -1226,7 +1256,7 @@ export default function Console() {
     setPassed(null);
     setErrorLines([]);
     setBadge(null);
-    if (next !== effector) addLog('info', next === 'none' ? '도구를 뺐어요. 이제 끝 플랜지만 있어요.' : `${EFFECTOR_BY_ID[next].name}을(를) 달았어요.`);
+    if (next !== effector) addLog('info', next === 'none' ? '도구를 뺐어요. 이제 끝 플랜지만 있어요.' : `${obj(EFFECTOR_BY_ID[next].name)} 달았어요.`);
     else addLog('info', flange ? '카메라 플랜지를 달았어요. 손 카메라를 쓸 수 있어요.' : '카메라 플랜지를 뗐어요.');
   };
 
@@ -1615,10 +1645,31 @@ export default function Console() {
    * play its timed commands in 3D with the collision checks. On the robot the
    * program starts from the real arm's pose, as it would there.
    */
-  const simulatePy = async () => {
-    if (!loaded || busy || level === 'basic') return;
+  /** The console's log, printed in the terminal while python3 runs there. */
+  const sinkTo =
+    (print: (l: TermLine) => void) =>
+    (kind: LogKind, raw: string, fix?: string) => {
+      // A cell alert comes as "주의 · 핀 걸림: …": the terminal's own [주의] / [오류] says the level.
+      const msg = raw.replace(/^(알림|주의|정지|고장) · /, '');
+      if (kind === 'err') {
+        print({ text: `[오류] ${msg}`, tone: 'err' });
+        if (fix) print({ text: `  → ${fix}`, tone: 'info' });
+      } else print({ text: kind === 'warn' ? `[주의] ${msg}` : msg, tone: kind === 'warn' ? 'warn' : kind === 'ok' ? 'ok' : 'out' });
+    };
+  /** Run the Python program (the code mode's, or a file python3 runs in the terminal, printing there). */
+  const simulatePy = async (file?: { text: string; name: string; print: (l: TermLine) => void }): Promise<PyEnd | null> => {
+    if (!loaded || busy || level === 'basic') return null;
+    if (!file) return runPy(code);
+    termSink.current = sinkTo(file.print);
+    try {
+      return await runPy(file.text, file);
+    } finally {
+      termSink.current = null;
+    }
+  };
+  const runPy = async (text: string, file?: { name: string; print: (l: TermLine) => void }): Promise<PyEnd | null> => {
+    if (!loaded || level === 'basic') return null;
     setProgramRun(true);
-    const text = code;
     const start = robotMode && robot?.angles ? robot.angles.slice() : arm.home.slice();
     setErrorLines([]);
     setPassed(null);
@@ -1632,7 +1683,7 @@ export default function Console() {
       setBusy(false);
       setBadge({ kind: 'stop', text: '멈춤' });
       addLog('err', err instanceof Error ? err.message : String(err));
-      return;
+      return 'error';
     } finally {
       setPyStatus('');
     }
@@ -1640,34 +1691,53 @@ export default function Console() {
     setPyOut(r.output);
     setPyRos(r.ros);
     if (r.ros) session.current.lastRos = r.ros;
+    // In the terminal: what the program printed, then Python's own error report.
+    if (file) {
+      for (const o of r.output) for (const line of o.text.replace(/\n$/, '').split('\n')) file.print({ text: line, tone: 'out' });
+      if (r.error) {
+        file.print({ text: 'Traceback (most recent call last):', tone: 'err' });
+        if (r.error.line) file.print({ text: `  File "${file.name}", line ${r.error.line}, in <module>`, tone: 'err' });
+        file.print({ text: `${r.error.type}: ${r.error.message}`, tone: 'err' });
+        if (r.error.hint) file.print({ text: `  → ${r.error.hint}`, tone: 'info' });
+      }
+    }
     if (!r.ok && r.error) {
       const e = r.error;
-      addLog('err', `${e.line ? `${e.line}번째 줄: ` : ''}${e.type}: ${e.message}`, e.hint);
+      if (!file) addLog('err', `${e.line ? `${e.line}번째 줄: ` : ''}${e.type}: ${e.message}`, e.hint);
       if (e.line) setErrorLines([e.line]);
       setBadge({ kind: 'stop', text: '오류' });
       // Commands issued before the error still play, so the student sees how far it got.
-      if (!r.events.length) return;
+      if (!r.events.length) return 'error';
     }
     // The whole timeline is checked first: a run that would fold the arm into itself does not start.
     const preWorld = createWorld(effector, cameraFlange, layout.current, theme);
     preWorld.angles = start.slice();
     const pre = await preflight((h) => playTimeline(r, h), { chain: loaded.chain, world: preWorld, poses });
-    if (pre) return refuseRun(pre);
+    if (pre) {
+      refuseRun(pre);
+      return 'error';
+    }
     const moves = r.events.filter((e) => e.kind === 'move').length;
     addLog('sim', `${r.endT.toFixed(1)}초 동안 명령 ${r.events.length}개 (움직임 ${moves}개). 3D 로 재생하며 충돌을 검사해요.`);
     if (!r.ok) setBadge({ kind: 'sim', text: '오류 전까지 재생' });
     else setBadge({ kind: 'sim', text: '시뮬레이션' });
-    const { ok, actions } = await execute(
+    const { ok, stopped, actions } = await execute(
       async (h) => {
         for (const a of await playTimeline(r, h)) h.record!(a);
       },
       { reset: true, label: true, start },
     );
+    if (stopped) {
+      file?.print({ text: 'KeyboardInterrupt', tone: 'warn' });
+      return 'stopped';
+    }
     if (!r.ok) {
       setBadge({ kind: 'stop', text: '오류' });
-      return;
+      return 'error';
     }
     if (ok) passedRun(text, actions, start);
+    file?.print({ text: ok ? `[끝] ${r.endT.toFixed(1)}초 동안 명령 ${r.events.length}개를 3D 로 실행했어요` : '[멈춤] 3D 실행이 도중에 멈췄어요', tone: ok ? 'ok' : 'warn' });
+    return ok ? 'pass' : 'error';
   };
 
   /** The planned path folds the arm into itself: nothing moves; the notice names the joint to change. */
@@ -1836,6 +1906,17 @@ export default function Console() {
     if (ok) passedRun(text, actions);
     else setPassed(null);
   };
+  /** A step passed (by blocks, code or the terminal): the next one opens. */
+  const recordPass = (id: string) =>
+    setCellPassed((prev) => {
+      const next = { ...prev, [id]: true };
+      try {
+        localStorage.setItem(CELL_PASSED_KEY, JSON.stringify(next));
+      } catch {
+        /* this session only */
+      }
+      return next;
+    });
   /** A cell run is over: the last part comes to rest, then the step's checks decide. */
   const finishCellRun = async (ok: boolean) => {
     const c = cellRef.current;
@@ -1851,15 +1932,7 @@ export default function Console() {
     setCellResult(all);
     if (all) {
       addLog('ok', `${res.mission.id} ${res.mission.title} 통과!`);
-      setCellPassed((prev) => {
-        const next = { ...prev, [res.mission.id]: true };
-        try {
-          localStorage.setItem(CELL_PASSED_KEY, JSON.stringify(next));
-        } catch {
-          /* this session only */
-        }
-        return next;
-      });
+      recordPass(res.mission.id);
     } else {
       const miss = res.items.filter((i) => !i.ok).map((i) => i.label);
       addLog('warn', `${res.mission.id} 아직이에요: ${miss.join(' · ') || '프로그램이 끝까지 가지 못했어요'}`);
@@ -1867,7 +1940,7 @@ export default function Console() {
   };
   /**
    * 터미널: python3 a file on the open cell — the same run and checks as the blocks, printed in the
-   * terminal as it goes. A terminal run shows its result there and does not open the next step.
+   * terminal as it goes. A pass counts like the blocks' (a student stuck on the blocks can go on).
    */
   const runTermPython = async (path: string, text: string, print: (l: TermLine) => void): Promise<PyEnd | null> => {
     const c = cellRef.current;
@@ -1901,14 +1974,7 @@ export default function Console() {
     }
     const m = c.mission ? missionById(c.mission) : null;
     print({ text: `[연결] 시뮬레이터 셀 ${CELL_BY_ID[c.cell].letter} · ${m ? `${m.id} ${m.title}` : '자유 실습'}`, tone: 'dim' });
-    termSink.current = (kind, raw, fix) => {
-      // A cell alert comes as "주의 · 핀 걸림: …": the terminal's own [주의] / [오류] says the level.
-      const msg = raw.replace(/^(알림|주의|정지|고장) · /, '');
-      if (kind === 'err') {
-        print({ text: `[오류] ${msg}`, tone: 'err' });
-        if (fix) print({ text: `  → ${fix}`, tone: 'info' });
-      } else print({ text: kind === 'warn' ? `[주의] ${msg}` : msg, tone: kind === 'warn' ? 'warn' : kind === 'ok' ? 'ok' : 'out' });
-    };
+    termSink.current = sinkTo(print);
     setBadge({ kind: 'sim', text: 'python3' });
     setCellResult(null);
     let res: Awaited<ReturnType<typeof runSteps>>;
@@ -1933,7 +1999,12 @@ export default function Console() {
     if (!checks) return res.ok ? 'pass' : 'error';
     for (const i of checks.items) print({ text: `  ${i.ok ? '✓' : '✗'} ${i.label}${i.detail ? ` (${i.detail})` : ''}`, tone: i.ok ? 'ok' : 'err' });
     const all = res.ok && checks.items.every((i) => i.ok);
-    print({ text: `[결과] ${all ? '통과' : res.ok ? '목표를 다 채우지 못했어요' : '도중에 멈췄어요'}`, tone: all ? 'ok' : 'warn' });
+    const next = all ? missionsOf(c.cell).find((x) => x.n === checks.mission.n + 1) : null;
+    print({ text: `[결과] ${all ? `통과${next ? ` · 다음 단계 ${next.id} 가 열렸어요` : ''}` : res.ok ? '목표를 다 채우지 못했어요' : '도중에 멈췄어요'}`, tone: all ? 'ok' : 'warn' });
+    if (all) {
+      setCellResult(true);
+      recordPass(checks.mission.id);
+    }
     return all ? 'pass' : res.ok ? 'fail' : 'error';
   };
 
@@ -2867,7 +2938,7 @@ export default function Console() {
     let name = `내 자세 ${n}`;
     for (let k = n; poses[name]; k += 1) name = `내 자세 ${k + 1}`;
     changePoses({ ...poses, [name]: basePose().map((a) => Math.round(a * 10) / 10) });
-    addLog('ok', `'${name}' 을(를) 저장했어요. [이 자세로] 를 누르면 이 자세로 돌아와요.`);
+    addLog('ok', `'${name}' 자세를 저장했어요. [이 자세로] 를 누르면 이 자세로 돌아와요.`);
   };
 
   const kind = EFFECTOR_BY_ID[effector].kind;
@@ -4100,12 +4171,15 @@ export default function Console() {
                       busy={busy}
                       onLevel={(lv) => (cellAt ? (lv === 'ros' ? addLog('info', '실습 셀의 ROS 2 터미널 실습은 다음 차례에 열려요.') : setCellTerm(lv === 'python')) : openTab(lv))}
                     />
+                    {((cellAt && cellTerm) || (!cellAt && level === 'python')) && <ModeSeg mode={cellAt ? pyMode.cell : pyMode.arm} busy={busy} onMode={(m) => setPyMode(cellAt ? 'cell' : 'arm', m)} />}
                     {cellAt ? (
                       <div className={css.cellCodeHead}>
                         <b>
                           실습 셀 · {cellAt.mission ? `${cellAt.mission} ${missionById(cellAt.mission)?.title ?? ''}` : '자유 실습'}
                         </b>
-                        <small>{cellTerm ? '터미널에서 명령으로 파이썬 파일을 실행해요. 목표와 채점은 3D 왼쪽 카드에 있어요.' : '블록으로 로봇과 장비를 움직여요. 목표와 채점은 3D 왼쪽 카드에 있어요.'}</small>
+                        <small>
+                          {cellTermOn ? '터미널에서 명령으로 파이썬 파일을 실행해요.' : cellTerm ? '블록 프로그램을 파이썬 코드로 고쳐요. 블록과 같은 프로그램이에요.' : '블록으로 로봇과 장비를 움직여요.'} 목표와 채점은 3D 왼쪽 카드에 있어요.
+                        </small>
                         <button type="button" className={css.cellLeave} disabled={busy} onClick={leaveCell}>
                           셀에서 나가기
                         </button>
@@ -4134,9 +4208,40 @@ export default function Console() {
                       }}
                     />
                     )}
-                    {cellAt && cellTerm ? (
+                    {cellAt && cellTermOn ? (
                       <div className={css.pane}>
                         <CellTerminal cell={cellAt.cell} mission={cellAt.mission} busy={busy} onPython={runTermPython} onStop={stop} onOpenStep={(m) => openCell(cellAt.cell, m)} />
+                      </div>
+                    ) : cellAt && cellTerm ? (
+                      <div className={css.pane}>
+                        <CodeEditor
+                          code={code}
+                          onCode={(c) => {
+                            setCode(c);
+                            setErrorLines([]);
+                          }}
+                          runningLine={runningLine}
+                          errorLines={errorLines}
+                          fileName="cell_program.py"
+                          modified={false}
+                          onRun={() => void simulate()}
+                          label="실습 셀 파이썬 코드"
+                          status={<span>블록과 같은 프로그램</span>}
+                        />
+                      </div>
+                    ) : armTermOn ? (
+                      <div className={css.pane}>
+                        <PyTerminal
+                          code={code}
+                          onCode={(c) => {
+                            setCode(c);
+                            setErrorLines([]);
+                          }}
+                          busy={busy}
+                          title={practice.title}
+                          onPython={(path, text, print) => simulatePy({ text, name: path.split('/').pop() ?? path, print })}
+                          onStop={stop}
+                        />
                       </div>
                     ) : level === 'basic' ? (
                       <div className={css.pane}>
@@ -4197,7 +4302,7 @@ export default function Console() {
                         <PyPanel level={level} status={pyStatus} output={pyOut} ros={pyRos} />
                       </div>
                     )}
-                    {!cellAt && (
+                    {!cellAt && !armTermOn && (
                       <Snippets
                         tut={tut}
                         code={code}
@@ -4208,7 +4313,7 @@ export default function Console() {
                         }}
                       />
                     )}
-                    {!(cellAt && cellTerm) && runBar}
+                    {!cellTermOn && !armTermOn && runBar}
                   </div>
                 )}
               </>

@@ -32,7 +32,7 @@ import {
   tcpPositionMm,
   type Trajectory,
 } from '../robot/motion';
-import { SELF_SLACK_MM, selfContact, selfFix, selfMessage, subj } from '../robot/selfCollision';
+import { SELF_SLACK_MM, obj, selfContact, selfFix, selfMessage, subj, topic } from '../robot/selfCollision';
 import { currentOrientation, solveToolPose, type PointMm } from '../robot/tool';
 import { ArmModel } from '../python/arm';
 import { activeArm } from '../robot/arms';
@@ -1373,7 +1373,7 @@ function takeObject(rt: Runtime, o: DeskObject, tip: Vector3): void {
   }
   rt.world.carry = { id: o.id, dx: o.x - tip.x, dy: o.y - tip.y, dz: o.z - tip.z };
   rt.world.version += 1;
-  rt.log?.('info', `${objectName(o)}을(를) 잡았어요.`);
+  rt.log?.('info', `${obj(objectName(o))} 잡았어요.`);
 }
 
 /** The bin an object is inside of (through its opening, above its floor), or null. */
@@ -1446,9 +1446,9 @@ async function settleObject(rt: Runtime, o: DeskObject): Promise<void> {
   o.z = z1;
   w.version += 1;
   const bin = binAround(w, o);
-  if (bin) rt.log?.('info', `${objectName(o)}을(를) ${objectName(bin)}에 넣었어요.`);
+  if (bin) rt.log?.('info', `${obj(objectName(o))} ${objectName(bin)}에 넣었어요.`);
   else if (z0 - z1 > 8) rt.log?.('warn', `${subj(objectName(o))} ${Math.round(z0 - z1)}mm 높이에서 떨어졌어요. 더 내려가서 놓아 주세요.`);
-  else rt.log?.('info', `${objectName(o)}을(를) 내려놓았어요.`);
+  else rt.log?.('info', `${obj(objectName(o))} 내려놓았어요.`);
 }
 
 function toolIntoBlocks(w: WorldState, tip: Vector3, kind: string): void {
@@ -1625,7 +1625,7 @@ async function release(rt: Runtime, kind: 'grip' | 'suction'): Promise<void> {
     rt.log?.('info', `${held.color} 블록을 ${spot}에 놓았어요.`);
   } else if (bin) {
     const right = COLOR_TO_BIN[held.color] === bin.name;
-    rt.log?.(right ? 'info' : 'warn', right ? `${held.color} 블록을 분류함 ${bin.name}에 넣었어요.` : `${held.color} 블록이 분류함 ${bin.name}에 들어갔어요. ${held.color}은(는) 분류함 ${COLOR_TO_BIN[held.color]}이에요.`);
+    rt.log?.(right ? 'info' : 'warn', right ? `${held.color} 블록을 분류함 ${bin.name}에 넣었어요.` : `${held.color} 블록이 분류함 ${bin.name}에 들어갔어요. ${topic(held.color)} 분류함 ${COLOR_TO_BIN[held.color]}이에요.`);
   } else {
     rt.log?.('info', `${held.color} 블록을 내려놓았어요.`);
   }

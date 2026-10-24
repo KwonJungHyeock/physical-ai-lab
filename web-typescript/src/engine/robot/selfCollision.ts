@@ -208,6 +208,13 @@ export const subj = (w: string) => {
   const c = w.charCodeAt(w.length - 1) - 0xac00;
   return `${w}${c >= 0 && c < 11172 && c % 28 === 0 ? '가' : '이'}`;
 };
+/** A word with its object particle (을/를) and its topic particle (은/는), by its last syllable. */
+const coda = (w: string) => {
+  const c = w.charCodeAt(w.length - 1) - 0xac00;
+  return !(c >= 0 && c < 11172 && c % 28 === 0);
+};
+export const obj = (w: string) => `${w}${coda(w) ? '을' : '를'}`;
+export const topic = (w: string) => `${w}${coda(w) ? '은' : '는'}`;
 
 /** The notice for a pose that runs into itself: what touches, then the joint to change. */
 export function selfMessage(hit: SelfHit, fix: SelfFix | null, anglesDeg: readonly number[]): string {

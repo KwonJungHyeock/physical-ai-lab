@@ -14,6 +14,7 @@ import { findSlots, insertSnippet, setSlot, type Tutorial } from '@/engine/simul
 
 import { highlight } from './CodeEditor';
 import css from './tutorial.module.css';
+import { subj as subjOf } from '@/engine/robot/selfCollision';
 
 export const LANGS: { level: Level; name: string; sub: string }[] = [
   { level: 'basic', name: '블록', sub: '초급' },
@@ -87,7 +88,7 @@ export function TutorialCard(p: CardProps) {
         {p.need && (
           <p className={css.need} role="status">
             <span>
-              이 실습은 <b>{p.need.text}</b>이(가) 있어야 해요
+              이 실습은 <b>{p.need.text}</b>{subjOf(p.need.text).slice(p.need.text.length)} 있어야 해요
             </span>
             <button type="button" className={css.btn} disabled={p.busy} onClick={p.need.fit}>
               끼우기

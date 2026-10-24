@@ -356,11 +356,23 @@
   border-color: #fde68a;
   box-shadow: 0 0 7px #f59e0b;
 }
+/* Inputs, outputs, then the record on its own row: the row never breaks between a label and its number. */
+.lamps > .grp {
+  flex-basis: 100%;
+}
+.kpis {
+  flex-basis: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid rgba(233, 238, 235, 0.14);
+  padding-top: 6px;
+}
 .kpi {
   font-weight: 800;
   font-size: 15px;
   color: #fff;
-  text-align: right;
+  text-align: left;
   font-variant-numeric: tabular-nums;
 }
 .kpi small {

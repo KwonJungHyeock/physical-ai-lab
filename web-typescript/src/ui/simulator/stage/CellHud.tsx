@@ -327,53 +327,55 @@ export default function CellHud(p: CellHudProps) {
               </span>
             ))}
           </span>
-          <span className={css.kpi}>
-            <small>사이클</small>
-            {snap.cycle === null ? '-' : `${snap.cycle.toFixed(1)} s`}
-          </span>
-          {snap.record ? (
-            <>
-              <span className={css.kpi}>
-                <small>양품</small>
-                {snap.record.passed}
-              </span>
-              <span className={css.kpi}>
-                <small>불량</small>
-                {snap.record.ejected}
-              </span>
-              <span className={css.kpi}>
-                <small>불량률</small>
-                {snap.record.passed + snap.record.ejected ? `${Math.round((100 * snap.record.ejected) / (snap.record.passed + snap.record.ejected))}%` : '-'}
-              </span>
-            </>
-          ) : snap.built ? (
-            <>
-              <span className={css.kpi}>
-                <small>조립 완료</small>
-                {snap.built.done}
-              </span>
-              <span className={css.kpi}>
-                <small>걸림</small>
-                {snap.built.jams}
-              </span>
-            </>
-          ) : snap.made ? (
-            <>
-              <span className={css.kpi}>
-                <small>가공 완료</small>
-                {snap.made.done}
-              </span>
-              <span className={css.kpi}>
-                <small>가공 중단</small>
-                {snap.made.cut}
-              </span>
-            </>
-          ) : (
+          <span className={css.kpis}>
             <span className={css.kpi}>
-              <small>적재</small>
-              {snap.stacked}
+              <small>사이클</small>
+              {snap.cycle === null ? '-' : `${snap.cycle.toFixed(1)} s`}
             </span>
-          )}
+            {snap.record ? (
+              <>
+                <span className={css.kpi}>
+                  <small>양품</small>
+                  {snap.record.passed}
+                </span>
+                <span className={css.kpi}>
+                  <small>불량</small>
+                  {snap.record.ejected}
+                </span>
+                <span className={css.kpi}>
+                  <small>불량률</small>
+                  {snap.record.passed + snap.record.ejected ? `${Math.round((100 * snap.record.ejected) / (snap.record.passed + snap.record.ejected))}%` : '-'}
+                </span>
+              </>
+            ) : snap.built ? (
+              <>
+                <span className={css.kpi}>
+                  <small>조립 완료</small>
+                  {snap.built.done}
+                </span>
+                <span className={css.kpi}>
+                  <small>걸림</small>
+                  {snap.built.jams}
+                </span>
+              </>
+            ) : snap.made ? (
+              <>
+                <span className={css.kpi}>
+                  <small>가공 완료</small>
+                  {snap.made.done}
+                </span>
+                <span className={css.kpi}>
+                  <small>가공 중단</small>
+                  {snap.made.cut}
+                </span>
+              </>
+            ) : (
+              <span className={css.kpi}>
+                <small>적재</small>
+                {snap.stacked}
+              </span>
+            )}
+          </span>
         </footer>
       )}
     </div>
