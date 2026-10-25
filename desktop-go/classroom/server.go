@@ -40,6 +40,7 @@ type Server struct {
 	ip      *limiter // per client address
 	flood   *budget  // statements per student per window
 	lead    *leadBook
+	llm     *llmService
 	now     func() time.Time
 	Logf    func(format string, args ...any)
 	// devOrigins: loopback web origins allowed by AllowDevOrigin (off unless the program is started
@@ -60,6 +61,7 @@ func NewServer(store *Store, syncer *Syncer) *Server {
 		ip:      newLimiter(30, 5*time.Minute, time.Hour, 10*time.Minute, now),
 		flood:   &budget{max: 1500, window: 5 * time.Minute, used: map[string]*spend{}, now: now},
 		lead:    newLeadBook(),
+		llm:     newLLMService(ClaudeCaller("")),
 		now:     now,
 		Logf:    log.Printf,
 	}
@@ -112,6 +114,14 @@ func (srv *Server) Handler() http.Handler {
 	mux.Handle("DELETE "+p+"/classes/{id}/lead", srv.need(staff, srv.endLead))
 	mux.Handle("GET "+p+"/lead", srv.need(st, srv.myLead))
 	mux.Handle("PUT "+p+"/lead/me", srv.need(st, srv.putMark))
+
+	// 말로 만들기 (llm.go): settings for staff (key and model: operator), questions for everyone.
+	mux.Handle("GET "+p+"/llm/settings", srv.need(staff, srv.getLLM))
+	mux.Handle("PUT "+p+"/llm/settings", srv.need(staff, srv.putLLM))
+	mux.Handle("GET "+p+"/llm", srv.need(all, srv.myLLM))
+	mux.Handle("POST "+p+"/llm/ask", srv.need(all, srv.askLLM))
+	mux.Handle("POST "+p+"/llm/ask/{id}/inserted", srv.need(st, srv.insertedLLM))
+	mux.Handle("GET "+p+"/classes/{id}/llm", srv.need(staff, srv.classLLM))
 
 	return srv.wrap(mux)
 }

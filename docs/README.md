@@ -83,6 +83,7 @@
 | [`23-accounts-hybrid.md`](reports/system/23-accounts-hybrid.md) | 보고 #23 — 학급 계정과 학습 기록: 교실 학급 서버(교사 PC) + 가명 클라우드, 역할 · 로그인 · 끊김 대응 · xAPI 이벤트 · 법 점검표 |
 | [`30-usb-maker.md`](reports/system/30-usb-maker.md) | 보고 #30 — 로봇 USB 만들기: 시뮬레이터 프로그램에 로봇 키트를 넣어, Wi-Fi 를 칸에 적고 버튼 하나로 USB 를 만들고 로봇마다 결과를 봄 |
 | [`40-wired-wireless.md`](reports/system/40-wired-wireless.md) | 보고 #40 — 로봇 연결 무선 / 유선 두 갈래: 직결 주소 169.254.127.10 · `와이파이=끔` · 결과 파일 주소 종류 · 연결 창 [유선 직결] · USB 만들기 연결 방법 |
+| [`41-omx-and-speak.md`](reports/system/41-omx-and-speak.md) | 보고 #41 — 다른 로봇팔 OMX-F (시뮬레이터 5관절 · 그리퍼 · 선생님 설정으로 켜기) · 말로 만들기 (AI): 학생 문장 → 학급 서버의 Claude → 블록 줄 → 블록 검사 · 시뮬레이션 뒤 실행, 키 · 횟수 · 기록 · 모델 |
 | [`31-load-tool-reading.md`](reports/system/31-load-tool-reading.md) | 보고 #31 — 학급 서버 부하 시험(학생 30 · 60명, 실패 0, 단계 전달 최대 1.5초), 실제 팔의 도구가 화면과 다를 때 안내 · 막기, 쉬운 글 기준을 매뉴얼 PDF 세 권 · 마무리 평가 · 관제센터 · 지도 카드까지 (두 줄 넘는 문장 0) |
 
 ## `mockup/` — 화면 목업

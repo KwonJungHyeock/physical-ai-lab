@@ -1,0 +1,257 @@
+/*
+ * 말로 만들기 (SpeakPanel.tsx) above the blocks on the dark side panel: a fold-out strip with the chat,
+ * the AI's blocks as a preview, [블록에 넣기]. Same palette as the rest of the panel; green only for
+ * "available" and the main button, orange for a line the block checks refuse.
+ */
+
+.speak {
+  flex: 0 0 auto;
+  margin: 10px 12px 0;
+  border-radius: 12px;
+  background: #222b36;
+  box-shadow: inset 0 0 0 1px #3a4656;
+  color: #d0d8e4;
+  font-size: 13.5px;
+  word-break: keep-all;
+}
+.speak[data-open] {
+  display: flex;
+  flex-direction: column;
+  max-height: min(36vh, 340px);
+}
+
+.head {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.head b {
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+}
+.head small {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 12px;
+  color: #97a3b5;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.chev {
+  font-size: 10px;
+  color: #97a3b5;
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #5b6677;
+}
+.dot[data-on] {
+  background: #2fbf71;
+  box-shadow: 0 0 0 3px rgba(47, 191, 113, 0.18);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0 10px 10px;
+  border-top: 1px solid #3a4656;
+}
+
+.off {
+  margin: 10px 2px 2px;
+  color: #aab5c5;
+  line-height: 1.5;
+}
+.link {
+  margin-left: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #8fc2ff;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.hello p {
+  margin: 10px 2px 8px;
+  color: #aab5c5;
+  line-height: 1.5;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chips button {
+  padding: 5px 9px;
+  border: 1px solid #45526a;
+  border-radius: 999px;
+  background: #2a3442;
+  color: #d0d8e4;
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.chips button:hover {
+  border-color: #6c7b93;
+}
+
+.turns {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  margin: 10px 0 0;
+  padding: 0 2px 2px;
+  overflow-y: auto;
+  list-style: none;
+}
+.me {
+  align-self: flex-end;
+  max-width: 88%;
+  padding: 7px 10px;
+  border-radius: 12px 12px 3px 12px;
+  background: #34507a;
+  color: #fff;
+  line-height: 1.45;
+}
+.ai {
+  align-self: flex-start;
+  max-width: 96%;
+  padding: 8px 10px;
+  border-radius: 12px 12px 12px 3px;
+  background: #2b3542;
+  box-shadow: inset 0 0 0 1px #3d4859;
+}
+.ai p {
+  margin: 0;
+  line-height: 1.5;
+}
+.thinking {
+  color: #97a3b5;
+}
+.note {
+  align-self: center;
+  color: #f0b27a;
+  font-size: 12.5px;
+}
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 7px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.preview li {
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: #1c242e;
+  box-shadow: inset 3px 0 0 #6b8cc7;
+}
+.preview li[data-bad] {
+  box-shadow: inset 3px 0 0 #f08a3c;
+}
+.preview code {
+  font:
+    12px/1.45 ui-monospace,
+    'Cascadia Mono',
+    Consolas,
+    monospace;
+  color: #e3e8ef;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.bad {
+  margin-top: 6px !important;
+  color: #f0b27a;
+  font-size: 12.5px;
+}
+
+.btns {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+.btns button {
+  padding: 5px 11px;
+  border: 1px solid #45526a;
+  border-radius: 8px;
+  background: #2a3442;
+  color: #d0d8e4;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.btns button.primary,
+.input button.primary {
+  border-color: #23955a;
+  background: #1f8a52;
+  color: #fff;
+}
+.btns button:disabled,
+.input button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.done {
+  color: #7fd9a6;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.undo {
+  align-self: flex-start;
+  margin-top: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #8fc2ff;
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.input {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.input input {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 10px;
+  border: 1px solid #45526a;
+  border-radius: 8px;
+  background: #1a212a;
+  color: #fff;
+  font: inherit;
+}
+.input input::placeholder {
+  color: #7a8597;
+}
+.input button {
+  padding: 7px 13px;
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}

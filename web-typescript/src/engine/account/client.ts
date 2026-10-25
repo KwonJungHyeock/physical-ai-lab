@@ -165,6 +165,63 @@ interface LoginStudent {
   class: StudentClass;
 }
 
+/* --- 말로 만들기 ------------------------------------------------------------------------------------ */
+
+/** The scene as the class server's 말로 만들기 sends it to Claude (each field short; llm.go checks). */
+export interface LlmContext {
+  arm: string;
+  joints: number;
+  ranges?: string;
+  tool: string;
+  toolKind: string;
+  places: string[];
+  poses?: string[];
+  program?: string;
+  /** The simulator's complaints about the last answer (다시 만들기). */
+  errors?: string;
+}
+
+export interface LlmStatus {
+  available: boolean;
+  daily: number;
+  remaining: number;
+  reason?: string;
+}
+
+export interface LlmAnswer {
+  id: string;
+  ok: boolean;
+  lines: string[] | null;
+  explain: string;
+  remaining: number;
+}
+
+export interface LlmSettings {
+  enabled: boolean;
+  model: string;
+  models: string[];
+  daily: number;
+  keySet: boolean;
+  keyHint: string;
+  today: { asks: number; inputTokens: number; outputTokens: number; cacheReadTokens: number };
+}
+
+export interface LlmLogEntry {
+  id: string;
+  t: string;
+  no?: number;
+  user?: string;
+  text?: string;
+  ok: boolean;
+  lines?: string[];
+  explain?: string;
+  model?: string;
+  in?: number;
+  out?: number;
+  error?: string;
+  inserted?: boolean;
+}
+
 /* --- the client ---------------------------------------------------------------------------------- */
 
 export class ClassServerClient {
@@ -372,6 +429,30 @@ export class ClassServerClient {
   /** Student: what this screen did on the step (409 'no_lead' when the teacher has ended it). */
   setMark(m: MarkIn): Promise<MyLead> {
     return this.call('PUT', '/lead/me', m);
+  }
+
+  /* 말로 만들기 (desktop-go/classroom/llm.go) */
+  /** Whether 말로 만들기 is open for me, and my questions left today. */
+  llmStatus(): Promise<LlmStatus> {
+    return this.call('GET', '/llm');
+  }
+  /** Ask for block lines; 429 'slow' / 'daily' / 'busy', 503 'off', 502 'llm' when Claude did not answer. */
+  llmAsk(text: string, context: LlmContext): Promise<LlmAnswer> {
+    return this.call('POST', '/llm/ask', { text, context });
+  }
+  /** Student: the answer `id` was put into the block editor (the teacher's log shows it). */
+  llmInserted(id: string): Promise<{ ok: true }> {
+    return this.call('POST', `/llm/ask/${encodeURIComponent(id)}/inserted`);
+  }
+  llmSettings(): Promise<LlmSettings> {
+    return this.call('GET', '/llm/settings');
+  }
+  /** Teacher: on/off and the daily limit; operator also the model and the API key ('' removes it). */
+  setLlmSettings(s: { enabled?: boolean; daily?: number; model?: string; apiKey?: string }): Promise<LlmSettings> {
+    return this.call('PUT', '/llm/settings', s);
+  }
+  classLlm(id: string, limit = 500): Promise<{ entries: LlmLogEntry[] }> {
+    return this.call('GET', `/classes/${encodeURIComponent(id)}/llm?limit=${limit}`);
   }
 
   /**

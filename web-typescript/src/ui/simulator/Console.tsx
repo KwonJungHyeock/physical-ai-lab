@@ -89,6 +89,7 @@ import type { ImageLike } from '@/engine/vision/color';
 import { Divergence, findColor, offCentre, probeJacobian, stepTowards, type Seen } from '@/engine/vision/track';
 
 import BlockEditor from './editors/BlockEditor';
+import SpeakPanel from './editors/SpeakPanel';
 import { CellTerminal, type PyEnd } from './editors/CellTerminal';
 import { PyTerminal } from './editors/PyTerminal';
 import { ModeSeg } from './editors/Terminal';
@@ -4311,6 +4312,21 @@ export default function Console() {
                       </div>
                     ) : level === 'basic' ? (
                       <div className={css.pane}>
+                        {!cellAt && (
+                          <SpeakPanel
+                            code={code}
+                            onCode={(c) => {
+                              setCode(c);
+                              setErrorLines([]);
+                            }}
+                            arm={arm}
+                            effector={effector}
+                            cameraFlange={cameraFlange}
+                            theme={theme}
+                            poses={poses}
+                            busy={busy}
+                          />
+                        )}
                         <BlockEditor
                           code={code}
                           onCode={(c) => {

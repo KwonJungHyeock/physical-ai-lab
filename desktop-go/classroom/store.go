@@ -106,6 +106,8 @@ type dbFile struct {
 	// AllowedOrigins: extra web origins allowed to call the API (besides the page itself and the
 	// simulator program on a student's PC, http://127.0.0.1:47280).
 	AllowedOrigins []string `json:"allowedOrigins,omitempty"`
+	// LLM: 말로 만들기 (llm.go) — on or off, model, the Anthropic API key, questions per student a day.
+	LLM LLMConfig `json:"llm"`
 }
 
 // classLog: what is kept in memory of a class's events.

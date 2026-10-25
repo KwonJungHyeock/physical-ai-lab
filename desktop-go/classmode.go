@@ -78,6 +78,10 @@ func runClassServer(root fs.FS, dataDir string, devOrigins []string) {
 		}
 		return out
 	}
+	// Development and tests: 말로 만들기 asks a stand-in for the Anthropic API at this address.
+	if u := os.Getenv("PAI_LLM_BASE_URL"); u != "" {
+		api.SetLLMCaller(classroom.ClaudeCaller(u))
+	}
 	for _, o := range devOrigins {
 		if err := api.AllowDevOrigin(o); err != nil {
 			fail(err)

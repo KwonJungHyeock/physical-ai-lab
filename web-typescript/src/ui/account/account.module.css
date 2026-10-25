@@ -1492,6 +1492,52 @@
   font-weight: 700;
 }
 
+/* --- 말로 만들기 (AI): settings + what the students asked (LlmPanel.tsx) ----------------------- */
+.subHead {
+  margin: 26px 0 10px;
+  font-size: 16px;
+  font-weight: 800;
+}
+.llmPick {
+  max-width: 640px;
+}
+.llmLog {
+  display: grid;
+  gap: 6px;
+  max-width: 820px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.llmLog li {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 2px 12px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fcfcfd;
+  word-break: keep-all;
+}
+.llmLog li[data-bad] {
+  border-color: #f5c2be;
+  background: var(--bad-soft);
+}
+.llmLog b {
+  font-weight: 700;
+}
+.llmLog small {
+  grid-column: 2;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.llmWho {
+  grid-row: span 2;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 650;
+}
+
 /* --- login cards (on screen a sheet over the page; printed alone, see globals.css) ----------- */
 .cardsBack {
   position: fixed;

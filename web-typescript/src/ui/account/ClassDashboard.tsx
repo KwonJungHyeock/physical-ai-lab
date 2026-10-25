@@ -3,7 +3,8 @@
 /**
  * 학급 관리 (teachers and the operator): a full page under the top bar.
  *  - Left: the classes (own classes; the operator sees every class), a new class, the archived ones;
- *    for the operator also 교사 계정 and 클라우드 동기화.
+ *    말로 만들기 (AI) (on/off, daily limit; the operator also its key and model); for the operator also
+ *    교사 계정 and 클라우드 동기화.
  *  - Right: the class picked (ClassPanel) — live grid, students and PINs, lessons open, names.
  * Every call goes to the class server with the teacher's login; a refused login (401) asks to log
  * in again. No student name ever leaves this PC (the names are in the teacher's browser: roster.ts).
@@ -15,11 +16,12 @@ import { ClassApiError, ClassServerClient, type ClassInfo } from '@/engine/accou
 
 import { useAccount } from './AccountProvider';
 import ClassPanel from './ClassPanel';
+import LlmPanel from './LlmPanel';
 import { SyncPanel, TeachersPanel } from './OperatorPanels';
 import { errorText } from './labels';
 import css from './account.module.css';
 
-type Pane = { kind: 'class'; id: string } | { kind: 'teachers' } | { kind: 'sync' } | { kind: 'none' };
+type Pane = { kind: 'class'; id: string } | { kind: 'teachers' } | { kind: 'sync' } | { kind: 'llm' } | { kind: 'none' };
 
 export default function ClassDashboard({ onClose }: { onClose(): void }) {
   const a = useAccount();
@@ -143,6 +145,10 @@ export default function ClassDashboard({ onClose }: { onClose(): void }) {
             {showArchived && <ul className={css.classList}>{archived.map(classBtn)}</ul>}
           </>
         )}
+        <h3>수업 도구</h3>
+        <button type="button" className={css.navBtn} aria-current={pane.kind === 'llm' || undefined} onClick={() => setPane({ kind: 'llm' })}>
+          말로 만들기 (AI)
+        </button>
         {operator && (
           <>
             <h3>운영자</h3>
@@ -186,6 +192,8 @@ export default function ClassDashboard({ onClose }: { onClose(): void }) {
           <TeachersPanel client={client} me={s.user.id} onError={fail} />
         ) : pane.kind === 'sync' ? (
           <SyncPanel client={client} onError={fail} />
+        ) : pane.kind === 'llm' ? (
+          <LlmPanel client={client} operator={operator} classes={classes ?? []} onError={fail} />
         ) : (
           <div className={css.emptyPane}>
             <h2>학급을 골라요</h2>

@@ -319,7 +319,7 @@ function parseLine(body: string, line: number, errors: Problem[]): Step | null {
       errors.push({
         line,
         msg: `관절 각도는 숫자 ${dof}개가 필요해요 (지금 ${joints.length}개).`,
-        fix: dof === 6 ? '예: robot.move_joints([0, 30, 0, 0, 0, 0])' : '예: robot.move_joints([0, 30, 0, 0])',
+        fix: dof === 6 ? '예: robot.move_joints([0, 30, 0, 0, 0, 0])' : dof === 5 ? '예: robot.move_joints([0, 30, 0, 0, 0])' : '예: robot.move_joints([0, 30, 0, 0])',
       });
       return null;
     }
