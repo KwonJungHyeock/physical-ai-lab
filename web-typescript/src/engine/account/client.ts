@@ -183,6 +183,8 @@ export interface LlmContext {
 
 export interface LlmStatus {
   available: boolean;
+  /** The AI is a model on the teacher's PC (Ollama): answers can take tens of seconds. */
+  local?: boolean;
   daily: number;
   remaining: number;
   reason?: string;
@@ -198,11 +200,17 @@ export interface LlmAnswer {
 
 export interface LlmSettings {
   enabled: boolean;
+  /** Which AI answers: Claude (the Anthropic API, a key) or a model in Ollama on the teacher's PC. */
+  provider: 'claude' | 'ollama';
+  /** There is something to ask: a key for Claude, a chosen model for Ollama. */
+  ready: boolean;
   model: string;
   models: string[];
   daily: number;
   keySet: boolean;
   keyHint: string;
+  ollamaUrl: string;
+  ollamaModel: string;
   today: { asks: number; inputTokens: number; outputTokens: number; cacheReadTokens: number };
 }
 
@@ -448,8 +456,12 @@ export class ClassServerClient {
     return this.call('GET', '/llm/settings');
   }
   /** Teacher: on/off and the daily limit; operator also the model and the API key ('' removes it). */
-  setLlmSettings(s: { enabled?: boolean; daily?: number; model?: string; apiKey?: string }): Promise<LlmSettings> {
+  setLlmSettings(s: { enabled?: boolean; daily?: number; provider?: 'claude' | 'ollama'; model?: string; apiKey?: string; ollamaUrl?: string; ollamaModel?: string }): Promise<LlmSettings> {
     return this.call('PUT', '/llm/settings', s);
+  }
+  /** The models Ollama has at an address (operator); 502 'ollama' when it does not answer. */
+  llmLocalModels(url: string): Promise<{ url: string; models: { name: string; size: number; params?: string }[] }> {
+    return this.call('GET', `/llm/local-models?url=${encodeURIComponent(url)}`);
   }
   classLlm(id: string, limit = 500): Promise<{ entries: LlmLogEntry[] }> {
     return this.call('GET', `/classes/${encodeURIComponent(id)}/llm?limit=${limit}`);

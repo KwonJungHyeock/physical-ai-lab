@@ -52,21 +52,50 @@ const (
 
 // LLMConfig: saved in db.json (the key stays on the teacher's PC and is never sent back whole).
 type LLMConfig struct {
-	Enabled bool   `json:"enabled"`
-	Model   string `json:"model"`
-	APIKey  string `json:"apiKey"`
+	Enabled bool `json:"enabled"`
+	// Provider: "claude" (the Anthropic API, a key) or "ollama" (a model on this PC, llm_local.go).
+	Provider string `json:"provider"`
+	Model    string `json:"model"`
+	APIKey   string `json:"apiKey"`
+	// OllamaURL, OllamaModel: where Ollama answers and which of its models to ask.
+	OllamaURL   string `json:"ollamaUrl"`
+	OllamaModel string `json:"ollamaModel"`
 	// Daily: questions per student per day.
 	Daily int `json:"daily"`
 }
 
 func (c LLMConfig) withDefaults() LLMConfig {
+	if c.Provider == "" {
+		c.Provider = llmProviderClaude
+	}
 	if c.Model == "" {
 		c.Model = llmDefaultModel
+	}
+	if c.OllamaURL == "" {
+		c.OllamaURL = ollamaDefaultURL
 	}
 	if c.Daily <= 0 {
 		c.Daily = llmDefaultDaily
 	}
 	return c
+}
+
+func (c LLMConfig) local() bool { return c.Provider == llmProviderOllama }
+
+// ready: there is something to ask (a key for Claude, a chosen model for Ollama).
+func (c LLMConfig) ready() bool {
+	if c.local() {
+		return c.OllamaModel != ""
+	}
+	return c.APIKey != ""
+}
+
+// modelName: what the log and the teacher's screen call the model asked.
+func (c LLMConfig) modelName() string {
+	if c.local() {
+		return "ollama:" + c.OllamaModel
+	}
+	return c.Model
 }
 
 func (s *Store) LLMConfig() LLMConfig {
@@ -242,7 +271,8 @@ func (a LLMAnswer) tidy() (LLMAnswer, error) {
 /* --- the service: limits, log ------------------------------------------------------------------ */
 
 type llmService struct {
-	call  LLMCaller
+	call  LLMCaller // Claude
+	local LLMCaller // Ollama
 	slots chan struct{}
 	mu    sync.Mutex
 	day   string
@@ -252,7 +282,7 @@ type llmService struct {
 }
 
 func newLLMService(call LLMCaller) *llmService {
-	return &llmService{call: call, slots: make(chan struct{}, llmInflight), used: map[string]int{}, last: map[string]time.Time{}}
+	return &llmService{call: call, local: OllamaCaller(), slots: make(chan struct{}, llmInflight), used: map[string]int{}, last: map[string]time.Time{}}
 }
 
 // take: one question for this asker now, or why not (and how long to wait).
@@ -399,8 +429,10 @@ func (srv *Server) llmView() map[string]any {
 	u := l.usage
 	l.mu.Unlock()
 	return map[string]any{
-		"enabled": c.Enabled, "model": c.Model, "models": LLMModels, "daily": c.Daily,
+		"enabled": c.Enabled, "provider": c.Provider, "ready": c.ready(),
+		"model": c.Model, "models": LLMModels, "daily": c.Daily,
 		"keySet": c.APIKey != "", "keyHint": llmKeyHint(c.APIKey),
+		"ollamaUrl": c.OllamaURL, "ollamaModel": c.OllamaModel,
 		"today": map[string]int64{"asks": u.asks, "inputTokens": u.in, "outputTokens": u.out, "cacheReadTokens": u.cacheRead},
 	}
 }
@@ -409,20 +441,23 @@ func (srv *Server) getLLM(w http.ResponseWriter, _ *http.Request, _ session) {
 	writeJSON(w, http.StatusOK, srv.llmView())
 }
 
-// putLLM: a teacher turns 말로 만들기 on or off and sets the daily limit; the operator also sets the
-// API key and the model.
+// putLLM: a teacher turns 말로 만들기 on or off and sets the daily limit; the operator also picks
+// the AI (Claude with its key and model, or a model in Ollama on this PC).
 func (srv *Server) putLLM(w http.ResponseWriter, r *http.Request, s session) {
 	var in struct {
-		Enabled *bool   `json:"enabled"`
-		Daily   *int    `json:"daily"`
-		Model   *string `json:"model"`
-		APIKey  *string `json:"apiKey"`
+		Enabled     *bool   `json:"enabled"`
+		Daily       *int    `json:"daily"`
+		Provider    *string `json:"provider"`
+		Model       *string `json:"model"`
+		APIKey      *string `json:"apiKey"`
+		OllamaURL   *string `json:"ollamaUrl"`
+		OllamaModel *string `json:"ollamaModel"`
 	}
 	if !readJSON(w, r, &in) {
 		return
 	}
-	if (in.Model != nil || in.APIKey != nil) && s.Role != RoleOperator {
-		writeErr(w, http.StatusForbidden, "role", "API 키와 모델은 운영자(관리자) 계정만 바꿀 수 있어요.")
+	if (in.Provider != nil || in.Model != nil || in.APIKey != nil || in.OllamaURL != nil || in.OllamaModel != nil) && s.Role != RoleOperator {
+		writeErr(w, http.StatusForbidden, "role", "AI 종류 · API 키 · 모델은 운영자(관리자) 계정만 바꿀 수 있어요.")
 		return
 	}
 	c := srv.store.LLMConfig()
@@ -452,11 +487,38 @@ func (srv *Server) putLLM(w http.ResponseWriter, r *http.Request, s session) {
 		}
 		c.APIKey = k
 	}
+	if in.Provider != nil {
+		if *in.Provider != llmProviderClaude && *in.Provider != llmProviderOllama {
+			writeErr(w, http.StatusBadRequest, "bad_input", "AI 종류는 claude 나 ollama 예요.")
+			return
+		}
+		c.Provider = *in.Provider
+	}
+	if in.OllamaURL != nil {
+		u, err := checkOllamaURL(*in.OllamaURL)
+		if err != nil {
+			srv.fail(w, err)
+			return
+		}
+		c.OllamaURL = u
+	}
+	if in.OllamaModel != nil {
+		m := strings.TrimSpace(*in.OllamaModel)
+		if m != "" && !reOllamaModel.MatchString(m) {
+			writeErr(w, http.StatusBadRequest, "bad_input", "Ollama 모델 이름이 올바르지 않아요.")
+			return
+		}
+		c.OllamaModel = m
+	}
 	if in.Enabled != nil {
 		c.Enabled = *in.Enabled
 	}
-	if c.Enabled && c.APIKey == "" {
-		writeErr(w, http.StatusBadRequest, "no_key", "먼저 API 키를 넣어 주세요.")
+	if c.Enabled && !c.ready() {
+		if c.local() {
+			writeErr(w, http.StatusBadRequest, "no_model", "먼저 Ollama 모델을 골라 주세요.")
+		} else {
+			writeErr(w, http.StatusBadRequest, "no_key", "먼저 API 키를 넣어 주세요.")
+		}
 		return
 	}
 	if err := srv.store.SetLLMConfig(c); err != nil {
@@ -476,8 +538,8 @@ func askerKey(s session) string {
 // myLLM: whether 말로 만들기 is open for me, and how many questions are left today.
 func (srv *Server) myLLM(w http.ResponseWriter, _ *http.Request, s session) {
 	c := srv.store.LLMConfig()
-	open := c.Enabled && c.APIKey != ""
-	out := map[string]any{"available": open, "daily": c.Daily, "remaining": srv.llm.remaining(askerKey(s), c.Daily, srv.now())}
+	open := c.Enabled && c.ready()
+	out := map[string]any{"available": open, "local": c.local(), "daily": c.Daily, "remaining": srv.llm.remaining(askerKey(s), c.Daily, srv.now())}
 	if !open {
 		out["reason"] = "선생님이 말로 만들기를 켜지 않았어요."
 	}
@@ -502,7 +564,7 @@ func (srv *Server) askLLM(w http.ResponseWriter, r *http.Request, s session) {
 		return
 	}
 	c := srv.store.LLMConfig()
-	if !c.Enabled || c.APIKey == "" {
+	if !c.Enabled || !c.ready() {
 		writeErr(w, http.StatusServiceUnavailable, "off", "선생님이 말로 만들기를 켜지 않았어요.")
 		return
 	}
@@ -524,14 +586,18 @@ func (srv *Server) askLLM(w http.ResponseWriter, r *http.Request, s session) {
 		writeJSON(w, http.StatusTooManyRequests, map[string]any{"error": "busy", "message": "지금 묻는 친구가 많아요. 잠시 뒤에 다시 물어봐 주세요.", "retryAfter": 5})
 		return
 	}
-	ctx, cancel := context.WithTimeout(r.Context(), llmTimeout+5*time.Second)
+	call, timeout := srv.llm.call, llmTimeout
+	if c.local() {
+		call, timeout = srv.llm.local, llmLocalTimeout
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), timeout+5*time.Second)
 	defer cancel()
-	ans, usage, err := srv.llm.call(ctx, c, userTurn(in.Text, in.Context))
+	ans, usage, err := call(ctx, c, userTurn(in.Text, in.Context))
 	srv.llm.count(usage)
 	if err == nil {
 		ans, err = ans.tidy()
 	}
-	entry := LLMLogEntry{ID: newLLMID(), Time: srv.now().UTC().Format(time.RFC3339), Text: in.Text, Model: c.Model, In: usage.In, Out: usage.Out}
+	entry := LLMLogEntry{ID: newLLMID(), Time: srv.now().UTC().Format(time.RFC3339), Text: in.Text, Model: c.modelName(), In: usage.In, Out: usage.Out}
 	if s.Role == RoleStudent {
 		entry.No = s.No
 	} else {

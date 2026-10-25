@@ -1501,6 +1501,55 @@
 .llmPick {
   max-width: 640px;
 }
+.llmKind {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.llmKind legend {
+  margin-bottom: 6px;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 700;
+}
+.llmKind label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  cursor: pointer;
+}
+.llmKind label:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.llmKind input {
+  margin-top: 3px;
+  accent-color: var(--accent);
+}
+.llmKind span {
+  display: grid;
+  gap: 2px;
+}
+.llmKind small {
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+.field > .llmFind {
+  align-items: stretch;
+  gap: 8px;
+  font-weight: 500;
+}
+.llmFind input {
+  flex: 1;
+  min-width: 0;
+}
 .llmLog {
   display: grid;
   gap: 6px;

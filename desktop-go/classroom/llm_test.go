@@ -196,3 +196,113 @@ func TestLLMRefusesWhatIsNotABlockProgram(t *testing.T) {
 	e.must(e.do("PUT", "/llm/settings", op, map[string]any{"enabled": false}), 200)
 	e.must(ask("x"), 503)
 }
+
+// fakeOllama: a stand-in for Ollama's /api/tags and /api/chat.
+type fakeOllama struct {
+	mu      sync.Mutex
+	reqs    []map[string]any
+	reply   string
+	noThink bool // answer 400 to the "think" switch, like an Ollama that does not know it
+}
+
+func (f *fakeOllama) server(t *testing.T) *httptest.Server {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/api/tags":
+			_, _ = w.Write([]byte(`{"models":[{"name":"qwen3:8b","size":5200000000,"details":{"parameter_size":"8.2B"}},{"name":"bad name;rm","size":1}]}`))
+		case "/api/chat":
+			var req map[string]any
+			_ = json.NewDecoder(r.Body).Decode(&req)
+			f.mu.Lock()
+			f.reqs = append(f.reqs, req)
+			reply, noThink := f.reply, f.noThink
+			f.mu.Unlock()
+			if _, has := req["think"]; has && noThink {
+				w.WriteHeader(http.StatusBadRequest)
+				_, _ = w.Write([]byte(`{"error":"think value \"false\" is not supported for this model"}`))
+				return
+			}
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"model": req["model"], "done": true, "done_reason": "stop",
+				"message":           map[string]any{"role": "assistant", "content": reply},
+				"prompt_eval_count": 2600, "eval_count": 70,
+			})
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	t.Cleanup(ts.Close)
+	return ts
+}
+
+func TestLLMOllamaOnThisPC(t *testing.T) {
+	e := newEnv(t)
+	f := &fakeOllama{reply: `{"ok":true,"lines":["from edu import robot","robot.home()","robot.pick_place(\"빨강 블록\", \"자리 1\")"],"explain":"빨간 블록을 1번 자리에 옮겨요."}`}
+	ts := f.server(t)
+	op := e.operator()
+	c := e.class(op, 1)
+	st := e.student(c, 1)
+	tch := e.teacher(op, "lee")
+
+	// The operator finds the models at the address; a teacher cannot; a broken address is refused.
+	e.must(e.do("GET", "/llm/local-models?url="+ts.URL, tch, nil), 403)
+	e.must(e.do("GET", "/llm/local-models?url=ftp://x", op, nil), 400)
+	r := e.must(e.do("GET", "/llm/local-models?url="+ts.URL, op, nil), 200)
+	models := r.body["models"].([]any)
+	if len(models) != 1 || models[0].(map[string]any)["name"] != "qwen3:8b" {
+		t.Fatalf("models: %s", r.raw)
+	}
+	e.must(e.do("GET", "/llm/local-models?url=http://127.0.0.1:1", op, nil), 502)
+
+	// Ollama chosen: no key needed, but a model is.
+	e.must(e.do("PUT", "/llm/settings", op, map[string]any{"provider": "ollama", "ollamaUrl": ts.URL, "enabled": true}), 400)
+	e.must(e.do("PUT", "/llm/settings", op, map[string]any{"provider": "ollama", "ollamaModel": "qwen3:8b; rm"}), 400)
+	e.must(e.do("PUT", "/llm/settings", tch, map[string]any{"provider": "ollama"}), 403)
+	r = e.must(e.do("PUT", "/llm/settings", op, map[string]any{"provider": "ollama", "ollamaUrl": ts.URL + "/", "ollamaModel": "qwen3:8b", "enabled": true}), 200)
+	if r.body["provider"] != "ollama" || r.body["ready"] != true || r.body["ollamaUrl"] != ts.URL || r.body["keySet"] != false {
+		t.Fatalf("settings: %s", r.raw)
+	}
+	if e.must(e.do("GET", "/llm", st, nil), 200).body["available"] != true {
+		t.Fatal("not available to the student")
+	}
+
+	// A question: the same instructions and answer shape, thinking off.
+	r = e.must(e.do("POST", "/llm/ask", st, map[string]any{"text": "빨간 블록 집어서 1번 자리에 놔", "context": testContext}), 200)
+	if r.body["ok"] != true || len(r.body["lines"].([]any)) != 3 {
+		t.Fatalf("answer: %s", r.raw)
+	}
+	f.mu.Lock()
+	req := f.reqs[0]
+	f.mu.Unlock()
+	msgs := req["messages"].([]any)
+	if req["model"] != "qwen3:8b" || req["stream"] != false || req["think"] != false || req["format"].(map[string]any)["type"] != "object" ||
+		!strings.Contains(msgs[0].(map[string]any)["content"].(string), "robot.pick_place") ||
+		!strings.Contains(msgs[1].(map[string]any)["content"].(string), "<student>\n빨간 블록") {
+		t.Fatalf("request: %v", req)
+	}
+
+	// An Ollama that does not take the thinking switch: asked again without it.
+	f.mu.Lock()
+	f.noThink = true
+	f.mu.Unlock()
+	e.clk.add(4 * time.Second)
+	e.must(e.do("POST", "/llm/ask", st, map[string]any{"text": "다시", "context": testContext}), 200)
+
+	// An answer that is not the agreed JSON is a 502.
+	f.mu.Lock()
+	f.reply = `not json`
+	f.mu.Unlock()
+	e.clk.add(4 * time.Second)
+	e.must(e.do("POST", "/llm/ask", st, map[string]any{"text": "x", "context": testContext}), 502)
+
+	// The log names the local model; back to Claude without a key: closed.
+	entries := e.must(e.do("GET", "/classes/"+c.id+"/llm", op, nil), 200).body["entries"].([]any)
+	if entries[0].(map[string]any)["model"] != "ollama:qwen3:8b" {
+		t.Fatalf("log: %v", entries[0])
+	}
+	e.must(e.do("PUT", "/llm/settings", op, map[string]any{"provider": "claude"}), 400)
+	e.must(e.do("PUT", "/llm/settings", op, map[string]any{"provider": "claude", "enabled": false}), 200)
+	e.clk.add(4 * time.Second)
+	e.must(e.do("POST", "/llm/ask", st, map[string]any{"text": "x", "context": testContext}), 503)
+}

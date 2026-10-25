@@ -206,7 +206,7 @@ export default function SpeakPanel({ code, onCode, arm, effector, cameraFlange, 
                 )}
                 {waiting && (
                   <li className={css.ai} aria-busy="true">
-                    <p className={css.thinking}>블록을 만들고 있어요…</p>
+                    <p className={css.thinking}>블록을 만들고 있어요…{status?.local ? ' 선생님 PC 의 AI 라 조금 걸릴 수 있어요.' : ''}</p>
                   </li>
                 )}
               </ol>

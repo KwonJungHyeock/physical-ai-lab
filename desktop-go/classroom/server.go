@@ -118,6 +118,7 @@ func (srv *Server) Handler() http.Handler {
 	// 말로 만들기 (llm.go): settings for staff (key and model: operator), questions for everyone.
 	mux.Handle("GET "+p+"/llm/settings", srv.need(staff, srv.getLLM))
 	mux.Handle("PUT "+p+"/llm/settings", srv.need(staff, srv.putLLM))
+	mux.Handle("GET "+p+"/llm/local-models", srv.need(staff, srv.localModels))
 	mux.Handle("GET "+p+"/llm", srv.need(all, srv.myLLM))
 	mux.Handle("POST "+p+"/llm/ask", srv.need(all, srv.askLLM))
 	mux.Handle("POST "+p+"/llm/ask/{id}/inserted", srv.need(st, srv.insertedLLM))
