@@ -112,9 +112,9 @@ export default function Intro({ progress, ready, note, gate }: Props) {
           <span>현장에서 일하는</span> 로봇으로
         </h1>
         <p className={css.lead}>
-          myCobot 280 RDK X5 로 조그 · 공정 · 코딩 · AI 비전까지.
+          로봇팔 · 이동형 로봇 · 휴머노이드를 한곳에서 다루는 피지컬 AI 통합 시뮬레이터.
           <br />
-          시뮬레이터에서 연습하고, 같은 프로그램을 실제 로봇에서 돌려요.
+          조그 · 공정 · 코딩 · AI 까지 연습하고, 같은 프로그램을 실제 로봇에서 돌려요.
         </p>
         <ol className={css.cards} aria-label="로봇이 일하는 모습">
           {ROBOTS.map((r, i) => (

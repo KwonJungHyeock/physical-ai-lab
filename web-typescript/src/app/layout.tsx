@@ -32,7 +32,7 @@ const michroma = Michroma({
 
 export const metadata: Metadata = {
   title: "Physical AI 로봇 학습 시뮬레이터",
-  description: "myCobot 280 RDK X5 로봇팔 블록·파이썬 실습과 시뮬레이션",
+  description: "로봇팔 · 이동형 로봇 · 휴머노이드를 한곳에서 다루는 피지컬 AI 통합 시뮬레이터",
   icons: { icon: "/icons/icon-192.png", apple: "/icons/apple-touch-icon.png" },
 };
 

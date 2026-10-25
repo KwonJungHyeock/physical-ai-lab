@@ -12,7 +12,7 @@ export default function manifest(): MetadataRoute.Manifest {
     id: '/console',
     name: 'Physical AI 로봇 학습 프로그램',
     short_name: 'Physical AI',
-    description: 'ROBODYNE SYSTEMS Physical AI 로봇 학습 프로그램 — myCobot 280 RDK X5 — 블록 코딩, 파이썬(pymycobot), ROS 2. 인터넷 없이도 실행돼요.',
+    description: 'ROBODYNE SYSTEMS Physical AI 통합 시뮬레이터 — 로봇팔 · 이동형 로봇 · 휴머노이드 — 블록 코딩, 파이썬, ROS 2, AI. 인터넷 없이도 실행돼요.',
     lang: 'ko',
     start_url: '/console',
     scope: '/',

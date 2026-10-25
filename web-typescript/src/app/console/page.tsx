@@ -5,7 +5,7 @@ import Console from '@/ui/simulator/Console';
 
 export const metadata: Metadata = {
   title: 'Physical AI 로봇 학습 프로그램',
-  description: 'myCobot 280 RDK X5 블록·파이썬 실습, 엔드이펙터 교체, 카메라 영상 처리',
+  description: '로봇팔 · 이동형 로봇 · 휴머노이드 피지컬 AI 통합 시뮬레이터: 조그 · 공정 · 블록 · 파이썬 · ROS 2 · AI, 실제 로봇 연결',
 };
 
 export default function ConsolePage() {
