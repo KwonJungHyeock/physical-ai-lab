@@ -243,7 +243,7 @@ function hintFor(type: string, message: string): string | undefined {
   let m: RegExpMatchArray | null;
   if (type === 'SyntaxError' || type === 'IndentationError') return '문법 오류예요. 괄호·따옴표·콜론(:)·들여쓰기를 확인해 주세요.';
   if (type === 'NameError' && (m = message.match(/name '(\w+)' is not defined/))) return `'${m[1]}' 이라는 이름이 없어요. 철자를 확인하거나 먼저 만들고(import) 써 주세요.`;
-  if (type === 'ModuleNotFoundError') return '시뮬레이터에 없는 모듈이에요. pymycobot, Hobot.GPIO, RPi.GPIO, time, math, rclpy, sensor_msgs, std_msgs 를 쓸 수 있어요.';
+  if (type === 'ModuleNotFoundError') return '시뮬레이터에 없는 모듈이에요. pymycobot, omx (OMX-F), Hobot.GPIO, RPi.GPIO, time, math, rclpy, sensor_msgs, std_msgs 를 쓸 수 있어요.';
   if (type === 'AttributeError') return '그런 이름의 함수(명령)가 없어요. 철자를 확인해 주세요. 시뮬레이터에 아직 없는 명령일 수도 있어요.';
   if (type === 'ValueError' && /angles? not right/.test(message)) return '관절 각도가 로봇이 움직일 수 있는 범위를 벗어났어요 (pymycobot 이 실제 로봇에서도 같은 오류를 내요).';
   if (type === 'ValueError' && /coords? not right/.test(message)) return '좌표가 로봇의 작업 범위를 벗어났어요 (pymycobot 이 실제 로봇에서도 같은 오류를 내요).';

@@ -241,6 +241,9 @@ URDF 와 데이터시트는 일치합니다. **맞추기 위해 조정한 값은
   가능하며, 저작권 고지·조건·면책조항을 유지해야 합니다 →
   `public/robot/mycobot280/LICENSE`, `public/robot/mycobot280/ATTRIBUTION.md`.
   상표권은 부여되지 않으므로 Elephant Robotics 의 보증을 암시해서는 안 됩니다.
+- ROBOTIS OMX-F (교사 설정 [다른 로봇팔 쓰기] 로 켜는 시뮬레이션 팔): ROBOTIS `open_manipulator` 의
+  `open_manipulator_description` (STL · URDF). **라이선스: Apache 2.0** → `public/robot/omx_f/LICENSE`,
+  `public/robot/omx_f/ATTRIBUTION.md` (바꾼 점: 메시를 GLB 하나로, 그리퍼를 도구로, 관절 범위를 서보 한계로).
 - 변환: Collada 8개(20.1MB) → 단일 GLB, 링크당 노드 1개 → Draco 압축 = **238KB**.
   재현 스크립트: `robot-python/tools/convert_meshes.py` (저장소 루트 기준).
 - `G_base.dae` 만 `<unit meter="0.001">` (밀리미터), 나머지는 미터입니다. 이 태그를 무시하는

@@ -33,6 +33,8 @@ interface Props {
   /** Tools the open arm can carry, and whether a camera flange is modelled for it. */
   tools?: readonly EffectorId[];
   flangeAvailable?: boolean;
+  /** The G base fits this arm (Elephant Robotics' arms; not OMX-F). */
+  mountAvailable?: boolean;
   /** The robot on a base (G base): its height above the table, mm. */
   mount: { on: boolean; mm: number };
   onMount(mount: { on: boolean; mm: number }): void;
@@ -41,7 +43,7 @@ interface Props {
 const MOUNT_MIN = 5;
 const MOUNT_MAX = 300;
 
-export default function PartsPanel({ effector, cameraFlange, busy, onTool, mount, onMount, tools, flangeAvailable = true }: Props) {
+export default function PartsPanel({ effector, cameraFlange, busy, onTool, mount, onMount, tools, flangeAvailable = true, mountAvailable = true }: Props) {
   const list = ORDER.filter((e) => !tools || tools.includes(e.id));
   const now = list.find((e) => e.id === effector) ?? ORDER[0];
   const height = (mm: number) => onMount({ ...mount, mm: Math.max(MOUNT_MIN, Math.min(MOUNT_MAX, Math.round(mm))) });
@@ -92,39 +94,41 @@ export default function PartsPanel({ effector, cameraFlange, busy, onTool, mount
             <input type="checkbox" role="switch" checked={cameraFlange} disabled={busy} onChange={(e) => onTool(effector, e.target.checked)} aria-label="카메라 플랜지 달기" />
           </label>
         )}
-        <div className={css.accCard} data-on={mount.on || undefined}>
-          {/* eslint-disable-next-line @next/next/no-img-element -- fixed pictures, also in the static export */}
-          <img src={pic('gbase')} alt="" />
-          <span className={css.accText}>
-            <b>받침대 (G 베이스)</b>
-            <small>{mount.on ? '책상에서 로봇 바닥까지' : '로봇이 책상 바로 위에 있어요'}</small>
-          </span>
-          <input type="checkbox" role="switch" checked={mount.on} disabled={busy} onChange={(e) => onMount({ ...mount, on: e.target.checked })} aria-label="받침대 (G 베이스) 달기" />
-          {mount.on && (
-            <span className={css.stepper} role="group" aria-label="받침대 높이">
-              <button type="button" disabled={busy || mount.mm <= MOUNT_MIN} onClick={() => height(mount.mm - 5)} aria-label="5mm 낮게">
-                −
-              </button>
-              <input
-                type="number"
-                min={MOUNT_MIN}
-                max={MOUNT_MAX}
-                step={1}
-                value={mount.mm}
-                disabled={busy}
-                aria-label="받침대 높이 (mm)"
-                onChange={(e) => {
-                  const mm = Math.round(Number(e.target.value));
-                  if (mm >= MOUNT_MIN && mm <= MOUNT_MAX) onMount({ ...mount, mm });
-                }}
-              />
-              <i>mm</i>
-              <button type="button" disabled={busy || mount.mm >= MOUNT_MAX} onClick={() => height(mount.mm + 5)} aria-label="5mm 높게">
-                +
-              </button>
+        {mountAvailable && (
+          <div className={css.accCard} data-on={mount.on || undefined}>
+            {/* eslint-disable-next-line @next/next/no-img-element -- fixed pictures, also in the static export */}
+            <img src={pic('gbase')} alt="" />
+            <span className={css.accText}>
+              <b>받침대 (G 베이스)</b>
+              <small>{mount.on ? '책상에서 로봇 바닥까지' : '로봇이 책상 바로 위에 있어요'}</small>
             </span>
-          )}
-        </div>
+            <input type="checkbox" role="switch" checked={mount.on} disabled={busy} onChange={(e) => onMount({ ...mount, on: e.target.checked })} aria-label="받침대 (G 베이스) 달기" />
+            {mount.on && (
+              <span className={css.stepper} role="group" aria-label="받침대 높이">
+                <button type="button" disabled={busy || mount.mm <= MOUNT_MIN} onClick={() => height(mount.mm - 5)} aria-label="5mm 낮게">
+                  −
+                </button>
+                <input
+                  type="number"
+                  min={MOUNT_MIN}
+                  max={MOUNT_MAX}
+                  step={1}
+                  value={mount.mm}
+                  disabled={busy}
+                  aria-label="받침대 높이 (mm)"
+                  onChange={(e) => {
+                    const mm = Math.round(Number(e.target.value));
+                    if (mm >= MOUNT_MIN && mm <= MOUNT_MAX) onMount({ ...mount, mm });
+                  }}
+                />
+                <i>mm</i>
+                <button type="button" disabled={busy || mount.mm >= MOUNT_MAX} onClick={() => height(mount.mm + 5)} aria-label="5mm 높게">
+                  +
+                </button>
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </section>
   );

@@ -25,6 +25,7 @@ const LINES: { line: string; img: string; text: string; title?: string }[] = [
   { line: 'myCobot 320', img: '/robot/thumbs/mycobot320.png', text: '6축 · 가반 1kg · 반경 350mm · 더 크고 힘센 팔' },
   { line: 'mechArm 270', img: '/robot/thumbs/mecharm270.png', text: '6축 · 중심 대칭형 산업용 구조 · 반경 270mm' },
   { line: '4축 로봇팔', img: '/robot/thumbs/mypalletizer260.png', text: '평행 링크로 손끝이 늘 아래를 보는 4축 팔 (myPalletizer 260 · ultraArm P340)' },
+  { line: 'ROBOTIS OMX', img: '/robot/thumbs/omx-f.png', text: '5축 + 그리퍼 · 다이나믹셀 서보 · AI 키트의 팔로워 팔 (시뮬레이션)', title: 'ROBOTIS OMX-F' },
   { line: '이동 로봇', img: '/robot/thumbs/myagv.png', text: '조이스틱 · 키보드 주행, 앞 카메라, 라이다, 직진 보정', title: 'myAGV' },
 ];
 
@@ -81,11 +82,12 @@ function LineCard({ line, models, current, onPick }: { line: (typeof LINES)[numb
   );
 }
 
-export default function ModelPicker({ current, onPick, onClose }: { current: RobotModelId | null; onPick(id: RobotModelId): void; onClose?(): void }) {
+/** `models`: the models offered (all of them, or the course robot and the teacher's extra arms). */
+export default function ModelPicker({ current, onPick, onClose, models = MODELS }: { current: RobotModelId | null; onPick(id: RobotModelId): void; onClose?(): void; models?: readonly RobotModel[] }) {
   const lines = (
     <ul className={css.lineGrid}>
-      {LINES.map((l) => (
-        <LineCard key={l.line} line={l} models={MODELS.filter((m) => m.line === l.line)} current={current} onPick={onPick} />
+      {LINES.filter((l) => models.some((m) => m.line === l.line)).map((l) => (
+        <LineCard key={l.line} line={l} models={models.filter((m) => m.line === l.line)} current={current} onPick={onPick} />
       ))}
     </ul>
   );

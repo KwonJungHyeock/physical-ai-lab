@@ -22,6 +22,7 @@ import StudioLight from './StudioLight';
 const DRACO = '/draco/';
 const RDK = '/robot/rdkx5/rdkx5.glb';
 const BASES = '/robot/mycobot280/bases.glb';
+const OMX = '/robot/omx_f/omx_f.glb';
 const AGV = '/robot/myagv/myagv2023.glb';
 const GRIPPER_URDF = '/robot/rdkx5/mycobot_280_rdkx5_adaptive_gripper.urdf';
 
@@ -54,16 +55,16 @@ function useFraming(object: Group) {
 }
 
 function Tool({ part, gripper }: { part: ToolPart; gripper: UrdfRobot }) {
-  const [rdk, bases] = useGLTF([RDK, BASES], DRACO) as unknown as { nodes: GlbNodes }[];
+  const [rdk, bases, omx] = useGLTF([RDK, BASES, OMX], DRACO) as unknown as { nodes: GlbNodes }[];
   const object = useMemo(() => {
     const g = new Group();
     if (part === 'gbase') g.add(partMesh(bases.nodes, 'G_base', true));
     else if (part === 'none') g.add(partMesh(rdk.nodes, 'joint7'));
-    else g.add(buildTool(part === 'flange' ? 'none' : part, part === 'flange', rdk.nodes, gripper).group);
+    else g.add(buildTool(part === 'flange' ? 'none' : part, part === 'flange', { ...rdk.nodes, ...omx.nodes }, gripper).group);
     // URDF z up -> three y up; tools point along the flange's +z, so they hang down.
     g.rotation.x = part === 'gbase' ? -Math.PI / 2 : Math.PI / 2;
     return g;
-  }, [part, rdk, bases, gripper]);
+  }, [part, rdk, bases, omx, gripper]);
   useFraming(object);
   return <primitive object={object} />;
 }

@@ -10,7 +10,7 @@
  * the product pages, and are marked `official: false`.
  */
 
-export type EffectorId = 'adaptive' | 'parallel' | 'flexible' | 'pump' | 'pen' | 'phone' | 'cylinder' | 'none';
+export type EffectorId = 'adaptive' | 'parallel' | 'flexible' | 'pump' | 'pen' | 'phone' | 'cylinder' | 'none' | 'omx';
 
 /** What the tool does — decides which commands are allowed while it is attached. */
 export type EffectorKind = 'grip' | 'suction' | 'pen' | 'press' | 'hold' | 'none';
@@ -42,9 +42,20 @@ export const EFFECTORS: readonly Effector[] = [
   { id: 'pen', name: '펜 홀더', kind: 'pen', tcpMm: 104, official: false },
   { id: 'phone', name: '폰 홀더', kind: 'hold', tcpMm: 60, official: false },
   { id: 'cylinder', name: '실린더', kind: 'press', tcpMm: 74, official: false },
+  // ROBOTIS OMX-F's own gripper (fingers follower_07 · follower_08): the flange is on the wrist-roll
+  // axis (public/robot/omx_f/omx_f.urdf), the fingertips close 94 mm out, the grasp line 88 mm. The
+  // fingers swing open (0 rad closed, 1 rad = ROBOTIS's "open"); 0.5 rad leaves a 60 mm gap.
+  { id: 'omx', name: 'OMX 그리퍼', kind: 'grip', tcpMm: 88, gapMm: { open: 60, closed: 0 }, official: true },
   // Nothing fitted: the working point is the flange face itself.
   { id: 'none', name: '도구 없음', kind: 'none', tcpMm: 0, official: true },
 ];
+
+/**
+ * The gripper an arm picks with: the adaptive one on the 280, the flexible one on the other
+ * Elephant arms (46 mm open, where the parallel gripper's 20 mm does not fit a 25 mm block), its
+ * own on OMX-F.
+ */
+export const armGripper = (tools: readonly EffectorId[]): EffectorId => (['adaptive', 'flexible', 'omx'] as const).find((g) => tools.includes(g)) ?? 'flexible';
 
 /** "지금 달린 도구는 흡착 펌프예요" / "지금 로봇에 도구가 없어요", for messages about a tool command. */
 export function fittedPhrase(id: EffectorId): string {

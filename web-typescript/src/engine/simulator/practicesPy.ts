@@ -80,7 +80,7 @@ function pyPick(effector: EffectorId, theme: Theme): string {
   const toolSetup =
     e.kind === 'grip'
       ? `def grip(close):
-    mc.set_gripper_state(1 if close else 0, 50, ${e.gripperType})   # 0 열기, 1 닫기 · ${e.gripperType} = ${e.name}
+    mc.set_gripper_state(1 if close else 0, 50${e.gripperType ? `, ${e.gripperType})   # 0 열기, 1 닫기 · ${e.gripperType} = ${e.name}` : `)   # 0 열기, 1 닫기 (${e.name})`}
     time.sleep(1.5)
 `
       : pumpPython(activeArm(), 'grip');

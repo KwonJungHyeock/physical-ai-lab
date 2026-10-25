@@ -7,6 +7,7 @@ the AI Kit 2023 model).
     python3 convert_meshes.py rdkx5 --description <clone>/mycobot_description/urdf -o rdkx5.glb
     python3 convert_meshes.py kit   --description <clone>/mycobot_description/urdf -o aikit.glb
     python3 convert_meshes.py 320   --description <clone>/mycobot_description/urdf -o mycobot320.glb   (also 280bases, 270, 260, p340)
+    python3 convert_meshes.py omx   --description <open_manipulator clone>/open_manipulator_description/meshes -o omx_f.glb
     npx gltf-pipeline -i rdkx5.glb -o rdkx5.draco.glb -d --draco.compressionLevel 10
 
 Each source mesh becomes one GLB node named after its file, so the web app can
@@ -108,6 +109,18 @@ PROFILES = {
         ("ultraArm_p340/ultraArm-1", "ua_link1"),
         ("ultraArm_p340/ultraArm-2", "ua_link2"),
         ("ultraArm_p340/ultraArm-3", "ua_link3"),
+    ],
+    # ROBOTIS OMX-F (follower), ROBOTIS-GIT/open_manipulator (Apache 2.0): STL in millimetres, read
+    # from open_manipulator_description/meshes (pass that folder as --description).
+    "omx": [
+        ("omx_f/follower_01_base.stl", "omx_base"),
+        ("omx_f/follower_02_base_tilt_Revised.stl", "omx_link1"),
+        ("omx_f/follower_03_middle_verticle.stl", "omx_link2"),
+        ("omx_f/follower_04_middle_horizontal.stl", "omx_link3"),
+        ("omx_f/follower_05_tip.stl", "omx_link4"),
+        ("omx_f/follower_06_pan_Revised.stl", "omx_link5"),
+        ("omx_f/follower_07_gripper_motorized.stl", "omx_finger1"),
+        ("omx_f/follower_08_gripper_gear.stl", "omx_finger2"),
     ],
     # The original M5 set used by the /spike/twin page.
     "m5": [
@@ -236,7 +249,7 @@ def convert_kit(description, output):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("profile", choices=sorted(PROFILES) + ["kit"])
-    ap.add_argument("--description", required=True, help="path to mycobot_description/urdf")
+    ap.add_argument("--description", required=True, help="path to mycobot_description/urdf (open_manipulator_description/meshes for omx)")
     ap.add_argument("-o", "--output", required=True)
     args = ap.parse_args()
     if args.profile == "kit":
@@ -248,8 +261,12 @@ def main():
     for entry in PROFILES[args.profile]:
         # An entry is a mesh path, or (path, node name) when two sources share a file name.
         rel, name = entry if isinstance(entry, tuple) else (entry, os.path.basename(entry))
-        path = os.path.join(args.description, rel + ".dae")
-        unit = declared_unit(path)
+        if rel.endswith(".stl"):
+            # STL has no unit tag: ROBOTIS's URDF scales these by 0.001 (millimetres).
+            path, unit = os.path.join(args.description, rel), 0.001
+        else:
+            path = os.path.join(args.description, rel + ".dae")
+            unit = declared_unit(path)
         mesh = trimesh.load(path, force="mesh")
         reader = "trimesh"
         if mesh.is_empty:

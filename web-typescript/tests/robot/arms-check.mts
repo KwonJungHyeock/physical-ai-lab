@@ -1,5 +1,5 @@
 /**
- * Every arm the simulator can open: its URDF loads, has its movable joints (6, or 4) and the
+ * Every arm the simulator can open: its URDF loads, has its movable joints (6, 5 or 4) and the
  * flange link the tools mount on; its ready pose is inside its joint ranges, points the tool
  * straight down and sits over the work mat; its model files exist. `solve` also prints IK
  * solutions for tool-down targets (how the ready poses were found).
@@ -36,7 +36,7 @@ for (const [id, a] of Object.entries(ARMS)) {
   const robot = parseUrdf(readFileSync(W + 'public' + a.urdf, 'utf8'));
   const chain = buildChain(robot);
   assert.equal(chain.filter((s) => s.movableIndex >= 0).length, a.dof, `${id}: ${a.dof} movable joints`);
-  assert.equal(a.min.length, 6, `${id}: six angle slots (a 4-axis arm's last two fixed at 0)`);
+  assert.equal(a.min.length, 6, `${id}: six angle slots (the slots past dof fixed at 0)`);
   assert.ok(chain.some((s) => s.joint.child === a.flangeLink), `${id}: flange link ${a.flangeLink}`);
   const meshes = [...robot.links.values()].map((l) => l.visual && meshNodeName(l.visual.meshFilename)).filter(Boolean);
   assert.ok(meshes.length >= a.dof + 1, `${id}: link meshes`);
@@ -55,5 +55,25 @@ for (const [id, a] of Object.entries(ARMS)) {
       console.log(`       tool down at ${target.map((v) => v.toFixed(0)).join(', ')}: ${r.converged ? r.anglesDeg.map((v) => v.toFixed(1)).join(', ') : 'no solution'}`);
     }
   }
+}
+// OMX-F (5 joints): with no sixth joint the tool-down poses over the practice mat must still all solve
+// (J5 turns the gripper about its own axis), inside its servo limits; and a block program's moves of
+// joint 6 are dropped, joint moves kept 5° inside its range.
+{
+  const { BLOCK_START, SPOTS } = await import('../../src/engine/simulator/board');
+  const { solveToolPose } = await import('../../src/engine/robot/tool');
+  const { adaptBlocks } = await import('../../src/engine/robot/arms');
+  const a = setActiveArm('omx-f');
+  const chain = buildChain(parseUrdf(readFileSync(W + 'public' + a.urdf, 'utf8')));
+  const points = [...Object.values(BLOCK_START), ...Object.values(SPOTS)].flatMap((p) => [{ ...p, z: 12.5 }, { ...p, z: 90 }]);
+  for (const p of points) {
+    const r = solveToolPose(chain, p, a.home, { tcpMm: 88 });
+    assert.ok(r.converged, `omx-f: tool down at ${p.x}, ${p.y}, ${p.z}`);
+    assert.ok(r.anglesDeg.every((v, i) => v >= a.min[i] - 0.5 && v <= a.max[i] + 0.5), `omx-f: inside its limits at ${p.x}, ${p.y}, ${p.z}`);
+  }
+  const blocks = adaptBlocks('robot.move_joint(3, -92)\nrobot.move_joint(6, 90)\nrobot.home()', a);
+  assert.equal(blocks, 'robot.move_joint(3, -85)\nrobot.home()');
+  setActiveArm('mycobot280-rdkx5');
+  console.log(`  ok   omx-f: gripper straight down over all ${points.length} block and spot points; blocks for 5 joints`);
 }
 console.log('arms-check: all arms load');

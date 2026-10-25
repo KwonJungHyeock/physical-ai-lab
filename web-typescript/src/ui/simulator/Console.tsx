@@ -45,7 +45,7 @@ import {
 } from '@/engine/simulator/robotLink';
 import { addEvidence, loadEvidence, reportHtml, saveEvidence, setDemoRobot, type PrepItem } from '@/engine/simulator/evidence';
 import { categoryOf, loadProgress, markKey, openCheck, saveProgress, type ConsoleMode, type Progress, type Where } from '@/engine/simulator/modules';
-import { DEFAULT_MODEL, MODEL_CHOICE, modelById, type RobotModelId } from '@/engine/robot/catalog';
+import { DEFAULT_MODEL, MODEL_CHOICE, extraArmsOn, modelById, offeredModels, setExtraArms, type RobotModelId } from '@/engine/robot/catalog';
 import { activeArm, adaptPython, armById, setActiveArm, type ArmSpec } from '@/engine/robot/arms';
 import {
   EMPTY_DESK,
@@ -425,11 +425,16 @@ export default function Console() {
   const [mode, setMode] = useState<ConsoleMode>('learn');
   /** The robot model; null until chosen on the first screen (the robot's own server picks it). */
   const [model, setModel] = useState<RobotModelId | null>(null);
+  /** The teacher turned on the extra arms (⚙ 설정 › 다른 로봇팔 쓰기: OMX-F); read after mount. */
+  const [extraArms, setExtraArmsState] = useState(false);
+  /** A model can be chosen: every model (MODEL_CHOICE), or the course robot and the extra arms. */
+  const choice = MODEL_CHOICE || extraArms;
+  const offered = offeredModels(extraArms);
   /**
    * The arm open in the simulator (a real robot is always the myCobot 280 RDK X5 serving the page).
    * Its joint ranges, ready pose and Python class are in force everywhere from this render on.
    */
-  const arm = armById(robotMode || !MODEL_CHOICE ? DEFAULT_MODEL : model);
+  const arm = armById(robotMode || !choice ? DEFAULT_MODEL : model);
   setActiveArm(arm.id);
   setActiveDesk(desk);
   // 공정 works on the practice mat too (its example picks a block from it).
@@ -762,12 +767,14 @@ export default function Console() {
       }
       const savedModel = modelById(localStorage.getItem(MODEL_KEY));
       // The mobile robot has its own page; this one opens on an arm.
-      if (MODEL_CHOICE && savedModel?.status === 'ready' && savedModel.kind === 'arm') {
+      const extra = extraArmsOn();
+      setExtraArmsState(extra);
+      if (savedModel?.status === 'ready' && savedModel.kind === 'arm' && offeredModels(extra).some((m) => m.id === savedModel.id)) {
         switchArm(savedModel.id);
         setModel(savedModel.id);
       }
       // From the driving console's [로봇팔로 바꾸기]: straight to the model choice.
-      if (MODEL_CHOICE && new URLSearchParams(window.location.search).has('pick')) setPicking(true);
+      if ((MODEL_CHOICE || extra) && new URLSearchParams(window.location.search).has('pick')) setPicking(true);
       const d = JSON.parse(localStorage.getItem(DISPLAY_KEY) ?? 'null') as Partial<DisplayOpts> | null;
       if (d && typeof d === 'object') setDisplay({ ...DEFAULT_DISPLAY, ...d });
       // The level and practice left last time, with the student's program (kept in this browser), or
@@ -1220,8 +1227,10 @@ export default function Console() {
     const untouched = !code.trim() || isStarter(code);
     keepProgram(code);
     setActiveArm(to.id);
+    // The G base is Elephant Robotics' accessory: OMX-F stands on its own plate.
+    if (to.family === 'omx') setMount((m) => ({ ...m, on: false }));
     const th: Theme = to.kit ? theme : 'arm';
-    const e: EffectorId = to.tools.includes(effector) ? effector : 'none';
+    const e: EffectorId = to.tools.includes(effector) ? effector : to.tools.includes('none') ? 'none' : to.tools[0];
     const p = practiceFor(level, th, practiceId);
     setTheme(th);
     setEffector(e);
@@ -3320,8 +3329,8 @@ export default function Console() {
   // Another page shown (교육 · 라이브러리 · 자료실): the paused 3D view does not hold the start screen.
   const splashDone = started || scene3d === 'slow' || !!loadError || (view !== 'sim' && !!loaded);
   // Served by the robot: the model is the robot's own (myCobot 280 RDK X5 server).
-  // With the model choice hidden (MODEL_CHOICE), it is the myCobot 280 RDK X5 everywhere.
-  const modelNow = robotMode || !MODEL_CHOICE ? DEFAULT_MODEL : model;
+  // With the model choice hidden (MODEL_CHOICE, no extra arms), it is the myCobot 280 RDK X5 everywhere.
+  const modelNow = robotMode || !choice ? DEFAULT_MODEL : model;
   /** Past the intro's last frame ([연결하기] or 시뮬레이터로 시작); on a robot's own console the intro steps aside by itself. */
   const [entered, setEntered] = useState(false);
   const pastIntro = entered || robotMode || picking;
@@ -3461,7 +3470,7 @@ export default function Console() {
           }}
         />
       )}
-      {showPicker && <ModelPicker current={modelNow} onPick={chooseModel} onClose={modelNow ? () => setPicking(false) : undefined} />}
+      {showPicker && <ModelPicker current={modelNow} models={offered} onPick={chooseModel} onClose={modelNow ? () => setPicking(false) : undefined} />}
       {prepOpen && (
         <div className={css.picker} role="dialog" aria-modal="true" aria-label="검수 준비 점검" onKeyDown={(e) => e.key === 'Escape' && setPrepOpen(false)} onMouseDown={(e) => e.target === e.currentTarget && setPrepOpen(false)}>
           <div className={`${css.pickerBox} ${css.aiBox}`}>
@@ -3589,7 +3598,7 @@ export default function Console() {
           }
           settings={(close) => (
             <>
-              {MODEL_CHOICE && (
+              {choice && (
                 <button
                   type="button"
                   role="menuitem"
@@ -3652,6 +3661,27 @@ export default function Console() {
                 </b>
                 <small>{mode === 'check' ? '학생 실습 화면으로 돌아가요' : '납품 검수 7종 · 검수 서류 (학생 화면에는 보이지 않아요)'}</small>
               </button>
+              )}
+              {account.role !== 'student' && !robotMode && !MODEL_CHOICE && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  disabled={busy}
+                  onClick={() => {
+                    const on = !extraArms;
+                    setExtraArms(on);
+                    setExtraArmsState(on);
+                    // Off: back to the course robot; on: straight to the choice.
+                    if (on) setPicking(true);
+                    else if (modelNow !== DEFAULT_MODEL) chooseModel(DEFAULT_MODEL);
+                    close();
+                  }}
+                >
+                  <b>
+                    <Icon name="robot" size={15} /> {extraArms ? '다른 로봇팔 끄기' : '다른 로봇팔 쓰기 (OMX-F)'}
+                  </b>
+                  <small>{extraArms ? 'myCobot 280 RDK X5 만 다시 보여요' : 'ROBOTIS OMX-F 를 시뮬레이션으로 열 수 있게 해요 (이 PC 에서만)'}</small>
+                </button>
               )}
               {!account.session && (
                 <button
@@ -3720,7 +3750,7 @@ export default function Console() {
               </span>
             }
             showChecks={mode === 'check'}
-            showModels={MODEL_CHOICE}
+            models={offered}
             model={modelNow}
             onModel={(id) => {
               chooseModel(id);
@@ -4082,14 +4112,14 @@ export default function Console() {
             {dockShown ? (
               <>
                 <div className={css.sideHeader}>
-                  <button type="button" className={css.sideModel} onClick={() => setPicking(true)} disabled={busy || !MODEL_CHOICE} title={MODEL_CHOICE ? '로봇 모델 바꾸기' : undefined}>
+                  <button type="button" className={css.sideModel} onClick={() => setPicking(true)} disabled={busy || !choice} title={choice ? '로봇 모델 바꾸기' : undefined}>
                     <span>
                       <b>{SCREEN_TITLE[workScreen] ?? ''}</b>
                       <small>
                         {arm.name} · {arm.dof}축
                       </small>
                     </span>
-                    {MODEL_CHOICE && <em>바꾸기</em>}
+                    {choice && <em>바꾸기</em>}
                   </button>
                   <StatusLights lights={lights}>
                     <RobotStatus
@@ -4118,7 +4148,7 @@ export default function Console() {
                     ) : workScreen === 'parts' ? (
                       <div className={css.screen}>
                         {(kind !== 'none' || cameraFlange) && toolRow}
-                        <PartsPanel effector={effector} cameraFlange={cameraFlange} busy={busy} onTool={changeTool} mount={mount} onMount={chooseMount} tools={arm.tools} flangeAvailable={arm.cameraFlange} />
+                        <PartsPanel effector={effector} cameraFlange={cameraFlange} busy={busy} onTool={changeTool} mount={mount} onMount={chooseMount} tools={arm.tools} flangeAvailable={arm.cameraFlange} mountAvailable={arm.family !== 'omx'} />
                       </div>
                     ) : workScreen === 'pose' ? (
                       <div className={css.screen}>{recordRow}</div>

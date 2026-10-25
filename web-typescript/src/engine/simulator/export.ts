@@ -63,7 +63,9 @@ export function toPymycobot(actions: readonly RobotAction[], effector: EffectorI
     out.push(
       '',
       'def gripper(open_):',
-      `    mc.set_gripper_state(0 if open_ else 1, 50, ${e.gripperType})  # 0 열기, 1 닫기 / ${e.gripperType} = ${e.name}`,
+      e.gripperType
+        ? `    mc.set_gripper_state(0 if open_ else 1, 50, ${e.gripperType})  # 0 열기, 1 닫기 / ${e.gripperType} = ${e.name}`
+        : `    mc.set_gripper_state(0 if open_ else 1, 50)  # 0 열기, 1 닫기 (${e.name})`,
       '    time.sleep(1.5)',
       '',
     );

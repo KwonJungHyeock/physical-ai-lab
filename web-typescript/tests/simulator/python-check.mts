@@ -275,8 +275,8 @@ rclpy.spin(Waver())
             setActiveArm('mycobot280-rdkx5');
             const r = runScript(py, code, { robot: armRobot, startAngles: spec.home.slice(), mode: level, armId: spec.id });
             assert.ok(r.ok, `${where}: ${JSON.stringify(r.error)}`);
-            if (level === 'python' && p.id === 'place') {
-              const marker = { hobot: 'Hobot.GPIO', rpi: 'RPi.GPIO', basic25: 'set_basic_output(5', basic12: 'set_basic_output(1' }[spec.pump];
+            if (level === 'python' && p.id === 'place' && spec.tools.includes('pump')) {
+              const marker = { hobot: 'Hobot.GPIO', rpi: 'RPi.GPIO', basic25: 'set_basic_output(5', basic12: 'set_basic_output(1', none: 'def pump' }[spec.pump];
               assert.ok(code.includes(marker), `${where}: pump code should use ${marker}`);
               const pumps = r.events.filter((e) => e.kind === 'pump').map((e) => (e.kind === 'pump' ? e.on : null));
               assert.deepEqual(pumps, [true, false], `${where}: pump ${JSON.stringify(pumps)}`);

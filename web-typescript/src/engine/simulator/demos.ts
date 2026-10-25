@@ -9,7 +9,7 @@
 import { activeArm, type ArmFamily, type ArmSpec } from '../robot/arms';
 import { BLOCK_START, COLOR_TO_BIN, type ColorName } from './board';
 import type { SceneId } from './desk';
-import type { EffectorId } from './effectors';
+import { armGripper, type EffectorId } from './effectors';
 
 export interface DemoStep {
   title: string;
@@ -30,8 +30,8 @@ export interface Demo {
 
 /** The arms each demo is made for (the places are where these arms reach them). */
 export const DEMO_ARMS: Record<SceneId, readonly ArmFamily[]> = {
-  empty: ['mycobot280', 'mycobot320', 'mecharm270', 'mypalletizer260'],
-  lab: ['mycobot280', 'mycobot320', 'mecharm270', 'mypalletizer260'],
+  empty: ['mycobot280', 'mycobot320', 'mecharm270', 'mypalletizer260', 'omx'],
+  lab: ['mycobot280', 'mycobot320', 'mecharm270', 'mypalletizer260', 'omx'],
   factory: ['mycobot280', 'mycobot320', 'mypalletizer260'],
   logistics: ['mycobot280'],
   home: ['mycobot280'],
@@ -61,24 +61,28 @@ function build(scene: SceneId, effector: EffectorId, imports: string, parts: (De
   return { scene, effector, steps: parts.map(({ title, note }) => ({ title, note })), code: `${out.join('\n')}\n`, starts };
 }
 
-/** The arm's own gripper: the adaptive one on the 280, the flexible one on the others. */
-const gripperOf = (arm: ArmSpec): EffectorId => (arm.tools.includes('adaptive') ? 'adaptive' : 'flexible');
+/** The arm's own gripper (effectors armGripper). */
+const gripperOf = (arm: ArmSpec): EffectorId => armGripper(arm.tools);
 
-/** Each joint turned on its own from the ready pose and back. */
-function joints(arm: ArmSpec): Demo {
+/** Each joint turned on its own from the ready pose and back (also 전 축 구동's starter on arms other than the 280). */
+export function joints(arm: ArmSpec): Demo {
   const h = arm.home.map((a) => Math.round(a));
   const clamp = (i: number, deg: number) => Math.round(Math.min(arm.max[i] - 5, Math.max(arm.min[i] + 5, deg)));
   const j = (n: number, deg: number) => `robot.move_joint(${n}, ${clamp(n - 1, deg)})`;
   // 30° back from the ready pose, or forward where the joint has no room back (myPalletizer's shoulder).
   const swing = (n: number, d: number) => j(n, h[n - 1] - d >= arm.min[n - 1] + 5 && h[n - 1] - d <= arm.max[n - 1] - 5 ? h[n - 1] - d : h[n - 1] + d);
   const wrist =
-    arm.dof === 6 ? [j(4, h[3] + 30), j(4, h[3]), j(5, h[4] + 40), j(5, h[4] - 40), j(5, h[4]), j(6, h[5] + 90), j(6, h[5] - 90), j(6, h[5])] : [j(4, h[3] + 90), j(4, h[3] - 90), j(4, h[3])];
-  return build('empty', 'none', 'robot', [
+    arm.dof === 6
+      ? [j(4, h[3] + 30), j(4, h[3]), j(5, h[4] + 40), j(5, h[4] - 40), j(5, h[4]), j(6, h[5] + 90), j(6, h[5] - 90), j(6, h[5])]
+      : arm.dof === 5
+        ? [j(4, h[3] - 30), j(4, h[3]), j(5, h[4] + 90), j(5, h[4] - 90), j(5, h[4])]
+        : [j(4, h[3] + 90), j(4, h[3] - 90), j(4, h[3])];
+  return build('empty', arm.tools.includes('none') ? 'none' : gripperOf(arm), 'robot', [
     { title: 'J1 좌우', note: '몸통 전체가 왼쪽 · 오른쪽으로 돌아요.', lines: ['robot.set_speed(35)', 'robot.home()', j(1, h[0] + 60), j(1, h[0] - 60), j(1, h[0])] },
     { title: 'J2 · J3 앞뒤', note: '어깨와 팔꿈치가 팔을 앞뒤로 숙였다 펴요.', lines: [swing(2, 30), j(2, h[1]), swing(3, -30), j(3, h[2])] },
     {
-      title: arm.dof === 6 ? '손목 J4 ~ J6' : '손끝 J4',
-      note: arm.dof === 6 ? '손목이 까딱이고, 옆으로 꺾이고, 손끝이 빙글 돌아요.' : '손끝이 빙글 돌아요. 이 팔은 손끝이 늘 아래를 봐요.',
+      title: arm.dof === 6 ? '손목 J4 ~ J6' : arm.dof === 5 ? '손목 J4 · J5' : '손끝 J4',
+      note: arm.dof === 6 ? '손목이 까딱이고, 옆으로 꺾이고, 손끝이 빙글 돌아요.' : arm.dof === 5 ? '손목이 까딱이고, 그리퍼가 빙글 돌아요.' : '손끝이 빙글 돌아요. 이 팔은 손끝이 늘 아래를 봐요.',
       lines: wrist,
     },
     { title: '기본 자세', note: '관절 6개가 각각 어떻게 도는지 봤어요. 처음 자세로 돌아가요.'.replace('6개', `${arm.dof}개`), lines: ['robot.home()'] },

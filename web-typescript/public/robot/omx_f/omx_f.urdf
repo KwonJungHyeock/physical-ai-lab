@@ -1,0 +1,76 @@
+<?xml version="1.0"?>
+<!--
+  ROBOTIS OMX-F (follower arm): ROBOTIS-GIT/open_manipulator, open_manipulator_description/urdf/omx_f/
+  omx_f.urdf (Apache 2.0), with three changes for the simulator:
+   - the gripper (gripper_joint_1, mimic gripper_joint_2, links 6-7) is left out of the arm: the
+     simulator draws it as the arm's tool (its fingers, nodes omx_finger1 · omx_finger2, open and
+     close with the gripper command), so its joints are not arm joints;
+   - a fixed "flange" link on link5, on the gripper's centre line (y -1.65 mm, between the two
+     finger pivots), turned so its z axis points along the gripper (link5 +x) and its x axis along
+     link5 +z: the simulator's tools work along the flange z axis;
+   - mesh names are the node names in omx_f.glb (omx_base, omx_link1 ...); joint limits are the
+     real motor limits (ros2_control/omx_f.ros2_control.xacro: joint2 830-3129, joint3 1024-3140
+     of 4096 around 2048) instead of the file's +-2 pi; joints 1, 4 and 5 keep +-180 degrees.
+  Joint names, origins and axes are the official ones.
+-->
+<robot name="omx_f">
+  <link name="link0">
+    <visual><origin xyz="0 0 0" rpy="0 0 0"/><geometry><mesh filename="package://open_manipulator_description/meshes/omx_f/omx_base.stl"/></geometry></visual>
+  </link>
+  <joint name="joint1" type="revolute">
+    <parent link="link0"/>
+    <child link="link1"/>
+    <origin xyz="-0.01125 0 0.034" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="1000" lower="-3.141592653589793" upper="3.141592653589793" velocity="4.8"/>
+  </joint>
+  <link name="link1">
+    <visual><origin xyz="0 0 0" rpy="0 0 0"/><geometry><mesh filename="package://open_manipulator_description/meshes/omx_f/omx_link1.stl"/></geometry></visual>
+  </link>
+  <joint name="joint2" type="revolute">
+    <parent link="link1"/>
+    <child link="link2"/>
+    <origin xyz="0 0 0.0635" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="1000" lower="-1.8684" upper="1.6582" velocity="4.8"/>
+  </joint>
+  <link name="link2">
+    <visual><origin xyz="0 0 0" rpy="0 0 0"/><geometry><mesh filename="package://open_manipulator_description/meshes/omx_f/omx_link2.stl"/></geometry></visual>
+  </link>
+  <joint name="joint3" type="revolute">
+    <parent link="link2"/>
+    <child link="link3"/>
+    <origin xyz="0.0415 0 0.11315" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="1000" lower="-1.5708" upper="1.6751" velocity="4.8"/>
+  </joint>
+  <link name="link3">
+    <visual><origin xyz="0 0 0" rpy="0 0 0"/><geometry><mesh filename="package://open_manipulator_description/meshes/omx_f/omx_link3.stl"/></geometry></visual>
+  </link>
+  <joint name="joint4" type="revolute">
+    <parent link="link3"/>
+    <child link="link4"/>
+    <origin xyz="0.162 0 0" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="1000" lower="-3.141592653589793" upper="3.141592653589793" velocity="4.8"/>
+  </joint>
+  <link name="link4">
+    <visual><origin xyz="0 0 0" rpy="0 0 0"/><geometry><mesh filename="package://open_manipulator_description/meshes/omx_f/omx_link4.stl"/></geometry></visual>
+  </link>
+  <joint name="joint5" type="revolute">
+    <parent link="link4"/>
+    <child link="link5"/>
+    <origin xyz="0.0287 0 0" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit effort="1000" lower="-3.141592653589793" upper="3.141592653589793" velocity="4.8"/>
+  </joint>
+  <link name="link5">
+    <visual><origin xyz="0 0 0" rpy="0 0 0"/><geometry><mesh filename="package://open_manipulator_description/meshes/omx_f/omx_link5.stl"/></geometry></visual>
+  </link>
+  <joint name="flange_joint" type="fixed">
+    <parent link="link5"/>
+    <child link="flange"/>
+    <origin xyz="0 -0.00165 0" rpy="3.141592653589793 -1.5707963267948966 0"/>
+  </joint>
+  <link name="flange"/>
+</robot>

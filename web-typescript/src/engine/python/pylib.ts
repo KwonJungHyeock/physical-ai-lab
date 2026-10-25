@@ -69,7 +69,12 @@ def _limits():
     a_min, a_max, c_min, c_max = (list(_sim.angles_min()), list(_sim.angles_max()), list(_sim.coords_min()), list(_sim.coords_max()))
     if _dof() == 4:
         return (a_min[:4], a_max[:4], _four(c_min), _four(c_max))
-    return (a_min, a_max, c_min, c_max)
+    return (a_min[: _dof()], a_max[: _dof()], c_min, c_max)
+
+
+def _ncoords():
+    # Numbers in a coordinate list: [x, y, z, θ] on a 4-axis arm, [x, y, z, rx, ry, rz] on the others (OMX-F's 5 joints too).
+    return 4 if _dof() == 4 else 6
 
 
 def _six(angles):
@@ -83,7 +88,7 @@ def _check(**kwargs):
         if value is None:
             continue
         if parameter in ("joint_id", "coord_id"):
-            ids = list(range(1, _dof() + 1))
+            ids = list(range(1, (_dof() if parameter == "joint_id" else _ncoords()) + 1))
             if value not in ids:
                 raise ValueError(f"The {parameter} not right, should be in {ids}, but received {value}.")
         elif parameter in ("angle", "coord"):
@@ -94,8 +99,9 @@ def _check(**kwargs):
             if not lo <= value <= hi:
                 raise ValueError(f"The {parameter} not right, should be in {lo} ~ {hi}, but received {value}.")
         elif parameter in ("angles", "coords"):
-            if len(value) != _dof():
-                raise ValueError(f"The length of {chr(96)}{parameter}{chr(96)} must be {_dof()}.")
+            n = _dof() if parameter == "angles" else _ncoords()
+            if len(value) != n:
+                raise ValueError(f"The length of {chr(96)}{parameter}{chr(96)} must be {n}.")
             ANGLES_MIN, ANGLES_MAX, COORDS_MIN, COORDS_MAX = _limits()
             lows = ANGLES_MIN if parameter == "angles" else COORDS_MIN
             highs = ANGLES_MAX if parameter == "angles" else COORDS_MAX
@@ -310,6 +316,16 @@ from pymycobot.mycobot280rdkx5 import MyCobot280RDKX5
 
 class MyPalletizer260(MyCobot280RDKX5):
     'myPalletizer 260: 관절 4개 (send_angles 는 숫자 4개), 좌표는 [x, y, z, θ] (손끝은 늘 아래).'
+`,
+
+  '/sim/omx/__init__.py': String.raw`
+"""omx (시뮬레이터 수업용) — ROBOTIS OMX-F 를 pymycobot 과 같은 명령으로 움직여요.
+실물 OMX-F 는 ROS 2 (open_manipulator) 나 다이나믹셀 SDK 로 움직여요: 이 모듈은 시뮬레이터에만 있어요."""
+from pymycobot.mycobot280rdkx5 import MyCobot280RDKX5
+
+
+class OMXF(MyCobot280RDKX5):
+    'OMX-F: 관절 5개 (send_angles 는 숫자 5개), 좌표는 [x, y, z, rx, ry, rz] (손 방향은 5축이 돌 수 있는 쪽만).'
 `,
 
   '/sim/Hobot/__init__.py': '',
@@ -676,7 +692,7 @@ class JointState(_Msg):
 /** Python run before every program: simulated clock for the time module, fresh modules. */
 export const PY_PRELUDE = String.raw`
 import sys, time
-for _m in [m for m in sys.modules if m.split(".")[0] in ("pymycobot", "Hobot", "RPi", "rclpy", "std_msgs", "sensor_msgs", "builtin_interfaces", "_simpy", "_sim")]:
+for _m in [m for m in sys.modules if m.split(".")[0] in ("pymycobot", "omx", "Hobot", "RPi", "rclpy", "std_msgs", "sensor_msgs", "builtin_interfaces", "_simpy", "_sim")]:
     del sys.modules[_m]
 if "/sim" not in sys.path:
     sys.path.insert(0, "/sim")

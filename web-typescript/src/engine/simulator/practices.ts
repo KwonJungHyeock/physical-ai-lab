@@ -10,9 +10,9 @@
  */
 
 import { COLORS, COLOR_TO_BIN, type ColorName, type Theme } from './board';
-import { demoFor } from './demos';
+import { demoFor, joints as jointSweep } from './demos';
 import { SCENES, activeDesk } from './desk';
-import { EFFECTOR_BY_ID, type EffectorId } from './effectors';
+import { EFFECTOR_BY_ID, armGripper, type EffectorId } from './effectors';
 import { starterProgram, type CameraId } from './program';
 import { PY_PRACTICES, ROS_PRACTICES } from './practicesPy';
 import { blocksOnSpots, blocksSorted, mission, type MissionStatus, type WorldState } from './sim';
@@ -348,20 +348,26 @@ export function practicesFor(level: Level, theme: Theme): readonly Practice[] {
   const list = level === 'python' ? PY_PRACTICES[theme] : level === 'ros' ? ROS_PRACTICES[theme] : PRACTICES[theme];
   const arm = activeArm();
   if (arm.id === 'mycobot280-rdkx5') return list;
-  // Another arm: its own tools (the flexible gripper, 46 mm open, for the 280's adaptive one — the
-  // parallel gripper's 20 mm does not fit a 25 mm block), no hand-camera practices without a camera
-  // flange, and Python with its own class, port and ready pose.
+  // Another arm: its own tools (its gripper, armGripper, for one it does not have), no hand-camera
+  // practices without a camera flange, and Python with its own class, port and ready pose.
+  // A drawing or pressing practice needs that very tool, and 도구 2종 needs two picking tools: an arm
+  // without them (OMX-F: its own gripper only) leaves them out.
+  const pickers = arm.tools.filter((t) => ['grip', 'suction'].includes(EFFECTOR_BY_ID[t].kind)).length;
   return list
     .filter((p) => arm.cameraFlange || !p.cameraFlange)
+    .filter((p) => arm.tools.includes(p.effector) || !['pen', 'press'].includes(EFFECTOR_BY_ID[p.effector].kind))
+    .filter((p) => p.id !== 'tools' || pickers >= 2)
     .map((p) => {
-      const effector = arm.tools.includes(p.effector) ? p.effector : 'flexible';
+      const effector = arm.tools.includes(p.effector) ? p.effector : armGripper(arm.tools);
       let goal = effector === p.effector ? p.goal : p.goal.replace(EFFECTOR_BY_ID[p.effector].name, EFFECTOR_BY_ID[effector].name);
       if (arm.dof !== 6) goal = goal.replace('6개 관절', `${arm.dof}개 관절`);
       // 전 축 구동 counts the arm's own joints.
       const progress: Practice['progress'] =
         p.id === 'joints' && arm.dof !== 6 ? (w, s) => ({ ...p.progress(w, s), title: `관절 ${arm.dof}개 모두 움직이기`, total: arm.dof }) : p.progress;
+      // 전 축 구동's starter is the 280's angles: another arm sweeps each joint from its own ready pose.
+      const sweep = p.id === 'joints' && arm.family !== 'mycobot280';
       return level === 'basic'
-        ? { ...p, effector, goal, progress, starter: (e: EffectorId, t: Theme) => adaptBlocks(p.starter(e, t), arm) }
+        ? { ...p, effector, goal, progress, starter: (e: EffectorId, t: Theme) => (sweep ? jointSweep(arm).code : adaptBlocks(p.starter(e, t), arm)) }
         : { ...p, effector, goal, progress, starter: (e: EffectorId, t: Theme) => adaptPython(p.starter(e, t), arm) };
     });
 }

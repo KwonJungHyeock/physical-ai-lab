@@ -15,7 +15,7 @@ import { EFFECTORS, type Effector, type EffectorId } from '@/engine/simulator/ef
 import { loadEvidence, onRealRobot, realMissing, type Evidence } from '@/engine/simulator/evidence';
 import { CATEGORIES, CHECKS, checkState, markKey, openCheck, type ConsoleMode, type Progress, type Where } from '@/engine/simulator/modules';
 import { LEVELS, practiceFor, practicesFor, type Level, type Practice, type PracticeId } from '@/engine/simulator/practices';
-import { MODELS, type RobotModelId } from '@/engine/robot/catalog';
+import type { RobotModel, RobotModelId } from '@/engine/robot/catalog';
 import { CELLS, type CellId } from '@/engine/simulator/cell/cells';
 import { missionsOf } from '@/engine/simulator/cell/missions';
 
@@ -67,8 +67,8 @@ interface Props {
   checkActions: ReactNode;
   /** The acceptance checks are shown (the teacher turned the 검수 시연 on); hidden from students. */
   showChecks: boolean;
-  /** The other robot models are offered (MODEL_CHOICE); hidden while the course is 280 RDK X5 only. */
-  showModels: boolean;
+  /** The models offered (catalog offeredModels); none while the course is 280 RDK X5 only. */
+  models: readonly RobotModel[];
   model: RobotModelId | null;
   onModel(id: RobotModelId): void;
   scene: SceneId;
@@ -164,7 +164,7 @@ export default function Library(p: Props) {
   const practices = practiceEntries(p.level, p.theme);
   const scenes = SCENES.filter((s) => SCENES_SHOWN.includes(s.id) && (s.id !== 'kit' || p.kitAvailable));
   const tools = EFFECTORS.filter((e) => p.tools.includes(e.id)).sort((a, b) => Number(b.kind === 'none') - Number(a.kind === 'none'));
-  const models = MODELS.filter((m) => m.status !== 'planned');
+  const models = p.models.filter((m) => m.status !== 'planned');
   // The 검수 record (the result sheet's lines) is shared with 로봇 실습 7 on the 교육 tab: a check
   // shown there counts here too.
   const [evidence, setEvidence] = useState<readonly Evidence[]>([]);
@@ -288,7 +288,7 @@ export default function Library(p: Props) {
     },
   ];
 
-  const shownGroups = groups.filter((g) => (g.id !== 'checks' || p.showChecks) && (g.id !== 'models' || p.showModels));
+  const shownGroups = groups.filter((g) => (g.id !== 'checks' || p.showChecks) && (g.id !== 'models' || models.length > 1));
   const total = shownGroups.reduce((n, g) => n + g.cards.length, 0);
   const sections: PageSection<LibrarySection>[] = [{ id: 'all', name: '전체', icon: 'grid', count: total }, ...shownGroups.map((g) => ({ id: g.id, name: g.name, icon: g.icon, count: g.cards.length }))];
   const open = shownGroups.find((g) => g.id === p.section);

@@ -119,6 +119,7 @@ const NODE_MATERIAL: Record<string, Material> = {
   pump_head: MATERIALS.tool,
   pump_box: MATERIALS.dark,
   camera_flange: MATERIALS.flange,
+  omx_finger2: MATERIALS.dark,
 };
 
 export type GlbNodes = Record<string, Object3D>;
@@ -376,6 +377,12 @@ export function adaptiveMotorAngle(gapMm: number): number {
   return t[t.length - 1][1];
 }
 
+/**
+ * OMX-F finger angle (rad) for a gap at its grasp line (88 mm out): measured on the official finger
+ * meshes, the gap opens about 120 mm per radian (0.3 rad 40 mm, 0.5 rad 60 mm); 0 = closed.
+ */
+export const omxFingerAngle = (gapMm: number): number => Math.min(1, Math.max(0, gapMm / 120));
+
 const box = (w: number, h: number, d: number, m: Material, x = 0, y = 0, z = 0) => {
   const mesh = new Mesh(new BoxGeometry(w / 1000, h / 1000, d / 1000), m);
   mesh.position.set(x / 1000, y / 1000, z / 1000);
@@ -577,6 +584,34 @@ export function buildTool(
       // The phone, screen facing the base, camera looking down.
       mount.add(box(76, 8, 150, MATERIALS.phone, 0, 0, 60));
       mount.add(zCylinder(3.5, 134, 135.5, MATERIALS.glass, 20, 0));
+      break;
+    }
+    case 'omx': {
+      // OMX-F's own gripper, drawn in its wrist link's frame (link5): the flange is on the gripper's
+      // centre line, turned so its z runs along link5's x (public/robot/omx_f/omx_f.urdf), so the
+      // fingers hang under the inverse of that turn. Two fingers swing about link5's z, the second
+      // the mirror of the first (the official gripper_joint_2 mimics gripper_joint_1 by -1).
+      const link5 = new Group();
+      new Matrix4()
+        .makeTranslation(0, -0.00165, 0)
+        .multiply(new Matrix4().makeRotationFromEuler(new Euler(Math.PI, -Math.PI / 2, 0, URDF_EULER_ORDER)))
+        .invert()
+        .decompose(link5.position, link5.quaternion, link5.scale);
+      mount.add(link5);
+      const finger = (node: string, y: number) => {
+        const pivot = new Group();
+        pivot.position.set(0.0295, y, 0);
+        pivot.add(meshFromNode(nodes, node));
+        link5.add(pivot);
+        return pivot;
+      };
+      const a = finger('omx_finger1', 0.0075);
+      const b = finger('omx_finger2', -0.0108);
+      update = (w) => {
+        const th = omxFingerAngle(w.gapMm);
+        a.rotation.z = th;
+        b.rotation.z = -th;
+      };
       break;
     }
     case 'cylinder': {

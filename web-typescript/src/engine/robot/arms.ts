@@ -1,7 +1,8 @@
 /**
  * Arm models the simulator can open: their official description (URDF + meshes from Elephant
- * Robotics' mycobot_ros2, BSD), joint ranges (pymycobot robot_info.py, the SDK's own table) and the
- * SDK class a program uses. One arm is active at a time (the one chosen on the console's first
+ * Robotics' mycobot_ros2, BSD; ROBOTIS's open_manipulator for OMX-F, Apache 2.0), joint ranges
+ * (pymycobot robot_info.py, the SDK's own table; OMX-F: its motor limits) and the SDK class a
+ * program uses. One arm is active at a time (the one chosen on the console's first
  * screen); the simulator's limits, poses and Python header follow it.
  *
  * The real-robot side (robot server, Web Serial) is myCobot 280's: other arms run in simulation.
@@ -12,7 +13,7 @@ import { JOINT_ANGLE_MAX, JOINT_ANGLE_MIN, setJointRanges } from './limits';
 import { HOME_DEG, setArmLayoutShift } from '../simulator/board';
 import type { RobotModelId } from './catalog';
 
-export type ArmFamily = 'mycobot280' | 'mycobot320' | 'mecharm270' | 'mypalletizer260';
+export type ArmFamily = 'mycobot280' | 'mycobot320' | 'mecharm270' | 'mypalletizer260' | 'omx';
 
 /**
  * How the suction pump is switched on this board (Elephant Robotics' own AI-kit scripts,
@@ -20,9 +21,10 @@ export type ArmFamily = 'mycobot280' | 'mycobot320' | 'mecharm270' | 'mypalletiz
  *  - hobot: RDK X5 — Hobot.GPIO, BOARD 31 · 37 (the RDK X5 vision kit);
  *  - rpi: Raspberry Pi / Jetson Nano — RPi.GPIO, BCM 20 · 21, both LOW = on (ai_mycobot_280, ai_mecharm_270);
  *  - basic25: M5Stack — the robot's own outputs, set_basic_output(2 · 5, 0) = on (ai_mycobot_280 m5);
- *  - basic12: myCobot 320 — set_basic_output(1, 0) + (2, 1) = on, off releases with 2 (aikit_320_pi).
+ *  - basic12: myCobot 320 — set_basic_output(1, 0) + (2, 1) = on, off releases with 2 (aikit_320_pi);
+ *  - none: no pump for this arm (OMX-F: its own gripper only).
  */
-export type PumpWiring = 'hobot' | 'rpi' | 'basic25' | 'basic12';
+export type PumpWiring = 'hobot' | 'rpi' | 'basic25' | 'basic12' | 'none';
 
 export interface ArmSpec {
   id: RobotModelId;
@@ -39,10 +41,10 @@ export interface ArmSpec {
   /** The link tools are mounted on. */
   flangeLink: string;
   /**
-   * Joints of its own: 6, or 4 on myPalletizer (its head is kept level by a linkage). Angle lists
-   * always have six slots; a 4-axis arm's last two stay 0.
+   * Joints of its own: 6, 5 on OMX-F (no sixth wrist joint), or 4 on myPalletizer (its head is
+   * kept level by a linkage). Angle lists always have six slots; the slots past `dof` stay 0.
    */
-  dof: 4 | 6;
+  dof: 4 | 5 | 6;
   /** Names on the control panel and in the monitor (the 6-axis arms use the teach-pendant names). */
   jointNames?: readonly { name: string; what: string }[];
   /** Joint ranges, degrees (pymycobot robot_info.py). */
@@ -198,6 +200,51 @@ const MYPALLETIZER260 = {
   matShiftMm: 40,
 };
 
+/**
+ * ROBOTIS OMX-F, the follower arm of the OMX AI kit: 5 joints (base turn, three pitch joints, wrist
+ * roll) and its own two-finger gripper, all Dynamixel servos on one bus (U2D2, 1 Mbps). URDF and
+ * meshes: ROBOTIS-GIT/open_manipulator (Apache 2.0), public/robot/omx_f/ (ATTRIBUTION.md there).
+ * Joint ranges: the servo position limits in its ros2_control file (joint2 830–3129, joint3
+ * 1024–3140 of 4096 around 2048); joints 1, 4 and 5 turn a full turn on the servo, ±180° here.
+ * Simulation only for now (no pymycobot: the Python class is the simulator's own `omx.OMXF`).
+ */
+/** OMX-F ready pose: upper arm and forearm as built, wrist bent 90° — gripper straight down, its grasp point over (192, -2, 94) mm (tests/robot/arms-check). */
+const OMX_HOME = [0, 0, 0, 90, 0, 0];
+
+const OMX_F = {
+  family: 'omx' as const,
+  name: 'OMX-F',
+  dof: 5 as const,
+  jointNames: [
+    { name: '베이스', what: '몸통 좌우로 돌리기' },
+    { name: '어깨', what: '위팔 앞뒤로 숙이기' },
+    { name: '팔꿈치', what: '아래팔 위아래' },
+    { name: '손목', what: '손목 위아래로 꺾기' },
+    { name: '손목 돌리기', what: '그리퍼 돌리기' },
+  ],
+  urdf: '/robot/omx_f/omx_f.urdf',
+  glbs: ['/robot/rdkx5/rdkx5.glb', '/robot/omx_f/omx_f.glb'],
+  flangeLink: 'flange',
+  min: [-180, -107, -90, -180, -180, 0],
+  max: [180, 95, 95, 180, 180, 0],
+  coordsMin: [-380, -380, -100, -180, -180, -180],
+  coordsMax: [380, 380, 420, 180, 180, 180],
+  home: OMX_HOME,
+  zero: [0, 0, 0, 0, 0, 0],
+  reachMm: 380,
+  payloadG: 100,
+  dark: ['omx_base'],
+  flange: [] as string[],
+  textures: {},
+  kit: false,
+  tools: ['omx'] as EffectorId[],
+  cameraFlange: false,
+  pump: 'none' as PumpWiring,
+  sdk: { module: 'omx', cls: 'OMXF', port: '/dev/ttyACM0', baud: 1000000 },
+  ros: { pkg: 'open_manipulator_bringup', follow: 'omx_f.launch.py', joints: ['joint1', 'joint2', 'joint3', 'joint4', 'joint5'] },
+  matShiftMm: 0,
+};
+
 export const ARMS: Readonly<Partial<Record<RobotModelId, ArmSpec>>> = {
   'mycobot280-rdkx5': {
     ...MYCOBOT280,
@@ -313,6 +360,7 @@ export const ARMS: Readonly<Partial<Record<RobotModelId, ArmSpec>>> = {
     pump: 'basic25',
     ros: ros('mypalletizer_260', JOINTS_PALLETIZER),
   },
+  'omx-f': { ...OMX_F, id: 'omx-f', board: 'U2D2' },
 };
 
 export const DEFAULT_ARM = ARMS['mycobot280-rdkx5']!;
@@ -386,6 +434,11 @@ def ${fn}(on):
     mc.set_basic_output(5, 0 if on else 1)
     time.sleep(0.5)
 `;
+    case 'none':
+      return `# 이 로봇팔(${arm.name})에는 흡착 펌프가 없어요: 그리퍼로 집어요.
+def ${fn}(on):
+    pass
+`;
     case 'basic12':
       return `# 흡착 펌프: myCobot 320 기본 출력 1·2번 (공식 AI 키트 aikit_320 과 같은 순서)
 def ${fn}(on):
@@ -423,20 +476,45 @@ export function adaptPython(code: string, arm: ArmSpec = active): string {
     .replace(/from pymycobot import MyCobot280RDKX5\b/g, `from ${arm.sdk.module} import ${arm.sdk.cls}`)
     .replace(/MyCobot280RDKX5\("[^"]*",\s*\d+\)/g, `${arm.sdk.cls}("${arm.sdk.port}", ${arm.sdk.baud})`);
   if (arm.dof === 6) return out;
+  const n = String.raw`-?\d+(?:\.\d+)?`;
+  const six = new RegExp(String.raw`\[\s*(${n})\s*,\s*(${n})\s*,\s*(${n})\s*,\s*(${n})\s*,\s*(${n})\s*,\s*${n}\s*\]`, 'g');
+  if (arm.dof === 5) {
+    // OMX-F: coordinates keep all six numbers (its 5 joints still reach a tool-down pose at any
+    // turn); angle lists lose the sixth joint, and there are five joints to loop over. A list is a
+    // coordinate when its line sends coordinates or it is assigned to a name that is sent as one
+    // (directly or as the loop variable over a list of them).
+    const coordNames = new Set([...out.matchAll(/send_coords\(\s*([A-Za-z_]\w*)/g)].map((m) => m[1]));
+    for (const m of out.matchAll(/for\s+([A-Za-z_]\w*)\s+in\s+([A-Za-z_]\w*)/g)) if (coordNames.has(m[1])) coordNames.add(m[2]);
+    const isCoord = (l: string) => /coords/.test(l) || [...coordNames].some((v) => new RegExp(String.raw`^\s*${v}\s*=`).test(l));
+    return out
+      .split('\n')
+      .map((l) => (isCoord(l) ? l : l.replace(six, '[$1, $2, $3, $4, $5]')))
+      .join('\n')
+      .replace(/range\(1, 7\)/g, 'range(1, 6)');
+  }
   // A 4-axis arm: coordinates are [x, y, z, θ] (its tool always points down), angle lists have four
   // numbers, and there are four joints to loop over.
-  const n = String.raw`-?\d+(?:\.\d+)?`;
   return out
     .replace(/,\s*-180,\s*0,\s*-90\]/g, ', 0]')
     .replace(new RegExp(String.raw`\[\s*(${n})\s*,\s*(${n})\s*,\s*(${n})\s*,\s*(${n})\s*,\s*${n}\s*,\s*${n}\s*\]`, 'g'), '[$1, $2, $3, $4]')
     .replace(/range\(1, 7\)/g, `range(1, ${arm.dof + 1})`);
 }
 
-/** A program for the block level written for six joints, for this arm (a 4-axis arm has no joint 5 or 6). */
+/**
+ * A program for the block level written for the 280's six joints, for this arm: no line for a joint
+ * it does not have, and a single-joint move kept 5° inside this arm's range.
+ */
 export function adaptBlocks(code: string, arm: ArmSpec = active): string {
-  if (arm.dof === 6) return code;
+  if (arm.id === 'mycobot280-rdkx5') return code;
   return code
     .split('\n')
-    .filter((l) => !new RegExp(String.raw`robot\.move_joint\(\s*[${arm.dof + 1}-6]\s*,`).test(l))
+    .filter((l) => arm.dof === 6 || !new RegExp(String.raw`robot\.move_joint\(\s*[${arm.dof + 1}-6]\s*,`).test(l))
+    .map((l) =>
+      l.replace(/robot\.move_joint\(\s*([1-6])\s*,\s*(-?\d+(?:\.\d+)?)/, (all, n: string, v: string) => {
+        const i = Number(n) - 1;
+        const deg = Math.round(Math.min(arm.max[i] - 5, Math.max(arm.min[i] + 5, Number(v))));
+        return all.replace(/(-?\d+(?:\.\d+)?)$/, String(deg));
+      }),
+    )
     .join('\n');
 }

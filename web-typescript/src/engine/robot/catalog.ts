@@ -22,7 +22,8 @@ export type RobotModelId =
   | 'myagv'
   | 'mypalletizer260-pi'
   | 'mypalletizer260-m5'
-  | 'four-axis';
+  | 'four-axis'
+  | 'omx-f';
 
 export interface RobotModel {
   id: RobotModelId;
@@ -71,6 +72,7 @@ export const MODELS: readonly RobotModel[] = [
   arm('mecharm270-m5', 'mechArm 270', 'mechArm 270', 'M5Stack', '같은 팔 · M5Stack 베이스 · 시뮬레이션'),
   arm('mypalletizer260-pi', '4축 로봇팔', 'myPalletizer 260', 'Raspberry Pi', '4축 · 평행 링크로 손끝이 늘 아래를 봐요 · 반경 260mm · 시뮬레이션'),
   arm('mypalletizer260-m5', '4축 로봇팔', 'myPalletizer 260', 'M5Stack', '같은 팔 · M5Stack 베이스 · 시뮬레이션'),
+  arm('omx-f', 'ROBOTIS OMX', 'OMX-F', 'U2D2', 'ROBOTIS 5축 + 그리퍼 · 다이나믹셀 · 반경 380mm · 시뮬레이션 (AI 키트 팔로워 팔)'),
   {
     id: 'myagv',
     kind: 'agv',
@@ -105,3 +107,30 @@ export const DEFAULT_MODEL: RobotModelId = 'mycobot280-rdkx5';
 export const MODEL_CHOICE = false;
 
 export const modelById = (id: string | null | undefined): RobotModel | undefined => MODELS.find((m) => m.id === id);
+
+/**
+ * Arms a teacher can open beside the course robot even with the model choice hidden: ⚙ 설정 ›
+ * [다른 로봇팔 쓰기] turns them on in this browser (simulation only).
+ */
+export const EXTRA_MODELS: readonly RobotModelId[] = ['omx-f'];
+const EXTRA_KEY = 'pai.extra-arms';
+
+export function extraArmsOn(): boolean {
+  try {
+    return localStorage.getItem(EXTRA_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function setExtraArms(on: boolean): void {
+  try {
+    if (on) localStorage.setItem(EXTRA_KEY, '1');
+    else localStorage.removeItem(EXTRA_KEY);
+  } catch {
+    /* this session only */
+  }
+}
+
+/** The models the model choice offers: all (MODEL_CHOICE), or the course robot and the teacher's extra arms. */
+export const offeredModels = (extra: boolean): readonly RobotModel[] => (MODEL_CHOICE ? MODELS : extra ? MODELS.filter((m) => m.id === DEFAULT_MODEL || EXTRA_MODELS.includes(m.id)) : []);

@@ -40,6 +40,9 @@ const GEOMETRY: Record<ArmFamily, { radii: readonly number[]; tool: number; base
   mycobot320: { radii: [28, 26, 22, 20], tool: 12, base: { x0: -60, x1: 55, y: 55 } },
   mecharm270: { radii: [24, 22, 18, 17], tool: 11, base: { x0: -60, x1: 45, y: 48 } },
   mypalletizer260: { radii: [22, 20, 18, 17], tool: 11, base: { x0: -60, x1: 45, y: 50 } },
+  // OMX-F: XL330 servos (20 x 34 mm) on thin brackets; the base box is the J1 column only (its flat
+  // plate is lower than any link can go), the gripper's fingers reach 20 mm to each side.
+  omx: { radii: [14, 13, 13, 12], tool: 14, base: { x0: -35, x1: 14, y: 22 } },
 };
 
 /** Two parts closer than this into each other are touching, mm (the capsules are a simplification). */
