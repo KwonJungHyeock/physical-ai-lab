@@ -5,7 +5,7 @@
  * anywhere else `localAiStatus()` says no and the button stays hidden.
  */
 
-import type { LlmContext } from '../account/client';
+import type { LlmContext, LlmMode } from '../account/client';
 
 const API = '/__physical-ai-simulator/ai';
 const HEAD = { 'X-Physical-AI': '1' };
@@ -30,6 +30,7 @@ export interface LocalAiStatus {
 
 export interface LocalAiAnswer {
   ok: boolean;
+  mode?: LlmMode;
   lines?: string[];
   explain: string;
 }

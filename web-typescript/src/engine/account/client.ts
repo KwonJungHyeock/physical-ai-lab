@@ -179,6 +179,10 @@ export interface LlmContext {
   program?: string;
   /** The simulator's complaints about the last answer (다시 만들기). */
   errors?: string;
+  /** AI 버튼: where things are now, in the arm's coordinates (speak.ts sceneText). */
+  scene?: string;
+  /** AI 버튼: the conversation so far and how each run went (speak.ts historyText). */
+  history?: string;
 }
 
 export interface LlmStatus {
@@ -190,9 +194,13 @@ export interface LlmStatus {
   reason?: string;
 }
 
+/** do: run the lines now; blocks: a program for the editor; talk: an answer in words (lines, if any, a suggestion). */
+export type LlmMode = 'do' | 'blocks' | 'talk';
+
 export interface LlmAnswer {
   id: string;
   ok: boolean;
+  mode?: LlmMode;
   lines: string[] | null;
   explain: string;
   remaining: number;

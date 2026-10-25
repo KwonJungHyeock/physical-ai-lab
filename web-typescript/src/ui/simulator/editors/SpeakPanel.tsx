@@ -169,7 +169,7 @@ export default function SpeakPanel({ code, onCode, arm, effector, cameraFlange, 
                   ) : (
                     <li key={i} className={css.ai} data-ok={t.ok || undefined}>
                       <p>{t.text}</p>
-                      {t.ok && (
+                      {t.ok && t.lines.length > 0 && (
                         <>
                           <ol className={css.preview} aria-label="만든 블록">
                             {t.code.split('\n').map((l, k) =>

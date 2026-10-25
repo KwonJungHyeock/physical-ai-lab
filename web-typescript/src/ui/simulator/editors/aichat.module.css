@@ -1,0 +1,451 @@
+/*
+ * AI 에게 시키기 (AiChat.tsx) in the work panel: the model line, the conversation (it scrolls), and the
+ * box to type in at the bottom. The panel's light body; one accent — the blue-violet of the AI badge.
+ */
+
+.chat {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #eef1f5;
+  word-break: keep-all;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #dde2ea;
+  background: #f7f8fb;
+}
+.model {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid #ccd3de;
+  border-radius: 8px;
+  background: #fff;
+  color: #18202d;
+  font: inherit;
+  font-size: 13px;
+}
+.bar .link {
+  flex: none;
+  padding: 4px 6px;
+  border: 0;
+  background: none;
+  color: #1d4ed8;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.bar .link:disabled {
+  color: #9aa3b2;
+  cursor: default;
+}
+
+.badge {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #5b8cff, #9b6bff);
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+/* --- the conversation ------------------------------------------------------------------------- */
+.turns {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 12px;
+  list-style: none;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  scrollbar-width: thin;
+}
+
+.hello {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid #dde2ea;
+}
+.hello p {
+  margin: 0;
+  color: #2b3442;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.hello small {
+  color: #6b7686;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.pair {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.me {
+  align-self: flex-end;
+  max-width: 85%;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 14px 14px 4px 14px;
+  background: #1d4ed8;
+  color: #fff;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.ai {
+  align-self: stretch;
+  padding: 10px 12px;
+  border-radius: 4px 14px 14px 14px;
+  background: #fff;
+  border: 1px solid #dde2ea;
+  font-size: 14px;
+  color: #18202d;
+}
+.ai > p {
+  margin: 6px 0 0;
+  line-height: 1.55;
+}
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #eef0ff;
+  color: #4b4fd6;
+  font-size: 11.5px;
+  font-weight: 800;
+}
+.ai:not([data-ok]) .tag {
+  background: #fdeee6;
+  color: #c2410c;
+}
+.ai[data-mode='do'] .tag {
+  background: #e3f4ec;
+  color: #0f6b4c;
+}
+
+.lines {
+  margin-top: 8px;
+}
+.lines summary {
+  cursor: pointer;
+  color: #5a6475;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.lines ol {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.lines li {
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: #f3f5f9;
+  box-shadow: inset 3px 0 0 #9aa9c4;
+}
+.lines li[data-now] {
+  background: #e3ecff;
+  box-shadow: inset 3px 0 0 #1d4ed8;
+}
+.lines li[data-bad] {
+  background: #fdeee6;
+  box-shadow: inset 3px 0 0 #c2410c;
+}
+.lines code {
+  font:
+    12.5px/1.45 ui-monospace,
+    'Cascadia Mono',
+    Consolas,
+    monospace;
+  color: #18202d;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.bad {
+  margin: 8px 0 0 !important;
+  color: #c2410c;
+  font-size: 13px;
+}
+
+.run {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: 9px;
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+.run[data-state='running'] {
+  align-items: center;
+  background: #eef3ff;
+  color: #1d4ed8;
+}
+.run[data-state='done'] {
+  background: #e3f4ec;
+  color: #0f6b4c;
+}
+.run[data-state='warn'] {
+  background: #fff4e5;
+  color: #8a4b08;
+}
+.run[data-state='failed'] {
+  background: #fdeee6;
+  color: #9a3412;
+}
+.run b {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  color: inherit;
+  font-size: 12px;
+}
+.run em {
+  font-style: normal;
+  font-weight: 700;
+  color: #c2410c;
+}
+.stop {
+  margin-left: auto;
+  padding: 4px 10px;
+  border: 1px solid #f3b4a4;
+  border-radius: 7px;
+  background: #fff;
+  color: #c2410c;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.btns {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+.done {
+  color: #0f6b4c;
+  font-size: 13px;
+  font-weight: 700;
+}
+.primary,
+.ghost {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.primary {
+  border: 1px solid #0f6b4c;
+  background: #0f6b4c;
+  color: #fff;
+}
+.primary:hover:not(:disabled) {
+  background: #12805b;
+}
+.ghost {
+  border: 1px solid #ccd3de;
+  background: #fff;
+  color: #2b3442;
+}
+.ghost:hover:not(:disabled) {
+  border-color: #8f9bb0;
+}
+.primary:disabled,
+.ghost:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.note {
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #fdeee6;
+  color: #9a3412;
+  font-size: 13px;
+}
+
+.thinking {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 4px 14px 14px 14px;
+  background: #fff;
+  border: 1px solid #dde2ea;
+  color: #5a6475;
+  font-size: 13.5px;
+}
+.dots {
+  display: inline-flex;
+  gap: 4px;
+}
+.dots i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #7b8cff;
+  animation: blink 1.2s ease-in-out infinite;
+}
+.dots i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.dots i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes blink {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dots i {
+    animation: none;
+  }
+}
+
+/* --- typing ----------------------------------------------------------------------------------- */
+.input {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  border-top: 1px solid #dde2ea;
+  background: #f7f8fb;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chips button {
+  padding: 5px 10px;
+  border: 1px solid #ccd3de;
+  border-radius: 999px;
+  background: #fff;
+  color: #2b3442;
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.chips button:hover:not(:disabled) {
+  border-color: #7a8cff;
+  color: #1d4ed8;
+}
+.chips button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.box {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 6px 6px 6px 12px;
+  border: 1px solid #ccd3de;
+  border-radius: 14px;
+  background: #fff;
+}
+.box:focus-within {
+  border-color: #7a8cff;
+  box-shadow: 0 0 0 3px rgba(122, 140, 255, 0.18);
+}
+.box textarea {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 0;
+  border: 0;
+  outline: none;
+  resize: none;
+  background: none;
+  color: #18202d;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.box textarea::placeholder {
+  color: #8a94a5;
+}
+.send {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #5b8cff, #9b6bff);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.send:disabled {
+  background: #c5ccd8;
+  cursor: default;
+}
+
+/* --- no AI yet -------------------------------------------------------------------------------- */
+.setup {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  margin: 12px;
+  padding: 16px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid #dde2ea;
+  color: #18202d;
+  font-size: 14px;
+}
+.setup ol {
+  margin: 0;
+  padding-left: 20px;
+  line-height: 1.7;
+  color: #2b3442;
+}
+.setup code {
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: #eef1f5;
+  font:
+    12.5px ui-monospace,
+    'Cascadia Mono',
+    Consolas,
+    monospace;
+}

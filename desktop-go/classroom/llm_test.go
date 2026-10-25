@@ -1,6 +1,7 @@
 package classroom
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -305,4 +306,62 @@ func TestLLMOllamaOnThisPC(t *testing.T) {
 	e.must(e.do("PUT", "/llm/settings", op, map[string]any{"provider": "claude", "enabled": false}), 200)
 	e.clk.add(4 * time.Second)
 	e.must(e.do("POST", "/llm/ask", st, map[string]any{"text": "x", "context": testContext}), 503)
+}
+
+// AI 버튼: the scene and the conversation reach the model inside the situation; the answer says what to
+// do with it (do, blocks, talk), and an answer in words needs no lines.
+func TestLLMModesSceneHistory(t *testing.T) {
+	f := &fakeOllama{reply: `{"ok":true,"mode":"talk","lines":[],"explain":"블록이 로봇에 너무 가까워서 J3 를 거의 끝까지 접었어요."}`}
+	ts := f.server(t)
+	ctx := LLMContext{Arm: "myCobot 280 RDK X5", Joints: 6, Tool: "어댑티브 그리퍼", ToolKind: "grip", Places: []string{"빨강 블록"},
+		Scene:   "tool tip now: x 135, y -25, z 13\njoints now: J3 -148.6° (1° from its limit)",
+		History: "student: 빨간 블록 집어봐\nyou moved the arm: 집었어요\nrun: 끝까지 움직였어요; J3 한계까지 1°"}
+	a, err := AskOllama(context.Background(), ts.URL, "qwen3:8b", "J3 에 무리가 가는데?", ctx)
+	if err != nil || !a.OK || a.Mode != LLMModeTalk || len(a.Lines) != 0 {
+		t.Fatalf("talk: %+v %v", a, err)
+	}
+	f.mu.Lock()
+	user := f.reqs[0]["messages"].([]any)[1].(map[string]any)["content"].(string)
+	schema := f.reqs[0]["format"].(map[string]any)
+	f.mu.Unlock()
+	scene, conv, student := strings.Index(user, "scene now:\ntool tip now"), strings.Index(user, "conversation so far (oldest first):\nstudent: 빨간"), strings.Index(user, "</situation>\n<student>")
+	if scene < 0 || conv < scene || student < conv {
+		t.Fatalf("situation: %s", user)
+	}
+	if req := schema["required"].([]any); len(req) != 4 || req[1] != "mode" {
+		t.Fatalf("schema: %v", schema)
+	}
+
+	// A model that leaves the mode out: lines are a program, no lines an answer in words.
+	for reply, want := range map[string]string{
+		`{"ok":true,"lines":["from edu import robot","robot.home()"],"explain":"가요."}`:   LLMModeBlocks,
+		`{"ok":true,"lines":[],"explain":"25cm 쯤이에요."}`:                                  LLMModeTalk,
+		`{"ok":true,"mode":"dance","lines":["robot.home()"],"explain":"가요."}`:            LLMModeBlocks,
+		`{"ok":true,"mode":"do","lines":["robot.move_to(160, 0, 90)"],"explain":"올려요."}`: LLMModeDo,
+	} {
+		f.mu.Lock()
+		f.reply = reply
+		f.mu.Unlock()
+		if a, err := AskOllama(context.Background(), ts.URL, "qwen3:8b", "x", ctx); err != nil || a.Mode != want {
+			t.Fatalf("%s → %+v %v", reply, a, err)
+		}
+	}
+	// Lines promised for a program but none given: still an error.
+	f.mu.Lock()
+	f.reply = `{"ok":true,"mode":"do","lines":[],"explain":"가요."}`
+	f.mu.Unlock()
+	if _, err := AskOllama(context.Background(), ts.URL, "qwen3:8b", "x", ctx); err == nil {
+		t.Fatal("do without lines accepted")
+	}
+	// A scene or conversation longer than the limits is refused before anything is asked.
+	long := ctx
+	long.Scene = strings.Repeat("x", llmMaxScene+1)
+	if _, err := AskOllama(context.Background(), ts.URL, "qwen3:8b", "x", long); !IsBadInput(err) {
+		t.Fatalf("long scene: %v", err)
+	}
+	long = ctx
+	long.History = strings.Repeat("가", llmMaxHistory+1)
+	if _, err := AskOllama(context.Background(), ts.URL, "qwen3:8b", "x", long); !IsBadInput(err) {
+		t.Fatalf("long history: %v", err)
+	}
 }

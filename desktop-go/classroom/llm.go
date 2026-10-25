@@ -45,6 +45,8 @@ const (
 	llmMaxLines     = 40
 	llmMaxLine      = 120
 	llmMaxExplain   = 400
+	llmMaxScene     = 1500            // runes of the scene (coordinates, the arm now)
+	llmMaxHistory   = 2000            // runes of the conversation so far (AI 버튼)
 	llmMinGap       = 3 * time.Second // between two questions of one student
 	llmInflight     = 8               // questions waiting for Claude at once, the whole server
 	llmTimeout      = 45 * time.Second
@@ -125,11 +127,18 @@ type LLMContext struct {
 	Program  string   `json:"program"`  // the block program now in the editor
 	// Errors: the simulator's complaints about the last answer, for 다시 만들기.
 	Errors string `json:"errors"`
+	// Scene: where things are now, in the arm's coordinates (the tool tip, each joint and how much
+	// room it has, what the tool holds, the blocks and spots), so "앞에", "조금 왼쪽", "5cm 위로" can
+	// be written as move_to lines. History: the last few turns of this conversation and how each run
+	// went (stopped where, which joint came near its limit or worked hard), so the student can go on
+	// correcting. Both are written by the simulator, not typed by the student.
+	Scene   string `json:"scene,omitempty"`
+	History string `json:"history,omitempty"`
 }
 
 func (c LLMContext) check() error {
 	short := func(s string, n int) bool { return utf8.RuneCountInString(s) <= n }
-	if !short(c.Arm, 60) || !short(c.Ranges, 200) || !short(c.Tool, 40) || !short(c.ToolKind, 10) || !short(c.Errors, 600) || !short(c.Program, llmMaxProgram) {
+	if !short(c.Arm, 60) || !short(c.Ranges, 200) || !short(c.Tool, 40) || !short(c.ToolKind, 10) || !short(c.Errors, 600) || !short(c.Program, llmMaxProgram) || !short(c.Scene, llmMaxScene) || !short(c.History, llmMaxHistory) {
 		return fmt.Errorf("%w: 장면 설명이 너무 길어요", errBadInput)
 	}
 	if c.Joints < 0 || c.Joints > 6 || len(c.Places) > 40 || len(c.Poses) > 20 {
@@ -163,6 +172,12 @@ func userTurn(text string, c LLMContext) string {
 	if c.Errors != "" {
 		fmt.Fprintf(&b, "errors in your last answer:\n%s\n", c.Errors)
 	}
+	if strings.TrimSpace(c.Scene) != "" {
+		fmt.Fprintf(&b, "scene now:\n%s\n", c.Scene)
+	}
+	if strings.TrimSpace(c.History) != "" {
+		fmt.Fprintf(&b, "conversation so far (oldest first):\n%s\n", c.History)
+	}
 	b.WriteString("</situation>\n<student>\n")
 	b.WriteString(text)
 	b.WriteString("\n</student>")
@@ -173,17 +188,27 @@ func userTurn(text string, c LLMContext) string {
 var llmSchema = map[string]any{
 	"type":                 "object",
 	"additionalProperties": false,
-	"required":             []string{"ok", "lines", "explain"},
+	"required":             []string{"ok", "mode", "lines", "explain"},
 	"properties": map[string]any{
 		"ok":      map[string]any{"type": "boolean"},
+		"mode":    map[string]any{"type": "string", "enum": []string{LLMModeDo, LLMModeBlocks, LLMModeTalk}},
 		"lines":   map[string]any{"type": "array", "items": map[string]any{"type": "string"}},
 		"explain": map[string]any{"type": "string"},
 	},
 }
 
+// What the student wants done with an answer: run it now in the simulator (do), put a program into
+// the block editor (blocks), or only hear an answer to a question, perhaps with lines to try (talk).
+const (
+	LLMModeDo     = "do"
+	LLMModeBlocks = "blocks"
+	LLMModeTalk   = "talk"
+)
+
 // LLMAnswer: Claude's answer, checked.
 type LLMAnswer struct {
 	OK      bool     `json:"ok"`
+	Mode    string   `json:"mode"`
 	Lines   []string `json:"lines"`
 	Explain string   `json:"explain"`
 }
@@ -255,10 +280,18 @@ func (a LLMAnswer) tidy() (LLMAnswer, error) {
 			lines = append(lines, l)
 		}
 	}
+	switch a.Mode {
+	case LLMModeDo, LLMModeBlocks, LLMModeTalk:
+	default: // an older or smaller model leaving it out: lines are a program, none an answer in words
+		a.Mode = LLMModeBlocks
+		if len(lines) == 0 {
+			a.Mode = LLMModeTalk
+		}
+	}
 	if !a.OK {
 		lines = nil
-	} else if len(lines) == 0 {
-		return a, errors.New("ok without lines")
+	} else if len(lines) == 0 && (a.Mode != LLMModeTalk || strings.TrimSpace(a.Explain) == "") {
+		return a, errors.New("ok without lines or words")
 	}
 	a.Lines = lines
 	a.Explain = strings.TrimSpace(a.Explain)
@@ -622,7 +655,7 @@ func (srv *Server) askLLM(w http.ResponseWriter, r *http.Request, s session) {
 	if err := srv.store.appendLLMLog(s.ClassID, entry); err != nil && srv.Logf != nil {
 		srv.Logf("llm log: %v", err)
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"id": entry.ID, "ok": ans.OK, "lines": ans.Lines, "explain": ans.Explain, "remaining": remaining})
+	writeJSON(w, http.StatusOK, map[string]any{"id": entry.ID, "ok": ans.OK, "mode": ans.Mode, "lines": ans.Lines, "explain": ans.Explain, "remaining": remaining})
 }
 
 // shortErr: the API's status and type, never the key or the request.

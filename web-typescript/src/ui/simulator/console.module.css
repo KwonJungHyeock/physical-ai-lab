@@ -7917,3 +7917,45 @@ div.zeroFlow {
   padding: 5px 9px;
   cursor: pointer;
 }
+
+/* AI 에게 시키기: the work panel's AI screen opens from its header (and from the folded rail). */
+.sideAi {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 12px 0 9px;
+  border: 1.5px solid transparent;
+  border-radius: 999px;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08)) padding-box,
+    linear-gradient(120deg, #6aa8ff, #9b7bff 55%, #46d39a) border-box;
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.sideAi:hover {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.16)) padding-box,
+    linear-gradient(120deg, #6aa8ff, #9b7bff 55%, #46d39a) border-box;
+}
+.sideAi[data-on] {
+  background:
+    linear-gradient(135deg, #5b8cff, #9b6bff) padding-box,
+    linear-gradient(120deg, #6aa8ff, #9b7bff 55%, #46d39a) border-box;
+}
+.railAi {
+  display: grid;
+  place-items: center;
+  margin: 8px auto 0;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #5b8cff, #9b6bff);
+  color: #fff;
+  cursor: pointer;
+}

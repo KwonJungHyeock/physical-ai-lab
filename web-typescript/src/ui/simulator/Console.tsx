@@ -65,6 +65,7 @@ import {
 } from '@/engine/simulator/desk';
 import { usbAvailable } from '@/engine/simulator/usbKit';
 import { localAiStatus, type LocalAiStatus } from '@/engine/simulator/localAi';
+import { RunWatch, sceneText } from '@/engine/simulator/speak';
 import { carryHash, loadLastPractice, loadProgram, readCarried, saveLastPractice, saveProgram } from '@/engine/simulator/programs';
 import { isStarter, newSession, placedBlocks, practiceFor, practicesFor, repeatability, starterFor, toolFits, toolNeeded, type Level, type PracticeId, type Session } from '@/engine/simulator/practices';
 import { check, parse, type CameraId, type Problem, type Step } from '@/engine/simulator/program';
@@ -101,7 +102,7 @@ import CodeEditor from './editors/CodeEditor';
 import ControlPanel, { type Axis } from './control/ControlPanel';
 import LeftRail, { type BarItem, type RailItem } from './stage/LeftRail';
 import MiniArmLabels from './stage/MiniArmLabels';
-import AiButton from './stage/AiButton';
+import AiChat, { type AiRunResult, type ChatTurn } from './editors/AiChat';
 import { createMonitor, type MiniRect } from './stage/MiniArm';
 import DeskPanel from './control/DeskPanel';
 import DemoCaption from './stage/DemoCaption';
@@ -501,8 +502,15 @@ export default function Console() {
       live = false;
     };
   }, [desktop]);
-  /** AI 버튼: the desktop program and Ollama on this PC (null: not asked yet, or not the program). */
+  /** AI 에게 시키기: the desktop program and Ollama on this PC (null: not asked yet, or not the program). */
   const [aiStatus, setAiStatus] = useState<LocalAiStatus | null>(null);
+  /** The work panel shows the AI conversation (kept while the panel shows another screen). */
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiTurns, setAiTurns] = useState<ChatTurn[]>([]);
+  /** The line of the AI's program running now (its program is not the editor's). */
+  const [aiLine, setAiLine] = useState(-1);
+  /** The program the replay bar belongs to when it is not the editor's (an AI run). */
+  const [runText, setRunText] = useState<string | null>(null);
   // On a robot's console the window title names the robot (several tabs, several robots).
   const robotId = robot?.robotId;
   useEffect(() => {
@@ -1486,8 +1494,11 @@ export default function Console() {
   };
 
   /** Run something on the simulated world (a block program, one control-panel step, a Python timeline). */
-  const execute = async (run: (hooks: RunHooks) => Promise<unknown>, opts: { reset: boolean; label?: boolean; start?: number[]; quiet?: boolean; onLine?: (line: number) => void }) => {
-    if (!loaded) return { ok: false, stopped: false, actions: [] as RobotAction[] };
+  /** `program`: the program run is not the editor's (an AI run): its lines are not marked in the editor. */
+  const execute = async (run: (hooks: RunHooks) => Promise<unknown>, opts: { reset: boolean; label?: boolean; start?: number[]; quiet?: boolean; onLine?: (line: number) => void; program?: string }) => {
+    if (!loaded) return { ok: false, stopped: false, actions: [] as RobotAction[], error: undefined as string | undefined };
+    const own = opts.program === undefined;
+    if (opts.label) setRunText(own ? null : opts.program!);
     const tk = { aborted: false };
     token.current = tk;
     setBusy(true);
@@ -1506,6 +1517,7 @@ export default function Console() {
     const actions: RobotAction[] = [];
     let ok = false;
     let stopped = false;
+    let error: string | undefined;
     try {
       await run({
         chain: loaded.chain,
@@ -1524,7 +1536,8 @@ export default function Console() {
         see,
         onLine: opts.label
           ? (line) => {
-              setRunningLine(line);
+              if (own) setRunningLine(line);
+              else setAiLine(line);
               rec?.marks.push({ t: rec.base + rec.cur, line });
             }
           : opts.onLine,
@@ -1541,14 +1554,17 @@ export default function Console() {
       } else if (err instanceof RunError) {
         addLog('err', `${err.line ? `${err.line}번째 줄: ` : ''}${err.message}`, err.fix);
         setBadge({ kind: 'stop', text: err.collision ? '부딪혀서 멈춤' : '멈춤' });
-        if (err.line) setErrorLines([err.line]);
+        if (err.line && own) setErrorLines([err.line]);
+        error = `${err.line && !own ? `'${(opts.program!.split('\n')[err.line - 1] ?? '').trim()}' 에서 ` : ''}멈췄어요: ${err.message}`;
       } else {
         addLog('err', `예상하지 못한 오류: ${err instanceof Error ? err.message : String(err)}`);
+        error = '예상하지 못한 오류로 멈췄어요.';
       }
     } finally {
       token.current = null;
       setBusy(false);
       setRunningLine(-1);
+      setAiLine(-1);
       cams.current?.mark(null);
       setAnglesView(world.current.angles.slice());
       if (goalPending.current) {
@@ -1561,7 +1577,7 @@ export default function Console() {
         if (end > 0.2 && rec.marks.length) setReplay({ frames: rec.frames, marks: rec.marks, duration: end, trail: world.current.trail.map((s) => s.slice()) });
       }
     }
-    return { ok, stopped, actions };
+    return { ok, stopped, actions, error };
   };
 
   const problemsFor = (text: string): { steps: Step[]; errors: Problem[]; warnings: Problem[] } => {
@@ -1926,6 +1942,44 @@ export default function Console() {
     if (cellRef.current) return finishCellRun(ok);
     if (ok) passedRun(text, actions);
     else setPassed(null);
+  };
+  /**
+   * AI 에게 시키기: the AI's lines in the simulator from where everything is now (the arm, what the tool
+   * holds, the blocks), without touching the editor; what happened goes back into the conversation.
+   */
+  const aiRun = async (text: string): Promise<AiRunResult> => {
+    if (!loaded || busy) return { ok: false, stopped: false, text: '다른 동작이 끝난 뒤에 움직일 수 있어요.', notes: [] };
+    const { steps, errors } = problemsFor(text);
+    if (errors.length) return { ok: false, stopped: false, text: `블록 검사에서 걸렸어요: ${errors[0].msg}`, notes: [] };
+    // Blocks to pick but a bare desk: the practice mat and its blocks come out (as for 공정).
+    if (/robot\.(pick_place|move_above|move_down|sort_blocks)\(/.test(text) && theme === 'arm' && !world.current.blocks.length) {
+      setAiMat(true);
+      setMatNeeded(true);
+      const at = world.current.angles.slice();
+      world.current = createWorld(effector, cameraFlange, layout.current, theme);
+      world.current.angles = at;
+      setAnglesView(at);
+    }
+    const watch = new RunWatch(loaded.chain, tcpFor(effector, cameraFlange), arm.family === 'mycobot280', arm.dof);
+    let clock = 0;
+    setBadge({ kind: 'sim', text: 'AI 동작' });
+    const r = await execute(
+      (h) =>
+        runProgram(steps, {
+          ...h,
+          animate: (d, frame) =>
+            h.animate(d, (t) => {
+              frame(t);
+              watch.update(clock + t, h.world.angles, h.world.held ? 0.02 : 0);
+            }).finally(() => {
+              clock += d;
+            }),
+        }),
+      { reset: false, label: true, program: text },
+    );
+    if (r.ok) setBadge(null);
+    const secs = clock > 0 ? ` (${clock.toFixed(1)}초)` : '';
+    return { ok: r.ok, stopped: r.stopped, text: r.ok ? `끝까지 움직였어요${secs}` : r.stopped ? '도중에 멈추라고 해서 멈췄어요' : (r.error ?? '도중에 멈췄어요'), notes: watch.notes() };
   };
   /** A step passed (by blocks, code or the terminal): the next one opens. */
   const recordPass = (id: string) =>
@@ -3199,9 +3253,18 @@ export default function Console() {
   );
 
   /* --- the menu bar: work screens in the side panel, view windows next to the bar ------------ */
-  const workScreen = zeroMode ? 'zero' : shownTab === 'direct' ? section || 'jog' : shownTab;
+  // AI 에게 시키기: a screen of the work panel, beside the 3D (only the desktop program has the AI).
+  const aiAvailable = !!aiStatus?.program && !!loaded && !robotMode && mode !== 'check' && !cellAt && !demo;
+  const aiShown = aiOpen && aiAvailable && !zeroMode;
+  const workScreen = aiShown ? 'ai' : zeroMode ? 'zero' : shownTab === 'direct' ? section || 'jog' : shownTab;
   const openWork = (id: string) => {
     if (dockShown && workScreen === id) return toggleDock();
+    if (id === 'ai') {
+      setAiOpen(true);
+      if (!dockShown) toggleDock();
+      return;
+    }
+    setAiOpen(false);
     if (id === 'zero') {
       setZeroMode(true);
       // The 0° pose stands the arm straight up: frame all of it.
@@ -3260,6 +3323,7 @@ export default function Console() {
       items: [
         work('process', '공정', 'flag', '공정 짜기: 위치를 가르쳐 옮기기 · 그리기'),
         { ...work('code', '코딩', 'code', '코딩: 블록 · Python · ROS 2 (튜토리얼)'), on: dockShown && (workScreen === 'basic' || workScreen === 'python' || workScreen === 'ros') },
+        ...(aiAvailable ? [work('ai', 'AI', 'spark', 'AI 에게 시키기: 말로 시키면 바로 움직이거나 블록을 짜 줘요', true)] : []),
       ],
     },
     {
@@ -3273,7 +3337,7 @@ export default function Console() {
     },
   ];
   const barFoot: BarItem[] = [{ ...work('zero', '영점', 'zero', robotMode ? '영점 맞추기' : '로봇을 연결하면 영점을 맞춰요'), disabled: !robotMode || (busy && !zeroMode) }];
-  const SCREEN_TITLE: Record<string, string> = { jog: '조그', parts: '도구', pose: '자세', zero: '영점', process: '공정', basic: '코딩', python: '코딩', ros: '코딩' };
+  const SCREEN_TITLE: Record<string, string> = { jog: '조그', parts: '도구', pose: '자세', zero: '영점', process: '공정', basic: '코딩', python: '코딩', ros: '코딩', ai: 'AI 에게 시키기' };
 
   const zeroPanel = (
     <ZeroPanel
@@ -4054,7 +4118,7 @@ export default function Console() {
                   key={replay.duration}
                   replay={replay}
                   autoplay={replayPlay}
-                  lineLabel={(line) => (tab === 'process' ? (procText.split('\n')[line - 1] ?? '') : lineName(code.split('\n')[line - 1] ?? ''))}
+                  lineLabel={(line) => (tab === 'process' && runText === null ? (procText.split('\n')[line - 1] ?? '') : lineName((runText ?? code).split('\n')[line - 1] ?? ''))}
                   onSeek={(f, line) => {
                     applyFrame(world.current, f, replay.trail);
                     setAnglesView(world.current.angles.slice());
@@ -4070,41 +4134,6 @@ export default function Console() {
               ) : loaded && view === 'sim' && demo ? (
                 <DemoCaption demo={demoFor(demo.scene, arm)} step={demo.step} playing={demo.playing} onBlocks={demoToBlocks} onStop={stopDemo} />
               ) : null}
-              {aiStatus?.program && loaded && view === 'sim' && mode !== 'check' && level === 'basic' && tab !== 'process' && !cellAt && !demo && (
-                <AiButton
-                  status={aiStatus}
-                  onStatus={setAiStatus}
-                  code={code}
-                  arm={arm}
-                  effector={effector}
-                  cameraFlange={cameraFlange}
-                  theme={theme}
-                  poses={poses}
-                  busy={busy}
-                  lifted={!!replay && !busy}
-                  onTry={(c) => {
-                    if (busy) return;
-                    // Blocks to pick but a bare desk: the practice mat and its blocks come out (as for 공정).
-                    if (/robot\.(pick_place|move_above|move_down|sort_blocks)\(/.test(c) && theme === 'arm' && !world.current.blocks.length) {
-                      setAiMat(true);
-                      setMatNeeded(true);
-                      const at = world.current.angles.slice();
-                      world.current = createWorld(effector, cameraFlange, layout.current, theme);
-                      world.current.angles = at;
-                      setAnglesView(at);
-                    }
-                    setCode(c);
-                    setErrorLines([]);
-                    chooseTab('basic');
-                    void simulateBlocks(c);
-                  }}
-                  onInsert={(c) => {
-                    setCode(c);
-                    setErrorLines([]);
-                    chooseTab('basic');
-                  }}
-                />
-              )}
               <ViewTools
                 api={getStage}
                 display={display}
@@ -4184,11 +4213,45 @@ export default function Console() {
                       }}
                     />
                   </StatusLights>
+                  {aiAvailable && (
+                    <button type="button" className={css.sideAi} data-on={aiShown || undefined} aria-pressed={aiShown} onClick={() => openWork('ai')} title="AI 에게 시키기: 말로 시키면 바로 움직이거나 블록을 짜 줘요">
+                      <Icon name="spark" size={15} />
+                      AI
+                    </button>
+                  )}
                   <button type="button" className={css.sideFold} onClick={toggleDock} title="패널 접기 (3D 화면을 넓게)" aria-label="작업 패널 접기">
                     <Icon name="chevron" size={16} />
                   </button>
                 </div>
-                {shownTab === 'direct' ? (
+                {aiShown && aiStatus ? (
+                  <div className={css.codeTab} role="region" aria-label="AI 에게 시키기">
+                    <AiChat
+                      status={aiStatus}
+                      onStatus={setAiStatus}
+                      turns={aiTurns}
+                      onTurns={setAiTurns}
+                      code={code}
+                      arm={arm}
+                      effector={effector}
+                      cameraFlange={cameraFlange}
+                      theme={theme}
+                      poses={poses}
+                      scene={() => sceneText({ chain: loaded!.chain, world: world.current, arm })}
+                      busy={busy}
+                      runLine={aiLine}
+                      onRun={aiRun}
+                      onStop={() => void stop()}
+                      onInsert={(c) => {
+                        setAiOpen(false);
+                        if (level !== 'basic') openTab('basic');
+                        setCode(c);
+                        setErrorLines([]);
+                        chooseTab('basic');
+                        addLog('ok', 'AI 가 만든 블록을 블록 편집기에 넣었어요. [시뮬레이션] 으로 확인한 뒤 로봇에서 실행해요.');
+                      }}
+                    />
+                  </div>
+                ) : shownTab === 'direct' ? (
                   <div className={css.dockScroll} role="region" aria-label={SCREEN_TITLE[workScreen]}>
                     {zeroMode ? (
                       <div className={css.screen}>{zeroPanel}</div>
@@ -4450,6 +4513,11 @@ export default function Console() {
                 <button type="button" className={css.dockRail} onClick={toggleDock} title="패널 열기" aria-label="작업 패널 열기">
                   <Icon name="chevron" size={16} />
                 </button>
+                {aiAvailable && (
+                  <button type="button" className={css.railAi} onClick={() => openWork('ai')} title="AI 에게 시키기" aria-label="AI 에게 시키기">
+                    <Icon name="spark" size={18} />
+                  </button>
+                )}
               </div>
             )}
           </aside>

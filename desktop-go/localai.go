@@ -20,7 +20,7 @@ import (
 // first. Only here on 127.0.0.1, like the USB maker, never on the class server's LAN address.
 //
 //	GET  /__physical-ai-simulator/ai       → {ok, url, models, error?}: is Ollama there, with which models
-//	POST /__physical-ai-simulator/ai/ask   {text, context, model} → {ok, lines, explain}
+//	POST /__physical-ai-simulator/ai/ask   {text, context, model} → {ok, mode, lines, explain}
 
 const aiAPI = hello + "/ai"
 
@@ -81,7 +81,7 @@ func aiHandler(next http.Handler) http.Handler {
 			case err != nil:
 				replyError(w, http.StatusBadGateway, "AI 에게 답을 받지 못했어요. Ollama 가 켜져 있는지 보고 다시 보내 주세요.")
 			default:
-				reply(w, map[string]any{"ok": a.OK, "lines": a.Lines, "explain": a.Explain})
+				reply(w, map[string]any{"ok": a.OK, "mode": a.Mode, "lines": a.Lines, "explain": a.Explain})
 			}
 		default:
 			replyError(w, http.StatusNotFound, "없는 주소예요.")

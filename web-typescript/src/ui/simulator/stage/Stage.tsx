@@ -1177,9 +1177,14 @@ function Blocks({ world }: { world: RefObject<WorldState> }) {
   useFrame(() => {
     const w = world.current;
     if (!w) return;
-    w.blocks.forEach((b, i) => {
+    // A world without some (or all) blocks — a practice on the bare desk — hides those meshes: left
+    // as they were, the last world's blocks would stay on screen where they were dropped.
+    COLORS.forEach((c, i) => {
       const m = refs.current[i];
       if (!m) return;
+      const b = w.blocks.find((k) => k.color === c.name);
+      m.visible = !!b;
+      if (!b) return;
       m.position.set(b.x / 1000, b.y / 1000, b.z / 1000);
       m.rotation.set(0, 0, (b.yawDeg * Math.PI) / 180);
     });
