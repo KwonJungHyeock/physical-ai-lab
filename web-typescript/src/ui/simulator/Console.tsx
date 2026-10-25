@@ -64,6 +64,7 @@ import {
   type SceneId,
 } from '@/engine/simulator/desk';
 import { usbAvailable } from '@/engine/simulator/usbKit';
+import { localAiStatus, type LocalAiStatus } from '@/engine/simulator/localAi';
 import { carryHash, loadLastPractice, loadProgram, readCarried, saveLastPractice, saveProgram } from '@/engine/simulator/programs';
 import { isStarter, newSession, placedBlocks, practiceFor, practicesFor, repeatability, starterFor, toolFits, toolNeeded, type Level, type PracticeId, type Session } from '@/engine/simulator/practices';
 import { check, parse, type CameraId, type Problem, type Step } from '@/engine/simulator/program';
@@ -100,6 +101,7 @@ import CodeEditor from './editors/CodeEditor';
 import ControlPanel, { type Axis } from './control/ControlPanel';
 import LeftRail, { type BarItem, type RailItem } from './stage/LeftRail';
 import MiniArmLabels from './stage/MiniArmLabels';
+import AiButton from './stage/AiButton';
 import { createMonitor, type MiniRect } from './stage/MiniArm';
 import DeskPanel from './control/DeskPanel';
 import DemoCaption from './stage/DemoCaption';
@@ -438,8 +440,10 @@ export default function Console() {
   const arm = armById(robotMode || !choice ? DEFAULT_MODEL : model);
   setActiveArm(arm.id);
   setActiveDesk(desk);
+  /** The AI button's program picks blocks on the bare desk: the practice mat and its blocks came out. */
+  const [aiMat, setAiMat] = useState(false);
   // 공정 works on the practice mat too (its example picks a block from it).
-  setMatNeeded(practiceUsesMat(practice.id) || tab === 'process');
+  setMatNeeded(practiceUsesMat(practice.id) || tab === 'process' || aiMat);
   const [picking, setPicking] = useState(false);
   /** [?] 도움말 open; the first-run guide's mount number (a new one shows the steps again). */
   const [helpOpen, setHelpOpen] = useState(false);
@@ -492,10 +496,13 @@ export default function Console() {
     if (!desktop) return;
     let live = true;
     void usbAvailable().then((ok) => live && setUsbOk(ok));
+    void localAiStatus().then((st) => live && setAiStatus(st));
     return () => {
       live = false;
     };
   }, [desktop]);
+  /** AI 버튼: the desktop program and Ollama on this PC (null: not asked yet, or not the program). */
+  const [aiStatus, setAiStatus] = useState<LocalAiStatus | null>(null);
   // On a robot's console the window title names the robot (several tabs, several robots).
   const robotId = robot?.robotId;
   useEffect(() => {
@@ -1207,6 +1214,7 @@ export default function Console() {
     setCode(restore ?? loadProgram(activeArm().id, lv, th, p.id) ?? starterFor(p, effector, th));
     layout.current = BLOCK_START;
     setMatNeeded(practiceUsesMat(p.id));
+    setAiMat(false);
     dropCell();
     world.current = createWorld(effector, flange, layout.current, th);
     setDemo(null);
@@ -1894,9 +1902,12 @@ export default function Console() {
     if (busy) return;
     if (tab === 'process') return simulateProcess();
     if (level !== 'basic') return simulatePy();
+    return simulateBlocks(code);
+  };
+  /** The block program `text` in the simulator (the editor's, or one the AI button just put there). */
+  const simulateBlocks = async (text: string) => {
     const fault = cellRef.current && world.current.cell?.health.fault;
     if (fault) return addLog('err', `고장 · ${fault.title}: [점검 · 복구]를 먼저 눌러 주세요.`, fault.fix);
-    const text = code;
     const { steps, errors, warnings } = problemsFor(text);
     setErrorLines(errors.map((e) => e.line));
     if (!errors.length) setProgramRun(true);
@@ -4059,6 +4070,41 @@ export default function Console() {
               ) : loaded && view === 'sim' && demo ? (
                 <DemoCaption demo={demoFor(demo.scene, arm)} step={demo.step} playing={demo.playing} onBlocks={demoToBlocks} onStop={stopDemo} />
               ) : null}
+              {aiStatus?.program && loaded && view === 'sim' && mode !== 'check' && level === 'basic' && tab !== 'process' && !cellAt && !demo && (
+                <AiButton
+                  status={aiStatus}
+                  onStatus={setAiStatus}
+                  code={code}
+                  arm={arm}
+                  effector={effector}
+                  cameraFlange={cameraFlange}
+                  theme={theme}
+                  poses={poses}
+                  busy={busy}
+                  lifted={!!replay && !busy}
+                  onTry={(c) => {
+                    if (busy) return;
+                    // Blocks to pick but a bare desk: the practice mat and its blocks come out (as for 공정).
+                    if (/robot\.(pick_place|move_above|move_down|sort_blocks)\(/.test(c) && theme === 'arm' && !world.current.blocks.length) {
+                      setAiMat(true);
+                      setMatNeeded(true);
+                      const at = world.current.angles.slice();
+                      world.current = createWorld(effector, cameraFlange, layout.current, theme);
+                      world.current.angles = at;
+                      setAnglesView(at);
+                    }
+                    setCode(c);
+                    setErrorLines([]);
+                    chooseTab('basic');
+                    void simulateBlocks(c);
+                  }}
+                  onInsert={(c) => {
+                    setCode(c);
+                    setErrorLines([]);
+                    chooseTab('basic');
+                  }}
+                />
+              )}
               <ViewTools
                 api={getStage}
                 display={display}

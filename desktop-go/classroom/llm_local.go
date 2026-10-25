@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 // 말로 만들기 with a model on the teacher's own PC (Ollama), for demonstrations before there is an
@@ -126,34 +127,32 @@ func OllamaCaller() LLMCaller {
 	}
 }
 
-// localModels: the models Ollama has at an address (the operator picks one), or why it cannot be
-// reached. GET /llm/local-models?url=…
-func (srv *Server) localModels(w http.ResponseWriter, r *http.Request, s session) {
-	if s.Role != RoleOperator {
-		writeErr(w, http.StatusForbidden, "role", "AI 종류는 운영자(관리자) 계정만 바꿀 수 있어요.")
-		return
-	}
-	base := r.URL.Query().Get("url")
-	if base == "" {
-		base = srv.store.LLMConfig().OllamaURL
-	}
+// LocalModel: one model Ollama has (name as Ollama calls it, size on disk, parameter count).
+type LocalModel struct {
+	Name   string `json:"name"`
+	Size   int64  `json:"size"`
+	Params string `json:"params,omitempty"`
+}
+
+// OllamaDefaultURL: where Ollama answers on the PC it runs on.
+const OllamaDefaultURL = ollamaDefaultURL
+
+// OllamaModels: the models Ollama has at an address (checked), or an error when it does not answer.
+func OllamaModels(ctx context.Context, base string) (string, []LocalModel, error) {
 	base, err := checkOllamaURL(base)
 	if err != nil {
-		srv.fail(w, err)
-		return
+		return "", nil, err
 	}
-	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, base+"/api/tags", nil)
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		writeErr(w, http.StatusBadGateway, "ollama", "Ollama 에 연결할 수 없어요. 이 PC 에서 Ollama 가 켜져 있는지 확인해 주세요.")
-		return
+		return base, nil, fmt.Errorf("Ollama 에 연결할 수 없어요: %w", err)
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		writeErr(w, http.StatusBadGateway, "ollama", "Ollama 가 모델 목록을 주지 않았어요: "+ollamaErr(res).Error())
-		return
+		return base, nil, ollamaErr(res)
 	}
 	var tags struct {
 		Models []struct {
@@ -165,19 +164,64 @@ func (srv *Server) localModels(w http.ResponseWriter, r *http.Request, s session
 		} `json:"models"`
 	}
 	if err := json.NewDecoder(io.LimitReader(res.Body, 1<<20)).Decode(&tags); err != nil {
-		writeErr(w, http.StatusBadGateway, "ollama", "Ollama 의 답을 읽지 못했어요.")
-		return
+		return base, nil, fmt.Errorf("Ollama 의 답을 읽지 못했어요: %w", err)
 	}
-	type model struct {
-		Name   string `json:"name"`
-		Size   int64  `json:"size"`
-		Params string `json:"params,omitempty"`
-	}
-	out := []model{}
+	out := []LocalModel{}
 	for _, m := range tags.Models {
 		if reOllamaModel.MatchString(m.Name) && len(out) < 100 {
-			out = append(out, model{m.Name, m.Size, m.Details.ParameterSize})
+			out = append(out, LocalModel{m.Name, m.Size, m.Details.ParameterSize})
 		}
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"url": base, "models": out})
+	return base, out, nil
+}
+
+// AskOllama: one 말로 만들기 question straight to a model in Ollama, with the same checks on the
+// question and the answer as the class server — for the desktop simulator's AI button on this PC.
+func AskOllama(ctx context.Context, base, model, text string, c LLMContext) (LLMAnswer, error) {
+	text = strings.TrimSpace(text)
+	if text == "" || utf8.RuneCountInString(text) > llmMaxText {
+		return LLMAnswer{}, fmt.Errorf("%w: 말은 1~%d자로 적어 주세요", errBadInput, llmMaxText)
+	}
+	if err := c.check(); err != nil {
+		return LLMAnswer{}, err
+	}
+	base, err := checkOllamaURL(base)
+	if err != nil {
+		return LLMAnswer{}, err
+	}
+	if !reOllamaModel.MatchString(model) {
+		return LLMAnswer{}, fmt.Errorf("%w: Ollama 모델 이름이 올바르지 않아요", errBadInput)
+	}
+	ctx, cancel := context.WithTimeout(ctx, llmLocalTimeout)
+	defer cancel()
+	a, _, err := OllamaCaller()(ctx, LLMConfig{OllamaURL: base, OllamaModel: model}, userTurn(text, c))
+	if err != nil {
+		return LLMAnswer{}, err
+	}
+	return a.tidy()
+}
+
+// IsBadInput: the question itself was refused (too long, a broken scene), not the model.
+func IsBadInput(err error) bool { return errors.Is(err, errBadInput) }
+
+// localModels: the models Ollama has at an address (the operator picks one), or why it cannot be
+// reached. GET /llm/local-models?url=…
+func (srv *Server) localModels(w http.ResponseWriter, r *http.Request, s session) {
+	if s.Role != RoleOperator {
+		writeErr(w, http.StatusForbidden, "role", "AI 종류는 운영자(관리자) 계정만 바꿀 수 있어요.")
+		return
+	}
+	base := r.URL.Query().Get("url")
+	if base == "" {
+		base = srv.store.LLMConfig().OllamaURL
+	}
+	base, models, err := OllamaModels(r.Context(), base)
+	switch {
+	case IsBadInput(err):
+		srv.fail(w, err)
+	case err != nil:
+		writeErr(w, http.StatusBadGateway, "ollama", "Ollama 에 연결할 수 없어요. 이 PC 에서 Ollama 가 켜져 있는지 확인해 주세요.")
+	default:
+		writeJSON(w, http.StatusOK, map[string]any{"url": base, "models": models})
+	}
 }

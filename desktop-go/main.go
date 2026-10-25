@@ -99,7 +99,7 @@ func main() {
 		openApp(url)
 	}()
 	// The USB maker (usbkit.go) only here, on 127.0.0.1: not in the class server on the LAN.
-	srv := &http.Server{Handler: usbHandler(handler(root)), ReadHeaderTimeout: 10 * time.Second}
+	srv := &http.Server{Handler: usbHandler(aiHandler(handler(root))), ReadHeaderTimeout: 10 * time.Second}
 	if err := srv.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		fail(err)
 	}
