@@ -21,9 +21,11 @@ interface Props {
   onClose(): void;
   /** [연결] on a robot's result: open that robot (the connect dialog's checks, then its console). */
   onConnect(address: string, robotId: string): void;
+  /** A robot never set up: 새 로봇 설치 (over a LAN cable, RobotSetup). */
+  onSetup?: () => void;
 }
 
-export default function UsbMaker({ onClose, onConnect }: Props) {
+export default function UsbMaker({ onClose, onConnect, onSetup }: Props) {
   const [state, setState] = useState<UsbState | null>(null);
   const [error, setError] = useState('');
   const [others, setOthers] = useState(false);
@@ -331,9 +333,13 @@ export default function UsbMaker({ onClose, onConnect }: Props) {
                   <li>
                     <b>새 로봇이면 (처음 한 번)</b>
                     <span>
-                      <span>
-                        로봇 화면에서 USB 의 <code>eduino</code> 폴더 → <code>설치하기</code> 더블클릭 → 로봇 비밀번호. 터미널이면 이 한 줄:
-                      </span>
+                      <span>USB 를 꽂기 전에 한 번 설치해야 해요. 랜선 하나로 PC 와 이어 [새 로봇 설치] 를 쓰면 모니터 · 키보드 없이 돼요.</span>
+                      {onSetup && (
+                        <button type="button" className={u.secondary} onClick={onSetup}>
+                          새 로봇 설치 열기
+                        </button>
+                      )}
+                      <span>모니터 · 키보드로 할 때는 USB 의 「처음 설치 (모니터로).txt」 순서대로, 터미널에 이 한 줄:</span>
                       <span className={u.cmd}>
                         <code>{INSTALL_LINE}</code>
                         <button type="button" onClick={copy}>

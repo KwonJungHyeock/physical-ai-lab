@@ -3,15 +3,17 @@
 /**
  * 로봇 연결: each student opens their own robot.
  *
- * - 로봇 찾기: the browser asks every address of the classroom network and
+ * Two ways, as a classroom has them: the classroom Wi-Fi (a router), or one LAN cable to the PC.
+ * - Wi-Fi: the browser asks every address of the classroom network and
  *   lists the robots that answer; [움직여 확인] makes one wiggle so the
  *   student knows which is theirs, [연결] opens its console.
- * - ID 로 연결: the robot's ID is the last number of its address (the server
- *   prints "로봇 ID: 252" when it starts, and every console shows it); with
- *   the network's first part remembered, typing the ID is enough.
  *   In the desktop simulator (`auto`) the PC's own networks come from the
  *   program and the search starts by itself; each robot shows its 사용자
  *   이름 (set on the USB stick) with its address.
+ *   Not found (a network that hides devices from each other): the robot's ID, the last number of its
+ *   address (every console shows it), typed in the fold below the list.
+ * - 랜선 직결: one cable, the robot at its fixed direct address. A robot not set up yet goes to
+ *   새 로봇 설치 (desktop program: it installs a new robot over that cable).
  * - 로봇 Wi-Fi (only on a robot's own console): move the robot from its
  *   hotspot to the classroom router, or back.
  *
@@ -54,7 +56,7 @@ export function robotAddress(input: string, prefix: string): string | null {
   return v.includes(':') ? v : `${v}:${PORT}`;
 }
 
-type Tab = 'find' | 'id' | 'direct' | 'wifi';
+type Tab = 'find' | 'direct' | 'wifi';
 
 interface Props {
   /** On a robot's own console: its ID and address, to show and to switch away from. */
@@ -67,10 +69,12 @@ interface Props {
   start?: { addr: string; label: string } | null;
   /** Desktop program: robots not on the Wi-Fi yet → 로봇 USB 만들기. */
   onUsb?: () => void;
+  /** Desktop program: a robot never set up → 새 로봇 설치 (over the LAN cable). */
+  onSetup?: () => void;
   onClose(): void;
 }
 
-export default function ConnectDialog({ current, auto, carry, start, onUsb, onClose }: Props) {
+export default function ConnectDialog({ current, auto, carry, start, onUsb, onSetup, onClose }: Props) {
   const [tab, setTab] = useState<Tab>('find');
   // On a robot's console its own network is the one to search; elsewhere the last one used.
   const hereNet = current?.ips[0]?.replace(/\d+$/, '');
@@ -90,9 +94,6 @@ export default function ConnectDialog({ current, auto, carry, start, onUsb, onCl
       /* storage blocked */
     }
   }, [hereNet]);
-  useEffect(() => {
-    if (tab === 'id') input.current?.focus();
-  }, [tab]);
 
   const address = robotAddress(id, prefix);
   /** The search as the radar shows it. */
@@ -185,12 +186,7 @@ export default function ConnectDialog({ current, auto, carry, start, onUsb, onCl
     return () => window.clearTimeout(t);
   }, [link, current]);
 
-  const tabs: { key: Tab; label: string; icon: string }[] = [
-    { key: 'find', label: '로봇 찾기', icon: 'search' },
-    { key: 'id', label: 'ID 로 연결', icon: 'link' },
-    { key: 'direct', label: '유선 직결', icon: 'pc' },
-    ...(current ? [{ key: 'wifi' as Tab, label: '로봇 Wi-Fi', icon: 'wifi' }] : []),
-  ];
+  const tabs: { key: Tab; label: string; icon: string }[] = [{ key: 'find', label: 'Wi-Fi (공유기)', icon: 'search' }, { key: 'direct', label: '랜선 직결', icon: 'pc' }, ...(current ? [{ key: 'wifi' as Tab, label: '로봇 Wi-Fi', icon: 'wifi' }] : [])];
 
   return (
     <div className={css.picker} role="dialog" aria-modal="true" aria-label="로봇 연결" onKeyDown={(e) => e.key === 'Escape' && onClose()}>
@@ -208,7 +204,7 @@ export default function ConnectDialog({ current, auto, carry, start, onUsb, onCl
                   ? '로봇이 붙을 Wi-Fi 를 정해요. 교실 공유기에 한 번 연결해 두면 다음부터 켜기만 하면 돼요.'
                   : current
                     ? '다른 로봇으로 바꾸려면 찾거나 ID 를 넣어요.'
-                    : '[로봇 찾기] 는 같은 공유기(Wi-Fi · 랜선)의 로봇을, [유선 직결] 은 랜선 하나로 이은 로봇을 연결해요. 로봇 없이 연습하려면 [시뮬레이션만].'}
+                    : '[Wi-Fi] 는 같은 공유기의 로봇을, [랜선 직결] 은 랜선 하나로 PC 와 이은 로봇을 연결해요. 로봇 없이 연습하려면 [시뮬레이션만].'}
               </p>
             </div>
             <button type="button" className={css.pickerClose} onClick={onClose} aria-label="닫기">
@@ -227,62 +223,51 @@ export default function ConnectDialog({ current, auto, carry, start, onUsb, onCl
 
           {link && <LinkSteps link={link} onRetry={() => setLink({ label: link.label, robot: link.robot, addr: link.addr, step: 0 })} onBack={() => setLink(null)} onOpenOld={() => openOwn(link.addr)} onUsb={onUsb} />}
 
-          {!link && tab === 'find' && <FindRobots prefix={prefix} setPrefix={setPrefix} here={current?.ips ?? []} auto={auto} onScan={setScan} onConnect={(r) => go(r.address, r.robotId, r)} onUsb={onUsb} />}
-
-          {!link && tab === 'id' && (
+          {!link && tab === 'find' && (
             <>
-              <form
-                className={css.connectForm}
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (address) go(address, id.trim());
-                }}
-              >
-                <label className={css.connectField}>
-                  <span>로봇 ID</span>
-                  <span className={css.connectAddr}>
-                    <input className={css.connectPrefix} value={prefix} onChange={(e) => setPrefix(e.target.value)} aria-label="네트워크 앞부분" spellCheck={false} />
-                    <input ref={input} className={css.connectId} value={id} onChange={(e) => setId(e.target.value)} placeholder="252" inputMode="numeric" aria-label="로봇 ID" spellCheck={false} />
-                  </span>
-                </label>
-                <button type="submit" className={css.connectGo} disabled={!address}>
-                  연결
-                </button>
-              </form>
-              <p className={css.connectHint}>
-                {address ? (
-                  <>
-                    <b>http://{address}/console</b> 로 열어요.
-                  </>
-                ) : (
-                  '숫자만(예: 252) 넣으면 앞부분과 합쳐요. 전체 주소(192.168.0.252)나 이름(robot.local)도 돼요.'
-                )}
-              </p>
-
-              {recent.length > 0 && (
-                <div className={css.connectRecent}>
-                  <span>최근 연결한 로봇</span>
-                  <div>
-                    {recent.map((r) => (
-                      <button key={r} type="button" onClick={() => setId(r)}>
-                        {r}
-                      </button>
-                    ))}
+              <FindRobots prefix={prefix} setPrefix={setPrefix} here={current?.ips ?? []} auto={auto} onScan={setScan} onConnect={(r) => go(r.address, r.robotId, r)} onUsb={onUsb} />
+              <details className={css.idFold} onToggle={(e) => (e.currentTarget as HTMLDetailsElement).open && input.current?.focus()}>
+                <summary>목록에 없나요? 로봇 ID 로 연결</summary>
+                <form
+                  className={css.connectForm}
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (address) go(address, id.trim());
+                  }}
+                >
+                  <label className={css.connectField}>
+                    <span>로봇 ID (주소의 마지막 숫자)</span>
+                    <span className={css.connectAddr}>
+                      <input className={css.connectPrefix} value={prefix} onChange={(e) => setPrefix(e.target.value)} aria-label="네트워크 앞부분" spellCheck={false} />
+                      <input ref={input} className={css.connectId} value={id} onChange={(e) => setId(e.target.value)} placeholder="252" inputMode="numeric" aria-label="로봇 ID" spellCheck={false} />
+                    </span>
+                  </label>
+                  <button type="submit" className={css.connectGo} disabled={!address}>
+                    연결
+                  </button>
+                </form>
+                <p className={css.connectHint}>
+                  {address ? (
+                    <>
+                      <b>http://{address}/console</b> 로 열어요.
+                    </>
+                  ) : (
+                    '로봇 ID 는 연결했던 화면 오른쪽 위, USB 결과 파일에 있어요. 공유기가 기기끼리 못 보게 막으면(학교 · 손님용 Wi-Fi) 찾기는 안 되고 ID 로만 돼요.'
+                  )}
+                </p>
+                {recent.length > 0 && (
+                  <div className={css.connectRecent}>
+                    <span>최근 연결한 로봇</span>
+                    <div>
+                      {recent.map((r) => (
+                        <button key={r} type="button" onClick={() => setId(r)}>
+                          {r}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-
-              <ol className={css.connectSteps}>
-                <li>
-                  <b>로봇 ID 찾기</b>: 로봇을 켜고 서버가 켜지면 터미널에 <code>★ 로봇 ID: 252</code> 가 나와요. 연결한 뒤에는 이 화면 오른쪽 위에도 보여요. (IP 주소의 마지막 숫자예요. 로봇마다 번호 스티커를 붙여 두면 편해요)
-                </li>
-                <li>
-                  <b>같은 공유기</b>: PC 와 로봇이 같은 공유기에 있어야 해요 (Wi-Fi 든 랜선이든). 공유기 없이 랜선 하나로 이었다면 [유선 직결]. 앞부분(192.168.0.)은 교실 공유기에 맞게 한 번만 고치면 기억해요.
-                </li>
-                <li>
-                  <b>안 열리면</b> 로봇 전원, 서버가 켜져 있는지(자동 시작), ID 가 맞는지 확인해요.
-                </li>
-              </ol>
+                )}
+              </details>
             </>
           )}
 
@@ -296,15 +281,24 @@ export default function ConnectDialog({ current, auto, carry, start, onUsb, onCl
                   <b>1분 기다리기</b>: 로봇을 켜고 1분쯤 기다려요. PC 가 이 연결의 주소를 스스로 잡아요 (설정할 것 없음).
                 </li>
                 <li>
-                  <b>[유선 직결로 연결]</b>: 로봇은 늘 <code>{DIRECT_IP}</code> 에 있어요.
+                  <b>[랜선 직결로 연결]</b>: 로봇은 늘 <code>{DIRECT_IP}</code> 에 있어요.
                 </li>
               </ol>
               <div className={css.connectForm}>
-                <button type="button" className={css.connectGo} onClick={() => go(`${DIRECT_IP}:${PORT}`, '유선 직결')}>
-                  유선 직결로 연결
+                <button type="button" className={css.connectGo} onClick={() => go(`${DIRECT_IP}:${PORT}`, '랜선 직결')}>
+                  랜선 직결로 연결
                 </button>
               </div>
-              <p className={css.connectHint}>안 되면: 랜선이 로봇의 LAN 포트에 꽂혔는지, PC 의 랜 포트가 학교망 대신 로봇에 이어졌는지 확인하고 30초 뒤 다시 눌러요. 공유기 · 허브에 함께 꽂았다면 [로봇 찾기] 를 써요.</p>
+              <p className={css.connectHint}>안 되면: 랜선이 로봇의 LAN 포트에 꽂혔는지, PC 의 랜 포트가 학교망 대신 로봇에 이어졌는지 확인하고 30초 뒤 다시 눌러요. 공유기 · 허브에 함께 꽂았다면 [Wi-Fi (공유기)] 탭에서 찾아요.</p>
+              {onSetup && (
+                <button type="button" className={css.usbHint} onClick={onSetup}>
+                  <Icon name="usb" size={18} />
+                  <span>
+                    <b>새 로봇이에요 (처음 한 번)</b>
+                    <small>새 로봇 설치: 이 랜선 그대로 프로그램이 로봇에 설치하고 Wi-Fi 까지 맞춰요. 모니터 · 키보드는 필요 없어요.</small>
+                  </span>
+                </button>
+              )}
             </>
           )}
 

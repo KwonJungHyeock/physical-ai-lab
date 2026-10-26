@@ -115,6 +115,7 @@ import { announceRobotStop } from './connect/robotStop';
 import ModelPicker from './connect/ModelPicker';
 import ConnectDialog from './connect/ConnectDialog';
 import UsbMaker from './connect/UsbMaker';
+import RobotSetup from './connect/RobotSetup';
 import PartsPanel from './control/PartsPanel';
 import ProcessPanel from './editors/ProcessPanel';
 import { FullBar, LangSeg, Snippets, SlotCode, TutorialCard } from './editors/Tutorial';
@@ -491,6 +492,7 @@ export default function Console() {
   /** 로봇 USB 만들기: only where the desktop program answers (it writes the USB stick). */
   const [usbOk, setUsbOk] = useState(false);
   const [usbOpen, setUsbOpen] = useState(false);
+  const [setupOpen, setSetupOpen] = useState(false);
   /** A robot to open at once in the connect dialog (from a USB result's [연결]). */
   const [connectTo, setConnectTo] = useState<{ addr: string; label: string } | null>(null);
   useEffect(() => {
@@ -3523,12 +3525,24 @@ export default function Console() {
           auto={desktop && !connectTo}
           start={connectTo}
           onUsb={usbOk && account.role !== 'student' ? () => (setConnectOpen(false), setUsbOpen(true)) : undefined}
+          onSetup={usbOk && account.role !== 'student' ? () => (setConnectOpen(false), setSetupOpen(true)) : undefined}
           carry={() => (practice.id === 'demo' ? '' : carryHash({ level, theme, id: practice.id, code }))}
           onClose={() => (setConnectOpen(false), setConnectTo(null))} />
+      )}
+      {setupOpen && (
+        <RobotSetup
+          onClose={() => setSetupOpen(false)}
+          onConnect={(addr, label) => {
+            setSetupOpen(false);
+            setConnectTo(addr ? { addr, label } : null);
+            setConnectOpen(true);
+          }}
+        />
       )}
       {usbOpen && (
         <UsbMaker
           onClose={() => setUsbOpen(false)}
+          onSetup={() => (setUsbOpen(false), setSetupOpen(true))}
           onConnect={(addr, id) => {
             setUsbOpen(false);
             setConnectTo({ addr, label: id || addr });
@@ -3703,6 +3717,21 @@ export default function Console() {
                 </b>
                 <small>같은 Wi-Fi 의 로봇 찾기 · 로봇의 Wi-Fi 바꾸기</small>
               </button>
+              {usbOk && account.role !== 'student' && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setSetupOpen(true);
+                    close();
+                  }}
+                >
+                  <b>
+                    <Icon name="install" size={15} /> 새 로봇 설치
+                  </b>
+                  <small>처음 한 번: 랜선 하나로 이어 로봇에 설치하고 Wi-Fi 를 맞춰요</small>
+                </button>
+              )}
               {usbOk && account.role !== 'student' && (
                 <button
                   type="button"

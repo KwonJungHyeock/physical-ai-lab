@@ -9,7 +9,7 @@ Development tool, not run on the robot. Build the console screens first
 
 eduino_usb.zip holds one folder, `eduino/`: install.py, 설치하기.desktop (double-click
 on the robot's desktop: finds install.py on the stick and runs it with sudo in a terminal),
-wifi.txt, 읽어보세요.txt (from robot-python/usb-kit/), robot_console.zip (robot-python/server/
+wifi.txt, 읽어보세요.txt, 처음 설치 (모니터로).txt (from robot-python/usb-kit/), robot_console.zip (robot-python/server/
 with its static/ screens; unpacked on the robot as ~/robot_console/), robot_console.zip.sig
 (its signature), checks/ (robot-python/checks/: pump, robot and network checks) and
 "Physical AI Tool.html", the PC program (static/pc/physical-ai-tool.html: it
@@ -49,7 +49,7 @@ REPO = os.path.dirname(PY)
 CONSOLE = os.path.join(PY, "server")
 KIT_SRC = os.path.join(PY, "usb-kit")
 CHECKS = os.path.join(PY, "checks")
-NOTEPAD = ("wifi.txt", "읽어보세요.txt")
+NOTEPAD = ("wifi.txt", "읽어보세요.txt", "처음 설치 (모니터로).txt")
 LAUNCHER = "설치하기.desktop"
 REQUIRED = ("server.py", "agv_server.py", "wifi.py", "usb_setup.py", "kit_update.py", "autostart.py",
             "kit_signing_public.pem", "static/console.html", "static/agv.html", "static/pc/physical-ai-tool.html")

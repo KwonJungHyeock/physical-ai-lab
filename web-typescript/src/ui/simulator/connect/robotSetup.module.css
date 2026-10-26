@@ -1,0 +1,119 @@
+/* 새 로봇 설치 (RobotSetup.tsx): what usbMaker.module.css does not have. */
+
+.plain {
+  margin: 0;
+  padding: 10px 14px 10px 32px;
+  border-radius: 12px;
+  background: var(--work, #f5f7fa);
+  display: grid;
+  gap: 5px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--muted, #6b7785);
+}
+.plain b {
+  color: var(--ink, #1f2933);
+}
+
+.fold {
+  display: grid;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--line, #d8dee6);
+  border-radius: 12px;
+}
+.fold summary {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink, #1f2933);
+  cursor: pointer;
+}
+
+/* The four stages: done (green), now (blue), stopped (red), still to come (grey). */
+.stages {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.stages li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  background: var(--soft, #f1f4f8);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted, #6b7785);
+}
+.stages li span {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border-radius: 50%;
+  background: #fff;
+  font-size: 12px;
+}
+.stages li[data-state='done'] {
+  background: #f0faf3;
+  color: #1c7c43;
+}
+.stages li[data-state='done'] span {
+  background: #1c7c43;
+  color: #fff;
+}
+.stages li[data-state='now'] {
+  background: var(--accent-soft, #e8f0ff);
+  color: var(--accent, #2563eb);
+}
+.stages li[data-state='now'] span {
+  background: var(--accent, #2563eb);
+  color: #fff;
+}
+.stages li[data-state='bad'] {
+  background: #fdecec;
+  color: #b42318;
+}
+
+.line {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink, #1f2933);
+}
+.log {
+  margin: 0;
+  max-height: 220px;
+  overflow: auto;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #1f2933;
+  color: #e6edf3;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+.result {
+  margin: 0;
+  display: grid;
+  gap: 2px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink, #1f2933);
+}
+.result small {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--muted, #6b7785);
+}
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}

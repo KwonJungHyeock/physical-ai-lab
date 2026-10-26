@@ -13,7 +13,11 @@
   Delivering it: during development send the zip split in two (`zip -s 30m`, under the 30 MB file limit);
   a build to test or deliver goes on the `release` branch as two files + README: `PhysicalAI-Simulator.zip`
   (built without the kit: `sh desktop-go/build.sh`) and `eduino_usb.zip` (`robot-python/tools/make_usb_kit.py`, signed),
-  each under GitHub's 100 MB file limit; the program takes the kit from beside it for 로봇 USB 만들기.
+  each under GitHub's 100 MB file limit; the program takes the kit from beside it for 로봇 USB 만들기
+  and 새 로봇 설치 (`setup.go`: a new robot over one LAN cable, factory 192.168.127.10 · sunrise/sunrise).
+  The release branch's `.github/workflows/bundle.yml` joins the two into one `PhysicalAI-Simulator.zip`
+  (files at the top, no folder in a folder) on the GitHub release: the download link people get is
+  `https://github.com/KwonJungHyeock/physical-ai-lab/releases/latest/download/PhysicalAI-Simulator.zip`.
 - `content-markdown/` — the lesson sources the app reads (8 md + `reference/`), Korean; `sites/` = the 산업단지 site labs' lesson scripts (story, activities, answers, teacher's plan).
   `npm run gen:curriculum` turns them into `web-typescript/src/engine/education/curriculum.gen.ts`.
 - `manuals/` — step-by-step guides for people (Korean), by audience: `simulator/`, `setup/`, `robot-arm/`, `myagv/`, `course/`.
