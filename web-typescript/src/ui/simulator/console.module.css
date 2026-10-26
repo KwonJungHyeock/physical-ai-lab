@@ -7976,3 +7976,365 @@ div.zeroFlow {
   color: #fff;
   cursor: pointer;
 }
+
+/* ===========================================================================
+ * 로봇 연결 시안 1 (2026-10-26): the same look as the simulator's work panel — dark slate cards,
+ * the choice in red (like 조그 [관절 | 좌표]), white bold text on every button; red for the one thing
+ * to do ([연결]), outlined buttons for the rest, green for a new robot (as the setup's done card).
+ * Later rules on purpose: they override the light dialog above.
+ * ======================================================================== */
+.picker:has(> .connectBox) {
+  background: rgba(16, 22, 30, 0.62);
+}
+.app .connectBox {
+  background: #27313e;
+  border: 1px solid #45526a;
+  color: #fff;
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.55);
+}
+.app .connectBox .connectMain {
+  gap: 16px;
+  padding: 26px 30px 22px;
+}
+.app .connectBox .radarSide {
+  background:
+    radial-gradient(120% 70% at 50% 42%, rgba(232, 57, 47, 0.12), transparent 62%),
+    linear-gradient(180deg, #1d2530, #18202a);
+  border-right: 1px solid #3a4658;
+}
+.app .connectBox .radarSide::after {
+  display: none;
+}
+.app .connectBox .radar {
+  border-color: #3e4b5e;
+  background:
+    repeating-radial-gradient(circle, transparent 0 41px, rgba(160, 175, 200, 0.14) 41px 42px),
+    linear-gradient(transparent 127.5px, rgba(160, 175, 200, 0.12) 127.5px 128.5px, transparent 128.5px),
+    linear-gradient(90deg, transparent 127.5px, rgba(160, 175, 200, 0.12) 127.5px 128.5px, transparent 128.5px),
+    radial-gradient(circle, #223044, #18202a 72%);
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.45);
+}
+.app .connectBox .radarSweep {
+  background: conic-gradient(from 0deg, rgba(232, 57, 47, 0.45), rgba(232, 57, 47, 0.06) 55deg, transparent 72deg);
+}
+.app .connectBox .radarBlip,
+.app .connectBox .radarBlip[data-pick] {
+  background: #22c55e;
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.8);
+}
+.app .connectBox .radarPc {
+  color: #fff;
+  background: #2f3b4c;
+  border-color: #5b6b82;
+  box-shadow: none;
+}
+.app .connectBox .radarState {
+  font-size: 15px;
+  color: #e6ebf2;
+}
+.app .connectBox .radarStats div {
+  background: #252f3c;
+  border-color: #3a4658;
+}
+.app .connectBox .radarStats dt,
+.app .connectBox .radarStats dd small,
+.radarBrand small {
+  color: #9aa6b6;
+}
+
+/* the working side */
+.app .connectBox .pickerHead h1 {
+  color: #fff;
+  font-size: 24px;
+}
+.app .connectBox .pickerHead p {
+  color: #c3cbd6;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.app .connectBox .pickerClose {
+  background: #323d4c;
+  color: #dfe5ee;
+}
+.app .connectBox .connectIcon {
+  background: #e8392f;
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(232, 57, 47, 0.32);
+}
+.app .connectBox .connectTabs {
+  margin-bottom: 0;
+  padding: 5px;
+  gap: 5px;
+  background: #1d2530;
+  border: 1px solid #3a4658;
+}
+.app .connectBox .connectTabs button {
+  height: 46px;
+  font-size: 16.5px;
+  color: #c3cbd6;
+}
+.app .connectBox .connectTabs button:hover {
+  color: #fff;
+}
+.app .connectBox .connectTabs .connectTabOn {
+  background: #e8392f;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(232, 57, 47, 0.35);
+}
+.app .connectBox .connectField {
+  color: #aeb8c6;
+  font-size: 13.5px;
+}
+.app .connectBox input,
+.app .connectBox .findNet {
+  background: #1b222c;
+  color: #fff;
+  border-color: #4a586c;
+}
+.app .connectBox input::placeholder {
+  color: #7d8a9c;
+}
+.app .connectBox .findNet:focus,
+.app .connectBox .connectAddr:focus-within {
+  border-color: #e8392f;
+  box-shadow: 0 0 0 3px rgba(232, 57, 47, 0.22);
+}
+.app .connectBox .connectAddr {
+  border-color: #4a586c;
+}
+.app .connectBox .connectPrefix {
+  background: #232c38;
+  color: #c3cbd6;
+  border-right-color: #4a586c;
+}
+.app .connectBox .connectGo,
+.app .connectBox .foundGo {
+  background: #e8392f;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(232, 57, 47, 0.3);
+}
+.app .connectBox .connectGo:hover:not(:disabled),
+.app .connectBox .foundGo:hover:not(:disabled) {
+  background: #f04a40;
+}
+/* searching again is not the step to take: a dark button, white text */
+.app .connectBox .findBar .connectGo {
+  background: #3a4658;
+  border: 1px solid #56657c;
+  box-shadow: none;
+}
+.app .connectBox .findBar .connectGo:hover:not(:disabled) {
+  background: #45526a;
+}
+.app .connectBox .connectGo:disabled {
+  opacity: 1;
+  background: #3a4658;
+  color: #8f9bad;
+  box-shadow: none;
+}
+.app .connectBox .ghost {
+  background: transparent;
+  border: 1.5px solid #6b7a90;
+  color: #fff;
+  font-weight: 700;
+}
+.app .connectBox .ghost:hover:not(:disabled) {
+  border-color: #aeb8c6;
+  background: rgba(255, 255, 255, 0.05);
+}
+.app .connectBox .findProgress {
+  background: #1d2530;
+}
+.app .connectBox .findProgress i {
+  background: #e8392f;
+}
+.app .connectBox .connectHint {
+  color: #c3cbd6;
+  font-size: 14px;
+}
+.app .connectBox .connectHint b {
+  color: #fff;
+}
+.app .connectBox .foundCard {
+  background: #313c4a;
+  border-color: #455268;
+  box-shadow: none;
+}
+.app .connectBox .foundCard:hover {
+  border-color: #6b7a90;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25);
+}
+.app .connectBox .foundPic {
+  background: radial-gradient(circle at 50% 35%, #4a586c, #3a4658 72%);
+  border-color: #4a586c;
+}
+.app .connectBox .foundInfo {
+  color: #c3cbd6;
+}
+.app .connectBox .foundInfo b,
+.app .connectBox .foundInfo .foundIp,
+.app .connectBox .foundInfo > span > b {
+  color: #fff;
+}
+.app .connectBox .foundId {
+  background: #1b222c;
+  color: #fff;
+  border: 1px solid #56657c;
+}
+.app .connectBox .findFilter {
+  background: #1b222c;
+  border-color: #4a586c;
+  color: #fff;
+}
+.app .connectBox .idFold {
+  background: transparent;
+  border: 1px dashed #56657c;
+}
+.app .connectBox .idFold summary {
+  color: #dfe5ee;
+  font-size: 15px;
+}
+.app .connectBox .connectRecent {
+  color: #aeb8c6;
+}
+.app .connectBox .connectRecent button {
+  background: #313c4a;
+  border-color: #56657c;
+  color: #fff;
+}
+.app .connectBox .connectSteps {
+  background: #1d2530;
+  color: #c3cbd6;
+  font-size: 14px;
+}
+.app .connectBox .connectSteps b {
+  color: #fff;
+}
+.app .connectBox .connectSteps code {
+  background: #313c4a;
+  color: #fff;
+}
+/* 랜선 직결: the order as three numbered cards */
+.app .connectBox .stepCards {
+  padding: 0;
+  background: none;
+  list-style: none;
+  counter-reset: step;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.app .connectBox .stepCards li {
+  counter-increment: step;
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  padding: 14px;
+  border-radius: 14px;
+  background: #313c4a;
+  border: 1px solid #455268;
+  line-height: 1.5;
+}
+.app .connectBox .stepCards li::before {
+  content: counter(step);
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin-bottom: 6px;
+  border-radius: 50%;
+  background: #e8392f;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+}
+.app .connectBox .stepCards b {
+  font-size: 16px;
+}
+.app .connectBox .usbHint {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1.5px dashed #6b7a90;
+  color: #fff;
+}
+.app .connectBox .usbHint small {
+  color: #c3cbd6;
+}
+/* a new robot: green, as the setup's done card */
+.app .connectBox .newHint {
+  padding: 14px 16px;
+  background: #2b3a33;
+  border: 1.5px solid #3f8f6a;
+}
+.app .connectBox .newHint b {
+  font-size: 16px;
+}
+.app .connectBox .newHint small {
+  color: #cfe3d8;
+}
+.app .connectBox .connectFoot {
+  border-top-color: #3a4658;
+}
+.app .connectBox .linkBox {
+  background: #1d2530;
+  border-color: #3a4658;
+}
+.app .connectBox .linkNode {
+  color: #dfe5ee;
+}
+.app .connectBox .linkNode i {
+  background: #313c4a;
+  border-color: #56657c;
+  color: #fff;
+}
+.app .connectBox .linkChecks li {
+  color: #8f9bad;
+}
+.app .connectBox .linkChecks li[data-state='now'] {
+  color: #fff;
+}
+.app .connectBox .linkChecks li[data-state='now'] i {
+  border-color: #e8392f;
+  border-top-color: transparent;
+}
+.app .connectBox .linkChecks li[data-state='ok'] {
+  color: #4ade80;
+}
+.app .connectBox .linkNote {
+  color: #c3cbd6;
+}
+.app .connectBox .linkError {
+  background: #3a2226;
+  border-color: #8a3a35;
+  color: #ffd9d5;
+}
+.app .connectBox .wifi,
+.app .connectBox .wifi * {
+  border-color: #455268;
+}
+.app .connectBox .connectGo,
+.app .connectBox .foundGo,
+.app .connectBox .connectTabs button {
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.app .connectBox .connectGo {
+  font-size: 17px;
+}
+.app .connectBox .foundGo {
+  font-size: 16px;
+}
+/* the green card's own button, as in the setup's done card */
+.app .connectBox .newHint::after {
+  content: '새 로봇 설치';
+  flex: none;
+  margin-left: auto;
+  padding: 11px 18px;
+  border-radius: 10px;
+  background: #16955a;
+  color: #fff;
+  font-size: 15.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.app .connectBox .newHint:hover::after {
+  background: #1aa866;
+}

@@ -273,15 +273,15 @@ export default function ConnectDialog({ current, auto, carry, start, onUsb, onSe
 
           {!link && tab === 'direct' && (
             <>
-              <ol className={css.connectSteps}>
+              <ol className={`${css.connectSteps} ${css.stepCards}`}>
                 <li>
-                  <b>랜선 하나로 잇기</b>: PC 의 랜 포트와 로봇의 LAN 포트를 랜선으로 바로 이어요. 공유기 · 허브는 없어도 돼요.
+                  <b>랜선 하나로 잇기</b> PC 의 랜 포트와 로봇의 LAN 포트를 랜선으로 바로 이어요. 공유기 · 허브는 없어도 돼요.
                 </li>
                 <li>
-                  <b>1분 기다리기</b>: 로봇을 켜고 1분쯤 기다려요. PC 가 이 연결의 주소를 스스로 잡아요 (설정할 것 없음).
+                  <b>1분 기다리기</b> 로봇을 켜고 1분쯤 기다려요. PC 가 이 연결의 주소를 스스로 잡아요 (설정할 것 없음).
                 </li>
                 <li>
-                  <b>[랜선 직결로 연결]</b>: 로봇은 늘 <code>{DIRECT_IP}</code> 에 있어요.
+                  <b>연결</b> 로봇은 늘 <code>{DIRECT_IP}</code> 에 있어요.
                 </li>
               </ol>
               <div className={css.connectForm}>
@@ -291,7 +291,7 @@ export default function ConnectDialog({ current, auto, carry, start, onUsb, onSe
               </div>
               <p className={css.connectHint}>안 되면: 랜선이 로봇의 LAN 포트에 꽂혔는지, PC 의 랜 포트가 학교망 대신 로봇에 이어졌는지 확인하고 30초 뒤 다시 눌러요. 공유기 · 허브에 함께 꽂았다면 [Wi-Fi (공유기)] 탭에서 찾아요.</p>
               {onSetup && (
-                <button type="button" className={css.usbHint} onClick={onSetup}>
+                <button type="button" className={`${css.usbHint} ${css.newHint}`} onClick={onSetup}>
                   <Icon name="usb" size={18} />
                   <span>
                     <b>새 로봇이에요 (처음 한 번)</b>
@@ -698,7 +698,7 @@ function FindRobots({
             <b>주소 앞부분</b>: PC 의 주소 앞 세 숫자와 같아야 해요 (Windows: <code>ipconfig</code>). 교실 공유기는 보통 <code>192.168.0.</code>, 로봇 핫스팟은 <code>10.42.0.</code> 이에요.
           </li>
           <li>
-            <b>로봇 서버</b>: 로봇 전원을 켜고 1분쯤 기다려요 (자동 시작). 그래도 없으면 [ID 로 연결] 에 로봇 ID 를 넣어 봐요.
+            <b>로봇 서버</b>: 로봇 전원을 켜고 1분쯤 기다려요 (자동 시작). 그래도 없으면 아래 [로봇 ID 로 연결] 에 로봇 ID 를 넣어 봐요.
           </li>
           <li>
             <b>학교 · 손님용 Wi-Fi</b>: 기기끼리 서로 못 보게 막아 둔 망(AP 격리)이 많아요. 실습실 공유기에 PC 와 로봇을 함께 붙여요.
