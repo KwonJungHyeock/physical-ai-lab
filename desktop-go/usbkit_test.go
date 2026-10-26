@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -53,14 +54,14 @@ func TestWifiForm(t *testing.T) {
 	if !bytes.HasPrefix(b, []byte("\xef\xbb\xbf")) || !strings.Contains(string(b), "\r\n와이파이=EDUINO-LAB\r\n") {
 		t.Fatalf("BOM/CRLF lost: %q", b)
 	}
-	if got := readWifi(b); got != w {
+	if got := readWifi(b); !reflect.DeepEqual(got, w) {
 		t.Fatalf("round trip: %+v", got)
 	}
 	if !strings.Contains(string(b), "# 비밀번호: 비워 두면") {
 		t.Fatal("comments lost")
 	}
 	// A template without the lines still gets them.
-	if got := readWifi(fillWifi([]byte("# x\r\n"), w)); got != w {
+	if got := readWifi(fillWifi([]byte("# x\r\n"), w)); !reflect.DeepEqual(got, w) {
 		t.Fatalf("appended: %+v", got)
 	}
 	for _, c := range []struct {
@@ -154,17 +155,20 @@ func TestRobotReadsWifi(t *testing.T) {
 	}
 	dir := t.TempDir()
 	p := filepath.Join(dir, "wifi.txt")
-	os.WriteFile(p, fillWifi([]byte(tmplWifi), WifiForm{SSID: "교실 Wi-Fi", Password: "a=b c#d", Label: "3조"}), 0o644)
+	os.WriteFile(p, fillWifi([]byte(tmplWifi), WifiForm{SSID: "교실 Wi-Fi", Password: "a=b c#d", Label: "3조", More: []WifiNet{{SSID: "robodyne2", Password: "pass-two2"}}}), 0o644)
 	server, _ := filepath.Abs("../robot-python/server")
 	out, err := exec.Command(py, "-c", "import sys,json; sys.path.insert(0, sys.argv[1]); import usb_setup as u; print(json.dumps(u.read_fields(sys.argv[2]), ensure_ascii=False))", server, p).CombinedOutput()
 	if err != nil {
 		t.Fatalf("%v: %s", err, out)
 	}
-	var got map[string]string
+	var got struct {
+		SSID, Password, Label string
+		More                  [][2]string
+	}
 	if err := json.Unmarshal(out, &got); err != nil {
 		t.Fatalf("%s", out)
 	}
-	if got["ssid"] != "교실 Wi-Fi" || got["password"] != "a=b c#d" || got["label"] != "3조" {
+	if got.SSID != "교실 Wi-Fi" || got.Password != "a=b c#d" || got.Label != "3조" || len(got.More) != 1 || got.More[0] != [2]string{"robodyne2", "pass-two2"} {
 		t.Fatalf("robot read %v", got)
 	}
 }
@@ -235,5 +239,31 @@ func TestUSBAPI(t *testing.T) {
 	d := st["drives"].([]any)[0].(map[string]any)
 	if d["kitVersion"] != "v1" || d["results"].(float64) != 1 || d["wifi"].(map[string]any)["label"] != "1조" {
 		t.Fatalf("drive %v", d)
+	}
+}
+
+// More networks: written as 와이파이2= / 비밀번호2= …, read back in order, empty ones left out, checked like the first.
+func TestWifiMore(t *testing.T) {
+	w := WifiForm{SSID: "robodyne", Password: "pass-one1", Label: "3조", More: []WifiNet{{SSID: "robodyne2", Password: "pass-two2"}, {}, {SSID: "lab3"}}}
+	b := fillWifi([]byte(tmplWifi), w)
+	s := string(b)
+	for _, line := range []string{"와이파이=robodyne\r\n", "와이파이2=robodyne2\r\n비밀번호2=pass-two2\r\n", "와이파이4=lab3\r\n"} {
+		if !strings.Contains(s, line) {
+			t.Fatalf("missing %q in %q", line, s)
+		}
+	}
+	if strings.Contains(s, "와이파이3=") {
+		t.Fatalf("an empty network written: %q", s)
+	}
+	got := readWifi(b)
+	want := []WifiNet{{SSID: "robodyne2", Password: "pass-two2"}, {SSID: "lab3"}}
+	if got.SSID != "robodyne" || !reflect.DeepEqual(got.More, want) {
+		t.Fatalf("read back: %+v", got)
+	}
+	if msg := checkWifi(WifiForm{SSID: "a", More: []WifiNet{{SSID: "b", Password: "short"}}}); !strings.Contains(msg, "2번째 Wi-Fi") {
+		t.Fatalf("checkWifi: %q", msg)
+	}
+	if msg := checkWifi(w); msg != "" {
+		t.Fatalf("checkWifi ok form: %q", msg)
 	}
 }

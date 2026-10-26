@@ -18,6 +18,7 @@ import { ROBOT_PORT } from '@/engine/simulator/discover';
 import Icon from '../Icon';
 import css from '../console.module.css';
 import u from './usbMaker.module.css';
+import MoreWifi from './MoreWifi';
 import s from './robotSetup.module.css';
 
 interface Props {
@@ -141,7 +142,7 @@ export default function RobotSetup({ onClose, onConnect }: Props) {
                     aria-checked={(id === 'off') === wired}
                     onClick={() => {
                       setTouched(true);
-                      setForm((f) => ({ ...f, ssid: id === 'off' ? WIFI_OFF : '', password: '' }));
+                      setForm((f) => ({ ...f, ssid: id === 'off' ? WIFI_OFF : '', password: '', more: id === 'off' ? [] : f.more }));
                     }}
                   >
                     <b>{name}</b>
@@ -165,6 +166,7 @@ export default function RobotSetup({ onClose, onConnect }: Props) {
                         </button>
                       </span>
                     </label>
+                    <MoreWifi value={form.more ?? []} onChange={(more) => (setTouched(true), setForm((f) => ({ ...f, more })))} />
                   </>
                 )}
                 <label>

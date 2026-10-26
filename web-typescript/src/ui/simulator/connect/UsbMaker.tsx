@@ -14,6 +14,7 @@ import { ROBOT_PORT } from '@/engine/simulator/discover';
 import Icon from '../Icon';
 import css from '../console.module.css';
 import u from './usbMaker.module.css';
+import MoreWifi from './MoreWifi';
 
 type Tab = 'make' | 'results';
 
@@ -67,7 +68,7 @@ export default function UsbMaker({ onClose, onConnect, onSetup }: Props) {
     if (touched.current) return;
     if (drive?.wifi?.ssid) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- filled once from the stick
-      setForm({ ssid: drive.wifi.ssid, password: drive.wifi.password, label: drive.wifi.label });
+      setForm({ ssid: drive.wifi.ssid, password: drive.wifi.password, label: drive.wifi.label, more: drive.wifi.more ?? [] });
       setFormFrom('usb');
       return;
     }
@@ -83,13 +84,13 @@ export default function UsbMaker({ onClose, onConnect, onSetup }: Props) {
     return () => {
       live = false;
     };
-  }, [drive?.id, drive?.wifi?.ssid, drive?.wifi?.password, drive?.wifi?.label]);
+  }, [drive?.id, drive?.wifi?.ssid, drive?.wifi?.password, drive?.wifi?.label, drive?.wifi?.more]);
   /** How the robot is reached: the classroom Wi-Fi, its own hotspot, or the LAN cable only (Wi-Fi off). */
   const way: 'wifi' | 'hotspot' | 'off' = form.ssid === WIFI_HOTSPOT ? 'hotspot' : form.ssid === WIFI_OFF ? 'off' : 'wifi';
   const chooseWay = (w: typeof way) => {
     touched.current = true;
     setFormFrom('');
-    setForm((f) => ({ ...f, ssid: w === 'hotspot' ? WIFI_HOTSPOT : w === 'off' ? WIFI_OFF : '', password: '' }));
+    setForm((f) => ({ ...f, ssid: w === 'hotspot' ? WIFI_HOTSPOT : w === 'off' ? WIFI_OFF : '', password: '', more: w === 'wifi' ? f.more : [] }));
   };
   const edit = (k: keyof WifiForm, v: string) => {
     touched.current = true;
@@ -270,6 +271,7 @@ export default function UsbMaker({ onClose, onConnect, onSetup }: Props) {
                         </button>
                       </span>
                     </label>
+                    <MoreWifi value={form.more ?? []} onChange={(more) => (touched.current = true, setFormFrom(''), setForm((f) => ({ ...f, more })))} disabled={writing} />
                   </>
                 )}
                 <label>

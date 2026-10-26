@@ -474,3 +474,48 @@
     grid-column: 2;
   }
 }
+
+/* More Wi-Fi networks (MoreWifi.tsx): number · name · password · remove. */
+.more {
+  display: grid;
+  gap: 8px;
+}
+.moreRow {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) minmax(0, 1fr) 34px;
+  align-items: center;
+  gap: 8px;
+}
+.moreNo {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--soft, #f1f4f8);
+  color: var(--muted, #6b7785);
+  font-size: 12px;
+  font-weight: 700;
+}
+.moreRow input {
+  min-width: 0;
+  height: 38px;
+  padding: 0 11px;
+  border: 1.5px solid var(--line, #d8dee6);
+  border-radius: 9px;
+  font: inherit;
+  font-size: 14px;
+}
+.moreRow input:focus {
+  outline: none;
+  border-color: var(--accent, #2563eb);
+}
+.moreRow button {
+  height: 34px;
+  border: 1px solid var(--line, #d8dee6);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--muted, #6b7785);
+  font-size: 16px;
+  cursor: pointer;
+}

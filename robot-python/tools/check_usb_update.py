@@ -472,6 +472,59 @@ def main():
         finally:
             usb_setup.wifi.Wifi, usb_setup.apply_wifi = real_wifi, real_apply
 
+    @case("several Wi-Fi in wifi.txt: the first one here is joined, the others remembered for power-on")
+    def _():
+        tried, kept, modes = [], [], []
+
+        class FakeWifi:
+            here = {"ROBODYNE2"}
+
+            def __init__(self, demo=False, log=None):
+                self.lock = __import__("threading").Lock()
+                self.last = None
+                self.maker = self
+
+            def status(self):
+                return {"mode": "hotspot", "ssid": "ElephantRobotics_AP"}
+
+            def connect(self, ssid, password):
+                tried.append((ssid, password))
+                self.last = {"state": "ok" if ssid in self.here else "failed", "error": "그 이름의 Wi-Fi 를 찾지 못했어요."}
+                return None
+
+            def remember(self, ssid, password, rank=1):
+                kept.append((ssid, password, rank))
+
+            def classroom_mode(self, ssid, here, ssids=None):
+                modes.append((ssid, ssids))
+
+        real_wifi, real_apply = usb_setup.wifi.Wifi, usb_setup.apply_wifi
+        usb_setup.wifi.Wifi, usb_setup.apply_wifi = FakeWifi, REAL_APPLY_WIFI
+        try:
+            path = os.path.join(TMP, "wifi-many.txt")
+            with open(path, "w", encoding="utf-8-sig") as f:
+                f.write("와이파이=ROBODYNE\r\n비밀번호=pass-one1\r\n와이파이2=ROBODYNE2\r\n비밀번호2=pass-two2\r\n"
+                        "와이파이3=\r\n비밀번호3=\r\n와이파이4=핫스팟\r\n사용자=3조\r\n")
+            fields = usb_setup.read_fields(path)
+            check(fields["ssid"] == "ROBODYNE" and fields["more"] == [("ROBODYNE2", "pass-two2")], fields)
+            ok, msg, _ = usb_setup.apply_wifi(path)
+            check(ok and tried == [("ROBODYNE", "pass-one1"), ("ROBODYNE2", "pass-two2")], f"{ok} {tried}")
+            check(kept == [("ROBODYNE", "pass-one1", 0)] and modes == [("ROBODYNE2", ["ROBODYNE", "ROBODYNE2"])], f"{kept} {modes}")
+            check("'ROBODYNE2' 에 연결했어요" in msg and "1개도 기억" in msg, msg)
+            FakeWifi.here = set()
+            tried.clear()
+            ok, msg, _ = usb_setup.apply_wifi(path)
+            check(ok is False and len(tried) == 2 and "'ROBODYNE':" in msg and "'ROBODYNE2':" in msg, f"{ok} {msg}")
+            # one network only: as before (nothing remembered, no list)
+            with open(path, "w", encoding="utf-8") as f:
+                f.write("와이파이=ROBODYNE2\r\n비밀번호=pass-two2\r\n")
+            FakeWifi.here = {"ROBODYNE2"}
+            kept.clear(), modes.clear()
+            ok, msg, _ = usb_setup.apply_wifi(path)
+            check(ok and not kept and not modes and msg == "'ROBODYNE2' 에 연결했어요.", f"{kept} {modes} {msg}")
+        finally:
+            usb_setup.wifi.Wifi, usb_setup.apply_wifi = real_wifi, real_apply
+
     @case("install.py's call (apply(mount)) still applies wifi.txt every time")
     def _():
         reset(V1)

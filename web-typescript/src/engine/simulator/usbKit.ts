@@ -30,7 +30,17 @@ export interface WifiForm {
   ssid: string;
   password: string;
   label: string;
+  /** More networks (wifi.txt 와이파이2= … 와이파이4=): the robot joins whichever of them is there. */
+  more?: WifiNet[];
 }
+
+export interface WifiNet {
+  ssid: string;
+  password: string;
+}
+
+/** Networks a wifi.txt can hold, the first one included (desktop-go/usbkit.go, robot-python usb_setup.MORE_WIFI). */
+export const MAX_WIFI = 4;
 
 export interface UsbJob {
   drive: string;
@@ -107,6 +117,21 @@ export type AddrKind = '무선' | '유선' | '직결' | '';
 
 /** The form's problem in words ("" when fine): the same rules as desktop-go/usbkit.go checkWifi. */
 export function checkWifi(w: WifiForm): string {
+  const first = checkOne(w);
+  if (first) return first;
+  const more = w.more ?? [];
+  if (more.length > MAX_WIFI - 1) return `Wi-Fi 는 ${MAX_WIFI}개까지 적을 수 있어요.`;
+  for (let i = 0; i < more.length; i++) {
+    const m = more[i];
+    if (!m.ssid && !m.password) continue;
+    if (m.ssid === WIFI_HOTSPOT || m.ssid === WIFI_OFF) return `${i + 2}번째 Wi-Fi: 핫스팟 · 끔 은 첫 번째 칸에만 적어요.`;
+    const msg = checkOne({ ssid: m.ssid, password: m.password, label: '' });
+    if (msg) return `${i + 2}번째 Wi-Fi: ${msg}`;
+  }
+  return '';
+}
+
+function checkOne(w: WifiForm): string {
   const ssid = w.ssid.trim();
   if (!ssid) return 'Wi-Fi 이름을 적어 주세요.';
   if (ssid === WIFI_HOTSPOT || ssid === WIFI_OFF) return [...w.label.trim()].length > 24 ? '사용자 이름은 24자까지예요.' : '';

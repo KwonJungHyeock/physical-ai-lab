@@ -130,10 +130,12 @@ class MakerHotspot:
         self._script("hotspot_on.sh")
 
     # --- classroom first at power-on -------------------------------------
-    def classroom_mode(self, ssid, here):
-        """After a join: power-on tries this network first; the login autostart no longer takes wlan0."""
-        self._own_boot({"ssid": ssid}, here)
-        self.log(f"[Wi-Fi] 켤 때마다 '{ssid}' 에 먼저 붙고, 없으면 로봇 핫스팟을 켜요.")
+    def classroom_mode(self, ssid, here, ssids=None):
+        """After a join: power-on tries this network first (then the others remembered with it, ssids);
+        the login autostart no longer takes wlan0."""
+        ssids = [ssid] + [s for s in (ssids or []) if s != ssid]
+        self._own_boot({"ssid": ssid, "ssids": ssids}, here)
+        self.log(f"[Wi-Fi] 켤 때마다 {' · '.join(repr(s) for s in ssids)} 중 있는 쪽에 먼저 붙고, 없으면 로봇 핫스팟을 켜요.")
 
     def off_mode(self, here):
         """Wi-Fi off (the classroom uses the LAN cable): no hotspot at login or at power-on."""
@@ -251,6 +253,7 @@ class Wifi:
         ssid = state.get("ssid")
         if not ssid or not self.maker:
             return
+        ssids = [s for s in state.get("ssids") or [ssid] if s]
         # a hotspot from an earlier fallback left wpa_supplicant masked: Wi-Fi needs it
         subprocess.run(["systemctl", "unmask", "wpa_supplicant"], capture_output=True)
         subprocess.run(["systemctl", "start", "wpa_supplicant"], capture_output=True)
@@ -260,16 +263,16 @@ class Wifi:
         while time.time() < end:
             try:
                 _, state, conn = self._device()
-                if state.startswith("connected") and conn == ssid:
-                    self.log(f"[Wi-Fi] 켜짐: '{ssid}' 에 연결됐어요.")
+                if state.startswith("connected") and conn in ssids:
+                    self.log(f"[Wi-Fi] 켜짐: '{conn}' 에 연결됐어요.")
                     return
                 if not tried and state == "disconnected" and time.time() > end - BOOT_WAIT_S / 2:
                     tried = True
-                    self._nm("--wait", "20", "connection", "up", "id", ssid, timeout=30)
+                    self._up_any(ssids, 20)
             except RuntimeError:
                 pass
             time.sleep(2)
-        self.log(f"[Wi-Fi] 켜짐: '{ssid}' 가 없어 로봇 핫스팟을 켜요.")
+        self.log(f"[Wi-Fi] 켜짐: {' · '.join(repr(s) for s in ssids)} 가 없어 로봇 핫스팟을 켜요.")
         self.maker.on()
         # The classroom network may come later (the router was off, or slower to start). While
         # nobody is on the hotspot, try it again now and then; someone on the hotspot is never cut off.
@@ -277,18 +280,47 @@ class Wifi:
             time.sleep(RETRY_S)
             if hotspot_has_clients():
                 continue
-            self.log(f"[Wi-Fi] '{ssid}' 를 다시 찾아봐요 (핫스팟에 붙은 기기가 없어요).")
+            self.log("[Wi-Fi] 교실 Wi-Fi 를 다시 찾아봐요 (핫스팟에 붙은 기기가 없어요).")
             self.maker.off()
+            conn = self._up_any(ssids, 30)
+            if conn:
+                self.log(f"[Wi-Fi] '{conn}' 에 연결됐어요.")
+                return
+            self.log("[Wi-Fi] 교실 Wi-Fi 가 아직 없어 핫스팟을 다시 켜요.")
+            self.maker.on()
+
+    def _up_any(self, ssids, wait_s):
+        """The first of these remembered networks that comes up (its name), else None."""
+        for ssid in ssids:
             try:
-                self._nm("--wait", "30", "connection", "up", "id", ssid, timeout=40)
+                self._nm("--wait", str(wait_s), "connection", "up", "id", ssid, timeout=wait_s + 10)
                 _, state, conn = self._device()
                 if state.startswith("connected") and conn == ssid:
-                    self.log(f"[Wi-Fi] '{ssid}' 에 연결됐어요.")
-                    return
+                    return ssid
             except RuntimeError:
                 pass
-            self.log(f"[Wi-Fi] '{ssid}' 가 아직 없어 핫스팟을 다시 켜요.")
-            self.maker.on()
+        return None
+
+    def remember(self, ssid, password, rank=1):
+        """Keep another network for later without joining it now: NetworkManager joins it by itself when
+        it is there and the first one is not (rank: its place in wifi.txt, a lower priority further down)."""
+        if self.demo:
+            return
+        try:
+            dev, _, _ = self._device()
+            try:
+                self._nm("connection", "delete", "id", ssid)
+            except RuntimeError:
+                pass
+            args = ["connection", "add", "type", "wifi", "ifname", dev, "con-name", ssid, "ssid", ssid,
+                    "802-11-wireless.hidden", "yes", "802-11-wireless.powersave", "2",
+                    "connection.autoconnect", "yes", "connection.autoconnect-priority", str(max(1, CLASSROOM_PRIORITY - rank))]
+            if password:
+                args += ["wifi-sec.key-mgmt", "wpa-psk", "wifi-sec.psk", password]
+            self._nm(*args)
+            self.log(f"[Wi-Fi] '{ssid}' 도 기억해 둬요 (있으면 저절로 붙어요).")
+        except RuntimeError as exc:
+            self.log(f"[Wi-Fi] '{ssid}' 를 기억하지 못했어요: {exc}")
 
     def _radio(self, on):
         try:

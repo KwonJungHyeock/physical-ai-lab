@@ -192,12 +192,24 @@ type Drive struct {
 	Need       int64     `json:"need"` // bytes still to free before the kit fits (0: it fits)
 }
 
-// WifiForm: the three lines of wifi.txt.
+// WifiForm: the lines of wifi.txt — the network, the robot's name, and more networks to remember.
 type WifiForm struct {
 	SSID     string `json:"ssid"`
 	Password string `json:"password"`
 	Label    string `json:"label"`
+	// 와이파이2= … 와이파이4= (with 비밀번호N=): the robot joins whichever of them is there
+	// (robot-python/server/usb_setup.py join_any). Empty ones are left out.
+	More []WifiNet `json:"more,omitempty"`
 }
+
+// WifiNet is one more network of wifi.txt.
+type WifiNet struct {
+	SSID     string `json:"ssid"`
+	Password string `json:"password"`
+}
+
+// moreWifi: networks 2 … moreWifi in wifi.txt (the robot reads the same, usb_setup.MORE_WIFI).
+const moreWifi = 4
 
 var (
 	ssidKeys  = []string{"이름", "와이파이", "wifi", "ssid", "name"}
@@ -212,6 +224,7 @@ func readWifi(b []byte) WifiForm {
 	if !utf8.Valid(b) {
 		return w
 	}
+	var more []WifiNet
 	for _, line := range strings.Split(strings.ReplaceAll(string(b), "\r\n", "\n"), "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" || strings.HasPrefix(line, "#") || !strings.Contains(line, "=") {
@@ -219,6 +232,17 @@ func readWifi(b []byte) WifiForm {
 		}
 		k, v, _ := strings.Cut(line, "=")
 		k, v = strings.ToLower(strings.TrimSpace(k)), strings.TrimSpace(v)
+		if n, base := numbered(k); n > 0 {
+			for len(more) < n-1 {
+				more = append(more, WifiNet{})
+			}
+			if has(ssidKeys, base) {
+				more[n-2].SSID = v
+			} else if has(passKeys, base) {
+				more[n-2].Password = v
+			}
+			continue
+		}
 		switch {
 		case has(ssidKeys, k):
 			w.SSID = v
@@ -228,7 +252,25 @@ func readWifi(b []byte) WifiForm {
 			w.Label = v
 		}
 	}
+	for _, m := range more {
+		if m.SSID != "" {
+			w.More = append(w.More, m)
+		}
+	}
 	return w
+}
+
+// numbered: "와이파이2" → 2 and "와이파이" (a network key numbered 2 … moreWifi), else 0.
+func numbered(k string) (int, string) {
+	r, size := utf8.DecodeLastRuneInString(k)
+	if r < '2' || r > '0'+moreWifi {
+		return 0, ""
+	}
+	base := strings.TrimSpace(k[:len(k)-size])
+	if !has(ssidKeys, base) && !has(passKeys, base) {
+		return 0, ""
+	}
+	return int(r - '0'), base
 }
 
 func has(list []string, s string) bool {
@@ -263,6 +305,20 @@ func checkWifi(w WifiForm) string {
 			}
 		}
 	}
+	if len(w.More) > moreWifi-1 {
+		return fmt.Sprintf("Wi-Fi 는 %d개까지 적을 수 있어요.", moreWifi)
+	}
+	for i, m := range w.More {
+		if m.SSID == "" && m.Password == "" {
+			continue
+		}
+		if msg := checkWifi(WifiForm{SSID: m.SSID, Password: m.Password}); msg != "" {
+			return fmt.Sprintf("%d번째 Wi-Fi: %s", i+2, msg)
+		}
+		if m.SSID == "핫스팟" || m.SSID == "끔" {
+			return fmt.Sprintf("%d번째 Wi-Fi: 핫스팟 · 끔 은 첫 번째 칸에만 적어요.", i+2)
+		}
+	}
 	if utf8.RuneCountInString(strings.TrimSpace(w.Label)) > labelMax {
 		return fmt.Sprintf("사용자 이름은 %d자까지예요.", labelMax)
 	}
@@ -291,6 +347,19 @@ func fillWifi(template []byte, w WifiForm) []byte {
 	text := strings.ReplaceAll(string(bytes.TrimPrefix(template, []byte("\xef\xbb\xbf"))), "\r\n", "\n")
 	lines := strings.Split(strings.TrimRight(text, "\n"), "\n")
 	set := map[string]string{"와이파이": w.SSID, "비밀번호": w.Password, "사용자": strings.TrimSpace(w.Label)}
+	order := []string{"와이파이", "비밀번호", "사용자"}
+	// More networks: written when filled; the template's own (empty) lines for them are kept empty.
+	for n := 2; n <= moreWifi; n++ {
+		ssid, pass := "", ""
+		if n-2 < len(w.More) {
+			ssid, pass = w.More[n-2].SSID, w.More[n-2].Password
+		}
+		ks, kp := fmt.Sprintf("와이파이%d", n), fmt.Sprintf("비밀번호%d", n)
+		set[ks], set[kp] = ssid, pass
+		if ssid != "" {
+			order = append(order, ks, kp)
+		}
+	}
 	done := map[string]bool{}
 	for i, line := range lines {
 		t := strings.TrimSpace(line)
@@ -304,7 +373,7 @@ func fillWifi(template []byte, w WifiForm) []byte {
 			done[k] = true
 		}
 	}
-	for _, k := range []string{"와이파이", "비밀번호", "사용자"} {
+	for _, k := range order {
 		if !done[k] {
 			lines = append(lines, k+"="+set[k])
 		}

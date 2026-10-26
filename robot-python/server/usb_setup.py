@@ -72,6 +72,7 @@ PASS_KEYS = ("비밀번호", "암호", "password", "pass", "psk")
 LABEL_KEYS = ("사용자", "사용자이름", "사용자 이름", "로봇이름", "로봇 이름", "user", "label")
 HOTSPOT_WORDS = ("핫스팟", "hotspot")
 OFF_WORDS = ("끔", "끄기", "off")
+MORE_WIFI = 4             # wifi.txt may name up to this many networks: 와이파이= … 와이파이4= (each with 비밀번호N=)
 CHECK_LABEL = "확인값"
 KIT_LABEL = "키트"
 UPDATE_TEXT = {
@@ -107,19 +108,30 @@ def read_fields(path):
         except UnicodeDecodeError:
             continue
     ssid = password = label = None
+    more = {}                               # 2 → {"ssid", "password"}: 와이파이2= / 비밀번호2= …
     for line in text.splitlines():
         line = line.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
         key, value = (part.strip() for part in line.split("=", 1))
         key = key.lower()
-        if key in NAME_KEYS:
+        m = re.fullmatch(r"(.+?)\s*([2-9])", key)
+        if m and int(m.group(2)) <= MORE_WIFI and (m.group(1) in NAME_KEYS or m.group(1) in PASS_KEYS):
+            slot = more.setdefault(int(m.group(2)), {"ssid": None, "password": ""})
+            if m.group(1) in NAME_KEYS:
+                slot["ssid"] = value or None
+            else:
+                slot["password"] = value
+        elif key in NAME_KEYS:
             ssid = value or None
         elif key in PASS_KEYS:
             password = value
         elif key in LABEL_KEYS:
             label = value
-    return {"ssid": ssid, "password": password or "", "label": robot_label.clean(label or "")}
+    # The other networks, in their order, only real names (not 핫스팟 / 끔) and not the first one again.
+    others = [(n["ssid"], n["password"]) for _, n in sorted(more.items())
+              if n["ssid"] and n["ssid"].lower() not in HOTSPOT_WORDS + OFF_WORDS and n["ssid"] != ssid]
+    return {"ssid": ssid, "password": password or "", "label": robot_label.clean(label or ""), "more": others}
 
 
 def fingerprint(path):
@@ -406,19 +418,42 @@ def apply_wifi(path):
         ok = err is None and last.get("state") == "ok"
         msg = "로봇 핫스팟으로 돌아갔어요." if ok else (err or last.get("error") or "핫스팟을 켜지 못했어요.")
     else:
-        try:
-            now = w.status()
-        except RuntimeError:
-            now = {}
-        if now.get("mode") == "wifi" and now.get("ssid") == ssid:
-            ok, msg = True, f"이미 '{ssid}' 에 연결돼 있어요."
-        else:
+        ok, msg = join_any(w, [(ssid, password)] + fields["more"])
+    return ok, msg, label
+
+
+def join_any(w, nets):
+    """The first of these networks that is here (wifi.txt order); the robot remembers all of them, so
+    after power-on it joins whichever one is there (a teacher who uses two routers sets both once)."""
+    names = [s for s, _ in nets]
+    try:
+        now = w.status()
+    except RuntimeError:
+        now = {}
+    joined, why = None, []
+    if now.get("mode") == "wifi" and now.get("ssid") in names:
+        joined = now["ssid"]
+        ok, msg = True, f"이미 '{joined}' 에 연결돼 있어요."
+    else:
+        ok, msg = False, ""
+        for ssid, password in nets:
             say(f"[USB] '{ssid}' 에 연결해요.")
             err = w.connect(ssid, password)
             last = {} if err else _wait(w)
-            ok = err is None and last.get("state") == "ok"
-            msg = f"'{ssid}' 에 연결했어요." if ok else (err or last.get("error") or "연결하지 못했어요.")
-    return ok, msg, label
+            if err is None and last.get("state") == "ok":
+                joined, ok, msg = ssid, True, f"'{ssid}' 에 연결했어요."
+                break
+            why.append(f"'{ssid}': {err or last.get('error') or '연결하지 못했어요.'}")
+        if not joined:
+            msg = " · ".join(why) if len(why) > 1 else (why[0].split(": ", 1)[1] if why else "연결하지 못했어요.")
+    if joined and len(nets) > 1:
+        for i, (ssid, password) in enumerate(nets):
+            if ssid != joined:
+                w.remember(ssid, password, rank=i)
+        if w.maker:
+            w.maker.classroom_mode(joined, os.path.dirname(os.path.abspath(__file__)), names)
+        msg += f" 다른 Wi-Fi {len(nets) - 1}개도 기억해 두어, 켤 때 있는 쪽에 붙어요."
+    return ok, msg
 
 
 def apply(mount, update=True, wifi_again=True, retry=True):
