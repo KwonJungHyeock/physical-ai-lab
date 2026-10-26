@@ -73,6 +73,12 @@ for (const [id, a] of Object.entries(ARMS)) {
   }
   const blocks = adaptBlocks('robot.move_joint(3, -92)\nrobot.move_joint(6, 90)\nrobot.home()', a);
   assert.equal(blocks, 'robot.move_joint(3, -85)\nrobot.home()');
+  // Switching models, the 3D view has the old arm's chain for a moment while the spec is the 280's: the
+  // joint alerts fall back to limits only instead of throwing (a reload error on [바꾸기]).
+  const { AlertTracker } = await import('../../src/engine/robot/jointAlert');
+  const t = new AlertTracker(chain, 0, true, 6);
+  t.update(0, a.home);
+  assert.ok(t.update(0.1, a.home).every((x) => x.loadPct === null), 'another arm\'s chain: no load model, no error');
   setActiveArm('mycobot280-rdkx5');
   console.log(`  ok   omx-f: gripper straight down over all ${points.length} block and spot points; blocks for 5 joints`);
 }

@@ -52,7 +52,14 @@ export class AlertTracker {
     private withLoad: boolean,
     private dof: number,
   ) {
-    this.limits = withLoad ? torqueLimits(chain, tcpMm) : [];
+    // The load model is the myCobot 280's: given another arm's chain (for a moment while the 3D view
+    // swaps models) it cannot be worked out, and the limits are judged alone.
+    try {
+      this.limits = withLoad ? torqueLimits(chain, tcpMm) : [];
+    } catch {
+      this.limits = [];
+    }
+    if (this.limits.length < dof || this.limits.some((l) => !Number.isFinite(l))) this.withLoad = false;
     this.qd = new Array(dof).fill(0);
     this.qdd = new Array(dof).fill(0);
     this.alerts = Array.from({ length: dof }, () => judge(null, 180));
