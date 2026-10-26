@@ -5,7 +5,7 @@
  *
  * Two ways, as a classroom has them: the classroom Wi-Fi (a router), or one LAN cable to the PC.
  * - Wi-Fi: the browser asks every address of the classroom network and
- *   lists the robots that answer; [움직여 확인] makes one wiggle so the
+ *   lists the robots that answer; [움직여 확인] makes one straighten so the
  *   student knows which is theirs, [연결] opens its console.
  *   In the desktop simulator (`auto`) the PC's own networks come from the
  *   program and the search starts by itself; each robot shows its 사용자
@@ -29,7 +29,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { remoteRobot, setRemoteRobot } from '@/engine/simulator/robotLink';
-import { identifyRobot, networkPrefix, pcNetworks, probeRobot, ROBOT_PORT, sameRobot, scanNetwork, type FoundRobot } from '@/engine/simulator/discover';
+import { identifyRobot, networkPrefix, otherWifiHint, pcLan, probeRobot, ROBOT_PORT, sameRobot, scanNetwork, type FoundRobot } from '@/engine/simulator/discover';
 
 import { sessionHandoff } from '@/engine/account';
 import { DIRECT_IP } from '@/engine/simulator/usbKit';
@@ -41,6 +41,8 @@ import css from '../console.module.css';
 
 const PREFIX_KEY = 'robot-console-net-prefix';
 const RECENT_KEY = 'robot-console-recent-robots';
+/** The Wi-Fi a robot was last seen on (robots report it): 로봇 찾기 says so when this PC is on another one. */
+const ROBOT_WIFI_KEY = 'robot-console-robot-wifi';
 const PORT = ROBOT_PORT;
 
 /** "252" → prefix + 252; "192.168.0.252", "robot.local" or "…:8081" are taken as they are. */
@@ -529,6 +531,27 @@ function FindRobots({
   const [filter, setFilter] = useState('');
   /** The PC's own networks (desktop simulator), searched together. */
   const [pcNets, setPcNets] = useState<string[]>([]);
+  /** This PC's Wi-Fi (desktop simulator) and the one a robot was last seen on. */
+  const [pcSsid, setPcSsid] = useState('');
+  const [robotWifi, setRobotWifi] = useState('');
+  useEffect(() => {
+    try {
+      // Read after the first render so server and client HTML agree.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setRobotWifi(localStorage.getItem(ROBOT_WIFI_KEY) ?? '');
+    } catch {
+      /* storage blocked */
+    }
+  }, []);
+  const seenOn = (r: FoundRobot) => {
+    if (!r.wifi) return;
+    setRobotWifi(r.wifi);
+    try {
+      localStorage.setItem(ROBOT_WIFI_KEY, r.wifi);
+    } catch {
+      /* ignore */
+    }
+  };
   const scan = async (asked: string[] = net ? [net] : []) => {
     // A PC on a LAN cable straight to a robot has only a 169.254.x.y address: no network to sweep,
     // the robot answers at its fixed direct address instead (asked below, whatever the networks).
@@ -555,6 +578,7 @@ function FindRobots({
             parallel: Math.max(16, Math.round(48 / nets.length)),
             onFound: (r) => {
               any += 1;
+              seenOn(r);
               setFound((f) => [...f.filter((x) => !sameRobot(x, r)), r].sort(byName));
             },
             onProgress: (done, total) => (i === 0 ? setProgress(from + (span * done) / total) : undefined),
@@ -564,6 +588,7 @@ function FindRobots({
     const direct = probeRobot(DIRECT_IP, 2500).then((r) => {
       if (!r || ctl.signal.aborted) return;
       any += 1;
+      seenOn(r);
       setFound((f) => [...f.filter((x) => !sameRobot(x, r)), r].sort(byName));
     });
     await Promise.all([pass(1500, 0, 1), direct]);
@@ -587,7 +612,8 @@ function FindRobots({
   useEffect(() => {
     if (!auto || started.current) return;
     started.current = true;
-    void pcNetworks().then((nets) => {
+    void pcLan().then(({ prefixes: nets, ssid }) => {
+      setPcSsid(ssid);
       if (!nets.length) return;
       setPcNets(nets);
       setPrefix(nets[0]);
@@ -599,7 +625,7 @@ function FindRobots({
   const identify = async (r: FoundRobot) => {
     setNotes((n) => ({ ...n, [r.address]: '움직이는 중…' }));
     const res = await identifyRobot(r.address);
-    setNotes((n) => ({ ...n, [r.address]: res.ok ? (r.kind === 'agv' ? '제자리에서 살짝 돌았어요' : '받침이 살짝 돌았다 돌아왔어요') : res.error || '움직이지 못했어요' }));
+    setNotes((n) => ({ ...n, [r.address]: res.ok ? (r.kind === 'agv' ? '제자리에서 살짝 돌았어요' : '일자로 폈어요 (천천히)') : res.error || '움직이지 못했어요' }));
   };
 
   return (
@@ -689,6 +715,11 @@ function FindRobots({
         </ul>
       )}
 
+      {scanned && !scanning && found.length === 0 && otherWifiHint(robotWifi, pcSsid) && (
+        <p className={css.wifiHint} role="status">
+          {otherWifiHint(robotWifi, pcSsid)}
+        </p>
+      )}
       {scanned && !scanning && found.length === 0 && (
         <ol className={css.connectSteps}>
           <li>

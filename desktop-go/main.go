@@ -117,7 +117,8 @@ func handler(root fs.FS) http.Handler {
 		case p == hello+"/lan":
 			w.Header().Set("Content-Type", "application/json")
 			w.Header().Set("Cache-Control", "no-store")
-			_ = json.NewEncoder(w).Encode(map[string][]string{"prefixes": lanPrefixes()})
+			// ssid: the PC's Wi-Fi, for 로봇 찾기 to say when a robot was last seen on another one
+			_ = json.NewEncoder(w).Encode(map[string]any{"prefixes": lanPrefixes(), "ssid": pcSSID()})
 			return
 		case strings.HasPrefix(p, "/api/"):
 			// No robot here: the console stays a simulator.

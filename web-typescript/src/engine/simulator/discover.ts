@@ -36,6 +36,8 @@ export interface FoundRobot {
   remote: boolean;
   /** Its robot program's version (`YYYYMMDD-HHMMSS-<hash>`); '' from robots older than that. */
   version: string;
+  /** The Wi-Fi it is on ('' on its hotspot, a cable, or a robot older than that). */
+  wifi: string;
   /** Round trip of the answer, ms. */
   ms: number;
 }
@@ -52,6 +54,7 @@ interface StateReply {
   label?: string;
   remote?: boolean;
   version?: string;
+  wifi?: string;
 }
 
 /** Chrome's Local Network Access options to try for `ip` (other browsers ignore the field). */
@@ -104,6 +107,7 @@ export async function probeRobot(ip: string, timeoutMs = 1500, port = ROBOT_PORT
       running: !!s.running,
       remote: !!s.remote,
       version: typeof s.version === 'string' ? s.version.slice(0, 64) : '',
+      wifi: typeof s.wifi === 'string' ? s.wifi.slice(0, 32) : '',
       ms: Math.round(performance.now() - t0),
     };
   } catch {
@@ -151,21 +155,35 @@ export async function scanNetwork(
 }
 
 /**
- * The networks of this PC, when the page is served by the desktop simulator (desktop-go/main.go
- * answers with its own IPv4 prefixes, e.g. ["192.168.0."]); [] anywhere else.
+ * This PC's networks and Wi-Fi, when the page is served by the desktop simulator (desktop-go/main.go
+ * answers with its own IPv4 prefixes, e.g. ["192.168.0."], and the Wi-Fi name); nothing anywhere else.
  */
-export async function pcNetworks(): Promise<string[]> {
+export async function pcLan(): Promise<{ prefixes: string[]; ssid: string }> {
   try {
-    const r = await fetch('/__physical-ai-simulator/lan', { cache: 'no-store', signal: AbortSignal.timeout(2000) });
-    if (!r.ok) return [];
-    const j = (await r.json()) as { prefixes?: unknown };
-    return Array.isArray(j.prefixes) ? j.prefixes.map((p) => (typeof p === 'string' ? networkPrefix(p) : null)).filter((p): p is string => !!p) : [];
+    const r = await fetch('/__physical-ai-simulator/lan', { cache: 'no-store', signal: AbortSignal.timeout(3000) });
+    if (!r.ok) return { prefixes: [], ssid: '' };
+    const j = (await r.json()) as { prefixes?: unknown; ssid?: unknown };
+    return {
+      prefixes: Array.isArray(j.prefixes) ? j.prefixes.map((p) => (typeof p === 'string' ? networkPrefix(p) : null)).filter((p): p is string => !!p) : [],
+      ssid: typeof j.ssid === 'string' ? j.ssid.slice(0, 32) : '',
+    };
   } catch {
-    return [];
+    return { prefixes: [], ssid: '' };
   }
 }
 
-/** "이 로봇 맞나요?": that robot moves a little (arm: base 5° and back) so the student sees which one it is. */
+/**
+ * Not found where it was: the robot was last seen on another Wi-Fi than this PC's (two routers, the robot
+ * on one and the PC on the other). The words for the screen, or null when nothing points to that.
+ */
+export function otherWifiHint(lastRobotWifi: string, pcSsid: string): string | null {
+  if (!lastRobotWifi) return null;
+  if (!pcSsid) return `로봇은 지난번 '${lastRobotWifi}' Wi-Fi 에 붙어 있었어요. PC 도 '${lastRobotWifi}' 에 붙어 있는지 확인해 주세요.`;
+  if (pcSsid === lastRobotWifi) return null;
+  return `로봇은 지난번 '${lastRobotWifi}' 에 붙어 있었는데, 이 PC 는 '${pcSsid}' 에 붙어 있어요. PC Wi-Fi 를 바꿔 '${lastRobotWifi}' 에 붙인 뒤 다시 찾아 주세요.`;
+}
+
+/** "이 로봇 맞나요?": that robot moves so the student sees which one it is (arm: straightens slowly and stays so). */
 export async function identifyRobot(address: string): Promise<{ ok: boolean; error?: string }> {
   try {
     const r = await fetchLocal(address.split(':')[0], `http://${address}/api/identify`, {

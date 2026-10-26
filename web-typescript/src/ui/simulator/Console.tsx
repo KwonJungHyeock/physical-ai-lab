@@ -1147,21 +1147,19 @@ export default function Console() {
     await startReal([start, ...actions], '로봇이 움직여요. 먼저 기본 자세로 천천히 간 뒤 프로그램을 시작해요.');
   };
 
-  /** Connection check: turn the wrist (J6) 15° and back, from wherever the arm is now. */
+  /** Connection check: the arm straightens slowly (every joint 0°) and stays so, seen from anywhere whatever the pose was. */
   const wiggleReal = async () => {
-    if (!robot?.angles || robot.released) return;
-    const here = robot.angles.slice();
-    const there = here.slice();
-    // The base (J1) turning 10° is plain to see from anywhere; the height of every part stays the same.
-    there[0] += here[0] > 0 ? -10 : 10;
-    await startReal(
-      [
-        { type: 'angles', angles: there, speed: 35, line: 0 },
-        { type: 'angles', angles: here, speed: 35, line: 0 },
-      ],
-      `연결 확인: 로봇 전체(1번 관절)가 ${there[0] > here[0] ? '왼쪽' : '오른쪽'}으로 10° 돌았다가 돌아와요.`,
-      'check',
-    );
+    if (!robot?.angles) return;
+    if (robot.released) {
+      addLog('warn', '관절이 풀려 있어(손으로 움직이기) 움직여 확인할 수 없어요.', '상태 표시등에서 관절을 고정한 뒤 다시 눌러 주세요.');
+      return;
+    }
+    const straight = robot.angles.map(() => 0);
+    if (!jointMoveSafe(robot.angles, straight)) {
+      addLog('err', '지금 자세에서 곧장 펴면 팔이 책상에 닿아요.', '[손으로 움직이기]로 팔을 조금 세운 뒤 다시 눌러 주세요.');
+      return;
+    }
+    await startReal([{ type: 'angles', angles: straight, speed: 25, line: 0 }], '연결 확인: 로봇이 천천히 일자로 펴져요. 주변을 비워 주세요.', 'check');
   };
 
   const toggleDock = () => {

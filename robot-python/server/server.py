@@ -74,6 +74,7 @@ SPEED_CAP = 50          # classroom speed limit (same as the console)
 ARRIVE_DEG = 2.0        # final arrival tolerance (J1 measured 1.4° on the real robot)
 VIA_DEG = 5.0           # intermediate waypoint of a straight line: send the next one early
 POLL_S = 0.1            # live angle refresh for the console
+IDENTIFY_SPEED = 25     # 로봇 찾기 [움직여 확인]: straightening, slow enough to stop by hand
 DEADMAN_S = 5.0         # stop a run when the console has not polled for this long (0 = off; --deadman);
                         # 5 s rides out a Wi-Fi roam or a busy classroom network without letting a lost arm go on
 SETTLE_S = 0.3         # after arriving, wait up to this long for the arm to stop moving before measuring
@@ -948,7 +949,9 @@ ROBOT = None
 CAMERA = None
 YOLO = kit_camera.Yolo()
 # Shown on every console and in 로봇 찾기; `label` is the 사용자 이름 from the USB stick (robot_label.py).
-IDENTITY = {"robotId": "", "ips": [], "host": "", "label": "", "kind": "arm", "model": "myCobot 280 RDK X5"}
+IDENTITY = {"robotId": "", "ips": [], "host": "", "label": "", "kind": "arm", "model": "myCobot 280 RDK X5",
+            # the Wi-Fi it is on ('' on its hotspot or a cable): the PC program says so when it is not the PC's
+            "wifi": ""}
 FIXED_LABEL = [None]   # --name: a name given on the command line wins over the file
 IDENTITY_AT = [0.0]
 WIFI = None
@@ -1031,6 +1034,17 @@ def refresh_identity(force=False):
     IDENTITY_AT[0] = time.time()
     ips = lan_ips()
     IDENTITY.update(robotId=ips[0].rsplit(".", 1)[1] if ips else "", ips=ips, label=current_label())
+
+
+def follow_wifi_name():
+    """IDENTITY["wifi"], kept fresh away from the request threads (nmcli can be slow to answer)."""
+    while True:
+        try:
+            st = WIFI.status()
+            IDENTITY["wifi"] = (st.get("ssid") or "") if st.get("mode") == "wifi" else ""
+        except Exception:
+            IDENTITY["wifi"] = ""
+        time.sleep(10)
 
 
 def current_label():
@@ -1282,20 +1296,28 @@ class Handler(SimpleHTTPRequestHandler):
                     log(f"[거절] {err}")
                 return self.send_json({"ok": err is None, "error": err, "run": run}, 200 if err is None else 409)
             if route == "/api/identify":
-                # "이 로봇 맞나요?" from 로봇 찾기: the base turns 5° and back (only when idle and holding)
+                # "이 로봇 맞나요?" from 로봇 찾기 [움직여 확인]: the arm straightens slowly and stays so
+                # (all joints 0, seen from across the room whatever the pose was). {"move": "nod"} from
+                # the USB stick (nobody pressed anything): only the base turns 5° and back.
                 a = ROBOT.state["angles"]
-                if not a or ROBOT.state["running"] or ROBOT.state["released"]:
+                if ROBOT.state["released"]:
+                    return self.send_json({"ok": False, "error": "관절이 풀려 있어요 (손으로 움직이기). 고정한 뒤 다시 눌러 주세요."}, 409)
+                if not a or ROBOT.state["running"]:
                     return self.send_json({"ok": False, "error": "지금은 움직여 알려 줄 수 없어요."}, 409)
                 holder = OWNER.view(False)
                 if holder and holder["id"] != self.console()[0]:
                     return self.send_json({"ok": False, "error": f"지금은 다른 PC({holder['name']})가 쓰는 중이라 움직여 알려 줄 수 없어요."}, 409)
-                there = list(a)
-                there[0] += -5 if a[0] > 0 else 5
                 # Asked by another PC's page: its polls do not count for the dead-man check, so the
-                # little move gets time of its own.
-                ROBOT.grace_until = time.time() + 10
-                err, run = ROBOT.start([{"type": "angles", "angles": there, "speed": 35, "line": 0},
-                                        {"type": "angles", "angles": list(a), "speed": 35, "line": 0}], "로봇 찾기: 이 로봇이에요")
+                # move gets time of its own.
+                ROBOT.grace_until = time.time() + 30
+                if body.get("move") == "nod":
+                    there = list(a)
+                    there[0] += -5 if a[0] > 0 else 5
+                    moves = [{"type": "angles", "angles": there, "speed": 35, "line": 0},
+                             {"type": "angles", "angles": list(a), "speed": 35, "line": 0}]
+                else:
+                    moves = [{"type": "angles", "angles": [0.0] * len(a), "speed": IDENTIFY_SPEED, "line": 0}]
+                err, run = ROBOT.start(moves, "로봇 찾기: 이 로봇이에요")
                 return self.send_json({"ok": err is None, "error": err}, 200 if err is None else 409)
             if route == "/api/wifi/connect":
                 err = WIFI.connect(body.get("ssid"), body.get("password") or "", on_done=lambda: refresh_identity(True))
@@ -1491,6 +1513,7 @@ def main():
     if not args.demo:
         log(f"[펌프] 준비됨 (40핀 BOARD {Pump.PIN_A}·{Pump.PIN_B})" if ROBOT.pump.available else f"[펌프] 쓸 수 없어요: {ROBOT.pump.error}")
     WIFI = Wifi(args.demo, log)
+    threading.Thread(target=follow_wifi_name, daemon=True).start()
     CAMERA = kit_camera.CameraSet(camera_spec(args.camera), log)
     server = ConsoleServer(("0.0.0.0", args.port), Handler)
     ips = lan_ips()

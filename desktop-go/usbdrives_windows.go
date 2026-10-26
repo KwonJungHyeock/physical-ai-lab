@@ -94,22 +94,29 @@ var (
 // pcWifi: the Wi-Fi this PC is on now, and its password when Windows gives it (netsh, no admin needed
 // for the profiles of this user). Both left empty when not known.
 func pcWifi() WifiForm {
-	var w WifiForm
-	out, err := netsh("netsh wlan show interfaces")
-	if err != nil {
+	w := WifiForm{SSID: pcSSID()}
+	if w.SSID == "" {
 		return w
 	}
-	m := ssidLine.FindStringSubmatch(out)
-	if m == nil || strings.ContainsAny(m[1], `"`) {
-		return w
-	}
-	w.SSID = m[1]
 	if prof, err := netsh(`netsh wlan show profile name="` + w.SSID + `" key=clear`); err == nil {
 		if k := keyLine.FindStringSubmatch(prof); k != nil {
 			w.Password = k[1]
 		}
 	}
 	return w
+}
+
+// pcSSID: the name of the Wi-Fi this PC is on now ("" when none or not known).
+func pcSSID() string {
+	out, err := netsh("netsh wlan show interfaces")
+	if err != nil {
+		return ""
+	}
+	m := ssidLine.FindStringSubmatch(out)
+	if m == nil || strings.ContainsAny(m[1], `"`) {
+		return ""
+	}
+	return m[1]
 }
 
 // netsh: one netsh command's output as text. netsh writes in the console's code page (cp949 on a

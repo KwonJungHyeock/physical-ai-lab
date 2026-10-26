@@ -8338,3 +8338,20 @@ div.zeroFlow {
 .app .connectBox .newHint:hover::after {
   background: #1aa866;
 }
+/* 로봇 찾기: nothing found and the robot was last seen on another Wi-Fi than this PC's */
+.wifiHint {
+  margin: 0 0 10px;
+  padding: 10px 14px;
+  border-left: 4px solid #e8392f;
+  border-radius: 8px;
+  background: #fff3f1;
+  color: #18201d;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  word-break: keep-all;
+}
+.app .connectBox .wifiHint {
+  background: #3a2a2c;
+  color: #fff;
+}

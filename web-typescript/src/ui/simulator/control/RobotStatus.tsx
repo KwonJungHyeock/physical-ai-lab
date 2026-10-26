@@ -68,7 +68,7 @@ export default function RobotStatus({ robotMode, live: store, lights, reason, bu
       {robotMode && (
         <>
           <div className={`${css.robotBtns} ${css.robotBtnsBig}`}>
-            <button type="button" className={css.jogWide} disabled={busy || !live || !!robot?.released} onClick={onWiggle} title="로봇 몸통(J1)이 10° 돌았다가 돌아와요">
+            <button type="button" className={css.jogWide} disabled={busy || !live || !!robot?.released} onClick={onWiggle} title="로봇이 천천히 일자로 펴져요 (모든 관절 0°)">
               <Icon name="link" size={16} />
               <span>연결 확인</span>
             </button>

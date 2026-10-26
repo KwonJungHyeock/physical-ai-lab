@@ -492,8 +492,8 @@ def main():
                 self.last = {"state": "ok" if ssid in self.here else "failed", "error": "그 이름의 Wi-Fi 를 찾지 못했어요."}
                 return None
 
-            def remember(self, ssid, password, rank=1):
-                kept.append((ssid, password, rank))
+            def remember(self, ssid, password):
+                kept.append((ssid, password))
 
             def classroom_mode(self, ssid, here, ssids=None):
                 modes.append((ssid, ssids))
@@ -509,7 +509,7 @@ def main():
             check(fields["ssid"] == "ROBODYNE" and fields["more"] == [("ROBODYNE2", "pass-two2")], fields)
             ok, msg, _ = usb_setup.apply_wifi(path)
             check(ok and tried == [("ROBODYNE", "pass-one1"), ("ROBODYNE2", "pass-two2")], f"{ok} {tried}")
-            check(kept == [("ROBODYNE", "pass-one1", 0)] and modes == [("ROBODYNE2", ["ROBODYNE", "ROBODYNE2"])], f"{kept} {modes}")
+            check(kept == [("ROBODYNE", "pass-one1")] and modes == [("ROBODYNE2", ["ROBODYNE", "ROBODYNE2"])], f"{kept} {modes}")
             check("'ROBODYNE2' 에 연결했어요" in msg and "1개도 기억" in msg, msg)
             FakeWifi.here = set()
             tried.clear()
@@ -524,6 +524,35 @@ def main():
             check(ok and not kept and not modes and msg == "'ROBODYNE2' 에 연결했어요.", f"{kept} {modes} {msg}")
         finally:
             usb_setup.wifi.Wifi, usb_setup.apply_wifi = real_wifi, real_apply
+
+    @case("every remembered Wi-Fi has the same priority (a short drop does not move the robot to the other router)")
+    def _():
+        import wifi as wifi_mod
+        bin_dir = os.path.join(TMP, "fake-nmcli")
+        os.makedirs(bin_dir, exist_ok=True)
+        calls = os.path.join(bin_dir, "calls.txt")
+        with open(os.path.join(bin_dir, "nmcli"), "w", encoding="utf-8") as f:
+            f.write("#!/bin/sh\necho \"$*\" >> " + calls + "\n"
+                    "case \"$*\" in *DEVICE,TYPE*) echo 'wlan0:wifi:connected:ROBODYNE2';; *-g*) echo 9;; esac\n")
+        os.chmod(os.path.join(bin_dir, "nmcli"), 0o755)
+        state = os.path.join(TMP, "eduino-wifi.json")
+        with open(state, "w", encoding="utf-8") as f:
+            json.dump({"ssid": "ROBODYNE2", "ssids": ["ROBODYNE2", "ROBODYNE"]}, f)
+        real_path, real_state = os.environ["PATH"], wifi_mod.STATE_FILE
+        os.environ["PATH"], wifi_mod.STATE_FILE = bin_dir + os.pathsep + real_path, state
+        try:
+            w = wifi_mod.Wifi(False, lambda *_: None)
+            w.remember("ROBODYNE", "pass-one1")
+            w.even_out()
+            with open(calls, encoding="utf-8") as f:
+                lines = f.read().splitlines()
+            add = [l for l in lines if l.startswith("connection add")]
+            check(len(add) == 1 and "autoconnect-priority 10" in add[0], lines)
+            mods = [l for l in lines if l.startswith("connection modify")]
+            check(mods == ["connection modify id ROBODYNE2 connection.autoconnect-priority 10",
+                           "connection modify id ROBODYNE connection.autoconnect-priority 10"], lines)
+        finally:
+            os.environ["PATH"], wifi_mod.STATE_FILE = real_path, real_state
 
     @case("install.py's call (apply(mount)) still applies wifi.txt every time")
     def _():

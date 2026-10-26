@@ -59,5 +59,7 @@ func ejectDrive(d Drive) error {
 
 // pcWifi: not looked up outside Windows (PAI_PC_WIFI="name" for the screenshots).
 func pcWifi() WifiForm {
-	return WifiForm{SSID: os.Getenv("PAI_PC_WIFI")}
+	return WifiForm{SSID: pcSSID()}
 }
+
+func pcSSID() string { return os.Getenv("PAI_PC_WIFI") }

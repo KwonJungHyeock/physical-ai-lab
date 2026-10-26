@@ -342,9 +342,10 @@ def add_to_pc_program(mount, ips, folder=None):
 
 # ------------------------------------------------------------------ one stick
 def nod():
-    """Tell the person at the robot it worked: the console server moves the robot a little."""
+    """Tell the person at the robot it worked: the console server moves the robot a little (the base
+    5° and back; nobody pressed anything, so not the big straightening of 로봇 찾기)."""
     try:
-        req = urllib.request.Request("http://127.0.0.1:8080/api/identify", data=b"{}", method="POST",
+        req = urllib.request.Request("http://127.0.0.1:8080/api/identify", data=b'{"move": "nod"}', method="POST",
                                      headers={"Content-Type": "application/json"})
         urllib.request.urlopen(req, timeout=5).read()
     except OSError:
@@ -447,9 +448,9 @@ def join_any(w, nets):
         if not joined:
             msg = " · ".join(why) if len(why) > 1 else (why[0].split(": ", 1)[1] if why else "연결하지 못했어요.")
     if joined and len(nets) > 1:
-        for i, (ssid, password) in enumerate(nets):
+        for ssid, password in nets:
             if ssid != joined:
-                w.remember(ssid, password, rank=i)
+                w.remember(ssid, password)
         if w.maker:
             w.maker.classroom_mode(joined, os.path.dirname(os.path.abspath(__file__)), names)
         msg += f" 다른 Wi-Fi {len(nets) - 1}개도 기억해 두어, 켤 때 있는 쪽에 붙어요."
@@ -552,6 +553,7 @@ def watch():
     A stick already in at power-on is handled too; only a kit this robot could not update from
     before waits for the stick to be plugged in again (no stop-and-start of the server at every boot)."""
     lan.ensure(say)                     # at once: a cable straight to a PC works from power-on
+    wifi.Wifi(False, say).even_out()    # robots set up by an older kit: every classroom Wi-Fi the same priority
     time.sleep(BOOT_SETTLE_S)
     done = {}        # device -> what was handled while this stick is in
     own_done = set() # devices we mounted ourselves once during this plug-in

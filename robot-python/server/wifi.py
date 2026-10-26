@@ -301,9 +301,11 @@ class Wifi:
                 pass
         return None
 
-    def remember(self, ssid, password, rank=1):
+    def remember(self, ssid, password):
         """Keep another network for later without joining it now: NetworkManager joins it by itself when
-        it is there and the first one is not (rank: its place in wifi.txt, a lower priority further down)."""
+        it is there and the one in use is not. Every classroom network gets the same priority, so after a
+        moment without signal the robot goes back to the one it was on (NetworkManager prefers the most
+        recently used of equal ones), not over to another router where the PC cannot see it."""
         if self.demo:
             return
         try:
@@ -314,13 +316,32 @@ class Wifi:
                 pass
             args = ["connection", "add", "type", "wifi", "ifname", dev, "con-name", ssid, "ssid", ssid,
                     "802-11-wireless.hidden", "yes", "802-11-wireless.powersave", "2",
-                    "connection.autoconnect", "yes", "connection.autoconnect-priority", str(max(1, CLASSROOM_PRIORITY - rank))]
+                    "connection.autoconnect", "yes", "connection.autoconnect-priority", str(CLASSROOM_PRIORITY)]
             if password:
                 args += ["wifi-sec.key-mgmt", "wpa-psk", "wifi-sec.psk", password]
             self._nm(*args)
             self.log(f"[Wi-Fi] '{ssid}' 도 기억해 둬요 (있으면 저절로 붙어요).")
         except RuntimeError as exc:
             self.log(f"[Wi-Fi] '{ssid}' 를 기억하지 못했어요: {exc}")
+
+    def even_out(self):
+        """Robots set up before every remembered network had the same priority (wifi.txt order, 10, 9 …):
+        give them all CLASSROOM_PRIORITY, so a short drop does not move the robot to the other router."""
+        if self.demo:
+            return
+        try:
+            with open(STATE_FILE, encoding="utf-8") as f:
+                ssids = json.load(f).get("ssids") or []
+        except (OSError, ValueError, AttributeError):
+            return
+        for ssid in ssids if len(ssids) > 1 else []:
+            try:
+                out = self._nm("-g", "connection.autoconnect-priority", "connection", "show", "id", ssid)
+                if out.strip() != str(CLASSROOM_PRIORITY):
+                    self._nm("connection", "modify", "id", ssid, "connection.autoconnect-priority", str(CLASSROOM_PRIORITY))
+                    self.log(f"[Wi-Fi] '{ssid}' 의 순위를 다른 교실 Wi-Fi 와 같게 맞췄어요.")
+            except RuntimeError:
+                pass
 
     def _radio(self, on):
         try:
