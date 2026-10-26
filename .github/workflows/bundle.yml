@@ -1,0 +1,36 @@
+# 한 파일로 묶기: release 브랜치에 올린 두 파일(프로그램 zip · 로봇 키트 zip, 각각 100 MB 아래)을
+# PhysicalAI-Simulator.zip 하나로 합쳐 GitHub 릴리스에 올려요 (릴리스 파일은 2 GB 까지).
+# 받는 사람은 늘 같은 주소 하나만 쓰면 돼요:
+#   https://github.com/KwonJungHyeock/physical-ai-lab/releases/latest/download/PhysicalAI-Simulator.zip
+# 프로그램 zip 은 파일이 맨 위에 있어 [압축 풀기] 하면 폴더 한 겹, 그 옆의 eduino_usb.zip 을 프로그램이 찾아 써요.
+name: 한 파일로 묶기
+
+on:
+  push:
+    branches: [release]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 프로그램 + 로봇 키트를 zip 하나로
+        run: |
+          mkdir -p out
+          cp PhysicalAI-Simulator.zip out/PhysicalAI-Simulator.zip
+          # 이미 압축된 키트라 그대로(-0) 맨 위에(-j) 넣어요.
+          zip -0 -j -q out/PhysicalAI-Simulator.zip eduino_usb.zip
+          unzip -l out/PhysicalAI-Simulator.zip
+          sha256sum out/PhysicalAI-Simulator.zip | tee out/sha256.txt
+      - name: 릴리스에 올리기 (늘 같은 주소)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="sim-$(date -u +%Y%m%d-%H%M)"
+          sed -n '1,/^## 지난 판/p' README.md | sed '$d' > out/notes.md
+          printf '\n확인값 (SHA-256): `%s`\n' "$(cut -d' ' -f1 out/sha256.txt)" >> out/notes.md
+          gh release create "$tag" out/PhysicalAI-Simulator.zip --target "$GITHUB_SHA" --title "Physical AI 시뮬레이터 ($tag)" --notes-file out/notes.md --latest
