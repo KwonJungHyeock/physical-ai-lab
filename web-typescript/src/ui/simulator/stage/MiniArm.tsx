@@ -60,6 +60,8 @@ const DEG = Math.PI / 180;
 
 export const ALERT_COLOR = ['', '#ff9f1c', '#ff3b3b'] as const;
 
+const plainOf = (look?: { finish?: 'black' }) => (look?.finish === 'black' ? '#3a4048' : '#f2f6ff');
+
 export function MiniArm({
   robot,
   chain,
@@ -88,7 +90,8 @@ export function MiniArm({
     key.position.set(0.4, -0.6, 1);
     scene.add(key);
     const arm = buildArm(robot, chain, nodes, look);
-    const base = new MeshStandardMaterial({ color: '#f2f6ff', transparent: true, opacity: 0.62, roughness: 0.55, metalness: 0 });
+    // See-through white over the dark studio; see-through black over a black arm's light one.
+    const base = new MeshStandardMaterial({ color: plainOf(look), transparent: true, opacity: 0.62, roughness: 0.55, metalness: 0 });
     arm.root.traverse((o) => {
       const m = o as Mesh;
       if (m.isMesh) {
@@ -123,7 +126,7 @@ export function MiniArm({
   );
 
   const p = useMemo(() => new Vector3(), []);
-  const plain = useMemo(() => new Color('#f2f6ff'), []);
+  const plain = useMemo(() => new Color(plainOf(look)), [look]);
   useFrame((state) => {
     if (!composer) state.gl.render(state.scene, state.camera);
     const q = world.current?.angles;

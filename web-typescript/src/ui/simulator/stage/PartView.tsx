@@ -75,8 +75,10 @@ function Robot({ id, urdf }: { id: RobotModelId; urdf: string }) {
   const object = useMemo(() => {
     const nodes = Object.assign({}, ...gltfs.map((g) => g.nodes)) as GlbNodes;
     const robot = parseUrdf(urdf);
-    const arm = buildArm(robot, buildChain(robot), nodes, { dark: spec.dark, flange: spec.flange, textures: spec.textures, flangeLink: spec.flangeLink });
+    const arm = buildArm(robot, buildChain(robot), nodes, { dark: spec.dark, flange: spec.flange, textures: spec.textures, flangeLink: spec.flangeLink, finish: spec.finish });
     arm.setAngles(spec.home);
+    // An arm with a gripper of its own (OMX-F) is shown holding it, as it is sold.
+    if (spec.tools.length === 1 && spec.tools[0] !== 'none') arm.flange.add(buildTool(spec.tools[0], false, nodes, null).group);
     const g = new Group();
     g.add(arm.root);
     g.rotation.x = -Math.PI / 2;

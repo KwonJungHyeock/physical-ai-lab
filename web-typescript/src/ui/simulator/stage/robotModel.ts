@@ -90,6 +90,25 @@ const shellMaterial = (map?: Texture, tone = 0) => {
   return m;
 };
 
+/**
+ * A black arm (ArmSpec.finish 'black', OMX-F): matte black frames in two near-blacks taken in turn so
+ * each link reads apart, with a soft sheen towards the outline (in a bright studio the edges of a
+ * black part catch the light instead of going darker).
+ */
+const BLACK_TONES = ['#1b1e22', '#2b3036'];
+const blackMaterial = (tone = 0) => {
+  const m = new MeshPhysicalMaterial({ color: new Color(BLACK_TONES[tone]), roughness: 0.5, metalness: 0.05, clearcoat: 0.3, clearcoatRoughness: 0.45 });
+  m.onBeforeCompile = (sh) => {
+    sh.fragmentShader = sh.fragmentShader.replace(
+      '#include <opaque_fragment>',
+      'float edge = 1.0 - clamp(abs(dot(normalize(normal), normalize(vViewPosition))), 0.0, 1.0);\noutgoingLight += vec3(0.05, 0.055, 0.06) * pow(edge, 2.0);\n#include <opaque_fragment>',
+    );
+  };
+  m.customProgramCacheKey = () => 'black-shaded';
+  return m;
+};
+const BLACK = [blackMaterial(0), blackMaterial(1)];
+
 const MATERIALS = {
   shell: shellMaterial(),
   dark: new MeshPhysicalMaterial({ color: new Color('#23272c'), roughness: 0.55, metalness: 0.05, clearcoat: 0.2, clearcoatRoughness: 0.5 }),
@@ -119,7 +138,8 @@ const NODE_MATERIAL: Record<string, Material> = {
   pump_head: MATERIALS.tool,
   pump_box: MATERIALS.dark,
   camera_flange: MATERIALS.flange,
-  omx_finger2: MATERIALS.dark,
+  omx_finger1: BLACK[1],
+  omx_finger2: BLACK[1],
 };
 
 export type GlbNodes = Record<string, Object3D>;
@@ -190,19 +210,24 @@ export interface ArmLook {
   flange: readonly string[];
   textures: Readonly<Record<string, string>>;
   flangeLink: string;
+  /** 'black': every part black (ArmSpec.finish). */
+  finish?: 'black';
 }
 
 function meshFromNode(nodes: GlbNodes, name: string, look?: ArmLook, tone = 0): Object3D {
   const source = nodes[name];
   if (!source) return new Group();
   const clone = source.clone(true);
-  const material = look?.dark.includes(name)
-    ? MATERIALS.dark
-    : look?.flange.includes(name)
-      ? MATERIALS.flange
-      : look
-        ? shellFor(name, look.textures[name], tone)
-        : (NODE_MATERIAL[name] ?? shellFor(name, undefined, tone));
+  const material =
+    look?.finish === 'black' && !look.flange.includes(name)
+      ? BLACK[tone % 2]
+      : look?.dark.includes(name)
+        ? MATERIALS.dark
+        : look?.flange.includes(name)
+          ? MATERIALS.flange
+          : look
+            ? shellFor(name, look.textures[name], tone)
+            : (NODE_MATERIAL[name] ?? shellFor(name, undefined, tone));
   clone.traverse((child) => {
     if ((child as Mesh).isMesh) {
       (child as Mesh).geometry = smoothGeometry((child as Mesh).geometry);

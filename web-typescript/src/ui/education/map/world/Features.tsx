@@ -199,7 +199,7 @@ const siteColor = (id: SiteId) => SITE_BY_ID.get(id)?.color ?? '#888';
 function MapArm({ robot, nodes, r, phase, still }: { robot: UrdfRobot; nodes: GlbNodes; r: MapRobot; phase: number; still: boolean }) {
   const arm = useMemo(() => {
     const spec = armSpec(r);
-    const a = buildArm(robot, buildChain(robot), nodes, { dark: spec.dark, flange: spec.flange, textures: spec.textures, flangeLink: spec.flangeLink });
+    const a = buildArm(robot, buildChain(robot), nodes, { dark: spec.dark, flange: spec.flange, textures: spec.textures, flangeLink: spec.flangeLink, finish: spec.finish });
     shadowAll(a.root);
     a.setAngles(r.angles);
     return a;

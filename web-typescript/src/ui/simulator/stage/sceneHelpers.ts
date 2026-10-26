@@ -67,6 +67,12 @@ export const REACH_MM = 280;
  */
 export const SCENE = { sky: '#262d36', desk: '#262d36', spot: '#4a5462', cell: '#4f5a68', section: '#6b7787' };
 
+/** The bright studio for a black arm (ArmSpec.finish 'black'): a light grey the black frames stand out against. */
+export const SCENE_LIGHT: typeof SCENE = { sky: '#dfe3e8', desk: '#dfe3e8', spot: '#f5f7f9', cell: '#c8ced6', section: '#a6afba' };
+
+/** The studio an arm is shown in. */
+export const sceneFor = (finish?: 'black'): typeof SCENE => (finish === 'black' ? SCENE_LIGHT : SCENE);
+
 /** Size of the desk plane, m; the spot under the robot fades out within the middle third. */
 export const DESK_M = 6;
 

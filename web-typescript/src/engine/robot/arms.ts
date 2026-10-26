@@ -79,6 +79,11 @@ export interface ArmSpec {
   ros: { pkg: string; follow: string; joints: readonly string[] };
   /** Arm-only theme: how far the practice mat sits from the 280's place along x, mm (where this arm reaches tool-down). */
   matShiftMm: number;
+  /**
+   * 'black': the arm is sold black (OMX-F) and is drawn black, in the light studio so it stands out
+   * (the white arms keep the dark slate one).
+   */
+  finish?: 'black';
 }
 
 const RDK_TEX = Object.fromEntries(['joint2', 'joint3', 'joint4', 'joint5', 'joint6'].map((n) => [n, `/robot/rdkx5/tex/${n}.jpg`]));
@@ -243,6 +248,7 @@ const OMX_F = {
   sdk: { module: 'omx', cls: 'OMXF', port: '/dev/ttyACM0', baud: 1000000 },
   ros: { pkg: 'open_manipulator_bringup', follow: 'omx_f.launch.py', joints: ['joint1', 'joint2', 'joint3', 'joint4', 'joint5'] },
   matShiftMm: 0,
+  finish: 'black' as const,
 };
 
 export const ARMS: Readonly<Partial<Record<RobotModelId, ArmSpec>>> = {

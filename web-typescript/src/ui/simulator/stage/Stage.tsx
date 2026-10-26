@@ -87,7 +87,7 @@ import { baseDressing, buildArm, buildTool, partMesh, type GlbNodes } from './ro
 import { ALERT_COLOR, MiniArm, type MiniRect, type MonitorOut } from './MiniArm';
 import { AlertTracker } from '@/engine/robot/jointAlert';
 import StudioLight from './StudioLight';
-import { DESK_M, SCENE, TOOL_LAYER, addJointAxes, axesTriad, deskSpot, framing, meshBox, reachDisc, type DisplayOpts, type FreeFrame } from './sceneHelpers';
+import { DESK_M, TOOL_LAYER, sceneFor, addJointAxes, axesTriad, deskSpot, framing, meshBox, reachDisc, type DisplayOpts, type FreeFrame } from './sceneHelpers';
 import { workspaceEnvelope } from '../../education/stage/learn3d';
 import type { ArmSpec } from '@/engine/robot/arms';
 import { CellObjects, CellPhysics, DeskObjects, DeskPhysics, type DeskEdit } from './DeskObjects';
@@ -271,6 +271,7 @@ export default function Stage(props: StageProps) {
   const key = useRef<DirectionalLight>(null);
   const fill = useRef<DirectionalLight>(null);
   const lights = useMemo<Lights>(() => ({ hemi, key, fill }), []);
+  const look = sceneFor(props.arm.finish);
   return (
     <Canvas
       // High quality: variance shadows with a blur, soft edges like a room light. Normal: plain
@@ -297,7 +298,7 @@ export default function Stage(props: StageProps) {
         gl.toneMappingExposure = 1;
       }}
     >
-      <color attach="background" args={[SCENE.sky]} />
+      <color attach="background" args={[look.sky]} />
       <StudioLight intensity={props.cell ? 0.75 : 0.5} softbox={!props.cell} factory={!!props.cell} />
       <hemisphereLight ref={hemi} args={['#ffffff', '#cfd6de', 0.3]} />
       <directionalLight
@@ -330,10 +331,10 @@ export default function Stage(props: StageProps) {
           infiniteGrid
           cellSize={0.01}
           cellThickness={0.7}
-          cellColor={SCENE.cell}
+          cellColor={look.cell}
           sectionSize={0.1}
           sectionThickness={1}
-          sectionColor={SCENE.section}
+          sectionColor={look.section}
           fadeDistance={2.4}
           fadeStrength={1.4}
         />
@@ -398,10 +399,10 @@ function World({
   const nodes = useMemo(() => Object.assign({}, ...gltfs.map((g) => g.nodes)) as GlbNodes, [gltfs]);
   const root = useRef<Group>(null);
 
-  const arm = useMemo(() => buildArm(robot, chain, nodes, { dark: spec.dark, flange: spec.flange, textures: spec.textures, flangeLink: spec.flangeLink }), [robot, chain, nodes, spec]);
+  const arm = useMemo(() => buildArm(robot, chain, nodes, { dark: spec.dark, flange: spec.flange, textures: spec.textures, flangeLink: spec.flangeLink, finish: spec.finish }), [robot, chain, nodes, spec]);
   // The program's end pose: the same arm, see-through blue, on screen only (not in the camera pictures).
   const ghostArm = useMemo(() => {
-    const g = buildArm(robot, chain, nodes, { dark: spec.dark, flange: spec.flange, textures: spec.textures, flangeLink: spec.flangeLink });
+    const g = buildArm(robot, chain, nodes, { dark: spec.dark, flange: spec.flange, textures: spec.textures, flangeLink: spec.flangeLink, finish: spec.finish });
     const mat = new MeshBasicMaterial({ color: '#6f9bff', transparent: true, opacity: 0.2, depthWrite: false });
     g.root.traverse((o) => {
       const m = o as Mesh;
@@ -663,7 +664,7 @@ function World({
 
   return (
     <group ref={root} rotation={[-Math.PI / 2, 0, 0]}>
-      {!cell && <Desk z={theme === 'kit' ? DESK_Z : 0} />}
+      {!cell && <Desk z={theme === 'kit' ? DESK_Z : 0} finish={spec.finish} />}
       {cell ? (
         <>
           <CellScene world={world} cell={cell} tags={cellTags} />
@@ -693,7 +694,7 @@ function World({
         <primitive object={arm.root} />
         {ghost && <primitive object={ghostArm.root} />}
         {miniRect && monitor && (
-          <MiniArm robot={robot} chain={chain} nodes={nodes} look={{ dark: spec.dark, flange: spec.flange, textures: spec.textures, flangeLink: spec.flangeLink }} world={world} place={miniRect} out={monitor} composer={quality === 'high'} />
+          <MiniArm robot={robot} chain={chain} nodes={nodes} look={{ dark: spec.dark, flange: spec.flange, textures: spec.textures, flangeLink: spec.flangeLink, finish: spec.finish }} world={world} place={miniRect} out={monitor} composer={quality === 'high'} />
         )}
         {display.baseAxes && <primitive object={baseAxes} />}
         {display.reach && shell && <primitive object={shell.group} />}
@@ -793,9 +794,9 @@ function fitView(name: ViewName, root: Group, arm: Group, area: { min: readonly 
 
 /* --- the AI Kit ------------------------------------------------------------- */
 
-/** The desk: a plane lit like a spot under the robot (sceneHelpers' SCENE · deskSpot). */
-function Desk({ z }: { z: number }) {
-  const spot = useMemo(() => deskSpot(), []);
+/** The desk: a plane lit like a spot under the robot (sceneHelpers' sceneFor · deskSpot). */
+function Desk({ z, finish }: { z: number; finish?: 'black' }) {
+  const spot = useMemo(() => deskSpot(sceneFor(finish)), [finish]);
   useEffect(() => () => spot.dispose(), [spot]);
   return (
     <mesh position={[0.14, 0, z / 1000 - 0.0005]} receiveShadow>
