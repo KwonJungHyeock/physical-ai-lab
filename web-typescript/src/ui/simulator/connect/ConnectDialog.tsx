@@ -17,7 +17,9 @@
  *
  * Connecting keeps this program's own screens (교육 · 시뮬레이터, always this version) and sends
  * only the arm's commands to the robot (robotLink setRemoteRobot). A robot with an older server
- * (no `remote` in its state) cannot take that: its own console opens instead, as before.
+ * (no `remote` in its state) cannot take that: only its own console, with the screens of the kit
+ * it was set up with, could open. That is said first, with the way out (update it from the USB
+ * kit), and its old screens open only when asked — never as a silent swap.
  * A radar beside the list shows the search, and the link to the picked robot is drawn and checked
  * step by step (network → robot server → arm signal → console) before it is used.
  */
@@ -121,6 +123,14 @@ export default function ConnectDialog({ current, auto, carry, start, onUsb, onCl
     carryNow.current = carry;
     sessionNow.current = session;
   });
+  /** The robot's own console (an older robot): the class login and the open program go along
+   *  (a robot's page is another address with its own store). */
+  const openOwn = (addr: string) => {
+    const program = (carryNow.current?.() ?? '').replace(/^#/, '');
+    const login = sessionNow.current ? sessionHandoff(sessionNow.current) : '';
+    const hash = [login, program].filter(Boolean).join('&');
+    window.location.href = `http://${addr}/console${hash ? `#${hash}` : ''}`;
+  };
   // The first step asks the robot itself (its address may be a typed ID, a recent one, or a robot
   // switched off since the search): the console opens only after it answered — never onto a
   // browser error page in the program window, which has no address bar to come back from.
@@ -159,12 +169,13 @@ export default function ConnectDialog({ current, auto, carry, start, onUsb, onCl
             window.location.reload();
             return;
           }
-          // An older robot: open its own console. The class login goes along (a robot's page is
-          // another address with its own store).
-          const program = (carryNow.current?.() ?? '').replace(/^#/, '');
-          const login = sessionNow.current ? sessionHandoff(sessionNow.current) : '';
-          const hash = [login, program].filter(Boolean).join('&');
-          window.location.href = `http://${link.addr}/console${hash ? `#${hash}` : ''}`;
+          // An older robot, from this program: say so and wait (LinkSteps). On a robot's own
+          // console, going to another robot is going to its console anyway.
+          if (!current) {
+            setLink((l) => (l === link ? { ...l, old: true } : l));
+            return;
+          }
+          openOwn(link.addr);
         },
         quick ? 0 : 450,
       );
@@ -172,7 +183,7 @@ export default function ConnectDialog({ current, auto, carry, start, onUsb, onCl
     }
     const t = window.setTimeout(() => setLink((l) => (l ? { ...l, step: l.step + 1 } : l)), quick ? 0 : 380);
     return () => window.clearTimeout(t);
-  }, [link]);
+  }, [link, current]);
 
   const tabs: { key: Tab; label: string; icon: string }[] = [
     { key: 'find', label: '로봇 찾기', icon: 'search' },
@@ -214,7 +225,7 @@ export default function ConnectDialog({ current, auto, carry, start, onUsb, onCl
             ))}
           </div>
 
-          {link && <LinkSteps link={link} onRetry={() => setLink({ label: link.label, robot: link.robot, addr: link.addr, step: 0 })} onBack={() => setLink(null)} />}
+          {link && <LinkSteps link={link} onRetry={() => setLink({ label: link.label, robot: link.robot, addr: link.addr, step: 0 })} onBack={() => setLink(null)} onOpenOld={() => openOwn(link.addr)} onUsb={onUsb} />}
 
           {!link && tab === 'find' && <FindRobots prefix={prefix} setPrefix={setPrefix} here={current?.ips ?? []} auto={auto} onScan={setScan} onConnect={(r) => go(r.address, r.robotId, r)} onUsb={onUsb} />}
 
@@ -334,6 +345,8 @@ interface Link {
   checked?: boolean;
   /** It did not answer: why, and what to check. */
   error?: string;
+  /** It answered, but its robot program is too old for this program's screens (no `remote`). */
+  old?: boolean;
 }
 
 /** A picture of the robot's family for the link line. */
@@ -415,7 +428,7 @@ function Radar({ scanning, found, progress, link, net }: { scanning: boolean; fo
   );
 }
 
-function LinkSteps({ link, onRetry, onBack }: { link: Link; onRetry(): void; onBack(): void }) {
+function LinkSteps({ link, onRetry, onBack, onOpenOld, onUsb }: { link: Link; onRetry(): void; onBack(): void; onOpenOld(): void; onUsb?: () => void }) {
   const done = link.step >= LINK_STEPS.length;
   // The arm's signal: known from the search (the server answers whether it reaches the arm).
   const armOk = link.robot ? link.robot.connected : true;
@@ -445,7 +458,29 @@ function LinkSteps({ link, onRetry, onBack }: { link: Link; onRetry(): void; onB
           </li>
         ))}
       </ol>
-      {link.error ? (
+      {link.old ? (
+        <div className={css.linkError} role="alert">
+          <p>
+            <b>이 로봇의 로봇 프로그램이 예전 판이에요{link.robot?.version ? ` (${link.robot.version.slice(0, 8)})` : ''}.</b> 그대로 열면 지금 화면 대신 로봇 안에 든 예전 화면(예전 인트로 · 패널)으로 바뀌어요.
+          </p>
+          <p>
+            로봇 USB 키트로 한 번 업데이트하면, 연결해도 지금 이 화면 그대로 로봇을 움직여요. USB 맨 위에 <code>eduino</code> 폴더가 있어야 로봇이 찾아요 (⚙ → 로봇 USB 만들기 가 맞춰 줘요).
+          </p>
+          <span>
+            {onUsb && (
+              <button type="button" className={css.connectGo} onClick={onUsb}>
+                로봇 USB 만들기
+              </button>
+            )}
+            <button type="button" className={css.ghost} onClick={onOpenOld}>
+              예전 화면으로 열기
+            </button>
+            <button type="button" className={css.ghost} onClick={onBack}>
+              돌아가기
+            </button>
+          </span>
+        </div>
+      ) : link.error ? (
         <div className={css.linkError} role="alert">
           <p>{link.error}</p>
           <span>
@@ -459,7 +494,7 @@ function LinkSteps({ link, onRetry, onBack }: { link: Link; onRetry(): void; onB
         </div>
       ) : (
         <p className={css.linkNote}>
-          {done ? `${link.robot?.label || `로봇 ${link.label}`} 의 화면을 여는 중…` : link.step === 0 ? `http://${link.addr} 에 물어보는 중…` : `http://${link.addr}`}
+          {done ? `${link.robot?.label || `로봇 ${link.label}`} 에 연결하는 중…` : link.step === 0 ? `http://${link.addr} 에 물어보는 중…` : `http://${link.addr}`}
           {!armOk && link.step > 2 && ' · 로봇팔 신호가 없어요 (전원 · USB 선 확인)'}
         </p>
       )}

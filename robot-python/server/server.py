@@ -958,6 +958,19 @@ CROSS_ORIGIN = ("/api/state", "/api/identify")
 BOOT_ID = os.urandom(4).hex()
 # Files whose names change with every build (and the Python runtime): kept by the browser.
 LONG_CACHE = ("/_next/static/", "/pyodide/")
+
+
+def console_version():
+    """This console's version (VERSION beside this file, written by the USB kit: YYYYMMDD-HHMMSS-<hash>), or ''."""
+    try:
+        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "VERSION"), encoding="utf-8", errors="replace") as f:
+            return f.readline().strip()[:64]
+    except OSError:
+        return ""
+
+
+# Read once: an update from the USB kit restarts the server.
+VERSION = console_version()
 # Requests that move the arm or its tool: one console at a time may send them (see Owner).
 MOTION_ROUTES = ("/api/run", "/api/move", "/api/jog", "/api/target", "/api/gripper", "/api/pump",
                  "/api/calibrate", "/api/joint", "/api/release", "/api/focus")
@@ -1123,8 +1136,11 @@ class Handler(SimpleHTTPRequestHandler):
         return urllib.parse.urlsplit(origin).netloc == (self.headers.get("Host") or "")
 
     def end_headers(self):
-        if self.command in ("GET", "HEAD") and self.path.startswith(LONG_CACHE):
-            self.send_header("Cache-Control", "public, max-age=31536000, immutable")
+        if self.command in ("GET", "HEAD") and not self.path.startswith("/api/"):
+            # Hashed bundles never change under their name; everything else (the pages, the logo, the
+            # pictures) is asked again each time, so the screens of a kit just installed show at once
+            # instead of a browser's copy from before the update.
+            self.send_header("Cache-Control", "public, max-age=31536000, immutable" if self.path.startswith(LONG_CACHE) else "no-cache")
         super().end_headers()
 
     def send_json(self, obj, code=200):
@@ -1181,7 +1197,7 @@ class Handler(SimpleHTTPRequestHandler):
             state = {k: v for k, v in ROBOT.state.items() if k != "arrivals"}
             state["arrivalCount"] = len(ROBOT.state["arrivals"])
             return self.send_json({**state, **IDENTITY, "boot": BOOT_ID, "speedCap": SPEED_CAP, "age": age, "camera": CAMERA.available, "cameras": CAMERA.count,
-                                   "pump": ROBOT.pump.available, "pumpError": ROBOT.pump.error, "remote": True,
+                                   "pump": ROBOT.pump.available, "pumpError": ROBOT.pump.error, "remote": True, "version": VERSION,
                                    "owner": OWNER.view(ROBOT.state["running"])})
         if self.path.split("?")[0] == "/api/wifi":
             try:

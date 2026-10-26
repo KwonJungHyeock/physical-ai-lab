@@ -34,6 +34,8 @@ export interface FoundRobot {
   running: boolean;
   /** Its server takes commands from the PC program's own screens (newer robots). */
   remote: boolean;
+  /** Its robot program's version (`YYYYMMDD-HHMMSS-<hash>`); '' from robots older than that. */
+  version: string;
   /** Round trip of the answer, ms. */
   ms: number;
 }
@@ -49,6 +51,7 @@ interface StateReply {
   host?: string;
   label?: string;
   remote?: boolean;
+  version?: string;
 }
 
 /** Chrome's Local Network Access options to try for `ip` (other browsers ignore the field). */
@@ -100,6 +103,7 @@ export async function probeRobot(ip: string, timeoutMs = 1500, port = ROBOT_PORT
       connected: s.connected,
       running: !!s.running,
       remote: !!s.remote,
+      version: typeof s.version === 'string' ? s.version.slice(0, 64) : '',
       ms: Math.round(performance.now() - t0),
     };
   } catch {
