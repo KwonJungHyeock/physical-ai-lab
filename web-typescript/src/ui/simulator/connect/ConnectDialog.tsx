@@ -14,8 +14,7 @@
  *   address (every console shows it), typed in the fold below the list.
  * - 랜선 직결: one cable, the robot at its fixed direct address. A robot not set up yet goes to
  *   새 로봇 설치 (desktop program: it installs a new robot over that cable).
- * - 로봇 Wi-Fi (only on a robot's own console): move the robot from its
- *   hotspot to the classroom router, or back.
+ * - 로봇 Wi-Fi (only on a robot's own console): move the robot to the classroom router.
  *
  * Connecting keeps this program's own screens (교육 · 시뮬레이터, always this version) and sends
  * only the arm's commands to the robot (robotLink setRemoteRobot). A robot with an older server
@@ -726,7 +725,7 @@ function FindRobots({
             <b>같은 Wi-Fi 인가요?</b> PC 와 로봇이 같은 공유기(예: ROBOT-LAB)에 붙어 있어야 해요.
           </li>
           <li>
-            <b>주소 앞부분</b>: PC 의 주소 앞 세 숫자와 같아야 해요 (Windows: <code>ipconfig</code>). 교실 공유기는 보통 <code>192.168.0.</code>, 로봇 핫스팟은 <code>10.42.0.</code> 이에요.
+            <b>주소 앞부분</b>: PC 의 주소 앞 세 숫자와 같아야 해요 (Windows: <code>ipconfig</code>). 교실 공유기는 보통 <code>192.168.0.</code> 이에요.
           </li>
           <li>
             <b>로봇 서버</b>: 로봇 전원을 켜고 1분쯤 기다려요 (자동 시작). 그래도 없으면 아래 [로봇 ID 로 연결] 에 로봇 ID 를 넣어 봐요.

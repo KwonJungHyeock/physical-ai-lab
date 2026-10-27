@@ -950,7 +950,7 @@ CAMERA = None
 YOLO = kit_camera.Yolo()
 # Shown on every console and in 로봇 찾기; `label` is the 사용자 이름 from the USB stick (robot_label.py).
 IDENTITY = {"robotId": "", "ips": [], "host": "", "label": "", "kind": "arm", "model": "myCobot 280 RDK X5",
-            # the Wi-Fi it is on ('' on its hotspot or a cable): the PC program says so when it is not the PC's
+            # the Wi-Fi it is on ('' on a cable): the PC program says so when it is not the PC's
             "wifi": ""}
 FIXED_LABEL = [None]   # --name: a name given on the command line wins over the file
 IDENTITY_AT = [0.0]
@@ -1321,9 +1321,6 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.send_json({"ok": err is None, "error": err}, 200 if err is None else 409)
             if route == "/api/wifi/connect":
                 err = WIFI.connect(body.get("ssid"), body.get("password") or "", on_done=lambda: refresh_identity(True))
-                return self.send_json({"ok": err is None, "error": err}, 200 if err is None else 409)
-            if route == "/api/wifi/hotspot":
-                err = WIFI.hotspot(on_done=lambda: refresh_identity(True))
                 return self.send_json({"ok": err is None, "error": err}, 200 if err is None else 409)
             if route == "/api/reconnect":
                 err = ROBOT.reconnect()

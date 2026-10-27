@@ -482,10 +482,9 @@ def main():
             def __init__(self, demo=False, log=None):
                 self.lock = __import__("threading").Lock()
                 self.last = None
-                self.maker = self
 
             def status(self):
-                return {"mode": "hotspot", "ssid": "ElephantRobotics_AP"}
+                return {"mode": None, "ssid": None}
 
             def connect(self, ssid, password):
                 tried.append((ssid, password))
@@ -495,7 +494,7 @@ def main():
             def remember(self, ssid, password):
                 kept.append((ssid, password))
 
-            def classroom_mode(self, ssid, here, ssids=None):
+            def classroom_mode(self, ssid, ssids=None):
                 modes.append((ssid, ssids))
 
         real_wifi, real_apply = usb_setup.wifi.Wifi, usb_setup.apply_wifi
@@ -554,6 +553,80 @@ def main():
         finally:
             os.environ["PATH"], wifi_mod.STATE_FILE = real_path, real_state
 
+    @case("와이파이=핫스팟 from an older stick: not supported any more, says so, joins nothing")
+    def _():
+        tried = []
+
+        class FakeWifi:
+            def __init__(self, demo=False, log=None):
+                pass
+
+            def connect(self, ssid, password):
+                tried.append(ssid)
+
+            def hotspot(self, *a):
+                tried.append("hotspot")
+
+        real_wifi, real_apply = usb_setup.wifi.Wifi, usb_setup.apply_wifi
+        usb_setup.wifi.Wifi, usb_setup.apply_wifi = FakeWifi, REAL_APPLY_WIFI
+        try:
+            path = os.path.join(TMP, "wifi-hotspot.txt")
+            with open(path, "w", encoding="utf-8") as f:
+                f.write("와이파이=핫스팟\r\n비밀번호=\r\n")
+            ok, msg, _ = usb_setup.apply_wifi(path)
+            check(ok is False and not tried and "쓰지 않아요" in msg, f"{ok} {tried} {msg}")
+        finally:
+            usb_setup.wifi.Wifi, usb_setup.apply_wifi = real_wifi, real_apply
+
+    @case("the robot's hotspot is retired for good: maker's off script, autostart set aside, DHCP off, boot unit, AP profiles not autoconnect")
+    def _():
+        import wifi as wifi_mod
+        base = os.path.join(TMP, "retire")
+        bin_dir, maker, home = (os.path.join(base, d) for d in ("bin", "maker", "home/robot/.config/autostart"))
+        for d in (bin_dir, maker, home):
+            os.makedirs(d, exist_ok=True)
+        calls, on = os.path.join(base, "calls.txt"), os.path.join(base, "hostapd-on")
+        open(on, "w").close()
+        open(os.path.join(home, "hotspot_on.desktop"), "w").close()
+        scripts = {
+            "nmcli": "case \"$*\" in *NAME,TYPE,AUTOCONNECT*) echo 'Hotspot:802-11-wireless:yes'; echo 'ROBODYNE:802-11-wireless:yes';;"
+                     " *mode,802-11-wireless.ssid*Hotspot) echo '802-11-wireless.mode:ap'; echo '802-11-wireless.ssid:EDU-AP';;"
+                     " *mode,802-11-wireless.ssid*) echo '802-11-wireless.mode:infrastructure';; esac",
+            "systemctl": "case \"$*\" in is-enabled*) echo enabled;; esac",
+            "pgrep": f"test -e {on}",
+            "pkill": "true",
+        }
+        for name, body in scripts.items():
+            with open(os.path.join(bin_dir, name), "w", encoding="utf-8") as f:
+                f.write(f"#!/bin/sh\necho \"{name} $*\" >> {calls}\n{body}\n")
+            os.chmod(os.path.join(bin_dir, name), 0o755)
+        with open(os.path.join(maker, "hotspot_off.sh"), "w", encoding="utf-8") as f:
+            f.write(f"echo 'hotspot_off.sh' >> {calls}\nrm -f {on}\n")
+        saved = {k: getattr(wifi_mod, k) for k in ("MAKER_DIR", "MAKER_AUTOSTART", "UNIT_FILE", "STATE_FILE")}
+        real_path, real_euid = os.environ["PATH"], os.geteuid
+        wifi_mod.MAKER_DIR, wifi_mod.MAKER_AUTOSTART = maker, os.path.join(base, "home/*/.config/autostart/hotspot_on.desktop")
+        wifi_mod.UNIT_FILE, wifi_mod.STATE_FILE = os.path.join(base, "eduino-wifi.service"), os.path.join(base, "state.json")
+        os.environ["PATH"], os.geteuid = bin_dir + os.pathsep + real_path, lambda: 0
+        try:
+            w = wifi_mod.Wifi(False, lambda *_: None)
+            check(w.maker is not None and w.retire_hotspot(), "first retire changes things")
+            with open(calls, encoding="utf-8") as f:
+                lines = f.read().splitlines()
+            check("hotspot_off.sh" in lines and not os.path.exists(on), lines)
+            check(os.path.exists(os.path.join(home, "hotspot_on.desktop" + wifi_mod.AUTOSTART_OFF))
+                  and not os.path.exists(os.path.join(home, "hotspot_on.desktop")), os.listdir(home))
+            check("systemctl disable isc-dhcp-server" in lines and "systemctl enable eduino-wifi.service" in lines, lines)
+            with open(wifi_mod.UNIT_FILE, encoding="utf-8") as f:
+                check("wifi.py --boot" in f.read(), "boot unit")
+            check("nmcli connection modify id Hotspot connection.autoconnect no" in lines
+                  and not any("modify id ROBODYNE " in l for l in lines), lines)
+            check("nmcli radio wifi on" in lines and "systemctl unmask wpa_supplicant" in lines, lines)
+            check(not hasattr(w, "hotspot"), "no way back to the hotspot")
+        finally:
+            for k, v in saved.items():
+                setattr(wifi_mod, k, v)
+            os.environ["PATH"], os.geteuid = real_path, real_euid
+
     @case("install.py's call (apply(mount)) still applies wifi.txt every time")
     def _():
         reset(V1)
@@ -578,7 +651,10 @@ def main():
             ticks[0] += 1
             if ticks[0] > 4:
                 raise Loop()
-        saved = usb_setup.usb_partitions, usb_setup._mounts, usb_setup.time
+        saved = usb_setup.usb_partitions, usb_setup._mounts, usb_setup.time, usb_setup.wifi.Wifi
+        retired = []
+        usb_setup.wifi.Wifi = type("W", (), {"__init__": lambda self, *a: None, "even_out": lambda self: None,
+                                             "retire_hotspot": lambda self: retired.append(1)})
         usb_setup.usb_partitions = lambda: ["/dev/sdz1"]
         usb_setup._mounts = lambda: {"/dev/sdz1": m}
         usb_setup.time = type("T", (), {"sleep": staticmethod(fake_sleep), "time": staticmethod(time.time),
@@ -589,11 +665,12 @@ def main():
         except Loop:
             returned = False
         finally:
-            usb_setup.usb_partitions, usb_setup._mounts, usb_setup.time = saved
+            usb_setup.usb_partitions, usb_setup._mounts, usb_setup.time, usb_setup.wifi.Wifi = saved
         check(installed() == V2, f"installed {installed()}")
         check(returned, "the loop should end after asking systemd to restart eduino-usb")
         check(calls["systemctl"][-1] == ("restart", "--no-block", kit_update.SELF_SERVICE), f"{calls['systemctl']}")
         check(calls["nod"] == 1, f"nodded {calls['nod']} times")
+        check(retired == [1], "the hotspot retired once at power-on")
 
     @case("kit_update.healthy(): a real HTTP /api/state answer, and a dead port")
     def _():

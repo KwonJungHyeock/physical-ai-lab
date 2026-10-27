@@ -1,9 +1,10 @@
 'use client';
 
 /**
- * 로봇 Wi-Fi: on a robot's own console, move the robot from its hotspot to
- * the classroom router (once per robot; afterwards it joins by itself at
- * power-on), or back to its hotspot.
+ * 로봇 Wi-Fi: on a robot's own console, move the robot to the classroom
+ * router (once per robot; afterwards it joins by itself at power-on). The
+ * robot has no hotspot to go back to: one that came on held the Wi-Fi chip
+ * (robot-python/server/wifi.py), so the way in is the Wi-Fi or the LAN cable.
  *
  * Switching takes the robot off the network this page reaches it on, so the
  * page watches for the answer to stop and then tells the student to move the
@@ -13,12 +14,12 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { connectWifi, fetchWifi, hotspotWifi, scanWifi, type WifiNetwork, type WifiStatus } from '@/engine/simulator/robotLink';
+import { connectWifi, fetchWifi, scanWifi, type WifiNetwork, type WifiStatus } from '@/engine/simulator/robotLink';
 
 import Icon from '../Icon';
 import css from '../console.module.css';
 
-type Phase = { kind: 'idle' } | { kind: 'switching'; ssid: string; hotspot: boolean } | { kind: 'moved'; ssid: string; hotspot: boolean };
+type Phase = { kind: 'idle' } | { kind: 'switching'; ssid: string } | { kind: 'moved'; ssid: string };
 
 function Bars({ signal }: { signal: number }) {
   const n = signal >= 75 ? 4 : signal >= 50 ? 3 : signal >= 25 ? 2 : 1;
@@ -105,16 +106,7 @@ export default function WifiPanel({ onFind }: { onFind(): void }) {
       setError(r.error || '연결하지 못했어요.');
       return;
     }
-    setPhase({ kind: 'switching', ssid: name, hotspot: false });
-  };
-  const toHotspot = async () => {
-    setError('');
-    const r = await hotspotWifi();
-    if (!r.ok) {
-      setError(r.error || '핫스팟을 켜지 못했어요.');
-      return;
-    }
-    setPhase({ kind: 'switching', ssid: '로봇 핫스팟', hotspot: true });
+    setPhase({ kind: 'switching', ssid: name });
   };
 
   const pwBad = password.length > 0 && (password.length < 8 || password.length > 63);
@@ -123,17 +115,11 @@ export default function WifiPanel({ onFind }: { onFind(): void }) {
     return (
       <div className={css.wifiMoved} role="status">
         <Icon name="wifi" size={34} />
-        <h2>로봇이 {phase.hotspot ? '자기 핫스팟' : `'${phase.ssid}'`} 으로 옮겨 가고 있어요</h2>
+        <h2>로봇이 &apos;{phase.ssid}&apos; 으로 옮겨 가고 있어요</h2>
         <ol>
-          {phase.hotspot ? (
-            <li>
-              PC 의 Wi-Fi 를 로봇 핫스팟(<b>{status?.ssid && status.mode === 'hotspot' ? status.ssid : 'ElephantRobotics_AP…'}</b>)으로 바꿔요.
-            </li>
-          ) : (
-            <li>
-              PC 의 Wi-Fi 도 <b>{phase.ssid}</b> 로 바꿔요.
-            </li>
-          )}
+          <li>
+            PC 의 Wi-Fi 도 <b>{phase.ssid}</b> 로 바꿔요.
+          </li>
           <li>
             20초쯤 뒤 [로봇 찾기] 를 눌러요. 새 네트워크에서는 <b>로봇 ID 가 바뀌어요</b> (주소 끝 숫자).
           </li>
@@ -160,7 +146,7 @@ export default function WifiPanel({ onFind }: { onFind(): void }) {
             {!status
               ? '확인하는 중…'
               : status.mode === 'hotspot'
-                ? `로봇 핫스팟 · ${status.ssid ?? ''}`
+                ? '로봇 핫스팟 · Wi-Fi 로 옮기면 꺼져요'
                 : status.mode === 'wifi'
                   ? `Wi-Fi · ${status.ssid ?? ''}`
                   : status.mode === 'off'
@@ -173,11 +159,6 @@ export default function WifiPanel({ onFind }: { onFind(): void }) {
             </span>
           )}
         </span>
-        {status?.mode === 'wifi' && (
-          <button type="button" className={css.ghost} onClick={() => void toHotspot()} disabled={busy}>
-            핫스팟으로 돌아가기
-          </button>
-        )}
       </div>
 
       <div className={css.wifiListHead}>

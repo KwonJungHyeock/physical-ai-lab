@@ -1,35 +1,35 @@
 """Classroom Wi-Fi for the robot: see where it is connected, list nearby
-networks, join the classroom router, or go back to its own hotspot.
+networks, join the classroom router, or turn Wi-Fi off (LAN cable only).
 
 Standard library only; it drives NetworkManager with `nmcli` (Ubuntu on the
 RDK X5, the Pi and the Jetson use it). Joining a network takes the robot off
 the network it is on now, so the switch runs in the background after the
 answer has gone out, and a failure puts the previous connection back.
 
-The classroom profile gets a higher autoconnect priority than the robot's
-hotspot: at school the robot joins the router by itself after power-on; away
-from the router it falls back to its hotspot.
+The robot has no hotspot of its own any more: a hotspot that came on held the
+Wi-Fi chip, and the classroom network could not get it back ("device not
+ready"). The robot is reached over the classroom Wi-Fi or the LAN cable
+(lan.py), and set up from a USB stick (usb_setup.py). Every classroom
+network gets the same autoconnect priority; NetworkManager joins whichever
+is there by itself.
 
-Joining needs only the network's name and password: the robot does not have
-to see it in a scan first (a robot running its hotspot cannot scan).
-
-The myCobot 280 RDK X5 image runs its hotspot outside NetworkManager: at
-desktop login ~/.config/autostart/hotspot_on.desktop runs Elephant Robotics'
+The myCobot 280 RDK X5 image comes with Elephant Robotics' hotspot outside
+NetworkManager: at desktop login ~/.config/autostart/hotspot_on.desktop runs
 /usr/local/bin/hotspot-function/hotspot_on.sh (masks wpa_supplicant, starts
-hostapd and isc-dhcp-server on wlan0, 10.42.0.1), and hotspot_off.sh undoes
-it. There (class MakerHotspot) joining the classroom calls hotspot_off.sh
-first and hotspot_on.sh again if the join fails; once joined, the login
-autostart is set aside (renamed, not deleted) and a small boot service
-(eduino-wifi.service, `wifi.py --boot`) waits for the classroom network and
-turns the maker's hotspot on only when it is not there. `--hotspot` puts all
-of it back as the maker left it. These steps need root: `sudo python3 wifi.py`.
+hostapd and isc-dhcp-server on wlan0, 10.42.0.1); hotspot_off.sh undoes it.
+retire_hotspot() turns it off and keeps it off: the login autostart set
+aside (renamed, not deleted), isc-dhcp-server disabled, wlan0 back to
+NetworkManager, and a small boot service (eduino-wifi.service,
+`wifi.py --boot`) that does it again at every power-on and then keeps
+looking for the classroom network. Hotspot profiles inside NetworkManager
+(other robot images) are kept but no longer joined by themselves. These
+steps need root (the installer, the eduino-usb service, `sudo python3 wifi.py`).
 
 Also a command-line tool for setting up robots one by one:
     sudo python3 wifi.py                       # where am I connected
     sudo python3 wifi.py EDUINO-LAB 비밀번호    # join the classroom router
-    sudo python3 wifi.py --hotspot             # back to the robot's own hotspot
     sudo python3 wifi.py --off                 # Wi-Fi off (a classroom on the LAN cable only, lan.py)
-    sudo python3 wifi.py --boot                # (the boot service) classroom first, else the hotspot
+    sudo python3 wifi.py --boot                # (the boot service) hotspot kept off, then the classroom Wi-Fi
 """
 
 import glob
@@ -42,16 +42,16 @@ import sys
 import threading
 import time
 
-CLASSROOM_PRIORITY = 10          # above the hotspot profile (0 by default)
+CLASSROOM_PRIORITY = 10          # every classroom network the same (see remember)
 CONNECT_TIMEOUT_S = 45
-BOOT_WAIT_S = 120                # at power-on: how long the classroom network may take before the hotspot comes on
+BOOT_WAIT_S = 120                # at power-on: how long NetworkManager may take to join by itself
                                  # (a router on the same power strip boots slower than the robot)
-RETRY_S = 300                    # on the fallback hotspot with nobody on it: try the classroom network again this often
+RETRY_S = 90                     # no classroom network yet: ask for it again this often
 
 # Elephant Robotics' own hotspot on the myCobot 280 RDK X5 image (see the module notes).
 MAKER_DIR = "/usr/local/bin/hotspot-function"
 MAKER_AUTOSTART = "/home/*/.config/autostart/hotspot_on.desktop"
-AUTOSTART_OFF = ".off-by-eduino"         # the login autostart, set aside while the classroom network is in use
+AUTOSTART_OFF = ".off-by-eduino"         # the login autostart, set aside for good
 HOSTAPD_CONF = "/etc/hostapd.conf"
 STATE_FILE = "/etc/eduino-wifi.json"     # {"ssid": ...}: the classroom network this robot uses; {"off": true}: Wi-Fi off
 UNIT_FILE = "/etc/systemd/system/eduino-wifi.service"
@@ -75,44 +75,23 @@ def _split_terse(line):
     return out
 
 
-MAKER_NEEDS_ROOT = ("이 로봇(RDK X5)은 제조사 핫스팟을 끄고 켜야 해서 관리자 권한이 필요해요. "
+MAKER_NEEDS_ROOT = ("이 로봇(RDK X5)은 Wi-Fi 장치를 다루려면 관리자 권한이 필요해요. "
                     "로봇 터미널에서 한 번만: cd ~/robot_console && sudo python3 wifi.py <Wi-Fi 이름> <비밀번호>")
 
 
-def hotspot_has_clients():
-    """A phone or PC is on the robot's hotspot now (`iw` lists its stations). When `iw` is missing,
-    say yes: better to keep the hotspot than to cut someone off."""
-    try:
-        names = [ln.split()[1] for ln in subprocess.run(["iw", "dev"], capture_output=True, text=True, timeout=5).stdout.splitlines() if ln.strip().startswith("Interface ")]
-        return any("Station" in subprocess.run(["iw", "dev", n, "station", "dump"], capture_output=True, text=True, timeout=5).stdout for n in names)
-    except (OSError, subprocess.SubprocessError, IndexError):
-        return True
-
-
 class MakerHotspot:
-    """The maker's hostapd hotspot (myCobot 280 RDK X5 image), switched with the maker's own scripts."""
+    """The maker's hostapd hotspot (myCobot 280 RDK X5 image): turned off with the maker's own script and kept off."""
 
     def __init__(self, log):
         self.log = log
 
     @staticmethod
     def present():
-        return all(os.path.exists(os.path.join(MAKER_DIR, f)) for f in ("hotspot_on.sh", "hotspot_off.sh"))
+        return os.path.exists(os.path.join(MAKER_DIR, "hotspot_off.sh"))
 
     @staticmethod
     def running():
         return subprocess.run(["pgrep", "-x", "hostapd"], capture_output=True).returncode == 0
-
-    @staticmethod
-    def ssid():
-        try:
-            with open(HOSTAPD_CONF, encoding="utf-8", errors="replace") as f:
-                for line in f:
-                    if line.startswith("ssid="):
-                        return line.split("=", 1)[1].strip()
-        except OSError:
-            pass
-        return "로봇 핫스팟"
 
     def _script(self, name, timeout=60):
         p = subprocess.run(["bash", os.path.join(MAKER_DIR, name)], capture_output=True, text=True, timeout=timeout)
@@ -123,60 +102,61 @@ class MakerHotspot:
         """Hotspot off, wlan0 back to NetworkManager (the driver reloads, so wait for it)."""
         self.log("[Wi-Fi] 제조사 핫스팟을 끄는 중 (hotspot_off.sh)…")
         self._script("hotspot_off.sh")
+        if self.running():
+            subprocess.run(["pkill", "-x", "hostapd"], capture_output=True)
         subprocess.run(["systemctl", "stop", "isc-dhcp-server"], capture_output=True)
 
-    def on(self):
-        self.log("[Wi-Fi] 제조사 핫스팟을 켜는 중 (hotspot_on.sh)…")
-        self._script("hotspot_on.sh")
-
-    # --- classroom first at power-on -------------------------------------
-    def classroom_mode(self, ssid, here, ssids=None):
-        """After a join: power-on tries this network first (then the others remembered with it, ssids);
-        the login autostart no longer takes wlan0."""
-        ssids = [ssid] + [s for s in (ssids or []) if s != ssid]
-        self._own_boot({"ssid": ssid, "ssids": ssids}, here)
-        self.log(f"[Wi-Fi] 켤 때마다 {' · '.join(repr(s) for s in ssids)} 중 있는 쪽에 먼저 붙고, 없으면 로봇 핫스팟을 켜요.")
-
-    def off_mode(self, here):
-        """Wi-Fi off (the classroom uses the LAN cable): no hotspot at login or at power-on."""
-        self._own_boot({"off": True}, here)
-        self.log("[Wi-Fi] 꺼 둠: 켤 때 핫스팟도 켜지 않아요 (유선 LAN 으로만 연결).")
-
-    def _own_boot(self, state, here):
-        """Power-on is ours (eduino-wifi.service), not the maker's login autostart."""
-        with open(STATE_FILE, "w", encoding="utf-8") as f:
-            json.dump(state, f)
+    def retire(self, here):
+        """Never on again: no login autostart, no DHCP server, our boot service in charge of power-on.
+        True when something was still set the maker's way."""
+        changed = False
         for path in glob.glob(MAKER_AUTOSTART):
             os.replace(path, path + AUTOSTART_OFF)
-        # no DHCP server on the classroom network (hotspot_on.sh enables it again)
-        subprocess.run(["systemctl", "disable", "isc-dhcp-server"], capture_output=True)
-        with open(UNIT_FILE, "w", encoding="utf-8") as f:
-            f.write(f"""[Unit]
-Description=Eduino classroom Wi-Fi first, the robot's own hotspot when it is not there, or Wi-Fi off (wifi.py --boot)
+            changed = True
+        # hotspot_on.sh enables it again; on the classroom network it must not hand out addresses
+        if subprocess.run(["systemctl", "is-enabled", "isc-dhcp-server"], capture_output=True, text=True).stdout.strip() == "enabled":
+            subprocess.run(["systemctl", "disable", "isc-dhcp-server"], capture_output=True)
+            changed = True
+        unit = f"""[Unit]
+Description=Eduino: the robot's hotspot kept off, then the classroom Wi-Fi (or Wi-Fi off) (wifi.py --boot)
 After=NetworkManager.service
 Wants=NetworkManager.service
 
 [Service]
-# simple, not oneshot: on the fallback hotspot it keeps trying the classroom network
+# simple, not oneshot: with no classroom network yet it keeps asking for it
 Type=simple
 ExecStart={sys.executable} {os.path.join(here, "wifi.py")} --boot
 
 [Install]
 WantedBy=multi-user.target
-""")
-        subprocess.run(["systemctl", "daemon-reload"], capture_output=True)
-        subprocess.run(["systemctl", "enable", "eduino-wifi.service"], capture_output=True)
-
-    def maker_mode(self):
-        """Everything back as the maker left it: hotspot at login, no boot service."""
-        for path in glob.glob(MAKER_AUTOSTART + AUTOSTART_OFF):
-            os.replace(path, path[: -len(AUTOSTART_OFF)])
-        if os.path.exists(UNIT_FILE):
-            subprocess.run(["systemctl", "disable", "eduino-wifi.service"], capture_output=True)
-            os.remove(UNIT_FILE)
+"""
+        try:
+            with open(UNIT_FILE, encoding="utf-8") as f:
+                same = f.read() == unit
+        except OSError:
+            same = False
+        if not same:
+            with open(UNIT_FILE, "w", encoding="utf-8") as f:
+                f.write(unit)
             subprocess.run(["systemctl", "daemon-reload"], capture_output=True)
-        if os.path.exists(STATE_FILE):
-            os.remove(STATE_FILE)
+            changed = True
+        subprocess.run(["systemctl", "enable", "eduino-wifi.service"], capture_output=True)
+        return changed
+
+
+def _read_state():
+    """STATE_FILE: {"ssid", "ssids"} the classroom networks, {"off": true} Wi-Fi off, {} not set yet."""
+    try:
+        with open(STATE_FILE, encoding="utf-8") as f:
+            state = json.load(f)
+        return state if isinstance(state, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def _write_state(state):
+    with open(STATE_FILE, "w", encoding="utf-8") as f:
+        json.dump(state, f)
 
 
 class Wifi:
@@ -186,7 +166,7 @@ class Wifi:
         self.lock = threading.Lock()
         # the last switch: {"ssid", "state": "switching"|"ok"|"failed", "error", "at"}
         self.last = None
-        self._demo_net = {"ssid": "ElephantRobotics_AP_DEMO", "mode": "hotspot"}
+        self._demo_net = {"ssid": "EDUINO-LAB", "mode": "wifi"}
         self.maker = None if demo or not MakerHotspot.present() else MakerHotspot(log)
 
     # ---------------------------------------------------------------- nmcli
@@ -204,7 +184,7 @@ class Wifi:
             if "secrets were required" in msg.lower() or "password" in msg.lower():
                 raise RuntimeError("비밀번호가 맞지 않아요.")
             if "no suitable device found" in msg.lower():
-                raise RuntimeError("로봇의 Wi-Fi 장치(wlan0)를 네트워크 관리자가 아직 쓰지 못해요 (핫스팟이 놓아주지 않음). 로봇을 껐다 켠 뒤 다시 해 주세요.")
+                raise RuntimeError("로봇의 Wi-Fi 장치(wlan0)를 네트워크 관리자가 아직 쓰지 못해요. 로봇을 껐다 켠 뒤 다시 해 주세요.")
             if "no network with ssid" in msg.lower() or "could not be found" in msg.lower():
                 raise RuntimeError("그 이름의 Wi-Fi 를 찾지 못했어요. 이름(대소문자·띄어쓰기)과 공유기가 켜져 있는지 확인해 주세요.")
             raise RuntimeError(msg or "nmcli 오류")
@@ -225,7 +205,13 @@ class Wifi:
         mode = vals.get("802-11-wireless.mode", "")
         return ("hotspot" if mode == "ap" else "wifi"), vals.get("802-11-wireless.ssid", conn)
 
-    def _take_wlan(self):
+    def _is_hotspot(self, conn):
+        try:
+            return self._mode(conn)[0] == "hotspot"
+        except RuntimeError:
+            return False
+
+    def _take_wlan(self, radio=True):
         """Hand the Wi-Fi chip back to NetworkManager after the maker's hotspot: hostapd's hotspot_on.sh
         masks wpa_supplicant, and NetworkManager leaves a device it saw unmanaged alone, so without this
         a join fails with "No suitable device found" (only eth0 left to try)."""
@@ -237,7 +223,8 @@ class Wifi:
                 self._nm("device", "set", dev, "managed", "yes")
             except RuntimeError:
                 pass
-        self._radio(True)
+        if radio:
+            self._radio(True)
 
     def _wait_device(self, timeout=40):
         """The Wi-Fi device once NetworkManager can use it (after the maker's script reloads the driver)."""
@@ -253,57 +240,77 @@ class Wifi:
                 return self._device()
             time.sleep(1)
 
-    def boot(self):
-        """Power-on (eduino-wifi.service): the classroom network if it comes, else the maker's hotspot."""
-        try:
-            with open(STATE_FILE, encoding="utf-8") as f:
-                state = json.load(f)
-        except (OSError, ValueError):
-            return
-        if state.get("off"):
-            if self.maker and MakerHotspot.running():
+    def retire_hotspot(self):
+        """No robot hotspot: the maker's hotspot off and kept off (login and power-on), hotspot profiles in
+        NetworkManager no longer joined by themselves, wlan0 back to NetworkManager. Needs root; safe to run
+        again and again (the installer, the eduino-usb service and every power-on do). True when it changed something."""
+        if self.demo or os.geteuid() != 0:
+            return False
+        changed = False
+        if self.maker:
+            if MakerHotspot.running():
                 self.maker.off()
+                changed = True
+            changed = self.maker.retire(os.path.dirname(os.path.abspath(__file__))) or changed
+        try:
+            for line in self._nm("-t", "-f", "NAME,TYPE,AUTOCONNECT", "connection", "show").splitlines():
+                name, typ, auto = (_split_terse(line) + ["", "", ""])[:3]
+                if typ in ("802-11-wireless", "wifi") and auto == "yes" and self._is_hotspot(name):
+                    self._nm("connection", "modify", "id", name, "connection.autoconnect", "no")
+                    self.log(f"[Wi-Fi] 핫스팟 '{name}' 은 이제 저절로 켜지지 않아요.")
+                    changed = True
+        except RuntimeError:
+            pass
+        self._take_wlan(radio=not _read_state().get("off"))
+        if changed:
+            self.log("[Wi-Fi] 로봇 핫스팟을 껐어요. 이제 교실 Wi-Fi 나 랜선으로만 연결해요.")
+        return changed
+
+    def boot(self):
+        """Power-on (eduino-wifi.service): the hotspot kept off, then the classroom network (or Wi-Fi off).
+        NetworkManager joins a remembered network by itself; this only asks for it again while none has come."""
+        self.retire_hotspot()
+        state = _read_state()
+        if state.get("off"):
             self._radio(False)
             self.log("[Wi-Fi] 켜짐: Wi-Fi 는 꺼 둠 (유선 LAN 으로만 연결).")
             return
-        ssid = state.get("ssid")
-        if not ssid or not self.maker:
+        ssids = [s for s in state.get("ssids") or [state.get("ssid")] if s]
+        if not ssids:
+            self.log("[Wi-Fi] 켜짐: 기억한 교실 Wi-Fi 가 없어요 (USB 의 wifi.txt 를 꽂거나 랜선으로 연결).")
             return
-        ssids = [s for s in state.get("ssids") or [ssid] if s]
-        # a hotspot from an earlier fallback left wpa_supplicant masked and wlan0 unmanaged: Wi-Fi needs both
-        self._take_wlan()
-        subprocess.run(["systemctl", "stop", "isc-dhcp-server"], capture_output=True)
         end = time.time() + BOOT_WAIT_S
-        tried = False
-        while time.time() < end:
+        asked = False
+        while True:
             try:
-                _, state, conn = self._device()
-                if state.startswith("connected") and conn in ssids:
+                _, dev_state, conn = self._device()
+                if dev_state.startswith("connected") and conn in ssids:
                     self.log(f"[Wi-Fi] 켜짐: '{conn}' 에 연결됐어요.")
                     return
-                if not tried and state == "disconnected" and time.time() > end - BOOT_WAIT_S / 2:
-                    tried = True
+                if not asked and dev_state == "disconnected" and time.time() > end - BOOT_WAIT_S / 2:
+                    asked = True
                     self._up_any(ssids, 20)
             except RuntimeError:
                 pass
+            if time.time() > end:
+                break
             time.sleep(2)
-        self.log(f"[Wi-Fi] 켜짐: {' · '.join(repr(s) for s in ssids)} 가 없어 로봇 핫스팟을 켜요.")
-        self.maker.on()
-        # The classroom network may come later (the router was off, or slower to start). While
-        # nobody is on the hotspot, try it again now and then; someone on the hotspot is never cut off.
+        # The classroom network may come later (the router was off, or slower to start): keep asking.
+        self.log(f"[Wi-Fi] 켜짐: {' · '.join(repr(s) for s in ssids)} 가 아직 없어요. 랜선은 그대로 쓸 수 있고, Wi-Fi 는 계속 찾아요.")
         while True:
             time.sleep(RETRY_S)
-            if hotspot_has_clients():
-                continue
-            self.log("[Wi-Fi] 교실 Wi-Fi 를 다시 찾아봐요 (핫스팟에 붙은 기기가 없어요).")
-            self.maker.off()
+            try:
+                _, dev_state, conn = self._device()
+                if dev_state.startswith("connected"):
+                    self.log(f"[Wi-Fi] '{conn}' 에 연결됐어요.")
+                    return
+            except RuntimeError:
+                pass
             self._take_wlan()
             conn = self._up_any(ssids, 30)
             if conn:
                 self.log(f"[Wi-Fi] '{conn}' 에 연결됐어요.")
                 return
-            self.log("[Wi-Fi] 교실 Wi-Fi 가 아직 없어 핫스팟을 다시 켜요.")
-            self.maker.on()
 
     def _up_any(self, ssids, wait_s):
         """The first of these remembered networks that comes up (its name), else None."""
@@ -316,6 +323,15 @@ class Wifi:
             except RuntimeError:
                 pass
         return None
+
+    def classroom_mode(self, ssid, ssids=None):
+        """After a join: power-on asks for this network first (then the others remembered with it, ssids)."""
+        if self.demo or os.geteuid() != 0:
+            return
+        ssids = [ssid] + [s for s in (ssids or []) if s != ssid]
+        _write_state({"ssid": ssid, "ssids": ssids})
+        self.retire_hotspot()
+        self.log(f"[Wi-Fi] 켤 때마다 {' · '.join(repr(s) for s in ssids)} 중 있는 쪽에 붙어요.")
 
     def remember(self, ssid, password):
         """Keep another network for later without joining it now: NetworkManager joins it by itself when
@@ -383,11 +399,10 @@ class Wifi:
         if not self.lock.acquire(blocking=False):
             return "이미 Wi-Fi 를 바꾸는 중이에요."
         try:
-            if self.maker:
-                if MakerHotspot.running():
-                    self.maker.off()
-                self.maker.off_mode(os.path.dirname(os.path.abspath(__file__)))
+            _write_state({"off": True})
+            self.retire_hotspot()
             self._radio(False)
+            self.log("[Wi-Fi] 꺼 둠: 켤 때도 Wi-Fi 를 켜지 않아요 (유선 LAN 으로만 연결).")
             self.last = {"ssid": "(Wi-Fi 끔)", "state": "ok", "error": "", "at": time.time()}
             return None
         except Exception as exc:
@@ -399,8 +414,8 @@ class Wifi:
         """Where the robot is connected now."""
         if self.demo:
             return {**self._demo_net, "device": "wlan0", "last": self.last}
-        if self.maker and MakerHotspot.running():
-            return {"device": "wlan0", "state": "connected", "mode": "hotspot", "ssid": MakerHotspot.ssid(),
+        if self.maker and MakerHotspot.running():   # a robot not set up by the kit yet
+            return {"device": "wlan0", "state": "connected", "mode": "hotspot", "ssid": None,
                     "connection": "hostapd", "last": self.last}
         if not self._radio_on():
             return {"device": "wlan0", "state": "off", "mode": "off", "ssid": None, "connection": None, "last": self.last}
@@ -409,9 +424,9 @@ class Wifi:
         return {"device": dev, "state": state, "mode": mode, "ssid": ssid, "connection": conn, "last": self.last}
 
     def scan(self):
-        """Nearby networks, strongest first (a robot in hotspot mode may only see a few)."""
+        """Nearby networks, strongest first."""
         if self.demo:
-            nets = [("ElephantRobotics_AP_DEMO", 100), ("EDUINO-LAB", 82), ("School-WiFi", 64), ("Library 2F", 31)]
+            nets = [("EDUINO-LAB", 82), ("School-WiFi", 64), ("Library 2F", 31)]
             return [{"ssid": n, "signal": sig, "secure": True, "current": n == self._demo_net["ssid"]} for n, sig in nets]
         if self.maker and MakerHotspot.running():
             return []                           # the maker's hotspot holds the radio: nothing to scan with
@@ -445,19 +460,8 @@ class Wifi:
         threading.Thread(target=self._switch, args=(ssid, password, on_done), daemon=True).start()
         return None
 
-    def hotspot(self, on_done=None):
-        """Back to the robot's own hotspot (its previous AP profile, or a new one)."""
-        if self.maker and os.geteuid() != 0:
-            return MAKER_NEEDS_ROOT
-        if not self.lock.acquire(blocking=False):
-            return "이미 Wi-Fi 를 바꾸는 중이에요."
-        self.last = {"ssid": "(로봇 핫스팟)", "state": "switching", "error": "", "at": time.time()}
-        threading.Thread(target=self._to_hotspot, args=(on_done,), daemon=True).start()
-        return None
-
     # ---------------------------------------------------------------- background work
     def _switch(self, ssid, password, on_done):
-        maker_was_on = False
         try:
             time.sleep(1.5)                     # let the answer reach the browser first
             if self.demo:
@@ -467,16 +471,14 @@ class Wifi:
                 self.log(f"[Wi-Fi] (데모) '{ssid}' 에 연결했어요.")
                 return
             self._radio(True)                   # after `--off`
-            maker_was_on = bool(self.maker and MakerHotspot.running())
-            if maker_was_on:
-                self.maker.off()
+            self.retire_hotspot()               # a robot not set up by the kit yet still has its hotspot on
             self._take_wlan()
             dev, state, before = self._wait_device()
             if state in ("unavailable", "unmanaged"):
                 raise RuntimeError(f"로봇의 Wi-Fi 장치({dev})가 준비되지 않았어요 ({state}). 로봇을 껐다 켠 뒤 다시 해 주세요.")
-            self.log(f"[Wi-Fi] '{ssid}' 에 연결하는 중… (지금 연결: {'제조사 핫스팟' if maker_was_on else before})")
-            # A profile made from the name and password alone, not from the scan list: while the
-            # robot is a hotspot its Wi-Fi cannot scan, so the classroom network is not listed.
+            self.log(f"[Wi-Fi] '{ssid}' 에 연결하는 중… (지금 연결: {before})")
+            # A profile made from the name and password alone, not from the scan list: right after
+            # the driver reloads the robot has not scanned yet, so the classroom network is not listed.
             # "hidden" makes NetworkManager ask for that name directly instead of waiting to see it.
             try:
                 self._nm("connection", "delete", "id", ssid)       # an earlier try with the same name
@@ -486,15 +488,14 @@ class Wifi:
                     "802-11-wireless.hidden", "yes",
                     # no Wi-Fi power saving: a dozing robot answers 로봇 찾기 too late and is missed
                     "802-11-wireless.powersave", "2",
-                    # prefer the classroom network at power-on; the hotspot stays as the fallback
+                    # joined by itself at power-on, like every classroom network (see remember)
                     "connection.autoconnect", "yes", "connection.autoconnect-priority", str(CLASSROOM_PRIORITY)]
             if password:
                 args += ["wifi-sec.key-mgmt", "wpa-psk", "wifi-sec.psk", password]
             try:
                 self._nm(*args)
                 self._nm("--wait", str(CONNECT_TIMEOUT_S), "connection", "up", "id", ssid, "ifname", dev, timeout=CONNECT_TIMEOUT_S + 10)
-                if self.maker:
-                    self.maker.classroom_mode(ssid, os.path.dirname(os.path.abspath(__file__)))
+                self.classroom_mode(ssid)
                 self.last.update(state="ok")
                 self.log(f"[Wi-Fi] '{ssid}' 에 연결했어요. 다음부터 켜면 이 Wi-Fi 에 먼저 붙어요.")
             except RuntimeError as exc:
@@ -504,9 +505,7 @@ class Wifi:
                     self._nm("connection", "delete", "id", ssid)   # no half-made profile left to retry at boot
                 except RuntimeError:
                     pass
-                if maker_was_on:
-                    self.maker.on()
-                elif before and before != "--" and before != ssid:
+                if before and before != "--" and before != ssid and not self._is_hotspot(before):
                     try:
                         self._nm("connection", "up", before, timeout=40)
                     except RuntimeError as exc2:
@@ -514,49 +513,6 @@ class Wifi:
         except Exception as exc:                # never leave the lock held
             self.last.update(state="failed", error=str(exc))
             self.log(f"[Wi-Fi] 연결 실패: {exc}")
-            if maker_was_on and not MakerHotspot.running():
-                self.maker.on()                 # never leave the robot with no way in
-        finally:
-            self.lock.release()
-            if on_done:
-                on_done()
-
-    def _to_hotspot(self, on_done):
-        try:
-            time.sleep(1.5)
-            if self.demo:
-                self._demo_net = {"ssid": "ElephantRobotics_AP_DEMO", "mode": "hotspot"}
-                self.last.update(state="ok")
-                return
-            self._radio(True)                   # after `--off`
-            if self.maker:
-                self.maker.maker_mode()
-                try:
-                    self._nm("device", "disconnect", "wlan0")
-                except RuntimeError:
-                    pass
-                if not MakerHotspot.running():
-                    self.maker.on()
-                self.last.update(state="ok")
-                self.log("[Wi-Fi] 제조사 핫스팟으로 돌아갔어요 (켤 때도 핫스팟).")
-                return
-            dev, _, _ = self._device()
-            ap = None
-            for line in self._nm("-t", "-f", "NAME,TYPE", "connection", "show").splitlines():
-                name, typ = (_split_terse(line) + ["", ""])[:2]
-                if typ in ("802-11-wireless", "wifi") and self._mode(name)[0] == "hotspot":
-                    ap = name
-                    break
-            if ap:
-                self._nm("connection", "up", ap, timeout=40)
-            else:
-                host = re.sub(r"[^A-Za-z0-9-]", "", subprocess.run(["hostname"], capture_output=True, text=True).stdout.strip()) or "robot"
-                self._nm("device", "wifi", "hotspot", "ifname", dev, "ssid", f"EDUINO-{host}", "password", "12345678", timeout=40)
-            self.last.update(state="ok")
-            self.log("[Wi-Fi] 로봇 핫스팟으로 돌아갔어요.")
-        except Exception as exc:
-            self.last.update(state="failed", error=str(exc))
-            self.log(f"[Wi-Fi] 핫스팟 켜기 실패: {exc}")
         finally:
             self.lock.release()
             if on_done:
@@ -564,7 +520,7 @@ class Wifi:
 
 
 def _say(text):
-    """Print, and keep going if the terminal is gone (joining Wi-Fi can cut an SSH session over the hotspot)."""
+    """Print, and keep going if the terminal is gone (joining Wi-Fi can cut an SSH session)."""
     try:
         print(text, flush=True)
     except OSError:
@@ -587,8 +543,8 @@ def _main(argv):
         _say(err or "Wi-Fi 를 껐어요. 유선 LAN 으로 연결하세요 (PC 와 랜선 직결: 169.254.127.10).")
         return
     if len(argv) >= 2 and argv[1] == "--hotspot":
-        err = w.hotspot()
-    elif len(argv) >= 2:
+        raise SystemExit("로봇 핫스팟은 이제 쓰지 않아요 (켜 두면 Wi-Fi 장치를 놓아주지 않아요). 교실 Wi-Fi 나 랜선으로 연결해 주세요.")
+    if len(argv) >= 2:
         err = w.connect(argv[1], argv[2] if len(argv) > 2 else "")
     else:
         s = w.status()

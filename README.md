@@ -162,7 +162,7 @@ HTTP + JSON 만 쓰고 WebSocket 은 없습니다 (화면이 `/api/state` 를 �
 | `GET /api/camera.jpg?cam=N` · `POST /api/vision` · `/api/vision/hand` · `/api/ai` | 카메라 영상 · 색 인식 · 손 카메라 좌표 · YOLOv5s |
 | `GET /api/selfcheck` · `/api/arrivals` | 검수 준비 점검 · 마지막 실행의 실제 도착 각도 |
 | `POST /api/identify` | "이 로봇 맞나요?" — 조금 움직여 보이기 (다른 주소에서 호출, CORS) |
-| `GET /api/wifi` · `/api/wifi/scan`, `POST /api/wifi/connect` · `/api/wifi/hotspot` | 교실 Wi-Fi |
+| `GET /api/wifi` · `/api/wifi/scan`, `POST /api/wifi/connect` | 교실 Wi-Fi (로봇 핫스팟은 쓰지 않음) |
 
 myAGV `agv_server.py` 는 같은 화면 파일에 `GET /api/state`, `POST /api/drive`(0.1–0.2초마다 유지 신호) · `/api/stop` ·
 `/api/straight` · `/api/trim` · `/api/led` · `/api/identify` · `/api/reconnect`, `GET /api/camera.jpg`, `/api/wifi…` 를 둡니다.

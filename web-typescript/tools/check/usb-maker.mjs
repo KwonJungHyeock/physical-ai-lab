@@ -69,15 +69,13 @@ await dlg.getByPlaceholder("비밀번호가 없으면 비워 두기").fill("edui
 await dlg.getByPlaceholder(/예: 3조/).fill("1조");
 await page.screenshot({ path: path.join(OUT, "usb-1-form.png") });
 await manual("u-make.png", dlg.locator("[class*=pickerBox]"));
-// The other two ways: the robot's own hotspot, and the LAN cable only (Wi-Fi off).
+// The other way: the LAN cable only (Wi-Fi off). The robot has no hotspot any more.
 const ways = dlg.getByRole("radiogroup", { name: "연결 방법" });
 await ways.getByRole("radio", { name: /유선만/ }).click();
 await page.waitForTimeout(400);
 check((await dlg.innerText()).includes("169.254.127.10"), "[유선만] → 직결 주소 안내");
 await manual("u-way-off.png", dlg.locator("section[aria-label=\"연결 방법\"]"));
-await ways.getByRole("radio", { name: /로봇 핫스팟/ }).click();
-await page.waitForTimeout(400);
-await manual("u-way-hotspot.png", dlg.locator("section[aria-label=\"연결 방법\"]"));
+check((await ways.getByRole("radio").count()) === 2 && !(await dlg.innerText()).includes("로봇 핫스팟"), "연결 방법: 교실 Wi-Fi · 유선만 두 가지 (핫스팟 없음)");
 await ways.getByRole("radio", { name: /교실 Wi-Fi/ }).click();
 await page.waitForTimeout(400);
 await dlg.getByPlaceholder("예: EDUINO-LAB").fill("EDUINO-LAB");

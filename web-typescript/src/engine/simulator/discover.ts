@@ -36,7 +36,7 @@ export interface FoundRobot {
   remote: boolean;
   /** Its robot program's version (`YYYYMMDD-HHMMSS-<hash>`); '' from robots older than that. */
   version: string;
-  /** The Wi-Fi it is on ('' on its hotspot, a cable, or a robot older than that). */
+  /** The Wi-Fi it is on ('' on a cable, or a robot older than that). */
   wifi: string;
   /** Round trip of the answer, ms. */
   ms: number;

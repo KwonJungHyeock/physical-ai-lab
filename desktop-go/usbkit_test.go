@@ -79,6 +79,8 @@ func TestWifiForm(t *testing.T) {
 		{WifiForm{SSID: "a", Password: strings.Repeat("z", 64)}, "8~63"},
 		{WifiForm{SSID: "a", Label: strings.Repeat("가", 25)}, "24자"},
 		{WifiForm{SSID: "a", Label: "x\ny"}, "보이지 않는"},
+		{WifiForm{SSID: "핫스팟"}, "쓰지 않아요"},
+		{WifiForm{SSID: "끔"}, ""},
 	} {
 		got := checkWifi(c.w)
 		if (c.want == "") != (got == "") || !strings.Contains(got, c.want) {

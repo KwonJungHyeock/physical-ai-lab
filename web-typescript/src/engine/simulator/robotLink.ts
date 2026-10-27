@@ -296,7 +296,7 @@ export const jogRobotAxis = (axis: 'x' | 'y' | 'z' | 'rx' | 'ry' | 'rz', dir: -1
 export interface WifiStatus {
   ok: boolean;
   error?: string;
-  /** 'hotspot' = the robot's own network, 'wifi' = joined a router, null = not connected. */
+  /** 'wifi' = joined a router, 'off' = Wi-Fi off (LAN cable), 'hotspot' = the maker's hotspot of a robot not set up by the kit yet, null = not connected. */
   mode?: 'hotspot' | 'wifi' | 'off' | null;
   ssid?: string | null;
   device?: string;
@@ -333,5 +333,3 @@ export async function scanWifi(): Promise<{ ok: boolean; error?: string; network
 
 /** The robot leaves its current network for `ssid` a moment after answering (this page loses it if the network changes). */
 export const connectWifi = (ssid: string, password: string) => post('/api/wifi/connect', { ssid, password });
-/** Back to the robot's own hotspot. */
-export const hotspotWifi = () => post('/api/wifi/hotspot');

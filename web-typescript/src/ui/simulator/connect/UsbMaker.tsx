@@ -8,7 +8,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { checkWifi, ejectUsb, formatBytes, INSTALL_LINE, kitDate, makeUsb, pcWifi, usbJob, usbResults, usbState, type RobotResult, type UsbDrive, type UsbJob, type UsbState, type WifiForm, WIFI_HOTSPOT, WIFI_OFF, DIRECT_IP } from '@/engine/simulator/usbKit';
+import { checkWifi, ejectUsb, formatBytes, INSTALL_LINE, kitDate, makeUsb, pcWifi, usbJob, usbResults, usbState, type RobotResult, type UsbDrive, type UsbJob, type UsbState, type WifiForm, WIFI_OFF, DIRECT_IP } from '@/engine/simulator/usbKit';
 import { ROBOT_PORT } from '@/engine/simulator/discover';
 
 import Icon from '../Icon';
@@ -85,12 +85,12 @@ export default function UsbMaker({ onClose, onConnect, onSetup }: Props) {
       live = false;
     };
   }, [drive?.id, drive?.wifi?.ssid, drive?.wifi?.password, drive?.wifi?.label, drive?.wifi?.more]);
-  /** How the robot is reached: the classroom Wi-Fi, its own hotspot, or the LAN cable only (Wi-Fi off). */
-  const way: 'wifi' | 'hotspot' | 'off' = form.ssid === WIFI_HOTSPOT ? 'hotspot' : form.ssid === WIFI_OFF ? 'off' : 'wifi';
+  /** How the robot is reached: the classroom Wi-Fi, or the LAN cable only (Wi-Fi off). The robot has no hotspot. */
+  const way: 'wifi' | 'off' = form.ssid === WIFI_OFF ? 'off' : 'wifi';
   const chooseWay = (w: typeof way) => {
     touched.current = true;
     setFormFrom('');
-    setForm((f) => ({ ...f, ssid: w === 'hotspot' ? WIFI_HOTSPOT : w === 'off' ? WIFI_OFF : '', password: '', more: w === 'wifi' ? f.more : [] }));
+    setForm((f) => ({ ...f, ssid: w === 'off' ? WIFI_OFF : '', password: '', more: w === 'wifi' ? f.more : [] }));
   };
   const edit = (k: keyof WifiForm, v: string) => {
     touched.current = true;
@@ -245,7 +245,6 @@ export default function UsbMaker({ onClose, onConnect, onSetup }: Props) {
                 {(
                   [
                     ['wifi', '교실 Wi-Fi', '공유기 Wi-Fi 에 붙어요'],
-                    ['hotspot', '로봇 핫스팟', '로봇이 Wi-Fi 를 내보내요 (1대 1)'],
                     ['off', '유선만 (Wi-Fi 끔)', '랜선으로만 연결해요'],
                   ] as const
                 ).map(([id, name, sub]) => (
@@ -282,15 +281,13 @@ export default function UsbMaker({ onClose, onConnect, onSetup }: Props) {
                 </label>
               </div>
               <p className={u.note}>
-                {way === 'hotspot'
-                  ? '로봇이 자기 Wi-Fi 를 내보내요. PC 를 그 Wi-Fi 에 붙여 로봇 1대와 연결해요.'
-                  : way === 'off'
-                    ? `로봇의 Wi-Fi 를 꺼요. 공유기 · 허브에 랜선으로 연결하거나, PC 와 랜선 하나로 바로 연결해요 (연결 창 [유선 직결], 주소 ${DIRECT_IP}).`
-                    : formFrom === 'pc'
-                      ? '이 PC 가 연결된 Wi-Fi 를 넣었어요. 로봇과 학생 PC 는 같은 Wi-Fi 여야 해요.'
-                      : formFrom === 'usb'
-                        ? '이 USB 에 적혀 있던 Wi-Fi 예요. 바꿀 것만 고치세요.'
-                        : '로봇과 학생 PC 는 같은 Wi-Fi 여야 해요. 이름은 대소문자 · 띄어쓰기까지 똑같이.'}
+                {way === 'off'
+                  ? `로봇의 Wi-Fi 를 꺼요. 공유기 · 허브에 랜선으로 연결하거나, PC 와 랜선 하나로 바로 연결해요 (연결 창 [유선 직결], 주소 ${DIRECT_IP}).`
+                  : formFrom === 'pc'
+                    ? '이 PC 가 연결된 Wi-Fi 를 넣었어요. 로봇과 학생 PC 는 같은 Wi-Fi 여야 해요.'
+                    : formFrom === 'usb'
+                      ? '이 USB 에 적혀 있던 Wi-Fi 예요. 바꿀 것만 고치세요.'
+                      : '로봇과 학생 PC 는 같은 Wi-Fi 여야 해요. 이름은 대소문자 · 띄어쓰기까지 똑같이.'}
               </p>
             </section>
 

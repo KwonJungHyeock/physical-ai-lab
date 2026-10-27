@@ -294,6 +294,9 @@ func checkWifi(w WifiForm) string {
 		return "Wi-Fi 이름 앞뒤에 빈칸이 있어요. 빈칸을 지워 주세요."
 	case strings.HasPrefix(ssid, "#"):
 		return "Wi-Fi 이름이 # 로 시작하면 로봇이 읽지 못해요."
+	case strings.EqualFold(ssid, "핫스팟") || strings.EqualFold(ssid, "hotspot"):
+		// the robot has no hotspot any more: one that came on held the Wi-Fi chip (wifi.py)
+		return "로봇 핫스팟은 이제 쓰지 않아요. 교실 Wi-Fi 이름을 적거나, 랜선만 쓰면 '끔' 을 골라 주세요."
 	}
 	if p := w.Password; p != "" {
 		if p != strings.TrimSpace(p) {
@@ -315,8 +318,8 @@ func checkWifi(w WifiForm) string {
 		if msg := checkWifi(WifiForm{SSID: m.SSID, Password: m.Password}); msg != "" {
 			return fmt.Sprintf("%d번째 Wi-Fi: %s", i+2, msg)
 		}
-		if m.SSID == "핫스팟" || m.SSID == "끔" {
-			return fmt.Sprintf("%d번째 Wi-Fi: 핫스팟 · 끔 은 첫 번째 칸에만 적어요.", i+2)
+		if m.SSID == "끔" {
+			return fmt.Sprintf("%d번째 Wi-Fi: 끔 은 첫 번째 칸에만 적어요.", i+2)
 		}
 	}
 	if utf8.RuneCountInString(strings.TrimSpace(w.Label)) > labelMax {

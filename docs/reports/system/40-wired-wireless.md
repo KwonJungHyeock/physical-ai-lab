@@ -2,6 +2,13 @@
 
 2026-10-24. 새 매뉴얼(교사용 · 학생용)을 쓰기 전에, 로봇을 PC 에 잇는 길을 **무선(USB 로 설정)** 과 **유선(LAN 포트)** 두 갈래로 정리했다.
 
+> **2026-10-27 바뀜 — 로봇 핫스팟(②)을 없앴다.** 제조사 핫스팟(hostapd)이 한 번 켜지면 wpa_supplicant 를 막고 wlan0 을
+> NetworkManager 에서 떼어 놓아, 교실 Wi-Fi 연결이 "No suitable device found" · "device not ready" 로 실패했다.
+> 이제 USB 키트 설치(`install.py` 4단계)와 eduino-usb 서비스, 켤 때마다(`eduino-wifi.service`) `wifi.py retire_hotspot()` 이
+> 핫스팟을 끄고(`hotspot_off.sh`), 로그인 자동 실행을 이름만 바꿔 두고, isc-dhcp-server 를 끄고, wlan0 을 NetworkManager 에 돌려준다.
+> 교실 Wi-Fi 가 없으면 핫스팟으로 넘어가지 않고 계속 찾는다(랜선 직결은 늘 됨). `와이파이=핫스팟` · `wifi.py --hotspot` ·
+> `/api/wifi/hotspot` · USB 만들기의 [로봇 핫스팟] · 로봇 Wi-Fi 탭의 [핫스팟으로 돌아가기] 는 없앴다. 아래 표의 ② 는 기록으로 둔다.
+
 ## 연결하는 길 넷
 
 | 길 | 이렇게 이어요 | 설정 | 상태 |

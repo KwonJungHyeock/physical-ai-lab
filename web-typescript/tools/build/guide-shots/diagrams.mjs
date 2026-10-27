@@ -1,5 +1,5 @@
 // Diagrams for the guides, drawn as HTML and saved as PNG (things a screenshot cannot show:
-// the parts of the robot, the four ways to connect it, the Windows first-run warning, the classroom network,
+// the parts of the robot, the ways to connect it, the Windows first-run warning, the classroom network,
 // the USB stick, the 50-minute lesson).
 //   node tools/build/guide-shots/diagrams.mjs [name ...]   → ../manuals/basic/img/d-*.png, ../manuals/course/img/d-*.png
 import { readFileSync } from 'node:fs';
@@ -127,7 +127,6 @@ ${(() => {
     ['1', '교실 Wi-Fi', '기본 · 로봇 여러 대', [pc(), air('Wi-Fi'), router, air('Wi-Fi'), robot()], '[교실 Wi-Fi] — Wi-Fi 이름 · 비밀번호', '같은 Wi-Fi → [연결하기]', '공유기가 줌'],
     ['2', '공유기 랜선', 'Wi-Fi 가 약하거나 막힌 교실', [pc(), air('Wi-Fi 또는 랜선'), router, wire('랜선'), robot()], '[유선만 (Wi-Fi 끔)] 또는 Wi-Fi 그대로', '같은 공유기 → [연결하기]', '공유기가 줌'],
     ['3', '유선 직결', '공유기 없음 · 1대 1', [pc(), wire('랜선 하나'), robot()], '[유선만 (Wi-Fi 끔)] 권장', '랜선 꽂고 약 30초 → [유선 직결]', '169.254.127.10 (늘 같음)'],
-    ['4', '로봇 핫스팟', '공유기도 랜선도 없을 때 · 1대 1', [pc(), air('로봇이 내보내는 Wi-Fi'), robot('로봇 (핫스팟)')], '[로봇 핫스팟]', '로봇 Wi-Fi 에 붙기 → [연결하기]', '10.42.0.1'],
   ]
     .map(
       ([n, t, sub, parts, usb, p, ip], i) => `<div class="card col" style="gap:12px;${i === 0 ? 'border-color:#17914a;border-width:2px' : ''}">
@@ -136,7 +135,8 @@ ${(() => {
   <div style="display:grid;grid-template-columns:118px 1fr;gap:4px 10px;font-size:15px"><b class="s" style="font-weight:700">USB 만들기</b><span>${usb}</span><b class="s" style="font-weight:700">PC 에서</b><span>${p}</span><b class="s" style="font-weight:700">로봇 주소</b><span>${ip}</span></div>
 </div>`,
     )
-    .join('');
+    .join('') +
+    `<div class="card col soft" style="gap:10px;justify-content:center"><div class="row" style="gap:10px"><span class="num" style="background:#9aa3b5">×</span><span class="t">로봇 핫스팟은 쓰지 않아요</span></div><div class="s" style="font-size:15px;line-height:1.6">핫스팟이 켜지면 로봇이 Wi-Fi 장치를 놓아주지 않아 교실 Wi-Fi 에 붙지 못해요. 그래서 설치할 때 꺼 두고, 다시 켜지 않아요. 공유기가 없으면 3 유선 직결로 연결해요.</div></div>`;
 })()}
 </div>`,
 
@@ -169,7 +169,6 @@ ${[
   </div>
   ${[
     ['교실 Wi-Fi', '와이파이=EDUINO-LAB\n비밀번호=12345678\n사용자=3조'],
-    ['로봇 핫스팟', '와이파이=핫스팟\n비밀번호=\n사용자=3조'],
     ['유선만 (Wi-Fi 끔)', '와이파이=끔\n비밀번호=\n사용자=3조'],
   ]
     .map(([t, txt]) => `<div class="card col" style="width:300px;border-color:#e8590c"><b class="orange">${t}</b><pre style="font:600 16px/1.8 ui-monospace,Menlo,monospace;background:#fbfbfd;border:1.5px solid #dfe3ec;border-radius:10px;padding:10px 14px;margin:0">${txt}</pre></div>`)

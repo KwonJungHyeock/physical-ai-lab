@@ -9,8 +9,9 @@ The stick carries a folder `eduino/` with `wifi.txt`:
 (`사용자` is optional: the name 로봇 찾기 shows next to the robot's address,
 kept by robot_label.py; the older `이름=` still means the Wi-Fi name.)
 
-(`와이파이=핫스팟` puts the robot back on its own hotspot, `와이파이=끔` turns its Wi-Fi off
-for a classroom that uses only the LAN cable, and an empty `와이파이=` leaves the Wi-Fi as it is.) Installed once by
+(`와이파이=끔` turns its Wi-Fi off for a classroom that uses only the LAN cable, and an empty
+`와이파이=` leaves the Wi-Fi as it is. The robot has no hotspot any more: `와이파이=핫스팟` from an
+older stick only says so.) Installed once by
 eduino/install.py, the `eduino-usb` service (root) looks at the USB sticks
 every few seconds (mounting a stick itself when no desktop did); a stick whose
 wifi.txt this robot has not applied yet is applied with wifi.py, the arm (or
@@ -70,7 +71,7 @@ OWN_MOUNTS = "/run/eduino-usb"
 NAME_KEYS = ("이름", "와이파이", "wifi", "ssid", "name")
 PASS_KEYS = ("비밀번호", "암호", "password", "pass", "psk")
 LABEL_KEYS = ("사용자", "사용자이름", "사용자 이름", "로봇이름", "로봇 이름", "user", "label")
-HOTSPOT_WORDS = ("핫스팟", "hotspot")
+HOTSPOT_WORDS = ("핫스팟", "hotspot")   # no longer: the result file says so
 OFF_WORDS = ("끔", "끄기", "off")
 MORE_WIFI = 4             # wifi.txt may name up to this many networks: 와이파이= … 와이파이4= (each with 비밀번호N=)
 CHECK_LABEL = "확인값"
@@ -412,12 +413,9 @@ def apply_wifi(path):
     elif ssid.lower() in OFF_WORDS:
         err = w.off()
         ok = err is None
-        msg = "Wi-Fi 를 껐어요 (유선 LAN 으로만 연결). 다시 켜려면 와이파이= 에 Wi-Fi 이름이나 '핫스팟'을 적어 꽂으세요." if ok else err
+        msg = "Wi-Fi 를 껐어요 (유선 LAN 으로만 연결). 다시 켜려면 와이파이= 에 교실 Wi-Fi 이름을 적어 꽂으세요." if ok else err
     elif ssid.lower() in HOTSPOT_WORDS:
-        err = w.hotspot()
-        last = {} if err else _wait(w)
-        ok = err is None and last.get("state") == "ok"
-        msg = "로봇 핫스팟으로 돌아갔어요." if ok else (err or last.get("error") or "핫스팟을 켜지 못했어요.")
+        ok, msg = False, "로봇 핫스팟은 이제 쓰지 않아요 (켜 두면 Wi-Fi 를 놓아주지 않아요). 와이파이= 에 교실 Wi-Fi 이름이나 '끔'을 적어 주세요."
     else:
         ok, msg = join_any(w, [(ssid, password)] + fields["more"])
     return ok, msg, label
@@ -451,8 +449,7 @@ def join_any(w, nets):
         for ssid, password in nets:
             if ssid != joined:
                 w.remember(ssid, password)
-        if w.maker:
-            w.maker.classroom_mode(joined, os.path.dirname(os.path.abspath(__file__)), names)
+        w.classroom_mode(joined, names)
         msg += f" 다른 Wi-Fi {len(nets) - 1}개도 기억해 두어, 켤 때 있는 쪽에 붙어요."
     return ok, msg
 
@@ -553,7 +550,9 @@ def watch():
     A stick already in at power-on is handled too; only a kit this robot could not update from
     before waits for the stick to be plugged in again (no stop-and-start of the server at every boot)."""
     lan.ensure(say)                     # at once: a cable straight to a PC works from power-on
-    wifi.Wifi(False, say).even_out()    # robots set up by an older kit: every classroom Wi-Fi the same priority
+    w = wifi.Wifi(False, say)
+    w.retire_hotspot()                  # robots set up by an older kit: their hotspot off for good
+    w.even_out()                        # and every classroom Wi-Fi the same priority
     time.sleep(BOOT_SETTLE_S)
     done = {}        # device -> what was handled while this stick is in
     own_done = set() # devices we mounted ourselves once during this plug-in

@@ -3,13 +3,14 @@
 // A new myCobot 280 RDK X5 has the factory address 192.168.127.10 on its LAN port and lets SSH in with
 // the factory account sunrise/sunrise (Elephant Robotics' RDK X5 manual, 5.2). The teacher joins the
 // robot and this PC with one LAN cable and presses one button; this program then
-//   - finds the robot (port 22 on that address, on our own direct-cable one, on a robot hotspot's),
+//   - finds the robot (port 22 on that address, on our own direct-cable one, on the hotspot address of
+//     a robot not set up by the kit yet),
 //     and if it is out of reach gives this PC's cabled port an address beside it (lanprep*.go),
 //   - logs in (the account typed, else the factory ones: sunrise/sunrise, root/root, er/Elephant),
 //   - copies the kit it carries (the same eduino/ folder a USB stick gets, wifi.txt filled in) to
 //     /tmp/eduino-setup/eduino on the robot,
 //   - starts eduino/install.py there with sudo, detached, so it goes on even if this connection drops
-//     (over a hotspot the robot's move to the classroom Wi-Fi cuts it), and
+//     (install.py turns the robot's hotspot off for good, which cuts a connection made over it), and
 //   - reads its log until it ends or the robot moves to the other Wi-Fi.
 //
 // The robot's host key is not checked: a new robot's key is not known anywhere yet. What goes to the
@@ -45,7 +46,7 @@ const setupAPI = hello + "/setup"
 
 var (
 	// Where a new robot is: its LAN port's factory address, our own direct-cable address (a robot set up
-	// before), a robot hotspot (when the robot has one: not in the RDK X5 manual).
+	// before), the maker's hotspot (a robot not set up yet may still have it on; install.py turns it off for good).
 	setupHosts = []string{robotLAN, "169.254.127.10", "10.42.0.1"}
 	// Looked for again once this PC's port has an address beside the robot's.
 	setupLANHost = robotLAN
@@ -157,7 +158,7 @@ func startSetup(w http.ResponseWriter, r *http.Request) {
 	}
 	host := strings.TrimSpace(body.Host)
 	if host != "" && net.ParseIP(host) == nil {
-		replyError(w, http.StatusBadRequest, "로봇 주소는 숫자 주소로 적어 주세요 (예: 10.42.0.1).")
+		replyError(w, http.StatusBadRequest, "로봇 주소는 숫자 주소로 적어 주세요 (예: 192.168.127.10).")
 		return
 	}
 	setupMu.Lock()
@@ -449,7 +450,7 @@ func followSetup(c *ssh.Client, host string, login [2]string) error {
 	return errors.New("설치가 10분 안에 끝나지 않았어요. 로봇을 다시 켜고 처음부터 해 주세요.")
 }
 
-// wifiStep: install.py has reached its Wi-Fi step (the one that may move the robot off the hotspot).
+// wifiStep: install.py has reached its Wi-Fi step (it turns the hotspot off and may move the robot to another network).
 func wifiStep(j *SetupJob) bool {
 	if j == nil {
 		return false

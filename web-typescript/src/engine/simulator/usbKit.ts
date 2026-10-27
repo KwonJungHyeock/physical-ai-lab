@@ -108,9 +108,10 @@ export async function usbResults(drive: string): Promise<RobotResult[]> {
   return j.results.map((r) => parseResult(r.file, r.text, r.time)).sort((a, b) => b.time - a.time);
 }
 
-/** wifi.txt's 와이파이= words the robot reads as a choice, not a network name (usb_setup.py). */
-export const WIFI_HOTSPOT = '핫스팟';
+/** wifi.txt's 와이파이= word the robot reads as a choice, not a network name (usb_setup.py). */
 export const WIFI_OFF = '끔';
+/** No longer a choice: the robot has no hotspot (one that came on held the Wi-Fi chip, wifi.py). */
+const HOTSPOT_WORDS = ['핫스팟', 'hotspot'];
 /** The robot's fixed address on its LAN port, for a cable straight to a PC (robot-python/server/lan.py). */
 export const DIRECT_IP = '169.254.127.10';
 export type AddrKind = '무선' | '유선' | '직결' | '';
@@ -124,7 +125,7 @@ export function checkWifi(w: WifiForm): string {
   for (let i = 0; i < more.length; i++) {
     const m = more[i];
     if (!m.ssid && !m.password) continue;
-    if (m.ssid === WIFI_HOTSPOT || m.ssid === WIFI_OFF) return `${i + 2}번째 Wi-Fi: 핫스팟 · 끔 은 첫 번째 칸에만 적어요.`;
+    if (m.ssid === WIFI_OFF) return `${i + 2}번째 Wi-Fi: 끔 은 첫 번째 칸에만 적어요.`;
     const msg = checkOne({ ssid: m.ssid, password: m.password, label: '' });
     if (msg) return `${i + 2}번째 Wi-Fi: ${msg}`;
   }
@@ -134,7 +135,8 @@ export function checkWifi(w: WifiForm): string {
 function checkOne(w: WifiForm): string {
   const ssid = w.ssid.trim();
   if (!ssid) return 'Wi-Fi 이름을 적어 주세요.';
-  if (ssid === WIFI_HOTSPOT || ssid === WIFI_OFF) return [...w.label.trim()].length > 24 ? '사용자 이름은 24자까지예요.' : '';
+  if (HOTSPOT_WORDS.includes(ssid.toLowerCase())) return "로봇 핫스팟은 이제 쓰지 않아요. 교실 Wi-Fi 이름을 적거나, 랜선만 쓰면 '끔' 을 골라 주세요.";
+  if (ssid === WIFI_OFF) return [...w.label.trim()].length > 24 ? '사용자 이름은 24자까지예요.' : '';
   if (new TextEncoder().encode(ssid).length > 32) return 'Wi-Fi 이름이 너무 길어요 (32바이트까지).';
   if (ssid !== w.ssid) return 'Wi-Fi 이름 앞뒤에 빈칸이 있어요. 빈칸을 지워 주세요.';
   if (ssid.startsWith('#')) return 'Wi-Fi 이름이 # 로 시작하면 로봇이 읽지 못해요.';

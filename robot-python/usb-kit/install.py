@@ -10,8 +10,10 @@ Everything a robot needs for class, from the stick it runs from:
   3. installs the `eduino-usb` service: from now on a stick with a new eduino/wifi.txt
      is applied as soon as it is plugged in, and a newer signed kit updates
      ~/robot_console by itself (usb_setup.py, kit_update.py)
-  4. applies this stick's wifi.txt right away, and writes the result
-     (robot ID, address, console version) next to it: eduino/result-<robot name>.txt
+  4. turns the robot's own hotspot off for good (it held the Wi-Fi chip, so the
+     classroom Wi-Fi could not get it; wifi.py retire_hotspot), then applies this
+     stick's wifi.txt right away and writes the result (robot ID, address,
+     console version) next to it: eduino/result-<robot name>.txt
 
 The zip's robot_console/VERSION stays in ~/robot_console/VERSION: the version the
 robot runs, which the eduino-usb service compares with the kit on a stick.
@@ -19,8 +21,8 @@ robot runs, which the eduino-usb service compares with the kit on a stick.
 Options:  arm | agv   choose the robot instead of detecting it
           --no-wifi   leave the Wi-Fi as it is
 
-Joining Wi-Fi can cut an SSH session over the robot's hotspot; the setup goes on
-without it and the result file on the stick tells how it went.
+Turning the hotspot off cuts an SSH session over it; the setup goes on without
+it and the result file on the stick tells how it went.
 """
 
 import glob
@@ -200,21 +202,25 @@ def main(argv):
     subprocess.run(["systemctl", "stop", "eduino-usb.service"], capture_output=True)
     say("  설치했어요: eduino-usb (USB 를 꽂으면 새 키트로 업데이트하고 eduino/wifi.txt 를 읽어 연결)")
 
-    step(4, "교실 Wi-Fi 연결")
+    step(4, "로봇 핫스팟 끄기 · 교실 Wi-Fi 연결")
+    sys.path.insert(0, dest)
+    sys.dont_write_bytecode = True                # no root-owned __pycache__ in the user's folder
+    import wifi as robot_wifi                     # the copy just unpacked
+    say("  로봇 핫스팟을 꺼요 (켜 두면 Wi-Fi 를 놓아주지 않아요). 핫스팟으로 SSH 접속 중이면 여기서 창이 끊겨요 — 정상이에요.")
+    if not robot_wifi.Wifi(False, say).retire_hotspot():
+        say("  핫스팟은 이미 꺼져 있어요. 교실 Wi-Fi 나 랜선으로만 연결해요.")
     ok = True
     if "--no-wifi" in args:
         say("  건너뛰었어요 (--no-wifi).")
     elif not os.path.exists(os.path.join(KIT, "wifi.txt")):
         say("  이 USB 에 eduino/wifi.txt 가 없어요. 나중에 wifi.txt 를 넣어 꽂으면 연결돼요.")
     else:
-        sys.path.insert(0, dest)
-        sys.dont_write_bytecode = True            # no root-owned __pycache__ in the user's folder
         import usb_setup                          # the copy just unpacked
         ssid, _ = usb_setup.read_config(os.path.join(KIT, "wifi.txt"))
         if not ssid:
             say("  wifi.txt 에 Wi-Fi 이름이 비어 있어요. PC 에서 '와이파이=' 뒤에 적어 저장한 뒤 다시 꽂으면 연결돼요.")
         else:
-            say(f"  '{ssid}' 에 연결해요. 로봇 핫스팟으로 SSH 접속 중이면 여기서 창이 끊겨요 — 정상이에요.")
+            say(f"  '{ssid}' 에 연결해요.")
             ok, _ = usb_setup.apply(MOUNT)
     subprocess.run(["systemctl", "start", "eduino-usb.service"], capture_output=True)
 

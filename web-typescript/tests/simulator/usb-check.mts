@@ -5,7 +5,7 @@
  */
 import assert from 'node:assert/strict';
 
-const { parseResult, checkWifi, kitDate, formatBytes, WIFI_OFF, WIFI_HOTSPOT, DIRECT_IP } = await import('../../src/engine/simulator/usbKit');
+const { parseResult, checkWifi, kitDate, formatBytes, WIFI_OFF, DIRECT_IP } = await import('../../src/engine/simulator/usbKit');
 
 /* --- 1. A robot that joined and updated ----------------------------------- */
 {
@@ -85,9 +85,9 @@ const { parseResult, checkWifi, kitDate, formatBytes, WIFI_OFF, WIFI_HOTSPOT, DI
   const direct = parseResult('r.txt', `로봇 ID: -   주소: 직결 ${DIRECT_IP}\r\n`);
   assert.deepEqual(direct.ips, []);
   assert.equal(direct.addrs[0].kind, '직결');
-  // the hotspot and Wi-Fi-off words need no password
-  assert.equal(checkWifi({ ssid: WIFI_OFF, password: '', label: '' }), '');
-  assert.equal(checkWifi({ ssid: WIFI_HOTSPOT, password: '', label: '3조' }), '');
+  // the Wi-Fi-off word needs no password; the robot has no hotspot any more (same words as usbkit.go)
+  assert.equal(checkWifi({ ssid: WIFI_OFF, password: '', label: '3조' }), '');
+  assert.match(checkWifi({ ssid: '핫스팟', password: '', label: '' }), /쓰지 않아요/);
 }
 
 /* --- 5. Words ------------------------------------------------------------------ */
