@@ -627,6 +627,44 @@ def main():
                 setattr(wifi_mod, k, v)
             os.environ["PATH"], os.geteuid = real_path, real_euid
 
+    @case("install.py: a damaged robot_console.zip on the stick is refused before the robot is touched; a good one is swapped in whole")
+    def _():
+        import pwd
+        sys.path.insert(0, os.path.join(os.path.dirname(HERE), "usb-kit"))
+        import install
+        home = os.path.join(TMP, "install-home")
+        shutil.rmtree(home, ignore_errors=True)
+        os.makedirs(os.path.join(home, "robot_console"))
+        with open(os.path.join(home, "robot_console", "usb_setup.py"), "w") as f:
+            f.write("old")
+        good, bad = os.path.join(TMP, "rc-good.zip"), os.path.join(TMP, "rc-bad.zip")
+        with zipfile.ZipFile(good, "w", zipfile.ZIP_DEFLATED) as z:
+            z.writestr("robot_console/usb_setup.py", "new" + "x" * 50000)
+            z.writestr("robot_console/big.bin", os.urandom(100000))
+        b = bytearray(open(good, "rb").read())
+        for i in range(2000, 2400):
+            b[i] ^= 0x5A
+        open(bad, "wb").write(b)
+        user = pwd.struct_passwd(("robot", "x", os.getuid(), os.getgid(), "", home, "/bin/sh"))
+        ran = []
+        saved = install.ZIP, install.subprocess.run, install.say
+        install.subprocess.run, install.say = (lambda *a, **k: ran.append(a)), (lambda *a: None)
+        try:
+            install.ZIP = bad
+            try:
+                install.unpack(user)
+                refused = False
+            except SystemExit as exc:
+                refused = "깨졌어요" in str(exc)
+            check(refused and not ran and open(os.path.join(home, "robot_console", "usb_setup.py")).read() == "old"
+                  and sorted(os.listdir(home)) == ["robot_console"], "the broken zip touched the robot")
+            install.ZIP = good
+            install.unpack(user)
+            check(open(os.path.join(home, "robot_console", "usb_setup.py")).read().startswith("new")
+                  and sorted(os.listdir(home)) == ["robot_console"], os.listdir(home))
+        finally:
+            install.ZIP, install.subprocess.run, install.say = saved
+
     @case("install.py's call (apply(mount)) still applies wifi.txt every time")
     def _():
         reset(V1)

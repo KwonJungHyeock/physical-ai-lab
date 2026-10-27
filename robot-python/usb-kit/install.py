@@ -33,6 +33,7 @@ import signal
 import subprocess
 import sys
 import zipfile
+import zlib
 
 KIT = os.path.dirname(os.path.abspath(__file__))
 MOUNT = os.path.dirname(KIT)
@@ -115,15 +116,31 @@ def unpack(user):
             raise SystemExit(f"{ZIP} 가 없고, 로봇에도 ~/robot_console 이 없어요. 키트를 다시 받아 USB 에 복사해 주세요.")
         say(f"  robot_console.zip 이 없어 로봇에 있던 {dest} 를 그대로 써요.")
         return dest
-    with zipfile.ZipFile(ZIP) as z:
-        bad = [n for n in z.namelist() if not n.startswith("robot_console/") or ".." in n.split("/")]
-        if bad or "robot_console/usb_setup.py" not in z.namelist():
-            raise SystemExit("robot_console.zip 이 이 키트의 것이 아니에요. 키트를 다시 받아 주세요.")
-        # the running server holds the old files; it is restarted by autostart.py
-        subprocess.run(["systemctl", "stop", "robot-console.service"], capture_output=True)
-        if os.path.isdir(dest):
-            shutil.rmtree(dest)
-        z.extractall(user.pw_dir)
+    broken = ("USB 의 robot_console.zip 이 깨졌어요 (복사가 덜 됐거나, 다 쓰기 전에 USB 를 뺐거나, USB 메모리 불량). "
+              "로봇은 그대로예요. PC 에서 USB 를 다시 만들고 [꺼내기] 를 누른 뒤 빼서 꽂아 주세요.")
+    try:
+        with zipfile.ZipFile(ZIP) as z:
+            bad = [n for n in z.namelist() if not n.startswith("robot_console/") or ".." in n.split("/")]
+            if bad or "robot_console/usb_setup.py" not in z.namelist():
+                raise SystemExit("robot_console.zip 이 이 키트의 것이 아니에요. 키트를 다시 받아 주세요.")
+            # every file read through and checked (CRC) before anything on the robot is touched
+            if z.testzip() is not None:
+                raise SystemExit(broken)
+            # unpacked beside the old one, swapped in only when complete: a failure leaves the robot as it was
+            stage = os.path.join(user.pw_dir, ".robot_console.new")
+            if os.path.isdir(stage):
+                shutil.rmtree(stage)
+            os.makedirs(stage)
+            z.extractall(stage)
+    except (zipfile.BadZipFile, zlib.error, EOFError, OSError) as exc:
+        shutil.rmtree(os.path.join(user.pw_dir, ".robot_console.new"), ignore_errors=True)
+        raise SystemExit(f"{broken}\n  ({exc})")
+    # the running server holds the old files; it is restarted by autostart.py
+    subprocess.run(["systemctl", "stop", "robot-console.service"], capture_output=True)
+    if os.path.isdir(dest):
+        shutil.rmtree(dest)
+    os.replace(os.path.join(stage, "robot_console"), dest)
+    shutil.rmtree(stage, ignore_errors=True)
     for root, dirs, files in os.walk(dest):
         for name in dirs + files:
             os.chown(os.path.join(root, name), user.pw_uid, user.pw_gid)

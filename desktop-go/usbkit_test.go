@@ -269,3 +269,29 @@ func TestWifiMore(t *testing.T) {
 		t.Fatalf("checkWifi ok form: %q", msg)
 	}
 }
+
+func TestCheckZip(t *testing.T) {
+	dir := t.TempDir()
+	if err := checkZip(filepath.Join(dir, "none.zip")); err != nil {
+		t.Fatalf("missing zip: %v", err)
+	}
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	f, _ := zw.Create("robot_console/usb_setup.py")
+	f.Write(bytes.Repeat([]byte("print('robot')\n"), 4000))
+	zw.Close()
+	good := filepath.Join(dir, "good.zip")
+	os.WriteFile(good, buf.Bytes(), 0o644)
+	if err := checkZip(good); err != nil {
+		t.Fatalf("good zip: %v", err)
+	}
+	b := append([]byte(nil), buf.Bytes()...)
+	for i := 60; i < 160; i++ {
+		b[i] ^= 0x5a
+	}
+	bad := filepath.Join(dir, "bad.zip")
+	os.WriteFile(bad, b, 0o644)
+	if err := checkZip(bad); err == nil {
+		t.Fatal("a damaged zip passed")
+	}
+}

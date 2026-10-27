@@ -587,7 +587,36 @@ func makeStick(root string, k *kitData, w WifiForm, progress func(done int64)) (
 			return moved, err
 		}
 	}
+	// Read the robot's console back off the stick, every file through its checksum: a stick that
+	// stores bytes wrongly is caught here, not on the robot halfway through install.py.
+	if err := checkZip(filepath.Join(folder, "robot_console.zip")); err != nil {
+		return moved, fmt.Errorf("USB 에 쓴 robot_console.zip 을 다시 읽어 보니 깨져 있어요. 다른 USB 로 다시 만들어 주세요 (%v)", err)
+	}
 	return moved, nil
+}
+
+// checkZip reads every file of a zip on disk to its end, so its CRC-32 is checked.
+func checkZip(p string) error {
+	z, err := zip.OpenReader(p)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	defer z.Close()
+	for _, f := range z.File {
+		rc, err := f.Open()
+		if err != nil {
+			return err
+		}
+		_, err = io.Copy(io.Discard, rc)
+		rc.Close()
+		if err != nil {
+			return fmt.Errorf("%s: %w", f.Name, err)
+		}
+	}
+	return nil
 }
 
 var robotsList = regexp.MustCompile(`var ROBOTS = /\*ROBOTS\*/(\[.*?\]);`)
