@@ -66,7 +66,7 @@ import {
 import { usbAvailable } from '@/engine/simulator/usbKit';
 import { localAiStatus, type LocalAiStatus } from '@/engine/simulator/localAi';
 import { RunWatch, sceneText } from '@/engine/simulator/speak';
-import { carryHash, loadLastPractice, loadProgram, readCarried, saveLastPractice, saveProgram } from '@/engine/simulator/programs';
+import { carryHash, loadAside, loadLastPractice, loadProgram, readCarried, saveAside, saveLastPractice, saveProgram } from '@/engine/simulator/programs';
 import { isStarter, newSession, placedBlocks, practiceFor, practicesFor, repeatability, starterFor, toolFits, toolNeeded, type Level, type PracticeId, type Session } from '@/engine/simulator/practices';
 import { check, parse, type CameraId, type Problem, type Step } from '@/engine/simulator/program';
 import { checkProcess, compileProcess, emptyProcess, processFromFile, processListing, processToFile, PROCESS_EXT, type Process } from '@/engine/simulator/process';
@@ -78,14 +78,14 @@ import { LEVEL_NAME, type CellAlert } from '@/engine/simulator/cell/faults';
 import { cellChecks, repairCell } from '@/engine/simulator/cell/run';
 import CellCamera from './stage/CellCamera';
 import CellHud from './stage/CellHud';
-import { RunError, SelfCollision, Stop, createCellWorld, createWorld, emptyStats, instantAnimate, jogTo, moveCheck, moveProblem, playTimeline, preflight, runProcess, runProgram, type RobotAction, type RunHooks, type WorldState } from '@/engine/simulator/sim';
+import { RunError, SelfCollision, Stop, contactJoints, createCellWorld, createWorld, poseContact, emptyStats, instantAnimate, jogTo, moveCheck, moveProblem, playTimeline, preflight, runProcess, runProgram, type RobotAction, type RunHooks, type WorldState } from '@/engine/simulator/sim';
 import { demoFits, demoFor, demoStepAt } from '@/engine/simulator/demos';
 import { runPython, warmPython } from '@/engine/python/client';
 import type { PyOutput, PyResult } from '@/engine/python/types';
 import { buildChain, forwardKinematics, forwardKinematicsFrames, liftChain, solveIk, type ChainSegment } from '@/engine/robot/kinematics';
 import { jointMax, jointMin } from '@/engine/robot/limits';
 import { tcpPositionMm } from '@/engine/robot/motion';
-import { STRAIGHT_DOWN, currentOrientation, shiftTool, solveToolPose, turnTool } from '@/engine/robot/tool';
+import { STRAIGHT_DOWN, coordJogBlocked, currentOrientation, shiftTool, solveToolPose, turnTool } from '@/engine/robot/tool';
 import { parseUrdf, type UrdfRobot } from '@/engine/robot/urdf';
 import type { ImageLike } from '@/engine/vision/color';
 import { Divergence, findColor, offCentre, probeJacobian, stepTowards, type Seen } from '@/engine/vision/track';
@@ -125,7 +125,7 @@ import RunBar from './tasks/RunBar';
 import { usePcApp } from './connect/usePcApp';
 import { createLive } from './liveStore';
 import { CameraPip, ViewTools, type CameraPipHandle } from './stage/StageTools';
-import Notices, { type LogEntry, type LogKind } from './stage/Notices';
+import Notices, { namedButtons, type Guide, type LogEntry, type LogKind } from './stage/Notices';
 import TopBar, { type ConsoleView } from './TopBar';
 import LearnView from '../education/LearnView';
 import { useAccount } from '../account/AccountProvider';
@@ -702,6 +702,12 @@ export default function Console() {
   const termSink = useRef<((kind: LogKind, msg: string, fix?: string) => void) | null>(null);
   const addLog = useCallback((kind: LogKind, msg: string, fix?: string) => {
     termSink.current?.(kind, msg, fix);
+    // A touch (the desk, the kit, an object): the joints it is about show red on the 3D arm for a moment.
+    if ((kind === 'err' || kind === 'warn') && /닿아|부딪|뚫고/.test(msg)) {
+      const until = performance.now() + 4000;
+      const c = world.current.contact;
+      if (!c || c.until !== Infinity) world.current.contact = { joints: contactJoints(msg), until };
+    }
     logId.current += 1;
     const id = logId.current;
     // The log opens only when the user asks; an error shows in red on its one-line bar.
@@ -803,7 +809,14 @@ export default function Console() {
       const savedLevel: Level = carried?.level ?? (stored === 'python' || stored === 'ros' ? stored : 'basic');
       const th: Theme = carried?.theme ?? START_THEME;
       const p = practiceFor(savedLevel, th, carried?.id ?? loadLastPractice(savedLevel) ?? 'joints');
-      const program = carried?.code ?? loadProgram(activeArm().id, savedLevel, th, p.id) ?? starterFor(p, 'none', th);
+      const left = loadProgram(activeArm().id, savedLevel, th, p.id);
+      // A check (검수) always opens on its own example; a program changed there waits under [내 프로그램].
+      const aside = !carried && !!p.check && !!left && !isStarter(left);
+      if (aside && left) {
+        saveAside(activeArm().id, savedLevel, th, p.id, left);
+        saveProgram(activeArm().id, savedLevel, th, p.id, null);
+      }
+      const program = carried?.code ?? (aside ? null : left) ?? starterFor(p, 'none', th);
       if (savedLevel !== 'basic' || th !== START_THEME || p.id !== 'joints' || program !== code) {
         setLevel(savedLevel);
         setTheme(th);
@@ -814,6 +827,7 @@ export default function Console() {
         world.current = createWorld('none', false, BLOCK_START, th);
         if (savedLevel !== 'basic') loadPython();
       }
+      if (aside) addLog('info', `검수 ${p.check} 예제 프로그램으로 열었어요. 전에 고친 프로그램은 [내 프로그램]으로 다시 불러와요.`);
       if (carried) {
         setTab(carried.level);
         addLog('info', '시뮬레이터에서 만들던 프로그램을 가져왔어요.');
@@ -1196,11 +1210,21 @@ export default function Console() {
    * opens on the program left in it before, or on its example; another level is another language
    * (`restore` brings back the one kept while its tab was closed), so nothing is lost.
    */
-  const selectPractice = (lv: Level, th: Theme, id: PracticeId, restore?: string) => {
+  const selectPractice = (lv: Level, th: Theme, id: PracticeId, restore?: string, fresh = false) => {
     if (busy) return;
     const p = practiceFor(lv, th, id);
-    // The fitted tool stays on: a practice that needs another one asks for it ([끼우기]).
-    const flange = cameraFlange;
+    // A check opened from its number or the library always starts on its own example program (the one
+    // the check list asks for); a program changed there before is kept aside for [내 프로그램].
+    // The fitted tool stays on: a practice that needs another one asks for it ([끼우기]). A check (검수)
+    // in the simulation opens set up as the check list sets the robot up — its own tool and camera
+    // flange on; a real robot keeps what is fitted on it (the panel asks for the tool).
+    const kitOut = !!p.check && !robotMode && !cellRef.current;
+    const eff = kitOut && p.effector !== effector && activeArm().tools.includes(p.effector) ? p.effector : effector;
+    const flange = cameraFlange || (kitOut && !!p.cameraFlange && activeArm().cameraFlange);
+    const saved = loadProgram(activeArm().id, lv, th, p.id);
+    const example = starterFor(p, eff, th);
+    let program = restore ?? saved ?? example;
+    const aside = !restore && !!p.check && !!saved && !isStarter(saved);
     const levelChange = lv !== level;
     keepProgram(code);
     if (levelChange) {
@@ -1219,12 +1243,20 @@ export default function Console() {
     setTheme(th);
     setPracticeId(p.id);
     fitCamView(th, flange);
-    setCode(restore ?? loadProgram(activeArm().id, lv, th, p.id) ?? starterFor(p, effector, th));
+    if (aside && saved) {
+      program = example;
+      saveAside(activeArm().id, lv, th, p.id, saved);
+      saveProgram(activeArm().id, lv, th, p.id, null);
+    }
+    setCode(program);
+    if (fresh) setTutSteps((m) => ({ ...m, [`${lv}:${p.id}`]: 0 }));
     layout.current = BLOCK_START;
     setMatNeeded(practiceUsesMat(p.id));
     setAiMat(false);
     dropCell();
-    world.current = createWorld(effector, flange, layout.current, th);
+    if (eff !== effector) setEffector(eff);
+    if (flange !== cameraFlange) setCameraFlange(flange);
+    world.current = createWorld(eff, flange, layout.current, th);
     setDemo(null);
     setReplay(null);
     setAnglesView(world.current.angles.slice());
@@ -1232,6 +1264,9 @@ export default function Console() {
     setErrorLines([]);
     setBadge(null);
     addLog('info', `${mode === 'check' && p.check ? `[검수 ${p.check}] ` : ''}${p.title}: ${p.goal}`);
+    if (eff !== effector || flange !== cameraFlange) addLog('info', `검수 ${p.check} 에 맞게 ${obj([eff !== effector && EFFECTOR_BY_ID[eff].name, flange !== cameraFlange && '카메라 플랜지'].filter(Boolean).join(' · '))} 달았어요.`);
+    if (eff !== effector || flange !== cameraFlange) addLog('info', `검수 ${p.check} 에 맞게 ${obj([eff !== effector && EFFECTOR_BY_ID[eff].name, flange !== cameraFlange && '카메라 플랜지'].filter(Boolean).join(' · '))} 달았어요.`);
+    if (aside) addLog('info', `검수 ${p.check} 예제 프로그램으로 열었어요. 전에 고친 프로그램은 [내 프로그램]으로 다시 불러와요.`);
   };
 
   /**
@@ -1661,6 +1696,20 @@ export default function Console() {
   const tutKey = `${level}:${practice.id}`;
   const tutStep = Math.min(tutSteps[tutKey] ?? 0, tut.steps.length - 1);
   const setTutStep = (k: number) => setTutSteps((m) => ({ ...m, [tutKey]: Math.max(0, Math.min(tut.steps.length - 1, k)) }));
+  // What to do now, on the situation board over the 3D view (the panel keeps the controls): the
+  // tutorial's step while its code is open, pointing at the button the step names.
+  const tutNow = tut.steps[tutStep];
+  // A check's program kept aside when it opened on its example ([내 프로그램]).
+  const mine = practice.check && restored ? loadAside(arm.id, level, theme, practice.id) : null;
+  const guide: Guide | null =
+    !cellAt && !armTermOn && view === 'sim' && (tab === 'basic' || tab === 'python' || tab === 'ros')
+      ? {
+          head: `${tutStep + 1}/${tut.steps.length} · ${tutNow.title}`,
+          text: tutNow.text,
+          onNext: tutStep < tut.steps.length - 1 ? () => setTutStep(tutStep + 1) : undefined,
+          hint: namedButtons(tutNow.text).length ? namedButtons(tutNow.text) : tutNow.slots.length ? [] : ['시뮬레이션'],
+        }
+      : null;
   const passedRun = (text: string, actions: RobotAction[], start?: number[]) => {
     // A passed run of a coding tutorial moves it on to its next step.
     if (tab !== 'process' && tutStep < tut.steps.length - 1) setTutStep(tutStep + 1);
@@ -1670,7 +1719,7 @@ export default function Console() {
     const m = practice.progress(world.current, session.current);
     addLog('ok', m.total && m.done >= m.total ? `실습 목표 달성! (${m.title}) 로봇에서 실행할 수 있어요.` : '시뮬레이션 성공! 로봇에서 실행할 수 있어요.');
     if (practice.id === 'tools' && session.current.pickTools.size === 1) {
-      addLog('info', '이제 위의 [도구]에서 다른 도구(흡착 펌프 또는 그리퍼)로 바꿔 한 번 더 해 보세요.');
+      addLog('info', '이제 왼쪽 [도구]에서 다른 도구(흡착 펌프 또는 그리퍼)로 바꿔 한 번 더 해 보세요.');
     }
   };
 
@@ -2140,12 +2189,22 @@ export default function Console() {
   );
 
   const stop = useCallback(() => {
+    const running = !!token.current || !!tracker.current?.alive || !!realRunRef.current;
     if (token.current) token.current.aborted = true;
     if (tracker.current) tracker.current.alive = false;
-    if (realRunRef.current || robotMode) void stopRobot();
+    if (realRunRef.current || robotMode) {
+      // Always answered: a press that seems to do nothing looks like a dead button.
+      void stopRobot().then((r) => {
+        if (!r.ok) addLog('err', `정지 신호를 로봇이 받지 못했어요: ${r.error ?? '응답 없음'}`, '로봇 전원 옆 버튼이나 USB 를 뽑아 멈추고, 연결을 확인해 주세요.');
+        else if (!running) addLog('info', '정지: 로봇에 멈춤을 보냈어요. 지금 움직이던 동작은 없었어요.');
+      });
+    } else if (!running) {
+      addLog('info', '정지: 지금 움직이는 동작이 없어요. 팔은 멈춰 있어요.');
+    }
+    setBadge(null);
     // 실물 연동 and 로봇 실습 7 end too, so they do not send the arm on.
     announceRobotStop();
-  }, [robotMode]);
+  }, [robotMode, addLog]);
 
   // The first time this PC opens a robot's console by its address, offer the PC program, so next
   // time it opens with a double click. Not when it was opened from the PC program itself.
@@ -2251,7 +2310,7 @@ export default function Console() {
   /** A task from the gallery or a check number: it opens in its language's tab. */
   const openTask = (w: Where) => {
     if (busy) return;
-    selectPractice(w.level, w.theme, w.id);
+    selectPractice(w.level, w.theme, w.id, undefined, true);
     chooseTab(w.level);
   };
   /** The base under the robot: kept in this browser (on a robot's own console: for that robot). */
@@ -2436,11 +2495,28 @@ export default function Console() {
     startJog({ dir: 1, goal });
   };
 
+  /**
+   * A coordinate jog that cannot start from this pose (the arm stretched straight — a singular pose —
+   * the end of its reach, a joint's limit): said before anything moves, with the way out. `onlySingular`:
+   * the step buttons have other ways to get there, so only the stretched arm stops them.
+   */
+  const coordRefused = (axis: Axis, dir: -1 | 1, pose: readonly number[], onlySingular = false): boolean => {
+    if (!loaded) return false;
+    const why = coordJogBlocked(loaded.chain, pose, tcpNow, axis, dir);
+    const singular = !!why && why.includes('특이 자세');
+    if (!why || (onlySingular && !singular)) return false;
+    setTipBlocked({ axis, dir });
+    addLog('err', why, singular ? '먼저 [기본 자세]를 누른 뒤 좌표로 움직여요. 팔꿈치가 굽어 있어야 손끝을 곧게 옮길 수 있어요.' : '반대 방향으로 움직이거나 [기본 자세]를 눌러 주세요.');
+    setBadge({ kind: 'stop', text: why });
+    return true;
+  };
+
   /** Tool tip one step along x / y / z, the tool kept the way it points now (down). */
   const tipStep = (axis: Axis, delta: number) => {
     if (!loaded || busy) return;
     const base = basePose();
     setTipBlocked(null);
+    if (coordRefused(axis, delta < 0 ? -1 : 1, base, true)) return;
     const blocked = () => setTipBlocked({ axis, dir: delta < 0 ? -1 : 1 });
     if (axis === 'rx' || axis === 'ry' || axis === 'rz') {
       const turned = turnTool(loaded.chain, base, tcpNow, axis[1] as 'x' | 'y' | 'z', delta, 0.2);
@@ -2539,11 +2615,11 @@ export default function Console() {
     } else if (j.axis === 'rx' || j.axis === 'ry' || j.axis === 'rz') {
       // Turning about a base axis, the tip kept: about as many °/s as the joints turn.
       const sol = turnTool(loaded.chain, j.cmd, tcpNow, j.axis[1] as 'x' | 'y' | 'z', j.dir * deg * 0.75 * dt);
-      if (!sol.converged || sol.anglesDeg.some((a, i) => Math.abs(a - j.cmd[i]) > 6)) return endJog('도구를 이 방향으로 더 돌릴 수 없어요 (손끝 자리를 지킬 수 없거나 자세가 크게 바뀌어요).');
+      if (!sol.converged || sol.anglesDeg.some((a, i) => Math.abs(a - j.cmd[i]) > 6)) return endJog(coordJogBlocked(loaded.chain, j.cmd, tcpNow, j.axis, j.dir) ?? '도구를 이 방향으로 더 돌릴 수 없어요 (자세가 크게 바뀌어야 해요).');
       next = sol.anglesDeg.map((a, i) => Math.min(jointMax()[i], Math.max(jointMin()[i], a)));
     } else if (j.axis) {
       const sol = shiftTool(loaded.chain, j.cmd, { x: 0, y: 0, z: 0, [j.axis]: j.dir * mm * dt });
-      if (!sol.converged || sol.anglesDeg.some((a, i) => Math.abs(a - j.cmd[i]) > 6)) return endJog('도구를 이 방향으로 더 움직일 수 없어요 (닿지 않거나 자세가 크게 바뀌어요).');
+      if (!sol.converged || sol.anglesDeg.some((a, i) => Math.abs(a - j.cmd[i]) > 6)) return endJog(coordJogBlocked(loaded.chain, j.cmd, tcpNow, j.axis, j.dir) ?? '도구를 이 방향으로 더 움직일 수 없어요 (자세가 크게 바뀌어야 해요).');
       next = sol.anglesDeg.map((a, i) => Math.min(jointMax()[i], Math.max(jointMin()[i], a)));
     }
     if (robotMode) {
@@ -2605,7 +2681,7 @@ export default function Console() {
       const about = j.axis[1] as 'x' | 'y' | 'z';
       let sol = turnTool(loaded.chain, r.angles, tcpNow, about, j.dir * 8, 0.5);
       if (!sol.converged) sol = turnTool(loaded.chain, r.angles, tcpNow, about, j.dir * 3, 0.5);
-      if (!sol.converged) return endJog('도구를 이 방향으로 더 돌릴 수 없어요.');
+      if (!sol.converged) return endJog(coordJogBlocked(loaded.chain, r.angles, tcpNow, j.axis, j.dir) ?? '도구를 이 방향으로 더 돌릴 수 없어요.');
       ahead = sol.anglesDeg;
     } else if (j.axis) {
       // Where the tool will be a moment from now, held as it is now — as the robot's coordinate jog moves it.
@@ -2619,7 +2695,7 @@ export default function Console() {
         const target = new Vector3().setFromMatrixPosition(tip).add(new Vector3(step.x, step.y, step.z).multiplyScalar(0.001));
         sol = solveIk(loaded.chain, target, r.angles, { positionToleranceM: 0.002, restarts: 0 });
       }
-      if (!sol.converged) return endJog('도구를 이 방향으로 더 움직일 수 없어요 (팔이 닿지 않는 곳이에요).');
+      if (!sol.converged) return endJog(coordJogBlocked(loaded.chain, r.angles, tcpNow, j.axis, j.dir) ?? '도구를 이 방향으로 더 움직일 수 없어요 (팔이 닿는 끝이에요).');
       ahead = sol.anglesDeg;
     }
     const why = moveProblem(loaded.chain, { ...world.current, angles: r.angles.slice() }, ahead, 4);
@@ -2666,6 +2742,7 @@ export default function Console() {
     }
     setBadge(null);
     setTipBlocked(null);
+    if (spec.axis && !spec.goal && coordRefused(spec.axis, spec.dir, basePose())) return;
     // `last` 0: the first tick starts the clock.
     jog.current = { ...spec, cmd: basePose(), last: 0, sent: 0, inflight: false, raf: 0, timer: false, view: 0 };
     scheduleJog(jog.current);
@@ -3317,7 +3394,7 @@ export default function Console() {
   });
   // 제어: moving the arm by hand. 작업: programs that run (a process of points, blocks, Python, ROS 2). 보기: windows.
   const barGroups = [
-    { name: '제어', items: [work('jog', '조그', 'move', '조그: 좌표 · 관절로 움직이기', true), work('parts', '도구', 'tool', '도구 · 액세서리', true), work('pose', '자세', 'home', '자세 저장 · 불러오기', true)] },
+    { name: '제어', items: [work('jog', '조그', 'move', '조그: 좌표 · 관절로 움직이기', true), { ...work('parts', '도구', 'tool', '도구 · 액세서리', true), hintFor: '끼우기, 도구' }, { ...work('pose', '자세', 'home', '자세 저장 · 불러오기', true), hintFor: '기본 자세, 일자로 펴기, 카메라 자세, 이 자세로, 자세' }] },
     {
       name: '작업',
       items: [
@@ -3329,7 +3406,7 @@ export default function Console() {
     {
       name: '보기',
       items: [
-        viewItem('env', '환경', 'scene', '실습 환경 · 장면마다 ▶ 데모'),
+        { ...viewItem('env', '환경', 'scene', '실습 환경 · 장면마다 ▶ 데모'), hintFor: '책상에 매트와 블록 놓기, 매트, 실습 환경, 블록 섞기, 처음 상태로, 물리' },
         ...(theme === 'kit' ? [] : [viewItem('objects', '물건', 'box', '책상에 물건 놓기', desk.objects.length ? String(desk.objects.length) : undefined)]),
         ...(camAvailable ? [viewItem('camera', '카메라', 'camera', '카메라 화면 · 영상 처리')] : []),
         viewItem('monitor', '모니터', 'chart', '관절 · 손끝 · 그래프 · 부하'),
@@ -3451,13 +3528,45 @@ export default function Console() {
     } catch {
       /* this session only */
     }
-    // The demonstration starts on a check: the open practice when it is one, else check 1.
-    if (m === 'check' && !practice.check) {
-      const w = openCheck(1, level, theme);
-      if (w) selectPractice(w.level, w.theme, w.id);
+    // The demonstration starts on a check: the open practice when it is one, else check 1 — on the
+    // check's own example program either way.
+    if (m === 'check') {
+      const w = openCheck(practice.check ?? 1, level, theme);
+      if (w) selectPractice(w.level, w.theme, w.id, undefined, true);
     }
     addLog('info', m === 'check' ? '검수 시연 모드예요. 위의 1~7 번호로 검수 항목을 하나씩 열어 시연해요.' : '실습 모드예요. [라이브러리]의 실습 과제에서 주제별 실습을 골라요.');
   };
+
+  // The arm standing into the kit, the plate or the desk while still (the scene changed under it, or the
+  // real arm stands so): the simulated arm goes back home, as a twin would; the real one shows red on the
+  // 3D arm with a notice pointing at [기본 자세] (only the user may move a real arm).
+  const touchSaid = useRef<string | null>(null);
+  useEffect(() => {
+    if (!loaded || view !== 'sim') return;
+    const t = window.setInterval(() => {
+      if (busyRef.current || previewing.current) return;
+      const w = world.current;
+      const err = poseContact(loaded.chain, w);
+      if (!err) {
+        if (w.contact?.until === Infinity) w.contact = null;
+        touchSaid.current = null;
+        return;
+      }
+      if (!robotMode) {
+        w.angles = activeArm().home.slice();
+        w.version += 1;
+        setAnglesView(w.angles.slice());
+        addLog('info', `팔이 장면과 겹쳐 있어서 (${err.message.replace(/\.$/, '')}) 기본 자세로 옮겼어요.`);
+        return;
+      }
+      w.contact = { joints: contactJoints(err.message), until: Infinity };
+      if (touchSaid.current !== err.message) {
+        touchSaid.current = err.message;
+        addLog('warn', `지금 로봇 팔이 3D 장면과 겹쳐요: ${err.message}`, '실제 팔 주변이 비어 있는지 보고 [기본 자세]를 눌러 팔을 빼 주세요.');
+      }
+    }, 800);
+    return () => window.clearInterval(t);
+  }, [loaded, view, robotMode, addLog]);
 
   // The flange again on connect, on a tool change and every 20 s while the arm is idle (tools get swapped mid-class).
   const flangeLive = robotMode && !!robot?.connected;
@@ -4126,7 +4235,7 @@ export default function Console() {
                   )}
                 </LeftRail>
               )}
-              <Notices entries={log} beside={!!loaded && !!cellAt && railOpen !== 'monitor'} />
+              <Notices entries={log} guide={guide} below={!!goalCard && view === 'sim'} />
               {goalCard && view === 'sim' && (
                 <ResultCard
                   title={practice.title}
@@ -4401,6 +4510,16 @@ export default function Console() {
                         setLibSection('tasks');
                         chooseView('library');
                       }}
+                      onMine={
+                        practice.check && mine && mine !== code
+                          ? () => {
+                              setCode(mine);
+                              setErrorLines([]);
+                              setPassed(null);
+                              addLog('info', `검수 ${practice.check} 에서 전에 고친 프로그램을 불러왔어요. 예제로 돌아가려면 [처음 예제로]를 눌러요.`);
+                            }
+                          : undefined
+                      }
                       onReload={() => {
                         if (code === starterFor(practice, effector, theme) || window.confirm('지금 프로그램 대신 이 실습의 예제 프로그램을 다시 불러올까요?')) {
                           setCode(starterFor(practice, effector, theme));

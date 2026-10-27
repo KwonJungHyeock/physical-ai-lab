@@ -106,6 +106,8 @@ export interface WorldState {
   objects: DeskObject[];
   physics: boolean;
   angles: number[];
+  /** Where the arm touches something (the 3D arm shows these joints red): until this time (ms, performance.now; Infinity while it lasts). */
+  contact?: { joints: number[]; until: number } | null;
   /** Where a running move is heading (the monitor marks it on each joint's dial); null when still. */
   goal?: number[] | null;
   effector: EffectorId;
@@ -946,7 +948,7 @@ function resolveTarget(rt: Runtime, t: Target): Place {
   if (t.kind === 'block') {
     // A held block is wherever the tool carries it: "위로" lifts it straight up.
     const b = rt.world.blocks.find((k) => k.color === t.color);
-    if (!b) throw new RunError('책상에 블록이 없어요.', '아래 [실습 환경] 막대에서 [매트] 를 켜 주세요.');
+    if (!b) throw new RunError('책상에 블록이 없어요.', '왼쪽 [환경]에서 [책상에 매트와 블록 놓기]를 켜 주세요.');
     return { x: b.x, y: b.y, top: b.z + BLOCK_MM / 2 };
   }
   const v = rt.vars.get(t.name);
@@ -1114,12 +1116,27 @@ async function play(rt: Runtime, traj: Trajectory): Promise<void> {
   // Like a servo meeting the table: on contact the arm stays at the last pose that was
   // still clear (not drawn inside the table), and the run stops with the reason.
   let clear = rt.world.angles.slice();
-  const step = (angles: number[]) => {
+  // Already touching something at the start (the scene changed under the arm): it may move on until
+  // it is clear of it, as on the way out of moveCheck; from then on contact stops it as usual.
+  let escaping = false;
+  try {
+    afterPoseChange(rt);
+  } catch (err) {
+    if (!(err instanceof RunError)) throw err;
+    // into itself: left to the frames and the run's own slack, as before
+    escaping = !(err instanceof SelfCollision);
+  }
+  const step = (angles: number[], last = false) => {
     rt.world.angles = angles;
     try {
       afterPoseChange(rt);
       clear = angles.slice();
+      escaping = false;
     } catch (err) {
+      if (err instanceof RunError && escaping && !last) {
+        rt.world.version += 1;
+        return;
+      }
       if (err instanceof RunError) {
         rt.world.angles = clear;
         rt.world.version += 1;
@@ -1130,7 +1147,7 @@ async function play(rt: Runtime, traj: Trajectory): Promise<void> {
   rt.world.goal = traj.end.slice();
   try {
     await rt.animate(traj.durationS, (t) => step(traj.sample(t)));
-    step(traj.end.slice());
+    step(traj.end.slice(), true);
   } finally {
     rt.world.goal = null;
   }
@@ -1206,7 +1223,7 @@ function afterPoseChange(rt: Runtime): void {
     }
   }
 
-  if (w.theme === 'kit') kitCollisions(w, frames, tip);
+  if (w.theme === 'kit') kitCollisions(w, frames, tip, rt.chain);
   else if (w.fixed.length || w.objects.length) deskCollisions(w, frames, tip, tcp(rt));
 
   // Held block follows the tool.
@@ -1242,7 +1259,30 @@ function afterPoseChange(rt: Runtime): void {
 }
 
 /** Kit only: the camera stand and the bin walls. */
-function kitCollisions(w: WorldState, frames: readonly Matrix4[], tip: Vector3): void {
+function kitCollisions(w: WorldState, frames: readonly Matrix4[], tip: Vector3, chain: readonly ChainSegment[]): void {
+  // The links themselves (their thickness, not only the joint centres): an elbow may not sweep through
+  // a bin wall or the stand, as it would on the real kit. Inside a bin's opening the arm may go down to its floor.
+  for (const c of armCapsules(chain, w.angles)) {
+    const r = Math.max(0, c.r - 2);
+    const len = Math.hypot(c.b[0] - c.a[0], c.b[1] - c.a[1], c.b[2] - c.a[2]);
+    const n = Math.max(1, Math.ceil(len / 8));
+    for (let k = 0; k <= n; k += 1) {
+      const t = k / n;
+      const x = c.a[0] + (c.b[0] - c.a[0]) * t;
+      const y = c.a[1] + (c.b[1] - c.a[1]) * t;
+      const z = c.a[2] + (c.b[2] - c.a[2]) * t;
+      for (const bx of STAND_BOXES) {
+        const d = Math.hypot(Math.max(bx.xMin - x, 0, x - bx.xMax), Math.max(bx.yMin - y, 0, y - bx.yMax), Math.max(bx.zMin - z, 0, z - bx.zMax));
+        if (d < r) throw new RunError(`${c.joint}번 관절 쪽 팔이 ${bx.name}에 닿아요.`, '거치대에서 먼 쪽으로 움직여 주세요.', true);
+      }
+      for (const { tub, label } of KIT_TUBS) {
+        const wall = z - r < wallTopAt(tub, y) && hitsWalls(x, y, r, tub);
+        const floor = z - r < tub.floorZ && Math.abs(x - tub.outer.x) < tub.outer.sx / 2 && Math.abs(y - tub.outer.y) < tub.outer.sy / 2;
+        if (wall || floor) throw new RunError(`${c.joint}번 관절 쪽 팔이 ${label}에 닿아요.`, `${label} 위로 충분히 올라간 뒤 움직여 주세요.`, true);
+      }
+    }
+  }
+
   // Camera stand: arm joints, flange and tool tip keep ~20 mm off it.
   const pts = frames.map((f) => new Vector3(f.elements[12] * 1000, f.elements[13] * 1000, f.elements[14] * 1000));
   pts.push(tip);
@@ -1762,14 +1802,23 @@ export function moveCheck(chain: readonly ChainSegment[], world: WorldState, to:
     stats: emptyStats(from),
   };
   const rt: Runtime = { chain, world: copy, poses: {}, animate: async () => {}, see: async () => null, speed: DEFAULT_SPEED, vars: new Map(), nums: new Map(), line: 0, selfSlack: startSlack(chain, world, from) };
-  try {
-    for (let k = 1; k <= samples; k += 1) {
-      copy.angles = from.map((a, i) => a + ((to[i] - a) * k) / samples);
+  const at = (angles: readonly number[]): RunError | null => {
+    copy.angles = angles.slice();
+    try {
       afterPoseChange(rt);
+      return null;
+    } catch (err) {
+      if (err instanceof RunError) return err;
+      throw err;
     }
-  } catch (err) {
-    if (err instanceof RunError) return err;
-    throw err;
+  };
+  // Already touching the plate, the desk, the kit or a block (the scene changed under the arm, or a
+  // real arm left that way): a move out of it is not refused for starting there — only where it ends.
+  // Otherwise every button, [기본 자세] and [일자로 펴기] too, would be refused and the arm stuck.
+  if (at(from)) return at(to);
+  for (let k = 1; k <= samples; k += 1) {
+    const err = at(from.map((a, i) => a + ((to[i] - a) * k) / samples));
+    if (err) return err;
   }
   return null;
 }
@@ -1927,4 +1976,29 @@ export async function playTimeline(run: { events: readonly PyEvent[]; endT: numb
     w.stats.arrivals.push({ x: p.x, y: p.y, z: p.z });
   }
   return actions;
+}
+
+/**
+ * The joints a contact message is about (for the red arm): "3번 관절 쪽 팔이 …" names one; the tool
+ * (gripper, pump, pen, the tool tip) is at joint 6; anything else the arm's outer half.
+ */
+export function contactJoints(msg: string): number[] {
+  const j = /(\d)번 관절 쪽/.exec(msg);
+  if (j) return [Number(j[1])];
+  // The arm's parts as the self-collision notices name them (selfCollision.ts NAMES_6), and the tool.
+  const parts: [RegExp, number[]][] = [
+    [/손목 끝|그리퍼|펌프|펜 홀더|펜이|도구|손끝|카메라 플랜지/, [6]],
+    [/손목(?! 끝)/, [4, 5]],
+    [/아래팔/, [3]],
+    [/위팔/, [2]],
+    [/받침/, [1]],
+  ];
+  const found = parts.filter(([re]) => re.test(msg)).flatMap(([, js]) => js);
+  return found.length ? [...new Set(found)] : [4, 5, 6];
+}
+
+/** What the arm touches standing where it is now (not itself), or null: a pose the scene changed under, or the real arm's. */
+export function poseContact(chain: readonly ChainSegment[], world: WorldState): RunError | null {
+  const err = moveCheck(chain, world, world.angles, 1);
+  return err && !(err instanceof SelfCollision) ? err : null;
 }

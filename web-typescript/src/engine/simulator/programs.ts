@@ -61,6 +61,18 @@ export function saveProgram(arm: string, level: Level, theme: Theme, id: Practic
   }
 }
 
+/**
+ * A check opens on its own example; the student's changed program of that check is kept aside here
+ * (brought back with [내 프로그램]).
+ */
+export function loadAside(arm: string, level: Level, theme: Theme, id: PracticeId): string | null {
+  return readAll()[`${slot(arm, level, theme, id)}~mine`]?.code ?? null;
+}
+
+export function saveAside(arm: string, level: Level, theme: Theme, id: PracticeId, code: string): void {
+  saveProgram(arm, level, theme, `${id}~mine` as PracticeId, code);
+}
+
 /** The practice each level was left on. */
 export function loadLastPractice(level: Level): PracticeId | null {
   try {

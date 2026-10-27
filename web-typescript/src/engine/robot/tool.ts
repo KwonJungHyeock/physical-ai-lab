@@ -236,3 +236,19 @@ export function turnTool(chain: readonly ChainSegment[], anglesDeg: readonly num
   }
   return r!;
 }
+
+
+/**
+ * Can a coordinate jog start from this pose in this direction? The first few millimetres (or degrees)
+ * are solved the same way the jog will solve them. Null when it can; else why not, in words: the arm
+ * stretched out (the elbow, J3, nearly straight: a singular pose, where the tool cannot be moved in a
+ * straight line or turned on the spot), or simply the end of its reach or a joint's limit.
+ */
+export function coordJogBlocked(chain: readonly ChainSegment[], anglesDeg: readonly number[], tcpMm: number, axis: 'x' | 'y' | 'z' | 'rx' | 'ry' | 'rz', dir: 1 | -1, elbowJoint = 2): string | null {
+  const turn = axis === 'rx' || axis === 'ry' || axis === 'rz';
+  const sol = turn ? turnTool(chain, anglesDeg, tcpMm, axis[1] as 'x' | 'y' | 'z', dir * 3) : shiftTool(chain, anglesDeg, { x: 0, y: 0, z: 0, [axis]: dir * 3 });
+  if (sol.converged && sol.anglesDeg.every((a, i) => Math.abs(a - anglesDeg[i]) <= 12)) return null;
+  const elbow = Math.abs(anglesDeg[elbowJoint] ?? 90);
+  if (elbow < 20) return '팔이 거의 일자로 펴져 있어서 (3번 관절 ' + anglesDeg[elbowJoint].toFixed(0) + '°) 손끝을 좌표로 움직일 수 없어요. 이 자세는 계산이 풀리지 않는 특이 자세예요.';
+  return turn ? '이 자세에서는 손끝 자리를 지킨 채 이 방향으로 돌릴 수 없어요 (관절 한계).' : '이 방향으로는 손끝이 더 갈 수 없어요 (팔이 닿는 끝이거나 관절 한계예요).';
+}

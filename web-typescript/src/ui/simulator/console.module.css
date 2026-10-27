@@ -5882,133 +5882,188 @@ div.zeroFlow {
   background: rgba(255, 255, 255, 0.05);
 }
 
-/* --- notifications (stage/Notices.tsx): one card over the monitor, 기록 under it ----------- */
+/* --- the situation board (stage/Notices.tsx): white, top centre of the 3D view ---------- */
 .notices {
   position: absolute;
-  z-index: 15;
-  /* Right of the left menu bar (LeftRail). */
-  left: var(--inset-l, 12px);
+  z-index: 16;
   top: calc(var(--top, 0px) + 12px);
-  width: 318px;
+  /* centred on the part of the view the panels leave free (the view tools take ~60 px on the right) */
+  left: calc((var(--inset-l, 12px) + var(--left-col, 0px) + 100% - var(--inset-r, 12px) - 60px) / 2);
+  transform: translateX(-50%);
+  width: min(600px, calc(100% - var(--inset-l, 12px) - var(--left-col, 0px) - var(--inset-r, 12px) - 100px));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+.notices > * {
+  pointer-events: auto;
 }
 .notices[data-idle] {
   width: auto;
 }
-/* 실습 셀: right of its 360 px column (CellHud). */
-.notices[data-beside] {
-  left: calc(var(--inset-l, 12px) + 372px);
+/* the run's result card holds the top centre: the board sits under it */
+.notices[data-below] {
+  top: calc(var(--top, 0px) + 92px);
 }
-.notice {
+.board {
+  width: 100%;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: start;
-  gap: 4px 9px;
-  padding: 10px 8px 6px 11px;
-  border-radius: 12px;
-  background: rgba(37, 46, 58, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.108);
-  border-left: 3px solid #ff6b62;
-  backdrop-filter: blur(12px);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
-  color: #f1f4f9;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid #e3e7ee;
+  box-shadow: 0 14px 34px rgba(10, 18, 30, 0.28), 0 2px 6px rgba(10, 18, 30, 0.12);
+  color: #18202b;
   animation: noticeIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-.notice[data-kind='ok'],
-.notice[data-kind='sim'] {
-  border-left-color: #3ddc84;
-}
-.notice[data-kind='warn'] {
-  border-left-color: #ffad1f;
-}
-.notice[data-kind='err'] {
-  border-left-color: #ff5a4e;
-  background: rgba(40, 16, 18, 0.92);
-  border-color: rgba(255, 90, 78, 0.4);
 }
 @keyframes noticeIn {
   from {
-    transform: translateY(-6px);
+    opacity: 0;
   }
 }
-.notice .tag {
-  margin-top: 1px;
+.notice,
+.guide {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 4px 10px;
+  padding: 8px 8px 8px 10px;
+  border-radius: 10px;
 }
-.notice p {
+.notice {
+  background: #f6f7f9;
+  box-shadow: inset 3px 0 0 #97a3b5;
+}
+.notice[data-kind='ok'],
+.notice[data-kind='sim'] {
+  background: #effaf3;
+  box-shadow: inset 3px 0 0 #16a34a;
+}
+.notice[data-kind='warn'] {
+  background: #fff7e8;
+  box-shadow: inset 3px 0 0 #e8930c;
+}
+.notice[data-kind='err'] {
+  background: #fff1f0;
+  box-shadow: inset 3px 0 0 #e5322d;
+}
+.notice .tag {
+  margin-top: 2px;
+}
+.notice p,
+.guide p {
   margin: 0;
-  font-size: 12.5px;
-  line-height: 1.45;
+  font-size: 13.5px;
+  line-height: 1.5;
   word-break: keep-all;
+  color: #18202b;
 }
 .notice p small {
   display: block;
   margin-top: 3px;
-  font-size: 11.5px;
-  color: #b4bfcf;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #4b5565;
+}
+.notice[data-kind='err'] p small {
+  color: #b42318;
+}
+.guide p b {
+  margin-right: 8px;
+  font-weight: 800;
+}
+.guideTag {
+  margin-top: 2px;
+  padding: 1px 7px;
+  border-radius: 6px;
+  background: #18202b;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.app .guideNext {
+  align-self: center;
+  padding: 5px 11px;
+  border: 0;
+  border-radius: 8px;
+  background: #18202b;
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.app .guideNext:hover {
+  background: #2f3a49;
 }
 .app .noticeClose {
-  width: 22px;
-  height: 22px;
-  margin-top: -3px;
+  width: 24px;
+  height: 24px;
   padding: 0;
   border: 0;
   border-radius: 6px;
   background: transparent;
-  color: #9eaabd;
-  font-size: 16px;
+  color: #6b7686;
+  font-size: 17px;
   line-height: 1;
   cursor: pointer;
 }
 .app .noticeClose:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  background: rgba(0, 0, 0, 0.06);
+  color: #18202b;
 }
-.noticeFoot {
-  grid-column: 1 / -1;
+.noticeEnd {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+  align-self: center;
 }
 .app .noticeLog {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  height: 24px;
+  height: 22px;
   padding: 0 8px;
   border: 0;
   border-radius: 7px;
   background: transparent;
-  color: #9eaabd;
+  color: #6b7686;
   font-size: 11px;
   font-weight: 700;
   cursor: pointer;
 }
 .app .noticeLog:hover,
 .app .noticeLog[aria-expanded='true'] {
-  background: rgba(255, 255, 255, 0.07);
-  color: #e6ebf2;
+  background: rgba(0, 0, 0, 0.05);
+  color: #18202b;
 }
 .app .notices[data-idle] > .noticeLog {
-  height: 30px;
+  height: 28px;
   padding: 0 10px;
   border-radius: 9px;
-  background: rgba(37, 46, 58, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.084);
-  backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #e3e7ee;
+  box-shadow: 0 6px 16px rgba(10, 18, 30, 0.18);
 }
 .noticeHistory {
   position: absolute;
-  left: 0;
   top: calc(100% + 6px);
-  width: 360px;
-  max-width: calc(100vw - 40px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(460px, calc(100vw - 40px));
   border-radius: 12px;
   overflow: hidden;
-  background: #2a3441;
-  border: 1px solid rgba(255, 255, 255, 0.108);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
-  --ink: #f1f4f9;
-  --muted: #a3afc1;
-  --line: rgba(255, 255, 255, 0.07);
-  color: #f1f4f9;
+  background: #fff;
+  border: 1px solid #e3e7ee;
+  box-shadow: 0 18px 40px rgba(10, 18, 30, 0.3);
+  --ink: #18202b;
+  --muted: #5b6575;
+  --line: #eef0f4;
+  color: #18202b;
 }
 .noticeHistory .log {
   max-height: 320px;
@@ -6023,20 +6078,43 @@ div.zeroFlow {
   font-size: 10.5px;
 }
 :is(.notice, .noticeHistory) .tag_info {
-  background: rgba(255, 255, 255, 0.08);
-  color: #c8d1de;
+  background: #e8ebf0;
+  color: #3b4554;
 }
 :is(.notice, .noticeHistory) :is(.tag_sim, .tag_ok) {
-  background: rgba(61, 220, 132, 0.14);
-  color: #7ff0b4;
+  background: #dcf5e5;
+  color: #15803d;
 }
 :is(.notice, .noticeHistory) .tag_warn {
-  background: rgba(255, 173, 31, 0.16);
-  color: #ffcf7a;
+  background: #ffedc7;
+  color: #a15c00;
 }
 :is(.notice, .noticeHistory) .tag_err {
-  background: rgba(255, 90, 78, 0.18);
-  color: #ff9b93;
+  background: #ffdcd9;
+  color: #b42318;
+}
+
+/* Where to press next (Notices.tsx sets data-hint): a soft ring that breathes; nothing moves. */
+.app [data-hint='on'] {
+  animation: hintRing 1.3s ease-in-out infinite;
+  outline: 2px solid #ff8a3d;
+  outline-offset: 2px;
+}
+@keyframes hintRing {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 138, 61, 0.55);
+    outline-color: rgba(255, 138, 61, 1);
+  }
+  50% {
+    box-shadow: 0 0 0 7px rgba(255, 138, 61, 0);
+    outline-color: rgba(255, 138, 61, 0.45);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app [data-hint='on'] {
+    animation: none;
+  }
 }
 /* 자세 저장 · 불러오기 in the dark panel */
 .app .side .dock .jogWide,
@@ -7783,10 +7861,6 @@ div.zeroFlow {
 }
 .viewRail .displayCount {
   background: #e5322d;
-}
-/* notices: neutral unless they say something is wrong */
-.notice {
-  border-left-color: #97a3b5;
 }
 .viewRail .displayCount {
   border-color: #2a3441;

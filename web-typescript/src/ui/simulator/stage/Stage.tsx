@@ -447,8 +447,10 @@ function World({
     const alerts = tracker.update(clock.elapsedTime, w.angles, w.held ? 0.015 : 0);
     monitor?.current?.setAlerts(alerts);
     const pulse = 0.55 + 0.35 * Math.sin(clock.elapsedTime * 7);
+    // Where the arm touches the desk, the kit or an object: those joints red (blinking) while it lasts.
+    const touching = w.contact && w.contact.until > performance.now() ? w.contact.joints : null;
     housings.forEach((h, i) => {
-      const lv = alerts[i]?.level ?? 0;
+      const lv = touching?.includes(i + 1) ? 2 : (alerts[i]?.level ?? 0);
       if (lv === h.level && lv < 2) return;
       h.level = lv;
       for (const { m, color } of h.mats) {

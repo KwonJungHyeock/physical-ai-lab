@@ -23,6 +23,8 @@ export interface BarItem {
   /** A small mark on the button (e.g. the number of objects). */
   badge?: string;
   disabled?: boolean;
+  /** Buttons inside this item's panel, by label: a hint for one of them points here while the panel is shut. */
+  hintFor?: string;
   onClick(): void;
 }
 
@@ -36,7 +38,7 @@ export default function LeftRail({ groups, foot, sheetOpen, onCloseSheet, childr
     return () => window.removeEventListener('keydown', key);
   }, [sheetOpen, onCloseSheet]);
   const button = (e: BarItem) => (
-    <button key={e.id} type="button" aria-pressed={!!e.on} disabled={e.disabled} title={e.title} onClick={e.onClick}>
+    <button key={e.id} type="button" aria-pressed={!!e.on} disabled={e.disabled} title={e.title} data-hint-for={e.hintFor} onClick={e.onClick}>
       <Icon name={e.icon} size={18} />
       <span>{e.label}</span>
       {e.badge && <i>{e.badge}</i>}

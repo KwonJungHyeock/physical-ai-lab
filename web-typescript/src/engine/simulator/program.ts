@@ -566,23 +566,23 @@ export function check(steps: readonly Step[], ctx: CheckContext): { errors: Prob
         errors.push({
           line: s.line,
           msg: `${tool.what} 명령인데 ${fittedPhrase(ctx.effector)}.`,
-          fix: `위의 [도구]에서 ${tool.what}${tool.kind === 'grip' ? '(어댑티브·평행·플렉서블)' : ''}를 달거나 이 줄을 지워 주세요.`,
+          fix: `왼쪽 [도구]에서 ${tool.what}${tool.kind === 'grip' ? '(어댑티브·평행·플렉서블)' : ''}를 달거나 이 줄을 지워 주세요.`,
         });
       }
       const picks = effector.kind === 'grip' || effector.kind === 'suction';
       switch (s.type) {
         case 'carry':
-          if (!picks) errors.push({ line: s.line, msg: `집어서 옮기기인데 ${fittedPhrase(ctx.effector)}.`, fix: '위의 [도구]에서 그리퍼나 흡착 펌프를 달아 주세요.' });
+          if (!picks) errors.push({ line: s.line, msg: `집어서 옮기기인데 ${fittedPhrase(ctx.effector)}.`, fix: '왼쪽 [도구]에서 그리퍼나 흡착 펌프를 달아 주세요.' });
           if ((s.from.kind === 'spot' || s.to.kind === 'spot' || s.from.kind === 'block' || s.to.kind === 'block') && ctx.theme !== 'arm')
             errors.push({ line: s.line, msg: '"빨강 블록" · "자리 1" 은 로봇팔 단독 실습 환경의 매트에만 있어요.', fix: 'AI 키트에서는 카메라로 찾은 블록과 "분류함 A" 를 써 주세요.' });
           if (s.from.kind === 'var' && !assigned.has(s.from.name)) errors.push({ line: s.line, msg: `'${s.from.name}'을 아직 찾지 않았어요.`, fix: `이 줄보다 위에 ${s.from.name} = camera.find("빨강") 처럼 먼저 찾아 주세요.` });
           break;
         case 'sort':
-          if (!picks) errors.push({ line: s.line, msg: `색깔별로 정리하기인데 ${fittedPhrase(ctx.effector)}.`, fix: '위의 [도구]에서 그리퍼나 흡착 펌프를 달아 주세요.' });
+          if (!picks) errors.push({ line: s.line, msg: `색깔별로 정리하기인데 ${fittedPhrase(ctx.effector)}.`, fix: '왼쪽 [도구]에서 그리퍼나 흡착 펌프를 달아 주세요.' });
           if (ctx.theme !== 'arm') errors.push({ line: s.line, msg: '색깔별로 정리하기는 로봇팔 단독 실습 환경의 매트에서 해요.', fix: 'AI 키트에서는 카메라로 찾아 분류함에 넣어 주세요.' });
           break;
         case 'shape':
-          if (effector.kind !== 'pen') errors.push({ line: s.line, msg: `도형 그리기인데 ${fittedPhrase(ctx.effector)}.`, fix: '위의 [도구]에서 펜 홀더를 달아 주세요.' });
+          if (effector.kind !== 'pen') errors.push({ line: s.line, msg: `도형 그리기인데 ${fittedPhrase(ctx.effector)}.`, fix: '왼쪽 [도구]에서 펜 홀더를 달아 주세요.' });
           if (!(s.cm >= SHAPE_CM.min && s.cm <= SHAPE_CM.max)) errors.push({ line: s.line, msg: `${s.cm}cm 는 그릴 수 없어요.`, fix: `${SHAPE_CM.min}에서 ${SHAPE_CM.max}cm 사이로 정해 주세요.` });
           break;
         case 'cellPick':
@@ -595,7 +595,7 @@ export function check(steps: readonly Step[], ctx: CheckContext): { errors: Prob
             break;
           }
           const l = cellLayout(ctx.cell);
-          if ((s.type === 'cellPick' || s.type === 'cellPlace') && !picks) errors.push({ line: s.line, msg: `집기 · 놓기인데 ${fittedPhrase(ctx.effector)}.`, fix: '위의 [도구]에서 그리퍼나 흡착 펌프를 달아 주세요.' });
+          if ((s.type === 'cellPick' || s.type === 'cellPlace') && !picks) errors.push({ line: s.line, msg: `집기 · 놓기인데 ${fittedPhrase(ctx.effector)}.`, fix: '왼쪽 [도구]에서 그리퍼나 흡착 펌프를 달아 주세요.' });
           if (s.type === 'cellPick' || s.type === 'cellPlace') {
             const grid = s.place.match(/^(.+) 다음 칸$/)?.[1];
             if (grid ? !l.grids[grid] : !l.places[s.place])
@@ -675,7 +675,7 @@ export function check(steps: readonly Step[], ctx: CheckContext): { errors: Prob
             errors.push({
               line: s.line,
               msg: '손 카메라는 카메라 플랜지를 달아야 쓸 수 있어요.',
-              fix: '위의 [카메라 플랜지]를 켜거나 camera.find 로 바꿔 주세요.',
+              fix: '왼쪽 [도구]에서 [카메라 플랜지]를 켜거나 camera.find 로 바꿔 주세요.',
             });
           assigned.add(s.variable);
           break;
@@ -728,7 +728,7 @@ function checkVision(s: Step, ctx: CheckContext, assigned: ReadonlySet<string>, 
     case 'cellPickVar':
     case 'cellSortPlace':
       if (!assigned.has(s.variable)) out.push({ line: s.line, msg: `'${s.variable}'에는 찍은 부품이 없어요.`, fix: `이 줄보다 위에 ${s.variable} = camera.look() 으로 먼저 찍어 주세요.` });
-      if (!picks) out.push({ line: s.line, msg: `집기 · 놓기인데 ${fittedPhrase(ctx.effector)}.`, fix: '위의 [도구]에서 그리퍼나 흡착 펌프를 달아 주세요.' });
+      if (!picks) out.push({ line: s.line, msg: `집기 · 놓기인데 ${fittedPhrase(ctx.effector)}.`, fix: '왼쪽 [도구]에서 그리퍼나 흡착 펌프를 달아 주세요.' });
       break;
     case 'cellRule': {
       const bad = s.when.filter((w) => !RULE_WORDS.includes(w));

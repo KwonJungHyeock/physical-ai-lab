@@ -47,7 +47,7 @@ export default function StatusLights({ lights, children }: { lights: Lights; chi
   }, [open]);
   return (
     <div className={css.lights} ref={box}>
-      <button type="button" className={css.lightsBtn} aria-expanded={open} onClick={() => setOpen((o) => !o)} title={`${now.title} · 누르면 로봇 상태 자세히`}>
+      <button type="button" className={css.lightsBtn} aria-expanded={open} data-hint-for="서보 고정, 손으로 움직이기, 연결 확인, 영점 맞추기" data-hint-skip="" onClick={() => setOpen((o) => !o)} title={`${now.title} · 누르면 로봇 상태 자세히`}>
         <span className={css.light} data-on data-tone={now.tone}>
           <i />
           {now.name}

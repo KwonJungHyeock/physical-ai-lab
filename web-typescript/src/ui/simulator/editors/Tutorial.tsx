@@ -44,6 +44,8 @@ interface CardProps {
   busy: boolean;
   onLibrary(): void;
   onReload(): void;
+  /** A check opened on its example keeps the student's changed program aside: [내 프로그램] brings it back. */
+  onMine?: () => void;
   action?: { label: string; run(): void; disabled?: boolean };
   need?: { text: string; fit(): void };
   /** The terminal mode: no yellow-slot steps (they point into the code editor). */
@@ -52,7 +54,6 @@ interface CardProps {
 
 export function TutorialCard(p: CardProps) {
   const n = p.tut.steps.length;
-  const st = p.tut.steps[Math.min(p.step, n - 1)];
   return (
     <>
       <section className={css.card} aria-label="튜토리얼">
@@ -86,6 +87,11 @@ export function TutorialCard(p: CardProps) {
           <button type="button" className={css.link} disabled={p.busy} onClick={p.onReload} title="편집기의 프로그램을 이 실습의 처음 예제로 되돌려요 (고친 내용은 사라져요)">
             처음 예제로
           </button>
+          {p.onMine && (
+            <button type="button" className={css.link} disabled={p.busy} onClick={p.onMine} title="이 검수에서 전에 고친 프로그램을 다시 불러와요">
+              내 프로그램
+            </button>
+          )}
         </div>
         {p.need && (
           <p className={css.need} role="status">
@@ -99,19 +105,6 @@ export function TutorialCard(p: CardProps) {
           </p>
         )}
       </section>
-      {!p.noSteps && (
-        <div className={css.now}>
-          <b>
-            {Math.min(p.step, n - 1) + 1}단계 · {st.title}
-          </b>
-          <span>{st.text}</span>
-          {p.step < n - 1 && (
-            <button type="button" className={css.next} onClick={() => p.onStep(p.step + 1)}>
-              다음 ▶
-            </button>
-          )}
-        </div>
-      )}
     </>
   );
 }
