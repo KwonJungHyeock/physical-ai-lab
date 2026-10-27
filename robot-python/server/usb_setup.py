@@ -433,6 +433,8 @@ def join_any(w, nets):
     if now.get("mode") == "wifi" and now.get("ssid") in names:
         joined = now["ssid"]
         ok, msg = True, f"이미 '{joined}' 에 연결돼 있어요."
+        # joined by hand, maybe: keep it for power-on, with this stick's password
+        w.adopt(now.get("connection") or joined, dict(nets).get(joined, ""))
     else:
         ok, msg = False, ""
         for ssid, password in nets:
@@ -449,8 +451,9 @@ def join_any(w, nets):
         for ssid, password in nets:
             if ssid != joined:
                 w.remember(ssid, password)
-        w.classroom_mode(joined, names)
         msg += f" 다른 Wi-Fi {len(nets) - 1}개도 기억해 두어, 켤 때 있는 쪽에 붙어요."
+    if joined:
+        w.classroom_mode(joined, names)     # power-on asks for these (eduino-wifi.service)
     return ok, msg
 
 

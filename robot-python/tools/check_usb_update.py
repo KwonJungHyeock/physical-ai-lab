@@ -474,17 +474,21 @@ def main():
 
     @case("several Wi-Fi in wifi.txt: the first one here is joined, the others remembered for power-on")
     def _():
-        tried, kept, modes = [], [], []
+        tried, kept, modes, adopted = [], [], [], []
 
         class FakeWifi:
             here = {"ROBODYNE2"}
+            now = {"mode": None, "ssid": None}
 
             def __init__(self, demo=False, log=None):
                 self.lock = __import__("threading").Lock()
                 self.last = None
 
             def status(self):
-                return {"mode": None, "ssid": None}
+                return FakeWifi.now
+
+            def adopt(self, conn, password):
+                adopted.append((conn, password))
 
             def connect(self, ssid, password):
                 tried.append((ssid, password))
@@ -514,13 +518,19 @@ def main():
             tried.clear()
             ok, msg, _ = usb_setup.apply_wifi(path)
             check(ok is False and len(tried) == 2 and "'ROBODYNE':" in msg and "'ROBODYNE2':" in msg, f"{ok} {msg}")
-            # one network only: as before (nothing remembered, no list)
+            # one network only: nothing else remembered, but kept for power-on
             with open(path, "w", encoding="utf-8") as f:
                 f.write("와이파이=ROBODYNE2\r\n비밀번호=pass-two2\r\n")
             FakeWifi.here = {"ROBODYNE2"}
             kept.clear(), modes.clear()
             ok, msg, _ = usb_setup.apply_wifi(path)
-            check(ok and not kept and not modes and msg == "'ROBODYNE2' 에 연결했어요.", f"{kept} {modes} {msg}")
+            check(ok and not kept and modes == [("ROBODYNE2", ["ROBODYNE2"])] and msg == "'ROBODYNE2' 에 연결했어요.", f"{kept} {modes} {msg}")
+            # already on it, joined by hand from the desktop: that profile is made the robot's own, with this password
+            FakeWifi.now = {"mode": "wifi", "ssid": "ROBODYNE2", "connection": "ROBODYNE2 1"}
+            tried.clear(), modes.clear()
+            ok, msg, _ = usb_setup.apply_wifi(path)
+            check(ok and not tried and adopted == [("ROBODYNE2 1", "pass-two2")] and modes == [("ROBODYNE2", ["ROBODYNE2"])]
+                  and "이미" in msg, f"{tried} {adopted} {modes} {msg}")
         finally:
             usb_setup.wifi.Wifi, usb_setup.apply_wifi = real_wifi, real_apply
 

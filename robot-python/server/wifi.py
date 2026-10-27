@@ -368,6 +368,23 @@ class Wifi:
         self.retire_hotspot()
         self.log(f"[Wi-Fi] 켤 때마다 {' · '.join(repr(s) for s in ssids)} 중 있는 쪽에 붙어요.")
 
+    def adopt(self, conn, password):
+        """A network joined by hand (the desktop's Wi-Fi menu): its profile may keep the password in the
+        logged-in user's keyring and belong to that user only, so after power-on nobody is there to unlock
+        it. Make it the robot's own, like one joined from wifi.txt: password stored for the system, for every
+        user, joined by itself at power-on."""
+        if self.demo or not conn:
+            return
+        args = ["connection", "modify", "id", conn, "connection.permissions", "", "connection.autoconnect", "yes",
+                "connection.autoconnect-priority", str(CLASSROOM_PRIORITY), "802-11-wireless.powersave", "2"]
+        if password:
+            args += ["802-11-wireless-security.psk", password, "802-11-wireless-security.psk-flags", "0"]
+        try:
+            self._nm(*args)
+            self.log(f"[Wi-Fi] 손으로 연결한 '{conn}' 을 로봇이 켤 때마다 붙도록 저장했어요.")
+        except RuntimeError as exc:
+            self.log(f"[Wi-Fi] '{conn}' 을 저장하지 못했어요: {exc}")
+
     def remember(self, ssid, password):
         """Keep another network for later without joining it now: NetworkManager joins it by itself when
         it is there and the one in use is not. Every classroom network gets the same priority, so after a
