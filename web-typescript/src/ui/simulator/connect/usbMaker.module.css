@@ -519,3 +519,272 @@
   font-size: 16px;
   cursor: pointer;
 }
+
+/* ===========================================================================
+ * Dark slate (2026-10-27): the connect window's look (console.module.css · toolBox) — slate cards,
+ * the choice and the one button to press in red, white bold text. Later rules on purpose.
+ * ======================================================================== */
+.box {
+  width: min(720px, 100%);
+  gap: 18px;
+}
+/* grid children may shrink: a long line (the install command) scrolls inside its own box instead of
+   pushing the window wider than the screen */
+.box > *,
+.step > * {
+  min-width: 0;
+}
+.headIcon {
+  background: #e8392f;
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(232, 57, 47, 0.32);
+}
+.step {
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid #3a4658;
+  border-radius: 14px;
+  background: #222b37;
+}
+.step h2 {
+  font-size: 16px;
+  color: #fff;
+}
+.step h2 b {
+  width: 24px;
+  height: 24px;
+  background: #e8392f;
+  font-size: 13px;
+}
+.empty {
+  border-color: #4a586c;
+  color: #aeb8c6;
+}
+.empty b {
+  color: #fff;
+}
+
+.drive {
+  border-color: #4a586c;
+  background: #1d2530;
+  color: #aeb8c6;
+}
+.drive:hover:not(:disabled) {
+  border-color: #e8392f;
+}
+.drive[aria-checked='true'] {
+  border-color: #e8392f;
+  background: rgba(232, 57, 47, 0.12);
+  color: #fff;
+}
+.driveName b {
+  color: #fff;
+}
+.driveName b span,
+.driveName small {
+  color: #aeb8c6;
+}
+.chip {
+  background: #323d4c;
+  color: #c3cbd6;
+}
+.chip[data-tone='ok'] {
+  background: rgba(34, 197, 94, 0.16);
+  color: #4ade80;
+}
+.chip[data-tone='bad'] {
+  background: rgba(232, 57, 47, 0.18);
+  color: #ff8a80;
+}
+.chip[data-tone='info'] {
+  background: rgba(96, 165, 250, 0.16);
+  color: #93c5fd;
+}
+
+/* the ways (Wi-Fi · 랜선만 · …): as many equal cards as there are, across the whole row */
+.ways {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  margin-bottom: 4px;
+}
+.ways button {
+  gap: 3px;
+  padding: 11px 14px;
+  border-color: #4a586c;
+  background: #1d2530;
+}
+.ways button b {
+  font-size: 14.5px;
+  color: #fff;
+}
+.ways button small {
+  font-size: 12.5px;
+  color: #aeb8c6;
+}
+.ways button[aria-checked='true'] {
+  border-color: #e8392f;
+  box-shadow: inset 0 0 0 1px #e8392f;
+  background: rgba(232, 57, 47, 0.12);
+}
+
+.form {
+  gap: 12px;
+}
+.form label {
+  grid-template-columns: 104px minmax(0, 1fr);
+  font-size: 14px;
+  color: #dfe5ee;
+}
+.form label i {
+  color: #8c99ab;
+}
+.form input,
+.moreRow input {
+  height: 42px;
+  border-color: #4a586c;
+  background: #1b222c;
+  color: #fff;
+}
+.form input::placeholder,
+.moreRow input::placeholder {
+  color: #7d8a9c;
+}
+.form input:focus,
+.moreRow input:focus {
+  border-color: #e8392f;
+  box-shadow: 0 0 0 3px rgba(232, 57, 47, 0.22);
+}
+.pass button {
+  min-width: 64px;
+  border-color: #4a586c;
+  background: #323d4c;
+  color: #fff;
+  font-weight: 700;
+}
+
+.note {
+  font-size: 13px;
+  color: #aeb8c6;
+}
+.error {
+  background: rgba(232, 57, 47, 0.14);
+  border: 1px solid rgba(232, 57, 47, 0.45);
+  color: #ffb4ab;
+}
+.errorSmall {
+  color: #ff8a80;
+}
+
+.makeRow small {
+  font-size: 12.5px;
+  color: #aeb8c6;
+}
+.primary {
+  background: #e8392f;
+  box-shadow: 0 6px 18px rgba(232, 57, 47, 0.32);
+}
+.primary:hover:not(:disabled) {
+  background: #d63126;
+}
+.secondary {
+  height: 40px;
+  border-color: #5b6b82;
+  background: #313c4a;
+  color: #fff;
+}
+.secondary:disabled {
+  border-color: #3a4658;
+  color: #7d8a9c;
+}
+
+.bar {
+  background: #1d2530;
+}
+.bar i {
+  background: rgba(232, 57, 47, 0.45);
+}
+.bar span {
+  color: #fff;
+}
+
+.done {
+  background: rgba(22, 149, 90, 0.14);
+  border-color: rgba(34, 197, 94, 0.45);
+}
+.done h2 {
+  color: #4ade80;
+}
+.done h2 small {
+  color: #aeb8c6;
+}
+.next li {
+  color: #dfe5ee;
+}
+.next li::before {
+  background: #16955a;
+}
+.next code {
+  background: #1b222c;
+  color: #fff;
+}
+.cmd code {
+  border-color: #3a4658;
+  border-radius: 8px;
+  background: #1b222c;
+  color: #e6edf3;
+}
+.cmd button {
+  border-color: #5b6b82;
+  background: #313c4a;
+  color: #fff;
+}
+
+.results li {
+  border-color: #4a586c;
+  background: #1d2530;
+}
+.results li[data-tone='fail'] {
+  border-color: rgba(232, 57, 47, 0.45);
+  background: rgba(232, 57, 47, 0.1);
+}
+.resMain b,
+.resMain small {
+  color: #fff;
+}
+.resMain b span {
+  color: #ff8a80;
+}
+.resMain .resMeta {
+  color: #aeb8c6;
+}
+
+/* More Wi-Fi rows sit under the inputs, not under the labels */
+.form > .more {
+  padding-left: 114px;
+}
+.moreNo {
+  background: #323d4c;
+  color: #fff;
+}
+.moreRow button {
+  border-color: #4a586c;
+  background: #313c4a;
+  color: #dfe5ee;
+}
+.linkBtn {
+  padding: 7px 12px;
+  border: 1px dashed #5b6b82;
+  border-radius: 9px;
+  color: #dfe5ee;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.linkBtn:hover:not(:disabled) {
+  border-color: #e8392f;
+  color: #fff;
+}
+@media (max-width: 560px) {
+  .form > .more {
+    padding-left: 0;
+  }
+}

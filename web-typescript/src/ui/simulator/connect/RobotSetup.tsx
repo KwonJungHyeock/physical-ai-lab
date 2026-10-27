@@ -106,7 +106,7 @@ export default function RobotSetup({ onClose, onConnect }: Props) {
 
   return (
     <div className={css.picker} role="dialog" aria-modal="true" aria-label="새 로봇 설치" onKeyDown={(e) => e.key === 'Escape' && !running && onClose()}>
-      <div className={`${css.pickerBox} ${u.box}`}>
+      <div className={`${css.pickerBox} ${css.toolBox} ${u.box}`}>
         <header className={css.pickerHead}>
           <span className={u.headIcon}>
             <Icon name="install" size={24} />

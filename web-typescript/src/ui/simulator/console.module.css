@@ -8355,3 +8355,56 @@ div.zeroFlow {
   background: #3a2a2c;
   color: #fff;
 }
+/* ===========================================================================
+ * 로봇 USB 만들기 · 새 로봇 설치 (toolBox, 2026-10-27): the connect window's dark slate look, so the
+ * three robot windows read as one family; their insides are in connect/usbMaker · robotSetup.module.css.
+ * ======================================================================== */
+.picker:has(> .toolBox) {
+  background: rgba(16, 22, 30, 0.62);
+}
+.app .toolBox {
+  background: #27313e;
+  border: 1px solid #45526a;
+  color: #fff;
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.55);
+  padding: 26px 30px 24px;
+}
+.app .toolBox .pickerHead {
+  align-items: flex-start;
+  margin-bottom: 4px;
+}
+.app .toolBox .pickerHead h1 {
+  color: #fff;
+  font-size: 22px;
+}
+.app .toolBox .pickerHead p {
+  margin-top: 4px;
+  color: #c3cbd6;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.app .toolBox .pickerClose {
+  flex: none;
+  background: #323d4c;
+  color: #dfe5ee;
+}
+.app .toolBox .connectTabs {
+  margin-bottom: 0;
+  padding: 5px;
+  gap: 5px;
+  background: #1d2530;
+  border: 1px solid #3a4658;
+}
+.app .toolBox .connectTabs button {
+  height: 42px;
+  font-size: 15px;
+  color: #c3cbd6;
+}
+.app .toolBox .connectTabs button:hover {
+  color: #fff;
+}
+.app .toolBox .connectTabs .connectTabOn {
+  background: #e8392f;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(232, 57, 47, 0.35);
+}

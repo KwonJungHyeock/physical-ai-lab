@@ -158,7 +158,7 @@ export default function UsbMaker({ onClose, onConnect, onSetup }: Props) {
 
   return (
     <div className={css.picker} role="dialog" aria-modal="true" aria-label="로봇 USB 만들기" onKeyDown={(e) => e.key === 'Escape' && !writing && onClose()}>
-      <div className={`${css.pickerBox} ${u.box}`}>
+      <div className={`${css.pickerBox} ${css.toolBox} ${u.box}`}>
         <header className={css.pickerHead}>
           <span className={u.headIcon}>
             <Icon name="usb" size={24} />

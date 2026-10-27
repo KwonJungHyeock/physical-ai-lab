@@ -117,3 +117,102 @@
   align-items: center;
   gap: 10px;
 }
+
+/* Dark slate (2026-10-27), as usbMaker.module.css: later rules on purpose. */
+.plain {
+  padding: 0;
+  list-style: none;
+  counter-reset: plain;
+  background: none;
+  gap: 8px;
+  font-size: 14px;
+  color: #c3cbd6;
+}
+.plain li {
+  counter-increment: plain;
+  position: relative;
+  min-height: 22px;
+  padding-left: 32px;
+  line-height: 1.6;
+  word-break: keep-all;
+}
+.plain li::before {
+  content: counter(plain);
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #323d4c;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+.plain b {
+  color: #fff;
+}
+.fold {
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  padding: 12px 16px;
+  border-color: #3a4658;
+  background: #222b37;
+}
+.fold summary {
+  font-size: 14px;
+  color: #fff;
+}
+.fold[open] summary {
+  margin-bottom: 4px;
+}
+.stages li {
+  min-width: 0;
+  padding: 10px;
+  background: #1d2530;
+  border: 1px solid #3a4658;
+  color: #aeb8c6;
+  font-size: 13.5px;
+  white-space: nowrap;
+}
+.stages li span {
+  background: #323d4c;
+  color: #fff;
+}
+.stages li[data-state='done'] {
+  background: rgba(22, 149, 90, 0.14);
+  border-color: rgba(34, 197, 94, 0.45);
+  color: #4ade80;
+}
+.stages li[data-state='done'] span {
+  background: #16955a;
+}
+.stages li[data-state='now'] {
+  background: rgba(232, 57, 47, 0.14);
+  border-color: #e8392f;
+  color: #fff;
+}
+.stages li[data-state='now'] span {
+  background: #e8392f;
+}
+.stages li[data-state='bad'] {
+  background: rgba(232, 57, 47, 0.14);
+  border-color: rgba(232, 57, 47, 0.6);
+  color: #ffb4ab;
+}
+.line {
+  font-size: 14px;
+  color: #fff;
+}
+.log {
+  background: #151b23;
+  border: 1px solid #3a4658;
+}
+.result {
+  color: #fff;
+}
+.result small {
+  color: #aeb8c6;
+}
