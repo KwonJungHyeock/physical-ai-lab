@@ -87,12 +87,13 @@ GRIP_SPEED = 50
 # powered, stalled against the other finger or the object (the buzzing, and a hot motor). Once the
 # fingers stop, it is told to hold where they are, this many steps (0-100 scale) tighter: enough to
 # keep a block, not a stall. Negative: never ease off (--grip-squeeze).
-GRIP_SQUEEZE = 5
+GRIP_SQUEEZE = 12
 GRIP_SETTLE_S = 3.0    # how long the fingers may take to stop
-# "Close" no longer means "fully closed": the fingers go only to where the kit's 40 mm cube is held
-# (adaptive gripper, 0-100 = about 4-43 mm apart: 40 mm ~ 92, so 82 squeezes ~4 mm), and slowly —
-# a full close at speed 50 stalled on the cube and buzzed until the ease-off came. --grip-close 0 = fully.
-GRIP_CLOSE = 82
+# "Close" is not "fully closed": the fingers go slowly towards 60 (a full close at speed 50 stalled on
+# the kit's 40 mm cube and buzzed). They stop on the object; then they hold GRIP_SQUEEZE steps tighter
+# than where they stopped, whatever the object's size. 82 (an estimate of 40 mm minus ~4 mm) was too
+# weak to lift the cube on the real robot. --grip-close 0 = fully.
+GRIP_CLOSE = 60
 GRIP_CLOSE_SPEED = 30
 # When each joint was last zero-calibrated from the console. Kept in the home folder,
 # not next to the server, so unpacking a new robot_console.zip keeps it.
@@ -1507,7 +1508,7 @@ def main():
     ap.add_argument("--grip-squeeze", type=int, default=GRIP_SQUEEZE,
                     help="그리퍼가 멈춘 자리보다 이만큼(0~100 단위) 더 조여 버팀 (기본 5, 음수 = 힘 빼기 끔)")
     ap.add_argument("--grip-close", type=int, default=GRIP_CLOSE,
-                    help="[닫기] 때 그리퍼를 이 자리(0~100)까지만 닫음 (기본 82 = 4 cm 블록을 살짝 조임, 0 = 끝까지)")
+                    help="[닫기] 때 그리퍼를 이 자리(0~100)까지만 닫음 (기본 60 쪽으로 천천히 닫다가 물건에 멈추면 그 자리보다 --grip-squeeze 만큼 더 조여 버팀, 0 = 끝까지)")
     ap.add_argument("--deadman", type=float, default=DEADMAN_S, help="화면 연결이 이만큼(초) 끊기면 실행 중인 로봇을 멈춤 (0 = 끔)")
     args = ap.parse_args()
     Owner.LEASE_S = max(0.5, args.owner_lease)

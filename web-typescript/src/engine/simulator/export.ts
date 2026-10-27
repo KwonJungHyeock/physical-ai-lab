@@ -65,8 +65,8 @@ export function toPymycobot(actions: readonly RobotAction[], effector: EffectorI
       'def gripper(open_):',
       ...(e.id === 'adaptive'
         ? [
-            '    # 닫을 때는 끝까지가 아니라 4 cm 블록을 살짝 조이는 자리(82)까지만, 천천히: 끝까지 닫으면 블록에 막혀 모터가 웅웅거려요.',
-            `    if open_:\n        mc.set_gripper_state(0, 50, ${e.gripperType})\n    else:\n        mc.set_gripper_value(82, 30, ${e.gripperType})`,
+            '    # 닫을 때는 끝까지가 아니라 4 cm 블록을 들 만큼 조이는 자리(70)까지만, 천천히: 끝까지 닫으면 블록에 막혀 모터가 웅웅거려요.',
+            `    if open_:\n        mc.set_gripper_state(0, 50, ${e.gripperType})\n    else:\n        mc.set_gripper_value(70, 30, ${e.gripperType})`,
           ]
         : [
             e.gripperType
