@@ -245,7 +245,8 @@ class MyCobot280RDKX5:
     def set_gripper_value(self, gripper_value, speed, gripper_type=None):
         if not 0 <= gripper_value <= 100:
             raise ValueError(f"gripper_value not right, should be 0 ~ 100, the received value is {gripper_value}")
-        _sim.gripper(gripper_value >= 50, int(gripper_type or 1), line())
+        # Open only near fully open: 82 (the kit cube's grip, ~36 mm apart) holds a block like a full close.
+        _sim.gripper(gripper_value >= 90, int(gripper_type or 1), line())
         return 1
 
     def get_gripper_value(self, gripper_type=None):

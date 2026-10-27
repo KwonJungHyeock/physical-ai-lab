@@ -3112,10 +3112,22 @@ export default function Console() {
   );
   const camAvailable = theme === 'kit' || cameraFlange || (robotMode && !!robot?.camera);
 
-  /** The fitted tool's own buttons (direct control). */
+  /** No tool fitted: the open/close buttons still show, and say what to do. */
+  const noTool = () => addLog('warn', '도구가 연결되어 있지 않아요.', '왼쪽 [도구]에서 그리퍼나 흡착 펌프를 달아 주세요.');
+  /** The fitted tool's own buttons: in the jog screen (the 도구 screen only fits and swaps the tool). */
   const toolRow = (
     <div className={css.toolRow}>
       <div className={css.poseRow}>
+        {kind === 'none' && (
+          <>
+            <button type="button" className={css.jogWide} disabled={busy} onClick={noTool}>
+              그리퍼 열기
+            </button>
+            <button type="button" className={css.jogWide} disabled={busy} onClick={noTool}>
+              그리퍼 닫기
+            </button>
+          </>
+        )}
         {kind === 'grip' && (
           <>
             <button type="button" className={css.jogWide} disabled={busy} onClick={() => void gripStep(true)}>
@@ -4235,20 +4247,25 @@ export default function Console() {
                   )}
                 </LeftRail>
               )}
-              <Notices entries={log} guide={guide} below={!!goalCard && view === 'sim'} />
-              {goalCard && view === 'sim' && (
-                <ResultCard
-                  title={practice.title}
-                  goal={goalCard.goal}
-                  done={goalCard.done}
-                  total={goalCard.total}
-                  seconds={replay ? replay.duration : null}
-                  onReplay={replay ? () => setReplayPlay((n) => n + 1) : undefined}
-                  onNext={nextPractice ? () => openTask({ level, theme, id: nextPractice.id }) : undefined}
-                  nextTitle={nextPractice?.title}
-                  onClose={closeGoalCard}
-                />
-              )}
+              <Notices
+                entries={log}
+                guide={guide}
+                above={
+                  goalCard && view === 'sim' ? (
+                    <ResultCard
+                      title={practice.title}
+                      goal={goalCard.goal}
+                      done={goalCard.done}
+                      total={goalCard.total}
+                      seconds={replay ? replay.duration : null}
+                      onReplay={replay ? () => setReplayPlay((n) => n + 1) : undefined}
+                      onNext={nextPractice ? () => openTask({ level, theme, id: nextPractice.id }) : undefined}
+                      nextTitle={nextPractice?.title}
+                      onClose={closeGoalCard}
+                    />
+                  ) : undefined
+                }
+              />
               {loaded && view === 'sim' && replay && !busy ? (
                 <RunTimeline
                   key={replay.duration}
@@ -4393,13 +4410,15 @@ export default function Console() {
                       <div className={css.screen}>{zeroPanel}</div>
                     ) : workScreen === 'parts' ? (
                       <div className={css.screen}>
-                        {(kind !== 'none' || cameraFlange) && toolRow}
                         <PartsPanel effector={effector} cameraFlange={cameraFlange} busy={busy} onTool={changeTool} mount={mount} onMount={chooseMount} tools={arm.tools} flangeAvailable={arm.cameraFlange} mountAvailable={arm.family !== 'omx'} />
                       </div>
                     ) : workScreen === 'pose' ? (
                       <div className={css.screen}>{recordRow}</div>
                     ) : (
-                      <div className={css.screen}>{controlPanel}</div>
+                      <div className={css.screen}>
+                        {controlPanel}
+                        {toolRow}
+                      </div>
                     )}
                     {!zeroMode && (
                       // Always in reach, whatever section is open: back to the ready pose, straight up, stop.

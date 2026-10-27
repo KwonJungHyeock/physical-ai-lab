@@ -11,7 +11,7 @@
  * closed panel is found by the menu button that opens it (`data-hint-for="매트 물리"`).
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 import Icon from '../Icon';
 import css from '../console.module.css';
@@ -87,8 +87,8 @@ function LogList({ entries }: { entries: LogEntry[] }) {
   );
 }
 
-/** `below`: a card already holds the top centre (the run's result), so the board sits under it. */
-export default function Notices({ entries, guide, below = false }: { entries: LogEntry[]; guide?: Guide | null; below?: boolean }) {
+/** `above`: a card that shares the top centre (the run's result): it sits over the board, both in one column, never on each other. */
+export default function Notices({ entries, guide, above }: { entries: LogEntry[]; guide?: Guide | null; above?: ReactNode }) {
   const last = entries[entries.length - 1];
   /** The id of the message the board shows; null when it has hidden or been closed. */
   const [shown, setShown] = useState<number | null>(last?.id ?? null);
@@ -156,7 +156,8 @@ export default function Notices({ entries, guide, below = false }: { entries: Lo
   );
   const idle = !open && !guide;
   return (
-    <div className={css.notices} ref={box} data-panel="log" data-idle={idle || undefined} data-below={below || undefined}>
+    <div className={css.notices} ref={box} data-panel="log" data-idle={(idle && !above) || undefined}>
+      {above}
       {idle ? (
         logButton
       ) : (

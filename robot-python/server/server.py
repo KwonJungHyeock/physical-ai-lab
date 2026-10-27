@@ -89,6 +89,11 @@ GRIP_SPEED = 50
 # keep a block, not a stall. Negative: never ease off (--grip-squeeze).
 GRIP_SQUEEZE = 5
 GRIP_SETTLE_S = 3.0    # how long the fingers may take to stop
+# "Close" no longer means "fully closed": the fingers go only to where the kit's 40 mm cube is held
+# (adaptive gripper, 0-100 = about 4-43 mm apart: 40 mm ~ 92, so 82 squeezes ~4 mm), and slowly —
+# a full close at speed 50 stalled on the cube and buzzed until the ease-off came. --grip-close 0 = fully.
+GRIP_CLOSE = 82
+GRIP_CLOSE_SPEED = 30
 # When each joint was last zero-calibrated from the console. Kept in the home folder,
 # not next to the server, so unpacking a new robot_console.zip keeps it.
 CALIBRATION_FILE = os.path.expanduser("~/.robot_console_calibration.json")
@@ -869,7 +874,10 @@ class Robot:
         """Open or close, then ease off once the fingers have stopped (see GRIP_SQUEEZE)."""
         self.grip_gen += 1
         before = (self.state["gripper"], self.state["gripperValue"])
-        reply = self.call("set_gripper_state", 0 if open_ else 1, GRIP_SPEED, gripper_type)
+        if open_ or GRIP_CLOSE <= 0:
+            reply = self.call("set_gripper_state", 0 if open_ else 1, GRIP_SPEED, gripper_type)
+        else:
+            reply = self.call("set_gripper_value", GRIP_CLOSE, GRIP_CLOSE_SPEED, gripper_type)
         self.state["gripper"] = "open" if open_ else "closed"
         if GRIP_SQUEEZE >= 0:
             threading.Thread(target=self._ease_grip, args=(self.grip_gen, open_, gripper_type, before), daemon=True).start()
@@ -894,7 +902,7 @@ class Robot:
                 start = v if start is None else start
                 still = still + 1 if last is not None and abs(v - last) <= 1 else 0
                 last = v
-                gone = abs(v - start) >= 5 or (v >= 90 if open_ else v <= 10) or (already and abs(v - was_value) <= 3)
+                gone = abs(v - start) >= 5 or (v >= 90 if open_ else v <= max(10, GRIP_CLOSE + 3)) or (already and abs(v - was_value) <= 3)
                 if still >= 2 and gone:         # three readings in a row within 1 step, after moving: stopped
                     break
             if time.time() > end:
@@ -906,7 +914,7 @@ class Robot:
         if gen != self.grip_gen:
             return
         try:
-            self.call("set_gripper_value", hold, GRIP_SPEED, gripper_type)
+            self.call("set_gripper_value", hold, GRIP_CLOSE_SPEED, gripper_type)
         except Exception as exc:
             log(f"[그리퍼] 힘 빼기 실패: {exc}")
             return
@@ -1485,7 +1493,7 @@ def camera_spec(text):
 
 
 def main():
-    global ROBOT, CAMERA, DEADMAN_S, WIFI, GRIP_SQUEEZE
+    global ROBOT, CAMERA, DEADMAN_S, WIFI, GRIP_SQUEEZE, GRIP_CLOSE
     ap = argparse.ArgumentParser(description="로봇팔 실습 콘솔 서버 (myCobot 280 RDK X5)")
     ap.add_argument("--port", type=int, default=8080, help="웹 주소 포트 (기본 8080)")
     ap.add_argument("--serial", default=PROFILE["serial_port"], help="로봇 시리얼 포트")
@@ -1498,11 +1506,14 @@ def main():
                     help="카메라: auto(기본, 연결된 카메라를 모두 찾아 씀), 장치 번호나 그림 파일 경로를 쉼표로 (예: 0,2), 또는 none")
     ap.add_argument("--grip-squeeze", type=int, default=GRIP_SQUEEZE,
                     help="그리퍼가 멈춘 자리보다 이만큼(0~100 단위) 더 조여 버팀 (기본 5, 음수 = 힘 빼기 끔)")
+    ap.add_argument("--grip-close", type=int, default=GRIP_CLOSE,
+                    help="[닫기] 때 그리퍼를 이 자리(0~100)까지만 닫음 (기본 82 = 4 cm 블록을 살짝 조임, 0 = 끝까지)")
     ap.add_argument("--deadman", type=float, default=DEADMAN_S, help="화면 연결이 이만큼(초) 끊기면 실행 중인 로봇을 멈춤 (0 = 끔)")
     args = ap.parse_args()
     Owner.LEASE_S = max(0.5, args.owner_lease)
     DEADMAN_S = args.deadman
     GRIP_SQUEEZE = args.grip_squeeze
+    GRIP_CLOSE = max(0, min(100, args.grip_close))
 
     if not os.path.exists(os.path.join(STATIC_DIR, "console.html")):
         raise SystemExit(f"화면 파일이 없어요: {STATIC_DIR}/console.html — 받은 압축 파일을 이 폴더에 그대로 풀었는지 확인해 주세요.")

@@ -5902,9 +5902,14 @@ div.zeroFlow {
 .notices[data-idle] {
   width: auto;
 }
-/* the run's result card holds the top centre: the board sits under it */
-.notices[data-below] {
-  top: calc(var(--top, 0px) + 92px);
+/* the run's result card shares the column: over the board, in the flow (never on top of it) */
+.notices {
+  gap: 8px;
+}
+.notices > .resultCard {
+  position: static;
+  transform: none;
+  max-width: 100%;
 }
 .board {
   width: 100%;

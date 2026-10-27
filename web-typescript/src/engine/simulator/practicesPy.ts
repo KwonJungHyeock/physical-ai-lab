@@ -79,7 +79,16 @@ function pyPick(effector: EffectorId, theme: Theme): string {
   const destHigh = theme === 'kit' ? '' : `mc.sync_send_coords([${dest.x}, ${dest.y}, 180, ${DOWN}], 40)\n`;
   const toolSetup =
     e.kind === 'grip'
-      ? `def grip(close):
+      ? e.id === 'adaptive'
+        ? `def grip(close):
+    # 닫기: 끝까지가 아니라 4 cm 블록을 살짝 조이는 자리(82)까지 천천히 (끝까지 닫으면 블록에 막혀 모터가 웅웅거려요)
+    if close:
+        mc.set_gripper_value(82, 30, ${e.gripperType})
+    else:
+        mc.set_gripper_state(0, 50, ${e.gripperType})
+    time.sleep(1.5)
+`
+        : `def grip(close):
     mc.set_gripper_state(1 if close else 0, 50${e.gripperType ? `, ${e.gripperType})   # 0 열기, 1 닫기 · ${e.gripperType} = ${e.name}` : `)   # 0 열기, 1 닫기 (${e.name})`}
     time.sleep(1.5)
 `
