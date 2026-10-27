@@ -7,6 +7,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net"
 	"strings"
 )
@@ -53,6 +54,40 @@ func lanCandidate(ports []lanPort) (int, string) {
 	return 0, ""
 }
 
+// lanReport: what this PC's wired ports look like, for the "no port" message (which one has no cable,
+// which one is on another network), so the person sees what to fix.
+func lanReport(ports []lanPort) string {
+	var parts []string
+	for _, p := range ports {
+		if virtualPort(p.Name) || strings.Contains(strings.ToLower(p.Name), "loopback") {
+			continue
+		}
+		var other []string
+		for _, ip := range p.IPv4 {
+			if !ip.IsLoopback() && !ip.IsLinkLocalUnicast() {
+				other = append(other, ip.String())
+			}
+		}
+		switch {
+		case !p.Up:
+			parts = append(parts, fmt.Sprintf("'%s' 랜선 신호 없음", p.Name))
+		case len(other) > 0:
+			parts = append(parts, fmt.Sprintf("'%s' 이미 다른 망 주소 %s", p.Name, strings.Join(other, ", ")))
+		}
+	}
+	if len(parts) == 0 {
+		return "이 PC 에서 유선 랜 포트가 보이지 않아요 (장치 관리자에서 꺼져 있지 않은지 확인)."
+	}
+	return "이 PC: " + strings.Join(parts, " · ") + "."
+}
+
+// onRobotSide: an address on the robot's LAN side (192.168.127.x) the PC already has, set by hand or left
+// from before: the robot is reached through it without changing anything.
+func onRobotSide(ip net.IP) bool {
+	_, side, _ := net.ParseCIDR(robotLAN + "/24")
+	return ip.String() != robotLAN && side.Contains(ip)
+}
+
 func virtualPort(name string) bool {
 	n := strings.ToLower(name)
 	for _, w := range []string{"wi-fi", "wifi", "wlan", "wireless", "무선", "bluetooth", "loopback", "vethernet", "virtualbox", "vmware", "hyper-v", "docker", "wsl", "tailscale", "zerotier", "vpn", "tap", "tun"} {
@@ -87,7 +122,7 @@ func thisPCPorts() []lanPort {
 func hasPCLAN() bool {
 	for _, p := range thisPCPorts() {
 		for _, ip := range p.IPv4 {
-			if ip.String() == pcLAN {
+			if ip.String() == pcLAN || onRobotSide(ip) {
 				return true
 			}
 		}

@@ -21,9 +21,10 @@ func prepareLANWindows() (func(), error) {
 	if hasPCLAN() {
 		return func() {}, nil
 	}
-	idx, _ := lanCandidate(thisPCPorts())
+	ports := thisPCPorts()
+	idx, _ := lanCandidate(ports)
 	if idx == 0 {
-		return nil, errNoLANPort
+		return nil, fmt.Errorf("%w %s", errNoLANPort, lanReport(ports))
 	}
 	dir := os.TempDir()
 	flag := filepath.Join(dir, fmt.Sprintf("eduino-lan-%d.done", time.Now().UnixNano()))

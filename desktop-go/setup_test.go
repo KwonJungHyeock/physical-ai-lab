@@ -235,6 +235,24 @@ func TestLANCandidate(t *testing.T) {
 	}
 }
 
+func TestLANReport(t *testing.T) {
+	ip := func(s string) []net.IP { return []net.IP{net.ParseIP(s).To4()} }
+	got := lanReport([]lanPort{
+		{Name: "Wi-Fi", Up: true, IPv4: ip("192.168.1.20")},
+		{Name: "이더넷", Up: false},
+		{Name: "이더넷 2", Up: true, IPv4: ip("192.168.0.7")},
+	})
+	if !strings.Contains(got, "'이더넷' 랜선 신호 없음") || !strings.Contains(got, "'이더넷 2' 이미 다른 망 주소 192.168.0.7") || strings.Contains(got, "Wi-Fi") {
+		t.Fatalf("got %q", got)
+	}
+	if got := lanReport([]lanPort{{Name: "Wi-Fi", Up: true}}); !strings.Contains(got, "보이지 않아요") {
+		t.Fatalf("got %q", got)
+	}
+	if !onRobotSide(net.ParseIP("192.168.127.5").To4()) || onRobotSide(net.ParseIP("192.168.127.10").To4()) || onRobotSide(net.ParseIP("192.168.1.5").To4()) {
+		t.Fatal("onRobotSide")
+	}
+}
+
 // A new robot on a LAN cable: not found at first, found once the PC's port has its address; the
 // address is given back when the setup ends, whatever happened.
 func TestSetupLANCable(t *testing.T) {
