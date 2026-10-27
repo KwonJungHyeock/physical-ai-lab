@@ -19,12 +19,14 @@ globalThis.DOMParser = new JSDOM('').window.DOMParser;
 const { loadPyodide } = await import('pyodide');
 const { runScript } = await import('../../src/engine/python/engine');
 const { parseUrdf } = await import('../../src/engine/robot/urdf');
-const { buildChain } = await import('../../src/engine/robot/kinematics');
+const { buildChain, liftChain } = await import('../../src/engine/robot/kinematics');
 const { createWorld, playTimeline, RunError, blocksSorted } = await import('../../src/engine/simulator/sim');
-const { HOME_DEG, BLOCK_START } = await import('../../src/engine/simulator/board');
+const { HOME_DEG, BLOCK_START, KIT_RISE_MM } = await import('../../src/engine/simulator/board');
 
 const robot = parseUrdf(readFileSync(new URL('../../public/robot/rdkx5/mycobot_280_rdkx5.urdf', import.meta.url), 'utf8'));
 const chain = buildChain(robot);
+// On the AI kit the robot stands KIT_RISE_MM above the plate (as the console lifts it); Python speaks the robot's own frame.
+const kitChain = liftChain(chain, KIT_RISE_MM);
 const py = (await loadPyodide()) as unknown as Parameters<typeof runScript>[0];
 const run = (code: string, mode: 'python' | 'ros' = 'python') => runScript(py, code, { robot, startAngles: HOME_DEG.slice(), mode });
 const instant = async (d: number, frame: (t: number) => void) => {
@@ -133,7 +135,7 @@ def pump(on):
 
 pump(False)
 mc.sync_send_coords([${red.x}, ${red.y}, 180, -180, 0, -90], 40)
-mc.sync_send_coords([${red.x}, ${red.y}, 114, -180, 0, -90], 20)
+mc.sync_send_coords([${red.x}, ${red.y}, ${114 - KIT_RISE_MM}, -180, 0, -90], 20)
 pump(True)
 mc.sync_send_coords([${red.x}, ${red.y}, 200, -180, 0, -90], 40)
 mc.sync_send_coords([132.2, -136.9, 200.8, -178.24, -3.72, -107.17], 40)
@@ -144,7 +146,7 @@ mc.sync_send_angles([0.61, 45.87, -92.37, -41.3, 2.02, 9.58], 40)
   assert.ok(r.ok, JSON.stringify(r.error));
   const world = createWorld('pump', false, layout, 'kit');
   const logs: string[] = [];
-  const actions = await playTimeline(r, { chain, world, poses: {}, animate: instant, see: async () => null, log: (_k, m) => logs.push(m) });
+  const actions = await playTimeline(r, { chain: kitChain, world, poses: {}, animate: instant, see: async () => null, log: (_k, m) => logs.push(m) });
   assert.equal(blocksSorted(world), 1, `red block in bin D: ${logs.join(' / ')}`);
   assert.ok(actions.every((a) => a.type === 'timed') && actions.some((a) => a.type === 'timed' && a.cmd === 'pump' && a.on));
   console.log(`  ok   Python pick-and-place on the AI Kit: red block into bin D (${actions.length} timed commands for the robot)`);
@@ -157,7 +159,7 @@ mc.send_angles([0, 100, 40, 0, 0, 0], 40)
 time.sleep(3)
 `);
   await assert.rejects(
-    playTimeline(crash, { chain, world: createWorld('pump', false, BLOCK_START, 'kit'), poses: {}, animate: instant, see: async () => null }),
+    playTimeline(crash, { chain: kitChain, world: createWorld('pump', false, BLOCK_START, 'kit'), poses: {}, animate: instant, see: async () => null }),
     (err: unknown) => err instanceof RunError && err.line === 5 && err.collision,
   );
   console.log('  ok   a collision during playback points at the line that sent the move');
@@ -218,7 +220,7 @@ rclpy.spin(Waver())
           world = createWorld(effector, p.cameraFlange ?? false, BLOCK_START, theme);
           const logs: string[] = [];
           try {
-            await playTimeline(r, { chain, world, poses: {}, animate: instant, see: async () => null, log: (k, m) => k === 'warn' && logs.push(m) });
+            await playTimeline(r, { chain: theme === 'kit' ? kitChain : chain, world, poses: {}, animate: instant, see: async () => null, log: (k, m) => k === 'warn' && logs.push(m) });
           } catch (err) {
             throw new Error(`${level}/${theme}/${p.id}/${effector}: ${err instanceof Error ? err.message : err} (line ${(err as { line?: number }).line})`);
           }

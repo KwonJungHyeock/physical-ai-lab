@@ -15,7 +15,7 @@ import { JSDOM } from 'jsdom';
 globalThis.DOMParser = new JSDOM('').window.DOMParser;
 
 const { parseUrdf } = await import('../../src/engine/robot/urdf');
-const { buildChain, forwardKinematics, forwardKinematicsFrames } = await import('../../src/engine/robot/kinematics');
+const { buildChain, forwardKinematics, forwardKinematicsFrames, liftChain } = await import('../../src/engine/robot/kinematics');
 const { JOINT_ANGLE_MAX, JOINT_ANGLE_MIN } = await import('../../src/engine/robot/limits');
 const { quintic, jointTrajectory } = await import('../../src/engine/robot/motion');
 const { shiftTool, solveToolDown } = await import('../../src/engine/robot/tool');
@@ -28,6 +28,8 @@ const { toPymycobot } = await import('../../src/engine/simulator/export');
 const { detectKit, rgbToHsvCv, OFFICIAL_HSV, inRangeCv } = await import('../../src/engine/vision/color');
 
 const chain = buildChain(parseUrdf(readFileSync('public/robot/rdkx5/mycobot_280_rdkx5.urdf', 'utf8')));
+// The AI kit (createWorld's default scene): the robot stands KIT_RISE_MM above the plate, as in the console.
+const kitChain = liftChain(chain, K.KIT_RISE_MM);
 
 /* --- 1. Motion profile ----------------------------------------------------- */
 {
@@ -139,7 +141,7 @@ const chain = buildChain(parseUrdf(readFileSync('public/robot/rdkx5/mycobot_280_
   const durations: number[] = [];
   const actions: { type: string; speed?: number; sec?: number }[] = [];
   await runProgram(steps.slice(0, 2), {
-    chain,
+    chain: kitChain,
     world,
     poses: {},
     animate: async (d: number, frame: (t: number) => void) => {
@@ -190,7 +192,7 @@ async function runMission(effector: Eid, cameraFlange: boolean, code: string, la
   const actions: Parameters<typeof toPymycobot>[0][number][] = [];
   try {
     await runProgram(steps, {
-      chain,
+      chain: kitChain,
       world,
       poses: {},
       animate: instantAnimate,

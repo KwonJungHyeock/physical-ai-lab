@@ -14,13 +14,13 @@ import { JSDOM } from 'jsdom';
 globalThis.DOMParser = new JSDOM('').window.DOMParser;
 
 const { parseUrdf } = await import('../../src/engine/robot/urdf');
-const { buildChain } = await import('../../src/engine/robot/kinematics');
+const { buildChain, liftChain } = await import('../../src/engine/robot/kinematics');
 const { selfContact } = await import('../../src/engine/robot/selfCollision');
 const { tcpPositionMm } = await import('../../src/engine/robot/motion');
 const { parse, check, serialize } = await import('../../src/engine/simulator/program');
 const { createWorld, runProgram, preflight, blocksSorted, RunError } = await import('../../src/engine/simulator/sim');
 const { EMPTY_DESK, SCENES, makeObject, sceneObjects, setActiveDesk, setMatNeeded } = await import('../../src/engine/simulator/desk');
-const { BLOCK_START } = await import('../../src/engine/simulator/board');
+const { BLOCK_START, KIT_RISE_MM } = await import('../../src/engine/simulator/board');
 const { tcpFor } = await import('../../src/engine/simulator/effectors');
 const { DEMO_ARMS, demoFor, demoFits, demoStepAt } = await import('../../src/engine/simulator/demos');
 const { ARMS, setActiveArm } = await import('../../src/engine/robot/arms');
@@ -82,8 +82,10 @@ for (const [family, id] of families) {
     // Each step starts on a line of the program, in order.
     d.starts.forEach((s, k) => assert.equal(demoStepAt(d, s), k));
     const world = createWorld(d.effector, false, BLOCK_START, theme);
-    const hooks = { chain, world, poses: {}, see: async (_c: unknown, color: string) => world.blocks.find((b) => b.color === color) ?? null };
-    assert.equal(await preflight((h) => runProgram(steps, h), { chain, world: createWorld(d.effector, false, BLOCK_START, theme), poses: {} }), null, `${family}/${scene}: no self-collision`);
+    // On the AI kit the robot stands KIT_RISE_MM above the plate, as in the console.
+    const on = theme === 'kit' ? liftChain(chain, KIT_RISE_MM) : chain;
+    const hooks = { chain: on, world, poses: {}, see: async (_c: unknown, color: string) => world.blocks.find((b) => b.color === color) ?? null };
+    assert.equal(await preflight((h) => runProgram(steps, h), { chain: on, world: createWorld(d.effector, false, BLOCK_START, theme), poses: {} }), null, `${family}/${scene}: no self-collision`);
     const seen = new Set<number>();
     try {
       await runProgram(steps, { ...hooks, animate: instantAnimate, onLine: (line) => seen.add(demoStepAt(d, line)) });

@@ -13,14 +13,14 @@ import { JSDOM } from 'jsdom';
 globalThis.DOMParser = new JSDOM('').window.DOMParser;
 
 const { parseUrdf } = await import('../../src/engine/robot/urdf');
-const { buildChain } = await import('../../src/engine/robot/kinematics');
+const { buildChain, liftChain } = await import('../../src/engine/robot/kinematics');
 const { parse, check } = await import('../../src/engine/simulator/program');
 const { createWorld, runProgram, moveProblem, RunError } = await import('../../src/engine/simulator/sim');
 const { EMPTY_DESK, makeObject, practiceUsesMat, setActiveDesk, setMatNeeded } = await import('../../src/engine/simulator/desk');
 const { solveIk } = await import('../../src/engine/robot/kinematics');
 const { Vector3 } = await import('three');
 const { PRACTICES, newSession, placedBlocks } = await import('../../src/engine/simulator/practices');
-const { HOME_DEG } = await import('../../src/engine/simulator/board');
+const { HOME_DEG, KIT_RISE_MM } = await import('../../src/engine/simulator/board');
 
 const chain = buildChain(parseUrdf(readFileSync(new URL('../../public/robot/rdkx5/mycobot_280_rdkx5.urdf', import.meta.url), 'utf8')));
 
@@ -52,7 +52,8 @@ async function run(theme: Theme, p: Practice, effector: Eid, session: ReturnType
   assert.equal(ce.length, 0, `${theme}/${p.id}: ${JSON.stringify(ce)}`);
   try {
     await runProgram(steps, {
-      chain,
+      // On the AI kit the robot stands KIT_RISE_MM above the plate, as in the console.
+      chain: theme === 'kit' ? liftChain(chain, KIT_RISE_MM) : chain,
       world,
       poses: POSES,
       animate: instantAnimate,

@@ -44,6 +44,14 @@ export const COLOR_HEX: Record<ColorName, string> = Object.fromEntries(COLORS.ma
 
 /** Base plate [M]: 396 x 510 x 8 mm acrylic. The bins sit in cut-outs down to the desk. */
 export const PLATE = { xMin: -55.7, xMax: 340.5, yMin: -249.6, yMax: 260.4, topZ: 0, thickness: 8 };
+/**
+ * How far the robot's base (z = 0 of its coordinates) stands above the plate's top on the real kit, mm.
+ * Measured with a ruler on the real RDK X5 kit (2026-10-27): with the simulator's tool on the plate, the
+ * real tool was about 19 mm above it. The simulator lifts the arm by this much over the kit (as it does
+ * for the G base), so the kit, the blocks and every height on the plate stay as below, and the robot's
+ * own coordinates (get_coords, send_coords) come out 19 mm lower than the plate frame.
+ */
+export const KIT_RISE_MM = 19;
 /** Desk surface under the kit [M] (underside of the plate and the bins). */
 export const DESK_Z = -8;
 
@@ -248,8 +256,12 @@ export const DROP_CLEARANCE_MM = 15;
 /** Push button for the cylinder exercise — not part of the kit, shown only with the cylinder. */
 export const BUTTON = { x: CAL_BOARD.x, y: CAL_BOARD.y, radiusMm: 13, heightMm: 18, travelMm: 4 };
 
-/** "블록 섞기" keeps blocks on the board (the camera only looks there), clear of the markers. */
-export const SHUFFLE_AREA = { xMin: 100, xMax: 220, yMin: -60, yMax: 60, markerClearanceMm: 34 };
+/**
+ * "블록 섞기" keeps blocks on the board (the camera only looks there), clear of the markers. Not nearer the
+ * base than 120 mm: standing KIT_RISE_MM above the plate, the arm reaches a block at 95–115 mm only by
+ * folding so far that the move there swings the tool up past the kit camera (from 120 mm every spot works).
+ */
+export const SHUFFLE_AREA = { xMin: 120, xMax: 220, yMin: -60, yMax: 60, markerClearanceMm: 34 };
 /** Centre-to-centre spacing so open gripper fingers fit between neighbouring blocks. */
 export const MIN_BLOCK_SPACING_MM = 45;
 

@@ -14,7 +14,7 @@ import { useRouter } from 'next/navigation';
 import { memo, useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
 import { Vector3 } from 'three';
 
-import { BLOCK_MM, BLOCK_START, HAND_PHOTO_DEG, HOME_DEG, randomBlockLayout, type ColorName, type Theme } from '@/engine/simulator/board';
+import { BLOCK_MM, BLOCK_START, HAND_PHOTO_DEG, HOME_DEG, KIT_RISE_MM, randomBlockLayout, type ColorName, type Theme } from '@/engine/simulator/board';
 import { EFFECTOR_BY_ID, flangeRefusal, tcpFor, toolMismatch, toolsUsed, type EffectorId, type FlangeReading } from '@/engine/simulator/effectors';
 import { toPymycobot } from '@/engine/simulator/export';
 import {
@@ -294,7 +294,9 @@ export default function Console() {
   /** The robot stands on a base (G base) this many mm above the table; 0 = on the table. */
   /** The G base under the robot: off, or on at its own 32 mm (another height can be set). */
   const [mount, setMount] = useState({ on: false, mm: 32 });
-  const mountMm = mount.on ? mount.mm : 0;
+  const [theme, setTheme] = useState<Theme>(START_THEME);
+  // On the AI kit the real robot's base stands KIT_RISE_MM above the plate: the arm is lifted by that too.
+  const mountMm = (theme === 'kit' ? KIT_RISE_MM : 0) + (mount.on ? mount.mm : 0);
   // Every check and solver works in the table's frame: the arm's chain lifted by the base.
   const loaded = useMemo<Loaded | null>(
     () => (loadedArm ? { ...loadedArm, chain: liftChain(loadedArm.chain, mountMm), rawChain: loadedArm.chain } : null),
@@ -302,7 +304,6 @@ export default function Console() {
   );
   const [loadError, setLoadError] = useState<string | null>(null);
   const [level, setLevel] = useState<Level>('basic');
-  const [theme, setTheme] = useState<Theme>(START_THEME);
   // 실습 환경: the desk's scene and objects (빈 화면 at every start), the panel (and the tab it opened on), the picked object.
   const [desk, setDesk] = useState<Desk>(EMPTY_DESK);
   /** The left menu bar's open window (실습 환경 · 물건 · 모니터; the camera has its own window). */

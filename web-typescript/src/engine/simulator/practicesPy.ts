@@ -9,7 +9,7 @@
  * mycobot_280_rdkx5 driver (slider_control) turns into arm motion.
  */
 
-import { BINS, BLOCK_MM, BLOCK_START, HOME_DEG, SPOTS, type Theme } from './board';
+import { BINS, BLOCK_MM, BLOCK_START, HOME_DEG, KIT_RISE_MM, SPOTS, type Theme } from './board';
 import { EFFECTOR_BY_ID, tcpFor, type EffectorId } from './effectors';
 import type { MissionStatus, WorldState } from './sim';
 import { blocksOnSpots, blocksSorted, mission } from './sim';
@@ -71,8 +71,9 @@ function pyPick(effector: EffectorId, theme: Theme): string {
   const e = EFFECTOR_BY_ID[effector];
   const tcp = tcpFor(effector, false);
   const b = BLOCK_START['파랑'];
-  // Suction cup on the block's top face; gripper fingers around its middle.
-  const grab = e.kind === 'grip' ? BLOCK_MM / 2 + tcp : BLOCK_MM + tcp;
+  // Suction cup on the block's top face; gripper fingers around its middle. In the robot's own
+  // coordinates: on the kit the plate is KIT_RISE_MM below the robot's base.
+  const grab = (e.kind === 'grip' ? BLOCK_MM / 2 + tcp : BLOCK_MM + tcp) - (theme === 'kit' ? KIT_RISE_MM : 0);
   const dest = theme === 'kit' ? { ...BINS.A.official } : { ...SPOTS['자리 4'], z: 0 };
   const destLow = theme === 'kit' ? `[${dest.x}, ${dest.y}, ${dest.z}, 178.06, -0.92, -6.11]` : `[${dest.x}, ${dest.y}, ${Math.round(grab + 1)}, ${DOWN}]`;
   const destNote = theme === 'kit' ? '분류함 A 위 (공식 AI 키트 좌표)' : '자리 4에 내려놓기';
