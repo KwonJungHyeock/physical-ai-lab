@@ -203,6 +203,8 @@ class Wifi:
                 raise RuntimeError("이 서버에는 Wi-Fi 를 바꿀 권한이 없어요. 로봇 터미널에서 'sudo python3 wifi.py <Wi-Fi 이름> <비밀번호>' 로 바꿔 주세요.")
             if "secrets were required" in msg.lower() or "password" in msg.lower():
                 raise RuntimeError("비밀번호가 맞지 않아요.")
+            if "no suitable device found" in msg.lower():
+                raise RuntimeError("로봇의 Wi-Fi 장치(wlan0)를 네트워크 관리자가 아직 쓰지 못해요 (핫스팟이 놓아주지 않음). 로봇을 껐다 켠 뒤 다시 해 주세요.")
             if "no network with ssid" in msg.lower() or "could not be found" in msg.lower():
                 raise RuntimeError("그 이름의 Wi-Fi 를 찾지 못했어요. 이름(대소문자·띄어쓰기)과 공유기가 켜져 있는지 확인해 주세요.")
             raise RuntimeError(msg or "nmcli 오류")
@@ -222,6 +224,20 @@ class Wifi:
         vals = dict(_split_terse(l)[:2] for l in out.splitlines() if ":" in l)
         mode = vals.get("802-11-wireless.mode", "")
         return ("hotspot" if mode == "ap" else "wifi"), vals.get("802-11-wireless.ssid", conn)
+
+    def _take_wlan(self):
+        """Hand the Wi-Fi chip back to NetworkManager after the maker's hotspot: hostapd's hotspot_on.sh
+        masks wpa_supplicant, and NetworkManager leaves a device it saw unmanaged alone, so without this
+        a join fails with "No suitable device found" (only eth0 left to try)."""
+        subprocess.run(["systemctl", "unmask", "wpa_supplicant"], capture_output=True)
+        subprocess.run(["systemctl", "start", "wpa_supplicant"], capture_output=True)
+        for path in glob.glob("/sys/class/net/*/wireless"):
+            dev = path.split("/")[-2]
+            try:
+                self._nm("device", "set", dev, "managed", "yes")
+            except RuntimeError:
+                pass
+        self._radio(True)
 
     def _wait_device(self, timeout=40):
         """The Wi-Fi device once NetworkManager can use it (after the maker's script reloads the driver)."""
@@ -254,9 +270,8 @@ class Wifi:
         if not ssid or not self.maker:
             return
         ssids = [s for s in state.get("ssids") or [ssid] if s]
-        # a hotspot from an earlier fallback left wpa_supplicant masked: Wi-Fi needs it
-        subprocess.run(["systemctl", "unmask", "wpa_supplicant"], capture_output=True)
-        subprocess.run(["systemctl", "start", "wpa_supplicant"], capture_output=True)
+        # a hotspot from an earlier fallback left wpa_supplicant masked and wlan0 unmanaged: Wi-Fi needs both
+        self._take_wlan()
         subprocess.run(["systemctl", "stop", "isc-dhcp-server"], capture_output=True)
         end = time.time() + BOOT_WAIT_S
         tried = False
@@ -282,6 +297,7 @@ class Wifi:
                 continue
             self.log("[Wi-Fi] 교실 Wi-Fi 를 다시 찾아봐요 (핫스팟에 붙은 기기가 없어요).")
             self.maker.off()
+            self._take_wlan()
             conn = self._up_any(ssids, 30)
             if conn:
                 self.log(f"[Wi-Fi] '{conn}' 에 연결됐어요.")
@@ -454,7 +470,10 @@ class Wifi:
             maker_was_on = bool(self.maker and MakerHotspot.running())
             if maker_was_on:
                 self.maker.off()
-            dev, _, before = self._wait_device()
+            self._take_wlan()
+            dev, state, before = self._wait_device()
+            if state in ("unavailable", "unmanaged"):
+                raise RuntimeError(f"로봇의 Wi-Fi 장치({dev})가 준비되지 않았어요 ({state}). 로봇을 껐다 켠 뒤 다시 해 주세요.")
             self.log(f"[Wi-Fi] '{ssid}' 에 연결하는 중… (지금 연결: {'제조사 핫스팟' if maker_was_on else before})")
             # A profile made from the name and password alone, not from the scan list: while the
             # robot is a hotspot its Wi-Fi cannot scan, so the classroom network is not listed.
@@ -473,7 +492,7 @@ class Wifi:
                 args += ["wifi-sec.key-mgmt", "wpa-psk", "wifi-sec.psk", password]
             try:
                 self._nm(*args)
-                self._nm("--wait", str(CONNECT_TIMEOUT_S), "connection", "up", "id", ssid, timeout=CONNECT_TIMEOUT_S + 10)
+                self._nm("--wait", str(CONNECT_TIMEOUT_S), "connection", "up", "id", ssid, "ifname", dev, timeout=CONNECT_TIMEOUT_S + 10)
                 if self.maker:
                     self.maker.classroom_mode(ssid, os.path.dirname(os.path.abspath(__file__)))
                 self.last.update(state="ok")
