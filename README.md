@@ -4,6 +4,8 @@
 
 **https://github.com/KwonJungHyeock/physical-ai-lab/releases/latest/download/PhysicalAI-Simulator.zip**
 
+로봇 키트(USB 용)만 따로: **https://github.com/KwonJungHyeock/physical-ai-lab/releases/latest/download/eduino_usb.zip**
+
 (약 170 MB, 프로그램 + 로봇 키트가 함께 들어 있어요. 업데이트해도 주소는 같아요.
  지금은 저장소가 비공개라 GitHub 에 로그인한 계정만 받아져요.)
 
