@@ -144,6 +144,14 @@ WantedBy=multi-user.target
         return changed
 
 
+def _run(cmd, timeout=20):
+    """A system command's output ("" when it is missing or fails): steps that may not apply on every robot."""
+    try:
+        return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout).stdout
+    except (OSError, subprocess.SubprocessError):
+        return ""
+
+
 def _read_state():
     """STATE_FILE: {"ssid", "ssids"} the classroom networks, {"off": true} Wi-Fi off, {} not set yet."""
     try:
@@ -214,17 +222,40 @@ class Wifi:
     def _take_wlan(self, radio=True):
         """Hand the Wi-Fi chip back to NetworkManager after the maker's hotspot: hostapd's hotspot_on.sh
         masks wpa_supplicant, and NetworkManager leaves a device it saw unmanaged alone, so without this
-        a join fails with "No suitable device found" (only eth0 left to try)."""
-        subprocess.run(["systemctl", "unmask", "wpa_supplicant"], capture_output=True)
-        subprocess.run(["systemctl", "start", "wpa_supplicant"], capture_output=True)
+        a join fails with "No suitable device found" (only eth0 left to try). The chip may also be left
+        blocked, in access-point mode or holding the hotspot's 10.42.0.1: NetworkManager then shows it
+        "unavailable"."""
+        _run(["rfkill", "unblock", "wifi"])
+        _run(["systemctl", "unmask", "wpa_supplicant"])
+        _run(["systemctl", "enable", "wpa_supplicant"])
+        _run(["systemctl", "start", "wpa_supplicant"])
         for path in glob.glob("/sys/class/net/*/wireless"):
             dev = path.split("/")[-2]
+            if not MakerHotspot.running():
+                _run(["ip", "addr", "flush", "dev", dev])
+                if "type AP" in _run(["iw", "dev", dev, "info"]):
+                    _run(["ip", "link", "set", dev, "down"])
+                    _run(["iw", "dev", dev, "set", "type", "managed"])
+                _run(["ip", "link", "set", dev, "up"])
             try:
                 self._nm("device", "set", dev, "managed", "yes")
             except RuntimeError:
                 pass
         if radio:
             self._radio(True)
+
+    def _ready_device(self):
+        """The Wi-Fi device once NetworkManager can use it; if it stays unavailable, NetworkManager is
+        restarted once (it can miss wpa_supplicant coming back after the hotspot) and waited for again."""
+        dev, state, conn = self._wait_device()
+        if state in ("unavailable", "unmanaged") and os.geteuid() == 0:
+            self.log(f"[Wi-Fi] {dev} 가 아직 준비되지 않아 ({state}) 네트워크 관리자를 다시 켜요.")
+            self._take_wlan()
+            _run(["systemctl", "restart", "NetworkManager"], timeout=60)
+            time.sleep(3)
+            self._take_wlan()
+            dev, state, conn = self._wait_device()
+        return dev, state, conn
 
     def _wait_device(self, timeout=40):
         """The Wi-Fi device once NetworkManager can use it (after the maker's script reloads the driver)."""
@@ -279,6 +310,10 @@ class Wifi:
         if not ssids:
             self.log("[Wi-Fi] 켜짐: 기억한 교실 Wi-Fi 가 없어요 (USB 의 wifi.txt 를 꽂거나 랜선으로 연결).")
             return
+        try:
+            self._ready_device()                # the chip freed from the maker's hotspot before asking for a network
+        except RuntimeError:
+            pass
         end = time.time() + BOOT_WAIT_S
         asked = False
         while True:
@@ -473,7 +508,7 @@ class Wifi:
             self._radio(True)                   # after `--off`
             self.retire_hotspot()               # a robot not set up by the kit yet still has its hotspot on
             self._take_wlan()
-            dev, state, before = self._wait_device()
+            dev, state, before = self._ready_device()
             if state in ("unavailable", "unmanaged"):
                 raise RuntimeError(f"로봇의 Wi-Fi 장치({dev})가 준비되지 않았어요 ({state}). 로봇을 껐다 켠 뒤 다시 해 주세요.")
             self.log(f"[Wi-Fi] '{ssid}' 에 연결하는 중… (지금 연결: {before})")

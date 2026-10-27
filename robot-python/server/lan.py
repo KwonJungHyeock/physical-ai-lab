@@ -25,13 +25,23 @@ PREFIX = 16
 NET = "/sys/class/net"
 
 
+def _ethernet(n):
+    """An Ethernet link (type 1, ARPHRD_ETHER): not the RDK X5's CAN bus (can0, type 280) or another kind of port."""
+    try:
+        with open(os.path.join(NET, n, "type"), encoding="ascii") as f:
+            return f.read().strip() == "1"
+    except OSError:
+        return False
+
+
 def _wired_ports():
-    """The physical wired ports (eth0, end0, enp1s0 …): a device behind them, no Wi-Fi radio."""
+    """The physical wired ports (eth0, end0, enp1s0 …): Ethernet, a device behind them, no Wi-Fi radio."""
     try:
         names = sorted(os.listdir(NET))
     except OSError:
         return []
-    return [n for n in names if n != "lo" and os.path.exists(os.path.join(NET, n, "device")) and not os.path.exists(os.path.join(NET, n, "wireless"))]
+    return [n for n in names if n != "lo" and _ethernet(n) and os.path.exists(os.path.join(NET, n, "device"))
+            and not os.path.exists(os.path.join(NET, n, "wireless"))]
 
 
 def _ipv4(dev=None):
@@ -55,6 +65,11 @@ def ensure(log=None):
     if not ports:
         return False
     dev = ports[0]
+    if os.geteuid() == 0:
+        # an earlier kit put it on the wrong port (can0 on the RDK X5): take it back off
+        for other, ip in _ipv4():
+            if ip == DIRECT and other != dev:
+                subprocess.run(["ip", "addr", "del", f"{DIRECT}/{PREFIX}", "dev", other.split(":")[0]], capture_output=True, timeout=5)
     if any(ip == DIRECT for _, ip in _ipv4(dev)):
         return True
     if os.geteuid() != 0:
