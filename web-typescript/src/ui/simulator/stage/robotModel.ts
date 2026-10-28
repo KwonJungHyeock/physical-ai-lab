@@ -39,7 +39,7 @@ import {
 } from 'three';
 import { toCreasedNormals } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
-import { URDF_EULER_ORDER, type ChainSegment } from '@/engine/robot/kinematics';
+import { buildBranches, URDF_EULER_ORDER, type ChainSegment } from '@/engine/robot/kinematics';
 import { meshNodeName, type UrdfOrigin, type UrdfRobot } from '@/engine/robot/urdf';
 import { HAND_CAMERA, verticalFov } from '@/engine/simulator/board';
 import {
@@ -310,13 +310,15 @@ export function buildArm(robot: UrdfRobot, chain: readonly ChainSegment[], nodes
 
   // `depth`: links from the base, so neighbouring links can take the two shell tones in turn.
   const visuals = new Map<string, Object3D>();
+  // The main chain and, on an arm with a linkage, the rods beside it (they follow the arm's joints).
+  const segments = [...chain, ...buildBranches(robot)];
   const addLink = (linkName: string, parent: Group, depth = 0) => {
     const v = linkVisual(robot, linkName, nodes, look, depth % 2);
     if (v) {
       parent.add(v);
       visuals.set(linkName, v);
     }
-    for (const seg of chain.filter((s) => s.joint.parent === linkName)) {
+    for (const seg of segments.filter((s) => s.joint.parent === linkName)) {
       const o = originGroup(seg.joint.origin);
       const r = new Group();
       o.add(r);

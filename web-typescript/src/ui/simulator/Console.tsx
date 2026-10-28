@@ -431,7 +431,7 @@ export default function Console() {
   const [mode, setMode] = useState<ConsoleMode>('learn');
   /** The robot model; null until chosen on the first screen (the robot's own server picks it). */
   const [model, setModel] = useState<RobotModelId | null>(null);
-  /** The teacher turned on the extra arms (⚙ 설정 › 다른 로봇팔 쓰기: OMX-F); read after mount. */
+  /** The teacher turned on the extra arms (⚙ 설정 › 다른 로봇팔 쓰기: OMX-F, MG400); read after mount. */
   const [extraArms, setExtraArmsState] = useState(false);
   /** A model can be chosen: every model (MODEL_CHOICE), or the course robot and the extra arms. */
   const choice = MODEL_CHOICE || extraArms;
@@ -1280,8 +1280,8 @@ export default function Console() {
     const untouched = !code.trim() || isStarter(code);
     keepProgram(code);
     setActiveArm(to.id);
-    // The G base is Elephant Robotics' accessory: OMX-F stands on its own plate.
-    if (to.family === 'omx') setMount((m) => ({ ...m, on: false }));
+    // The G base is Elephant Robotics' accessory: OMX-F and MG400 stand on their own bases.
+    if (to.family === 'omx' || to.family === 'mg400') setMount((m) => ({ ...m, on: false }));
     const th: Theme = to.kit ? theme : 'arm';
     const e: EffectorId = to.tools.includes(effector) ? effector : to.tools.includes('none') ? 'none' : to.tools[0];
     const p = practiceFor(level, th, practiceId);
@@ -3903,9 +3903,9 @@ export default function Console() {
                   }}
                 >
                   <b>
-                    <Icon name="robot" size={15} /> {extraArms ? '다른 로봇팔 끄기' : '다른 로봇팔 쓰기 (OMX-F)'}
+                    <Icon name="robot" size={15} /> {extraArms ? '다른 로봇팔 끄기' : '다른 로봇팔 쓰기 (OMX-F · MG400)'}
                   </b>
-                  <small>{extraArms ? 'myCobot 280 RDK X5 만 다시 보여요' : 'ROBOTIS OMX-F 를 시뮬레이션으로 열 수 있게 해요 (이 PC 에서만)'}</small>
+                  <small>{extraArms ? 'myCobot 280 RDK X5 만 다시 보여요' : 'ROBOTIS OMX-F 와 Dobot MG400 을 시뮬레이션으로 열 수 있게 해요 (이 PC 에서만)'}</small>
                 </button>
               )}
               {!account.session && (
@@ -4411,7 +4411,7 @@ export default function Console() {
                       <div className={css.screen}>{zeroPanel}</div>
                     ) : workScreen === 'parts' ? (
                       <div className={css.screen}>
-                        <PartsPanel effector={effector} cameraFlange={cameraFlange} busy={busy} onTool={changeTool} mount={mount} onMount={chooseMount} tools={arm.tools} flangeAvailable={arm.cameraFlange} mountAvailable={arm.family !== 'omx'} />
+                        <PartsPanel effector={effector} cameraFlange={cameraFlange} busy={busy} onTool={changeTool} mount={mount} onMount={chooseMount} tools={arm.tools} flangeAvailable={arm.cameraFlange} mountAvailable={arm.family !== 'omx' && arm.family !== 'mg400'} />
                       </div>
                     ) : workScreen === 'pose' ? (
                       <div className={css.screen}>{recordRow}</div>

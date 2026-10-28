@@ -26,6 +26,7 @@ const LINES: { line: string; img: string; text: string; title?: string }[] = [
   { line: 'mechArm 270', img: '/robot/thumbs/mecharm270.png', text: '6축 · 중심 대칭형 산업용 구조 · 반경 270mm' },
   { line: '4축 로봇팔', img: '/robot/thumbs/mypalletizer260.png', text: '평행 링크로 손끝이 늘 아래를 보는 4축 팔 (myPalletizer 260 · ultraArm P340)' },
   { line: 'ROBOTIS OMX', img: '/robot/thumbs/omx-f.png', text: '5축 + 그리퍼 · 다이나믹셀 서보 · AI 키트의 팔로워 팔 (시뮬레이션)', title: 'ROBOTIS OMX-F' },
+  { line: 'Dobot MG400', img: '/robot/thumbs/mg400.png', text: '4축 · 평행 링크로 손끝이 늘 아래를 봐요 · 반경 440mm · 가반 500g (시뮬레이션)', title: 'Dobot MG400' },
   { line: '이동 로봇', img: '/robot/thumbs/myagv.png', text: '조이스틱 · 키보드 주행, 앞 카메라, 라이다, 직진 보정', title: 'myAGV' },
 ];
 

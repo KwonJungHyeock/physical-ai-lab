@@ -43,6 +43,9 @@ const GEOMETRY: Record<ArmFamily, { radii: readonly number[]; tool: number; base
   // OMX-F: XL330 servos (20 x 34 mm) on thin brackets; the base box is the J1 column only (its flat
   // plate is lower than any link can go), the gripper's fingers reach 20 mm to each side.
   omx: { radii: [14, 13, 13, 12], tool: 14, base: { x0: -35, x1: 14, y: 22 } },
+  // MG400: upper arm 40 mm across, forearm rods ~36, the head box 44 (meshes); the base box is the J1
+  // housing (link1: x -81…79, y ±79 around the J1 axis).
+  mg400: { radii: [20, 18, 22, 20], tool: 12, base: { x0: -81, x1: 79, y: 79 } },
 };
 
 /** Two parts closer than this into each other are touching, mm (the capsules are a simplification). */

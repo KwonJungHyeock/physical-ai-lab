@@ -329,6 +329,26 @@ class OMXF(MyCobot280RDKX5):
     'OMX-F: 관절 5개 (send_angles 는 숫자 5개), 좌표는 [x, y, z, rx, ry, rz] (손 방향은 5축이 돌 수 있는 쪽만).'
 `,
 
+  '/sim/dobot/__init__.py': String.raw`
+"""dobot (시뮬레이터 수업용) — Dobot MG400 을 pymycobot 과 같은 명령으로 움직여요.
+실물 MG400 은 Dobot 의 TCP/IP API (dobot_api: DobotApiDashboard · DobotApiMove, 192.168.1.6) 로 움직여요:
+이 모듈은 시뮬레이터에만 있어요."""
+import _sim
+from _simpy import line
+from pymycobot.mycobot280rdkx5 import MyCobot280RDKX5
+
+
+class MG400(MyCobot280RDKX5):
+    'MG400: 관절 4개 (send_angles 는 숫자 4개), 좌표는 [x, y, z, θ] (손끝은 늘 아래).'
+
+    def DO(self, index, status):
+        'Dobot API 와 같은 이름: 제어기 디지털 출력 index 를 켜고(1) 꺼요(0).'
+        if status not in (0, 1):
+            raise ValueError(f"DO 의 status 는 0 이나 1 이에요 (받은 값 {status})")
+        _sim.basic_out(int(index), int(status), line())
+        return 0
+`,
+
   '/sim/Hobot/__init__.py': '',
 
   '/sim/Hobot/GPIO.py': String.raw`
@@ -693,7 +713,7 @@ class JointState(_Msg):
 /** Python run before every program: simulated clock for the time module, fresh modules. */
 export const PY_PRELUDE = String.raw`
 import sys, time
-for _m in [m for m in sys.modules if m.split(".")[0] in ("pymycobot", "omx", "Hobot", "RPi", "rclpy", "std_msgs", "sensor_msgs", "builtin_interfaces", "_simpy", "_sim")]:
+for _m in [m for m in sys.modules if m.split(".")[0] in ("pymycobot", "omx", "dobot", "Hobot", "RPi", "rclpy", "std_msgs", "sensor_msgs", "builtin_interfaces", "_simpy", "_sim")]:
     del sys.modules[_m]
 if "/sim" not in sys.path:
     sys.path.insert(0, "/sim")

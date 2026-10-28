@@ -2,8 +2,9 @@
 <!--
   Dobot MG400: Dobot's mg400_description/urdf/mg400_description.urdf from github.com/Dobot-Arm/mg400_ros
   (MIT, commit 2bcf6a9, March 2024). Joints, origins, axes, limits, mimics and inertia are the official ones;
-  only the collision meshes are left out and the mesh names are the node names in mg400.glb (mg400_base,
-  mg400_link1 ... mg400_link5).
+  only the collision meshes are left out, the mesh names are the node names in mg400.glb (mg400_base,
+  mg400_link1 ... mg400_link5), and a fixed `flange` link is added at the face of the tool flange (85 mm
+  below J4, the bottom of link5's mesh), its z pointing out of the flange (down), for the simulator's tools.
   The arm is a tree, not one chain: link1 carries the main arm (j2 -> j3 -> link3_1 -> link4_1 -> j4 -> link5,
   the tool) and the parallel rods (j2_2 -> link2_2 -> j3_2 -> link3_2 -> j4_2 -> link4_2). Every joint but
   j1, j2, j3 and j4 follows one of them (<mimic>), which keeps the head level.
@@ -220,5 +221,11 @@
     <axis xyz="0 1 0" />
     <limit lower="-3.14" upper="3.14" effort="0" velocity="0" />
     <mimic joint="j3" />
+  </joint>
+  <link name="flange" />
+  <joint name="flange_joint" type="fixed">
+    <origin xyz="0 0 -0.085" rpy="3.14159265 0 0" />
+    <parent link="link5" />
+    <child link="flange" />
   </joint>
 </robot>

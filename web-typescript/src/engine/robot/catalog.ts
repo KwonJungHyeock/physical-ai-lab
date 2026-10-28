@@ -23,7 +23,8 @@ export type RobotModelId =
   | 'mypalletizer260-pi'
   | 'mypalletizer260-m5'
   | 'four-axis'
-  | 'omx-f';
+  | 'omx-f'
+  | 'mg400';
 
 export interface RobotModel {
   id: RobotModelId;
@@ -73,6 +74,7 @@ export const MODELS: readonly RobotModel[] = [
   arm('mypalletizer260-pi', '4축 로봇팔', 'myPalletizer 260', 'Raspberry Pi', '4축 · 평행 링크로 손끝이 늘 아래를 봐요 · 반경 260mm · 시뮬레이션'),
   arm('mypalletizer260-m5', '4축 로봇팔', 'myPalletizer 260', 'M5Stack', '같은 팔 · M5Stack 베이스 · 시뮬레이션'),
   arm('omx-f', 'ROBOTIS OMX', 'OMX-F', 'U2D2', 'ROBOTIS 5축 + 그리퍼 · 다이나믹셀 · 반경 380mm · 시뮬레이션 (AI 키트 팔로워 팔)'),
+  arm('mg400', 'Dobot MG400', 'MG400', '제어기 내장', 'Dobot 4축 · 평행 링크로 손끝이 늘 아래를 봐요 · 반경 440mm · 가반 500g · 시뮬레이션'),
   {
     id: 'myagv',
     kind: 'agv',
@@ -112,7 +114,7 @@ export const modelById = (id: string | null | undefined): RobotModel | undefined
  * Arms a teacher can open beside the course robot even with the model choice hidden: ⚙ 설정 ›
  * [다른 로봇팔 쓰기] turns them on in this browser (simulation only).
  */
-export const EXTRA_MODELS: readonly RobotModelId[] = ['omx-f'];
+export const EXTRA_MODELS: readonly RobotModelId[] = ['omx-f', 'mg400'];
 const EXTRA_KEY = 'pai.extra-arms';
 
 export function extraArmsOn(): boolean {

@@ -13,7 +13,7 @@ import { JOINT_ANGLE_MAX, JOINT_ANGLE_MIN, setJointRanges } from './limits';
 import { HOME_DEG, setArmLayoutShift } from '../simulator/board';
 import type { RobotModelId } from './catalog';
 
-export type ArmFamily = 'mycobot280' | 'mycobot320' | 'mecharm270' | 'mypalletizer260' | 'omx';
+export type ArmFamily = 'mycobot280' | 'mycobot320' | 'mecharm270' | 'mypalletizer260' | 'omx' | 'mg400';
 
 /**
  * How the suction pump is switched on this board (Elephant Robotics' own AI-kit scripts,
@@ -22,9 +22,11 @@ export type ArmFamily = 'mycobot280' | 'mycobot320' | 'mecharm270' | 'mypalletiz
  *  - rpi: Raspberry Pi / Jetson Nano — RPi.GPIO, BCM 20 · 21, both LOW = on (ai_mycobot_280, ai_mecharm_270);
  *  - basic25: M5Stack — the robot's own outputs, set_basic_output(2 · 5, 0) = on (ai_mycobot_280 m5);
  *  - basic12: myCobot 320 — set_basic_output(1, 0) + (2, 1) = on, off releases with 2 (aikit_320_pi);
+ *  - dobot: Dobot MG400 — the controller's digital output DO1 (Dobot API DO(1, 1) = on); which output the
+ *    suction kit uses is not checked here: the program says to match it;
  *  - none: no pump for this arm (OMX-F: its own gripper only).
  */
-export type PumpWiring = 'hobot' | 'rpi' | 'basic25' | 'basic12' | 'none';
+export type PumpWiring = 'hobot' | 'rpi' | 'basic25' | 'basic12' | 'dobot' | 'none';
 
 export interface ArmSpec {
   id: RobotModelId;
@@ -251,6 +253,52 @@ const OMX_F = {
   finish: 'black' as const,
 };
 
+/**
+ * Dobot MG400: 4 axes (base, shoulder, elbow, tool turn) with a parallel linkage that keeps the head
+ * level, so the tool always points down. URDF and meshes: Dobot-Arm/mg400_ros (MIT),
+ * public/robot/mg400/ (ATTRIBUTION.md there); the parallel rods are drawn beside the arm
+ * (kinematics.ts buildBranches). Joint ranges: Dobot's own joint slider in that repository
+ * (joint_publish_gui main_window.h: J1 ±2.82, J2 -0.52…1.57, J3 0…1.57 rad). J3 is the forearm's own
+ * angle from level (the linkage takes J2 back out), as Dobot counts it. Reach and payload: Dobot's
+ * MG400 datasheet (440 mm, 500 g). Simulation only: the real MG400 takes Dobot's TCP/IP API
+ * (dobot_api, 192.168.1.6 : 29999), the Python class here is the simulator's own `dobot.MG400`.
+ */
+const MG400 = {
+  family: 'mg400' as const,
+  name: 'MG400',
+  dof: 4 as const,
+  jointNames: [
+    { name: '베이스', what: '몸통 좌우로 돌리기' },
+    { name: '어깨', what: '큰 팔 앞뒤로 숙이기' },
+    { name: '팔꿈치', what: '작은 팔 위아래' },
+    { name: '손끝', what: '손끝 돌리기' },
+  ],
+  urdf: '/robot/mg400/mg400.urdf',
+  glbs: ['/robot/rdkx5/rdkx5.glb', '/robot/mg400/mg400.glb'],
+  flangeLink: 'flange',
+  min: [-161, -29, 0, -180, 0, 0],
+  max: [161, 90, 90, 180, 0, 0],
+  coordsMin: [-455, -455, -5, -180, -180, -180],
+  coordsMax: [455, 455, 360, 180, 180, 180],
+  // Flange over (281, 0, 176) mm, tool down (always); every joint has 30° to spare.
+  home: [0, 30, 60, 0, 0, 0],
+  zero: [0, 0, 0, 0, 0, 0],
+  reachMm: 440,
+  payloadG: 500,
+  dark: [] as string[],
+  flange: [] as string[],
+  textures: {},
+  kit: false,
+  tools: ['none', 'pump', 'flexible', 'pen', 'cylinder'] as EffectorId[],
+  cameraFlange: false,
+  pump: 'dobot' as PumpWiring,
+  sdk: { module: 'dobot', cls: 'MG400', port: '192.168.1.6', baud: 29999 },
+  ros: { pkg: 'mg400_bringup', follow: 'mg400.launch.py', joints: ['j1', 'j2', 'j3', 'j4'] },
+  // The tool comes down onto a block on the desk 237–444 mm out (its base box is 113 mm tall): the
+  // mat sits 150 mm further out than the 280's.
+  matShiftMm: 150,
+};
+
 export const ARMS: Readonly<Partial<Record<RobotModelId, ArmSpec>>> = {
   'mycobot280-rdkx5': {
     ...MYCOBOT280,
@@ -367,6 +415,7 @@ export const ARMS: Readonly<Partial<Record<RobotModelId, ArmSpec>>> = {
     ros: ros('mypalletizer_260', JOINTS_PALLETIZER),
   },
   'omx-f': { ...OMX_F, id: 'omx-f', board: 'U2D2' },
+  mg400: { ...MG400, id: 'mg400', board: '제어기 내장' },
 };
 
 export const DEFAULT_ARM = ARMS['mycobot280-rdkx5']!;
@@ -438,6 +487,13 @@ def ${fn}(on):
 def ${fn}(on):
     mc.set_basic_output(2, 0 if on else 1)
     mc.set_basic_output(5, 0 if on else 1)
+    time.sleep(0.5)
+`;
+    case 'dobot':
+      return `# 흡착 펌프: 제어기 디지털 출력 DO1 (Dobot API 의 DO(1, 1) 켜기 · DO(1, 0) 끄기).
+# 실물에서는 흡착 키트를 꽂은 출력 번호에 맞춰 바꿔 주세요.
+def ${fn}(on):
+    mc.DO(1, 1 if on else 0)
     time.sleep(0.5)
 `;
     case 'none':

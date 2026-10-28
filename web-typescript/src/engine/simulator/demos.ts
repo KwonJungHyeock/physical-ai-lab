@@ -30,7 +30,7 @@ export interface Demo {
 
 /** The arms each demo is made for (the places are where these arms reach them). */
 export const DEMO_ARMS: Record<SceneId, readonly ArmFamily[]> = {
-  empty: ['mycobot280', 'mycobot320', 'mecharm270', 'mypalletizer260', 'omx'],
+  empty: ['mycobot280', 'mycobot320', 'mecharm270', 'mypalletizer260', 'omx', 'mg400'],
   lab: ['mycobot280', 'mycobot320', 'mecharm270', 'mypalletizer260', 'omx'],
   factory: ['mycobot280', 'mycobot320', 'mypalletizer260'],
   logistics: ['mycobot280'],

@@ -81,22 +81,62 @@ export function originToMatrix(joint: UrdfJoint): Matrix4 {
 /**
  * Flatten the URDF into the ordered list of transforms from the root link to the
  * tip, tagging which entries are driven by a joint angle.
+ *
+ * A URDF that branches (the MG400's parallel rods hang off link1 beside the arm) gives the main path:
+ * root to the leaf with the most joints of its own (then the longest). The other joints only show
+ * where the rods are: buildBranches.
  */
 export function buildChain(robot: UrdfRobot): ChainSegment[] {
-  const turns = (joint: UrdfRobot['joints'][number]) => joint.type === 'revolute' || joint.type === 'continuous' || joint.type === 'prismatic';
+  return segmentsOf(robot).main;
+}
+
+/** The joints off the main chain (a linkage's rods), for drawing them; empty for a serial arm. */
+export function buildBranches(robot: UrdfRobot): ChainSegment[] {
+  return segmentsOf(robot).branches;
+}
+
+function segmentsOf(robot: UrdfRobot): { main: ChainSegment[]; branches: ChainSegment[] } {
+  const turns = (joint: UrdfJoint) => joint.type === 'revolute' || joint.type === 'continuous' || joint.type === 'prismatic';
   // Joints of their own get the next index; a <mimic> joint follows the one it names.
   const index = new Map<string, number>();
   for (const joint of robot.joints) if (turns(joint) && !joint.mimic) index.set(joint.name, index.size);
-  return robot.joints.map((joint) => {
-    const followed = joint.mimic && turns(joint) ? index.get(joint.mimic.joint) : undefined;
+  const byName = new Map(robot.joints.map((j) => [j.name, j]));
+  // A mimic of a mimic (MG400: j3_1 follows j3_2, which follows j2_2, which follows j2) is followed to
+  // the joint of its own at the end: multipliers multiply, offsets carry through.
+  const follow = (joint: UrdfJoint, depth = 0): { index: number; multiplier: number; offset: number } | undefined => {
+    const target = joint.mimic && byName.get(joint.mimic.joint);
+    if (!target || depth > 8) return undefined;
+    const own = index.get(target.name);
+    if (own !== undefined) return { index: own, multiplier: joint.mimic!.multiplier, offset: joint.mimic!.offset };
+    const up = follow(target, depth + 1);
+    return up && { index: up.index, multiplier: joint.mimic!.multiplier * up.multiplier, offset: joint.mimic!.multiplier * up.offset + joint.mimic!.offset };
+  };
+  const segment = (joint: UrdfJoint): ChainSegment => {
+    const followed = joint.mimic && turns(joint) ? follow(joint) : undefined;
     return {
       joint,
       originMatrix: originToMatrix(joint),
       axis: new Vector3(joint.axis.x, joint.axis.y, joint.axis.z).normalize(),
       movableIndex: index.get(joint.name) ?? -1,
-      mimic: followed === undefined ? undefined : { index: followed, multiplier: joint.mimic!.multiplier, offsetDeg: joint.mimic!.offset * RAD2DEG },
+      mimic: followed && { index: followed.index, multiplier: followed.multiplier, offsetDeg: followed.offset * RAD2DEG },
     };
-  });
+  };
+  const childrenOf = (link: string) => robot.joints.filter((j) => j.parent === link);
+  // A serial arm (no link carries two joints) keeps the file's order, as it always has.
+  if (robot.joints.every((j) => childrenOf(j.parent).length === 1)) return { main: robot.joints.map(segment), branches: [] };
+  let best: UrdfJoint[] = [];
+  const better = (p: UrdfJoint[]) => {
+    const own = (q: UrdfJoint[]) => q.filter((j) => index.has(j.name)).length;
+    return own(p) > own(best) || (own(p) === own(best) && p.length > best.length);
+  };
+  const walk = (link: string, path: UrdfJoint[]) => {
+    const next = childrenOf(link);
+    if (!next.length && better(path)) best = path;
+    for (const j of next) walk(j.child, [...path, j]);
+  };
+  walk(robot.rootLink, []);
+  const main = new Set(best);
+  return { main: best.map(segment), branches: robot.joints.filter((j) => !main.has(j)).map(segment) };
 }
 
 /**
