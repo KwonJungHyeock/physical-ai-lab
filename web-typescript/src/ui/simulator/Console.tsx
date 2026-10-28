@@ -14,7 +14,7 @@ import { useRouter } from 'next/navigation';
 import { memo, useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
 import { Vector3 } from 'three';
 
-import { BLOCK_MM, BLOCK_START, HAND_PHOTO_DEG, HOME_DEG, KIT_RISE_MM, randomBlockLayout, type ColorName, type Theme } from '@/engine/simulator/board';
+import { BLOCK_MM, BLOCK_START, BLOCK_STORED, CAL_BOARD, HAND_PHOTO_DEG, HOME_DEG, KIT_RISE_MM, randomBlockLayout, STORAGE_BOX, type ColorName, type Theme } from '@/engine/simulator/board';
 import { EFFECTOR_BY_ID, flangeRefusal, tcpFor, toolMismatch, toolsUsed, type EffectorId, type FlangeReading } from '@/engine/simulator/effectors';
 import { toPymycobot } from '@/engine/simulator/export';
 import {
@@ -1266,7 +1266,6 @@ export default function Console() {
     setBadge(null);
     addLog('info', `${mode === 'check' && p.check ? `[검수 ${p.check}] ` : ''}${p.title}: ${p.goal}`);
     if (eff !== effector || flange !== cameraFlange) addLog('info', `검수 ${p.check} 에 맞게 ${obj([eff !== effector && EFFECTOR_BY_ID[eff].name, flange !== cameraFlange && '카메라 플랜지'].filter(Boolean).join(' · '))} 달았어요.`);
-    if (eff !== effector || flange !== cameraFlange) addLog('info', `검수 ${p.check} 에 맞게 ${obj([eff !== effector && EFFECTOR_BY_ID[eff].name, flange !== cameraFlange && '카메라 플랜지'].filter(Boolean).join(' · '))} 달았어요.`);
     if (aside) addLog('info', `검수 ${p.check} 예제 프로그램으로 열었어요. 전에 고친 프로그램은 [내 프로그램]으로 다시 불러와요.`);
   };
 
@@ -1301,7 +1300,7 @@ export default function Console() {
     setPassed(null);
     setErrorLines([]);
     setBadge(null);
-    addLog('info', `${to.name} · ${to.board} 를 열었어요. 관절 범위 · 기본 자세 · 파이썬 클래스(${to.sdk.cls})가 이 로봇팔에 맞춰졌어요.`);
+    addLog('info', `${obj(to.name)} 열었어요 (${to.board}). 관절 범위 · 기본 자세 · 파이썬 클래스(${to.sdk.cls})가 이 로봇팔에 맞춰졌어요.`);
   };
 
   const changeTool = (next: EffectorId, flange: boolean) => {
@@ -1351,7 +1350,13 @@ export default function Console() {
     setDeskSel(null);
     setDemo(null);
     if (id === 'kit') {
-      if (theme !== 'kit') openKeeping(level, 'kit');
+      if (theme !== 'kit') {
+        openKeeping(level, 'kit');
+        // The kit comes out with the camera's board clear: one object at a time to pick (practices
+        // opened from 검수 or the library still lay their blocks out).
+        kitClear();
+        addLog('info', 'AI 키트를 불러왔어요. 블록은 보관함에 있어요.', '[블록 1개 놓기]로 카메라 칸에 하나씩 놓고 집어 보세요.');
+      }
       return;
     }
     const next: Desk = { ...desk, scene: id, objects: sceneObjects(id) };
@@ -1363,6 +1368,29 @@ export default function Console() {
       w.fixed = SCENE_FIXED[id];
       objectsToWorld(() => next.objects.map((o) => ({ ...o })));
     }
+  };
+  /** The kit's blocks into the storage box: the camera's board clear. */
+  const kitClear = () => {
+    const w = world.current;
+    if (w.theme !== 'kit') return;
+    for (const b of w.blocks) Object.assign(b, { x: BLOCK_STORED[b.color].x, y: BLOCK_STORED[b.color].y, z: STORAGE_BOX.floorZ + BLOCK_MM / 2, yawDeg: 0 });
+    w.held = null;
+    w.version += 1;
+    setPassed(null);
+  };
+  /** One block from the storage box onto the board: its middle, or the next start place still free. */
+  const kitPlaceOne = () => {
+    const w = world.current;
+    if (busy || w.theme !== 'kit') return;
+    const stored = w.blocks.find((b) => Math.hypot(b.x - BLOCK_STORED[b.color].x, b.y - BLOCK_STORED[b.color].y) < 1);
+    if (!stored) return addLog('warn', '보관함에 남은 블록이 없어요.', '[처음 상태로]를 누르면 블록이 처음 자리로 돌아가요.');
+    const spots = [{ x: CAL_BOARD.x, y: CAL_BOARD.y }, ...Object.values(BLOCK_START)];
+    const free = spots.find((s) => w.blocks.every((b) => b === stored || Math.hypot(b.x - s.x, b.y - s.y) > BLOCK_MM + 8));
+    if (!free) return addLog('warn', '카메라 칸에 블록을 놓을 빈 자리가 없어요.');
+    Object.assign(stored, { x: free.x, y: free.y, z: BLOCK_MM / 2, yawDeg: 0 });
+    w.version += 1;
+    setPassed(null);
+    addLog('info', `${obj(`${stored.color} 블록`)} 카메라 칸에 놓았어요.`);
   };
   const deskAdd = (kind: ObjectKind) => {
     if (busy) return;
@@ -3502,9 +3530,29 @@ export default function Console() {
   const pastIntro = entered || robotMode || picking;
   const showPicker = splashDone && pastIntro && !connectOpen && (picking || !modelNow);
 
+  // Connecting to the real robot (a myCobot 280) while another arm was open: the model choice goes back
+  // to the 280 too, so the picker, the saved choice and the screen agree.
+  useEffect(() => {
+    if (!robotMode || model === null || model === DEFAULT_MODEL) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the connected robot decides the model
+    setModel(DEFAULT_MODEL);
+    try {
+      localStorage.setItem(MODEL_KEY, DEFAULT_MODEL);
+    } catch {
+      /* this session only */
+    }
+    addLog('info', '실물 myCobot 280 과 연결돼서 화면의 로봇팔도 myCobot 280 이에요.');
+  }, [robotMode, model, addLog]);
+
   const chooseModel = (id: RobotModelId) => {
     if (modelById(id)?.kind === 'agv') {
       router.push('/agv');
+      return;
+    }
+    // Connected, the arm on screen is the real myCobot 280 the page drives: another arm cannot open.
+    if (robotMode && id !== DEFAULT_MODEL) {
+      setPicking(false);
+      addLog('warn', `실물 myCobot 280 과 연결된 동안은 다른 로봇팔(${modelById(id)?.name ?? id})을 열 수 없어요.`, '오른쪽 위 [로봇 연결] → [연결 끊기 (시뮬레이션으로)] 를 누른 뒤 다시 골라 주세요.');
       return;
     }
     switchArm(id);
@@ -4234,6 +4282,7 @@ export default function Console() {
                       }}
                       onMat={deskMat}
                       onShuffle={shuffle}
+                      onPlaceOne={kitPlaceOne}
                       onReset={() => {
                         layout.current = BLOCK_START;
                         resetWorld();

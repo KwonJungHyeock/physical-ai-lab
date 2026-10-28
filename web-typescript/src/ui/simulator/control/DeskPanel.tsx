@@ -111,6 +111,8 @@ interface Props {
   onMat(on: boolean): void;
   onShuffle(): void;
   onReset(): void;
+  /** AI kit: one block from the storage box onto the camera's board. */
+  onPlaceOne?(): void;
   onAdd(kind: ObjectKind): void;
   onUpdate(id: string, patch: Partial<DeskObject>): void;
   onRemove(id: string): void;
@@ -230,6 +232,11 @@ export default function DeskPanel(p: Props) {
               </label>
             )}
             <div className={css.row}>
+              {kit && p.onPlaceOne && (
+                <button type="button" className={css.btn} disabled={p.busy} onClick={p.onPlaceOne}>
+                  블록 1개 놓기
+                </button>
+              )}
               <button type="button" className={css.btn} disabled={p.busy || !p.canPick || !(kit || p.matNeeded || p.desk.mat)} onClick={p.onShuffle}>
                 블록 섞기
               </button>
