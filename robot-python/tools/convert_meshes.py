@@ -8,6 +8,7 @@ the AI Kit 2023 model).
     python3 convert_meshes.py kit   --description <clone>/mycobot_description/urdf -o aikit.glb
     python3 convert_meshes.py 320   --description <clone>/mycobot_description/urdf -o mycobot320.glb   (also 280bases, 270, 260, p340)
     python3 convert_meshes.py omx   --description <open_manipulator clone>/open_manipulator_description/meshes -o omx_f.glb
+    python3 convert_meshes.py mg400 --description <Dobot-Arm/mg400_ros clone>/mg400_description/meshes -o mg400.glb
     npx gltf-pipeline -i rdkx5.glb -o rdkx5.draco.glb -d --draco.compressionLevel 10
 
 Each source mesh becomes one GLB node named after its file, so the web app can
@@ -121,6 +122,19 @@ PROFILES = {
         ("omx_f/follower_06_pan_Revised.stl", "omx_link5"),
         ("omx_f/follower_07_gripper_motorized.stl", "omx_finger1"),
         ("omx_f/follower_08_gripper_gear.stl", "omx_finger2"),
+    ],
+    # Dobot MG400 (4 axes, parallel linkage), Dobot-Arm/mg400_ros (MIT): STL in metres, read from
+    # mg400_description/meshes (pass that folder as --description). The third item is the unit.
+    "mg400": [
+        ("base_link.STL", "mg400_base", 1.0),
+        ("link1.STL", "mg400_link1", 1.0),
+        ("link2_1.STL", "mg400_link2_1", 1.0),
+        ("link2_2.STL", "mg400_link2_2", 1.0),
+        ("link3_1.STL", "mg400_link3_1", 1.0),
+        ("link3_2.STL", "mg400_link3_2", 1.0),
+        ("link4_1.STL", "mg400_link4_1", 1.0),
+        ("link4_2.STL", "mg400_link4_2", 1.0),
+        ("link5.STL", "mg400_link5", 1.0),
     ],
     # The original M5 set used by the /spike/twin page.
     "m5": [
@@ -249,7 +263,7 @@ def convert_kit(description, output):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("profile", choices=sorted(PROFILES) + ["kit"])
-    ap.add_argument("--description", required=True, help="path to mycobot_description/urdf (open_manipulator_description/meshes for omx)")
+    ap.add_argument("--description", required=True, help="path to mycobot_description/urdf (open_manipulator_description/meshes for omx, mg400_description/meshes for mg400)")
     ap.add_argument("-o", "--output", required=True)
     args = ap.parse_args()
     if args.profile == "kit":
@@ -259,11 +273,12 @@ def main():
     scene = trimesh.Scene()
     report, bad = {}, []
     for entry in PROFILES[args.profile]:
-        # An entry is a mesh path, or (path, node name) when two sources share a file name.
-        rel, name = entry if isinstance(entry, tuple) else (entry, os.path.basename(entry))
-        if rel.endswith(".stl"):
-            # STL has no unit tag: ROBOTIS's URDF scales these by 0.001 (millimetres).
-            path, unit = os.path.join(args.description, rel), 0.001
+        # An entry is a mesh path, or (path, node name) when two sources share a file name, or
+        # (path, node name, unit) for an STL that is not in millimetres.
+        rel, name = entry[:2] if isinstance(entry, tuple) else (entry, os.path.basename(entry))
+        if rel.lower().endswith(".stl"):
+            # STL has no unit tag: ROBOTIS's URDF scales these by 0.001 (millimetres); Dobot's are in metres.
+            path, unit = os.path.join(args.description, rel), entry[2] if isinstance(entry, tuple) and len(entry) > 2 else 0.001
         else:
             path = os.path.join(args.description, rel + ".dae")
             unit = declared_unit(path)
