@@ -4,8 +4,9 @@
 #   EDUINO_SIGNING_KEY=~/keys/eduino-kit-signing.pem sh desktop-go/build.sh
 #                                     → the same, carrying the signed robot kit (⚙ → 로봇 USB 만들기, usbkit.go)
 #   KIT=path/eduino_usb.zip sh desktop-go/build.sh   → carrying a kit made before
-# Needs Go 1.24+ and the web app's npm packages. The program's icon needs go-winres
-# (go install github.com/tc-hib/go-winres@latest); without it the program has no icon.
+# Needs Go 1.24+ and the web app's npm packages. The program's icon needs go-winres: it is installed
+# here when missing (go install github.com/tc-hib/go-winres@v0.3.3), and the build stops rather than
+# make a program without its icon (NO_ICON=1 builds one anyway, for a quick test).
 set -e
 cd "$(dirname "$0")"
 VERSION=$(date +%Y.%m.%d)
@@ -29,13 +30,20 @@ else
 fi
 
 WINRES=$(command -v go-winres || echo "$(go env GOPATH)/bin/go-winres")
+if [ ! -x "$WINRES" ] && [ -z "$NO_ICON" ]; then
+  echo "go-winres 를 설치합니다 (프로그램 아이콘)."
+  go install github.com/tc-hib/go-winres@v0.3.3 || true
+fi
 if [ -x "$WINRES" ]; then
   "$WINRES" simply --arch amd64 --icon ../web-typescript/public/icons/icon-512.png --manifest cli \
     --product-name "Physical AI 시뮬레이터" --file-description "ROBODYNE SYSTEMS Physical AI 로봇 학습 프로그램 시뮬레이터" \
     --product-version "$VERSION" --file-version "$VERSION" --copyright "ROBODYNE SYSTEMS" \
     --original-filename "Physical AI 시뮬레이터.exe"
+elif [ -n "$NO_ICON" ]; then
+  echo "go-winres 가 없어 아이콘 없이 만듭니다 (NO_ICON)."
 else
-  echo "go-winres 가 없어 아이콘 없이 만듭니다."
+  echo "go-winres 가 없어 멈춥니다: 아이콘 없는 프로그램을 내보내지 않아요 (시험용은 NO_ICON=1)." >&2
+  exit 1
 fi
 
 GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o "dist/Physical AI 시뮬레이터.exe" .
