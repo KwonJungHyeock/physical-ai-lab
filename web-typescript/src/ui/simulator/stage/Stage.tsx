@@ -20,6 +20,8 @@
 
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { CameraControls, Grid, useGLTF } from '@react-three/drei';
+import TrackTags, { MAX_TAGS, type TrackTag } from './TrackTags';
+import { JOINTS } from '../control/jointInfo';
 import { EffectComposer, N8AO, SMAA, ToneMapping } from '@react-three/postprocessing';
 import { ToneMappingMode } from 'postprocessing';
 import type CameraControlsImpl from 'camera-controls';
@@ -50,7 +52,6 @@ import {
   NoToneMapping,
   PerspectiveCamera,
   Scene,
-  TorusGeometry,
   Vector3,
   WebGLRenderTarget,
 } from 'three';
@@ -441,6 +442,9 @@ function World({
       }),
     [arm],
   );
+  // Tracking tags (TrackTags.tsx) on the joints that need a look: set again only when what they say changes.
+  const [tags, setTags] = useState<TrackTag[]>([]);
+  const tagKey = useRef('');
   useFrame(({ clock }) => {
     const w = world.current;
     if (!w) return;
@@ -449,12 +453,20 @@ function World({
     const pulse = 0.55 + 0.35 * Math.sin(clock.elapsedTime * 7);
     // Where the arm touches the desk, the kit or an object: those joints red (blinking) while it lasts.
     const touching = w.contact && w.contact.until > performance.now() ? w.contact.joints : null;
+    // The joint being zero-calibrated takes the same effect in the accent blue, pulsing softly (a
+    // warning on it wins).
+    const soft = 0.35 + 0.25 * Math.sin(clock.elapsedTime * 4);
     housings.forEach((h, i) => {
-      const lv = touching?.includes(i + 1) ? 2 : (alerts[i]?.level ?? 0);
+      const warn = touching?.includes(i + 1) ? 2 : (alerts[i]?.level ?? 0);
+      const lv = warn || (ringJoint === i + 1 ? 3 : 0);
       if (lv === h.level && lv < 2) return;
       h.level = lv;
       for (const { m, color } of h.mats) {
-        if (lv) {
+        if (lv === 3) {
+          m.color.copy(color).lerp(new Color(FOCUS_COLOR), 0.55);
+          m.emissive.set(FOCUS_COLOR);
+          m.emissiveIntensity = soft;
+        } else if (lv) {
           m.color.copy(color).lerp(new Color(ALERT_COLOR[lv]), 0.7);
           m.emissive.set(ALERT_COLOR[lv]);
           m.emissiveIntensity = lv === 2 ? pulse : 0.25;
@@ -465,6 +477,21 @@ function World({
         }
       }
     });
+    const names = spec.jointNames ?? JOINTS;
+    const next: TrackTag[] = [];
+    housings.forEach((h, i) => {
+      if (!h.level) return;
+      const title = `J${i + 1} ${names[i]?.name ?? ''}`.trim();
+      const detail = touching?.includes(i + 1) ? '물건 · 판에 닿았어요' : h.level === 3 ? '영점 맞추는 중' : (alerts[i]?.why ?? '');
+      next.push({ joint: i + 1, level: h.level as TrackTag['level'], title, detail });
+    });
+    next.sort((a, b) => (a.level === 3 ? 0 : a.level) - (b.level === 3 ? 0 : b.level)).reverse();
+    const shown = next.slice(0, MAX_TAGS);
+    const key = shown.map((s) => `${s.joint}:${s.level}:${s.detail}`).join('|');
+    if (key !== tagKey.current) {
+      tagKey.current = key;
+      setTags(shown);
+    }
   });
   // Cables and the contact shadow around the base, on the table (or on the block the arm stands on).
   const dressing = useMemo(() => baseDressing(arm.root, mountMm / 1000), [arm, mountMm]);
@@ -476,7 +503,6 @@ function World({
       }),
     [dressing],
   );
-  useEffect(() => setJointRing(arm, ringJoint ?? null), [arm, ringJoint]);
   const ready = useRef(false);
   useFrame(() => {
     if (ready.current) return;
@@ -694,6 +720,7 @@ function World({
       {/* On a base the arm and its base axes stand mountMm above the table; the table, kit and blocks stay put. */}
       <group position={[0, 0, mountMm / 1000]}>
         <primitive object={arm.root} />
+        <TrackTags tags={tags} joints={arm.joints} />
         {ghost && <primitive object={ghostArm.root} />}
         {miniRect && monitor && (
           <MiniArm robot={robot} chain={chain} nodes={nodes} look={{ dark: spec.dark, flange: spec.flange, textures: spec.textures, flangeLink: spec.flangeLink, finish: spec.finish }} world={world} place={miniRect} out={monitor} composer={quality === 'high'} />
@@ -912,31 +939,18 @@ function readBaseLuminance(gl: WebGLRenderer, camera: Camera, base: Object3D): (
   };
 }
 
-/** One ring per arm, around the joint being zero-calibrated (drawn over the arm, screen only). */
-const RINGS = new WeakMap<object, Mesh>();
-
-function setJointRing(arm: ReturnType<typeof buildArm>, joint: number | null): void {
-  let ring = RINGS.get(arm);
-  if (!ring) {
-    ring = new Mesh(new TorusGeometry(0.048, 0.0032, 12, 72), new MeshBasicMaterial({ color: '#e5322d', transparent: true, opacity: 0.9, depthTest: false }));
-    ring.renderOrder = 10;
-    ring.layers.set(SCREEN_ONLY);
-    RINGS.set(arm, ring);
-  }
-  ring.removeFromParent();
-  if (!joint) return;
-  const j = arm.joints[joint - 1];
-  if (!j) return;
-  // The torus lies in its XY plane: turn its axis (+Z) onto the joint axis.
-  ring.quaternion.setFromUnitVectors(new Vector3(0, 0, 1), j.axis.clone().normalize());
-  j.group.add(ring);
-}
+/** The joint being zero-calibrated: its housing in the accent blue (the warnings' effect, ALERT_COLOR). */
+const FOCUS_COLOR = '#2f8cff';
 
 /**
  * The line is always drawn, fully transparent while it has no path: its shader then compiles
  * with the rest of the scene while the model loads, not in the middle of the first jog (a
  * slow graphics chip can take seconds to compile it, and the page stands still meanwhile).
  */
+/** The tool's path stays this long after the arm stops, then fades out over PATH_FADE_S, s. */
+const PATH_HOLD_S = 1.2;
+const PATH_FADE_S = 0.8;
+
 function newPathLine(): Line2 {
   const material = new LineMaterial({ linewidth: 2.5, vertexColors: true, transparent: true, depthWrite: false });
   const l = new Line2(new LineGeometry(), material);
@@ -978,6 +992,10 @@ function clearPath(line: Line2): void {
   (line.material as LineMaterial).opacity = 0;
 }
 
+function fadePath(line: Line2, opacity: number): void {
+  (line.material as LineMaterial).opacity = opacity;
+}
+
 function setLineResolution(line: Line2, width: number, height: number): void {
   (line.material as LineMaterial).resolution.set(width, height);
 }
@@ -990,7 +1008,9 @@ function ToolPath({ world, flange, tcpMm, root }: { world: RefObject<WorldState>
   const owner = useRef<WorldState | null>(null);
   const tip = useRef(new Vector3());
   const settle = useRef(0);
-  useFrame(() => {
+  /** When the tip last moved (s): the path fades out after the arm has stood still, so no line stays behind. */
+  const moved = useRef(0);
+  useFrame(({ clock }) => {
     const w = world.current;
     const r = root.current;
     if (!w || !r) return;
@@ -1011,7 +1031,17 @@ function ToolPath({ world, flange, tcpMm, root }: { world: RefObject<WorldState>
     const p = tip.current.set(0, 0, tcpMm / 1000);
     flange.localToWorld(p);
     r.worldToLocal(p);
-    pts.current = extendPath(line, pts.current, p);
+    const before = pts.current;
+    pts.current = extendPath(line, before, p);
+    const now = clock.elapsedTime;
+    if (pts.current !== before) moved.current = now;
+    else if (before.length >= 6) {
+      const still = now - moved.current;
+      if (still > PATH_HOLD_S + PATH_FADE_S) {
+        pts.current = [];
+        clearPath(line);
+      } else if (still > PATH_HOLD_S) fadePath(line, 1 - (still - PATH_HOLD_S) / PATH_FADE_S);
+    }
   });
   return <primitive object={line} />;
 }

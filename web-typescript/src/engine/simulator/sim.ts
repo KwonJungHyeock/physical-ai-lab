@@ -1195,9 +1195,10 @@ function afterPoseChange(rt: Runtime): void {
     if (low - c.r < -1) throw new RunError(`${c.joint}번 관절 쪽 팔이 책상에 닿아요.`, '팔이 덜 숙여지도록 각도나 위치를 바꿔 주세요.', true);
   }
   // The arm into itself or back through its base (with or without the physics engine).
-  const self = selfContact(rt.chain, w.angles, activeArm().family, tcp(rt), 0, rt.selfSlack ?? SELF_SLACK_MM);
+  const body = EFFECTOR_BY_ID[w.effector].body;
+  const self = selfContact(rt.chain, w.angles, activeArm().family, tcp(rt), 0, rt.selfSlack ?? SELF_SLACK_MM, body);
   if (self) {
-    const fix = selfFix(rt.chain, w.angles, activeArm(), tcp(rt));
+    const fix = selfFix(rt.chain, w.angles, activeArm(), tcp(rt), 0, body);
     throw new SelfCollision(selfMessage(self, fix, w.angles), '팔이 스스로 부딪히는 자세는 실제 로봇도 망가뜨려요. 안내한 관절을 바꾸거나 [기본 자세] 에서 다시 시작해 주세요.', true);
   }
 
@@ -1825,7 +1826,7 @@ export function moveCheck(chain: readonly ChainSegment[], world: WorldState, to:
 
 /** Already into itself (a real arm left that way): how deep, so a move out of it is not refused. */
 function startSlack(chain: readonly ChainSegment[], world: WorldState, from: readonly number[]): number {
-  const hit = selfContact(chain, from, activeArm().family, tcpFor(world.effector, world.cameraFlange));
+  const hit = selfContact(chain, from, activeArm().family, tcpFor(world.effector, world.cameraFlange), 0, SELF_SLACK_MM, EFFECTOR_BY_ID[world.effector].body);
   return hit ? hit.depth + 0.5 : SELF_SLACK_MM;
 }
 

@@ -1,0 +1,106 @@
+/* Tracking tags (TrackTags.tsx): no card — a bracket, a hairline and text over the scene. */
+.tag {
+  --c: #ffb547;
+  position: relative;
+  width: 0;
+  height: 0;
+  color: #f4f7fb;
+  font-variant-numeric: tabular-nums;
+  word-break: keep-all;
+  animation: in 0.25s ease-out;
+}
+.tag[data-level='2'] {
+  --c: #ff5a5a;
+}
+.tag[data-level='3'] {
+  --c: #5ab0ff;
+}
+/* Four corners of a 38 px square around the joint. */
+.bracket {
+  position: absolute;
+  left: -19px;
+  top: -19px;
+  width: 38px;
+  height: 38px;
+  background:
+    linear-gradient(var(--c), var(--c)) left top / 9px 1.5px no-repeat,
+    linear-gradient(var(--c), var(--c)) left top / 1.5px 9px no-repeat,
+    linear-gradient(var(--c), var(--c)) right top / 9px 1.5px no-repeat,
+    linear-gradient(var(--c), var(--c)) right top / 1.5px 9px no-repeat,
+    linear-gradient(var(--c), var(--c)) left bottom / 9px 1.5px no-repeat,
+    linear-gradient(var(--c), var(--c)) left bottom / 1.5px 9px no-repeat,
+    linear-gradient(var(--c), var(--c)) right bottom / 9px 1.5px no-repeat,
+    linear-gradient(var(--c), var(--c)) right bottom / 1.5px 9px no-repeat;
+}
+.bracket::after {
+  content: '';
+  position: absolute;
+  left: 15px;
+  top: 15px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid var(--c);
+  animation: ping 1.6s ease-out infinite;
+}
+.tag[data-level='2'] .bracket::after {
+  animation-duration: 0.9s;
+}
+.lead {
+  position: absolute;
+  left: 19px;
+  top: -63px;
+  overflow: visible;
+}
+.lead polyline {
+  fill: none;
+  stroke: var(--c);
+  stroke-width: 1.2;
+  opacity: 0.85;
+}
+.label {
+  position: absolute;
+  left: 87px;
+  top: -76px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  white-space: nowrap;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.75);
+}
+.label b {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.label b::first-letter {
+  color: var(--c);
+}
+.label small {
+  font-size: 12px;
+  color: rgba(244, 247, 251, 0.78);
+  border-top: 1px solid color-mix(in srgb, var(--c) 70%, transparent);
+  padding-top: 2px;
+}
+@keyframes ping {
+  from {
+    transform: scale(0.6);
+    opacity: 1;
+  }
+  to {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+@keyframes in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bracket::after,
+  .tag {
+    animation: none;
+  }
+}

@@ -15,11 +15,27 @@ export type EffectorId = 'adaptive' | 'parallel' | 'flexible' | 'pump' | 'pen' |
 /** What the tool does — decides which commands are allowed while it is attached. */
 export type EffectorKind = 'grip' | 'suction' | 'pen' | 'press' | 'hold' | 'none';
 
+/** One capsule of a tool's shape: its axis at (x, y) in the flange frame from z0 to z1, radius r, mm. */
+export interface ToolCapsule {
+  x: number;
+  y: number;
+  z0: number;
+  z1: number;
+  r: number;
+}
+
 export interface Effector {
   id: EffectorId;
   name: string;
   kind: EffectorKind;
   /** Flange face -> working point, mm (without the camera flange). */
+  /**
+   * The tool's shape for self-collision when it is wider than the arm's default tool width
+   * (selfCollision.ts): capsules in the flange frame, mm (z along the tool). Measured on the official
+   * model (the adaptive gripper, fingers open: body x ±29, y -38…13, z 2…64; each finger x 20…45,
+   * y -3…18, z 25…109).
+   */
+  body?: readonly ToolCapsule[];
   tcpMm: number;
   /** For grippers: finger gap range, mm (open, closed). */
   gapMm?: { open: number; closed: number };
@@ -28,11 +44,18 @@ export interface Effector {
   official: boolean;
 }
 
+/** The adaptive gripper, fingers open (the official model, flange frame): its body and its two fingers. */
+const ADAPTIVE_BODY: readonly ToolCapsule[] = [
+  { x: 0, y: -12.5, z0: 28, z1: 38, r: 28 },
+  { x: -32.5, y: 7.5, z0: 37.5, z1: 96.5, r: 12.5 },
+  { x: 32.5, y: 7.5, z0: 37.5, z1: 96.5, r: 12.5 },
+];
+
 export const EFFECTORS: readonly Effector[] = [
   // Datasheet: 112 x 94 x 50 mm, gripping range 20-45 mm.
   // Grasp point sits ~4 mm above the fingertips when closed on a 25 mm block
   // (tips reach 104.5 mm open, 122.7 mm fully closed; URDF motor range -0.74..0.15).
-  { id: 'adaptive', name: '어댑티브 그리퍼', kind: 'grip', tcpMm: 112, gapMm: { open: 43, closed: 4 }, gripperType: 1, official: true },
+  { id: 'adaptive', name: '어댑티브 그리퍼', kind: 'grip', tcpMm: 112, body: ADAPTIVE_BODY, gapMm: { open: 43, closed: 4 }, gripperType: 1, official: true },
   // Datasheet (docs 4-SupportAndService/Accessories/ParallelGripper.md): 66 x 78 x 46 mm,
   // gripping range < 20 mm (effective 15 mm) — too narrow for the kit's 25 mm blocks.
   { id: 'parallel', name: '평행 그리퍼', kind: 'grip', tcpMm: 58, gapMm: { open: 20, closed: 0 }, gripperType: 3, official: false },

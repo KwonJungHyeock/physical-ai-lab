@@ -10,6 +10,7 @@
 
 import { forwardKinematicsFrames, type ChainSegment } from './kinematics';
 import type { ArmFamily, ArmSpec } from './arms';
+import type { ToolCapsule } from '../simulator/effectors';
 
 type V3 = [number, number, number];
 
@@ -19,6 +20,11 @@ export interface Link {
   a: V3;
   b: V3;
   r: number;
+  /**
+   * Only for one check: a wide gripper's finger capsules count against the other links ('pairs'), its
+   * thin centre line against the base box ('base', itself a generous box around the J1 column).
+   */
+  only?: 'pairs' | 'base';
 }
 
 export interface SelfHit {
@@ -99,7 +105,7 @@ function pointBox(p: V3, min: V3, max: V3): number {
 }
 
 /** The arm's links for these angles: upper arm, forearm, wrist parts, then the tool (when longer than its own width). */
-export function armLinks(chain: readonly ChainSegment[], anglesDeg: readonly number[], family: ArmFamily, tcpMm = 0): { links: Link[]; base: { min: V3; max: V3 } } {
+export function armLinks(chain: readonly ChainSegment[], anglesDeg: readonly number[], family: ArmFamily, tcpMm = 0, toolBody?: readonly ToolCapsule[]): { links: Link[]; base: { min: V3; max: V3 } } {
   const g = GEOMETRY[family];
   const frames = forwardKinematicsFrames(chain, anglesDeg);
   const joints: V3[] = [];
@@ -117,16 +123,19 @@ export function armLinks(chain: readonly ChainSegment[], anglesDeg: readonly num
   const names = joints.length > 4 ? NAMES_6 : NAMES_4;
   const links: Link[] = [];
   for (let k = 0; k + 1 < pts.length; k += 1) links.push({ name: names[Math.min(k, names.length - 1)], a: pts[k], b: pts[k + 1], r: g.radii[Math.min(k, g.radii.length - 1)] });
-  if (tcpMm > g.tool * 2) {
+  const dir: V3 = [f[8], f[9], f[10]];
+  const along = (p: V3, d: number, side: V3 = [0, 0, 0]): V3 => [p[0] + dir[0] * d + side[0], p[1] + dir[1] * d + side[1], p[2] + dir[2] * d + side[2]];
+  if (toolBody?.length) {
+    // A wide gripper (the adaptive one): its body and fingers as measured, turning with the last joint
+    // as the real ones do. They count against the other links; the base box (itself generous around
+    // the J1 column) is checked with the tool's thin centre line.
+    const at = (x: number, y: number, z: number): V3 => [flange[0] + f[0] * x + f[4] * y + f[8] * z, flange[1] + f[1] * x + f[5] * y + f[9] * z, flange[2] + f[2] * x + f[6] * y + f[10] * z];
+    for (const c of toolBody) links.push({ name: '도구', a: at(c.x, c.y, c.z0), b: at(c.x, c.y, c.z1), r: c.r, only: 'pairs' });
+    if (tcpMm > g.tool * 2) links.push({ name: '도구', a: along(flange, g.tool), b: along(flange, tcpMm - g.tool), r: g.tool, only: 'base' });
+  } else if (tcpMm > g.tool * 2) {
     const r = g.tool;
-    const dir: V3 = [f[8], f[9], f[10]];
     // From one width out of the flange (the wrist's own servo covers the flange face) to the rounded tip.
-    links.push({
-      name: '도구',
-      a: [flange[0] + dir[0] * r, flange[1] + dir[1] * r, flange[2] + dir[2] * r],
-      b: [flange[0] + dir[0] * (tcpMm - r), flange[1] + dir[1] * (tcpMm - r), flange[2] + dir[2] * (tcpMm - r)],
-      r,
-    });
+    links.push({ name: '도구', a: along(flange, r), b: along(flange, tcpMm - r), r });
   }
   const top = (joints[1]?.[2] ?? 120) - 14;
   return { links, base: { min: [g.base.x0, -g.base.y, -1000], max: [g.base.x1, g.base.y, top] } };
@@ -137,18 +146,23 @@ export function armLinks(chain: readonly ChainSegment[], anglesDeg: readonly num
  * (not the upper arm) in the base, a link's body below the table (z < floorZ; the tool's tip is the
  * simulator's own rule, so the tool is left out here).
  */
-export function selfContact(chain: readonly ChainSegment[], anglesDeg: readonly number[], family: ArmFamily, tcpMm = 0, floorZ = 0, slack = SELF_SLACK_MM): SelfHit | null {
-  const { links, base } = armLinks(chain, anglesDeg, family, tcpMm);
+export function selfContact(chain: readonly ChainSegment[], anglesDeg: readonly number[], family: ArmFamily, tcpMm = 0, floorZ = 0, slack = SELF_SLACK_MM, toolBody?: readonly ToolCapsule[]): SelfHit | null {
+  const { links, base } = armLinks(chain, anglesDeg, family, tcpMm, toolBody);
+  // The tool is fixed to the last arm link (a wide gripper's two capsules to each other as well).
+  const lastArm = links.filter((l) => l.name !== '도구').length - 1;
   for (let i = 0; i < links.length; i += 1) {
     for (let j = i + 2; j < links.length; j += 1) {
       const a = links[i];
       const b = links[j];
+      if (b.name === '도구' && (a.name === '도구' || i === lastArm)) continue;
+      if (a.only === 'base' || b.only === 'base') continue;
       const depth = a.r + b.r - segmentDistance(a.a, a.b, b.a, b.b);
       if (depth > slack) return { kind: 'self', a: b.name, b: a.name, depth };
     }
   }
   for (let i = 1; i < links.length; i += 1) {
     const l = links[i];
+    if (l.only === 'pairs') continue;
     const n = Math.max(2, Math.ceil(dist(l.a, l.b) / 4));
     let worst = -Infinity;
     for (let k = 0; k <= n; k += 1) worst = Math.max(worst, l.r - pointBox(lerp(l.a, l.b, k / n), base.min, base.max));
@@ -177,9 +191,9 @@ export interface SelfFix {
  * both ways within the joint's range, on the bending joints (J2 … the last but one). Null when no
  * single joint within 150° does.
  */
-export function selfFix(chain: readonly ChainSegment[], anglesDeg: readonly number[], arm: Pick<ArmSpec, 'family' | 'dof' | 'min' | 'max'>, tcpMm = 0, floorZ = 0): SelfFix | null {
+export function selfFix(chain: readonly ChainSegment[], anglesDeg: readonly number[], arm: Pick<ArmSpec, 'family' | 'dof' | 'min' | 'max'>, tcpMm = 0, floorZ = 0, toolBody?: readonly ToolCapsule[]): SelfFix | null {
   const { family, min, max } = arm;
-  if (!selfContact(chain, anglesDeg, family, tcpMm, floorZ)) return null;
+  if (!selfContact(chain, anglesDeg, family, tcpMm, floorZ, SELF_SLACK_MM, toolBody)) return null;
   // J2 .. the last bending joint (J1 turns the whole arm; the last joint spins the tool on its axis).
   const candidates = Array.from({ length: Math.max(0, arm.dof - 2) }, (_, k) => k + 1);
   let best: (SelfFix & { cost: number }) | null = null;
@@ -191,7 +205,7 @@ export function selfFix(chain: readonly ChainSegment[], anglesDeg: readonly numb
         if (v > max[j] || v < min[j]) break;
         const q = anglesDeg.slice();
         q[j] = v;
-        if (!selfContact(chain, q, family, tcpMm, floorZ)) {
+        if (!selfContact(chain, q, family, tcpMm, floorZ, SELF_SLACK_MM, toolBody)) {
           // Ties: the way back toward 0° (unfolding) first.
           const cost = d + (Math.abs(v) < Math.abs(anglesDeg[j]) ? 0 : 0.5);
           if (!best || cost < best.cost) best = { joint: j, dir, limitDeg: dir > 0 ? Math.ceil(v - 1) : Math.floor(v + 1), cost };

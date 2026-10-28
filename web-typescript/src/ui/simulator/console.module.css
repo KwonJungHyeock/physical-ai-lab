@@ -5882,7 +5882,7 @@ div.zeroFlow {
   background: rgba(255, 255, 255, 0.05);
 }
 
-/* --- the situation board (stage/Notices.tsx): white, top centre of the 3D view ---------- */
+/* --- the situation board (stage/Notices.tsx): over the 3D view, top centre, no card -------- */
 .notices {
   position: absolute;
   z-index: 16;
@@ -5911,99 +5911,106 @@ div.zeroFlow {
   transform: none;
   max-width: 100%;
 }
+/* No card: text straight over the 3D view (shadowed to read on any part of it), a hairline in the
+   message's colour, outline buttons — an instrument display's notice, not a dialog. */
 .board {
   width: 100%;
   display: grid;
-  gap: 2px;
-  padding: 4px;
-  border-radius: 14px;
-  background: #fff;
-  border: 1px solid #e3e7ee;
-  box-shadow: 0 14px 34px rgba(10, 18, 30, 0.28), 0 2px 6px rgba(10, 18, 30, 0.12);
-  color: #18202b;
+  gap: 6px;
+  color: #f4f7fb;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85), 0 0 14px rgba(0, 0, 0, 0.55);
   animation: noticeIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 @keyframes noticeIn {
   from {
     opacity: 0;
+    transform: translateY(-4px);
   }
 }
 .notice,
 .guide {
+  --c: #c9d3e0;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: start;
-  gap: 4px 10px;
-  padding: 8px 8px 8px 10px;
-  border-radius: 10px;
-}
-.notice {
-  background: #f6f7f9;
-  box-shadow: inset 3px 0 0 #97a3b5;
+  gap: 4px 12px;
+  padding: 2px 0 7px;
+  /* the hairline: strong under the tag, fading out to the right */
+  background: linear-gradient(90deg, var(--c), color-mix(in srgb, var(--c) 35%, transparent) 30%, transparent 85%) left bottom / 100% 1px no-repeat;
 }
 .notice[data-kind='ok'],
 .notice[data-kind='sim'] {
-  background: #effaf3;
-  box-shadow: inset 3px 0 0 #16a34a;
+  --c: #4ade80;
 }
 .notice[data-kind='warn'] {
-  background: #fff7e8;
-  box-shadow: inset 3px 0 0 #e8930c;
+  --c: #ffb547;
 }
 .notice[data-kind='err'] {
-  background: #fff1f0;
-  box-shadow: inset 3px 0 0 #e5322d;
+  --c: #ff5a5a;
+}
+.guide {
+  --c: #5ab0ff;
 }
 .notice .tag {
-  margin-top: 2px;
+  margin-top: 1px;
 }
 .notice p,
 .guide p {
   margin: 0;
-  font-size: 13.5px;
+  font-size: 14px;
   line-height: 1.5;
   word-break: keep-all;
-  color: #18202b;
+  color: #f4f7fb;
 }
 .notice p small {
   display: block;
-  margin-top: 3px;
+  margin-top: 2px;
   font-size: 12.5px;
   font-weight: 600;
-  color: #4b5565;
+  color: rgba(244, 247, 251, 0.8);
 }
 .notice[data-kind='err'] p small {
-  color: #b42318;
+  color: #ffb4b0;
 }
 .guide p b {
   margin-right: 8px;
   font-weight: 800;
 }
 .guideTag {
-  margin-top: 2px;
-  padding: 1px 7px;
-  border-radius: 6px;
-  background: #18202b;
-  color: #fff;
-  font-size: 11px;
+  margin-top: 1px;
+  color: var(--c);
+  font-size: 11.5px;
   font-weight: 800;
+  letter-spacing: 0.04em;
   white-space: nowrap;
+}
+.guideTag::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin: 0 6px 1px 0;
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow: 0 0 8px var(--c);
 }
 .app .guideNext {
   align-self: center;
-  padding: 5px 11px;
-  border: 0;
-  border-radius: 8px;
-  background: #18202b;
-  color: #fff;
+  padding: 4px 11px;
+  border: 1px solid rgba(244, 247, 251, 0.55);
+  border-radius: 6px;
+  background: transparent;
+  color: #f4f7fb;
   font: inherit;
   font-size: 12px;
   font-weight: 800;
+  text-shadow: inherit;
   cursor: pointer;
   white-space: nowrap;
 }
 .app .guideNext:hover {
-  background: #2f3a49;
+  border-color: #f4f7fb;
+  background: rgba(244, 247, 251, 0.1);
 }
 .app .noticeClose {
   width: 24px;
@@ -6012,14 +6019,15 @@ div.zeroFlow {
   border: 0;
   border-radius: 6px;
   background: transparent;
-  color: #6b7686;
+  color: rgba(244, 247, 251, 0.7);
   font-size: 17px;
   line-height: 1;
+  text-shadow: inherit;
   cursor: pointer;
 }
 .app .noticeClose:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: #18202b;
+  background: rgba(244, 247, 251, 0.1);
+  color: #f4f7fb;
 }
 .noticeEnd {
   display: flex;
@@ -6034,41 +6042,41 @@ div.zeroFlow {
   height: 22px;
   padding: 0 8px;
   border: 0;
-  border-radius: 7px;
+  border-radius: 6px;
   background: transparent;
-  color: #6b7686;
+  color: rgba(244, 247, 251, 0.75);
   font-size: 11px;
   font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
   cursor: pointer;
 }
 .app .noticeLog:hover,
 .app .noticeLog[aria-expanded='true'] {
-  background: rgba(0, 0, 0, 0.05);
-  color: #18202b;
+  background: rgba(244, 247, 251, 0.1);
+  color: #f4f7fb;
 }
 .app .notices[data-idle] > .noticeLog {
-  height: 28px;
+  height: 26px;
   padding: 0 10px;
-  border-radius: 9px;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid #e3e7ee;
-  box-shadow: 0 6px 16px rgba(10, 18, 30, 0.18);
+  border: 1px solid rgba(244, 247, 251, 0.35);
 }
+/* the history: a long list to read, so on a see-through dark panel */
 .noticeHistory {
   position: absolute;
   top: calc(100% + 6px);
   left: 50%;
   transform: translateX(-50%);
   width: min(460px, calc(100vw - 40px));
-  border-radius: 12px;
+  border-radius: 10px;
   overflow: hidden;
-  background: #fff;
-  border: 1px solid #e3e7ee;
-  box-shadow: 0 18px 40px rgba(10, 18, 30, 0.3);
-  --ink: #18202b;
-  --muted: #5b6575;
-  --line: #eef0f4;
-  color: #18202b;
+  background: rgba(14, 18, 26, 0.82);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(244, 247, 251, 0.14);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+  --ink: #f4f7fb;
+  --muted: rgba(244, 247, 251, 0.7);
+  --line: rgba(244, 247, 251, 0.1);
+  color: #f4f7fb;
 }
 .noticeHistory .log {
   max-height: 320px;
@@ -6076,27 +6084,42 @@ div.zeroFlow {
   margin: 0;
   background: transparent;
 }
+/* the message's kind: its colour with a dot, no chip */
 .notice .tag,
 .noticeHistory .tag {
-  padding: 1px 6px;
+  padding: 0;
+  background: none;
   font-weight: 800;
-  font-size: 10.5px;
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.notice .tag::before,
+.noticeHistory .tag::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin: 0 6px 1px 0;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor;
 }
 :is(.notice, .noticeHistory) .tag_info {
-  background: #e8ebf0;
-  color: #3b4554;
+  background: none;
+  color: #c9d3e0;
 }
 :is(.notice, .noticeHistory) :is(.tag_sim, .tag_ok) {
-  background: #dcf5e5;
-  color: #15803d;
+  background: none;
+  color: #4ade80;
 }
 :is(.notice, .noticeHistory) .tag_warn {
-  background: #ffedc7;
-  color: #a15c00;
+  background: none;
+  color: #ffb547;
 }
 :is(.notice, .noticeHistory) .tag_err {
-  background: #ffdcd9;
-  color: #b42318;
+  background: none;
+  color: #ff5a5a;
 }
 
 /* Where to press next (Notices.tsx sets data-hint): a soft ring that breathes; nothing moves. */
