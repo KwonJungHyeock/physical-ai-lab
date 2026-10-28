@@ -260,6 +260,78 @@ def convert_kit(description, output):
     print(f"\nwrote {output} ({os.path.getsize(output)} bytes)")
 
 
+# --- MG400 colour regions -------------------------------------------------------
+#
+# Each MG400 STL is one solid, but the real arm is several finishes (Dobot's product photos): satin
+# aluminium shells, charcoal links, smoked see-through side covers on the J1 housing, a black glass top
+# on the base box with a cyan LED ring, black vent slots on the head, polished pin caps. The faces are
+# split into child meshes the web app colours by name, <node>__<region>; the rest keeps the node's colour.
+#   pin:   faces facing along a pivot's axis (y) within MG400_PIN_R of it. The pivots of a link are its
+#          own joint (the origin) and the joints it carries, from the official URDF.
+#   cover: link1's outer side lobes, rims included: everything beyond |y| = MG400_COVER_Y (the J1
+#          housing's core stays within ±45 mm, the covers stand out from 47 to 80 mm); cut exactly there.
+#   top:   the base box's top panel (up-facing, 112.4-112.8 mm; the rim at 113 stays aluminium) and the
+#          recess under J1 (110.4 mm).
+#   led:   the ring LED in the top panel's corner: up-facing faces 3-6 mm from its centre (73.4, 63.4).
+#   vent:  the head box's slot walls: faces more than MG400_VENT_IN inside its outer walls, above 34 mm.
+MG400_PIN_R = 0.0055
+MG400_COVER_Y = 0.046
+MG400_LED = (0.0734, 0.0634)
+MG400_VENT_IN = 0.0006
+
+
+def mg400_pivots(urdf_path):
+    """Per mesh node: the pivot points (metres, the link's own frame) whose axis is y."""
+    import xml.etree.ElementTree as ET
+    root = ET.parse(urdf_path).getroot()
+    mesh_of = {}
+    for link in root.findall("link"):
+        m = link.find("visual/geometry/mesh")
+        if m is not None:
+            mesh_of[link.get("name")] = "mg400_" + os.path.splitext(os.path.basename(m.get("filename")))[0].replace("base_link", "base")
+    piv = {n: [] for n in mesh_of.values()}
+    for j in root.findall("joint"):
+        axis = [float(v) for v in (j.find("axis").get("xyz") if j.find("axis") is not None else "0 0 1").split()]
+        if abs(axis[1]) < 0.99:
+            continue
+        o = j.find("origin")
+        xyz = [float(v) for v in o.get("xyz").split()] if o is not None else [0.0, 0.0, 0.0]
+        parent, child = j.find("parent").get("link"), j.find("child").get("link")
+        if parent in mesh_of:
+            piv[mesh_of[parent]].append(xyz)
+        if child in mesh_of:
+            piv[mesh_of[child]].append([0.0, 0.0, 0.0])
+    return piv
+
+
+def mg400_regions(name, mesh, pivots):
+    """{region: mesh} for one MG400 part (see above); '' = the node's own colour."""
+    out = {}
+    if name == "mg400_link1":
+        # Cut exactly at the cover planes, so the colour line is straight (long triangles cross it).
+        slice_ = trimesh.intersections.slice_mesh_plane
+        out["cover"] = trimesh.util.concatenate([slice_(mesh, [0, s, 0], [0, s * MG400_COVER_Y, 0]) for s in (1, -1)])
+        mesh = slice_(slice_(mesh, [0, -1, 0], [0, MG400_COVER_Y, 0]), [0, 1, 0], [0, -MG400_COVER_Y, 0])
+    c, n = mesh.triangles_center, mesh.face_normals
+    region = np.array([""] * len(c), dtype=object)
+    for p in pivots:
+        region[(np.hypot(c[:, 0] - p[0], c[:, 2] - p[2]) < MG400_PIN_R) & (np.abs(n[:, 1]) > 0.8)] = "pin"
+    if name == "mg400_base":
+        up = n[:, 2] > 0.9
+        region[up & (((c[:, 2] > 0.1124) & (c[:, 2] < 0.1128)) | (np.abs(c[:, 2] - 0.1104) < 0.0002))] = "top"
+        d = np.hypot(c[:, 0] - MG400_LED[0], c[:, 1] - MG400_LED[1])
+        region[up & (c[:, 2] > 0.112) & (d < 0.006)] = np.where(d[up & (c[:, 2] > 0.112) & (d < 0.006)] > 0.003, "led", "top")
+    if name == "mg400_link4_1":
+        # The head box (44 x 44 x 81 mm, x 44-88) is the part with the vents.
+        lo, hi = np.array([0.044, -0.005, -0.041]), np.array([0.088, 0.039, 0.040])
+        inside = np.min(np.stack([c[:, 0] - lo[0], hi[0] - c[:, 0], c[:, 1] - lo[1], hi[1] - c[:, 1], hi[2] - c[:, 2]]), axis=0)
+        in_box = np.all((c > lo - 1e-4) & (c < hi + 1e-4), axis=1)
+        region[in_box & (inside > MG400_VENT_IN) & (c[:, 2] > 0.034)] = "vent"
+    for r in sorted(set(region)):
+        out[r] = mesh.submesh([np.nonzero(region == r)[0]], append=True)
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("profile", choices=sorted(PROFILES) + ["kit"])
@@ -298,6 +370,15 @@ def main():
         report[name] = {"reader": reader, "unit": unit, "raw_max_extent": round(raw, 4), "max_extent_m": round(size, 4),
                         "faces": int(len(mesh.faces)), "dae_bytes": os.path.getsize(path), "ok": ok}
         print(f"{name:16s} {reader:7s} unit={unit:<6g} raw={raw:9.4f} -> {size:7.4f} m  faces={len(mesh.faces):6d} {'' if ok else '<-- OUT OF RANGE'}")
+        if args.profile == "mg400":
+            # One node per part, its colour regions as child meshes (see mg400_regions).
+            pivots = mg400_pivots(os.path.join(args.description, "..", "urdf", "mg400_description.urdf"))
+            scene.graph.update(frame_to=name, frame_from=scene.graph.base_frame)
+            for region, part in mg400_regions(name, mesh, pivots[name]).items():
+                child = name if not region else f"{name}__{region}"
+                scene.add_geometry(part, node_name=child + ("_mesh" if not region else ""), geom_name=child, parent_node_name=name)
+                report[name][region or "own"] = int(len(part.faces))
+            continue
         scene.add_geometry(mesh, node_name=name, geom_name=name)
 
     if bad:

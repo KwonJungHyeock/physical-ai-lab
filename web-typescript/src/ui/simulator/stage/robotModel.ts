@@ -124,6 +124,36 @@ const MATERIALS = {
   plug: mat('#3b4148', 0.45, 0.1),
 };
 
+/**
+ * Dobot MG400, from Dobot's product photos: satin anodised aluminium shells and base box, charcoal links
+ * with the same edge sheen as the black parts above, smoked see-through covers on the J1 housing (its
+ * aluminium core shows through), a black glass top on the base with a cyan LED ring, black vent slots on
+ * the head, polished steel pin caps and tool flange.
+ */
+const charcoalMaterial = () => {
+  const m = new MeshPhysicalMaterial({ color: new Color('#3a3e44'), roughness: 0.45, metalness: 0.3, clearcoat: 0.2, clearcoatRoughness: 0.45 });
+  m.onBeforeCompile = (sh) => {
+    sh.fragmentShader = sh.fragmentShader.replace(
+      '#include <opaque_fragment>',
+      'float edge = 1.0 - clamp(abs(dot(normalize(normal), normalize(vViewPosition))), 0.0, 1.0);\noutgoingLight += vec3(0.05, 0.055, 0.06) * pow(edge, 2.0);\n#include <opaque_fragment>',
+    );
+  };
+  m.customProgramCacheKey = () => 'charcoal-shaded';
+  return m;
+};
+const MG400 = {
+  alu: new MeshPhysicalMaterial({ color: new Color('#dde0e4'), metalness: 0.85, roughness: 0.28, clearcoat: 0.2, clearcoatRoughness: 0.4 }),
+  aluBase: new MeshPhysicalMaterial({ color: new Color('#cdd1d6'), metalness: 0.8, roughness: 0.38 }),
+  charcoal: charcoalMaterial(),
+  smoke: new MeshPhysicalMaterial({ color: new Color('#2b2e33'), roughness: 0.12, clearcoat: 1, clearcoatRoughness: 0.1, transparent: true, opacity: 0.86 }),
+  glass: new MeshPhysicalMaterial({ color: new Color('#111316'), roughness: 0.18, clearcoat: 1, clearcoatRoughness: 0.08 }),
+  led: new MeshStandardMaterial({ color: new Color('#8ff3f5'), emissive: new Color('#2fd6e0'), emissiveIntensity: 2 }),
+  steel: mat('#e3e6ea', 0.15, 1),
+  vent: mat('#15171a', 0.6),
+};
+/** MG400 parts split into finishes (convert_meshes.py mg400): child meshes named <node>__<region>. */
+const REGION_MATERIAL: Record<string, Material> = { pin: MG400.steel, cover: MG400.smoke, top: MG400.glass, led: MG400.led, vent: MG400.vent };
+
 /** Which colour each GLB node of the arm gets (RDK X5: black base, white shells). */
 const NODE_MATERIAL: Record<string, Material> = {
   joint1_rdkx5: MATERIALS.dark,
@@ -140,6 +170,15 @@ const NODE_MATERIAL: Record<string, Material> = {
   camera_flange: MATERIALS.flange,
   omx_finger1: BLACK[1],
   omx_finger2: BLACK[1],
+  mg400_base: MG400.aluBase,
+  mg400_link1: MG400.alu,
+  mg400_link2_1: MG400.charcoal,
+  mg400_link2_2: MG400.alu,
+  mg400_link3_1: MG400.charcoal,
+  mg400_link3_2: MG400.charcoal,
+  mg400_link4_1: MG400.alu,
+  mg400_link4_2: MG400.alu,
+  mg400_link5: MG400.steel,
 };
 
 export type GlbNodes = Record<string, Object3D>;
@@ -231,7 +270,7 @@ function meshFromNode(nodes: GlbNodes, name: string, look?: ArmLook, tone = 0): 
   clone.traverse((child) => {
     if ((child as Mesh).isMesh) {
       (child as Mesh).geometry = smoothGeometry((child as Mesh).geometry);
-      (child as Mesh).material = material;
+      (child as Mesh).material = REGION_MATERIAL[child.name.split('__')[1] ?? ''] ?? material;
       child.castShadow = true;
       child.receiveShadow = true;
     }
