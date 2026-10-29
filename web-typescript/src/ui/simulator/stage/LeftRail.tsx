@@ -28,6 +28,9 @@ export interface BarItem {
   onClick(): void;
 }
 
+/** Each item's English tag over its Korean name (Metal Mission HUD). */
+const EN: Record<string, string> = { jog: 'CONTROL', parts: 'TOOL', pose: 'POSE', process: 'TASK', code: 'CODE', ai: 'AI', env: 'SCENE', objects: 'ITEM', camera: 'CAMERA', monitor: 'DATA', zero: 'ZERO' };
+
 export default function LeftRail({ groups, foot, sheetOpen, onCloseSheet, children }: { groups: { name: string; items: BarItem[] }[]; foot?: BarItem[]; sheetOpen: boolean; onCloseSheet(): void; children?: ReactNode }) {
   useEffect(() => {
     if (!sheetOpen) return;
@@ -40,6 +43,7 @@ export default function LeftRail({ groups, foot, sheetOpen, onCloseSheet, childr
   const button = (e: BarItem) => (
     <button key={e.id} type="button" aria-pressed={!!e.on} disabled={e.disabled} title={e.title} data-hint-for={e.hintFor} onClick={e.onClick}>
       <Icon name={e.icon} size={18} />
+      {EN[e.id] && <em aria-hidden="true">{EN[e.id]}</em>}
       <span>{e.label}</span>
       {e.badge && <i>{e.badge}</i>}
     </button>

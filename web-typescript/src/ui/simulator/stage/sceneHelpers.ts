@@ -65,7 +65,7 @@ export const REACH_MM = 280;
  * fading to `desk` towards the edges, which is the sky colour, so the far floor melts into the
  * background with no horizon line).
  */
-export const SCENE = { sky: '#262d36', desk: '#262d36', spot: '#4a5462', cell: '#4f5a68', section: '#6b7787' };
+export const SCENE = { sky: '#24272b', desk: '#24272b', spot: '#4a4f56', cell: '#50555c', section: '#6c7177' };
 
 /** The bright studio for a black arm (ArmSpec.finish 'black'): a light grey the black frames stand out against. */
 export const SCENE_LIGHT: typeof SCENE = { sky: '#dfe3e8', desk: '#dfe3e8', spot: '#f5f7f9', cell: '#c8ced6', section: '#a6afba' };

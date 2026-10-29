@@ -35,6 +35,7 @@ import { DIRECT_IP } from '@/engine/simulator/usbKit';
 
 import { useAccount } from '../../account/AccountProvider';
 import Icon from '../Icon';
+import { skipIntroOnce } from './Intro';
 import WifiPanel from './WifiPanel';
 import css from '../console.module.css';
 
@@ -168,6 +169,7 @@ export default function ConnectDialog({ current, auto, carry, start, onUsb, onSe
           // A newer robot: stay on this program's screens and drive the arm from here.
           if (link.robot?.remote) {
             setRemoteRobot(link.addr);
+            skipIntroOnce();
             window.location.reload();
             return;
           }
@@ -312,6 +314,7 @@ export default function ConnectDialog({ current, auto, carry, start, onUsb, onSe
                 className={css.ghost}
                 onClick={() => {
                   setRemoteRobot(null);
+                  skipIntroOnce();
                   window.location.reload();
                 }}
               >

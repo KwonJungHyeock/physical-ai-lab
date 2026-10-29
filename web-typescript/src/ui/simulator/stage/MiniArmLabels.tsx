@@ -40,6 +40,12 @@ function layout(points: readonly { x: number; y: number }[]): ({ x: number; y: n
       last = y;
     }
   }
+  // J1's chip beside the base goes under the right column when the wrist hangs low over it.
+  const j1 = out[0];
+  if (j1) {
+    const right = points.map((_, i) => out[i]).filter((c, i): c is { x: number; y: number } => !!c && SIDE[i] === 'right');
+    for (const c of right.sort((a, b) => a.y - b.y)) if (Math.abs(c.y - j1.y) < GAP && Math.abs(c.x - j1.x) < 110) j1.y = c.y + GAP;
+  }
   return out;
 }
 

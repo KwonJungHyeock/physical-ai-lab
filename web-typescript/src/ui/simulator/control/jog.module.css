@@ -1211,3 +1211,252 @@
     display: none;
   }
 }
+
+/* ===========================================================================
+ * Metal Mission HUD (2026-10-29): metal keys, readouts in dark grooves, the chosen in teal (a teal
+ * outline and word, no fill), a joint near its limit in amber. A little more air between the rows.
+ * ======================================================================== */
+.jog {
+  gap: 12px;
+}
+.modes {
+  gap: 6px;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+}
+.jog .modes button {
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  background: var(--hud-key);
+  box-shadow: var(--hud-key-shadow);
+  color: var(--hud-sub);
+}
+.jog .modes button em {
+  font-style: normal;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--hud-tx);
+}
+.jog .modes button b {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--hud-sub);
+}
+.jog .modes button small {
+  display: none;
+}
+.jog .modes button[aria-pressed='true'] {
+  border-color: var(--hud-teal);
+  background: var(--hud-key);
+  box-shadow: var(--hud-key-shadow), var(--hud-key-on);
+}
+.jog .modes button[aria-pressed='true'] em {
+  color: var(--hud-teal);
+}
+.optName {
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--hud-dim);
+}
+.chips {
+  gap: 6px;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+}
+.jog .chips button {
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  border-radius: 7px;
+  background: var(--hud-key);
+  box-shadow: var(--hud-key-shadow);
+  color: var(--hud-tx);
+  font-weight: 600;
+}
+.jog .chips button:hover:not([aria-pressed='true']) {
+  background: var(--hud-key);
+  filter: brightness(1.12);
+}
+.jog .chips button[aria-pressed='true'] {
+  border-color: var(--hud-teal);
+  background: var(--hud-key);
+  color: var(--hud-teal);
+  box-shadow: var(--hud-key-shadow), var(--hud-key-on);
+}
+.jog .chips button[aria-pressed='true']::after {
+  display: none;
+}
+/* 속도: a groove filled teal up to the value, a small metal knob. */
+.speed input {
+  background: linear-gradient(90deg, rgba(70, 211, 230, 0.35), var(--hud-teal)) 0 50% / var(--fill, 50%) 6px no-repeat, var(--hud-groove);
+  box-shadow: var(--hud-groove-shadow);
+}
+.speed input::-webkit-slider-thumb {
+  background: linear-gradient(180deg, #e7eaee, #a9b0b8);
+  border: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6), 0 0 0 3px rgba(70, 211, 230, 0.25);
+}
+.speed input::-moz-range-thumb {
+  background: linear-gradient(180deg, #e7eaee, #a9b0b8);
+  border: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6), 0 0 0 3px rgba(70, 211, 230, 0.25);
+}
+.speed output {
+  color: var(--hud-tx);
+  font-variant-numeric: tabular-nums;
+}
+/* the joint rows: [− key] [groove: name · J · angle, the track] [+ key] */
+.rows {
+  gap: 8px;
+}
+.jog .key {
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  background: var(--hud-key);
+  box-shadow: var(--hud-key-shadow);
+  color: var(--hud-sub);
+}
+.jog .key svg {
+  opacity: 0.75;
+}
+.jog .key b {
+  font-weight: 600;
+  color: var(--hud-sub);
+}
+.jog .key:hover:not(:disabled) {
+  border-color: rgba(0, 0, 0, 0.35);
+  background: var(--hud-key);
+  filter: brightness(1.12);
+}
+.jog .key:active:not(:disabled),
+.jog .key[data-state='on'],
+.jog .key[data-state='hold'] {
+  border-color: var(--hud-teal);
+  background: var(--hud-key);
+  box-shadow: var(--hud-key-shadow), var(--hud-key-on);
+}
+.jog .key:active:not(:disabled) b,
+.jog .key[data-state='on'] b,
+.jog .key[data-state='hold'] b {
+  color: var(--hud-teal);
+}
+.jog .key:disabled {
+  background: var(--hud-key);
+  opacity: 0.45;
+}
+.mid {
+  border-radius: 7px;
+  background: var(--hud-groove);
+  box-shadow: var(--hud-groove-shadow);
+}
+.what {
+  display: none;
+}
+.head b {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--hud-tx);
+}
+.head em {
+  background: none;
+  color: var(--hud-dim);
+  letter-spacing: 0.12em;
+}
+.head output {
+  font-family: inherit;
+  font-size: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--hud-tx);
+}
+.head output[data-near] {
+  color: var(--hud-amber);
+}
+.row[data-sel] .mid {
+  background: var(--hud-groove);
+  box-shadow: var(--hud-groove-shadow), inset 0 0 0 1px rgba(70, 211, 230, 0.55);
+}
+.row[data-sel] .mid::before {
+  display: none;
+}
+.row[data-sel] .head em {
+  background: none;
+  color: var(--hud-teal);
+}
+.row:has(output[data-near]) .mid {
+  box-shadow: var(--hud-groove-shadow), inset 0 0 0 1px rgba(240, 162, 59, 0.65);
+}
+.track {
+  height: 3px;
+  background: rgba(214, 219, 224, 0.14);
+  box-shadow: none;
+}
+.fill,
+.row[data-sel] .fill {
+  background: rgba(70, 211, 230, 0.45);
+}
+.bar[data-near] .fill {
+  background: rgba(240, 162, 59, 0.6);
+}
+.knob {
+  width: 3px;
+  height: 12px;
+  border: 0;
+  border-radius: 1px;
+  background: var(--hud-line);
+  box-shadow: 0 0 6px rgba(214, 219, 224, 0.6);
+}
+.bar[data-near] .knob {
+  background: var(--hud-amber);
+  box-shadow: 0 0 6px rgba(240, 162, 59, 0.7);
+}
+/* the hint under the rows: a quiet line, its button a small metal key */
+.tip {
+  background: none;
+  box-shadow: none;
+  color: var(--hud-dim);
+}
+.tip b {
+  color: var(--hud-sub);
+}
+.jog .learn {
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  background: var(--hud-key);
+  box-shadow: var(--hud-key-shadow);
+  color: var(--hud-tx);
+}
+.jog .learn:hover:not(:disabled) {
+  background: var(--hud-key);
+  filter: brightness(1.12);
+}
+.readout span {
+  background: var(--hud-groove);
+  box-shadow: var(--hud-groove-shadow);
+}
+.keys kbd {
+  background: var(--hud-key);
+  box-shadow: var(--hud-key-shadow);
+}
+/* a short window: the HUD's extra air goes, so the rows and the gripper keys still fit */
+@media (max-height: 960px) {
+  .jog {
+    gap: 8px;
+  }
+  .rows {
+    gap: 5px;
+  }
+}
+@media (max-height: 800px) {
+  .row {
+    min-height: 46px;
+  }
+  .head output {
+    font-size: 16px;
+  }
+  .tip {
+    padding: 4px 10px;
+  }
+}

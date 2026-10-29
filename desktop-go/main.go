@@ -51,6 +51,7 @@ func main() {
 		".mjs":         "text/javascript; charset=utf-8",
 		".webmanifest": "application/manifest+json",
 		".txt":         "text/plain; charset=utf-8",
+		".mp4":         "video/mp4",
 	} {
 		_ = mime.AddExtensionType(ext, typ)
 	}

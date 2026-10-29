@@ -1,0 +1,227 @@
+/* The simulator's corners (StageHud.tsx): title and ROBOT LINK top left, two gauges bottom right.
+   The link button keeps the name connPill: the guide screenshots and checks find it by that. */
+.title {
+  position: absolute;
+  z-index: 12;
+  left: calc(var(--bar-w, 96px) + 28px);
+  top: calc(var(--top, 64px) + 18px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  pointer-events: none;
+  color: var(--hud-tx);
+}
+.mode {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: var(--hud-dim);
+}
+.mode small {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--hud-sub);
+}
+.mode i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--hud-teal);
+  box-shadow: 0 0 10px var(--hud-teal);
+}
+.title[data-link='real'] .mode i {
+  background: var(--hud-green);
+  box-shadow: 0 0 10px var(--hud-green);
+  animation: live 1.4s ease-in-out infinite alternate;
+}
+.title[data-link='lost'] .mode i {
+  background: var(--hud-amber);
+  box-shadow: 0 0 10px var(--hud-amber);
+}
+.arm {
+  margin-top: 8px;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #e9ecef;
+  text-shadow: var(--hud-emboss);
+}
+.screen {
+  margin-top: 4px;
+  font-size: 15px;
+  color: var(--hud-sub);
+}
+.connPill {
+  pointer-events: auto;
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 12px 7px 11px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  background: var(--hud-key);
+  box-shadow: var(--hud-key-shadow);
+  color: var(--hud-tx);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.connPill:hover {
+  filter: brightness(1.12);
+}
+.connPill > span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.connPill b {
+  font-size: 12px;
+  letter-spacing: 0.16em;
+}
+.connPill small {
+  font-size: 13px;
+  color: var(--hud-sub);
+}
+.connPill svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  fill: none;
+  stroke: var(--hud-teal);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.connPill svg.chev {
+  width: 15px;
+  height: 15px;
+  stroke: var(--hud-dim);
+  stroke-width: 2;
+}
+.connPill[data-state='real'] svg:first-child {
+  stroke: var(--hud-green);
+}
+/* The link lost: the button is the way back, in amber. */
+.connPill[data-state='lost'] {
+  border-color: rgba(240, 162, 59, 0.75);
+  box-shadow:
+    var(--hud-key-shadow),
+    0 0 12px rgba(240, 162, 59, 0.2);
+}
+.connPill[data-state='lost'] b,
+.connPill[data-state='lost'] small {
+  color: var(--hud-amber);
+}
+.connPill[data-state='lost'] svg {
+  stroke: var(--hud-amber);
+}
+
+/* Two gauges, bottom right of the free view (left of the panel, above the coordinates line). */
+.gauges {
+  position: absolute;
+  z-index: 11;
+  right: calc(var(--side-w, 420px) + 44px);
+  bottom: 70px;
+  display: flex;
+  gap: 18px;
+  pointer-events: none;
+}
+.gauges[data-dock='closed'] {
+  right: 110px;
+}
+.gauge {
+  position: relative;
+  width: 108px;
+  height: 108px;
+}
+.gauge svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.trackArc,
+.valueArc {
+  fill: none;
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+.trackArc {
+  stroke: rgba(214, 219, 224, 0.16);
+}
+.valueArc {
+  stroke: var(--hud-teal);
+  filter: drop-shadow(0 0 5px rgba(70, 211, 230, 0.6));
+  transition: d 0.3s ease;
+}
+.gauge line {
+  stroke: #d6dbe0;
+  stroke-opacity: 0.28;
+}
+.gauge line[data-major] {
+  stroke-opacity: 0.65;
+}
+.gauge[data-level='1'] .valueArc {
+  stroke: var(--hud-amber);
+  filter: drop-shadow(0 0 5px rgba(240, 162, 59, 0.6));
+}
+.gauge[data-level='2'] .valueArc {
+  stroke: var(--hud-red);
+  filter: drop-shadow(0 0 5px rgba(235, 64, 52, 0.6));
+}
+.value {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 33px;
+  text-align: center;
+  white-space: nowrap;
+}
+.value b {
+  font-size: 28px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.55);
+}
+.gauge[data-level='1'] .value b {
+  color: var(--hud-amber);
+}
+.gauge[data-level='2'] .value b {
+  color: var(--hud-red);
+}
+.value small {
+  margin-left: 2px;
+  font-size: 13px;
+  color: var(--hud-sub);
+}
+.gaugeLabel {
+  position: absolute;
+  left: -20px;
+  right: -20px;
+  bottom: -16px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: var(--hud-dim);
+  white-space: nowrap;
+}
+
+@media (max-width: 1280px), (max-height: 760px) {
+  .gauges {
+    display: none;
+  }
+  .arm {
+    font-size: 21px;
+  }
+}
+@keyframes live {
+  to {
+    opacity: 0.4;
+  }
+}

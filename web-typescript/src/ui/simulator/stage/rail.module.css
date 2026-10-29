@@ -171,3 +171,99 @@
   pointer-events: auto;
   max-height: 100%;
 }
+
+/* ===========================================================================
+ * Metal Mission HUD (2026-10): the bar is one metal plate a little off the edges, each item a
+ * metal key with its English tag over the Korean name; the open one lit teal. Groups are kept
+ * apart by a hairline (their names stay for screen readers).
+ * ======================================================================== */
+.rail {
+  left: 10px;
+  top: calc(var(--top, 0px) + 10px);
+  bottom: 10px;
+  width: calc(var(--bar-w, 96px) - 16px);
+  padding: 10px 8px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--hud-plate);
+  box-shadow: var(--hud-plate-shadow);
+}
+.group {
+  gap: 7px;
+}
+.group + .group {
+  margin-top: 6px;
+  padding-top: 7px;
+}
+.groupName {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.group + .group::before {
+  content: '';
+  height: 1px;
+  margin: 0 6px 3px;
+  background: rgba(214, 219, 224, 0.18);
+}
+.rail button {
+  gap: 2px;
+  padding: 8px 2px 7px;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  border-radius: 8px;
+  background: var(--hud-key);
+  box-shadow: var(--hud-key-shadow);
+  color: var(--hud-sub);
+  font-size: 13px;
+  font-weight: 500;
+}
+.rail button svg {
+  display: none;
+}
+.rail button em {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--hud-tx);
+}
+.rail button:hover:not(:disabled):not([aria-pressed="true"]) {
+  background: var(--hud-key);
+  filter: brightness(1.12);
+  color: var(--hud-sub);
+}
+.rail button[aria-pressed="true"] {
+  background: var(--hud-key);
+  border-color: var(--hud-teal);
+  color: var(--hud-sub);
+  font-weight: 500;
+  box-shadow: var(--hud-key-shadow), var(--hud-key-on);
+}
+.rail button[aria-pressed="true"] em {
+  color: var(--hud-teal);
+}
+.rail button[aria-pressed="true"]::before {
+  display: none;
+}
+.rail button i {
+  background: var(--hud-teal);
+  color: #101214;
+}
+@media (max-height: 860px) {
+  .rail {
+    padding: 8px 7px;
+  }
+  .group {
+    gap: 5px;
+  }
+  .rail button {
+    padding: 5px 2px 4px;
+    font-size: 12px;
+  }
+  .rail button em {
+    font-size: 10.5px;
+  }
+}

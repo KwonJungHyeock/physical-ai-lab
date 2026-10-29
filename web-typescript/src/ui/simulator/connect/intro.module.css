@@ -1,349 +1,338 @@
-/* The program intro (Intro.tsx): a full-window photograph, the words on its dark left side. Every motion
-   eases out; nothing flashes. */
+/* The program intro (Intro.tsx), Metal Mission HUD: the film on the right of a dark metal ground, the
+   words on the left, information in the corners and along the foot. Motion is short and eases out. */
 .splash {
   position: fixed;
   inset: 0;
   z-index: 100;
   overflow: hidden;
   cursor: pointer;
-  color: #e8eef8;
-  background: #070b12;
+  color: var(--hud-tx);
+  background: var(--hud-ground);
+  word-break: keep-all;
   transition:
-    opacity 0.7s ease,
-    visibility 0.7s,
-    transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+    opacity 0.6s ease,
+    visibility 0.6s;
 }
 .splash[data-done] {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transform: scale(1.03);
+}
+/* Right after a reload of its own: the ground and the loading only. */
+.splash[data-quiet] .film,
+.splash[data-quiet] .caption,
+.splash[data-quiet] .hero {
+  display: none;
 }
 
-/* The photographs, one at a time, drifting slowly closer. */
-.photos {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  animation: fadeIn 1.2s 0.1s ease-out forwards;
-}
-.photos img {
+/* The film: recorded on the same ground, so it can sit under everything (cover keeps the ground at the edges). */
+.film {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 72% 50%;
   opacity: 0;
-  transform: scale(1.02);
-  transition:
-    opacity 1.1s ease,
-    transform 6s ease-out;
-  user-select: none;
+  animation: fadeIn 1s 0.1s ease-out forwards;
+  pointer-events: none;
 }
-.photos img[data-on] {
-  opacity: 1;
-  transform: scale(1.09);
-}
-/* Dark on the left (the words) and along the foot (the bar), the robot clear on the right. */
-.shade {
+.vignette {
   position: absolute;
   inset: 0;
-  background:
-    linear-gradient(90deg, #070b12 0%, rgba(7, 11, 18, 0.94) 28%, rgba(7, 11, 18, 0.55) 50%, rgba(7, 11, 18, 0.05) 74%),
-    linear-gradient(0deg, rgba(7, 11, 18, 0.88) 0%, transparent 28%);
+  pointer-events: none;
+  background: radial-gradient(ellipse 80% 75% at 50% 48%, transparent 45%, rgba(8, 9, 11, 0.62) 100%);
 }
 
-/* The left column: logo, headline, one line, the three cards, then the two ways in. */
-.col {
+/* Corners: the marks top left, the version top right. */
+.top {
   position: absolute;
-  left: clamp(28px, 5.7vw, 110px);
-  top: 0;
-  bottom: clamp(70px, 10vh, 110px);
-  width: min(780px, 56vw);
+  left: var(--gut);
+  right: var(--gut);
+  top: clamp(28px, 5vh, 50px);
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: clamp(14px, 2.6vh, 28px);
+  justify-content: space-between;
+  align-items: flex-start;
+  pointer-events: none;
 }
-.logo {
-  width: clamp(240px, 21vw, 400px);
-  height: auto;
-  filter: drop-shadow(0 0 18px rgba(120, 160, 255, 0.3));
-  opacity: 0;
-  transform: translateX(-18px);
-  animation: wordIn 1s 0.25s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+.splash {
+  --gut: clamp(28px, 4vw, 72px);
 }
-.head {
-  margin: clamp(4px, 2vh, 28px) 0 0;
-  font-size: clamp(38px, 3.4vw, 64px);
-  font-weight: 800;
-  line-height: 1.16;
-  letter-spacing: -0.02em;
-  color: #fff;
-  word-break: keep-all;
-  opacity: 0;
-  animation: rise 0.9s 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-.head span {
-  color: #ff4a43;
-}
-.lead {
-  margin: 0;
-  font-size: clamp(16px, 1.15vw, 22px);
-  line-height: 1.6;
-  color: #c5cddc;
-  word-break: keep-all;
-  opacity: 0;
-  animation: rise 0.9s 0.95s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-.cards {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 236px));
-  gap: 14px;
-  margin: clamp(4px, 1.5vh, 18px) 0 0;
-  padding: 0;
-  list-style: none;
-  opacity: 0;
-  animation: rise 0.9s 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-.splash .cards button {
-  position: relative;
-  display: block;
-  width: 100%;
-  padding: 0;
-  overflow: hidden;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.05);
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  opacity: 0.7;
-  transition:
-    opacity 0.3s ease,
-    border-color 0.3s ease,
-    background 0.3s ease;
-}
-.splash .cards button:hover,
-.splash .cards button[data-on] {
-  opacity: 1;
-}
-.splash .cards button[data-on] {
-  border-color: rgba(255, 255, 255, 0.75);
-  background: rgba(255, 255, 255, 0.1);
-}
-.cards img {
-  display: block;
-  width: 100%;
-  height: clamp(64px, 11vh, 120px);
-  object-fit: cover;
-}
-.cards span {
-  display: grid;
-  gap: 2px;
-  padding: 10px 14px 12px;
-}
-.cards b {
-  font-size: clamp(15px, 1vw, 19px);
-  font-weight: 800;
-  color: #fff;
-}
-.cards small {
-  font-size: 12.5px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: #aab4c6;
-}
-/* the picture's time: a red line filling under the card on show */
-.cards i {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 3px;
-  background: rgba(255, 255, 255, 0.12);
-}
-.splash .cards button[data-on] i::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: #ff4a43;
-  transform-origin: 0 50%;
-  animation: fill linear forwards;
-  animation-duration: inherit;
-}
-.splash .cards button:focus-visible {
-  outline: 2px solid #8fb2ff;
-  outline-offset: 3px;
-}
-
-/* The picture on show, named bottom right. */
-.caption {
-  position: absolute;
-  right: clamp(24px, 4.7vw, 90px);
-  bottom: clamp(90px, 13vh, 130px);
-  margin: 0;
-  display: grid;
-  gap: 4px;
-  text-align: right;
-  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.6);
-  animation: rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-.caption small {
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: 0.22em;
-  color: #ff6b65;
-}
-.caption b {
-  font-size: clamp(28px, 2.1vw, 40px);
-  font-weight: 800;
-  color: #fff;
-}
-.caption span {
-  font-size: clamp(15px, 1vw, 19px);
-  color: #dfe5f0;
-}
-
-/* Along the foot: what is loading and how far, and a short hint. */
-.foot {
-  position: absolute;
-  left: clamp(28px, 5.7vw, 110px);
-  right: clamp(24px, 4.7vw, 90px);
-  bottom: clamp(22px, 4.6vh, 50px);
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  opacity: 0;
-  animation: fadeIn 0.6s 1.4s ease-out forwards;
-}
-.load {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  min-width: 0;
-}
-.load small {
-  flex: none;
-  font-size: 14px;
-  color: #8b97ab;
-}
-.bar {
-  flex: 1;
-  display: block;
-  height: 4px;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.1);
-  overflow: hidden;
-}
-.bar i {
-  display: block;
-  height: 100%;
-  transform-origin: 0 50%;
-  transform: scaleX(0.03);
-  background: linear-gradient(90deg, #4f7cff, #ff4a43);
-  animation: barCreep 12s cubic-bezier(0.08, 0.75, 0.2, 1) forwards;
-}
-.hint {
-  flex: none;
-  max-width: 46%;
-  font-size: 14px;
-  color: #8b97ab;
-  text-align: right;
-}
-
-/* The last frame: the two ways in, under the cards. */
-.splash[data-final] {
-  cursor: default;
-}
-.actions {
+.mark {
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-top: clamp(4px, 1.4vh, 16px);
-  opacity: 0;
-  animation: rise 0.6s 0.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
-.splash .connect {
-  height: 58px;
-  padding: 0 52px;
-  border: 0;
-  border-radius: 14px;
-  background: linear-gradient(#4f7cff, #2f5ef0);
-  color: #fff;
-  font: inherit;
+.mark img:first-child {
+  height: 34px;
+  width: auto;
+}
+.mark i {
+  width: 1px;
+  height: 30px;
+  background: rgba(214, 219, 224, 0.35);
+}
+.mark img:last-child {
+  height: 30px;
+  width: auto;
+}
+.version {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+.version small,
+.caption small {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: var(--hud-dim);
+}
+.version b {
+  font-size: 26px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.55);
+}
+
+/* The scene's name, right under the version: index, name, one line, six ticks. */
+.caption {
+  position: absolute;
+  right: var(--gut);
+  top: clamp(130px, 21vh, 190px);
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  color: var(--hud-teal);
+  pointer-events: none;
+}
+.caption b {
+  margin-top: 8px;
   font-size: 20px;
-  font-weight: 800;
-  cursor: pointer;
-  box-shadow:
-    0 0 0 3px rgba(79, 124, 255, 0.35),
-    0 12px 30px rgba(47, 94, 240, 0.35);
-  transition:
-    transform 0.15s ease,
-    box-shadow 0.2s ease;
+  letter-spacing: 0.12em;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.55);
 }
-.splash .connect:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow:
-    0 0 0 5px rgba(79, 124, 255, 0.4),
-    0 14px 36px rgba(47, 94, 240, 0.45);
+.caption span {
+  margin-top: 7px;
+  padding-top: 7px;
+  border-top: 1px solid currentColor;
+  font-size: 16px;
+  color: var(--hud-sub);
 }
-.splash .start {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  height: 58px;
-  padding: 0 28px;
-  border: 1px solid rgba(255, 255, 255, 0.24);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.06);
-  color: #fff;
-  font: inherit;
-  font-size: 18px;
+.caption ol {
+  display: flex;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.caption li {
+  width: 18px;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(214, 219, 224, 0.25);
+}
+.caption li[data-on] {
+  background: var(--hud-teal);
+  box-shadow: 0 0 8px rgba(70, 211, 230, 0.6);
+}
+
+/* The left: the title (embossed), the Korean name, one line, then the two ways in. */
+.hero {
+  position: absolute;
+  left: var(--gut);
+  top: 50%;
+  transform: translateY(-46%);
+  width: min(620px, 44vw);
+}
+.hero h1 {
+  margin: 0;
+  font-size: clamp(36px, 3.4vw, 56px);
+  line-height: 1.1;
   font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #e9ecef;
+  text-shadow: var(--hud-emboss);
+  opacity: 0;
+  animation: rise 0.7s 0.15s ease-out forwards;
+}
+.ko {
+  margin: 16px 0 0;
+  font-size: clamp(19px, 1.5vw, 24px);
+  font-weight: 600;
+  color: var(--hud-sub);
+}
+.lead {
+  margin: 22px 0 0;
+  font-size: 17px;
+  line-height: 1.65;
+  color: var(--hud-sub);
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: clamp(28px, 5vh, 48px);
+  animation: rise 0.45s ease-out;
+}
+.actions button {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 252px;
+  height: 68px;
+  padding: 0 18px 0 16px;
+  border-radius: 9px;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  background: var(--hud-key);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 1px 0 rgba(0, 0, 0, 0.6), 0 4px 10px rgba(0, 0, 0, 0.4);
+  color: var(--hud-tx);
+  text-align: left;
   cursor: pointer;
-  transition: background 0.2s ease;
+  font: inherit;
+  transition:
+    filter 0.15s ease,
+    transform 0.15s ease;
 }
-.splash .start span {
-  transition: transform 0.15s ease;
+.actions button:hover:not(:disabled) {
+  filter: brightness(1.12);
 }
-.splash .start:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.12);
+.actions button:active:not(:disabled) {
+  transform: translateY(1px);
 }
-.splash .start:hover:not(:disabled) span {
-  transform: translateX(3px);
-}
-.splash .connect:focus-visible,
-.splash .start:focus-visible {
-  outline: 2px solid #8fb2ff;
+.actions button:focus-visible {
+  outline: 1px solid rgba(70, 211, 230, 0.6);
   outline-offset: 4px;
 }
-
-/* Skipped: everything at its last frame. */
-.splash[data-skipped] .photos,
-.splash[data-skipped] .logo,
-.splash[data-skipped] .head,
-.splash[data-skipped] .lead,
-.splash[data-skipped] .cards,
-.splash[data-skipped] .foot {
-  animation-delay: 0s !important;
-  animation-duration: 0.35s !important;
+.actions button > span {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.actions b {
+  font-size: 17px;
+  letter-spacing: 0.16em;
+}
+.actions small {
+  font-size: 14px;
+  color: var(--hud-sub);
+}
+.actions svg {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  fill: none;
+  stroke: var(--hud-sub);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.actions svg.chev {
+  width: 18px;
+  height: 18px;
+  stroke: var(--hud-dim);
+  stroke-width: 2;
+}
+/* CONNECT is the one lit: teal outline, icon, name and arrow. */
+.actions .connect {
+  border-color: rgba(70, 211, 230, 0.7);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 0 14px rgba(70, 211, 230, 0.16), 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+.connect b {
+  color: var(--hud-teal);
+}
+.actions .connect svg {
+  stroke: var(--hud-teal);
+}
+.hint {
+  display: block;
+  margin-top: clamp(28px, 5vh, 48px);
+  min-height: 20px;
+  font-size: 15px;
+  color: var(--hud-dim);
 }
 
-/* A narrow window (a tablet held upright): the words over the whole picture, the caption hidden. */
+/* The foot: a silver hairline that fills teal as the program loads, the step on the left, the state on the right. */
+.foot {
+  position: absolute;
+  left: var(--gut);
+  right: var(--gut);
+  bottom: clamp(22px, 4.4vh, 40px);
+  pointer-events: none;
+}
+.load {
+  position: relative;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(214, 219, 224, 0.75) 50%, transparent);
+}
+.load i {
+  position: absolute;
+  inset: -1px 0;
+  transform-origin: 0 50%;
+  transform: scaleX(0.03);
+  background: linear-gradient(90deg, rgba(70, 211, 230, 0), var(--hud-teal));
+  box-shadow: 0 0 8px rgba(70, 211, 230, 0.5);
+  animation: barCreep 12s cubic-bezier(0.08, 0.75, 0.2, 1) forwards;
+}
+.splash[data-final] .load i,
+.splash[data-done] .load i {
+  opacity: 0;
+  transition: opacity 0.6s ease 0.4s;
+}
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  margin-top: 16px;
+}
+.note {
+  font-size: 15px;
+  color: var(--hud-dim);
+}
+.status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: var(--hud-dim);
+}
+.status small {
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--hud-sub);
+}
+.status i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--hud-amber);
+  box-shadow: 0 0 10px var(--hud-amber);
+  animation: blink 1.2s ease-in-out infinite alternate;
+}
+.status[data-ready] i {
+  background: var(--hud-teal);
+  box-shadow: 0 0 10px var(--hud-teal);
+  animation: none;
+}
+
 @media (max-width: 900px) {
-  .col {
+  .hero {
     width: auto;
-    right: 24px;
+    right: var(--gut);
   }
-  .shade {
-    background: linear-gradient(90deg, rgba(7, 11, 18, 0.92), rgba(7, 11, 18, 0.6)), linear-gradient(0deg, rgba(7, 11, 18, 0.88) 0%, transparent 28%);
+  .caption {
+    display: none;
   }
-  .caption,
-  .hint {
+}
+@media (max-height: 640px) {
+  .lead {
     display: none;
   }
 }
@@ -353,27 +342,14 @@
     opacity: 1;
   }
 }
-@keyframes wordIn {
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
 @keyframes rise {
   from {
-    transform: translateY(14px);
+    opacity: 0;
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
     transform: none;
-  }
-}
-@keyframes fill {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
   }
 }
 @keyframes barCreep {
@@ -381,13 +357,21 @@
     transform: scaleX(0.3);
   }
 }
+@keyframes blink {
+  to {
+    opacity: 0.35;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
-  .photos img,
-  .photos img[data-on] {
-    transform: none;
+  .film {
+    display: none;
+  }
+  .splash {
+    background:
+      url('/brand/intro/roll.jpg') center / cover no-repeat,
+      var(--hud-ground);
   }
   .splash * {
     animation-duration: 0.01s !important;
-    animation-delay: 0s !important;
   }
 }

@@ -1094,7 +1094,7 @@ class Handler(SimpleHTTPRequestHandler):
         **SimpleHTTPRequestHandler.extensions_map,
         ".glb": "model/gltf-binary", ".wasm": "application/wasm", ".js": "text/javascript",
         ".mjs": "text/javascript", ".json": "application/json", ".urdf": "application/xml",
-        ".svg": "image/svg+xml", ".woff2": "font/woff2",
+        ".svg": "image/svg+xml", ".woff2": "font/woff2", ".mp4": "video/mp4",
     }
 
     def __init__(self, *args, **kwargs):

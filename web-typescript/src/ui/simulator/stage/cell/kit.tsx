@@ -177,7 +177,7 @@ export function Hose({ pts, r = 1.6, color = '#2f7ff0' }: { pts: [number, number
 
 /** The shop floor: polished concrete, the cell's painted work area inside a hazard line (`box`, mm). */
 export function Floor({ box = { x0: -170, x1: 520, y0: -450, y1: 240 } }: { box?: { x0: number; x1: number; y0: number; y1: number } }) {
-  // Polished concrete: mottled grey with fine grit, saw cuts every 1 m of shop floor.
+  // Polished concrete (tinted dark for the HUD ground): mottled grey with fine grit, saw cuts every 1 m of shop floor.
   const tex = useSheet('cell-floor2', 400, 400, (ctx, w, h) => {
     ctx.fillStyle = '#a9adaf';
     ctx.fillRect(0, 0, w, h);
@@ -239,7 +239,7 @@ export function Floor({ box = { x0: -170, x1: 520, y0: -450, y1: 240 } }: { box?
       {tiles.map(([x, y]) => (
         <mesh key={`${x},${y}`} position={[m(x), m(y), m(F)]} receiveShadow>
           <planeGeometry args={[m(400), m(400)]} />
-          <meshStandardMaterial map={tex} roughness={0.78} metalness={0.02} />
+          <meshStandardMaterial map={tex} color="#454a51" roughness={0.78} metalness={0.02} />
         </mesh>
       ))}
       <mesh position={[m((box.x0 + box.x1) / 2), m((box.y0 + box.y1) / 2), m(F + 0.2)]} receiveShadow>
@@ -768,15 +768,15 @@ export function Fence() {
   );
 }
 
-/** The workshop round the cell: a light, hazy backdrop so the cell stands out (the stage's own is put back on leaving). */
+/** The workshop round the cell: a dark, hazy backdrop (the HUD's ground) the lit cell stands out against (the stage's own is put back on leaving). */
 export function Backdrop() {
   const get = useThree((s) => s.get);
   useEffect(() => {
     const scene = get().scene;
     const bg = scene.background;
     const fog = scene.fog;
-    scene.background = new Color('#d9dde1');
-    scene.fog = new Fog('#d9dde1', 1.4, 3.6);
+    scene.background = new Color('#1c1f23');
+    scene.fog = new Fog('#1c1f23', 1.4, 3.6);
     return () => {
       scene.background = bg;
       scene.fog = fog;

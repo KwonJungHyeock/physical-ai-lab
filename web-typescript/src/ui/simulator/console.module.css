@@ -8510,3 +8510,244 @@ div.zeroFlow {
   color: #fff;
   box-shadow: 0 4px 14px rgba(232, 57, 47, 0.35);
 }
+
+/* ===========================================================================
+ * Metal Mission HUD (2026-10-29): the console on a dark metal ground. The top bar a thin dark plate,
+ * the work panel and the menu bar metal plates with metal keys, readouts in dark grooves; teal is
+ * the one accent for what is chosen, amber for warnings, red only for stop. The panel's colours are
+ * variables (see "Control room" above): here they are set to the HUD's.
+ * ======================================================================== */
+.app {
+  --stage: #24272b;
+}
+@media (min-width: 1000px) and (min-height: 600px) {
+  .app {
+    --top: 54px;
+  }
+  .app .topBar {
+    min-height: 54px;
+    height: 54px;
+    background: linear-gradient(180deg, #2c3035, #212428);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.6);
+    box-shadow:
+      inset 0 -1px 0 rgba(255, 255, 255, 0.05),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      0 6px 18px rgba(0, 0, 0, 0.35);
+  }
+}
+.app .topBar {
+  color: var(--hud-tx);
+  color-scheme: dark;
+}
+.lockup img {
+  height: 30px;
+}
+.lockup > i {
+  background: rgba(214, 219, 224, 0.3);
+}
+.product em {
+  background: none;
+  color: var(--hud-dim);
+  -webkit-text-fill-color: currentColor;
+}
+.product b {
+  margin-top: 4px;
+  font-size: 14.5px;
+  color: var(--hud-tx);
+}
+.app .screens button {
+  color: var(--hud-dim);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.app .screens button:hover:not(:disabled) {
+  color: var(--hud-tx);
+}
+.app .screens button[aria-selected='true'] {
+  color: var(--hud-teal);
+}
+.app .screens button[aria-selected='true']::after {
+  height: 2px;
+  background: var(--hud-teal);
+  box-shadow: 0 0 10px rgba(70, 211, 230, 0.6);
+}
+.app .topBar button,
+.app .topBar .menuChipBtn,
+.app .topBar .conn {
+  color: var(--hud-tx);
+}
+.app .topBar .menuChipBtn,
+.app .topBar .taskChip,
+.app .topBar .conn,
+.app .topBar .connPill {
+  background: var(--hud-key);
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  box-shadow: var(--hud-key-shadow);
+}
+.app .topBar .menuChipBtn:hover {
+  background: var(--hud-key);
+  filter: brightness(1.12);
+}
+.app .context .taskChip {
+  background: var(--hud-groove);
+  border: 0;
+  box-shadow: var(--hud-groove-shadow);
+  color: var(--hud-tx);
+}
+.app .topBar .connPill small,
+.app .context .taskChip small {
+  color: var(--hud-sub);
+}
+
+/* The work panel: a metal plate; inside, the side's variables in the HUD's greys. */
+.app .side {
+  --page: #2f3337;
+  --soft: #34383d;
+  --work: #1b1e21;
+  --line: rgba(214, 219, 224, 0.14);
+  --ink: var(--hud-tx);
+  --muted: var(--hud-sub);
+  --faint: var(--hud-dim);
+  --accent: var(--hud-teal);
+  --accent-soft: rgba(70, 211, 230, 0.1);
+  --head: #2f3337;
+  --raised: var(--hud-key);
+  --raised-shadow: var(--hud-key-shadow);
+  --key: var(--hud-key);
+  --key-shadow: var(--hud-key-shadow);
+}
+@media (min-width: 1000px) and (min-height: 600px) {
+  .app .shell .side {
+    border: 0;
+    border-radius: 10px;
+    background: var(--hud-plate);
+    box-shadow: var(--hud-plate-shadow);
+  }
+}
+.app .sideHeader {
+  box-shadow: inset 0 -1px 0 rgba(214, 219, 224, 0.12);
+}
+.app .side .dockIcon {
+  background: rgba(70, 211, 230, 0.1);
+  color: var(--hud-teal);
+  box-shadow: inset 0 0 0 1px rgba(70, 211, 230, 0.4);
+}
+.app .side .poseDock {
+  background: linear-gradient(rgba(39, 42, 46, 0), #272a2e 12px);
+  border-top: 1px solid rgba(214, 219, 224, 0.12);
+}
+.app .side .poseDock button,
+.app .side .dock .jogWide,
+.app .side .jogWide {
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  background: var(--hud-key);
+  box-shadow: var(--hud-key-shadow);
+  color: var(--hud-tx);
+  font-weight: 600;
+}
+.app .side .poseDock button:hover:not(:disabled),
+.app .side .dock .jogWide:hover:not(:disabled) {
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  background: var(--hud-key);
+  filter: brightness(1.12);
+}
+.app .side .dock .jogWide:active:not(:disabled) {
+  border: 1px solid var(--hud-teal);
+  background: var(--hud-key);
+}
+/* 정지: a metal key with a red outline and red word (red is for stopping). */
+.app .side .poseDock .poseStop {
+  background: var(--hud-key);
+  border: 1px solid rgba(235, 64, 52, 0.85);
+  color: #ff6b61;
+  box-shadow: var(--hud-key-shadow), 0 0 12px rgba(235, 64, 52, 0.18);
+}
+.app .side .poseDock .poseStop:hover:not(:disabled) {
+  background: linear-gradient(180deg, #ef3f39, #cf2a25);
+  color: #fff;
+}
+.poseStop kbd {
+  background: rgba(0, 0, 0, 0.3);
+  color: #ffd4d0;
+}
+.app .side .poseList li,
+.app .side .poseGo {
+  background: var(--hud-groove);
+  box-shadow: var(--hud-groove-shadow);
+}
+.app .side .runRate {
+  background: var(--hud-groove);
+  box-shadow: var(--hud-groove-shadow);
+}
+.app .side .runRate button[aria-pressed='true'] {
+  background: var(--hud-key);
+  box-shadow: var(--hud-key-shadow), var(--hud-key-on);
+  border-color: var(--hud-teal);
+}
+
+/* The 3D view's tools: the view cube in metal, the column of tools a metal plate, the one on teal. */
+.viewCube {
+  background: radial-gradient(circle, rgba(20, 22, 25, 0.55) 0 58%, transparent 60%);
+  box-shadow: inset 0 0 0 1px rgba(214, 219, 224, 0.14);
+}
+.app .cubeFace {
+  border-color: rgba(214, 219, 224, 0.35);
+  background: linear-gradient(180deg, rgba(74, 79, 86, 0.97), rgba(42, 45, 50, 0.97));
+  color: var(--hud-sub);
+}
+.app button.cubeFace:hover {
+  background: linear-gradient(180deg, #3a6f78, #24474d);
+  border-color: var(--hud-teal);
+  color: #fff;
+}
+.viewRail {
+  background: var(--hud-plate);
+  border-color: transparent;
+  box-shadow: var(--hud-plate-shadow);
+}
+.app .viewRail button {
+  color: var(--hud-sub);
+}
+.app .viewRail button[aria-pressed='true'],
+.app .viewRail button[aria-expanded='true'] {
+  color: var(--hud-teal);
+  background: rgba(70, 211, 230, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(70, 211, 230, 0.35);
+}
+.app .viewRail button[aria-pressed='true']::after,
+.app .viewRail button[aria-expanded='true']::after {
+  display: none;
+}
+.viewRail .displayCount {
+  background: var(--hud-teal);
+  color: #101214;
+  border-color: #2a2d31;
+}
+/* 기록: a metal key over the view. */
+.app .noticeLog {
+  background: var(--hud-key);
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  box-shadow: var(--hud-key-shadow);
+  color: var(--hud-tx);
+}
+.app .topBar .settingsChip .menuChipBtn {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  color: var(--hud-sub);
+}
+.app .topBar .settingsChip .menuChipBtn:hover,
+.app .topBar .settingsChip .menuChipBtn[aria-expanded='true'] {
+  background: var(--hud-key);
+  border-color: var(--hud-teal);
+  color: var(--hud-teal);
+}
+.app .topBar .topStop {
+  height: 38px;
+  border-radius: 8px;
+}
+/* 그리퍼 열기 · 닫기 and the like under the rows: lower keys, so the panel breathes. */
+.app .side .poseRow .jogWide {
+  min-height: 0;
+  height: 44px;
+}

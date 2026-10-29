@@ -104,3 +104,26 @@
     animation: none;
   }
 }
+
+/* Metal Mission HUD (2026-10-29): no frame round the joint — the joint's whole housing takes the
+   colour on the arm (Stage.tsx); here only a small ring on the joint, the leader line and the words. */
+.bracket {
+  left: -6px;
+  top: -6px;
+  width: 12px;
+  height: 12px;
+  background: none;
+}
+.bracket::after {
+  left: 2px;
+  top: 2px;
+}
+.lead {
+  left: 4px;
+}
+.label {
+  left: 72px;
+}
+.label b {
+  letter-spacing: 0.1em;
+}

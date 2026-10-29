@@ -110,13 +110,13 @@ await shot('viewtools', () => {
   });
 });
 await shot('jog', async () => {
-  await openScreen('조그');
+  await openScreen('제어');
   await screen().getByRole('group', { name: '움직이는 방법' }).getByRole('button', { name: /^관절/ }).click();
   await settle(page, 1200);
   await save(page, out('s-jog.png'), { crop: screen(), pad: 10 });
 });
 await shot('jog-xyz', async () => {
-  await openScreen('조그');
+  await openScreen('제어');
   await screen().getByRole('group', { name: '움직이는 방법' }).getByRole('button', { name: /^좌표/ }).click();
   await settle(page, 1500);
   await save(page, out('s-jog-xyz.png'), { crop: screen(), pad: 10 });

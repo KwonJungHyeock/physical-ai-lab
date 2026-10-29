@@ -102,6 +102,7 @@ import CodeEditor from './editors/CodeEditor';
 import ControlPanel, { type Axis } from './control/ControlPanel';
 import LeftRail, { type BarItem, type RailItem } from './stage/LeftRail';
 import MiniArmLabels from './stage/MiniArmLabels';
+import { HudGauges, StageTitle } from './stage/StageHud';
 import AiChat, { type AiRunResult, type ChatTurn } from './editors/AiChat';
 import { createMonitor, type MiniRect } from './stage/MiniArm';
 import DeskPanel from './control/DeskPanel';
@@ -167,7 +168,8 @@ const barW = () => (typeof document === 'undefined' ? 96 : (document.querySelect
 /** The mini arm's corner, px: from the left menu bar's left edge, and its size. Left of the arm's joints
  *  sit their angle chips (about 80 px): room for them right of the bar. */
 const MINI = { bottom: 64, width: 250, height: 300 };
-const miniLeft = () => barW() + 24;
+// Room on the left for a chip with its reason ("−142.4° 한계까지 8°") clear of the menu bar.
+const miniLeft = () => barW() + 84;
 const QUALITY_KEY = 'robot-console-quality';
 const LEVEL_KEY = 'robot-console-level';
 const DISPLAY_KEY = 'robot-console-display';
@@ -3230,7 +3232,7 @@ export default function Console() {
       {poseNames.length === 0 && (
         <>
           <p className={css.poseHelp}>
-            <b>자세</b> = 관절 {arm.home.length}개의 각도에 이름을 붙여 저장해 둔 것이에요. [조그]로 팔을 옮기고 위 버튼을 누르면 이름을 붙여 여기에 쌓여요.
+            <b>자세</b> = 관절 {arm.home.length}개의 각도에 이름을 붙여 저장해 둔 것이에요. [제어]로 팔을 옮기고 위 버튼을 누르면 이름을 붙여 여기에 쌓여요.
           </p>
           <ul aria-label="고정 자세">
             {(
@@ -3435,7 +3437,7 @@ export default function Console() {
   });
   // 제어: moving the arm by hand. 작업: programs that run (a process of points, blocks, Python, ROS 2). 보기: windows.
   const barGroups = [
-    { name: '제어', items: [work('jog', '조그', 'move', '조그: 좌표 · 관절로 움직이기', true), { ...work('parts', '도구', 'tool', '도구 · 액세서리', true), hintFor: '끼우기, 도구' }, { ...work('pose', '자세', 'home', '자세 저장 · 불러오기', true), hintFor: '기본 자세, 일자로 펴기, 카메라 자세, 이 자세로, 자세' }] },
+    { name: '제어', items: [work('jog', '제어', 'move', '제어: 관절 · 좌표로 움직이기 (조그)', true), { ...work('parts', '도구', 'tool', '도구 · 액세서리', true), hintFor: '끼우기, 도구' }, { ...work('pose', '자세', 'home', '자세 저장 · 불러오기', true), hintFor: '기본 자세, 일자로 펴기, 카메라 자세, 이 자세로, 자세' }] },
     {
       name: '작업',
       items: [
@@ -3455,7 +3457,11 @@ export default function Console() {
     },
   ];
   const barFoot: BarItem[] = [{ ...work('zero', '영점', 'zero', robotMode ? '영점 맞추기' : '로봇을 연결하면 영점을 맞춰요'), disabled: !robotMode || (busy && !zeroMode) }];
-  const SCREEN_TITLE: Record<string, string> = { jog: '조그', parts: '도구', pose: '자세', zero: '영점', process: '공정', basic: '코딩', python: '코딩', ros: '코딩', ai: 'AI 에게 시키기' };
+  /** The 3D view's top-left corner: the arm's name and ROBOT LINK, when no cell or window is there. */
+  const stageTitle = !!loaded && view === 'sim' && !cellAt && !railOpen;
+  /** The open screen in the 3D view's corner: [English, Korean]. */
+  const SCREEN_EN: Record<string, string> = { jog: 'CONTROL', parts: 'TOOL', pose: 'POSE', zero: 'ZERO', process: 'TASK', basic: 'CODE', python: 'CODE', ros: 'CODE', ai: 'AI' };
+  const SCREEN_TITLE: Record<string, string> = { jog: '제어', parts: '도구', pose: '자세', zero: '영점', process: '공정', basic: '코딩', python: '코딩', ros: '코딩', ai: 'AI 에게 시키기' };
 
   const zeroPanel = (
     <ZeroPanel
@@ -3525,7 +3531,7 @@ export default function Console() {
   // Served by the robot: the model is the robot's own (myCobot 280 RDK X5 server).
   // With the model choice hidden (MODEL_CHOICE, no extra arms), it is the myCobot 280 RDK X5 everywhere.
   const modelNow = robotMode || !choice ? DEFAULT_MODEL : model;
-  /** Past the intro's last frame ([연결하기] or 시뮬레이터로 시작); on a robot's own console the intro steps aside by itself. */
+  /** Past the intro's last frame (CONNECT or SIMULATOR); on a robot's own console the intro steps aside by itself. */
   const [entered, setEntered] = useState(false);
   const pastIntro = entered || robotMode || picking;
   const showPicker = splashDone && pastIntro && !connectOpen && (picking || !modelNow);
@@ -3976,6 +3982,8 @@ export default function Console() {
           status={
             <>
             <AccountChip />
+            {/* On the simulator the link sits in the 3D view's top-left corner (StageTitle), unless a cell or a window holds that corner. */}
+            {!stageTitle && (
             <button
               type="button"
               className={css.connPill}
@@ -3995,6 +4003,7 @@ export default function Console() {
                 <small>{!robotMode ? (pcApp.offline ? '지금은 시뮬레이션 · 오프라인 가능' : '지금은 시뮬레이션') : robot?.ips?.[0] ?? '로봇 콘솔'}</small>
               </span>
             </button>
+            )}
             </>
           }
         />
@@ -4250,6 +4259,19 @@ export default function Console() {
               )}
               {loaded && view === 'sim' && cellAt && railOpen !== 'monitor' && cellLayout(cellAt.cell).line.camera && <CellCamera world={world} cell={cellAt.cell} />}
               {loaded && view === 'sim' && display.mini && !railOpen && !cellAt && <MiniArmLabels monitor={monitor} live={live} tipOf={tipOf} side="right" />}
+              {stageTitle && (
+                <StageTitle
+                  link={!robotMode ? 'sim' : robot?.connected ? 'real' : 'lost'}
+                  robotId={robot?.robotId}
+                  ip={robot?.ips?.[0]}
+                  demo={robot?.demo}
+                  offline={pcApp.offline}
+                  arm={arm.name}
+                  screen={[SCREEN_EN[workScreen] ?? 'VIEW', SCREEN_TITLE[workScreen] ?? '보기']}
+                  onLink={() => setConnectOpen(true)}
+                />
+              )}
+              {loaded && view === 'sim' && !railOpen && !cellAt && <HudGauges speed={jogSpeed} monitor={monitor} dock={dockShown ? 'open' : 'closed'} />}
               {loaded && view === 'sim' && (
                 <LeftRail groups={barGroups} foot={barFoot} sheetOpen={railOpen !== null} onCloseSheet={() => setRailOpen(null)}>
                   {(railOpen === 'env' || railOpen === 'objects') && (

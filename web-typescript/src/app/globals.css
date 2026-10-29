@@ -8,6 +8,29 @@
   --background: #ffffff;
   --foreground: #1f2933;
   color-scheme: light;
+
+  /* Metal Mission HUD (the intro and the simulator console): brushed-metal plates on a dark
+     radial ground, wide-tracked labels, one or two accents a screen. */
+  --hud-ground: radial-gradient(ellipse 75% 70% at 50% 46%, #3a3e44 0%, #24272b 58%, #141619 100%);
+  --hud-tx: #f2f4f6;
+  --hud-sub: #b4bbc2;
+  --hud-dim: #8a9199;
+  --hud-line: #d6dbe0;
+  --hud-teal: #46d3e6;
+  --hud-amber: #f0a23b;
+  --hud-green: #5bd17a;
+  --hud-red: #eb4034;
+  /* A plate: the gradient, a 1 px highlight along its top, shadows in layers. */
+  --hud-plate: linear-gradient(180deg, #4a4f56 0%, #34383d 42%, #272a2e 100%);
+  --hud-plate-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), inset 0 -1px 0 rgba(0, 0, 0, 0.5), 0 1px 0 rgba(0, 0, 0, 0.55), 0 6px 14px rgba(0, 0, 0, 0.4), 0 22px 46px rgba(0, 0, 0, 0.35);
+  /* A button on a plate. */
+  --hud-key: linear-gradient(180deg, #50555c, #373b40 55%, #2b2e32);
+  --hud-key-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 1px 0 rgba(0, 0, 0, 0.55), 0 3px 8px rgba(0, 0, 0, 0.32);
+  --hud-key-on: 0 0 0 1px rgba(70, 211, 230, 0.32), 0 0 14px rgba(70, 211, 230, 0.18);
+  /* A groove: a dark recess (readouts, inputs, tracks). */
+  --hud-groove: linear-gradient(180deg, #121417, #1b1e21);
+  --hud-groove-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.75), inset 0 -1px 0 rgba(255, 255, 255, 0.07), 0 1px 0 rgba(255, 255, 255, 0.06);
+  --hud-emboss: 0 -1px 0 rgba(255, 255, 255, 0.35), 0 2px 0 rgba(0, 0, 0, 0.65), 0 6px 14px rgba(0, 0, 0, 0.45);
 }
 
 @theme inline {

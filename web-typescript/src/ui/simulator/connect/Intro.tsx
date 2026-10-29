@@ -1,14 +1,15 @@
 'use client';
 
 /**
- * The start of the program: a full-window photograph of a robot at work — a robot arm, a mobile robot,
- * a humanoid, one after another (public/brand/intro/photo-*.jpg) — darkened on the left, where the
- * simulator's logo, one line of what the program is for and the three pictures as small cards come in.
- * The bar along the foot follows the real loading (robot description, the model files, then the 3D
- * scene), easing on between the steps so it never stands still. When both the sequence has played and
- * the 3D view is ready, [연결하기] (the 로봇 연결 window) and 시뮬레이터로 시작 appear under the cards;
- * the intro steps aside on either. A click skips the sequence (the bar still waits for the 3D view).
- * Without `gate` (the robot's own console) it steps aside by itself.
+ * The start of the program (Metal Mission HUD): a film of the simulated myCobot at work rolls on the
+ * right of a dark metal ground — the six joints, then the 공정 cells A–E (public/brand/intro/roll.mp4,
+ * recorded from this program; it loops seamlessly) — with the scene's name in the top-right corner.
+ * On the left: the title, one line, and, once the 3D view is ready, [CONNECT] (the 로봇 연결 window)
+ * and [SIMULATOR] (시뮬레이터로 시작); the intro steps aside on either. The hairline along the foot
+ * follows the real loading (robot description, the model files, then the 3D scene), easing on between
+ * the steps. A click skips the sequence (the bar still waits for the 3D view). Without `gate` (the
+ * robot's own console) it steps aside by itself. Right after the program reloaded itself to connect to
+ * a robot or to leave it (skipIntroOnce), it does not play again: it covers the loading only.
  *
  * The root keeps `splash` in its class and `data-done` when gone: the screenshot tools wait on those.
  */
@@ -18,16 +19,48 @@ import { useEffect, useRef, useState } from 'react';
 
 import css from './intro.module.css';
 
-/** The robots the pictures show, with what each does. */
-const ROBOTS = [
-  { id: 'arm', tag: 'ROBOT ARM', name: '로봇팔', line: '사람 곁에서 집고 · 옮기고 · 조립해요' },
-  { id: 'amr', tag: 'MOBILE ROBOT', name: '이동형 로봇', line: '스스로 길을 찾아 물건을 나르고 집어요' },
-  { id: 'humanoid', tag: 'HUMANOID', name: '휴머노이드', line: '사람처럼 두 손으로 상자를 들고 일해요' },
+/** The release number shown as VERSION v1.<n>: one up with each release (the release branch README). */
+export const RELEASE = 14;
+
+/** The film's scenes: when each one's name comes up (s into the film, halfway through its fade in). */
+const SCENES = [
+  { at: 0, tag: 'JOINT MOTION', line: '전 축 구동 · 관절 6개' },
+  { at: 3.5, tag: 'FEED · PALLETIZE', line: '공급 · 적재 셀' },
+  { at: 7.5, tag: 'VISION SORTING', line: '비전 분류 셀' },
+  { at: 11.5, tag: 'INSPECTION', line: '검사 · 불량 배출 셀' },
+  { at: 13.67, tag: 'MACHINE TENDING', line: '머신 텐딩 셀 · CNC 선반' },
+  { at: 17.67, tag: 'ASSEMBLY', line: '조립 · 삽입 셀' },
 ];
-/** How long each picture shows, ms. */
-const SCENE_MS = 3400;
+/** The film fades back into its first scene at the end: its name comes back here, s. */
+const BACK_TO_FIRST = 20.33;
 /** How long the sequence plays before the intro may step aside, ms. */
 const SEQUENCE_MS = 3200;
+
+const SKIP_KEY = 'intro-skip-once';
+/** Call before the program reloads itself (connecting to a robot, leaving it): the next start does not play the intro. */
+export function skipIntroOnce() {
+  try {
+    sessionStorage.setItem(SKIP_KEY, '1');
+  } catch {
+    /* storage blocked: the intro plays */
+  }
+}
+
+/** Whether this page load comes from such a reload: read (and cleared) once, the answer kept for the page. */
+let skipThisLoad: boolean | null = null;
+function introSkipped() {
+  if (skipThisLoad !== null) return skipThisLoad;
+  skipThisLoad = false;
+  try {
+    skipThisLoad = sessionStorage.getItem(SKIP_KEY) === '1';
+    sessionStorage.removeItem(SKIP_KEY);
+  } catch {
+    /* storage blocked: the intro plays */
+  }
+  return skipThisLoad;
+}
+
+const sceneAt = (t: number) => (t >= BACK_TO_FIRST ? 0 : SCENES.reduce((n, s, i) => (t >= s.at ? i : n), 0));
 
 interface Props {
   /** 0..1: how far the robot and the 3D view have loaded (its steps; the bar eases on between them). */
@@ -43,20 +76,29 @@ interface Props {
 export default function Intro({ progress, ready, note, gate }: Props) {
   const [played, setPlayed] = useState(false);
   const [entered, setEntered] = useState(false);
+  // Right after a reload of its own (to a robot or back): no sequence and no choice, the loading only.
+  const [quiet, setQuiet] = useState(false);
   useEffect(() => {
-    const quick = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    const t = window.setTimeout(() => setPlayed(true), quick ? 600 : SEQUENCE_MS);
+    const again = introSkipped();
+    const quick = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const t = window.setTimeout(
+      () => {
+        setQuiet(again);
+        setPlayed(true);
+      },
+      again ? 0 : quick ? 600 : SEQUENCE_MS,
+    );
     return () => window.clearTimeout(t);
   }, []);
-  // The pictures, one after another (on until the intro steps aside); a card picks one and the round goes on from it.
+  // The scene's name follows the film (its time updates, a few a second; the film plays on its own).
+  const film = useRef<HTMLVideoElement>(null);
   const [scene, setScene] = useState(0);
-  useEffect(() => {
-    const quick = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    const t = window.setTimeout(() => setScene((n) => (n + 1) % ROBOTS.length), quick ? SCENE_MS * 2 : SCENE_MS);
-    return () => window.clearTimeout(t);
-  }, [scene]);
   const final = ready && played;
-  const done = final && (!gate || entered);
+  const done = final && (!gate || entered || quiet);
+  // Paused once gone (it is still in the page, under the console).
+  useEffect(() => {
+    if (done) film.current?.pause();
+  }, [done]);
 
   // The model files (three's loading manager) fill the stretch between "description read" and "3D ready".
   const files = useProgress((s) => (s.total ? s.loaded / s.total : 0));
@@ -83,67 +125,74 @@ export default function Intro({ progress, ready, note, gate }: Props) {
     setEntered(true);
     go();
   };
-  const now = ROBOTS[scene];
+  // After a reload of its own with the choice still open (back from a robot): straight into the simulator.
+  useEffect(() => {
+    if (!quiet || !final || !gate || entered) return;
+    const t = window.setTimeout(() => enter(gate.onStart), 0);
+    return () => window.clearTimeout(t);
+  });
+  const now = SCENES[scene];
+  const choose = gate && final && !quiet;
   return (
     <div
       className={css.splash}
       data-done={done || undefined}
+      data-quiet={quiet || undefined}
       data-skipped={played || undefined}
-      data-final={(final && gate && !entered) || undefined}
+      data-final={(choose && !entered) || undefined}
       aria-hidden={done}
-      role={final && gate ? 'dialog' : 'status'}
+      role={choose ? 'dialog' : 'status'}
       aria-label="Physical AI 로봇 학습 프로그램"
       onClick={() => setPlayed(true)}
     >
-      <div className={css.photos} aria-hidden="true">
-        {ROBOTS.map((r, i) => (
-          // eslint-disable-next-line @next/next/no-img-element -- fixed pictures, also in the static export
-          <img key={r.id} src={`/brand/intro/photo-${r.id}.jpg`} alt="" data-on={i === scene || undefined} draggable={false} />
-        ))}
-      </div>
-      <div className={css.shade} />
+      <video ref={film} className={css.film} src="/brand/intro/roll.mp4" poster="/brand/intro/roll.jpg" autoPlay muted loop playsInline preload="auto" aria-hidden="true" onTimeUpdate={(e) => setScene(sceneAt(e.currentTarget.currentTime))} />
+      <div className={css.vignette} />
 
-      <div className={css.col}>
-        {/* eslint-disable-next-line @next/next/no-img-element -- the simulator's logo, also in the static export */}
-        <img className={css.logo} src="/brand/sim-logo-white.svg" alt="ROBODYNE SYSTEMS" width={464} height={228} />
-        <h1 className={css.head}>
-          배우는 로봇이
-          <br />
-          <span>현장에서 일하는</span> 로봇으로
-        </h1>
-        <p className={css.lead}>
-          로봇팔 · 이동형 로봇 · 휴머노이드를 한곳에서 다루는 피지컬 AI 통합 시뮬레이터.
-          <br />
-          조그 · 공정 · 코딩 · AI 까지 연습하고, 같은 프로그램을 실제 로봇에서 돌려요.
-        </p>
-        <ol className={css.cards} aria-label="로봇이 일하는 모습">
-          {ROBOTS.map((r, i) => (
-            <li key={r.id}>
-              <button
-                type="button"
-                data-on={i === scene || undefined}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setScene(i);
-                }}
-                aria-label={`${r.name} 사진 보기`}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element -- fixed pictures, also in the static export */}
-                <img src={`/brand/intro/photo-${r.id}.jpg`} alt="" draggable={false} />
-                <span>
-                  <b>{r.name}</b>
-                  <small>{r.tag}</small>
-                </span>
-                <i key={i === scene ? `on-${scene}` : 'off'} style={{ animationDuration: `${SCENE_MS}ms` }} />
-              </button>
-            </li>
+      <header className={css.top}>
+        <span className={css.mark}>
+          {/* eslint-disable-next-line @next/next/no-img-element -- the simulator's mark, also in the static export */}
+          <img src="/brand/sim-mark-white.svg" alt="" width={272} height={228} />
+          <i />
+          {/* eslint-disable-next-line @next/next/no-img-element -- the company's logo, also in the static export */}
+          <img src="/brand/robodyne-name-white.png" alt="ROBODYNE SYSTEMS" width={615} height={174} />
+        </span>
+        <span className={css.version}>
+          <small>VERSION</small>
+          <b>v1.{RELEASE}</b>
+        </span>
+      </header>
+
+      <figure key={scene} className={css.caption} aria-hidden="true">
+        <small>
+          SCENE {String(scene + 1).padStart(2, '0')} / {String(SCENES.length).padStart(2, '0')}
+        </small>
+        <b>{now.tag}</b>
+        <span>{now.line}</span>
+        <ol>
+          {SCENES.map((s, i) => (
+            <li key={s.tag} data-on={i === scene || undefined} />
           ))}
         </ol>
-        {gate && final && (
+      </figure>
+
+      <div className={css.hero}>
+        <h1>
+          Physical AI
+          <br />
+          Simulator
+        </h1>
+        <p className={css.ko}>로봇 학습 시뮬레이터</p>
+        <p className={css.lead}>
+          조그 · 공정 · 코딩 · AI 를 연습하고,
+          <br />
+          같은 프로그램을 실제 로봇에서 돌려요.
+        </p>
+        {choose ? (
           <div className={css.actions}>
             <button
               type="button"
               className={css.connect}
+              aria-label="연결하기"
               autoFocus
               disabled={entered}
               onClick={(e) => {
@@ -151,41 +200,59 @@ export default function Intro({ progress, ready, note, gate }: Props) {
                 enter(gate.onConnect);
               }}
             >
-              연결하기
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1" />
+                <path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" />
+              </svg>
+              <span>
+                <b>CONNECT</b>
+                <small>로봇 연결하기</small>
+              </span>
+              <svg className={css.chev} viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 6l6 6-6 6" />
+              </svg>
             </button>
             <button
               type="button"
               className={css.start}
+              aria-label="시뮬레이터로 시작"
               disabled={entered}
               onClick={(e) => {
                 e.stopPropagation();
                 enter(gate.onStart);
               }}
             >
-              시뮬레이터로 시작
-              <span aria-hidden="true">→</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z" />
+                <path d="M12 12l8-4.5M12 12v9M12 12L4 7.5" />
+              </svg>
+              <span>
+                <b>SIMULATOR</b>
+                <small>시뮬레이터로 시작</small>
+              </span>
+              <svg className={css.chev} viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 6l6 6-6 6" />
+              </svg>
             </button>
           </div>
+        ) : (
+          <small className={css.hint}>{!played ? '클릭하면 건너뛰어요' : ''}</small>
         )}
       </div>
 
-      <figure key={scene} className={css.caption}>
-        <small>
-          {String(scene + 1).padStart(2, '0')} · {now.tag}
-        </small>
-        <b>{now.name}</b>
-        <span>{now.line}</span>
-      </figure>
-
-      <div className={css.foot}>
+      <footer className={css.foot}>
         <div className={css.load} role="progressbar" aria-label="불러오기" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(target * 100)}>
-          <small>{note}</small>
-          <span className={css.bar}>
-            <i ref={bar} />
-          </span>
+          <i ref={bar} />
         </div>
-        <small className={css.hint}>{gate && final ? '로봇과 같은 Wi-Fi 라면 [연결하기], 로봇 없이 연습하려면 시뮬레이터로 시작해요.' : !played ? '클릭하면 건너뛰어요' : ''}</small>
-      </div>
+        <span className={css.row}>
+          <small className={css.note}>{choose ? '로봇과 같은 Wi-Fi 라면 CONNECT, 로봇 없이 연습하려면 SIMULATOR' : note}</small>
+          <span className={css.status} data-ready={ready || undefined}>
+            <i />
+            {ready ? 'SYSTEM READY' : 'LOADING'}
+            <small>{ready ? '시스템 준비됨' : '불러오는 중'}</small>
+          </span>
+        </span>
+      </footer>
     </div>
   );
 }
