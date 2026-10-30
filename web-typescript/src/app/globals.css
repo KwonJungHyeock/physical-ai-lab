@@ -16,7 +16,13 @@
   --hud-sub: #b4bbc2;
   --hud-dim: #8a9199;
   --hud-line: #d6dbe0;
-  --hud-teal: #46d3e6;
+  /* The accent: white. A chosen key is filled silver with dark words (--hud-silver); a value or
+     progress glows white (--hud-light). Colour is kept for meaning: amber warns, red stops, green links. */
+  --hud-light: #f4f6f9;
+  --hud-silver: linear-gradient(180deg, #ffffff 0%, #eef1f4 38%, #cfd5dc 100%);
+  --hud-silver-shadow: inset 0 1px 0 #fff, inset 0 -1px 0 rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(0, 0, 0, 0.45), 0 4px 12px rgba(0, 0, 0, 0.35), 0 0 22px rgba(255, 255, 255, 0.12);
+  --hud-ink: #15181c;
+  --hud-ink-sub: #4a5058;
   --hud-amber: #f0a23b;
   --hud-green: #5bd17a;
   --hud-red: #eb4034;
@@ -26,7 +32,7 @@
   /* A button on a plate. */
   --hud-key: linear-gradient(180deg, #50555c, #373b40 55%, #2b2e32);
   --hud-key-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 1px 0 rgba(0, 0, 0, 0.55), 0 3px 8px rgba(0, 0, 0, 0.32);
-  --hud-key-on: 0 0 0 1px rgba(70, 211, 230, 0.32), 0 0 14px rgba(70, 211, 230, 0.18);
+  --hud-key-on: 0 0 0 1px rgba(255, 255, 255, 0.4), 0 0 16px rgba(230, 236, 244, 0.18);
   /* A groove: a dark recess (readouts, inputs, tracks). */
   --hud-groove: linear-gradient(180deg, #121417, #1b1e21);
   --hud-groove-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.75), inset 0 -1px 0 rgba(255, 255, 255, 0.07), 0 1px 0 rgba(255, 255, 255, 0.06);

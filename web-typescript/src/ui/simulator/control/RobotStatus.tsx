@@ -74,7 +74,7 @@ export default function RobotStatus({ robotMode, live: store, lights, reason, bu
             </button>
             <button type="button" className={css.jogWide} disabled={busy || !live} onClick={onServos}>
               <Icon name="hand" size={16} />
-              <span>{robot?.released ? '서보 고정' : '손으로 움직이기'}</span>
+              <span>{robot?.released ? '서보 고정' : '서보 풀기'}</span>
             </button>
             <button type="button" className={css.jogWide} disabled={busy || !live} onClick={onZero}>
               <Icon name="zero" size={16} />

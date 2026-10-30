@@ -6167,7 +6167,7 @@ div.zeroFlow {
   background: rgba(255, 255, 255, 0.03);
   border-color: rgba(255, 255, 255, 0.08);
 }
-/* The status card (연결 확인 · 손으로 움직이기 · 영점 맞추기) is white: light buttons there, not the dark panel's. */
+/* The status card (연결 확인 · 서보 풀기 · 영점 맞추기) is white: light buttons there, not the dark panel's. */
 .app .side .lightsPop .jogWide {
   color: #101828;
   background: #f4f6fb;
@@ -8513,7 +8513,7 @@ div.zeroFlow {
 
 /* ===========================================================================
  * Metal Mission HUD (2026-10-29): the console on a dark metal ground. The top bar a thin dark plate,
- * the work panel and the menu bar metal plates with metal keys, readouts in dark grooves; teal is
+ * the work panel and the menu bar metal plates with metal keys, readouts in dark grooves; white is
  * the one accent for what is chosen, amber for warnings, red only for stop. The panel's colours are
  * variables (see "Control room" above): here they are set to the HUD's.
  * ======================================================================== */
@@ -8564,12 +8564,12 @@ div.zeroFlow {
   color: var(--hud-tx);
 }
 .app .screens button[aria-selected='true'] {
-  color: var(--hud-teal);
+  color: var(--hud-light);
 }
 .app .screens button[aria-selected='true']::after {
   height: 2px;
-  background: var(--hud-teal);
-  box-shadow: 0 0 10px rgba(70, 211, 230, 0.6);
+  background: var(--hud-light);
+  box-shadow: 0 0 10px rgba(236, 241, 248, 0.6);
 }
 .app .topBar button,
 .app .topBar .menuChipBtn,
@@ -8608,8 +8608,8 @@ div.zeroFlow {
   --ink: var(--hud-tx);
   --muted: var(--hud-sub);
   --faint: var(--hud-dim);
-  --accent: var(--hud-teal);
-  --accent-soft: rgba(70, 211, 230, 0.1);
+  --accent: var(--hud-light);
+  --accent-soft: rgba(236, 241, 248, 0.1);
   --head: #2f3337;
   --raised: var(--hud-key);
   --raised-shadow: var(--hud-key-shadow);
@@ -8628,9 +8628,9 @@ div.zeroFlow {
   box-shadow: inset 0 -1px 0 rgba(213, 218, 225, 0.12);
 }
 .app .side .dockIcon {
-  background: rgba(70, 211, 230, 0.1);
-  color: var(--hud-teal);
-  box-shadow: inset 0 0 0 1px rgba(70, 211, 230, 0.4);
+  background: rgba(236, 241, 248, 0.1);
+  color: var(--hud-light);
+  box-shadow: inset 0 0 0 1px rgba(236, 241, 248, 0.4);
 }
 .app .side .poseDock {
   background: linear-gradient(rgba(39, 42, 46, 0), #272a2e 12px);
@@ -8652,7 +8652,7 @@ div.zeroFlow {
   filter: brightness(1.12);
 }
 .app .side .dock .jogWide:active:not(:disabled) {
-  border: 1px solid var(--hud-teal);
+  border: 1px solid var(--hud-light);
   background: var(--hud-key);
 }
 /* 정지: a metal key with a red outline and red word (red is for stopping). */
@@ -8680,12 +8680,13 @@ div.zeroFlow {
   box-shadow: var(--hud-groove-shadow);
 }
 .app .side .runRate button[aria-pressed='true'] {
-  background: var(--hud-key);
-  box-shadow: var(--hud-key-shadow), var(--hud-key-on);
-  border-color: var(--hud-teal);
+  border-color: rgba(255, 255, 255, 0.95);
+  background: var(--hud-silver);
+  color: var(--hud-ink);
+  box-shadow: var(--hud-silver-shadow);
 }
 
-/* The 3D view's tools: the view cube in metal, the column of tools a metal plate, the one on teal. */
+/* The 3D view's tools: the view cube in metal, the column of tools a metal plate, the one on white. */
 .viewCube {
   background: radial-gradient(circle, rgba(20, 22, 25, 0.55) 0 58%, transparent 60%);
   box-shadow: inset 0 0 0 1px rgba(213, 218, 225, 0.14);
@@ -8697,7 +8698,7 @@ div.zeroFlow {
 }
 .app button.cubeFace:hover {
   background: linear-gradient(180deg, #3a6f78, #24474d);
-  border-color: var(--hud-teal);
+  border-color: var(--hud-light);
   color: #fff;
 }
 .viewRail {
@@ -8710,16 +8711,16 @@ div.zeroFlow {
 }
 .app .viewRail button[aria-pressed='true'],
 .app .viewRail button[aria-expanded='true'] {
-  color: var(--hud-teal);
-  background: rgba(70, 211, 230, 0.1);
-  box-shadow: inset 0 0 0 1px rgba(70, 211, 230, 0.35);
+  color: var(--hud-light);
+  background: rgba(236, 241, 248, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(236, 241, 248, 0.35);
 }
 .app .viewRail button[aria-pressed='true']::after,
 .app .viewRail button[aria-expanded='true']::after {
   display: none;
 }
 .viewRail .displayCount {
-  background: var(--hud-teal);
+  background: var(--hud-light);
   color: #101214;
   border-color: #2a2d31;
 }
@@ -8739,8 +8740,8 @@ div.zeroFlow {
 .app .topBar .settingsChip .menuChipBtn:hover,
 .app .topBar .settingsChip .menuChipBtn[aria-expanded='true'] {
   background: var(--hud-key);
-  border-color: var(--hud-teal);
-  color: var(--hud-teal);
+  border-color: var(--hud-light);
+  color: var(--hud-light);
 }
 .app .topBar .topStop {
   height: 38px;
@@ -8778,14 +8779,14 @@ div.zeroFlow {
   background: #2f3337;
   color: var(--hud-tx);
 }
-/* the run bar: 시뮬레이션 a metal key lit teal, 정지 red outline (red is for stopping) */
+/* the run bar: 시뮬레이션 a metal key lit white, 정지 red outline (red is for stopping) */
 .runSim,
 .app .runDock .runSim {
-  border: 1px solid var(--hud-teal);
-  background: var(--hud-key);
-  color: var(--hud-teal);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  background: var(--hud-silver);
+  color: var(--hud-ink);
   letter-spacing: 0.04em;
-  box-shadow: var(--hud-key-shadow), var(--hud-key-on);
+  box-shadow: var(--hud-silver-shadow);
 }
 .runSim:hover:not(:disabled) {
   filter: brightness(1.12);
@@ -8808,11 +8809,11 @@ div.zeroFlow {
   background: linear-gradient(180deg, #ef3f39, #cf2a25);
   color: #fff;
 }
-/* the task chip in the top bar: a groove, its kind as a small teal tag */
+/* the task chip in the top bar: a groove, its kind as a small white tag */
 .app .taskTag {
-  background: rgba(70, 211, 230, 0.12);
-  color: var(--hud-teal);
-  box-shadow: inset 0 0 0 1px rgba(70, 211, 230, 0.35);
+  background: rgba(236, 241, 248, 0.12);
+  color: var(--hud-light);
+  box-shadow: inset 0 0 0 1px rgba(236, 241, 248, 0.35);
 }
 .app .taskTitle {
   color: var(--hud-tx);
@@ -8827,8 +8828,8 @@ div.zeroFlow {
   --ink: var(--hud-tx);
   --muted: var(--hud-sub);
   --faint: var(--hud-dim);
-  --accent: var(--hud-teal);
-  --accent-soft: rgba(70, 211, 230, 0.1);
+  --accent: var(--hud-light);
+  --accent-soft: rgba(236, 241, 248, 0.1);
   color-scheme: dark;
   color: var(--hud-tx);
   border: 0;
@@ -8847,9 +8848,9 @@ div.zeroFlow {
   color: var(--hud-tx);
 }
 .app .displayMenu input {
-  accent-color: var(--hud-teal);
+  accent-color: var(--hud-light);
 }
-/* 로봇 연결: the radar sweeps teal, the chosen tab and the mark teal (as on the intro's CONNECT) */
+/* 로봇 연결: the radar sweeps white, the chosen tab and the mark white (as on the intro's CONNECT) */
 .app .connectBox {
   background: var(--hud-plate);
   box-shadow: var(--hud-plate-shadow);
@@ -8857,7 +8858,7 @@ div.zeroFlow {
 }
 .app .connectBox .radarSide {
   background:
-    radial-gradient(120% 70% at 50% 42%, rgba(70, 211, 230, 0.08), transparent 62%),
+    radial-gradient(120% 70% at 50% 42%, rgba(236, 241, 248, 0.08), transparent 62%),
     linear-gradient(180deg, #24272b, #1d2023);
   border-right: 1px solid rgba(214, 219, 224, 0.12);
 }
@@ -8870,7 +8871,7 @@ div.zeroFlow {
   border-color: rgba(214, 219, 224, 0.2);
 }
 .app .connectBox .radarSweep {
-  background: conic-gradient(from 0deg, rgba(70, 211, 230, 0.45), rgba(70, 211, 230, 0.06) 55deg, transparent 72deg);
+  background: conic-gradient(from 0deg, rgba(236, 241, 248, 0.45), rgba(236, 241, 248, 0.06) 55deg, transparent 72deg);
 }
 .app .connectBox .radarStats div {
   background: var(--hud-groove);
@@ -8878,9 +8879,9 @@ div.zeroFlow {
   box-shadow: var(--hud-groove-shadow);
 }
 .app .connectBox .connectIcon {
-  background: rgba(70, 211, 230, 0.12);
-  color: var(--hud-teal);
-  box-shadow: inset 0 0 0 1px rgba(70, 211, 230, 0.45);
+  background: rgba(236, 241, 248, 0.12);
+  color: var(--hud-light);
+  box-shadow: inset 0 0 0 1px rgba(236, 241, 248, 0.45);
 }
 .app .connectBox .connectTabs {
   background: var(--hud-groove);
@@ -8889,10 +8890,10 @@ div.zeroFlow {
 }
 .app .connectBox .connectTabs .connectTabOn,
 .app .toolBox .connectTabs .connectTabOn {
-  border: 1px solid var(--hud-teal);
-  background: var(--hud-key);
-  color: var(--hud-teal);
-  box-shadow: var(--hud-key-shadow), var(--hud-key-on);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  background: var(--hud-silver);
+  color: var(--hud-ink);
+  box-shadow: var(--hud-silver-shadow);
 }
 .app .connectBox input,
 .app .connectBox .findNet {
@@ -8907,27 +8908,27 @@ div.zeroFlow {
 /* the work panel's own header card in each screen (전 축 구동 · 라이브러리에서 바꾸기 …) */
 .app .side .dockIcon,
 .app .side [class*='cardIcon'] {
-  background: rgba(70, 211, 230, 0.1);
-  color: var(--hud-teal);
-  box-shadow: inset 0 0 0 1px rgba(70, 211, 230, 0.4);
+  background: rgba(236, 241, 248, 0.1);
+  color: var(--hud-light);
+  box-shadow: inset 0 0 0 1px rgba(236, 241, 248, 0.4);
 }
-/* 공정 짜기 pins in 3D and the block workspace: teal marks, a dark groove to build in */
+/* 공정 짜기 pins in 3D and the block workspace: white marks, a dark groove to build in */
 .planMark {
   border-radius: 4px;
   background: rgba(16, 18, 21, 0.72);
-  box-shadow: inset 0 0 0 1px rgba(214, 219, 224, 0.25), inset 3px 0 0 var(--hud-teal);
+  box-shadow: inset 0 0 0 1px rgba(214, 219, 224, 0.25), inset 3px 0 0 var(--hud-light);
 }
 .planMark b {
   border-radius: 3px;
-  background: rgba(70, 211, 230, 0.16);
-  color: var(--hud-teal);
-  box-shadow: inset 0 0 0 1px rgba(70, 211, 230, 0.5);
+  background: rgba(236, 241, 248, 0.16);
+  color: var(--hud-light);
+  box-shadow: inset 0 0 0 1px rgba(236, 241, 248, 0.5);
 }
 .app .side .workspace {
   background: var(--hud-groove);
   box-shadow: var(--hud-groove-shadow);
 }
-/* 검수 1~7 in the top bar: small metal keys, the open one teal, the passed ones green */
+/* 검수 1~7 in the top bar: small metal keys, the open one white, the passed ones green */
 .app .checkChips button {
   border: 1px solid rgba(0, 0, 0, 0.4);
   background: var(--hud-key);
@@ -8936,9 +8937,10 @@ div.zeroFlow {
 }
 .app .checkChips button[aria-pressed='true'],
 .app .checkChips button[aria-current] {
-  border-color: var(--hud-teal);
-  color: var(--hud-teal);
-  box-shadow: var(--hud-key-shadow), var(--hud-key-on);
+  border-color: rgba(255, 255, 255, 0.95);
+  background: var(--hud-silver);
+  color: var(--hud-ink);
+  box-shadow: var(--hud-silver-shadow);
 }
 .app .checkChips button[data-done] {
   border-color: rgba(91, 209, 122, 0.7);

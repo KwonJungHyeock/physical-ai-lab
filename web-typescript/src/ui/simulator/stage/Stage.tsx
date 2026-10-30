@@ -401,10 +401,10 @@ function World({
   const root = useRef<Group>(null);
 
   const arm = useMemo(() => buildArm(robot, chain, nodes, { dark: spec.dark, flange: spec.flange, textures: spec.textures, flangeLink: spec.flangeLink, finish: spec.finish }), [robot, chain, nodes, spec]);
-  // The program's end pose: the same arm, see-through teal, on screen only (not in the camera pictures).
+  // The program's end pose: the same arm, see-through white, on screen only (not in the camera pictures).
   const ghostArm = useMemo(() => {
     const g = buildArm(robot, chain, nodes, { dark: spec.dark, flange: spec.flange, textures: spec.textures, flangeLink: spec.flangeLink, finish: spec.finish });
-    const mat = new MeshBasicMaterial({ color: '#46d3e6', transparent: true, opacity: 0.12, depthWrite: false });
+    const mat = new MeshBasicMaterial({ color: '#e8edf3', transparent: true, opacity: 0.12, depthWrite: false });
     g.root.traverse((o) => {
       const m = o as Mesh;
       if (!m.isMesh) return;
@@ -664,14 +664,14 @@ function World({
   const toolAxes = useMemo(() => axesTriad(0.045, 0.001, ['x', 'y', 'z'], SCREEN_ONLY), []);
   const reach = useMemo(() => reachDisc(0, SCREEN_ONLY, spec.reachMm), [spec.reachMm]);
   // The 3D workspace (everywhere the flange can reach), sampled once when first shown (~0.3 s);
-  // a dim teal: the shell glows by adding its colour, so a dark tint keeps it a hairline.
+  // a dim silver: the shell glows by adding its colour, so a dark tint keeps it a hairline.
   const [shell, setShell] = useState<ReturnType<typeof workspaceEnvelope> | null>(null);
   useEffect(() => {
     if (!display.reach || shell) return;
     const id = window.setTimeout(() => {
       const f = forwardKinematicsFrames(chain, [0, 45.87, -92.37, -41.3, 0, 0]);
       const e = f[f.length - 1].elements;
-      const env = workspaceEnvelope(workspaceProfile(chain), (Math.atan2(e[13], e[12]) * 180) / Math.PI, '#1d6973');
+      const env = workspaceEnvelope(workspaceProfile(chain), (Math.atan2(e[13], e[12]) * 180) / Math.PI, '#4a5058');
       env.group.traverse((c) => c.layers.set(SCREEN_ONLY));
       setShell(env);
     }, 30);
@@ -972,9 +972,9 @@ function extendPath(line: Line2, pts: number[], tip: Vector3): number[] {
   const count = next.length / 3;
   const colors: number[] = [];
   for (let i = 0; i < count; i += 1) {
-    // Old points fade into the dark ground, the newest are the HUD's teal.
+    // Old points fade into the dark ground, the newest are the HUD's white.
     const a = (i + 1) / count;
-    colors.push(0.14 + 0.13 * a, 0.15 + 0.68 * a, 0.17 + 0.73 * a);
+    colors.push(0.14 + 0.77 * a, 0.15 + 0.78 * a, 0.17 + 0.78 * a);
   }
   const g = new LineGeometry();
   g.setPositions(next);

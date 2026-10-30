@@ -201,3 +201,11 @@
 .tcp b {
   font-weight: 600;
 }
+/* With a tool: the flange (get_coords) at the end of the line, dimmer. */
+.tcp .flange[hidden] {
+  display: none;
+}
+.tcp .flange b {
+  color: var(--hud-sub);
+  font-weight: 500;
+}

@@ -48,7 +48,7 @@
   color: #e4eaf2;
 }
 .jog .modes button[aria-pressed='true'] {
-  background: #1f8797;
+  background: #59616a;
   color: #fff;
   box-shadow: 0 6px 16px -8px rgba(255, 255, 255, 0.405);
 }
@@ -99,7 +99,7 @@
 .jog .chips button[aria-pressed='true'] {
   background: #424448;
   color: #fff;
-  box-shadow: inset 0 0 0 2px #46d3e6;
+  box-shadow: inset 0 0 0 2px #f4f6f9;
 }
 .speed {
   display: grid;
@@ -172,8 +172,8 @@
 }
 .jog .key:active:not(:disabled) {
   transform: translateY(1px);
-  background: #1f8797;
-  border-color: #46d3e6;
+  background: #59616a;
+  border-color: #f4f6f9;
 }
 .jog .key:focus-visible {
   outline: 2px solid #ffb3ad;
@@ -188,8 +188,8 @@
 /* a key pressed from the keyboard or moving while held; a key whose last move could not be made */
 .jog .key[data-state='on'],
 .jog .key[data-state='hold'] {
-  background: #1f8797;
-  border-color: #46d3e6;
+  background: #59616a;
+  border-color: #f4f6f9;
 }
 .jog .key[data-state='blocked'] {
   background: #3e1a24;
@@ -226,7 +226,7 @@
 }
 .row[data-sel] .mid {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.099), rgba(255, 255, 255, 0.036));
-  box-shadow: inset 0 0 0 2px #46d3e6;
+  box-shadow: inset 0 0 0 2px #f4f6f9;
 }
 .head {
   display: flex;
@@ -270,7 +270,7 @@
   padding: 0 4px;
 }
 .row[data-sel] .head em {
-  background: rgba(70, 211, 230, 0.4);
+  background: rgba(236, 241, 248, 0.4);
   color: #fff;
 }
 /* the angle between the joint's limits, draggable */
@@ -292,10 +292,10 @@
   top: 0;
   bottom: 0;
   border-radius: 4px;
-  background: rgba(70, 211, 230, 0.5);
+  background: rgba(236, 241, 248, 0.5);
 }
 .row[data-sel] .fill {
-  background: linear-gradient(90deg, #46d3e6, #ff9a95);
+  background: linear-gradient(90deg, #f4f6f9, #ff9a95);
 }
 .zero {
   position: absolute;
@@ -316,7 +316,7 @@
   background: #303236;
 }
 .row[data-sel] .knob {
-  border-color: #46d3e6;
+  border-color: #f4f6f9;
   background: #fff;
 }
 .bar[data-near] .knob {
@@ -339,13 +339,13 @@
   opacity: 0.4;
 }
 .row[data-focus] .key:not(:disabled) {
-  background: linear-gradient(#2a9aab, #1f8797);
+  background: linear-gradient(#6b737c, #59616a);
   border-color: #b8241f;
   animation: nudge 1.6s ease-in-out infinite;
 }
 @keyframes nudge {
   50% {
-    box-shadow: 0 0 0 4px rgba(70, 211, 230, 0.35);
+    box-shadow: 0 0 0 4px rgba(236, 241, 248, 0.35);
   }
 }
 .lesson {
@@ -355,7 +355,7 @@
   padding: 12px 34px 12px 14px;
   border-radius: 12px;
   background: linear-gradient(180deg, #3a3c40, #383a3e);
-  box-shadow: inset 0 0 0 1px rgba(70, 211, 230, 0.45);
+  box-shadow: inset 0 0 0 1px rgba(236, 241, 248, 0.45);
   font-size: 14px;
   line-height: 1.45;
   color: #d8dee6;
@@ -403,7 +403,7 @@
   padding: 8px 14px;
   border: 0;
   border-radius: 9px;
-  background: #1f8797;
+  background: #59616a;
   color: #fff;
   font: inherit;
   font-size: 14px;
@@ -591,7 +591,7 @@
 .jog .key[data-kind='wedge'][data-state='on'],
 .jog .key[data-kind='wedge'][data-state='hold'] {
   transform: none;
-  background: radial-gradient(circle, #f2443e 30%, #46d3e6 70%);
+  background: radial-gradient(circle, #f2443e 30%, #f4f6f9 70%);
 }
 .jog .key[data-kind='wedge'][data-state='blocked'] {
   background: radial-gradient(circle, #5a2430 30%, #3e1a24 70%);
@@ -826,10 +826,10 @@
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35);
 }
 .jog .modes button[aria-pressed='true'] {
-  background: linear-gradient(180deg, #2a9aab, #46d3e6);
+  background: linear-gradient(180deg, #6b737c, #f4f6f9);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.25),
-    0 6px 16px -8px rgba(70, 211, 230, 0.6);
+    0 6px 16px -8px rgba(236, 241, 248, 0.6);
 }
 /* 한 번에: one groove, the chosen step raised with a red underline (no box, no tint) */
 .chips {
@@ -865,24 +865,24 @@
   height: 3px;
   margin-left: -9px;
   border-radius: 2px;
-  background: #1f8797;
+  background: #d5dae0;
 }
 /* 속도: a red line on an inset track, ticks at a quarter, a half and three quarters */
 .speed input {
   background:
-    linear-gradient(90deg, #b8241f, #46d3e6 var(--fill, 50%), #282a2e var(--fill, 50%));
+    linear-gradient(90deg, #b8241f, #f4f6f9 var(--fill, 50%), #282a2e var(--fill, 50%));
   box-shadow: inset 0 0 0 1px #424448;
 }
 .speed input::-webkit-slider-thumb {
   box-shadow:
-    0 0 0 3px #46d3e6,
-    0 0 0 7px rgba(70, 211, 230, 0.18),
+    0 0 0 3px #f4f6f9,
+    0 0 0 7px rgba(236, 241, 248, 0.18),
     0 2px 6px rgba(0, 0, 0, 0.4);
 }
 .speed input::-moz-range-thumb {
   box-shadow:
-    0 0 0 3px #46d3e6,
-    0 0 0 7px rgba(70, 211, 230, 0.18);
+    0 0 0 3px #f4f6f9,
+    0 0 0 7px rgba(236, 241, 248, 0.18);
 }
 /* keys: a lit top edge and a shadow under, pressed = red */
 .jog .key {
@@ -901,10 +901,10 @@
 .jog .key[data-state='on'],
 .jog .key[data-state='hold'] {
   border-color: transparent;
-  background: linear-gradient(180deg, #2a9aab, #1f8797);
+  background: linear-gradient(180deg, #6b737c, #59616a);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    0 0 0 3px rgba(70, 211, 230, 0.22);
+    0 0 0 3px rgba(236, 241, 248, 0.22);
 }
 .jog .key:disabled {
   background: rgba(255, 255, 255, 0.04);
@@ -929,17 +929,17 @@
   bottom: 10px;
   width: 3px;
   border-radius: 0 3px 3px 0;
-  background: #1f8797;
+  background: #d5dae0;
 }
 .row[data-sel] .head em {
-  background: #1f8797;
+  background: #59616a;
   color: #fff;
 }
 .fill {
   background: rgba(210, 215, 222, 0.35);
 }
 .row[data-sel] .fill {
-  background: linear-gradient(90deg, #b8241f, #46d3e6);
+  background: linear-gradient(90deg, #b8241f, #f4f6f9);
 }
 .track {
   background: #282a2e;
@@ -1093,11 +1093,11 @@
   opacity: 0.8;
 }
 .gauge i {
-  background: linear-gradient(0deg, rgba(70, 211, 230, 0.25), #46d3e6);
+  background: linear-gradient(0deg, rgba(236, 241, 248, 0.25), #f4f6f9);
   opacity: 1;
 }
 .gauge b {
-  box-shadow: 0 0 0 2px #46d3e6;
+  box-shadow: 0 0 0 2px #f4f6f9;
 }
 .keys kbd {
   border: 0;
@@ -1213,7 +1213,7 @@
 }
 
 /* ===========================================================================
- * Metal Mission HUD (2026-10-29): metal keys, readouts in dark grooves, the chosen in teal (a teal
+ * Metal Mission HUD (2026-10-29): metal keys, readouts in dark grooves, the chosen in white (a white
  * outline and word, no fill), a joint near its limit in amber. A little more air between the rows.
  * ======================================================================== */
 .jog {
@@ -1250,12 +1250,14 @@
   display: none;
 }
 .jog .modes button[aria-pressed='true'] {
-  border-color: var(--hud-teal);
-  background: var(--hud-key);
-  box-shadow: var(--hud-key-shadow), var(--hud-key-on);
+  border-color: rgba(255, 255, 255, 0.95);
+  background: var(--hud-silver);
+  color: var(--hud-ink);
+  box-shadow: var(--hud-silver-shadow);
 }
-.jog .modes button[aria-pressed='true'] em {
-  color: var(--hud-teal);
+.jog .modes button[aria-pressed='true'] em,
+.jog .modes button[aria-pressed='true'] b {
+  color: var(--hud-ink);
 }
 .optName {
   font-size: 12.5px;
@@ -1282,28 +1284,31 @@
   filter: brightness(1.12);
 }
 .jog .chips button[aria-pressed='true'] {
-  border-color: var(--hud-teal);
-  background: var(--hud-key);
-  color: var(--hud-teal);
-  box-shadow: var(--hud-key-shadow), var(--hud-key-on);
+  border-color: rgba(255, 255, 255, 0.95);
+  background: var(--hud-silver);
+  color: var(--hud-ink);
+  box-shadow: var(--hud-silver-shadow);
+}
+.jog .chips button[aria-pressed='true'] small {
+  color: var(--hud-ink-sub);
 }
 .jog .chips button[aria-pressed='true']::after {
   display: none;
 }
-/* 속도: a groove filled teal up to the value, a small metal knob. */
+/* 속도: a groove filled white up to the value, a small metal knob. */
 .speed input {
-  background: linear-gradient(90deg, rgba(70, 211, 230, 0.35), var(--hud-teal)) 0 50% / var(--fill, 50%) 6px no-repeat, var(--hud-groove);
+  background: linear-gradient(90deg, rgba(236, 241, 248, 0.35), var(--hud-light)) 0 50% / var(--fill, 50%) 6px no-repeat, var(--hud-groove);
   box-shadow: var(--hud-groove-shadow);
 }
 .speed input::-webkit-slider-thumb {
   background: linear-gradient(180deg, #e7eaee, #abafb5);
   border: 0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6), 0 0 0 3px rgba(70, 211, 230, 0.25);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6), 0 0 0 3px rgba(236, 241, 248, 0.25);
 }
 .speed input::-moz-range-thumb {
   background: linear-gradient(180deg, #e7eaee, #abafb5);
   border: 0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6), 0 0 0 3px rgba(70, 211, 230, 0.25);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6), 0 0 0 3px rgba(236, 241, 248, 0.25);
 }
 .speed output {
   color: var(--hud-tx);
@@ -1334,14 +1339,19 @@
 .jog .key:active:not(:disabled),
 .jog .key[data-state='on'],
 .jog .key[data-state='hold'] {
-  border-color: var(--hud-teal);
-  background: var(--hud-key);
-  box-shadow: var(--hud-key-shadow), var(--hud-key-on);
+  border-color: rgba(255, 255, 255, 0.95);
+  background: var(--hud-silver);
+  color: var(--hud-ink);
+  box-shadow: var(--hud-silver-shadow);
 }
 .jog .key:active:not(:disabled) b,
 .jog .key[data-state='on'] b,
-.jog .key[data-state='hold'] b {
-  color: var(--hud-teal);
+.jog .key[data-state='hold'] b,
+.jog .key:active:not(:disabled) svg,
+.jog .key[data-state='on'] svg,
+.jog .key[data-state='hold'] svg {
+  color: var(--hud-ink);
+  opacity: 1;
 }
 .jog .key:disabled {
   background: var(--hud-key);
@@ -1377,14 +1387,14 @@
 }
 .row[data-sel] .mid {
   background: var(--hud-groove);
-  box-shadow: var(--hud-groove-shadow), inset 0 0 0 1px rgba(70, 211, 230, 0.55);
+  box-shadow: var(--hud-groove-shadow), inset 0 0 0 1px rgba(236, 241, 248, 0.55);
 }
 .row[data-sel] .mid::before {
   display: none;
 }
 .row[data-sel] .head em {
   background: none;
-  color: var(--hud-teal);
+  color: var(--hud-light);
 }
 .row:has(output[data-near]) .mid {
   box-shadow: var(--hud-groove-shadow), inset 0 0 0 1px rgba(240, 162, 59, 0.65);
@@ -1396,7 +1406,7 @@
 }
 .fill,
 .row[data-sel] .fill {
-  background: rgba(70, 211, 230, 0.45);
+  background: rgba(236, 241, 248, 0.45);
 }
 .bar[data-near] .fill {
   background: rgba(240, 162, 59, 0.6);
@@ -1460,10 +1470,133 @@
     padding: 4px 10px;
   }
 }
-/* With a tool: the flange (get_coords) under the tip, small. */
-.readout .flange {
-  grid-column: 1 / -1;
-  margin-top: -2px;
-  font: 500 12px ui-monospace, SFMono-Regular, Menlo, monospace;
-  color: var(--hud-dim, #8a8f96);
+/* STEP: the numbers on the keys, the unit once after them. */
+.chips {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+}
+.chips .chipUnit {
+  align-self: center;
+  margin-left: 2px;
+  font-style: normal;
+  font-size: 12.5px;
+  color: var(--hud-dim);
+}
+
+/* --- 좌표 조그: one brushed-metal dial (the round pad and the 위 · 아래 rocker alike), dark glass keys,
+   a held key lit white; the axis colour only on the small X± · Y± · Z± under each word. --------- */
+.pad {
+  background: conic-gradient(from 20deg, #a3a9b1, #5f656d 10%, #c3c8ce 24%, #5b6168 37%, #9aa1aa 50%, #5f656d 61%, #c3c8ce 75%, #5b6168 88%, #a3a9b1);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.6),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.35),
+    0 22px 36px -16px rgba(0, 0, 0, 0.9);
+}
+.jog .key[data-kind='wedge'] {
+  inset: 3.2%;
+  background: radial-gradient(circle at 50% 28%, #3f444b 0%, #2a2e33 55%, #1d2024 100%);
+}
+.jog .key[data-kind='wedge']:hover:not(:disabled),
+.jog .key[data-kind='wedge']:focus-visible {
+  background: radial-gradient(circle at 50% 28%, #4a5058 0%, #30353a 60%, #22252a 100%);
+}
+.jog .key[data-kind='wedge']:active:not(:disabled),
+.jog .key[data-kind='wedge'][data-state='on'],
+.jog .key[data-kind='wedge'][data-state='hold'] {
+  background: radial-gradient(circle at 50% 50%, #ffffff 22%, #e7ebef 48%, #b8c0c8 82%);
+}
+.jog .key[data-kind='wedge'] b,
+.jog .key[data-kind='lift'] b {
+  font-weight: 600;
+  color: #eef1f4;
+}
+.jog .key[data-kind='wedge'] svg,
+.jog .key[data-kind='lift'] svg {
+  color: #fff;
+  opacity: 1;
+}
+.jog .key[data-kind='wedge']:active:not(:disabled) :is(b, svg),
+.jog .key[data-kind='wedge'][data-state='on'] :is(b, svg),
+.jog .key[data-kind='wedge'][data-state='hold'] :is(b, svg),
+.jog .key[data-kind='lift']:active:not(:disabled) :is(b, svg),
+.jog .key[data-kind='lift'][data-state='on'] :is(b, svg),
+.jog .key[data-kind='lift'][data-state='hold'] :is(b, svg) {
+  color: var(--hud-ink);
+}
+.jog .key[data-kind='wedge'] small,
+.jog .key[data-kind='lift'] small {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.jog .key[data-side='up'] small,
+.jog .key[data-side='down'] small {
+  color: #ff8f86;
+}
+.jog .key[data-side='left'] small,
+.jog .key[data-side='right'] small {
+  color: #74e0a2;
+}
+.jog .key[data-kind='lift'] small {
+  color: #93b4ff;
+}
+.padRing path[data-axis] {
+  display: none;
+}
+.padRing path:first-child {
+  stroke: rgba(0, 0, 0, 0.65);
+  stroke-width: 1.6;
+}
+.padRing path[data-tick] {
+  stroke: rgba(255, 255, 255, 0.22);
+}
+.padRing path[data-tick='big'] {
+  stroke: rgba(255, 255, 255, 0.5);
+}
+.padHub {
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: radial-gradient(circle at 50% 25%, #555b63, #25292e 62%, #15171a);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 0 0 5px rgba(0, 0, 0, 0.35),
+    0 6px 14px rgba(0, 0, 0, 0.5);
+}
+.rocker {
+  padding: 4px;
+  background: linear-gradient(90deg, #5b6168, #c3c8ce 30%, #7b818a 55%, #a3a9b1 80%, #5b6168);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.6),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.3),
+    0 18px 30px -16px rgba(0, 0, 0, 0.9);
+}
+.jog .key[data-kind='lift'] {
+  background: radial-gradient(circle at 50% 20%, #3f444b, #24282c 80%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+.jog .key[data-kind='lift']:hover:not(:disabled) {
+  background: radial-gradient(circle at 50% 20%, #4a5058, #2a2e33 80%);
+}
+.jog .key[data-kind='lift']:active:not(:disabled),
+.jog .key[data-kind='lift'][data-state='on'],
+.jog .key[data-kind='lift'][data-state='hold'] {
+  background: radial-gradient(circle at 50% 50%, #ffffff 22%, #e7ebef 55%, #b8c0c8 95%);
+  box-shadow: inset 0 1px 0 #fff;
+}
+.liftName {
+  border-radius: 10px;
+  background: #16181b;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.7);
+}
+.gauge {
+  width: 6px;
+  background: #16181b;
+  box-shadow:
+    inset 0 1px 3px rgba(0, 0, 0, 0.8),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.gauge i {
+  background: linear-gradient(0deg, rgba(255, 255, 255, 0.15), #fff);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.45);
+}
+.gauge b {
+  background: #fff;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
 }

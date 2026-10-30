@@ -76,7 +76,7 @@
     0 6px 14px -6px rgba(0, 0, 0, 0.6);
 }
 .rail button[aria-pressed="true"] svg {
-  color: #46d3e6;
+  color: #f4f6f9;
 }
 .rail button[aria-pressed="true"]::before {
   content: '';
@@ -86,8 +86,8 @@
   bottom: 14px;
   width: 4px;
   border-radius: 0 4px 4px 0;
-  background: #1f8797;
-  box-shadow: 0 0 12px rgba(70, 211, 230, 0.35);
+  background: #d5dae0;
+  box-shadow: 0 0 12px rgba(236, 241, 248, 0.35);
 }
 .rail button:disabled {
   opacity: 0.35;
@@ -174,7 +174,7 @@
 
 /* ===========================================================================
  * Metal Mission HUD (2026-10): the bar is one metal plate a little off the edges, each item a
- * metal key with its English tag over the Korean name; the open one lit teal. Groups are kept
+ * metal key with its English tag over the Korean name; the open one lit white. Groups are kept
  * apart by a hairline (their names stay for screen readers).
  * ======================================================================== */
 .rail {
@@ -236,20 +236,20 @@
   color: var(--hud-sub);
 }
 .rail button[aria-pressed="true"] {
-  background: var(--hud-key);
-  border-color: var(--hud-teal);
-  color: var(--hud-sub);
-  font-weight: 500;
-  box-shadow: var(--hud-key-shadow), var(--hud-key-on);
+  background: var(--hud-silver);
+  border-color: rgba(255, 255, 255, 0.95);
+  color: var(--hud-ink-sub);
+  font-weight: 600;
+  box-shadow: var(--hud-silver-shadow);
 }
 .rail button[aria-pressed="true"] em {
-  color: var(--hud-teal);
+  color: var(--hud-ink);
 }
 .rail button[aria-pressed="true"]::before {
   display: none;
 }
 .rail button i {
-  background: var(--hud-teal);
+  background: var(--hud-light);
   color: #101214;
 }
 @media (max-height: 860px) {

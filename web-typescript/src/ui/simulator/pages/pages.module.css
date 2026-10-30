@@ -833,21 +833,21 @@
 }
 
 /* Metal Mission HUD (2026-10-29): the pages on the same dark metal ground as the console; cards as
-   plates, the chosen in teal. */
+   plates, the chosen in white. */
 .page {
   --ink: var(--hud-tx);
   --muted: var(--hud-sub);
   --faint: var(--hud-dim);
   --soft: #2f3337;
   --line: rgba(214, 219, 224, 0.14);
-  --accent: var(--hud-teal);
-  --accent-soft: rgba(70, 211, 230, 0.1);
+  --accent: var(--hud-light);
+  --accent-soft: rgba(236, 241, 248, 0.1);
   --card: linear-gradient(180deg, #3a3e44, #2c3035);
   --edge: rgba(214, 219, 224, 0.12);
   --edge-strong: rgba(214, 219, 224, 0.24);
   --hover: rgba(255, 255, 255, 0.05);
-  --select: rgba(70, 211, 230, 0.1);
-  --select-edge: rgba(70, 211, 230, 0.55);
+  --select: rgba(236, 241, 248, 0.1);
+  --select-edge: rgba(236, 241, 248, 0.55);
   --card-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 4px 12px rgba(0, 0, 0, 0.35);
   --card-lift: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 10px 26px rgba(0, 0, 0, 0.5);
   color-scheme: dark;
@@ -859,10 +859,10 @@
   box-shadow: var(--hud-key-shadow);
 }
 .page .primary {
-  border: 1px solid var(--hud-teal);
-  background: var(--hud-key);
-  color: var(--hud-teal);
-  box-shadow: var(--hud-key-shadow), var(--hud-key-on);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  background: var(--hud-silver);
+  color: var(--hud-ink);
+  box-shadow: var(--hud-silver-shadow);
 }
 .cardTags em {
   background: var(--hud-groove);

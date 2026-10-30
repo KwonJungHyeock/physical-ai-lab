@@ -1026,11 +1026,11 @@
   }
 }
 
-/* Metal Mission HUD (2026-10-29): the flow's accent teal (deeper where it is a fill under white
+/* Metal Mission HUD (2026-10-29): the flow's accent white (deeper where it is a fill under white
    words), keys in metal, grooves neutral. */
 .wrap {
-  --red: #1f8797;
-  --red-hi: var(--hud-teal);
+  --red: #59616a;
+  --red-hi: var(--hud-light);
   --amber: var(--hud-amber);
   --well: #1b1e21;
   --cell: #34383d;
@@ -1047,10 +1047,10 @@
   filter: brightness(1.12);
 }
 .btn[data-main] {
-  border-color: var(--hud-teal);
-  background: var(--hud-key);
-  color: var(--hud-teal);
-  box-shadow: var(--hud-key-shadow), var(--hud-key-on);
+  border-color: rgba(255, 255, 255, 0.95);
+  background: var(--hud-silver);
+  color: var(--hud-ink);
+  box-shadow: var(--hud-silver-shadow);
 }
 .nav button {
   border: 1px solid rgba(0, 0, 0, 0.35);
@@ -1058,20 +1058,33 @@
   box-shadow: var(--hud-key-shadow);
 }
 .nav button[data-main] {
-  border-color: var(--hud-teal);
-  background: var(--hud-key);
-  color: var(--hud-teal);
-  box-shadow: var(--hud-key-shadow), var(--hud-key-on);
+  border-color: rgba(255, 255, 255, 0.95);
+  background: var(--hud-silver);
+  color: var(--hud-ink);
+  box-shadow: var(--hud-silver-shadow);
 }
-/* 지금 할 일: the next step in teal (amber is for warnings); 통과 stays green */
+/* 지금 할 일: the next step in white (amber is for warnings); 통과 stays green */
 .now {
   border-radius: 6px;
-  background: rgba(70, 211, 230, 0.08);
-  box-shadow: inset 3px 0 0 var(--hud-teal);
+  background: rgba(236, 241, 248, 0.08);
+  box-shadow: inset 3px 0 0 var(--hud-light);
 }
 .now b {
-  color: var(--hud-teal);
+  color: var(--hud-light);
 }
 .now span {
   color: var(--hud-tx);
+}
+
+/* The chosen option is filled silver (amber stays for notes and warnings); typed values glow white. */
+.pick button[aria-pressed='true'] {
+  border-radius: 6px;
+  background: var(--hud-silver);
+  color: var(--hud-ink);
+  box-shadow: var(--hud-silver-shadow);
+}
+.mm input,
+.nums input,
+.fd output {
+  color: var(--hud-light);
 }

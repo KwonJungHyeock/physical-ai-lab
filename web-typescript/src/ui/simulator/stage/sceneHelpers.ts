@@ -202,10 +202,10 @@ export function addJointAxes(joints: readonly { group: Group; axis: Vector3 }[],
 export function reachDisc(z: number, layer: number, reachMm = REACH_MM): Group {
   const r = reachMm / 1000;
   const g = new Group();
-  const fill = new Mesh(new CircleGeometry(r, 96), new MeshBasicMaterial({ color: '#46d3e6', transparent: true, opacity: 0.04, depthWrite: false, side: DoubleSide, toneMapped: false }));
-  const rim = new Mesh(new RingGeometry(r - 0.0015, r + 0.0015, 128), new MeshBasicMaterial({ color: '#46d3e6', transparent: true, opacity: 0.6, depthWrite: false, side: DoubleSide, toneMapped: false }));
+  const fill = new Mesh(new CircleGeometry(r, 96), new MeshBasicMaterial({ color: '#e8edf3', transparent: true, opacity: 0.04, depthWrite: false, side: DoubleSide, toneMapped: false }));
+  const rim = new Mesh(new RingGeometry(r - 0.0015, r + 0.0015, 128), new MeshBasicMaterial({ color: '#e8edf3', transparent: true, opacity: 0.6, depthWrite: false, side: DoubleSide, toneMapped: false }));
   g.add(fill, rim);
-  const s = textSprite(`작업 범위 ${reachMm} mm`, '#46d3e6', 0.013);
+  const s = textSprite(`작업 범위 ${reachMm} mm`, '#e8edf3', 0.013);
   s.position.set(r * 0.72, -r * 0.72, 0.012);
   g.add(s);
   g.position.z = z + 0.0006;

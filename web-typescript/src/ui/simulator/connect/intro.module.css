@@ -104,7 +104,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  color: var(--hud-teal);
+  color: var(--hud-light);
   pointer-events: none;
 }
 .caption b {
@@ -134,8 +134,8 @@
   background: rgba(213, 218, 225, 0.25);
 }
 .caption li[data-on] {
-  background: var(--hud-teal);
-  box-shadow: 0 0 8px rgba(70, 211, 230, 0.6);
+  background: var(--hud-light);
+  box-shadow: 0 0 8px rgba(236, 241, 248, 0.6);
 }
 
 /* The left: the title (embossed), the Korean name, one line, then the two ways in. */
@@ -203,7 +203,7 @@
   transform: translateY(1px);
 }
 .actions button:focus-visible {
-  outline: 1px solid rgba(70, 211, 230, 0.6);
+  outline: 1px solid rgba(236, 241, 248, 0.6);
   outline-offset: 4px;
 }
 .actions button > span {
@@ -236,16 +236,22 @@
   stroke: var(--hud-dim);
   stroke-width: 2;
 }
-/* CONNECT is the one lit: teal outline, icon, name and arrow. */
+/* CONNECT is the one lit: filled silver, dark words, icon and arrow. */
 .actions .connect {
-  border-color: rgba(70, 211, 230, 0.7);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 0 14px rgba(70, 211, 230, 0.16), 0 4px 10px rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 255, 255, 0.95);
+  background: var(--hud-silver);
+  color: var(--hud-ink);
+  box-shadow: var(--hud-silver-shadow);
 }
 .connect b {
-  color: var(--hud-teal);
+  color: var(--hud-ink);
 }
-.actions .connect svg {
-  stroke: var(--hud-teal);
+.actions .connect small {
+  color: var(--hud-ink-sub);
+}
+.actions .connect svg,
+.actions .connect svg.chev {
+  stroke: var(--hud-ink);
 }
 .hint {
   display: block;
@@ -255,7 +261,7 @@
   color: var(--hud-dim);
 }
 
-/* The foot: a silver hairline that fills teal as the program loads, the step on the left, the state on the right. */
+/* The foot: a silver hairline that fills white as the program loads, the step on the left, the state on the right. */
 .foot {
   position: absolute;
   left: var(--gut);
@@ -273,8 +279,8 @@
   inset: -1px 0;
   transform-origin: 0 50%;
   transform: scaleX(0.03);
-  background: linear-gradient(90deg, rgba(70, 211, 230, 0), var(--hud-teal));
-  box-shadow: 0 0 8px rgba(70, 211, 230, 0.5);
+  background: linear-gradient(90deg, rgba(236, 241, 248, 0), var(--hud-light));
+  box-shadow: 0 0 8px rgba(236, 241, 248, 0.5);
   animation: barCreep 12s cubic-bezier(0.08, 0.75, 0.2, 1) forwards;
 }
 .splash[data-final] .load i,
@@ -317,8 +323,8 @@
   animation: blink 1.2s ease-in-out infinite alternate;
 }
 .status[data-ready] i {
-  background: var(--hud-teal);
-  box-shadow: 0 0 10px var(--hud-teal);
+  background: var(--hud-light);
+  box-shadow: 0 0 10px var(--hud-light);
   animation: none;
 }
 

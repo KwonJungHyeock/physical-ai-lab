@@ -1138,7 +1138,7 @@ export default function Console() {
       addLog('info', `흡착 펌프 동작 ${pumpSteps.length}개는 빼고 움직임만 실행해요.`);
     }
     if (robot.released) {
-      addLog('err', '손으로 움직이기가 켜져 있어요.', '패널 위 상태 표시등을 눌러 [서보 고정]을 누른 뒤 실행해 주세요.');
+      addLog('err', '서보가 풀려 있어요.', '패널 위 상태 표시등을 눌러 [서보 고정]을 누른 뒤 실행해 주세요.');
       return;
     }
     if (passed.start) {
@@ -1161,7 +1161,7 @@ export default function Console() {
       return;
     }
     if (!jointMoveSafe(robot.angles, HOME_DEG)) {
-      addLog('err', '지금 자세에서 기본 자세로 곧장 가면 팔이 책상에 닿아요.', '패널 위 상태 표시등의 [손으로 움직이기]로 팔을 세운 뒤 다시 실행해 주세요.');
+      addLog('err', '지금 자세에서 기본 자세로 곧장 가면 팔이 책상에 닿아요.', '패널 위 상태 표시등의 [서보 풀기]로 팔을 손으로 세운 뒤 다시 실행해 주세요.');
       return;
     }
     const start = { type: 'angles' as const, angles: HOME_DEG.slice(), speed: 20, line: 0 };
@@ -1172,12 +1172,12 @@ export default function Console() {
   const wiggleReal = async () => {
     if (!robot?.angles) return;
     if (robot.released) {
-      addLog('warn', '관절이 풀려 있어(손으로 움직이기) 움직여 확인할 수 없어요.', '상태 표시등에서 관절을 고정한 뒤 다시 눌러 주세요.');
+      addLog('warn', '서보가 풀려 있어 움직여 확인할 수 없어요.', '상태 표시등에서 관절을 고정한 뒤 다시 눌러 주세요.');
       return;
     }
     const straight = robot.angles.map(() => 0);
     if (!jointMoveSafe(robot.angles, straight)) {
-      addLog('err', '지금 자세에서 곧장 펴면 팔이 책상에 닿아요.', '[손으로 움직이기]로 팔을 조금 세운 뒤 다시 눌러 주세요.');
+      addLog('err', '지금 자세에서 곧장 펴면 팔이 책상에 닿아요.', '[서보 풀기]로 팔을 손으로 조금 세운 뒤 다시 눌러 주세요.');
       return;
     }
     await startReal([{ type: 'angles', angles: straight, speed: 25, line: 0 }], '연결 확인: 로봇이 천천히 일자로 펴져요. 주변을 비워 주세요.', 'check');

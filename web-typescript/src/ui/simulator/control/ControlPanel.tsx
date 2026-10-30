@@ -85,8 +85,6 @@ const TURNS: { axis: Axis; color: string; what: string }[] = [
   { axis: 'ry', color: '#5ad895', what: '앞뒤 기울기' },
   { axis: 'rz', color: '#86abff', what: '손 돌리기' },
 ];
-/** The tip readout's axis colours: the 3D view's X (red) · Y (green) · Z (blue). */
-const AXIS_COLOR = { x: '#ff7a72', y: '#5ad895', z: '#86abff' } as const;
 /** The round pad's four keys, clockwise from the top, and the keyboard key for each (Shift / Space: 위 / 아래). */
 const PAD: { side: 'up' | 'right' | 'down' | 'left'; axis: 'x' | 'y'; dir: -1 | 1; word: string; key: string }[] = [
   { side: 'up', axis: 'x', dir: 1, word: '앞', key: '↑' },
@@ -443,16 +441,20 @@ export default function ControlPanel(p: Props) {
       </div>
 
       <div className={css.opts}>
-        <span className={css.optName}>한 번에</span>
+        <span className={css.optName} title="한 번 누를 때 움직이는 양">
+          STEP
+        </span>
         <span className={css.chips} role="group" aria-label="한 번 누를 때 움직이는 양">
           {steps.map((v) => (
-            <button key={v} type="button" aria-pressed={step === v} onClick={() => (frame === 'joint' ? setJStep(v) : setTStep(v))}>
+            <button key={v} type="button" aria-pressed={step === v} onClick={() => (frame === 'joint' ? setJStep(v) : setTStep(v))} aria-label={`${v}${unit}`}>
               {v}
-              <i>{unit}</i>
             </button>
           ))}
+          <i className={css.chipUnit}>{unit}</i>
         </span>
-        <span className={css.optName}>속도</span>
+        <span className={css.optName} title="움직이는 빠르기">
+          SPEED
+        </span>
         <label className={css.speed}>
           <input
             type="range"
@@ -564,11 +566,8 @@ export default function ControlPanel(p: Props) {
               );
             })}
           </div>
-          {!lesson && (
+          {!lesson && dof === LESSON.length && (
             <div className={css.tip}>
-              <span>
-                <b>짧게 누르면 {jStep}°</b>, 누르고 있으면 계속 돌아요.
-              </span>
               {dof === LESSON.length && (
                 <button type="button" className={css.learn} onClick={startLesson} disabled={p.busy} title="여섯 관절을 하나씩 돌려 보며 무엇을 움직이는지 알아봐요">
                   관절 익히기
@@ -579,23 +578,6 @@ export default function ControlPanel(p: Props) {
         </>
       ) : (
         <>
-          <div className={css.readout} aria-label="손끝 위치 (mm)">
-            {(['x', 'y', 'z'] as const).map((k) => (
-              <span key={k}>
-                <b style={{ color: AXIS_COLOR[k] }}>{k.toUpperCase()}</b>
-                <output>{tip ? tip[k].toFixed(1) : '—'}</output>
-              </span>
-            ))}
-            <small>mm</small>
-            {tip?.flange && (
-              <small className={css.flange} title="손끝(TCP)은 도구 끝이에요. 로봇의 get_coords 는 도구를 다는 플랜지 위치를 알려 줘요">
-                TCP · get_coords(플랜지) {tip.flange.x.toFixed(0)}, {tip.flange.y.toFixed(0)}, {tip.flange.z.toFixed(0)}
-              </small>
-            )}
-          </div>
-          <p className={css.cap}>
-            손끝 옮기기 <small>로봇이 바라보는 쪽이 앞</small>
-          </p>
           <div className={css.padWrap}>
             <div className={css.pad} role="group" aria-label="손끝 옮기기 (키보드 ↑ ↓ ← → · Shift 위 · Space 아래)">
               {PAD.map((k) => tipKey(k.axis, k.dir, k.word, k.side, 'wedge', k.side))}
@@ -615,7 +597,6 @@ export default function ControlPanel(p: Props) {
                   <circle cy="-21.5" r="4.4" fill="#e5322d" />
                   <circle r="3.4" fill="#cfd8e6" />
                 </svg>
-                <small>위에서 본 로봇</small>
               </span>
             </div>
             <div className={css.lift}>
@@ -634,7 +615,7 @@ export default function ControlPanel(p: Props) {
             </div>
           </div>
           <p className={css.cap}>
-            손 방향 <small>손끝은 그 자리에서 {turnStep}°씩</small>
+            손 방향 <small>{turnStep}°</small>
             {p.onToolDown && (
               <button type="button" className={css.toolDown} disabled={p.busy} onClick={p.onToolDown} title="손(도구)을 똑바로 아래로 향하게 돌려요. 손끝 위치는 그대로예요">
                 손 아래로

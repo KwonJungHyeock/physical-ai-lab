@@ -96,6 +96,12 @@ export default function MiniArmLabels({ monitor, live, tipOf, side }: { monitor:
         if (t) {
           const vals = [t.x, t.y, t.z, t.rx ?? 0, t.ry ?? 0, t.rz ?? 0];
           box.querySelectorAll<HTMLElement>('[data-c]').forEach((el, i) => (el.textContent = vals[i].toFixed(1)));
+          // With a tool: the flange too, what the robot's get_coords reports (the line above is the tool tip).
+          const f = box.querySelector<HTMLElement>('[data-flange]');
+          if (f) {
+            f.hidden = !t.flange;
+            if (t.flange) f.querySelector('b')!.textContent = `${t.flange.x.toFixed(0)}, ${t.flange.y.toFixed(0)}, ${t.flange.z.toFixed(0)}`;
+          }
         }
       }
       frame += 1;
@@ -129,6 +135,10 @@ export default function MiniArmLabels({ monitor, live, tipOf, side }: { monitor:
             <b data-c>—</b>
           </span>
         ))}
+        <span className={css.flange} data-flange hidden title="위의 X · Y · Z 는 도구 끝(TCP)이에요. 로봇의 get_coords 는 도구를 다는 플랜지 위치를 알려 줘요">
+          <i>FLANGE</i>
+          <b>—</b>
+        </span>
       </div>
     </div>
   );

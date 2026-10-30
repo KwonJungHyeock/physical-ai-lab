@@ -30,8 +30,8 @@
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: var(--hud-teal);
-  box-shadow: 0 0 10px var(--hud-teal);
+  background: var(--hud-light);
+  box-shadow: 0 0 10px var(--hud-light);
 }
 .title[data-link='real'] .mode i {
   background: var(--hud-green);
@@ -93,7 +93,7 @@
   height: 18px;
   flex: none;
   fill: none;
-  stroke: var(--hud-teal);
+  stroke: var(--hud-light);
   stroke-width: 1.7;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -155,8 +155,8 @@
   stroke: rgba(213, 218, 225, 0.16);
 }
 .valueArc {
-  stroke: var(--hud-teal);
-  filter: drop-shadow(0 0 5px rgba(70, 211, 230, 0.6));
+  stroke: var(--hud-light);
+  filter: drop-shadow(0 0 5px rgba(236, 241, 248, 0.6));
   transition: d 0.3s ease;
 }
 .gauge line {

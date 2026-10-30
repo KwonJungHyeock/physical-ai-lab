@@ -131,7 +131,7 @@
   color: #fff;
 }
 
-/* Metal Mission HUD (2026-10-29): the sheet a metal plate, words light, the accent teal. */
+/* Metal Mission HUD (2026-10-29): the sheet a metal plate, words light, the accent white. */
 .sheet {
   background: var(--hud-plate);
   color: var(--hud-tx);
@@ -145,12 +145,12 @@
   color: var(--hud-tx);
 }
 .inner h3 {
-  color: var(--hud-teal);
+  color: var(--hud-light);
   letter-spacing: 0.08em;
 }
 .mark {
-  background: rgba(70, 211, 230, 0.12);
-  color: var(--hud-teal);
+  background: rgba(236, 241, 248, 0.12);
+  color: var(--hud-light);
 }
 .close {
   background: var(--hud-key);
@@ -171,8 +171,8 @@
   box-shadow: var(--hud-key-shadow);
 }
 .sheet a {
-  border-color: var(--hud-teal);
-  color: var(--hud-teal);
+  border-color: var(--hud-light);
+  color: var(--hud-light);
 }
 .sheet small,
 .inner dd {

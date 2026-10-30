@@ -33,7 +33,7 @@ export default function PlanMarks({ marks, layer }: { marks: PlanMarksData; laye
         <group key={`${s.tag}${k}`} position={[m(s.at.x), m(s.at.y), m(s.at.z)]}>
           <mesh renderOrder={2}>
             <sphereGeometry args={[0.0045, 16, 12]} />
-            <meshBasicMaterial color="#46d3e6" depthTest={false} transparent />
+            <meshBasicMaterial color="#e8edf3" depthTest={false} transparent />
           </mesh>
           <Html center zIndexRange={[5, 4]} position={[0, 0, 0.018]} pointerEvents="none">
             <span className={css.planMark}>
