@@ -530,7 +530,8 @@ export function buildPlan(p: Plan, rules: Rules, solve: Solver, start: readonly 
 /**
  * How each carry sets its block down. A place means a block gripped at BLOCK_Z (its bottom at
  * place.z − BLOCK_Z), never into the desk; the block hangs under the tip as far as it was
- * gripped above its bottom, and is let go SET_MM above. Also where it then rests (its centre).
+ * gripped above its bottom, and is let go SET_MM above. Also where it is meant to rest (its centre;
+ * nothing under it there and it drops, which the run's check counts as not placed).
  */
 function setDowns(list: readonly Carry[]): { tipZ: number; restZ: number }[] {
   const rest: { x: number; y: number; bottom: number }[] = [];
@@ -541,7 +542,8 @@ function setDowns(list: readonly Carry[]): { tipZ: number; restZ: number }[] {
     const hang = c.from.z - (k >= 0 ? rest.splice(k, 1)[0].bottom : 0);
     const under = support(c.to);
     rest.push({ x: c.to.x, y: c.to.y, bottom: under });
-    return { tipZ: Math.max(0, c.to.z - BLOCK_Z) + hang + SET_MM, restZ: under + BLOCK_MM / 2 };
+    const bottom = Math.max(0, c.to.z - BLOCK_Z);
+    return { tipZ: bottom + hang + SET_MM, restZ: bottom + BLOCK_MM / 2 };
   });
 }
 
@@ -560,7 +562,7 @@ export function blockLayout(p: Plan): Record<ColorName, { x: number; y: number }
   return out;
 }
 
-/** A rough "done" check after a simulated run of a carry practice: where the blocks should rest (their centres), mm. */
+/** A rough "done" check after a simulated run of a carry practice: where the blocks are meant to rest (their centres), mm. */
 export function carryTargets(p: Plan): Spot[] {
   if (p.kind === 'swap') {
     const [A, B] = p.spots;

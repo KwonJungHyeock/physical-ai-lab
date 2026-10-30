@@ -37,6 +37,8 @@ export interface ToolNow {
   rz?: number;
   /** The flange (mm): what get_coords reports, when a tool sticks out past it. */
   flange?: { x: number; y: number; z: number };
+  /** The 손 방향 cards (°): the lean from straight down about base x · y and the facing about z (tool.ts toolTiltDeg). */
+  tilt?: { rx: number; ry: number; rz: number };
 }
 
 interface Props {
@@ -640,16 +642,16 @@ export default function ControlPanel(p: Props) {
           <div className={css.turns}>
             {TURNS.map(({ axis, color, what, icon }) => {
               const name = axis.toUpperCase();
-              const v = tip?.[axis];
+              const v = axis === 'rx' || axis === 'ry' || axis === 'rz' ? tip?.tilt?.[axis] : undefined;
               return (
                 <div key={axis} className={css.turn}>
-                  <span className={css.turnMid} title={`${what} (${name}): 베이스의 ${name.slice(1)}축 둘레로 손을 돌려요. 손끝 위치는 그대로예요`}>
+                  <span className={css.turnMid} title={`${what} (${name}): 베이스의 ${name.slice(1)}축 둘레로 손을 돌려요. 손끝 위치는 그대로예요. ${axis === 'rz' ? '숫자는 손이 향한 방향이에요' : '숫자는 바로 아래에서 기운 각도예요 (바로 아래 = 0°)'}`}>
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <path d={icon} />
                     </svg>
                     <em style={{ color }}>{name}</em>
                     <b className={css.turnWhat}>{what}</b>
-                    <output>{v === undefined ? '—' : `${v.toFixed(1)}°`}</output>
+                    <output>{v === undefined ? '—' : `${(Math.abs(v) < 0.05 ? 0 : v).toFixed(1)}°`}</output>
                   </span>
                   <JogKey kind="slim" dir={-1} state={stateOf(axis, -1)} label={`${what} (${name}) −${turnStep}°`} disabled={p.busy} onStep={() => p.onTipStep(axis, -turnStep)} onStart={() => p.onTipJog(axis, -1)} onStop={p.onJogStop} />
                   <JogKey kind="slim" dir={1} state={stateOf(axis, 1)} label={`${what} (${name}) +${turnStep}°`} disabled={p.busy} onStep={() => p.onTipStep(axis, turnStep)} onStart={() => p.onTipJog(axis, 1)} onStop={p.onJogStop} />

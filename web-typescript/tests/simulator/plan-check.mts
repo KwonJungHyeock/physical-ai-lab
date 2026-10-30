@@ -109,6 +109,22 @@ console.log('  ok   원 · 삼각형 · 별 draw too (원 in Smooth)');
   console.log('  ok   4 blocks stack; a stack above the travel height raises it with a note');
 }
 
+// A block gripped higher than the practice's own is still set down just above the desk; a stack gap
+// wider than a block drops the blocks, and the done check does not count them (the run fails).
+{
+  const placedOf = (plan: Parameters<typeof L.carryTargets>[0], world: { blocks: { x: number; y: number; z: number }[] }) =>
+    L.carryTargets(plan).filter((t) => world.blocks.some((b) => Math.hypot(b.x - t.x, b.y - t.y) < 8 && Math.abs(b.z - t.z) < 8)).length;
+  const high = { ...L.freshPlan('move1'), spots: [{ x: 185, y: -25, z: 20 }, { x: 190, y: -100, z: 15 }] };
+  const a = await run(high);
+  assert.deepEqual(a.warns, []);
+  assert.equal(placedOf(high, a.world), 1, 'gripped 5 mm high, set down');
+  const wide = { ...L.freshPlan('stack'), gap: 35 };
+  const b = await run(wide);
+  assert.ok(b.warns.some((w) => /떨어졌어요/.test(w)));
+  assert.equal(placedOf(wide, b.world), 1, 'a 35 mm gap drops two blocks');
+  console.log('  ok   a high grip is set down on the desk; a 35 mm stack gap drops blocks and is not done');
+}
+
 // Refused before anything moves: untaught, out of reach, under the desk, by the body.
 {
   const solve = L.makeSolver(chain, tcpFor('adaptive', false));

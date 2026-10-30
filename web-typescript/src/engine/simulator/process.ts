@@ -16,7 +16,7 @@ export type Blend = 'smooth' | 'tick';
 
 /**
  * `note`: what the row does in words (rows made from a practice, plan.ts: "A 위로 가기"); `speed`:
- * this row's own speed (the movement rules: fast J, slow L), else the process's.
+ * this row's own speed (the movement rules: fast J, slow L), scaled by the process's; else the process's.
  */
 export type ProcRow =
   /** `joints`: the taught point; null until [좌표 저장]. */
@@ -57,7 +57,10 @@ export function compileProcess(p: Process, only?: number): ProcessItem[] {
     const line = i + 1;
     if (r.kind === 'move') {
       if (!r.joints) return;
-      const leg: Leg = { mode: r.mode, joints: r.joints.slice(), line, speed: r.speed };
+      // The process speed scales a row's own speed as a pendant's override does (보통 = as set),
+      // so fast J and slow L rows keep their ratio up to the speed cap.
+      const speed = r.speed === undefined ? undefined : Math.max(1, Math.min(SPEED_CAP, Math.round((r.speed * p.speed) / DEFAULT_SPEED)));
+      const leg: Leg = { mode: r.mode, joints: r.joints.slice(), line, speed };
       if (path) path.push(leg);
       else items.push({ type: 'path', legs: (path = [leg]), blend: p.blend === 'smooth' });
       return;

@@ -100,7 +100,7 @@ export default function ProcessPanel({ process: p, onProcess, pose, tipOf, busy,
             </button>
           ))}
         </div>
-        <select className={css.speed} value={p.speed} disabled={busy} aria-label="속도" onChange={(e) => onProcess({ ...p, speed: Number(e.target.value) })}>
+        <select className={css.speed} value={p.speed} disabled={busy} aria-label="속도" title="모든 이동 줄에 적용돼요. 줄마다 정한 속도(빠른 J · 느린 L)의 비율은 그대로예요 (보통 = 정한 그대로)." onChange={(e) => onProcess({ ...p, speed: Number(e.target.value) })}>
           {SPEEDS.map(([n, v]) => (
             <option key={v} value={v}>
               {n}

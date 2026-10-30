@@ -173,6 +173,19 @@ export function toolYawDeg(chain: readonly ChainSegment[], anglesDeg: readonly n
   return Math.round(Math.atan2(across, along) * RAD2DEG);
 }
 
+/**
+ * The hand's turn about the base axes as the coordinate jog turns it (the 손 방향 cards), degrees:
+ * rx · ry = how far the tool axis leans from straight down (0 = straight down) about base x · y,
+ * rz = which way the flange's x axis faces in the base plane. One key changes its own number by
+ * the step (rx and ry interact a little only when both are large); get_coords' Euler angles do not.
+ */
+export function toolTiltDeg(chain: readonly ChainSegment[], anglesDeg: readonly number[]): { rx: number; ry: number; rz: number } {
+  const e = forwardKinematicsFrames(chain, anglesDeg).at(-1)!.elements;
+  // Columns of the flange rotation: x axis (e0..e2), tool axis z (e8..e10).
+  const [ax, ay, az] = [e[8], e[9], e[10]];
+  return { rx: Math.atan2(ay, -az) * RAD2DEG, ry: Math.atan2(-ax, -az) * RAD2DEG, rz: Math.atan2(e[1], e[0]) * RAD2DEG };
+}
+
 /** The orientation the tool currently has, if it is one of the search orientations (within 2°). */
 export function currentOrientation(chain: readonly ChainSegment[], anglesDeg: readonly number[], tcpMm: number): ToolOrientation | null {
   const f = forwardKinematicsFrames(chain, anglesDeg).at(-1)!;

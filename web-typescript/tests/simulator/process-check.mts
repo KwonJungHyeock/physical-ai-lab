@@ -197,6 +197,30 @@ for (const preset of P.PRESETS) {
     assert.ok(Math.abs(turned - 10) < 0.5, `R${axis.toUpperCase()}: turned ${turned.toFixed(2)}°`);
   }
   console.log('  ok   RX · RY · RZ jog turns the tool 10° about each base axis with the tip kept (< 0.5 mm)');
+  // The 손 방향 cards: from the arm's start pose each key changes its own number by the step, the others stay.
+  const { toolTiltDeg } = await import('../../src/engine/robot/tool');
+  const before = toolTiltDeg(chain, A);
+  for (const axis of ['x', 'y', 'z'] as const) {
+    const after = toolTiltDeg(chain, turnTool(chain, A, TCP, axis, 10).anglesDeg);
+    for (const k of ['x', 'y', 'z'] as const) {
+      const d = after[`r${k}`] - before[`r${k}`];
+      assert.ok(Math.abs(d - (k === axis ? 10 : 0)) < 1, `R${axis.toUpperCase()} +10: card R${k.toUpperCase()} changed ${d.toFixed(2)}`);
+    }
+  }
+  console.log(`  ok   손 방향 cards follow their own keys (start: RX ${before.rx.toFixed(1)} · RY ${before.ry.toFixed(1)} · RZ ${before.rz.toFixed(1)})`);
+}
+
+// The process speed scales each row's own speed (보통 = as set; fast J and slow L keep their ratio up to the cap).
+{
+  const rows = [
+    { kind: 'move' as const, mode: 'J' as const, joints: A.slice(), speed: 50 },
+    { kind: 'move' as const, mode: 'L' as const, joints: A.slice(), speed: 20 },
+  ];
+  const legs = (speed: number) => P.compileProcess({ name: 'x', blend: 'tick', speed, rows }).flatMap((it) => (it.type === 'path' ? it.legs.map((l) => l.speed) : []));
+  assert.deepEqual(legs(35), [50, 20]);
+  assert.deepEqual(legs(20), [29, 11]);
+  assert.deepEqual(legs(50), [50, 29]);
+  console.log('  ok   the process speed scales the rows: 느리게 J 29 · L 11, 보통 50 · 20, 빠르게 50 · 29');
 }
 
 // Joint warnings shared by the 3D arm, the mini arm and its chips: amber, then red, with the reason.

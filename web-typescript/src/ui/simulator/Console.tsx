@@ -87,7 +87,7 @@ import type { PyOutput, PyResult } from '@/engine/python/types';
 import { buildChain, forwardKinematics, forwardKinematicsFrames, liftChain, solveIk, type ChainSegment } from '@/engine/robot/kinematics';
 import { jointMax, jointMin } from '@/engine/robot/limits';
 import { ARM_STOP_DEC_DEG_S2, tcpPositionMm } from '@/engine/robot/motion';
-import { STRAIGHT_DOWN, coordJogBlocked, currentOrientation, shiftTool, solveToolPose, toolYawDeg, turnTool } from '@/engine/robot/tool';
+import { STRAIGHT_DOWN, coordJogBlocked, currentOrientation, shiftTool, solveToolPose, toolTiltDeg, toolYawDeg, turnTool } from '@/engine/robot/tool';
 import { parseUrdf, type UrdfRobot } from '@/engine/robot/urdf';
 import type { ImageLike } from '@/engine/vision/color';
 import { Divergence, findColor, offCentre, probeJacobian, stepTowards, type Seen } from '@/engine/vision/track';
@@ -1222,6 +1222,7 @@ export default function Console() {
   const selectPractice = (lv: Level, th: Theme, id: PracticeId, restore?: string, fresh = false) => {
     if (busy) return;
     const p = practiceFor(lv, th, id);
+    if (lv !== level || th !== theme || id !== practice.id) session.current.pickTools.clear();
     // A check opened from its number or the library always starts on its own example program (the one
     // the check list asks for); a program changed there before is kept aside for [내 프로그램].
     // The fitted tool stays on: a practice that needs another one asks for it ([끼우기]). A check (검수)
@@ -1798,7 +1799,8 @@ export default function Console() {
     if (tab !== 'process' && tutStep < tut.steps.length - 1) setTutStep(tutStep + 1);
     setBadge(null);
     setPassed({ code: text, actions, start });
-    if (placedBlocks(world.current) > 0) session.current.pickTools.add(effector);
+    // 도구 2종 counts only the tools used in this practice (another practice's pump run is not a swap).
+    if (practice.id === 'tools' && placedBlocks(world.current) > 0) session.current.pickTools.add(effector);
     const m = practice.progress(world.current, session.current);
     addLog('ok', m.total && m.done >= m.total ? `실습 목표 달성! (${m.title}) 로봇에서 실행할 수 있어요.` : '시뮬레이션 성공! 로봇에서 실행할 수 있어요.');
     if (practice.id === 'tools' && session.current.pickTools.size === 1) {
@@ -2037,11 +2039,15 @@ export default function Console() {
       { reset: true, label: true, start },
     );
     const targets = carry ? carryTargets(plan) : [];
-    const placed = targets.filter((t) => world.current.blocks.some((b) => Math.hypot(b.x - t.x, b.y - t.y) < 8 && Math.abs(b.z - t.z) < 4)).length;
-    setLastRun({ ok, seconds: simT, ...(carry ? { placed, total: targets.length } : {}) });
-    if (ok) passedRun(text, actions, start);
+    // A block counts where it is meant to rest; one that dropped more than the simulator lets pass
+    // without a warning (8 mm: a gap wider than the block) is not placed, and the run does not pass.
+    const placed = targets.filter((t) => world.current.blocks.some((b) => Math.hypot(b.x - t.x, b.y - t.y) < 8 && Math.abs(b.z - t.z) < 8)).length;
+    const done = ok && (theme !== 'arm' || placed === targets.length);
+    if (ok && !done) addLog('err', `블록 ${targets.length - placed}개가 정한 높이에 놓이지 않고 떨어졌어요.`, flow.kind === 'stack' ? '쌓기 간격을 블록 높이(25 mm)에 맞춰 주세요.' : '내려놓는 곳의 높이(Z)를 블록이 놓일 높이에 맞춰 주세요.');
+    setLastRun({ ok: done, seconds: simT, ...(carry ? { placed, total: targets.length } : {}) });
+    if (done) passedRun(text, actions, start);
     else setPassed(null);
-    if (ok && flow.step === 3) setFlow({ ...flow, step: 4 });
+    if (done && flow.step === 3) setFlow({ ...flow, step: 4 });
   };
   /** 한 줄씩: one row from where the arm is (the simulated arm only). */
   const runProcessRow = async (i: number) => {
@@ -3226,7 +3232,7 @@ export default function Console() {
       const p = tcpPositionMm(loaded.chain, angles, tcpNow);
       const r = forwardKinematics(loaded.chain, angles).rpyDeg;
       const f = tcpNow > 0 ? tcpPositionMm(loaded.chain, angles, 0) : null;
-      return { ...p, z: p.z - mountMm, rx: r.x, ry: r.y, rz: r.z, flange: f ? { ...f, z: f.z - mountMm } : undefined };
+      return { ...p, z: p.z - mountMm, rx: r.x, ry: r.y, rz: r.z, flange: f ? { ...f, z: f.z - mountMm } : undefined, tilt: toolTiltDeg(loaded.chain, angles) };
     },
     [loaded, tcpNow, mountMm],
   );
