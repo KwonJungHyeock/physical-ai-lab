@@ -74,7 +74,7 @@ for (const prac of L.PLAN_PRACTICES) {
   if (prac.group === 'carry') {
     const targets = L.carryTargets(plan);
     for (const t of targets) {
-      const b = world.blocks.find((k) => Math.hypot(k.x - t.x, k.y - t.y) < 6 && Math.abs(k.z - (t.z - 1.5)) < 3);
+      const b = world.blocks.find((k) => Math.hypot(k.x - t.x, k.y - t.y) < 6 && Math.abs(k.z - t.z) < 3);
       assert.ok(b, `${prac.name}: a block at ${JSON.stringify(t)} — ${JSON.stringify(world.blocks.map((k) => [k.color, Math.round(k.x), Math.round(k.y), Math.round(k.z)]))}`);
     }
     // Carrying stays at the travel height between places.

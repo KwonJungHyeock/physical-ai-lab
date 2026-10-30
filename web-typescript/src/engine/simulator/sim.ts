@@ -784,7 +784,7 @@ function legTrajectory(rt: Runtime, from: readonly number[], leg: Leg, blended =
   if (leg.mode === 'J') return blended ? jointTrajectory(from, leg.joints, v) : armTrajectory(from, leg.joints, v);
   const plan = linearPosePath(rt.chain, from, leg.joints, tcp(rt), v);
   if (!plan.ok) {
-    const err = new RunError(`${leg.line}번 줄 MOVE L: 손끝이 곧게 갈 수 없어요 (가는 길에 팔 자세가 뒤집혀요).`, 'MOVE J 로 바꾸거나, 사이에 점을 하나 더 넣어 주세요.');
+    const err = new RunError(`MOVE L: 손끝이 곧게 갈 수 없어요 (가는 길에 팔 자세가 뒤집혀요).`, 'MOVE J 로 바꾸거나, 사이에 점을 하나 더 넣어 주세요.');
     err.line = leg.line;
     throw err;
   }
@@ -820,13 +820,11 @@ async function runBlended(rt: Runtime, legs: readonly Leg[]): Promise<void> {
   // Each leg's path, sampled densely; the time profile does not matter, only where it goes.
   const pts: number[][] = [rt.world.angles.slice()];
   const ends: number[] = [];
-  let durationS = 0;
   const legDur: number[] = [];
   let from = rt.world.angles.slice();
   for (const leg of legs) {
     rt.line = leg.line;
     const traj = legTrajectory(rt, from, leg, true);
-    durationS += traj.durationS;
     legDur.push(traj.durationS);
     const n = Math.max(2, Math.ceil(traj.durationS / 0.02));
     for (let k = 1; k <= n; k += 1) pts.push(traj.sample((traj.durationS * k) / n));
@@ -852,19 +850,38 @@ async function runBlended(rt: Runtime, legs: readonly Leg[]): Promise<void> {
   });
   const total = cum[cum.length - 1];
   const legEnds = ends.map((i) => cum[i]);
-  // Timing: cruise along the whole path at the legs' own peak rate, with a smooth start and stop
-  // (velocity eased in over the first leg's half, out over the last leg's), never stopping between.
-  const V = total / Math.max(1e-6, durationS / QUINTIC_PEAK_RATE);
+  // Timing: each leg cruises at its own peak rate (its own speed), the rate changing across a
+  // rounded corner; a smooth start and stop (eased in over the first leg's half, out over the last
+  // leg's), never stopping between.
+  const legStart = [0, ...legEnds.slice(0, -1)];
+  const rates = legs.map((_, i) => Math.max(1e-6, ((legEnds[i] - legStart[i]) * QUINTIC_PEAK_RATE) / Math.max(1e-6, legDur[i])));
+  const rateAt = (s: number): number => {
+    const c = corners.findIndex((q) => q.r > 1e-6 && Math.abs(s - q.s) < q.r);
+    if (c >= 0) return rates[c] + ((rates[c + 1] - rates[c]) * (s - (corners[c].s - corners[c].r))) / (2 * corners[c].r);
+    const i = legEnds.findIndex((e) => s <= e + 1e-9);
+    return rates[i < 0 ? rates.length - 1 : i];
+  };
+  // Cruise time to each sampled point of the path.
+  const tau = [0];
+  for (let i = 1; i < pts.length; i += 1) tau.push(tau[i - 1] + (cum[i] - cum[i - 1]) / rateAt((cum[i] + cum[i - 1]) / 2));
+  const cruiseS = tau[tau.length - 1];
+  const sAt = (t: number): number => {
+    let k = 1;
+    while (k < tau.length - 1 && tau[k] < t) k += 1;
+    const span = tau[k] - tau[k - 1];
+    const f = span < 1e-12 ? 1 : (t - tau[k - 1]) / span;
+    return cum[k - 1] + (cum[k] - cum[k - 1]) * f;
+  };
   let Tr = Math.min(legDur[0], legDur[legDur.length - 1]) / 2;
-  if (total / V < Tr) Tr = total / V;
-  const T = Math.max(0.3, total / V + Tr);
+  if (cruiseS < Tr) Tr = cruiseS;
+  const T = Math.max(0.3, cruiseS + Tr);
   const ease = (u: number) => u * u * u - (u * u * u * u) / 2;
   const along = (t: number) => {
     if (t <= 0) return 0;
     if (t >= T) return total;
-    if (t < Tr) return V * Tr * ease(t / Tr);
-    if (t > T - Tr) return total - V * Tr * ease((T - t) / Tr);
-    return V * Tr * 0.5 + V * (t - Tr);
+    if (t < Tr) return sAt(Tr * ease(t / Tr));
+    if (t > T - Tr) return sAt(cruiseS - Tr * ease((T - t) / Tr));
+    return sAt(Tr * 0.5 + (t - Tr));
   };
   let shown = -1;
   const traj: Trajectory = {

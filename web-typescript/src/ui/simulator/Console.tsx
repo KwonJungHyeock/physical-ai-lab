@@ -2018,7 +2018,7 @@ export default function Console() {
       { reset: true, label: true, start },
     );
     const targets = carry ? carryTargets(plan) : [];
-    const placed = targets.filter((t) => world.current.blocks.some((b) => Math.hypot(b.x - t.x, b.y - t.y) < 8 && Math.abs(b.z - (t.z - 1.5)) < 4)).length;
+    const placed = targets.filter((t) => world.current.blocks.some((b) => Math.hypot(b.x - t.x, b.y - t.y) < 8 && Math.abs(b.z - t.z) < 4)).length;
     setLastRun({ ok, seconds: simT, ...(carry ? { placed, total: targets.length } : {}) });
     if (ok) passedRun(text, actions, start);
     else setPassed(null);

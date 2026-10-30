@@ -681,7 +681,7 @@ function TeachStep(p: Props & { plan: Plan; teach: ReturnType<typeof teachOf>; s
                         {(t.zOnly ? (['z'] as const) : (['x', 'y', 'z'] as const)).map((a) => (
                           <label key={a}>
                             {a.toUpperCase()}
-                            <input type="number" step={1} value={s ? r0(s[a]) : ''} aria-label={`${t.label} ${a.toUpperCase()} (mm)`} onChange={(e) => typeSpot(k, a, Number(e.target.value))} />
+                            <input type="number" step={1} value={s ? r0(s[a]) : ''} aria-label={`${t.label} ${a.toUpperCase()} (mm)`} onChange={(e) => e.target.value !== '' && typeSpot(k, a, Number(e.target.value))} />
                           </label>
                         ))}
                       </span>

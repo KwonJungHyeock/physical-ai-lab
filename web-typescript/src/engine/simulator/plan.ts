@@ -16,7 +16,7 @@
 
 import type { ChainSegment } from '../robot/kinematics';
 import { solveToolPose, type ToolOrientation } from '../robot/tool';
-import { ARM_STORED, COLORS, type ColorName } from './board';
+import { ARM_STORED, BLOCK_MM, COLORS, type ColorName } from './board';
 import { SPEEDS, type Problem } from './program';
 import type { Process, ProcRow } from './process';
 
@@ -104,7 +104,11 @@ export interface PlanPractice {
   start: Plan;
 }
 
-const BLOCK_Z = 15; // the tool tip when gripping a 25 mm mat block (its centre is 12.5; a little above, so it is set down, not pressed in)
+const BLOCK_Z = 15; // the tool tip when gripping a 25 mm mat block on the desk (its centre is 12.5)
+/** How far above its support a carried block is let go, mm (it settles the rest). */
+const SET_MM = 1;
+/** The gripper's closed fingertips reach this far below the grasp point, mm (the simulator stops a grip lower). */
+const GRIP_FLOOR_MM = 10;
 const PEN_Z = 0; // the paper in the simulator
 
 const plan = (kind: PlanKind, spots: Spot[], over: Partial<Plan> = {}): Plan => ({
@@ -228,7 +232,7 @@ export const PLAN_PRACTICES: readonly PlanPractice[] = [
 ];
 
 export const practiceOf = (kind: PlanKind): PlanPractice => PLAN_PRACTICES.find((p) => p.kind === kind)!;
-export const freshPlan = (kind: PlanKind): Plan => structuredClone(practiceOf(kind).start);
+export const freshPlan = (kind: PlanKind): Plan => fitSpots(structuredClone(practiceOf(kind).start));
 
 const PEN_TEACH: TeachDef = { label: '펜 끝 높이', tag: '펜', zOnly: true };
 
@@ -336,7 +340,7 @@ export function shapePoints(kind: ShapeKind, c: Spot, size: number, turnDeg: num
 /** The zigzag over a size × size square around `c`, `gap` apart. */
 function fillPoints(c: Spot, size: number, gap: number): Spot[] {
   const h = size / 2;
-  const n = Math.max(1, Math.floor(size / gap));
+  const n = Math.max(1, Math.ceil(size / gap - 1e-9)); // never wider apart than asked
   const out: Spot[] = [];
   for (let k = 0; k <= n; k += 1) {
     const x = c.x - h + (size * k) / n;
@@ -408,9 +412,10 @@ export interface Built {
 const fmt = (p: Spot) => `X ${Math.round(p.x)} · Y ${Math.round(p.y)} · Z ${Math.round(p.z)}`;
 
 /** Places that cannot be used before anything is solved: under the desk, by the robot's body. */
-function placeProblem(p: Spot, name: string): Problem | null {
+function placeProblem(p: Spot, name: string, grip: boolean): Problem | null {
   if (p.z < -0.5) return { line: 0, msg: `${name} (${fmt(p)}): 책상 아래예요.`, fix: '조그로 더 위에서 저장해 주세요.' };
   if (Math.hypot(p.x, p.y) < BODY_MM) return { line: 0, msg: `${name} (${fmt(p)}): 로봇 몸통에 너무 가까워요.`, fix: `로봇 가운데에서 ${BODY_MM} mm 보다 멀리 잡아 주세요.` };
+  if (grip && p.z < GRIP_FLOOR_MM) return { line: 0, msg: `${name} (${fmt(p)}): 그리퍼 손가락이 판에 닿아요.`, fix: `Z 를 ${GRIP_FLOOR_MM} mm 보다 높게 저장해 주세요.` };
   return null;
 }
 
@@ -434,7 +439,7 @@ export function buildPlan(p: Plan, rules: Rules, solve: Solver, start: readonly 
   }
 
   const move = (mode: 'J' | 'L', at: Spot, note: string, keep?: ToolOrientation): Solved | null => {
-    const bad = placeProblem(at, note);
+    const bad = placeProblem(at, note, prac.tool === 'grip');
     if (bad) {
       problems.push(bad);
       return null;
@@ -467,7 +472,8 @@ export function buildPlan(p: Plan, rules: Rules, solve: Solver, start: readonly 
     const travel = Math.max(rules.travelZ, top + 15);
     if (travel > rules.travelZ) notes.push(`쌓은 블록 위로 지나가야 해서, 옮길 때 높이를 ${rules.travelZ} mm 대신 ${travel} mm 로 했어요.`);
     rows.push({ kind: 'grip', open: true, note: '그리퍼 열기' });
-    for (const c of list) {
+    const sets = setDowns(list);
+    list.forEach((c, i) => {
       const upFrom = { ...c.from, z: travel };
       const upTo = { ...c.to, z: travel };
       const a = move('J', upFrom, `${c.fromName} 위로 가기`);
@@ -475,10 +481,10 @@ export function buildPlan(p: Plan, rules: Rules, solve: Solver, start: readonly 
       rows.push({ kind: 'grip', open: false, note: '잡기' });
       move('L', upFrom, '올라오기', a?.orientation);
       const b = move('J', upTo, `${c.toName} 위로 옮기기`);
-      move('L', c.to, `${c.toName} 에 내려놓기`, b?.orientation);
+      move('L', { ...c.to, z: sets[i].tipZ }, `${c.toName} 에 내려놓기`, b?.orientation);
       rows.push({ kind: 'grip', open: true, note: '놓기' });
       move('L', upTo, '올라오기', b?.orientation);
-    }
+    });
     cycle = [
       { label: '가기', kind: 'J' },
       { label: '내려가기', kind: 'L' },
@@ -521,6 +527,24 @@ export function buildPlan(p: Plan, rules: Rules, solve: Solver, start: readonly 
   return { rows, cycle, times, blend, problems, notes, marks, path };
 }
 
+/**
+ * How each carry sets its block down. A place means a block gripped at BLOCK_Z (its bottom at
+ * place.z − BLOCK_Z), never into the desk; the block hangs under the tip as far as it was
+ * gripped above its bottom, and is let go SET_MM above. Also where it then rests (its centre).
+ */
+function setDowns(list: readonly Carry[]): { tipZ: number; restZ: number }[] {
+  const rest: { x: number; y: number; bottom: number }[] = [];
+  const near = (q: { x: number; y: number }, at: Spot) => Math.hypot(q.x - at.x, q.y - at.y) < 8;
+  const support = (at: Spot) => Math.max(0, ...rest.filter((q) => near(q, at)).map((q) => q.bottom + BLOCK_MM));
+  return list.map((c) => {
+    const k = rest.findLastIndex((q) => near(q, c.from));
+    const hang = c.from.z - (k >= 0 ? rest.splice(k, 1)[0].bottom : 0);
+    const under = support(c.to);
+    rest.push({ x: c.to.x, y: c.to.y, bottom: under });
+    return { tipZ: Math.max(0, c.to.z - BLOCK_Z) + hang + SET_MM, restZ: under + BLOCK_MM / 2 };
+  });
+}
+
 /* --- the practice desk ------------------------------------------------------ */
 
 /**
@@ -536,11 +560,13 @@ export function blockLayout(p: Plan): Record<ColorName, { x: number; y: number }
   return out;
 }
 
-/** A rough "done" check after a simulated run of a carry practice: blocks where they should be. */
+/** A rough "done" check after a simulated run of a carry practice: where the blocks should rest (their centres), mm. */
 export function carryTargets(p: Plan): Spot[] {
   if (p.kind === 'swap') {
     const [A, B] = p.spots;
-    return A && B ? [B, A] : [];
+    return A && B ? [B, A].map((q) => ({ ...q, z: BLOCK_MM / 2 })) : [];
   }
-  return (carries(p) ?? []).map((c) => c.to);
+  const list = carries(p) ?? [];
+  const sets = setDowns(list);
+  return list.map((c, i) => ({ ...c.to, z: sets[i].restZ }));
 }
