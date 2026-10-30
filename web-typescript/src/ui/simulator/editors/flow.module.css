@@ -1063,3 +1063,15 @@
   color: var(--hud-teal);
   box-shadow: var(--hud-key-shadow), var(--hud-key-on);
 }
+/* 지금 할 일: the next step in teal (amber is for warnings); 통과 stays green */
+.now {
+  border-radius: 6px;
+  background: rgba(70, 211, 230, 0.08);
+  box-shadow: inset 3px 0 0 var(--hud-teal);
+}
+.now b {
+  color: var(--hud-teal);
+}
+.now span {
+  color: var(--hud-tx);
+}

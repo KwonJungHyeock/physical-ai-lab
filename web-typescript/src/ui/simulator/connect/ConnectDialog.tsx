@@ -166,7 +166,12 @@ export default function ConnectDialog({ current, auto, carry, start, onUsb, onSe
     if (link.step >= LINK_STEPS.length) {
       const t = window.setTimeout(
         () => {
-          // A newer robot: stay on this program's screens and drive the arm from here.
+          // A newer robot: stay on this program's screens and drive the arm from here — not from a
+          // secure (https) page, which may not call an http robot: there, open the robot's own page.
+          if (link.robot?.remote && window.location.protocol === 'https:') {
+            openOwn(link.addr);
+            return;
+          }
           if (link.robot?.remote) {
             setRemoteRobot(link.addr);
             skipIntroOnce();

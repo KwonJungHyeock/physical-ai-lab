@@ -298,6 +298,9 @@ const CameraViews = forwardRef<CameraViewsHandle, Props>(function CameraViews(
     const next = () => {
       const asked = performance.now();
       const img = new Image();
+      // From the PC program the robot is another address: without this the canvas is tainted and
+      // reading its pixels throws on the first frame.
+      img.crossOrigin = 'anonymous';
       img.onload = () => {
         if (!alive) return;
         const rc = raw.current;

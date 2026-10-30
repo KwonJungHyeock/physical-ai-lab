@@ -42,6 +42,8 @@ import {
   otherOwner,
   type RobotAi,
   type RobotState,
+  remoteRobot,
+  setRemoteRobot,
 } from '@/engine/simulator/robotLink';
 import { addEvidence, loadEvidence, reportHtml, saveEvidence, setDemoRobot, type PrepItem } from '@/engine/simulator/evidence';
 import { categoryOf, loadProgress, markKey, openCheck, saveProgress, type ConsoleMode, type Progress, type Where } from '@/engine/simulator/modules';
@@ -109,7 +111,7 @@ import DeskPanel from './control/DeskPanel';
 import DemoCaption from './stage/DemoCaption';
 import { ResultCard, RunTimeline, applyFrame, snapshot, type Replay } from './stage/RunReplay';
 import Hud, { type HudStatus } from './stage/Hud';
-import Intro from './connect/Intro';
+import Intro, { skipIntroOnce } from './connect/Intro';
 import FirstGuide, { resetFirstGuide } from './connect/FirstGuide';
 import HelpSheet from './connect/HelpSheet';
 import { announceRobotStop } from './connect/robotStop';
@@ -1005,7 +1007,8 @@ export default function Console() {
       if (!loaded) return;
       const rep = repeatability(await fetchArrivals(), (q) => tcpPositionMm(loaded.chain, q, tcpNow));
       if (!rep) return;
-      note(2, `반복 정밀도: 같은 자세 ${rep.count}번, 도착점 퍼짐 최대 ${rep.spreadMm.toFixed(2)}mm, 목표와 평균 차이 ${rep.offsetMm.toFixed(2)}mm (로봇 각도 센서 기준)`, true);
+      // Proof for 검수 2 only from its own practice (other programs also return to the same pose).
+      if (practice.check === 2) note(2, `반복 정밀도: 같은 자세 ${rep.count}번, 도착점 퍼짐 최대 ${rep.spreadMm.toFixed(2)}mm, 목표와 평균 차이 ${rep.offsetMm.toFixed(2)}mm (로봇 각도 센서 기준)`, true);
       addLog(
         'ok',
         `반복 정밀도(로봇 각도 센서 기준): 같은 자세 ${rep.count}번, 도착점 퍼짐 최대 ${rep.spreadMm.toFixed(2)}mm, 목표와 평균 차이 ${rep.offsetMm.toFixed(2)}mm`,
@@ -1022,7 +1025,7 @@ export default function Console() {
     const apply = (s: RobotState | null) => {
       if (!s) {
         misses += 1;
-        // A few misses in a row (half a second), not one slow answer, count as a lost link.
+        // Three misses in a row (about 5 s on a slow Wi-Fi), not one slow answer, count as a lost link.
         if (misses === 3) {
           lastShown = '';
           setServerLost(true);
@@ -2414,7 +2417,7 @@ export default function Console() {
   /** 초급: the blocks turned into a pymycobot script. 중급·고급: the student's own program, unchanged — it is the robot program. */
   const openExport = () => {
     if (!passed) return;
-    note(7, `로봇용 ${level === 'basic' ? '파이썬 API(pymycobot) 코드' : level === 'ros' ? 'ROS 2 노드' : '파이썬 파일'} 받기`, false);
+    if (practice.check === 7) note(7, `로봇용 ${level === 'basic' ? '파이썬 API(pymycobot) 코드' : level === 'ros' ? 'ROS 2 노드' : '파이썬 파일'} 받기`, false);
     setExportText(adaptPython(level === 'basic' || tab === 'process' ? toPymycobot(passed.actions, effector, passed.code, theme) : passed.code, arm));
   };
 
@@ -3144,20 +3147,15 @@ export default function Console() {
   const camAvailable = theme === 'kit' || cameraFlange || (robotMode && !!robot?.camera);
 
   /** No tool fitted: the open/close buttons still show, and say what to do. */
-  const noTool = () => addLog('warn', '도구가 연결되어 있지 않아요.', '왼쪽 [도구]에서 그리퍼나 흡착 펌프를 달아 주세요.');
   /** The fitted tool's own buttons: in the jog screen (the 도구 screen only fits and swaps the tool). */
   const toolRow = (
     <div className={css.toolRow}>
       <div className={css.poseRow}>
+        {/* No tool: one way to fit one (no grip keys that could only say there is none). */}
         {kind === 'none' && (
-          <>
-            <button type="button" className={css.jogWide} disabled={busy} onClick={noTool}>
-              그리퍼 열기
-            </button>
-            <button type="button" className={css.jogWide} disabled={busy} onClick={noTool}>
-              그리퍼 닫기
-            </button>
-          </>
+          <button type="button" className={css.jogWide} disabled={busy} onClick={() => openWork('parts')}>
+            도구 달기
+          </button>
         )}
         {kind === 'grip' && (
           <>
@@ -3578,7 +3576,7 @@ export default function Console() {
   const reconnect = async () => {
     setRetry({ busy: true, note: '' });
     if (serverLost) {
-      const s = await fetchRobotState();
+      const s = await fetchRobotState(AbortSignal.timeout(3000));
       setRetry({ busy: false, note: s ? '' : '아직 연결되지 않았어요. 아래를 확인한 뒤 다시 눌러 주세요. (화면도 계속 스스로 다시 시도해요)' });
       return;
     }
@@ -3596,9 +3594,10 @@ export default function Console() {
       /* this session only */
     }
     // The demonstration starts on a check: the open practice when it is one, else check 1 — on the
-    // check's own example program either way.
+    // check's own example program either way, always in the AI kit at 초급 (each check the same way,
+    // whatever was open before).
     if (m === 'check') {
-      const w = openCheck(practice.check ?? 1, level, theme);
+      const w = openCheck(practice.check ?? 1, 'basic', 'kit');
       if (w) selectPractice(w.level, w.theme, w.id, undefined, true);
     }
     addLog('info', m === 'check' ? '검수 시연 모드예요. 위의 1~7 번호로 검수 항목을 하나씩 열어 시연해요.' : '실습 모드예요. [라이브러리]의 실습 과제에서 주제별 실습을 골라요.');
@@ -3928,10 +3927,8 @@ export default function Console() {
                 disabled={busy}
                 onClick={() => {
                   chooseMode(mode === 'check' ? 'learn' : 'check');
-                  if (mode !== 'check') {
-                    setLibSection('checks');
-                    chooseView('library');
-                  }
+                  // Straight to the simulator on check 1: the chips 1~7 above lead the demonstration.
+                  if (mode !== 'check') chooseView('sim');
                   close();
                 }}
               >
@@ -4028,6 +4025,9 @@ export default function Console() {
                 </button>
                 <button type="button" onClick={saveReport} title="검수별 시각 · 실측값을 한 장으로 (열어서 인쇄 → PDF)">
                   <Icon name="download" size={15} /> 검수 결과표 저장
+                </button>
+                <button type="button" onClick={clearEvidence} title="연습 · 리허설 기록을 지우고 오늘 검수를 처음부터 기록해요">
+                  검수 기록 새로 시작
                 </button>
               </span>
             }
@@ -4219,6 +4219,23 @@ export default function Console() {
                     <button type="button" className={css.btnAction} disabled={retry.busy} onClick={() => void reconnect()}>
                       <Icon name="refresh" size={15} /> {retry.busy ? '연결하는 중…' : '다시 연결'}
                     </button>
+                    {/* The robot may have a new address (Wi-Fi changed, new lease): find it again, or go on without it. */}
+                    <button type="button" className={css.ghost} onClick={() => setConnectOpen(true)}>
+                      로봇 다시 찾기
+                    </button>
+                    {remoteRobot() && (
+                      <button
+                        type="button"
+                        className={css.ghost}
+                        onClick={() => {
+                          setRemoteRobot(null);
+                          skipIntroOnce();
+                          window.location.reload();
+                        }}
+                      >
+                        시뮬레이션으로
+                      </button>
+                    )}
                     {retry.note && <span>{retry.note}</span>}
                   </div>
                 </div>
@@ -4572,8 +4589,8 @@ export default function Console() {
                       level={cellAt ? (cellTerm ? 'python' : 'basic') : level}
                       busy={busy}
                       onLevel={(lv) => (cellAt ? (lv === 'ros' ? addLog('info', '실습 셀의 ROS 2 터미널 실습은 다음 차례에 열려요.') : setCellTerm(lv === 'python')) : openTab(lv))}
+                      extra={(cellAt && cellTerm) || (!cellAt && level === 'python') ? <ModeSeg mode={cellAt ? pyMode.cell : pyMode.arm} busy={busy} onMode={(m) => setPyMode(cellAt ? 'cell' : 'arm', m)} /> : undefined}
                     />
-                    {((cellAt && cellTerm) || (!cellAt && level === 'python')) && <ModeSeg mode={cellAt ? pyMode.cell : pyMode.arm} busy={busy} onMode={(m) => setPyMode(cellAt ? 'cell' : 'arm', m)} />}
                     {cellAt ? (
                       <div className={css.cellCodeHead}>
                         <b>
@@ -4589,7 +4606,7 @@ export default function Console() {
                     ) : (
                     <TutorialCard
                       practice={practice}
-                      sub={`${LEVEL_TAB[level].sub} · ${mode === 'check' && practice.check ? `검수 ${practice.check}` : categoryOf(practice.id)} · 라이브러리 튜토리얼`}
+                      sub={`${LEVEL_TAB[level].sub} · ${mode === 'check' && practice.check ? `검수 ${practice.check}` : categoryOf(practice.id)}`}
                       tut={tut}
                       step={tutStep}
                       onStep={setTutStep}

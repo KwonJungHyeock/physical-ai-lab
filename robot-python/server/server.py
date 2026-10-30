@@ -1006,13 +1006,15 @@ class Owner:
         self.id = None
         self.name = ""
         self.until = 0.0
+        # The holder's network address: only its state polls keep a run alive (dead-man).
+        self.addr = None
 
     def _hold(self, running, now):
         """While its run goes on the holder keeps the robot; the lease counts from the run's end."""
         if self.id and running:
             self.until = max(self.until, now + self.LEASE_S)
 
-    def claim(self, cid, name, running):
+    def claim(self, cid, name, running, addr=None):
         """None when `cid` may move the arm now (it then holds it), else why not."""
         now = self.clock()
         with self.lock:
@@ -1020,8 +1022,15 @@ class Owner:
             if self.id and self.id != cid and (running or now < self.until):
                 wait = "" if running else f" {max(1, round(self.until - now))}초 뒤에 다시 해 주세요."
                 return f"다른 PC({self.name or '이름 없음'})가 이 로봇을 움직이는 중이에요." + (" 그 PC 의 실행이 끝나면 다시 해 주세요." if running else wait)
-            self.id, self.name, self.until = cid, name, now + self.LEASE_S
+            self.id, self.name, self.until, self.addr = cid, name, now + self.LEASE_S, addr
             return None
+
+    def holder_addr(self, running):
+        """The address of the console holding the robot now, else None."""
+        now = self.clock()
+        with self.lock:
+            self._hold(running, now)
+            return self.addr if self.id and now < self.until else None
 
     def view(self, running):
         """The holder ({id, name}) while it holds the robot, else None."""
@@ -1213,8 +1222,14 @@ class Handler(SimpleHTTPRequestHandler):
             refresh_identity()
             # Only this robot's own console keeps a run alive: another PC's 로봇 찾기 asking the
             # state (cross-origin) must not keep a run going after its own console has gone.
-            if self.same_origin() or ("console=1" in self.path and self.remote_console()):
+            # With two PCs on the same robot, only the one moving it counts: the other's polls must
+            # not keep a run going after the mover's laptop has closed.
+            if self.same_origin():
                 ROBOT.seen()
+            elif "console=1" in self.path and self.remote_console():
+                holder = OWNER.holder_addr(ROBOT.state["running"])
+                if holder is None or holder == self.client_address[0]:
+                    ROBOT.seen()
             # age: seconds since the last good angle read, measured on the robot's clock
             age = round(time.time() - ROBOT.state["updated"], 2) if ROBOT.state["updated"] else None
             state = {k: v for k, v in ROBOT.state.items() if k != "arrivals"}
@@ -1252,6 +1267,8 @@ class Handler(SimpleHTTPRequestHandler):
             except RuntimeError as exc:
                 return self.send_json({"ok": False, "error": str(exc)}, 503)
             self.send_response(200)
+            # The PC program shows (and reads) the picture from another address: say it may.
+            self.cross_origin()
             self.send_header("Content-Type", "image/jpeg")
             self.send_header("Cache-Control", "no-store")
             self.send_header("Content-Length", str(len(body)))
@@ -1291,7 +1308,7 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.send_json({"ok": True})
             if route in MOTION_ROUTES:
                 cid, name = self.console()
-                err = OWNER.claim(cid, name, ROBOT.state["running"])
+                err = OWNER.claim(cid, name, ROBOT.state["running"], self.client_address[0])
                 if err:
                     log(f"[거절] {name}: {err}")
                     return self.send_json({"ok": False, "error": err, "owner": OWNER.view(ROBOT.state["running"])}, 409)

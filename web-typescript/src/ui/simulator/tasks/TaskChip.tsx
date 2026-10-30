@@ -160,7 +160,8 @@ export function TaskChip({ mode, practice, level, theme, progress, busy, world, 
                 disabled={busy}
                 title={`검수 ${c.check} · ${c.title}: ${c.spec}`}
                 onClick={() => {
-                  const w = openCheck(c.check, level, theme);
+                  // Each check opens the same way in the demonstration: the AI kit at 초급 first.
+                  const w = openCheck(c.check, 'basic', 'kit');
                   if (w) onOpen(w);
                 }}
               >

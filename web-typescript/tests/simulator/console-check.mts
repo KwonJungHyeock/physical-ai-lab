@@ -358,6 +358,12 @@ const release = { grip: 'robot.gripper.open()', suction: 'robot.pump.off()' };
   assert.equal(realMissing(5, ['실제 어댑티브 그리퍼 열기']), '흡착 펌프로 바꿔 끼운 뒤 켜기 · 끄기');
   assert.equal(realMissing(5, ['실제 어댑티브 그리퍼 열기', '실제 흡착 펌프 켜기']), null);
   assert.equal(realMissing(1, ['로봇에서 실행 완료: 6축 하나씩']), null);
+  // Proof is the check's own measurement, not any run on the robot.
+  assert.ok(realMissing(2, ['로봇에서 실행 완료: 전 축 구동 (블록 코딩, 어댑티브 그리퍼)']));
+  assert.equal(realMissing(2, ['로봇 실습 7 · 반복 위치제어: 같은 점에 5번 도착 · 흩어진 폭 0.4 mm (잰 각도로 계산)']), null);
+  assert.ok(realMissing(4, ['로봇에서 실행 완료: 비전-로봇 연계 (블록 코딩, 흡착 펌프)']), 'a run on the simulated layout is not proof');
+  assert.ok(realMissing(6, ['로봇에서 실행 완료: 색 인식 (블록 코딩, 어댑티브 그리퍼)']));
+  assert.equal(realMissing(6, ['AI 샘플 로봇 실행: YOLOv5s 80ms, 찾은 물체: cup 91%']), null);
   const at = new Date().toISOString();
   const html = reportHtml({
     robot: '로봇 1',

@@ -22,7 +22,8 @@ export const LANGS: { level: Level; name: string; sub: string }[] = [
   { level: 'ros', name: 'ROS 2', sub: '고급' },
 ];
 
-export function LangSeg({ level, busy, onLevel }: { level: Level; busy: boolean; onLevel(l: Level): void }) {
+/** The coding languages in one row; `extra` (the Python tab's 코드 | 터미널) sits at its end, so the panel spends one row on getting about. */
+export function LangSeg({ level, busy, onLevel, extra }: { level: Level; busy: boolean; onLevel(l: Level): void; extra?: ReactNode }) {
   return (
     <div className={css.langs} role="tablist" aria-label="코딩 언어">
       {LANGS.map((l) => (
@@ -30,6 +31,7 @@ export function LangSeg({ level, busy, onLevel }: { level: Level; busy: boolean;
           {l.name} <small>{l.sub}</small>
         </button>
       ))}
+      {extra}
     </div>
   );
 }
@@ -74,7 +76,7 @@ export function TutorialCard(p: CardProps) {
             </button>
           )}
           <button type="button" className={css.btn} disabled={p.busy} onClick={p.onLibrary} title="라이브러리에서 다른 튜토리얼 고르기">
-            라이브러리에서 바꾸기
+            과제 바꾸기
           </button>
         </div>
         <div className={css.steps} role="group" aria-label="단계">
@@ -223,9 +225,7 @@ export function Snippets({ tut, code, onCode, busy }: { tut: Tutorial; code: str
   if (!tut.snippets.length) return null;
   return (
     <section className={css.snips} aria-label="미션 코드 조각">
-      <h4>
-        미션 코드 조각 <small>누르면 알맞은 자리에 들어가요</small>
-      </h4>
+      <h4>미션 코드 조각</h4>
       <div className={css.snipList}>
         {tut.snippets.map((s) => (
           <button key={s.label} type="button" className={css.snip} disabled={busy} title={s.code} onClick={() => onCode(insertSnippet(code, s))}>

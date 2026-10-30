@@ -77,12 +77,18 @@ export function realMissing(check: number, robotLines: readonly string[]): strin
   if (!robotLines.length) return '실제 로봇 기록 없음';
   const any = (re: RegExp) => robotLines.some((t) => re.test(t));
   switch (check) {
+    case 2:
+      return any(/반복 정밀도|같은 점에 \d+번 도착/) ? null : '같은 위치 반복 도달 (반복 정밀도 측정)';
     case 3:
       return any(/카메라 2대/) || (any(/키트 카메라/) && any(/손 카메라/)) ? null : '실제 카메라 2대 사진 (키트 카메라 · 손 카메라)';
     case 4:
+      // The blocks found by the real camera, then carried: a run on the simulated layout alone is not proof.
+      if (!any(/실제 블록|실제 손 카메라/)) return '실제 카메라로 블록 위치 찾기';
       return any(/실행 완료|옮김/) ? null : '찾은 블록을 실제로 집어 옮기기';
     case 5:
       return any(/그리퍼/) && any(/펌프/) ? null : !any(/그리퍼/) ? '그리퍼 열기 · 닫기' : '흡착 펌프로 바꿔 끼운 뒤 켜기 · 끄기';
+    case 6:
+      return any(/AI 샘플 로봇 실행|YOLO/) ? null : '로봇 안에서 AI 샘플(YOLO) 실행';
     default:
       return null;
   }

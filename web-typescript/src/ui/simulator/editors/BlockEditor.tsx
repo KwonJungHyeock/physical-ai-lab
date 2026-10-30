@@ -966,7 +966,7 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
           endDrag();
         }}
       >
-        <p className={css.paletteTip}>{picked?.startsWith('in:') ? '누르면 고른 칸 안에 들어가요' : picked ? '누르면 고른 블록 다음에 들어가요' : '누르면 맨 끝에 들어가요'}</p>
+        {picked && <p className={css.paletteTip}>{picked.startsWith('in:') ? '누르면 고른 칸 안에 들어가요' : '누르면 고른 블록 다음에 들어가요'}</p>}
         {palette.map(([name, items]) => (
           <PaletteGroup key={name} name={name} empty={items.length === 0}>
             {items.map((proto, k) => {

@@ -421,3 +421,26 @@
     height: 30px;
   }
 }
+
+/* One row for getting about (2026-10-30): the three languages share it, the Python tab's 코드 | 터미널
+   sits at its right end as a small switch. */
+.langs {
+  display: flex;
+}
+.langs > button {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.langs > [role='tablist'] {
+  flex: none;
+  display: flex;
+  gap: 2px;
+  margin: 0 0 0 4px;
+  padding: 0 0 0 6px;
+  border-left: 1px solid rgba(214, 219, 224, 0.16);
+}
+.langs > [role='tablist'] button {
+  flex: none;
+  padding: 5px 9px;
+  font-size: 12px;
+}

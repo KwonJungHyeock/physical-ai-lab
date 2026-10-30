@@ -126,7 +126,7 @@ export default function SpeakPanel({ code, onCode, arm, effector, cameraFlange, 
       <button type="button" className={css.head} aria-expanded={open} onClick={toggle}>
         <span className={css.dot} data-on={available || undefined} aria-hidden="true" />
         <b>말로 만들기</b>
-        <small>{open ? (available && status ? `오늘 ${status.remaining}번 남음` : 'AI 가 블록을 만들어 줘요') : '로봇에게 시킬 일을 말로 적으면 블록을 만들어 줘요'}</small>
+        <small>{open ? (available && status ? `오늘 ${status.remaining}번 남음` : 'AI 가 블록을 만들어 줘요') : ''}</small>
         <span className={css.chev} aria-hidden="true">
           {open ? '▲' : '▼'}
         </span>
