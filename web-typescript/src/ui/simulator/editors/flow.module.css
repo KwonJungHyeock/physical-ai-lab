@@ -787,13 +787,29 @@
   padding: 0 4px;
   border-radius: 4px;
 }
-.chips em[data-k='J'] {
-  background: rgba(122, 92, 245, 0.3);
-  color: #d0d5dc;
+/* 관절로 (J) and 곧게 (L), as the 3D path draws them: a dashed grey curve, a solid white line. */
+.way {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-style: normal;
 }
-.chips em[data-k='L'] {
-  background: rgba(30, 167, 223, 0.26);
-  color: #b4e6f8;
+.way svg {
+  width: 11px;
+  height: 11px;
+  flex: none;
+}
+.chips em[data-k='J'],
+.running em[data-k='J'] {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px dashed rgba(196, 203, 212, 0.7);
+  color: #c4cbd4;
+}
+.chips em[data-k='L'],
+.running em[data-k='L'] {
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  color: #fff;
 }
 .chips em[data-k='grip'] {
   background: rgba(255, 255, 255, 0.12);
@@ -1634,4 +1650,61 @@
 .nav button {
   height: 46px;
   font-size: 15px;
+}
+
+/* 관절로 그려 보기: the try, then the concept card with the bend just measured. */
+.try {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--well);
+  font-size: 12.5px;
+  color: var(--ink2);
+}
+.try > b {
+  font-size: 13.5px;
+  color: #fff;
+}
+.try > b em {
+  font-style: normal;
+  color: var(--hud-light, #f4f6f9);
+  text-shadow: 0 0 10px rgba(244, 246, 249, 0.45);
+}
+.try em[data-k] {
+  display: inline-flex;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.try em[data-k='J'] {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px dashed rgba(196, 203, 212, 0.7);
+  color: #c4cbd4;
+}
+.try em[data-k='L'] {
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  color: #fff;
+}
+.try dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 10px;
+  margin: 0;
+  align-items: center;
+}
+.try dt {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-weight: 700;
+  color: #e4eaf2;
+}
+.try dd {
+  margin: 0;
+}
+.try > button {
+  justify-self: start;
 }

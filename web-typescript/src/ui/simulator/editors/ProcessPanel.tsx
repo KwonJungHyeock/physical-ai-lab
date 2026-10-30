@@ -111,10 +111,10 @@ export default function ProcessPanel({ process: p, onProcess, pose, tipOf, busy,
       </div>
 
       <div className={css.tools}>
-        <button type="button" className={css.j} disabled={busy} onClick={() => add({ kind: 'move', mode: 'J', joints: pose() })} title="지금 팔 자세를 점으로 넣어요. 관절이 함께 돌아 곡선으로 가요">
+        <button type="button" className={css.j} disabled={busy} onClick={() => add({ kind: 'move', mode: 'J', joints: pose() })} title="관절로 (MOVE J): 지금 팔 자세를 점으로 넣어요. 관절이 함께 돌아 손끝이 곡선으로 가요">
           ＋ MOVE J
         </button>
-        <button type="button" className={css.l} disabled={busy} onClick={() => add({ kind: 'move', mode: 'L', joints: pose() })} title="지금 팔 자세를 점으로 넣어요. 손끝이 직선으로 가요 (용접 · 끼우기)">
+        <button type="button" className={css.l} disabled={busy} onClick={() => add({ kind: 'move', mode: 'L', joints: pose() })} title="곧게 (MOVE L): 지금 팔 자세를 점으로 넣어요. 손끝이 직선으로 가요 (그리기 · 내려가기)">
           ＋ MOVE L
         </button>
         {canGrip && (

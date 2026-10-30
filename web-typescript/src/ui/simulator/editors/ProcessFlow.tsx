@@ -116,6 +116,11 @@ interface Props {
   editor: ReactNode;
   /** Open the 도구 screen (the practice needs another tool). */
   onTools?(): void;
+  /** 관절로 그려 보기 (pen practices, simulator): how far the pen line bent, mm, once tried. */
+  jointTry?: number | null;
+  onTryJoint?(): void;
+  /** ▶ the process again (곧게 다시 그리기). */
+  onRun?(): void;
 }
 
 const STEPS: { name: string; short: string; icon: string }[] = [
@@ -168,6 +173,20 @@ const r0 = (v: number) => Math.round(v);
 const r1 = (v: number) => (Math.round(v * 10) / 10).toFixed(1);
 const xyz = (p: Spot | PointMm) => `X ${r0(p.x)} · Y ${r0(p.y)} · Z ${r0(p.z)}`;
 const speedName = (v: number) => SPEEDS.find(([, s]) => s === v)?.[0] ?? `속도 ${v}`;
+/** How a MOVE row goes, in words first (따라하기 · 바꿔 보기); MOVE J / L is the tooltip and 직접 짜기's name. */
+const WAY: Record<'J' | 'L', { word: string; icon: ReactNode; title: string }> = {
+  J: { word: '관절로', icon: S('M4 18c3-9 13-9 16 0M17 15l3 3 1-4'), title: 'MOVE J · 관절이 함께 돌아 손끝이 곡선으로 가요' },
+  L: { word: '곧게', icon: S('M5 19L19 5M12 5h7v7'), title: 'MOVE L · 손끝이 직선으로 가요' },
+};
+function Way({ mode }: { mode: 'J' | 'L' }) {
+  return (
+    <em data-k={mode} className={css.way} title={WAY[mode].title}>
+      {WAY[mode].icon}
+      {WAY[mode].word}
+    </em>
+  );
+}
+
 const LEVEL_DOTS: Record<PlanLevel, number> = { basic: 1, apply: 2, challenge: 3 };
 
 /** The level as one, two or three dots (기초 · 응용 · 도전), not a colour. */
@@ -741,7 +760,7 @@ function TeachStep(p: Props & { plan: Plan; teach: ReturnType<typeof teachOf>; s
               <div className={css.chips}>
                 {p.built.cycle.map((c, k) => (
                   <span key={k}>
-                    {c.label} <em data-k={c.kind}>{c.kind === 'grip' ? '손' : c.kind}</em>
+                    {c.label} {c.kind === 'grip' ? <em data-k={c.kind}>손</em> : <Way mode={c.kind} />}
                   </span>
                 ))}
                 {p.built.times > 1 && <b>× {p.built.times}</b>}
@@ -847,6 +866,46 @@ function RowList({ rows, running }: { rows: Process['rows']; running: number }) 
 
 /* --- 4 실행 · 확인 ------------------------------------------------------------ */
 
+/**
+ * 왜 곧게? Try the drawing as MOVE J (관절로): the pen line bends; then the concept, with the bend
+ * just measured, and ▶ to draw it straight again and compare.
+ */
+function JointTry(p: Props) {
+  const bow = p.jointTry;
+  if (bow == null)
+    return (
+      <div className={css.try}>
+        <b>곧게 대신 관절로 그리면 어떻게 될까요?</b>
+        <span>
+          그리는 줄만 바꿔서 한 번 그려 봐요: <Way mode="L" /> → <Way mode="J" />
+        </span>
+        <button type="button" className={css.btn} disabled={p.busy} onClick={p.onTryJoint}>
+          관절로 그려 보기
+        </button>
+      </div>
+    );
+  return (
+    <div className={css.try} data-done>
+      <b>
+        방금 선이 최대 <em>{bow} mm</em> 휘었어요
+      </b>
+      <dl>
+        <dt>
+          <Way mode="J" /> MOVE J
+        </dt>
+        <dd>관절이 함께 돌아요. 손끝은 곡선으로 가요. 멀리 옮길 때 써요.</dd>
+        <dt>
+          <Way mode="L" /> MOVE L
+        </dt>
+        <dd>손끝이 직선으로 가요. 그릴 때 · 블록에 내려갈 때 써요.</dd>
+      </dl>
+      <button type="button" className={css.btn} disabled={p.busy} onClick={p.onRun}>
+        곧게 다시 그리기
+      </button>
+    </div>
+  );
+}
+
 function ResultStep(p: Props) {
   const r = p.lastRun;
   const prac = practiceOf(p.flow.kind);
@@ -875,7 +934,7 @@ function ResultStep(p: Props) {
             <small>{run ? `지금 실행 중 · ${p.runningLine} / ${rows.length}` : `동작 ${rows.length}줄`}</small>
             <b>{run ? (run.note ?? (run.kind === 'move' ? `MOVE ${run.mode}` : run.kind === 'grip' ? '그리퍼' : '대기')) : r ? (r.ok ? '끝까지 실행했어요' : '중간에 멈췄어요') : '아직 실행 전'}</b>
           </span>
-          {run && <em>{run.kind === 'move' ? `MOVE ${run.mode}` : run.kind === 'grip' ? '그리퍼' : '대기'}</em>}
+          {run && (run.kind === 'move' ? <Way mode={run.mode} /> : <em>{run.kind === 'grip' ? '그리퍼' : '대기'}</em>)}
         </div>
         <div className={css.result}>
           <div>
@@ -894,6 +953,7 @@ function ResultStep(p: Props) {
             <b>{prac.group === 'carry' ? (r?.total ? `${r.placed ?? 0} / ${r.total}` : '–') : `${rows.length} 줄`}</b>
           </div>
         </div>
+        {prac.group === 'path' && p.flow.mode !== 'free' && p.onTryJoint && (r || p.jointTry != null) && <JointTry {...p} />}
         <Fold icon="list" title={<>동작 줄 전체 <b>{rows.length}줄</b> · 실행 중인 줄이 밝아져요</>}>
           <RowList rows={rows} running={p.runningLine} />
         </Fold>

@@ -73,7 +73,7 @@ import { isStarter, newSession, placedBlocks, practiceFor, practicesFor, repeata
 import { check, parse, type CameraId, type Problem, type Step } from '@/engine/simulator/program';
 import { checkProcess, compileProcess, emptyProcess, processFromFile, processListing, processToFile, PROCESS_EXT, type Process } from '@/engine/simulator/process';
 import { findSlots, tutorialFor } from '@/engine/simulator/tutorials';
-import { blockLayout, buildPlan, carryTargets, freshPlan, makeSolver, practiceOf, type Built, type PlanKind, type Solver, type Spot } from '@/engine/simulator/plan';
+import { blockLayout, buildPlan, carryTargets, freshPlan, makeSolver, practiceOf, strokes, type Built, type PlanKind, type Solver, type Spot } from '@/engine/simulator/plan';
 import { CELL_BY_ID, cellLayout, type CellId } from '@/engine/simulator/cell/cells';
 import { missionById, missionsOf } from '@/engine/simulator/cell/missions';
 import { LEVEL_NAME, type CellAlert } from '@/engine/simulator/cell/faults';
@@ -2049,6 +2049,34 @@ export default function Console() {
     else setPassed(null);
     if (done && flow.step === 3) setFlow({ ...flow, step: 4 });
   };
+  /**
+   * 관절로 그려 보기 (pen practices, simulator): the drawing rows run as MOVE J instead of MOVE L,
+   * and the pen line shows how far a joint move bends off the straight line (measured on the paper).
+   */
+  const [jointTry, setJointTry] = useState<{ key: string; bowMm: number } | null>(null);
+  const tryJointDraw = async () => {
+    if (!loaded || busy || robotMode) return;
+    const rows = proc.rows.map((r) => (r.kind === 'move' && r.mode === 'L' && /→/.test(r.note ?? '') ? { ...r, mode: 'J' as const } : r));
+    addLog('sim', '곧게(MOVE L) 그리던 선을 관절로(MOVE J) 그려 봐요.');
+    const { ok } = await execute((h) => runProcess(compileProcess({ ...proc, rows, blend: 'tick' }), h, proc.speed), { reset: true, start: basePose() });
+    if (!ok) return;
+    const lines = strokes(plan) ?? [];
+    const off = (x: number, y: number) =>
+      Math.min(
+        ...lines.flatMap((l) =>
+          l.slice(1).map((b, k) => {
+            const a = l[k];
+            const dx = b.x - a.x;
+            const dy = b.y - a.y;
+            const u = Math.max(0, Math.min(1, ((x - a.x) * dx + (y - a.y) * dy) / (dx * dx + dy * dy || 1)));
+            return Math.hypot(x - a.x - u * dx, y - a.y - u * dy);
+          }),
+        ),
+      );
+    const bowMm = Math.round(Math.max(0, ...world.current.trail.flat().map(([x, y]) => off(x, y))) * 10) / 10;
+    setJointTry({ key: planKey, bowMm });
+    addLog('info', `관절로 그렸더니 선이 곧은 선에서 최대 ${bowMm} mm 휘었어요. 관절이 함께 돌면 손끝은 곡선으로 가요.`, '▶ 로 다시 실행하면 곧게(MOVE L) 그려요. 두 선을 비교해 보세요.');
+  };
   /** 한 줄씩: one row from where the arm is (the simulated arm only). */
   const runProcessRow = async (i: number) => {
     if (!loaded || busy) return;
@@ -3418,6 +3446,25 @@ export default function Console() {
     [],
   );
 
+  // The planned tool path leg by leg, as the arm will go: a J leg (all joints together) bends, an
+  // L leg is the straight line (drawn differently in 3D, so the two kinds can be told apart).
+  const planLegs = useMemo(() => {
+    if (!loaded) return [];
+    const tip = (j: readonly number[]) => {
+      const q = tcpPositionMm(loaded.chain, j, tcpNow);
+      return { ...q, z: q.z - mountMm };
+    };
+    const legs: { mode: 'J' | 'L'; pts: Spot[] }[] = [];
+    let from = flow.startJoints;
+    for (const r of built.rows) {
+      if (r.kind !== 'move' || !r.joints) continue;
+      const to = r.joints;
+      const n = r.mode === 'J' ? 16 : 1;
+      legs.push({ mode: r.mode, pts: Array.from({ length: n + 1 }, (_, k) => tip(from.map((a, i) => a + ((to[i] - a) * k) / n))) });
+      from = to;
+    }
+    return legs.filter((l) => Math.hypot(l.pts[0].x - l.pts.at(-1)!.x, l.pts[0].y - l.pts.at(-1)!.y, l.pts[0].z - l.pts.at(-1)!.z) > 0.5);
+  }, [loaded, built, flow.startJoints, tcpNow, mountMm]);
   // 공정 짜기 in 3D: the base frame and the + mark while checking the zero; the taught places and the path after.
   const planMarks =
     view === 'sim' && shownTab === 'process' && dockShown && !zeroMode && (flow.step === 1 || flow.step >= 3)
@@ -3431,7 +3478,7 @@ export default function Console() {
           }
         : flow.mode === 'free'
           ? null
-          : { spots: built.marks, path: built.path }
+          : { spots: built.marks, path: built.path, legs: planLegs }
       : null;
   const runBar = (
     <RunBar
@@ -4665,6 +4712,9 @@ export default function Console() {
                       onSaveFile={saveProcessFile}
                       onOpenFile={() => procFile.current?.click()}
                       onTools={() => openWork('parts')}
+                      jointTry={jointTry?.key === planKey ? jointTry.bowMm : null}
+                      onTryJoint={robotMode ? undefined : () => void tryJointDraw()}
+                      onRun={() => void simulateProcess()}
                       runBar={runBar}
                       editor={
                         <ProcessPanel
