@@ -347,12 +347,25 @@ export default function ControlPanel(p: Props) {
       if (k.holding) keyFns.current.stop();
       else if (tap) keyFns.current.step(k.axis, k.dir * keyFns.current.tStep);
     };
+    // The keys move the arm only with nothing else to take them: the page itself, the 3D view or this
+    // panel focused (not a key or a tab elsewhere), and Space on a focused button presses that button.
     const ours = (e: KeyboardEvent) => {
       const el = document.activeElement as HTMLElement | null;
       const typing = !!el && (/^(TEXTAREA|INPUT|SELECT)$/.test(el.tagName) || el.isContentEditable);
-      return !!PAD_KEYS[e.key] && !typing && !e.ctrlKey && !e.metaKey && !e.altKey && !!root.current?.getClientRects().length;
+      const free = !el || el === document.body || el.tagName === 'CANVAS' || !!root.current?.contains(el);
+      const pressing = e.key === ' ' && !!el && (el.tagName === 'BUTTON' || el.getAttribute('role') === 'button');
+      return !!PAD_KEYS[e.key] && !typing && free && !pressing && !e.ctrlKey && !e.metaKey && !e.altKey && !!root.current?.getClientRects().length;
     };
     const down = (e: KeyboardEvent) => {
+      // Another key with a held one (Shift+Tab, Shift+click keys): not a jog; let it be.
+      if (held && e.key !== held.key) {
+        if (!held.holding) {
+          window.clearTimeout(held.timer);
+          held = null;
+          setActive(null);
+        }
+        return;
+      }
       if (!ours(e) || keyFns.current.busy) return;
       e.preventDefault();
       e.stopPropagation();

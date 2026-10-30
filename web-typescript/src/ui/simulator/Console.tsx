@@ -87,7 +87,7 @@ import type { PyOutput, PyResult } from '@/engine/python/types';
 import { buildChain, forwardKinematics, forwardKinematicsFrames, liftChain, solveIk, type ChainSegment } from '@/engine/robot/kinematics';
 import { jointMax, jointMin } from '@/engine/robot/limits';
 import { ARM_STOP_DEC_DEG_S2, tcpPositionMm } from '@/engine/robot/motion';
-import { STRAIGHT_DOWN, coordJogBlocked, currentOrientation, shiftTool, solveToolPose, turnTool } from '@/engine/robot/tool';
+import { STRAIGHT_DOWN, coordJogBlocked, currentOrientation, shiftTool, solveToolPose, toolYawDeg, turnTool } from '@/engine/robot/tool';
 import { parseUrdf, type UrdfRobot } from '@/engine/robot/urdf';
 import type { ImageLike } from '@/engine/vision/color';
 import { Divergence, findColor, offCentre, probeJacobian, stepTowards, type Seen } from '@/engine/vision/track';
@@ -906,6 +906,8 @@ export default function Console() {
     return v;
   }, []);
   /** The running real-time jog (see startJog). */
+  /** endJog for 정지 (stop is memoised; the jog functions are not). */
+  const endJogRef = useRef<(() => void) | null>(null);
   const jog = useRef<{
     /** A held key: a joint or a base axis and its direction; a slider: the pose to reach. */
     joint?: number;
@@ -2257,7 +2259,9 @@ export default function Console() {
   );
 
   const stop = useCallback(() => {
-    const running = !!token.current || !!tracker.current?.alive || !!realRunRef.current;
+    const running = !!token.current || !!tracker.current?.alive || !!realRunRef.current || !!jog.current;
+    // A held jog key (or a dragged slider) stops too, before the key is let go.
+    if (jog.current) endJogRef.current?.();
     if (token.current) token.current.aborted = true;
     if (tracker.current) tracker.current.alive = false;
     if (realRunRef.current || robotMode) {
@@ -2526,6 +2530,13 @@ export default function Console() {
     if (!loaded || busy) return;
     if (jog && robotMode && robot?.running) return;
     const to = target.map((a, i) => Math.min(jointMax()[i], Math.max(jointMin()[i], a)));
+    // A step past a limit stops at it, and says so (the held key does the same).
+    const capped = target.findIndex((a, i) => Math.abs(a - to[i]) > 0.01);
+    if (capped >= 0) {
+      const limit = to[capped];
+      if (Math.abs(basePose()[capped] - limit) < 0.05) return addLog('warn', `J${capped + 1} 이 한계(${limit}°)에 닿아 있어요.`, '반대 방향으로 움직여 주세요.');
+      addLog('info', `J${capped + 1} 은 한계(${limit}°)까지만 움직여요.`);
+    }
     if (robotMode) {
       previewing.current = false;
       if (!robot?.connected || !robot.angles) return addLog('err', '로봇이 연결되지 않았어요.');
@@ -2611,7 +2622,7 @@ export default function Console() {
     // A step that needs a big turn of some joint (the tool was not pointing down) is a surprise on a real arm: ask first.
     const turn = Math.max(...sol.anglesDeg.map((a, i) => Math.abs(a - base[i])));
     if (turn > 25) {
-      if (robotMode && !window.confirm(`도구를 아래로 향하게 하느라 관절이 최대 ${Math.round(turn)}° 크게 움직여요.\n계속할까요?`)) return;
+      if (!window.confirm(`도구를 아래로 향하게 하느라 관절이 최대 ${Math.round(turn)}° 크게 움직여요.\n계속할까요?`)) return;
       addLog('info', '도구가 아래를 향하도록 자세를 바꿔요.');
     }
     void goJoints(sol.anglesDeg, `${axis.toUpperCase()} ${delta > 0 ? '+' : ''}${delta}mm`, true);
@@ -2620,7 +2631,10 @@ export default function Console() {
   const toolDown = () => {
     if (!loaded || busy) return;
     const base = basePose();
-    const sol = solveToolPose(loaded.chain, tcpPositionMm(loaded.chain, base, tcpNow), base, { tcpMm: tcpNow, orientation: STRAIGHT_DOWN });
+    // Straight down, the hand kept turned as it is (only the lean is taken out).
+    const keep = { yawDeg: toolYawDeg(loaded.chain, base, tcpNow), tiltDeg: 0 };
+    let sol = solveToolPose(loaded.chain, tcpPositionMm(loaded.chain, base, tcpNow), base, { tcpMm: tcpNow, orientation: keep });
+    if (!sol.converged) sol = solveToolPose(loaded.chain, tcpPositionMm(loaded.chain, base, tcpNow), base, { tcpMm: tcpNow, orientation: STRAIGHT_DOWN });
     if (!sol.converged) return addLog('err', '이 자리에서는 손을 똑바로 아래로 향하게 할 수 없어요.', '손끝을 로봇 쪽으로 조금 옮긴 뒤 다시 눌러 주세요.');
     void goJoints(sol.anglesDeg, '손 아래로', true);
   };
@@ -2657,6 +2671,8 @@ export default function Console() {
     }
   };
 
+  endJogRef.current = () => endJog();
+
   /** One frame of the jog loop: advance the commanded pose, check it, apply it (sim) or stream it (robot). */
   const jogFrame = (now: number) => {
     const j = jog.current;
@@ -2684,13 +2700,27 @@ export default function Console() {
       next[i] = Math.min(jointMax()[i], Math.max(jointMin()[i], next[i] + j.dir * deg * dt));
     } else if (j.axis === 'rx' || j.axis === 'ry' || j.axis === 'rz') {
       // Turning about a base axis, the tip kept: about as many °/s as the joints turn.
-      const sol = turnTool(loaded.chain, j.cmd, tcpNow, j.axis[1] as 'x' | 'y' | 'z', j.dir * deg * 0.75 * dt);
-      if (!sol.converged || sol.anglesDeg.some((a, i) => Math.abs(a - j.cmd[i]) > 6)) return endJog(coordJogBlocked(loaded.chain, j.cmd, tcpNow, j.axis, j.dir) ?? '도구를 이 방향으로 더 돌릴 수 없어요 (자세가 크게 바뀌어야 해요).');
-      next = sol.anglesDeg.map((a, i) => Math.min(jointMax()[i], Math.max(jointMin()[i], a)));
+      // In sub-steps of at most 1.5°, each checked, so a slow frame (a long dt) is not taken for a flip.
+      const total = j.dir * deg * 0.75 * dt;
+      const n = Math.max(1, Math.ceil(Math.abs(total) / 1.5));
+      let at = j.cmd;
+      for (let k = 0; k < n; k++) {
+        const sol = turnTool(loaded.chain, at, tcpNow, j.axis[1] as 'x' | 'y' | 'z', total / n);
+        if (!sol.converged || sol.anglesDeg.some((a, i) => Math.abs(a - at[i]) > 6)) return endJog(coordJogBlocked(loaded.chain, j.cmd, tcpNow, j.axis, j.dir) ?? '도구를 이 방향으로 더 돌릴 수 없어요 (자세가 크게 바뀌어야 해요).');
+        at = sol.anglesDeg;
+      }
+      next = at.map((a, i) => Math.min(jointMax()[i], Math.max(jointMin()[i], a)));
     } else if (j.axis) {
-      const sol = shiftTool(loaded.chain, j.cmd, { x: 0, y: 0, z: 0, [j.axis]: j.dir * mm * dt });
-      if (!sol.converged || sol.anglesDeg.some((a, i) => Math.abs(a - j.cmd[i]) > 6)) return endJog(coordJogBlocked(loaded.chain, j.cmd, tcpNow, j.axis, j.dir) ?? '도구를 이 방향으로 더 움직일 수 없어요 (자세가 크게 바뀌어야 해요).');
-      next = sol.anglesDeg.map((a, i) => Math.min(jointMax()[i], Math.max(jointMin()[i], a)));
+      // In sub-steps of at most 2 mm, each checked, so a slow frame (a long dt) is not taken for a flip.
+      const total = j.dir * mm * dt;
+      const n = Math.max(1, Math.ceil(Math.abs(total) / 2));
+      let at = j.cmd;
+      for (let k = 0; k < n; k++) {
+        const sol = shiftTool(loaded.chain, at, { x: 0, y: 0, z: 0, [j.axis]: total / n });
+        if (!sol.converged || sol.anglesDeg.some((a, i) => Math.abs(a - at[i]) > 6)) return endJog(coordJogBlocked(loaded.chain, j.cmd, tcpNow, j.axis, j.dir) ?? '도구를 이 방향으로 더 움직일 수 없어요 (자세가 크게 바뀌어야 해요).');
+        at = sol.anglesDeg;
+      }
+      next = at.map((a, i) => Math.min(jointMax()[i], Math.max(jointMin()[i], a)));
     }
     if (robotMode) {
       const r = robotNow.current;

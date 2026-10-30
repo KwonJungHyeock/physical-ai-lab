@@ -158,6 +158,21 @@ export function solveToolPose(chain: readonly ChainSegment[], point: PointMm, se
 /** Compatibility name: same search. */
 export const solveToolDown = solveToolPose;
 
+/**
+ * How the hand is turned about its own axis now, as toolRotation's yaw (degrees): the flange x axis
+ * against the radial direction at the tip, seen from above. Pointing (about) down, this is the yaw
+ * that keeps the hand as it is when only the lean is taken out ([손 아래로], a pen lowered).
+ */
+export function toolYawDeg(chain: readonly ChainSegment[], anglesDeg: readonly number[], tcpMm: number): number {
+  const f = forwardKinematicsFrames(chain, anglesDeg).at(-1)!;
+  const p = new Vector3(0, 0, tcpMm / 1000).applyMatrix4(f);
+  const h = Math.atan2(p.y, p.x);
+  const e = f.elements;
+  const along = e[0] * Math.cos(h) + e[1] * Math.sin(h);
+  const across = e[0] * Math.sin(h) - e[1] * Math.cos(h);
+  return Math.round(Math.atan2(across, along) * RAD2DEG);
+}
+
 /** The orientation the tool currently has, if it is one of the search orientations (within 2°). */
 export function currentOrientation(chain: readonly ChainSegment[], anglesDeg: readonly number[], tcpMm: number): ToolOrientation | null {
   const f = forwardKinematicsFrames(chain, anglesDeg).at(-1)!;

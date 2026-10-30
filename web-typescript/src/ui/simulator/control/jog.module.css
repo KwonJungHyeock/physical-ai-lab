@@ -1688,3 +1688,8 @@
   min-height: 0;
   padding: 0;
 }
+/* The pad's centre (the robot seen from above) takes its own clicks: a click there moves nothing. */
+.padHub {
+  pointer-events: auto;
+  cursor: default;
+}

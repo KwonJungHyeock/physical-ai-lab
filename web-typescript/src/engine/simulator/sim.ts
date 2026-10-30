@@ -34,7 +34,7 @@ import {
   type Trajectory,
 } from '../robot/motion';
 import { SELF_SLACK_MM, obj, selfContact, selfFix, selfMessage, subj, topic } from '../robot/selfCollision';
-import { currentOrientation, solveToolPose, type PointMm } from '../robot/tool';
+import { currentOrientation, solveToolPose, toolYawDeg, type PointMm } from '../robot/tool';
 import { ArmModel } from '../python/arm';
 import { activeArm } from '../robot/arms';
 import { OBJECT_KINDS, SCENE_FIXED, activeDesk, footprint, matShown, objectBox, type DeskObject, type FixedBox, type SceneId } from './desk';
@@ -1085,6 +1085,9 @@ async function moveTool(rt: Runtime, to: PointMm): Promise<void> {
   const vertical = Math.hypot(to.x - here.x, to.y - here.y) < 5;
   // A lowered pen keeps its orientation for the whole stroke too.
   let end = now && (vertical || w.penDown) ? solveToolPose(rt.chain, to, w.angles, { tcpMm: len, orientation: now }) : null;
+  // Straight up or down from a pose held at some other turn (the 기본 자세): the hand kept as it is,
+  // only the lean taken out — not a search that may find a far arm shape and swing the whole arm.
+  if (!end?.converged && !now && vertical) end = solveToolPose(rt.chain, to, w.angles, { tcpMm: len, orientation: { yawDeg: toolYawDeg(rt.chain, w.angles, len), tiltDeg: 0 } });
   if (!end?.converged) end = solveToolPose(rt.chain, to, w.angles, { tcpMm: len });
   if (!end.converged) {
     throw new RunError(`(${fmt(to)})에는 도구를 아래로 향한 채 닿을 수 없어요.`, '로봇에 더 가까운 곳이나 더 높은 곳으로 바꿔 주세요.');
