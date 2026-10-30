@@ -44,7 +44,7 @@ export function namedButtons(text: string): string[] {
   return [...text.matchAll(/\[([^\]]{1,16})\]/g)].map((m) => m[1].trim()).filter(Boolean);
 }
 
-const squash = (s: string | null | undefined) => (s ?? '').replace(/[\s▶▷·+]+/g, '');
+const squash = (s: string | null | undefined) => (s ?? '').replace(/[\s▶▷·+＋]+/g, '');
 
 /** The visible buttons (or the menu buttons that open them) whose label is one of `names`. */
 function findTargets(names: readonly string[], skip: Element | null): HTMLElement[] {

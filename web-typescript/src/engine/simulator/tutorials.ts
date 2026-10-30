@@ -98,7 +98,7 @@ const ROS_SNIPPETS: Snippet[] = [
 const basicCarry = (grip: boolean): Tutorial => ({
   steps: [
     run('▶ 시뮬레이션을 눌러 로봇이 블록을 어떻게 옮기는지 먼저 보세요.'),
-    { title: '블록 바꾸기', text: '노란 칸 1 을 눌러 옮길 블록의 색을 바꿔요. 세 줄이 함께 바뀌어요.', slots: [0] },
+    { title: '블록 바꾸기', text: '노란 칸 1 이 있는 블록마다 옮길 블록의 색을 같은 색으로 바꿔요.', slots: [0] },
     { title: '자리 바꾸기', text: `노란 칸 2 를 눌러 내려놓을 자리를 바꾸고 다시 실행해요.`, slots: [1] },
     { title: '미션', text: `아래 코드 조각 [블록 한 번에 옮기기]를 넣어 블록을 하나 더 옮겨 보세요. ${grip ? '그리퍼' : '흡착 펌프'}로 해요.`, slots: [] },
   ],
@@ -181,7 +181,7 @@ const AUTHORED: Partial<Record<Level, Partial<Record<PracticeId, Tutorial>>>> = 
         { title: '미션', text: '코드 조각 [지금 각도 출력]을 넣어 마지막 각도를 출력해 보세요.', slots: [] },
       ],
       slots: [
-        { re: /for delta in \((\d+), /g, label: '돌릴 각도' },
+        { re: /for delta in \((-?\d+), /g, label: '돌릴 각도' },
         { re: /mc\.send_angle\(joint, home\[joint - 1\] \+ delta, (\d+)\)/g, label: '속도' },
         { re: new RegExp(String.raw`time\.sleep\((${NUM})\)`, 'g'), label: '쉬는 시간', nth: 0 },
       ],
@@ -300,8 +300,29 @@ function plain(level: Level): Tutorial {
   };
 }
 
-export function tutorialFor(level: Level, _theme: Theme, id: PracticeId): Tutorial {
-  return AUTHORED[level]?.[id] ?? plain(level);
+/**
+ * The tutorial of a practice, fitted to its example as it stands (theme, tool): a yellow place the
+ * example does not have is left out (and a step left with none), and so is a snippet that does not
+ * go in or `fits` refuses (a pen shape with a gripper fitted, a mat block on the kit); a mission
+ * naming a snippet left out names none.
+ */
+export function tutorialFor(level: Level, _theme: Theme, id: PracticeId, fit?: { example: string; fits?(code: string): boolean }): Tutorial {
+  const t = AUTHORED[level]?.[id] ?? plain(level);
+  if (!fit) return t;
+  const found = new Set(findSlots(fit.example, t).map((h) => h.index));
+  const snippets = t.snippets.filter((sn) => {
+    const next = insertSnippet(fit.example, sn);
+    return next !== fit.example && (fit.fits?.(next) ?? true);
+  });
+  const steps = t.steps.flatMap((st): TutStep[] => {
+    const slots = st.slots.filter((k) => found.has(k));
+    if (st.slots.length && !slots.length) return [];
+    if (st.title !== '미션') return [{ ...st, slots }];
+    const named = [...st.text.matchAll(/\[([^\]]+)\]/g)].map((m) => m[1]);
+    if (named.every((n) => snippets.some((sn) => sn.label === n))) return [{ ...st, slots }];
+    return snippets.length ? [{ ...st, slots, text: '아래 코드 조각을 하나 넣어 보세요.' }] : slots.length ? [{ ...st, slots, text: '노란 칸의 값을 바꿔 다시 실행해요.' }] : [];
+  });
+  return { ...t, steps, snippets };
 }
 
 /* --- slots in a program ------------------------------------------------------- */
@@ -332,12 +353,16 @@ export function setSlot(code: string, t: Tutorial, index: number, value: string)
   return out;
 }
 
+/** Whether slot `index` can be set to `value` and still be found there (a half-typed "0." or "-" cannot). */
+export function slotTakes(code: string, t: Tutorial, index: number, value: string): boolean {
+  if (!value.trim()) return false;
+  return findSlots(setSlot(code, t, index, value), t).some((h) => h.index === index && h.value === value);
+}
+
 /** Where a snippet goes: before the program's last return home (or at the end). */
 export function insertSnippet(code: string, s: Snippet): string {
-  if (s.apply) {
-    const next = s.apply(code);
-    if (next !== code) return next;
-  }
+  // A snippet that changes a part of its own goes in only there (a program without that part: not at all).
+  if (s.apply) return s.apply(code);
   const lines = code.replace(/\n+$/, '').split('\n');
   let at = lines.length;
   for (let k = lines.length - 1; k >= 0; k -= 1) {

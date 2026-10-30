@@ -7,10 +7,10 @@
  * a place to change = yellow; the rest of the program is locked until 전체 편집.
  */
 
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 import type { Level, Practice } from '@/engine/simulator/practices';
-import { findSlots, insertSnippet, setSlot, type Tutorial } from '@/engine/simulator/tutorials';
+import { findSlots, insertSnippet, setSlot, slotTakes, type Tutorial } from '@/engine/simulator/tutorials';
 
 import { highlight } from './CodeEditor';
 import css from './tutorial.module.css';
@@ -155,7 +155,6 @@ export function SlotCode({
     let at = start;
     mine.forEach((h, k) => {
       if (h.start > at) parts.push(<span key={`t${k}`}>{highlight(code.slice(at, h.start))}</span>);
-      const width = `${Math.max(2, h.value.length + 1)}ch`;
       parts.push(
         <span key={`s${k}`} className={css.slot} data-hot={hot.has(h.index) || undefined} title={h.label}>
           <sup>{h.index + 1}</sup>
@@ -168,7 +167,7 @@ export function SlotCode({
               ))}
             </select>
           ) : (
-            <input aria-label={h.label} value={h.value} style={{ width }} spellCheck={false} onChange={(e) => onCode(setSlot(code, tut, h.index, e.target.value.replace(/\n/g, '')))} />
+            <SlotInput label={h.label} value={h.value} takes={(v) => slotTakes(code, tut, h.index, v)} onValue={(v) => onCode(setSlot(code, tut, h.index, v))} />
           )}
         </span>,
       );
@@ -206,6 +205,30 @@ export function SlotCode({
         {rows}
       </div>
     </div>
+  );
+}
+
+/**
+ * A typed yellow place. A half-typed value ("0.", "-", empty) stays in the box until it is one the
+ * place takes again; only then does the program change, so the place is never lost on the way.
+ */
+function SlotInput({ label, value, takes, onValue }: { label: string; value: string; takes(v: string): boolean; onValue(v: string): void }) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const shown = draft ?? value;
+  return (
+    <input
+      aria-label={label}
+      value={shown}
+      style={{ width: `${Math.max(2, shown.length + 1)}ch` }}
+      spellCheck={false}
+      aria-invalid={draft !== null && draft !== value ? true : undefined}
+      onChange={(e) => {
+        const v = e.target.value.replace(/\n/g, '');
+        setDraft(v);
+        if (v !== value && takes(v)) onValue(v);
+      }}
+      onBlur={() => setDraft(null)}
+    />
   );
 }
 

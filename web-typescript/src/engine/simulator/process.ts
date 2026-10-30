@@ -87,7 +87,7 @@ export function checkProcess(p: Process, canGrip = true): Problem[] {
         }
       });
     }
-    if (r.kind === 'grip' && !canGrip) out.push({ line, msg: `${line}번 줄: 지금 도구는 그리퍼가 아니에요.`, fix: '[수동 제어] → [도구 · 액세서리]에서 그리퍼로 바꾸거나 이 줄을 지워 주세요.' });
+    if (r.kind === 'grip' && !canGrip) out.push({ line, msg: `${line}번 줄: 지금 도구는 그리퍼가 아니에요.`, fix: '왼쪽 [도구]에서 그리퍼로 바꾸거나 이 줄을 지워 주세요.' });
     if (r.kind === 'wait' && !(r.sec > 0 && r.sec <= WAIT_MAX_S)) out.push({ line, msg: `${line}번 줄: 대기는 0 ~ ${WAIT_MAX_S}초로 해 주세요.` });
   });
   return out;

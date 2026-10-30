@@ -661,7 +661,7 @@ export function check(steps: readonly Step[], ctx: CheckContext): { errors: Prob
             errors.push({
               line: s.line,
               msg: `'${s.name}'이라는 자세가 없어요.`,
-              fix: '[수동 제어] → [자세 저장 · 불러오기]에서 자세를 기록하거나 있는 자세를 골라 주세요.',
+              fix: '왼쪽 [자세]에서 자세를 기록하거나 있는 자세를 골라 주세요.',
             });
           break;
         case 'find':

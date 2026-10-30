@@ -50,7 +50,15 @@ for (const theme of ['arm', 'kit'] as const) {
         assert.ok(T.findSlots(next, tut).some((x) => x.index === h.index), `${level} ${p.id}: "${h.label}" lost after a change`);
         places += 1;
       }
-      for (const sn of tut.snippets) {
+      // Fitted to its example (as the console shows it): every step's place is there, every snippet goes in
+      // and adds no problem for the practice's own tool on this desk, and a mission names only snippets offered.
+      const ctx = { theme, effector: p.effector, cameraFlange: !!p.cameraFlange, poses: {} };
+      const known = new Set(G.check(G.parse(code).steps, ctx).errors.map((e) => e.msg));
+      const fitted = T.tutorialFor(level, theme, p.id, { example: code, fits: level === 'basic' ? (next) => !G.parse(next).errors.length && G.check(G.parse(next).steps, ctx).errors.every((e) => known.has(e.msg)) : undefined });
+      const there = new Set(T.findSlots(code, fitted).map((h) => h.index));
+      for (const st of fitted.steps) for (const k of st.slots) assert.ok(there.has(k), `${theme} ${level} ${p.id}: step "${st.title}" points at a place the example does not have`);
+      for (const st of fitted.steps) for (const [, n] of st.text.matchAll(/\[([^\]]+)\]/g)) if (st.title === '미션') assert.ok(fitted.snippets.some((sn) => sn.label === n), `${theme} ${level} ${p.id}: mission names [${n}], not offered`);
+      for (const sn of fitted.snippets) {
         const next = T.insertSnippet(code, sn);
         assert.notEqual(next, code, `${level} ${p.id}: snippet "${sn.label}" did not go in`);
         if (level === 'basic') assert.deepEqual(G.parse(next).errors, [], `${level} ${p.id}: snippet "${sn.label}" breaks the program`);
@@ -59,6 +67,18 @@ for (const theme of ['arm', 'kit'] as const) {
   }
 }
 console.log(`  ok   tutorials: every place found and changed alone (${places} places), every snippet goes in`);
+
+// A half-typed value is not taken (the place would be lost); a whole one is.
+{
+  const p = P.practicesFor('python', 'arm').find((x) => x.id === 'joints')!;
+  const code = P.starterFor(p, p.effector, 'arm');
+  const tut = T.tutorialFor('python', 'arm', 'joints');
+  const pause = tut.slots.findIndex((s) => s.label === '쉬는 시간');
+  const turn = tut.slots.findIndex((s) => s.label === '돌릴 각도');
+  for (const v of ['0.', '', '-', '.5']) assert.equal(T.slotTakes(code, tut, pause, v), false, `"${v}" taken`);
+  assert.ok(T.slotTakes(code, tut, pause, '0.5') && T.slotTakes(code, tut, turn, '-30'));
+  console.log('  ok   a half-typed value keeps the place (0. · - · empty wait; 0.5 · -30 go in)');
+}
 
 // Basic snippets land before the last return home.
 {

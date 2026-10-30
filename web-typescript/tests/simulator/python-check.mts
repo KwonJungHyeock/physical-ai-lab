@@ -360,6 +360,25 @@ rclpy.spin(Waver())
   assert.deepEqual(names, ['control_slider', 'waver']);
   assert.ok(r.ros!.messages.every((m) => m.topic === '/joint_states' && m.type === 'sensor_msgs/JointState'));
   console.log(`  ok   ROS 2: node publishes /joint_states, the official driver (control_slider) moves the arm (${moves.length} moves)`);
+  // Past a joint's limit the driver's send_angles refuses it, as pymycobot does on the robot.
+  const far = run(
+    `import math
+import rclpy
+from rclpy.node import Node
+from sensor_msgs.msg import JointState
+
+rclpy.init()
+node = Node("far")
+pub = node.create_publisher(JointState, "joint_states", 10)
+msg = JointState()
+msg.position = [math.radians(400), 0.0, 0.0, 0.0, 0.0, 0.0]
+pub.publish(msg)
+rclpy.spin_once(node)
+`,
+    'ros',
+  );
+  assert.ok(!far.ok && /angles not right/.test(far.error?.message ?? ''), JSON.stringify(far.error));
+  console.log(`  ok   ROS 2: an angle past the limit stops with pymycobot's message (${far.error?.type})`);
 }
 
 /* --- every starter program of the 중급 and 고급 practices ------------------------ */

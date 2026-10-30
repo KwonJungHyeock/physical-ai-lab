@@ -643,6 +643,12 @@ def start_driver():
             n = int(_sim.dof())
             data_list = [round(math.degrees(v), 2) for v in list(msg.position)[:n]]
             if len(data_list) == n:
+                # The pymycobot driver calls send_angles, which refuses an angle past a joint's limit
+                # as on the robot (the ROBOTIS and Dobot arms' own drivers are not modelled: clamped).
+                if str(_sim.family()) not in ("omx", "mg400"):
+                    from pymycobot.mycobot280rdkx5 import _check
+
+                    _check(angles=data_list, speed=50)
                 _sim.driver_move(data_list + [0] * (6 - n), 50, current_line[0])
 
     driver[0] = ControlSlider()

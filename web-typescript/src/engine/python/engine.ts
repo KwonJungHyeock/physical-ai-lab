@@ -160,6 +160,7 @@ export function runScript(py: PyodideLike, code: string, init: PyInit): PyResult
     },
     fk: (angles: unknown) => coordsAt(nums(angles)),
     dof: () => activeArm().dof,
+    family: () => activeArm().family,
     angles_min: () => [...jointMin()],
     angles_max: () => [...jointMax()],
     coords_min: () => [...activeArm().coordsMin],

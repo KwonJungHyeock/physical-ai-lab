@@ -1762,7 +1762,20 @@ export default function Console() {
   const runSteps = (steps: Step[], opts: { reset: boolean; label?: boolean; quiet?: boolean }) => execute((h) => runProgram(steps, h), opts);
 
   /** After a run passed: the gate opens and the practice reports. */
-  const tut = tutorialFor(level, theme, practice.id);
+  // Fitted to the example as it stands here: only places it has, only snippets that work with the
+  // fitted tool and on this desk (no new problem in a block program).
+  const tut = useMemo(() => {
+    const example = starterFor(practice, effector, theme);
+    const ctx = { theme, effector, cameraFlange, poses };
+    const known = level === 'basic' ? new Set(check(parse(example).steps, ctx).errors.map((e) => e.msg)) : null;
+    const fits = known
+      ? (next: string) => {
+          const r = parse(next);
+          return !r.errors.length && check(r.steps, ctx).errors.every((e) => known.has(e.msg));
+        }
+      : undefined;
+    return tutorialFor(level, theme, practice.id, { example, fits });
+  }, [level, theme, practice, effector, cameraFlange, poses]);
   const tutKey = `${level}:${practice.id}`;
   const tutStep = Math.min(tutSteps[tutKey] ?? 0, tut.steps.length - 1);
   const setTutStep = (k: number) => setTutSteps((m) => ({ ...m, [tutKey]: Math.max(0, Math.min(tut.steps.length - 1, k)) }));
@@ -1854,23 +1867,28 @@ export default function Console() {
         if (r.error.hint) file.print({ text: `  → ${r.error.hint}`, tone: 'info' });
       }
     }
-    if (!r.ok && r.error) {
-      const e = r.error;
-      if (!file) addLog('err', `${e.line ? `${e.line}번째 줄: ` : ''}${e.type}: ${e.message}`, e.hint);
+    const e = r.ok ? null : r.error;
+    const postError = () => e && !file && addLog('err', `${e.line ? `${e.line}번째 줄: ` : ''}${e.type}: ${e.message}`, e.hint);
+    if (e) {
       if (e.line) setErrorLines([e.line]);
       setBadge({ kind: 'stop', text: '오류' });
-      // Commands issued before the error still play, so the student sees how far it got.
-      if (!r.events.length) return 'error';
+      // Commands issued before the error still play, so the student sees how far it got; the
+      // error is posted after them (the last notice on the board).
+      if (!r.events.length) {
+        postError();
+        return 'error';
+      }
     }
     // The whole timeline is checked first: a run that would fold the arm into itself does not start.
     const preWorld = createWorld(effector, cameraFlange, layout.current, theme);
     preWorld.angles = start.slice();
     const pre = await preflight((h) => playTimeline(r, h), { chain: loaded.chain, world: preWorld, poses });
     if (pre) {
+      postError();
       refuseRun(pre);
       return 'error';
     }
-    const moves = r.events.filter((e) => e.kind === 'move').length;
+    const moves = r.events.filter((ev) => ev.kind === 'move').length;
     addLog('sim', `${r.endT.toFixed(1)}초 동안 명령 ${r.events.length}개 (움직임 ${moves}개). 3D 로 재생하며 충돌을 검사해요.`);
     if (!r.ok) setBadge({ kind: 'sim', text: '오류 전까지 재생' });
     else setBadge({ kind: 'sim', text: '시뮬레이션' });
@@ -1885,6 +1903,7 @@ export default function Console() {
       return 'stopped';
     }
     if (!r.ok) {
+      postError();
       setBadge({ kind: 'stop', text: '오류' });
       return 'error';
     }
