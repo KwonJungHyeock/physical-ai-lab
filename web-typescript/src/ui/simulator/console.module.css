@@ -9102,3 +9102,82 @@ div.zeroFlow {
 .app .toolPlate > p {
   flex-basis: 100%;
 }
+
+/* --- the rest of the simulator in the white rule (2026-10-30): the chosen = silver or a white edge,
+   red only to stop, amber only to warn. ------------------------------------------------------------ */
+/* 도구: the tool on now on a groove plate, its label quiet; the chosen card lit white, its name silver */
+.toolHero {
+  background: var(--hud-groove);
+  box-shadow: var(--hud-groove-shadow);
+}
+.toolHero small {
+  color: var(--hud-dim);
+  letter-spacing: 0.04em;
+}
+.app .toolCard[aria-pressed='true'] {
+  background: linear-gradient(180deg, #3b4046, #2c3035);
+  box-shadow:
+    inset 0 0 0 1.5px rgba(255, 255, 255, 0.85),
+    0 0 14px rgba(255, 255, 255, 0.12);
+}
+.app .toolCard[aria-pressed='true']::after {
+  display: none;
+}
+.app .toolCard[aria-pressed='true'] span {
+  padding: 1px 8px;
+  border-radius: 6px;
+  background: var(--hud-silver);
+  color: var(--hud-ink);
+  box-shadow: var(--hud-silver-shadow);
+}
+/* 자세: [지금 자세 저장하기] silver; each pose an icon, its name, the angles small, a lock when fixed */
+.app .side .poseSave {
+  border-color: rgba(255, 255, 255, 0.95);
+  background: var(--hud-silver);
+  color: var(--hud-ink);
+  box-shadow: var(--hud-silver-shadow);
+}
+.app .side .poseList li {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+}
+.poseIcon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  background: #2a2e33;
+  color: #e9edf2;
+}
+.app .side .poseList .poseName small {
+  font-size: 11.5px;
+  color: var(--hud-dim);
+}
+.app .side .poseFixed {
+  display: grid;
+  place-items: center;
+  color: var(--hud-dim);
+}
+/* Where to press next: a white ring that breathes (orange is for warnings). */
+.app [data-hint='on'] {
+  outline-color: #fff;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .app [data-hint='on'] {
+    animation-name: hintRingWhite;
+  }
+}
+@keyframes hintRingWhite {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.5);
+    outline-color: rgba(255, 255, 255, 1);
+  }
+  50% {
+    box-shadow: 0 0 0 7px rgba(255, 255, 255, 0);
+    outline-color: rgba(255, 255, 255, 0.45);
+  }
+}

@@ -50,14 +50,14 @@ function useSizes(urls: string[]) {
 function FolderGlyph({ size = 44, open }: { size?: number; open?: boolean }) {
   return (
     <svg className={css.glyph} width={size} height={(size * 40) / 48} viewBox="0 0 48 40" aria-hidden="true">
-      <path d="M3 7.5A3.5 3.5 0 0 1 6.5 4h11.2a3 3 0 0 1 2.1.9L23 8h18.5A3.5 3.5 0 0 1 45 11.5V33a3.5 3.5 0 0 1-3.5 3.5h-35A3.5 3.5 0 0 1 3 33z" fill="#7aa2ff" />
+      <path d="M3 7.5A3.5 3.5 0 0 1 6.5 4h11.2a3 3 0 0 1 2.1.9L23 8h18.5A3.5 3.5 0 0 1 45 11.5V33a3.5 3.5 0 0 1-3.5 3.5h-35A3.5 3.5 0 0 1 3 33z" fill="#8d949c" />
       <path
         d={
           open
             ? 'M5.5 15.5A3.5 3.5 0 0 1 9 12.5h35.5a2.5 2.5 0 0 1 2.4 3.2l-4.6 17.5a3.5 3.5 0 0 1-3.4 2.8H6.5A3.5 3.5 0 0 1 3 32.5z'
             : 'M3 14.5A3.5 3.5 0 0 1 6.5 11h35a3.5 3.5 0 0 1 3.5 3.5V33a3.5 3.5 0 0 1-3.5 3.5h-35A3.5 3.5 0 0 1 3 33z'
         }
-        fill="#a9c3ff"
+        fill="#bcc2c9"
       />
       <path d="M3 14.5A3.5 3.5 0 0 1 6.5 11h35a3.5 3.5 0 0 1 3.5 3.5v1H3z" fill="#fff" opacity={open ? 0 : 0.35} />
     </svg>

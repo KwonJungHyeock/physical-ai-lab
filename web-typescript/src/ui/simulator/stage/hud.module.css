@@ -496,3 +496,26 @@
   backdrop-filter: none;
   box-shadow: var(--hud-plate-shadow);
 }
+
+/* The monitor's panel keys: on = silver; a joint's load ring white, amber and red only when it works hard. */
+.hud .bar button[aria-pressed='true'] {
+  color: var(--hud-ink);
+  background: var(--hud-silver);
+  box-shadow: var(--hud-silver-shadow);
+}
+.hud .bar button[aria-pressed='true']::after {
+  display: none;
+}
+.ring {
+  stroke: #e9edf2;
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.5));
+}
+.dial[data-load='mid'] .ring {
+  filter: none;
+}
+.dial[data-load='high'] .ring {
+  filter: none;
+}
+.lgLoad {
+  background: #e9edf2;
+}

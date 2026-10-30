@@ -868,3 +868,15 @@
   background: var(--hud-groove);
   box-shadow: var(--hud-groove-shadow);
 }
+
+/* The page menus (라이브러리 · 자료실 tree): the open one filled silver, as on the rail. */
+.page .pageNav button[aria-current='page'],
+.page .pageNav .treeName[aria-current='page'] {
+  background: var(--hud-silver);
+  color: var(--hud-ink);
+  box-shadow: var(--hud-silver-shadow);
+}
+.page .pageNav button[aria-current='page'] :is(svg, em, span),
+.page .pageNav .treeName[aria-current='page'] :is(svg, em, span) {
+  color: var(--hud-ink);
+}

@@ -3265,7 +3265,7 @@ export default function Console() {
   const poseNames = Object.keys(poses);
   const recordRow = (
     <div className={css.poseList}>
-      <button className={css.jogWide} type="button" disabled={busy} onClick={recordPose}>
+      <button className={`${css.jogWide} ${css.poseSave}`} type="button" disabled={busy} onClick={recordPose}>
         <Icon name="save" size={15} /> 지금 자세 저장하기
       </button>
       {poseNames.length === 0 && (
@@ -3281,6 +3281,9 @@ export default function Console() {
               ] as const
             ).map(([id, name, angles]) => (
               <li key={id}>
+                <span className={css.poseIcon}>
+                  <Icon name={id} size={18} />
+                </span>
                 <span className={css.poseName}>
                   <b>{name}</b>
                   <small>{angles.map((a) => `${Math.round(a * 10) / 10}°`).join(' ')}</small>
@@ -3288,7 +3291,9 @@ export default function Console() {
                 <button type="button" className={css.poseGo} disabled={busy} onClick={() => goPose(id)}>
                   이 자세로
                 </button>
-                <em className={css.poseFixed}>고정</em>
+                <em className={css.poseFixed} title="고정 자세 (지울 수 없어요)" aria-label="고정">
+                  <Icon name="lock" size={14} />
+                </em>
               </li>
             ))}
           </ul>
@@ -3298,6 +3303,9 @@ export default function Console() {
         <ul>
           {poseNames.map((n) => (
             <li key={n}>
+              <span className={css.poseIcon}>
+                <Icon name="flag" size={18} />
+              </span>
               <span className={css.poseName} title={`J1~J6: ${poses[n].join('°, ')}°`}>
                 <b>{n}</b>
                 <small>{poses[n].map((a) => `${a}°`).join(' ')}</small>

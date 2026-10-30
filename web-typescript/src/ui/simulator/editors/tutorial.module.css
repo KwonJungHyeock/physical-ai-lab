@@ -449,3 +449,9 @@
 .steps .link:first-of-type {
   margin-left: auto;
 }
+
+/* 미션 코드 조각: the + in white (the yellow stays for the values to change in the code). */
+.snip i {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
