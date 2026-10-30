@@ -75,8 +75,9 @@ ARRIVE_DEG = 2.0        # final arrival tolerance (J1 measured 1.4° on the real
 VIA_DEG = 5.0           # intermediate waypoint of a straight line: send the next one early
 POLL_S = 0.1            # live angle refresh for the console
 IDENTIFY_SPEED = 25     # 로봇 찾기 [움직여 확인]: straightening, slow enough to stop by hand
-DEADMAN_S = 5.0         # stop a run when the console has not polled for this long (0 = off; --deadman);
-                        # 5 s rides out a Wi-Fi roam or a busy classroom network without letting a lost arm go on
+DEADMAN_S = 8.0         # stop a run when the console has not polled for this long (0 = off; --deadman);
+                        # 8 s rides out a Wi-Fi roam or a busy classroom network without letting a lost arm go on,
+                        # and stays well past the console's own "link lost" (3 missed 1.5 s polls, ~5 s)
 SETTLE_S = 0.3         # after arriving, wait up to this long for the arm to stop moving before measuring
 JOG_LEAD_DEG = 15.0    # a jog target may lead the arm by at most this much per joint
 JOG_HOLD_S = 1.0       # jogging and no keep-alive for this long: the console let go (or went away), stop
@@ -124,6 +125,18 @@ def arrival_gap(now, target, tolerance):
     far = [(i, t - a) for i, (a, t) in enumerate(zip(now, target)) if abs(t - a) > tolerance]
     far.sort(key=lambda x: -abs(x[1]))
     return ", ".join(f"J{i + 1} 목표 {target[i]:.1f}° / 지금 {now[i]:.1f}° ({abs(d):.1f}° 차이)" for i, d in far[:3])
+
+
+def nearing_limit(before, now):
+    """The first joint (1-6) that is within JOG_EDGE_DEG of a limit and got nearer to it since `before`, or 0."""
+    for i, (b, a) in enumerate(zip(before, now)):
+        lo, hi = PROFILE["angle_min"][i], PROFILE["angle_max"][i]
+        gap, was = min(a - lo, hi - a), min(b - lo, hi - b)
+        if gap < JOG_EDGE_DEG and gap < was:
+            return i + 1
+    return 0
+
+
 MAX_ARRIVALS = 200      # measured arrivals kept per run (for the repeatability check)
 
 
@@ -415,6 +428,7 @@ class Robot:
         self.jog_at = 0.0           # time of the latest jog target; 0 when not jogging
         self.jog_key = None         # what the firmware is jogging now: ("joint", 1..6, ±1) or ("coord", 1..3, ±1)
         self.jog_speed = 0
+        self.jog_edge = None        # a tool jog stopped at a joint's limit: that jog is refused until another motion
         self.grip_gen = 0           # each gripper command; a newer one cancels the older one's easing off
         threading.Thread(target=self._poll, daemon=True).start()
 
@@ -443,6 +457,7 @@ class Robot:
                 if self.reconnect() is None:
                     self.state["error"] = ""
             if not self.state["running"]:       # the runner reads angles itself while moving
+                before = self.state["angles"]
                 self.read_angles()
                 # Hold-to-run: a jog lasts only while the console keeps sending targets.
                 if self.jog_at and time.time() - self.jog_at > JOG_HOLD_S:
@@ -456,6 +471,15 @@ class Robot:
                     if (edge - a) * d < JOG_EDGE_DEG:
                         log(f"[조그] J{j} 한계 가까이에서 멈춥니다.")
                         self.end_jog()
+                # A tool jog (jog_coord) turns whichever joints it needs: it stops as one of them comes
+                # within JOG_EDGE_DEG of its limit (getting nearer to it, so a jog away from an edge goes on).
+                elif self.jog_key and self.jog_key[0] == "coord" and before and self.state["angles"]:
+                    j = nearing_limit(before, self.state["angles"])
+                    if j:
+                        log(f"[조그] {COORD_AXES[self.jog_key[1] - 1].upper()}: J{j} 한계 가까이에서 멈춥니다.")
+                        edge = self.jog_key
+                        self.end_jog()
+                        self.jog_edge = (edge, j)
             # Dead-man: the console polls /api/state several times a second. If it goes
             # quiet while the arm is moving (Wi-Fi dropped, laptop closed), nobody can
             # press Stop any more — so stop.
@@ -478,7 +502,8 @@ class Robot:
             if not isinstance(v, (int, float)) or math.isnan(v):
                 return f"{i + 1}번 관절 각도가 숫자가 아니에요."
             lo, hi = PROFILE["angle_min"][i], PROFILE["angle_max"][i]
-            if not lo - 0.5 <= v <= hi + 0.5:
+            # Strict: pymycobot is never handed an angle past a joint's limit (its own refusal is unclear).
+            if not lo <= v <= hi:
                 return f"{i + 1}번 관절 {v:.1f}°는 범위({lo}°~{hi}°) 밖이에요."
         return None
 
@@ -540,6 +565,7 @@ class Robot:
             self.lost = False
             self.jog_at = 0.0
             self.jog_key = None
+            self.jog_edge = None
             self.seen()
             run = self.state["run"] + 1
             self.state.update(running=True, step=-1, line=0, total=len(actions), message=message, error="", run=run, arrivals=[])
@@ -568,6 +594,7 @@ class Robot:
         if self.jog_key:
             self.call("stop")
             self.jog_key = None
+        self.jog_edge = None
         if not self.jog_at:
             log(f"[조그] 시작 (속도 {speed})")
         self.call("send_angles", [round(float(v), 2) for v in angles], speed)
@@ -591,6 +618,8 @@ class Robot:
             if axis not in COORD_AXES:
                 return "축은 x, y, z, rx, ry, rz 예요."
             key = ("coord", COORD_AXES.index(axis) + 1, direction)
+            if self.jog_edge and self.jog_edge[0] == key:
+                return f"{self.jog_edge[1]}번 관절이 한계 가까이라 이쪽으로는 더 갈 수 없어요."
         else:
             if joint not in range(1, 7):
                 return "관절 번호는 1~6 이에요."
@@ -603,6 +632,7 @@ class Robot:
             speed = max(1, min(SPEED_CAP, int(round(float(speed)))))
         except (TypeError, ValueError):
             speed = 20
+        self.jog_edge = None
         if self.jog_key != key or abs(speed - self.jog_speed) >= 2:
             if self.jog_key and self.jog_key != key:
                 self.call("stop")
@@ -965,7 +995,9 @@ FIXED_LABEL = [None]   # --name: a name given on the command line wins over the 
 IDENTITY_AT = [0.0]
 WIFI = None
 # Read by other pages on the classroom network (로봇 찾기 on a student's PC lists every robot).
-CROSS_ORIGIN = ("/api/state", "/api/identify")
+# Only reading: /api/identify moves the arm, so it is taken from this robot's own console and the PC
+# program on this network only (remote_console), like every other command.
+CROSS_ORIGIN = ("/api/state",)
 # Different on every start: a console that sees it change knows the server restarted (its run ids start over).
 BOOT_ID = os.urandom(4).hex()
 # Files whose names change with every build (and the Python runtime): kept by the browser.
@@ -1167,6 +1199,13 @@ class Handler(SimpleHTTPRequestHandler):
             return True
         return urllib.parse.urlsplit(origin).netloc == (self.headers.get("Host") or "")
 
+    def console_post(self):
+        """A POST this server takes: only JSON, and only from this robot's own console or the PC program
+        on this network (로봇 찾기 [움직여 확인] too). A plain form or text/plain POST from another web page needs no
+        preflight and would otherwise drive the robot."""
+        ctype = (self.headers.get("Content-Type") or "").split(";")[0].strip().lower()
+        return ctype == "application/json" and (self.same_origin() or self.remote_console())
+
     def end_headers(self):
         if self.command in ("GET", "HEAD") and not self.path.startswith("/api/"):
             # Hashed bundles never change under their name; everything else (the pages, the logo, the
@@ -1290,11 +1329,7 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_POST(self):
         route = self.path.split("?")[0]
-        # Only JSON, and only from this robot's own console or the PC program on this network (or,
-        # for 움직여 확인, any page that asks first): a plain form or text/plain POST from another web
-        # page needs no preflight and would otherwise drive the arm.
-        ctype = (self.headers.get("Content-Type") or "").split(";")[0].strip().lower()
-        if ctype != "application/json" or (route not in CROSS_ORIGIN and not self.same_origin() and not self.remote_console()):
+        if not self.console_post():
             return self.send_json({"ok": False, "error": "이 요청은 받을 수 없어요 (로봇 콘솔 화면에서만)."}, 403)
         try:
             body = self.read_json()
@@ -1337,10 +1372,13 @@ class Handler(SimpleHTTPRequestHandler):
                 # move gets time of its own.
                 ROBOT.grace_until = time.time() + 30
                 if body.get("move") == "nod":
-                    there = list(a)
-                    there[0] += -5 if a[0] > 0 else 5
+                    # From where it stands, kept within the limits (a joint read a hair past its limit
+                    # would otherwise be refused by the strict check).
+                    here = [max(lo, min(hi, v)) for v, lo, hi in zip(a, PROFILE["angle_min"], PROFILE["angle_max"])]
+                    there = list(here)
+                    there[0] += -5 if here[0] > 0 else 5
                     moves = [{"type": "angles", "angles": there, "speed": 35, "line": 0},
-                             {"type": "angles", "angles": list(a), "speed": 35, "line": 0}]
+                             {"type": "angles", "angles": here, "speed": 35, "line": 0}]
                 else:
                     moves = [{"type": "angles", "angles": [0.0] * len(a), "speed": IDENTIFY_SPEED, "line": 0}]
                 err, run = ROBOT.start(moves, "로봇 찾기: 이 로봇이에요")

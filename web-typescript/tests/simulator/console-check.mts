@@ -17,7 +17,7 @@ globalThis.DOMParser = new JSDOM('').window.DOMParser;
 const { parseUrdf } = await import('../../src/engine/robot/urdf');
 const { buildChain, forwardKinematics, forwardKinematicsFrames, liftChain } = await import('../../src/engine/robot/kinematics');
 const { JOINT_ANGLE_MAX, JOINT_ANGLE_MIN } = await import('../../src/engine/robot/limits');
-const { quintic, jointTrajectory } = await import('../../src/engine/robot/motion');
+const { quintic, jointTrajectory, armMoveDuration, armTrajectory, coastTrajectory } = await import('../../src/engine/robot/motion');
 const { shiftTool, solveToolDown } = await import('../../src/engine/robot/tool');
 const K = await import('../../src/engine/simulator/board');
 const { ABOVE_MM, ARUCO_6X6, BINS, BIN_NAMES, BLOCK_MM, BLOCK_START, BUTTON, CAL_BOARD, COLORS, COLOR_TO_BIN, DROP_CLEARANCE_MM, HOME_DEG, MARKERS, MARKER_MM, TOP_CAMERA, randomBlockLayout } = K;
@@ -43,6 +43,13 @@ const kitChain = liftChain(chain, K.KIT_RISE_MM);
   const v = (traj.sample(traj.durationS / 2 + dt)[0] - traj.sample(traj.durationS / 2 - dt)[0]) / (2 * dt);
   assert.ok(Math.abs(v - 100) < 0.5, `peak joint speed ${v.toFixed(2)} deg/s, expected 100`);
   console.log(`  ok   quintic motion (90° at speed 50: ${traj.durationS.toFixed(2)} s, peak ${v.toFixed(1)}°/s)`);
+  // The simulator's arm timing against the real RDK X5 (docs/reports/console/08-robot-check.md).
+  const z = [0, 0, 0, 0, 0, 0];
+  assert.ok(Math.abs(armMoveDuration(z, [10, 0, 0, 0, 0, 0], 20) - 0.44) < 0.05, 'J1 10° at speed 20 arrives in about 0.44 s');
+  assert.ok(Math.abs(armMoveDuration(z, [0, 0, 0, 0, 0, 20], 20) - 0.75) < 0.05, 'J6 20° at speed 20 arrives in about 0.75 s');
+  assert.ok(Math.abs(armTrajectory(z, [30, 0, 0, 0, 0, 0], 10).sample(0.6)[0] - 10.72) < 0.5, '0.6 s into a 30° move at speed 10: about 10.7°');
+  assert.ok(Math.abs(coastTrajectory([0], [20]).end[0] - 2.99) < 0.2, 'after stop from 20°/s it runs on about 3°');
+  console.log('  ok   real-arm timing (0.44 s · 0.75 s · 10.7° · 3° coast, measured)');
 }
 
 /* --- 2. Kinematics vs the official AI Kit data ----------------------------- */
@@ -365,6 +372,12 @@ const release = { grip: 'robot.gripper.open()', suction: 'robot.pump.off()' };
   assert.ok(realMissing(6, ['로봇에서 실행 완료: 색 인식 (블록 코딩, 어댑티브 그리퍼)']));
   assert.equal(realMissing(6, ['AI 샘플 로봇 실행: YOLOv5s 80ms, 찾은 물체: cup 91%']), null);
   const at = new Date().toISOString();
+  // Check 2 passes within the repeatability limit only; the sheet has the pass lines and the sign table.
+  const sheet = (mm: number) =>
+    reportHtml({ robot: '로봇 1', model: 'myCobot 280 RDK X5', evidence: [{ check: 2, at, text: `로봇 실습 7 · 반복 위치제어: 같은 점에 5번 도착 · 흩어진 폭 ${mm} mm (잰 각도로 계산)`, robot: true }], prep: null, prepAt: null });
+  assert.ok(sheet(0.4).includes('✓ 실제 로봇') && !sheet(0.4).includes('기준 0.5 mm 초과'));
+  assert.ok(sheet(0.8).includes('기준 0.5 mm 초과') && /0\s*\/\s*7/.test(sheet(0.8).replace(/<[^>]+>/g, ' ')), 'over the limit is not a pass');
+  assert.ok(sheet(0.4).includes('합격 기준') && sheet(0.4).includes('확인자 (고객)'));
   const html = reportHtml({
     robot: '로봇 1',
     model: 'myCobot 280 RDK X5',

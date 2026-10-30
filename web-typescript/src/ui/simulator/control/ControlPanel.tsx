@@ -35,6 +35,8 @@ export interface ToolNow {
   rx?: number;
   ry?: number;
   rz?: number;
+  /** The flange (mm): what get_coords reports, when a tool sticks out past it. */
+  flange?: { x: number; y: number; z: number };
 }
 
 interface Props {
@@ -585,6 +587,11 @@ export default function ControlPanel(p: Props) {
               </span>
             ))}
             <small>mm</small>
+            {tip?.flange && (
+              <small className={css.flange} title="손끝(TCP)은 도구 끝이에요. 로봇의 get_coords 는 도구를 다는 플랜지 위치를 알려 줘요">
+                TCP · get_coords(플랜지) {tip.flange.x.toFixed(0)}, {tip.flange.y.toFixed(0)}, {tip.flange.z.toFixed(0)}
+              </small>
+            )}
           </div>
           <p className={css.cap}>
             손끝 옮기기 <small>로봇이 바라보는 쪽이 앞</small>
@@ -626,12 +633,6 @@ export default function ControlPanel(p: Props) {
               </span>
             </div>
           </div>
-          <p className={css.keys} aria-hidden="true">
-            키보드 <kbd>↑</kbd>
-            <kbd>↓</kbd>
-            <kbd>←</kbd>
-            <kbd>→</kbd> 방향 · <kbd>Shift</kbd> 위 · <kbd>Space</kbd> 아래
-          </p>
           <p className={css.cap}>
             손 방향 <small>손끝은 그 자리에서 {turnStep}°씩</small>
             {p.onToolDown && (

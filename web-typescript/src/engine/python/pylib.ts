@@ -111,6 +111,21 @@ def _check(**kwargs):
         elif parameter == "speed":
             if not 1 <= value <= 100:
                 raise ValueError(f"speed value not right, should be 1 ~ 100, the received speed is {value}")
+        elif parameter in ("direction", "coord_mode"):
+            if value not in (0, 1):
+                raise ValueError(f"The {parameter} not right, should be in (0, 1), but received {value}.")
+        elif parameter == "gripper_state":
+            if value not in (0, 1, 254):
+                raise ValueError(f"The {parameter} not right, should be in (0, 1, 254), but received {value}.")
+        elif parameter == "gripper_speed":
+            if not 0 <= value <= 100:
+                raise ValueError(f"The gripper_speed value not right, should be 0 ~ 100, the received speed is {value}")
+        elif parameter == "gripper_type":
+            if value not in (1, 2, 3, 4):
+                raise ValueError(f"The gripper_type not right, should be in (1, 2, 3, 4), but received {value}.")
+        elif parameter == "is_torque":
+            if value not in (0, 1):
+                raise ValueError(f"The is_torque not right, should be in (0, 1), but received {value}.")
 
 
 class MyCobot280RDKX5:
@@ -198,17 +213,19 @@ class MyCobot280RDKX5:
     def send_radians(self, radians, speed):
         return self.send_angles([math.degrees(r) for r in radians], speed)
 
-    def send_coords(self, coords, speed, mode=0, _async=False):
+    def send_coords(self, coords, speed, coord_mode=None, _async=False):
+        # coord_mode: 0 (or left out) = angular, each joint the short way; 1 = linear, the tool in a straight line.
+        # An unreachable target does not stop the program: the arm stays put (the simulator says so).
         coords = list(coords)
-        _check(coords=coords, speed=speed)
-        _sim.move_coords(self._six_coords(coords), speed, "send_coords", line())
+        _check(coords=coords, speed=speed, coord_mode=coord_mode)
+        _sim.move_coords(self._six_coords(coords), speed, int(coord_mode or 0), "send_coords", line())
         return 1
 
-    def send_coord(self, coord_id, coord, speed):
+    def send_coord(self, coord_id, coord, speed, _async=False):
         _check(coord_id=coord_id, coord=coord, speed=speed)
         target = self.get_coords()
         target[coord_id - 1] = coord
-        _sim.move_coords(self._six_coords(target), speed, "send_coord", line())
+        _sim.move_coords(self._six_coords(target), speed, 0, "send_coord", line())
         return 1
 
     def _wait(self, timeout):
@@ -226,6 +243,7 @@ class MyCobot280RDKX5:
         return self._wait(timeout)
 
     def stop(self):
+        # Also ends a jog_angle / jog_coord.
         _sim.stop(line())
         return 1
 
@@ -235,22 +253,65 @@ class MyCobot280RDKX5:
     def resume(self):
         return 1
 
+    # -- jog -----------------------------------------------------------------
+    def jog_angle(self, joint_id, direction, speed):
+        # direction 0 = decrease, 1 = increase; the joint keeps going until stop() or its limit.
+        _check(joint_id=joint_id, direction=direction, speed=speed)
+        ANGLES_MIN, ANGLES_MAX, _, _ = _limits()
+        end = (ANGLES_MAX if direction == 1 else ANGLES_MIN)[joint_id - 1]
+        _sim.jog("angle", joint_id - 1, end, speed, "jog_angle", line())
+        return 1
+
+    def jog_coord(self, coord_id, direction, speed):
+        # The tool moves along one coordinate (x, y, z in a straight line; rx, ry, rz turning) until stop(),
+        # the coordinate's limit, or where the arm cannot follow.
+        _check(coord_id=coord_id, direction=direction, speed=speed)
+        _, _, COORDS_MIN, COORDS_MAX = _limits()
+        end = (COORDS_MAX if direction == 1 else COORDS_MIN)[coord_id - 1]
+        # A 4-axis arm's [x, y, z, θ]: θ is the tool's turn, rz of the six slots.
+        axis = [0, 1, 2, 5][coord_id - 1] if _dof() == 4 else coord_id - 1
+        _sim.jog("coord", axis, end, speed, "jog_coord", line())
+        return 1
+
+    def jog_increment_angle(self, joint_id, increment, speed):
+        # pymycobot 4.0.0 ~ 4.0.7 checks this one as calibration_parameters(id=joint_id, speed=speed, angle=increment):
+        # the "angle" check looks for joint_id, finds None and fails with TypeError before anything reaches the arm.
+        # The simulator stops the same way, so a program that runs here also runs on the robot.
+        _check(speed=speed)
+        _sim.log("[시뮬레이터] jog_increment_angle 은 pymycobot 4.0.x 에서 오류(TypeError)로 멈춰요 (실제 로봇에서도 같아요). "
+                 "send_angle(joint_id, mc.get_angles()[joint_id - 1] + increment, speed) 로 바꿔 써 주세요.")
+        raise TypeError("unsupported operand type(s) for -: 'NoneType' and 'int'")
+
+    def jog_increment_coord(self, coord_id, increment, speed):
+        # The increment is checked against that coordinate's range (as pymycobot does); the tool moves by it in a straight line.
+        _check(coord_id=coord_id, speed=speed, coord=increment)
+        target = self.get_coords()
+        target[coord_id - 1] += increment
+        _sim.move_coords(self._six_coords(target), speed, 1, "jog_increment_coord", line())
+        return 1
+
     # -- tools ---------------------------------------------------------------
-    def set_gripper_state(self, flag, speed, _type_1=None, is_torque=None):
-        if flag not in (0, 1):
-            raise ValueError(f"The data supported by parameter flag is 0 or 1, but the received value is {flag}")
-        _sim.gripper(flag == 0, int(_type_1 or 1), line())
+    def set_gripper_state(self, gripper_state, gripper_speed, gripper_type=None, is_torque=None):
+        # gripper_state 0 = open, 1 = close, 254 = release (torque off); gripper_type 1 adaptive, 2 five-finger hand, 3 parallel, 4 flexible.
+        _check(gripper_state=gripper_state, gripper_speed=gripper_speed, gripper_type=gripper_type, is_torque=is_torque)
+        if gripper_state == 254:
+            _sim.gripper_release(line())
+        else:
+            _sim.gripper(100 if gripper_state == 0 else 0, int(gripper_type or 1), line())
         return 1
 
-    def set_gripper_value(self, gripper_value, speed, gripper_type=None):
+    def set_gripper_value(self, gripper_value, gripper_speed, gripper_type=None, is_torque=None):
+        # pymycobot checks the speed here as "speed" (1 ~ 100) and leaves gripper_value to the gripper (0 ~ 100).
+        _check(speed=gripper_speed, gripper_type=gripper_type, is_torque=is_torque)
         if not 0 <= gripper_value <= 100:
-            raise ValueError(f"gripper_value not right, should be 0 ~ 100, the received value is {gripper_value}")
-        # Open only near fully open: 82 (the kit cube's grip, ~36 mm apart) holds a block like a full close.
-        _sim.gripper(gripper_value >= 90, int(gripper_type or 1), line())
+            _sim.log(f"[시뮬레이터] {line()}번째 줄: 그리퍼 값은 0 ~ 100 이에요. {gripper_value} 대신 {min(100, max(0, gripper_value))} 로 움직여요.")
+        _sim.gripper(gripper_value, int(gripper_type or 1), line())
         return 1
 
-    def get_gripper_value(self, gripper_type=None):
-        return _sim.gripper_value()
+    def get_gripper_value(self, gripper_type=1):
+        # The opening the gripper was last set to: 0 closed .. 100 open.
+        _check(gripper_type=gripper_type)
+        return int(_sim.gripper_value())
 
     def set_basic_output(self, pin_no, pin_signal):
         if pin_signal not in (0, 1):
@@ -265,16 +326,47 @@ class MyCobot280RDKX5:
 class MyCobot280RDKX5Socket(MyCobot280RDKX5):
     """PC 에서 로봇의 소켓 서버(포트 30002)로 제어할 때 쓰는 클래스 (시뮬레이터에서는 같은 동작)."""
 
-    def __init__(self, ip, netport=30002, debug=False):
-        super().__init__(f"{ip}:{netport}")
+    def __init__(self, ip, port=30002, timeout=0.1, debug=False, thread_lock=True):
+        super().__init__(f"{ip}:{port}")
 `,
 
   '/sim/pymycobot/mycobot280.py': String.raw`
-from pymycobot.mycobot280rdkx5 import MyCobot280RDKX5
+import _sim
+from _simpy import line
+from pymycobot.mycobot280rdkx5 import MyCobot280RDKX5, _check, _limits, _six
 
 
-class MyCobot280(MyCobot280RDKX5):
-    """myCobot 280 (Pi · M5 · Jetson Nano · Arduino) — 시뮬레이터에서는 RDK X5 와 같은 명령."""
+class _Classic(MyCobot280RDKX5):
+    # The other arms' classes (pymycobot 4.0.x generate.py / mycobot280.py): the same commands with their
+    # older parameter names (flag, speed, _type_1, mode, id), and jog_increment_angle checked the way that works.
+
+    def send_coords(self, coords, speed, mode=None, _async=False):
+        return super().send_coords(coords, speed, mode)
+
+    def set_gripper_state(self, flag, speed, _type_1=None, is_torque=None):
+        return super().set_gripper_state(flag, speed, _type_1, is_torque)
+
+    def set_gripper_value(self, gripper_value, speed, gripper_type=None, is_torque=None):
+        return super().set_gripper_value(gripper_value, speed, gripper_type, is_torque)
+
+    def get_gripper_value(self, gripper_type=None):
+        return super().get_gripper_value(gripper_type)
+
+    def jog_increment_angle(self, joint_id, increment, speed, _async=False):
+        _check(joint_id=joint_id, speed=speed)
+        ANGLES_MIN, ANGLES_MAX, _, _ = _limits()
+        target = self.get_angles()
+        # A step past the joint's limit stops at the limit.
+        target[joint_id - 1] = min(ANGLES_MAX[joint_id - 1], max(ANGLES_MIN[joint_id - 1], target[joint_id - 1] + increment))
+        _sim.move(_six(target), speed, "jog_increment_angle", line())
+        return 1
+
+    def jog_increment_coord(self, id, increment, speed, _async=False):
+        return super().jog_increment_coord(id, increment, speed)
+
+
+class MyCobot280(_Classic):
+    """myCobot 280 (Pi · M5 · Jetson Nano · Arduino) — 시뮬레이터에서는 RDK X5 와 같은 명령 (매개변수 이름은 MyCobot280 의 것)."""
 
 
 class MyCobot280Socket(MyCobot280):
@@ -291,10 +383,10 @@ class MyCobot(MyCobot280):
 `,
 
   '/sim/pymycobot/mycobot320.py': String.raw`
-from pymycobot.mycobot280rdkx5 import MyCobot280RDKX5
+from pymycobot.mycobot280 import _Classic
 
 
-class MyCobot320(MyCobot280RDKX5):
+class MyCobot320(_Classic):
     """myCobot 320 — 같은 명령, 관절 범위는 320 의 것 (시뮬레이터에서 연 로봇팔)."""
 
 
@@ -304,18 +396,18 @@ class MyCobot320Socket(MyCobot320):
 `,
 
   '/sim/pymycobot/mecharm270.py': String.raw`
-from pymycobot.mycobot280rdkx5 import MyCobot280RDKX5
+from pymycobot.mycobot280 import _Classic
 
 
-class MechArm270(MyCobot280RDKX5):
+class MechArm270(_Classic):
     """mechArm 270 — 같은 명령, 관절 범위는 mechArm 270 의 것 (시뮬레이터에서 연 로봇팔)."""
 `,
 
   '/sim/pymycobot/mypalletizer260.py': String.raw`
-from pymycobot.mycobot280rdkx5 import MyCobot280RDKX5
+from pymycobot.mycobot280 import _Classic
 
 
-class MyPalletizer260(MyCobot280RDKX5):
+class MyPalletizer260(_Classic):
     'myPalletizer 260: 관절 4개 (send_angles 는 숫자 4개), 좌표는 [x, y, z, θ] (손끝은 늘 아래).'
 `,
 

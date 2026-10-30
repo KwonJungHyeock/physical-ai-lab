@@ -35,6 +35,7 @@ import {
   toActions,
   unitDone,
   unitLesson,
+  P7_OPEN,
   type Found,
   type Move,
   type Part,
@@ -213,6 +214,15 @@ export default function Practice7({ robot, chain, gripperRobot, real, hidden, te
       /* not remembered */
     }
   };
+  // The simulator's [실물 검수 N] while this screen is already up: to that unit.
+  useEffect(() => {
+    const to = (e: Event) => {
+      const u = (e as CustomEvent<UnitId>).detail;
+      if (UNIT_BY_ID.has(u)) setUnitIdRaw(u);
+    };
+    window.addEventListener(P7_OPEN, to);
+    return () => window.removeEventListener(P7_OPEN, to);
+  }, []);
   const update = (id: UnitId, f: (p: UnitProgress) => UnitProgress) =>
     setProgress((old) => {
       const before = old[id];

@@ -1460,3 +1460,10 @@
     padding: 4px 10px;
   }
 }
+/* With a tool: the flange (get_coords) under the tip, small. */
+.readout .flange {
+  grid-column: 1 / -1;
+  margin-top: -2px;
+  font: 500 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--hud-dim, #8a8f96);
+}

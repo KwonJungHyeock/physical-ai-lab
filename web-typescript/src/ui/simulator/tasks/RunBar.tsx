@@ -98,6 +98,7 @@ export default function RunBar(p: Props) {
         title="시뮬레이션 빠르기. 한 번: 2배 (세모 하나), 두 번: 4배 (세모 둘), 세 번: 보통. 실제 로봇은 늘 제 속도"
       >
         <Speed rate={p.simRate} />
+        <b className={css.runRateX}>×{p.simRate}</b>
       </button>
       <button type="button" className={css.runReal} data-done={p.robotDone || undefined} disabled={p.realDisabled} onClick={p.onReal} aria-label={p.robotMode ? '로봇에서 실행' : '로봇용 코드 받기'} title={realTitle}>
         {p.realBlocked ? <Icon name="lock" size={16} /> : p.robotMode ? <RobotPlay /> : <Icon name="code" size={18} />}

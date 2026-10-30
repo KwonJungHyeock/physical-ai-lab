@@ -12,7 +12,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { THEMES, type Theme } from '@/engine/simulator/board';
 import { SCENES, type SceneId } from '@/engine/simulator/desk';
 import { EFFECTORS, type Effector, type EffectorId } from '@/engine/simulator/effectors';
-import { loadEvidence, onRealRobot, realMissing, type Evidence } from '@/engine/simulator/evidence';
+import { loadEvidence, recordState, type Evidence } from '@/engine/simulator/evidence';
 import { CATEGORIES, CHECKS, checkState, markKey, openCheck, type ConsoleMode, type Progress, type Where } from '@/engine/simulator/modules';
 import { LEVELS, practiceFor, practicesFor, type Level, type Practice, type PracticeId } from '@/engine/simulator/practices';
 import type { RobotModel, RobotModelId } from '@/engine/robot/catalog';
@@ -173,12 +173,8 @@ export default function Library(p: Props) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setEvidence(loadEvidence());
   }, []);
-  const stateOf = (check: number): 0 | 1 | 2 => {
-    const lines = evidence.filter((e) => e.check === check);
-    const robotLines = lines.filter(onRealRobot).map((e) => e.text);
-    const fromRecord = robotLines.length && realMissing(check, robotLines) === null ? 2 : lines.length ? 1 : 0;
-    return Math.max(checkState(p.progress, check), fromRecord) as 0 | 1 | 2;
-  };
+  // The same count as the 검수 시연 chips: the progress marks or the record (로봇 실습 7 writes there too).
+  const stateOf = (check: number): 0 | 1 | 2 => Math.max(checkState(p.progress, check), recordState(check, evidence)) as 0 | 1 | 2;
   const checksDone = CHECKS.filter((c) => stateOf(c.check) > 0).length;
   const current = p.practiceId;
 

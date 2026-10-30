@@ -94,6 +94,33 @@ export function realMissing(check: number, robotLines: readonly string[]): strin
   }
 }
 
+/** A check's state from the record alone: 2 shown on the real robot (all of it), 1 some line (simulation, demo, part), 0 none. */
+export function recordState(check: number, evidence: readonly Evidence[]): 0 | 1 | 2 {
+  const lines = evidence.filter((e) => e.check === check);
+  const robotLines = lines.filter(onRealRobot).map((e) => e.text);
+  return robotLines.length && realMissing(check, robotLines) === null ? 2 : lines.length ? 1 : 0;
+}
+
+/** The repeatability limit on the sheet, mm: the maker's figure for the myCobot 280 (±0.5 mm). */
+export const REPEAT_LIMIT_MM = 0.5;
+
+/** Each check's pass line on the sheet (what the demonstration shows; check 2 is measured against REPEAT_LIMIT_MM). */
+const PASS: Record<number, string> = {
+  1: '6개 관절이 각각 지정 각도까지 움직이고 돌아옴',
+  2: `같은 점 5번 도착, 퍼짐 ${REPEAT_LIMIT_MM} mm 이하 (제조사 반복 정밀도 ±${REPEAT_LIMIT_MM} mm)`,
+  3: '키트 카메라 · 손 카메라 2대에서 영상 취득',
+  4: '카메라로 찾은 블록을 집어 정해진 칸으로 옮김',
+  5: '그리퍼 · 흡착 펌프 2종을 바꿔 끼워 각각 작동',
+  6: '로봇 안에서 AI 샘플(YOLO) 실행, 인식 결과 표시',
+  7: '같은 Python(API) 코드로 실제 로봇 실행 (ROS 2 범위는 협의)',
+};
+
+/** Check 2's largest spread on the real robot, mm, from its lines (null when none was measured). */
+function repeatSpread(robotLines: readonly string[]): number | null {
+  const mm = robotLines.map((t) => /(?:퍼짐 최대|흩어진 폭) ([\d.]+) ?mm/.exec(t)).filter((m) => m !== null).map((m) => Number(m[1]));
+  return mm.length ? mm[mm.length - 1] : null;
+}
+
 /** The result sheet: a self-contained HTML page (print it to PDF from the browser). */
 export function reportHtml(opts: { robot: string; model: string; evidence: readonly Evidence[]; prep: readonly PrepItem[] | null; prepAt: string | null }): string {
   const now = new Date();
@@ -102,10 +129,11 @@ export function reportHtml(opts: { robot: string; model: string; evidence: reado
     const real = list.some(onRealRobot);
     const demo = list.some((e) => e.robot && e.demo);
     const sim = list.some((e) => !e.robot);
-    const missing = realMissing(
-      c.check,
-      list.filter(onRealRobot).map((e) => e.text),
-    );
+    const robotLines = list.filter(onRealRobot).map((e) => e.text);
+    let missing = realMissing(c.check, robotLines);
+    // Check 2 passes only within the limit (the latest measurement counts).
+    const spread = c.check === 2 ? repeatSpread(robotLines) : null;
+    if (!missing && spread !== null && spread > REPEAT_LIMIT_MM) missing = `퍼짐 ${spread} mm, 기준 ${REPEAT_LIMIT_MM} mm 초과 · 다시 측정`;
     const state = real
       ? missing
         ? `<b class="sim">◐ 실제 로봇 일부</b><small class="miss">남은 것: ${esc(missing)}</small>`
@@ -121,7 +149,7 @@ export function reportHtml(opts: { robot: string; model: string; evidence: reado
           .map((e) => `<li><time>${time(e.at)}</time> ${e.robot ? (e.demo ? '<i class="s">데모</i>' : '<i>로봇</i>') : '<i class="s">시뮬</i>'} ${esc(e.text)}</li>`)
           .join('')}</ul>`
       : '';
-    return `<tr><td class="n">${c.check}</td><td><b>${esc(c.title)}</b><small>${esc(c.spec)}</small></td><td>${state}${lines}</td></tr>`;
+    return `<tr><td class="n">${c.check}</td><td><b>${esc(c.title)}</b><small>${esc(c.spec)}</small><small class="pass">합격 기준: ${esc(PASS[c.check] ?? '')}</small></td><td>${state}${lines}</td></tr>`;
   }).join('');
   const prep = opts.prep
     ? `<h2>검수 준비 점검 <small>${opts.prepAt ? time(opts.prepAt) : ''}</small></h2><table class="prep">${opts.prep
@@ -133,7 +161,8 @@ export function reportHtml(opts: { robot: string; model: string; evidence: reado
     : '';
   const done = CHECKS.filter((c) => {
     const robotLines = opts.evidence.filter((e) => e.check === c.check && onRealRobot(e)).map((e) => e.text);
-    return robotLines.length > 0 && realMissing(c.check, robotLines) === null;
+    const spread = c.check === 2 ? repeatSpread(robotLines) : null;
+    return robotLines.length > 0 && realMissing(c.check, robotLines) === null && (spread === null || spread <= REPEAT_LIMIT_MM);
   }).length;
   const demoNote = opts.evidence.some((e) => e.robot && e.demo)
     ? '<p class="warn">데모 로봇(가짜 팔, 연습용 서버)으로 한 기록은 연습이라 위의 수에 넣지 않았어요.</p>'
@@ -148,6 +177,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}td{border-top:1px solid
 td.n{width:28px;font-weight:800;font-size:16px;color:#3454d1}ul{margin:6px 0 0;padding-left:16px}li{margin:2px 0}
 time{color:#667085;font-variant-numeric:tabular-nums}i{font-style:normal;font-size:11px;background:#e7f6ee;color:#16955a;border-radius:4px;padding:0 4px}
 i.s{background:#eef1f7;color:#475467}.ok{color:#16955a}.sim{color:#b54708}.no{color:#b42318}.miss{display:block;color:#b54708}
+.pass{color:#3454d1!important}.sign{margin-top:28px;width:100%;font-size:14px}.sign td{border:1px solid #d0d5dd;padding:10px 12px;height:44px}.sign th{width:120px;background:#f2f4f7;border:1px solid #d0d5dd;text-align:left;padding:10px 12px;font-weight:600}[contenteditable]{outline:none}
 .prep td:first-child{width:20px;font-weight:800}.warn{font-size:13px;color:#b54708;background:#fffaeb;border:1px solid #fedf89;border-radius:6px;padding:8px 10px;margin:0 0 12px}@media print{body{padding:0}}
 </style></head><body>
 <h1>검수 결과표 (myCobot 280 RDK X5)</h1>
@@ -156,5 +186,10 @@ i.s{background:#eef1f7;color:#475467}.ok{color:#16955a}.sim{color:#b54708}.no{co
 ${demoNote}
 <table>${rows}</table>
 ${prep}
+<h2>확인 <small>칸을 눌러 적은 뒤 인쇄하거나, 인쇄한 종이에 적어요</small></h2>
+<table class="sign"><tr><th>검수 일시</th><td contenteditable="true"></td><th>장소</th><td contenteditable="true"></td></tr>
+<tr><th>검수자 (공급)</th><td contenteditable="true"></td><th>서명</th><td></td></tr>
+<tr><th>확인자 (고객)</th><td contenteditable="true"></td><th>서명</th><td></td></tr>
+<tr><th>의견</th><td colspan="3" contenteditable="true"></td></tr></table>
 </body></html>`;
 }

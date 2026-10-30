@@ -13,7 +13,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { checkWifi, DIRECT_IP, formatBytes, INSTALL_LINE, kitDate, parseResult, pcWifi, WIFI_OFF, type WifiForm } from '@/engine/simulator/usbKit';
 import { SETUP_STEPS, setupLine, setupRunning, setupState, setupStep, startSetup, type SetupJob, type SetupLogin } from '@/engine/simulator/robotSetup';
-import { ROBOT_PORT } from '@/engine/simulator/discover';
+import { probeRobot, ROBOT_PORT } from '@/engine/simulator/discover';
 
 import Icon from '../Icon';
 import css from '../console.module.css';
@@ -36,6 +36,7 @@ export default function RobotSetup({ onClose, onConnect }: Props) {
   const [job, setJob] = useState<SetupJob | null>(null);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [linking, setLinking] = useState(false);
 
   // The program's kit, a setup already going (the window was closed), and this PC's Wi-Fi for the form.
   useEffect(() => {
@@ -103,6 +104,18 @@ export default function RobotSetup({ onClose, onConnect }: Props) {
   const result = job?.result ? parseResult('result.txt', job.result) : null;
   // After the install the robot always keeps its fixed direct address on the LAN port (the cable is still in).
   const robotAddr = result?.wifi === 'ok' && result.ips[0] ? result.ips[0] : DIRECT_IP;
+  /** [이 로봇에 연결]: its Wi-Fi address; when that does not answer (the PC is not on that Wi-Fi yet), the
+   *  direct address over the cable that is still in; only when neither answers does the dialog say so. */
+  const connect = async (label: string) => {
+    if (linking) return;
+    let addr = robotAddr;
+    if (addr !== DIRECT_IP) {
+      setLinking(true);
+      if (!(await probeRobot(addr, 2500)) && (await probeRobot(DIRECT_IP, 2500))) addr = DIRECT_IP;
+      setLinking(false);
+    }
+    onConnect(`${addr}:${ROBOT_PORT}`, label);
+  };
 
   return (
     <div className={css.picker} role="dialog" aria-modal="true" aria-label="새 로봇 설치" onKeyDown={(e) => e.key === 'Escape' && !running && onClose()}>
@@ -282,8 +295,17 @@ export default function RobotSetup({ onClose, onConnect }: Props) {
               <p className={u.note}>이제 랜선을 빼도 돼요. 다음부터는 로봇을 켜기만 하면 {wired || result?.wifi !== 'ok' ? '랜선 직결로' : `'${job.ssid}' 에서`} 찾을 수 있어요.</p>
             )}
             <div className={s.row}>
-              <button type="button" className={u.primary} onClick={() => onConnect(job.state === 'moved' ? '' : `${robotAddr}:${ROBOT_PORT}`, result?.robotId || result?.user || '새 로봇')}>
-                {job.state === 'moved' ? '로봇 연결 열기' : '이 로봇에 연결'}
+              <button
+                type="button"
+                className={u.primary}
+                disabled={linking}
+                onClick={() => {
+                  const label = result?.robotId || result?.user || '새 로봇';
+                  if (job.state === 'moved') onConnect('', label);
+                  else void connect(label);
+                }}
+              >
+                {job.state === 'moved' ? '로봇 연결 열기' : linking ? '로봇을 찾는 중…' : '이 로봇에 연결'}
               </button>
               <button type="button" className={u.secondary} onClick={() => (setJob(null), setError(''))}>
                 다른 로봇 설치

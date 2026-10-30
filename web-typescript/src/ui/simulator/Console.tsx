@@ -86,7 +86,7 @@ import { runPython, warmPython } from '@/engine/python/client';
 import type { PyOutput, PyResult } from '@/engine/python/types';
 import { buildChain, forwardKinematics, forwardKinematicsFrames, liftChain, solveIk, type ChainSegment } from '@/engine/robot/kinematics';
 import { jointMax, jointMin } from '@/engine/robot/limits';
-import { tcpPositionMm } from '@/engine/robot/motion';
+import { ARM_STOP_DEC_DEG_S2, tcpPositionMm } from '@/engine/robot/motion';
 import { STRAIGHT_DOWN, coordJogBlocked, currentOrientation, shiftTool, solveToolPose, turnTool } from '@/engine/robot/tool';
 import { parseUrdf, type UrdfRobot } from '@/engine/robot/urdf';
 import type { ImageLike } from '@/engine/vision/color';
@@ -131,6 +131,7 @@ import { CameraPip, ViewTools, type CameraPipHandle } from './stage/StageTools';
 import Notices, { namedButtons, type Guide, type LogEntry, type LogKind } from './stage/Notices';
 import TopBar, { type ConsoleView } from './TopBar';
 import LearnView from '../education/LearnView';
+import { openPractice7, type UnitId } from '@/engine/education/practice7';
 import { useAccount } from '../account/AccountProvider';
 import AccountChip from '../account/AccountChip';
 import ClassDashboard from '../account/ClassDashboard';
@@ -1532,9 +1533,42 @@ export default function Console() {
       // motion slows down rather than jumps (the cell's physics keeps the same pace).
       let t = 0;
       let last = performance.now();
+      // After 정지 the arm runs on a little, slowing down, as the real one does (about 3° from speed 10):
+      // the same move goes on with its clock slowing to a halt over coastS.
+      let coast: { s: number; left: number } | null = null;
       const step = (now: number) => {
-        if (tk?.aborted) return reject(new Stop());
-        t = Math.min(durationS, t + (Math.min(now - last, 250) / 1000) * rate);
+        let dt = (Math.min(now - last, 250) / 1000) * rate;
+        if (tk?.aborted && !coast) {
+          const at = world.current.angles.slice();
+          const ahead = Math.min(durationS, t + 0.02);
+          let fastest = 0;
+          try {
+            frame(ahead);
+            fastest = Math.max(0, ...world.current.angles.map((q, i) => Math.abs(q - at[i]) / Math.max(1e-6, ahead - t)));
+            frame(t);
+          } catch {
+            fastest = 0;
+          }
+          const s = ahead > t ? fastest / ARM_STOP_DEC_DEG_S2 : 0;
+          if (s < 0.02) return reject(new Stop());
+          coast = { s, left: s };
+        }
+        if (coast) {
+          // The clock slows evenly to a stop: the move covers half of what it would at full pace.
+          const was = coast.left;
+          coast.left = Math.max(0, coast.left - dt);
+          dt = (was * was - coast.left * coast.left) / (2 * coast.s);
+          if (coast.left <= 0 || t >= durationS) {
+            t = Math.min(durationS, t + dt);
+            try {
+              frame(t);
+            } catch {
+              /* stopped against something: it stays where it is */
+            }
+            return reject(new Stop());
+          }
+        }
+        t = Math.min(durationS, t + dt);
         last = now;
         try {
           frame(t);
@@ -2506,12 +2540,14 @@ export default function Console() {
       return;
     }
     setBadge(null);
+    // One step speed for both: 10..100 % → speed 5..40, the same move in the simulator and on the robot.
+    const speed = Math.max(5, Math.round((40 * jogSpeed) / 100));
     if (robotMode) {
-      const res = await moveRobot(to, Math.max(5, Math.round((40 * jogSpeed) / 100)));
+      const res = await moveRobot(to, speed);
       if (!res.ok && !(jog && res.status === 409)) addLog('err', `로봇: ${res.error}`);
       return;
     }
-    await runSteps([{ type: 'move', joints: to, speed: Math.max(8, Math.round((70 * jogSpeed) / 100)), line: 0 }], { reset: false });
+    await runSteps([{ type: 'move', joints: to, speed, line: 0 }], { reset: false });
   };
 
   const jointStep = (i: number, delta: number) => {
@@ -3134,13 +3170,14 @@ export default function Console() {
   };
 
   const kind = EFFECTOR_BY_ID[effector].kind;
-  /** Tool tip as the robot reports it (get_coords): from the robot's base, so a base under the robot is taken off. */
+  /** Tool tip (TCP) from the robot's base, so a base under the robot is taken off; with a tool, the flange too (what get_coords reports). */
   const tipOf = useCallback(
     (angles: readonly number[]) => {
       if (!loaded) return null;
       const p = tcpPositionMm(loaded.chain, angles, tcpNow);
       const r = forwardKinematics(loaded.chain, angles).rpyDeg;
-      return { ...p, z: p.z - mountMm, rx: r.x, ry: r.y, rz: r.z };
+      const f = tcpNow > 0 ? tcpPositionMm(loaded.chain, angles, 0) : null;
+      return { ...p, z: p.z - mountMm, rx: r.x, ry: r.y, rz: r.z, flange: f ? { ...f, z: f.z - mountMm } : undefined };
     },
     [loaded, tcpNow, mountMm],
   );
@@ -3230,7 +3267,7 @@ export default function Console() {
       {poseNames.length === 0 && (
         <>
           <p className={css.poseHelp}>
-            <b>자세</b> = 관절 {arm.home.length}개의 각도에 이름을 붙여 저장해 둔 것이에요. [제어]로 팔을 옮기고 위 버튼을 누르면 이름을 붙여 여기에 쌓여요.
+            [제어]로 팔을 옮긴 뒤 저장하면 관절 {arm.home.length}개의 각도가 이름과 함께 여기에 쌓여요.
           </p>
           <ul aria-label="고정 자세">
             {(
@@ -3856,6 +3893,15 @@ export default function Console() {
                   setLibSection(mode === 'check' ? 'checks' : 'tasks');
                   chooseView('library');
                 }}
+                onReal={
+                  robotMode && robot?.connected
+                    ? (check) => {
+                        // The real-robot check is 로봇 실습 7's unit (its [실물로] measures and records it).
+                        openPractice7(check as UnitId);
+                        chooseView('learn');
+                      }
+                    : undefined
+                }
               />
             ) : null
           }
@@ -4433,9 +4479,6 @@ export default function Console() {
                   <button type="button" className={css.sideModel} onClick={() => setPicking(true)} disabled={busy || !choice} title={choice ? '로봇 모델 바꾸기' : undefined}>
                     <span>
                       <b>{SCREEN_TITLE[workScreen] ?? ''}</b>
-                      <small>
-                        {arm.name} · {arm.dof}축
-                      </small>
                     </span>
                     {choice && <em>바꾸기</em>}
                   </button>

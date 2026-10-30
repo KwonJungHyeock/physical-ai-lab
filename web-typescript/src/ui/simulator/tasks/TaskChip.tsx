@@ -11,6 +11,7 @@
 import { useEffect, useEffectEvent, useRef, useState, type RefObject } from 'react';
 
 import type { Theme } from '@/engine/simulator/board';
+import { loadEvidence, recordState, type Evidence } from '@/engine/simulator/evidence';
 import { CATEGORIES, CHECKS, categoryOf, checkState, markKey, openCheck, type ConsoleMode, type Mark, type Progress, type Where } from '@/engine/simulator/modules';
 import type { Level, Practice, PracticeId, Session } from '@/engine/simulator/practices';
 import type { WorldState } from '@/engine/simulator/sim';
@@ -91,10 +92,19 @@ interface ChipProps {
   onGoal(): void;
   onOpen(where: Where): void;
   onGallery(): void;
+  /** With a robot connected: show this check on the real robot (로봇 실습 7's unit, its [실물로]). */
+  onReal?(check: number): void;
 }
 
-export function TaskChip({ mode, practice, level, theme, progress, busy, world, session, demo, process, cell, onGoal, onOpen, onGallery }: ChipProps) {
+export function TaskChip({ mode, practice, level, theme, progress, busy, world, session, demo, process, cell, onGoal, onOpen, onGallery, onReal }: ChipProps) {
   const here: Where = { level, theme, id: practice.id };
+  // The record too (로봇 실습 7 and the robot write there): the chips count as the library does.
+  const [evidence, setEvidence] = useState<readonly Evidence[]>([]);
+  useEffect(() => {
+    if (mode !== 'check') return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setEvidence(loadEvidence());
+  }, [mode, progress, practice.id]);
   if (cell) {
     return (
       <div className={css.taskChip} data-mode="practice">
@@ -150,7 +160,7 @@ export function TaskChip({ mode, practice, level, theme, progress, busy, world, 
       {mode === 'check' && (
         <span className={css.checkChips} role="group" aria-label="검수 항목">
           {CHECKS.map((c) => {
-            const state = checkState(progress, c.check);
+            const state = Math.max(checkState(progress, c.check), recordState(c.check, evidence));
             return (
               <button
                 key={c.check}
@@ -169,6 +179,11 @@ export function TaskChip({ mode, practice, level, theme, progress, busy, world, 
               </button>
             );
           })}
+          {onReal && practice.check && (
+            <button type="button" className={css.chipReal} disabled={busy} onClick={() => onReal(practice.check!)} title={`로봇 실습 7 의 ${practice.check}번 단원에서 [실물로] 로 실제 로봇 검수를 해요 (측정값이 검수 기록에 남아요)`}>
+              실물 검수 {practice.check}
+            </button>
+          )}
         </span>
       )}
     </div>

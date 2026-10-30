@@ -112,6 +112,164 @@ mc.send_angle(1, 30, speed)
   assert.match(endless.error!.message, /300초/);
   console.log('  ok   errors: pymycobot range message with its line, NameError/SyntaxError explained, endless loop stopped');
 }
+{
+  // send_coords(coords, speed, coord_mode): 1 = linear, the tool on the straight line; 0 = joint move, off it.
+  const off = (mode: number) =>
+    run(`from pymycobot import MyCobot280RDKX5
+import math, time
+mc = MyCobot280RDKX5("/dev/ttyS1", 1000000)
+mc.sync_send_angles([0, 20, -60, -40, 0, 0], 50)
+a = mc.get_coords()
+b = list(a)
+b[0] += 60
+b[1] += 40
+b[2] -= 50
+mc.send_coords(b, 40, ${mode})
+worst = 0
+while mc.is_moving():
+    time.sleep(0.05)
+    p = mc.get_coords()[:3]
+    ab = [b[i] - a[i] for i in range(3)]
+    ap = [p[i] - a[i] for i in range(3)]
+    f = max(0, min(1, sum(x * y for x, y in zip(ab, ap)) / sum(x * x for x in ab)))
+    worst = max(worst, math.dist(p, [a[i] + ab[i] * f for i in range(3)]))
+print(round(worst, 2), round(math.dist(mc.get_coords()[:3], b[:3]), 2))
+`);
+  const lin = off(1);
+  const joint = off(0);
+  assert.ok(lin.ok && joint.ok, JSON.stringify(lin.error ?? joint.error));
+  const [linOff, linEnd] = lin.output[0].text.split(' ').map(Number);
+  const [jointOff] = joint.output[0].text.split(' ').map(Number);
+  assert.ok(linOff < 2 && linEnd < 1.5, `linear: ${linOff} mm off the line, ends ${linEnd} mm away`);
+  assert.ok(jointOff > 3 * linOff, `coord_mode 0 is a joint move (${jointOff} mm off the line), 1 is straight (${linOff} mm)`);
+  assert.ok(lin.events.filter((e) => e.kind === 'move' && e.line === 10).length > 3, 'a linear move is sent as steps along the line');
+
+  const modes = run(`from pymycobot import MyCobot280RDKX5
+mc = MyCobot280RDKX5("/dev/ttyS1", 1000000)
+mc.send_coords([150, -60, 200, -180, 0, -90], 40, coord_mode=1)
+mc.send_coords([150, -60, 200, -180, 0, -90], 40, 2)
+`);
+  assert.equal(modes.error?.line, 4);
+  assert.equal(modes.error?.message, 'The coord_mode not right, should be in (0, 1), but received 2.');
+  assert.match(modes.error!.hint!, /직선 이동/);
+  // pymycobot's MyCobot280RDKX5.send_coords has no `mode` keyword (coord_mode); sync_send_coords keeps `mode`.
+  const kw = run(`from pymycobot import MyCobot280RDKX5
+mc = MyCobot280RDKX5("/dev/ttyS1", 1000000)
+mc.sync_send_coords([150, -60, 200, -180, 0, -90], 40, mode=1)
+mc.send_coords([150, -60, 200, -180, 0, -90], 40, mode=1)
+`);
+  assert.equal(kw.error?.type, 'TypeError');
+  assert.equal(kw.error?.line, 4);
+
+  // An unreachable target: the real arm stays put and the program goes on, with one line saying so.
+  const far = run(`from pymycobot import MyCobot280RDKX5
+mc = MyCobot280RDKX5("/dev/ttyS1", 1000000)
+mc.send_coords([250, 250, 300, -180, 0, 0], 40)
+mc.send_coords([250, 250, 300, -180, 0, 0], 40, 1)
+print("next", mc.is_moving())
+`);
+  assert.ok(far.ok, JSON.stringify(far.error));
+  assert.deepEqual(
+    far.output.map((o) => o.text.match(/^\[시뮬레이터\] (\d)번째 줄: 좌표 \[250, 250, 300, -180, 0, 0\] 에는 갈 수 없어요/)?.[1] ?? o.text),
+    ['3', '4', 'next 0'],
+  );
+  assert.equal(far.events.length, 0);
+  console.log(`  ok   send_coords coord_mode 1 goes straight (${linOff} mm off the line, joint move ${jointOff} mm), coord_mode checked, unreachable = warning, not an error`);
+}
+{
+  const r = run(`from pymycobot import MyCobot280RDKX5
+import time
+mc = MyCobot280RDKX5("/dev/ttyS1", 1000000)
+mc.sync_send_angles([0, 20, -60, -40, 0, 0], 50)
+mc.jog_angle(1, 1, 20)
+time.sleep(1)
+j1 = mc.get_angles()[0]
+mc.stop()
+time.sleep(1.5)
+held = mc.get_angles()[0]
+time.sleep(1)
+print(j1, held, mc.get_angles()[0], mc.is_moving())
+c = mc.get_coords()
+mc.jog_coord(3, 0, 20)
+time.sleep(1)
+d = mc.get_coords()
+mc.stop()
+time.sleep(1.5)
+print(c[2] - d[2], max(abs(d[i] - c[i]) for i in (0, 1, 3, 4, 5)))
+c = mc.get_coords()
+mc.jog_increment_coord(1, 15, 30)
+time.sleep(3)
+print(mc.get_coords()[0] - c[0])
+mc.jog_angle(6, 0, 50)
+time.sleep(10)
+print(mc.get_angles()[5], mc.is_moving())
+`);
+  assert.ok(r.ok, JSON.stringify(r.error));
+  const [j1, held, later, moving] = r.output[0].text.split(' ');
+  assert.ok(Number(j1) > 10 && Number(j1) < 60, `jog_angle at speed 20 for 1 s: J1 ${j1}`);
+  assert.ok(Number(held) >= Number(j1) && Number(held) === Number(later) && moving === '0', `stop() ends the jog: ${r.output[0].text}`);
+  const [down, drift] = r.output[1].text.split(' ').map(Number);
+  assert.ok(down > 5 && drift < 1, `jog_coord z-: ${down} mm down, the rest drifts ${drift}`);
+  assert.ok(Math.abs(Number(r.output[2].text) - 15) < 1, `jog_increment_coord x +15: ${r.output[2].text}`);
+  assert.match(r.output[3].text, /^-180(\.0)? 0$/, 'a jog without stop() ends at the joint limit');
+  assert.ok(r.events.some((e) => e.kind === 'move' && e.what === 'jog_coord') && r.events.filter((e) => e.kind === 'stop').length === 2);
+
+  // pymycobot 4.0.x (MyCobot280RDKX5) checks jog_increment_angle with id= and fails with TypeError: the simulator does too.
+  const inc = run(`from pymycobot import MyCobot280RDKX5
+mc = MyCobot280RDKX5("/dev/ttyS1", 1000000)
+mc.jog_increment_angle(1, 10, 30)
+`);
+  assert.equal(inc.error?.type, 'TypeError');
+  assert.equal(inc.error?.line, 3);
+  assert.match(inc.output.map((o) => o.text).join('\n'), /send_angle\(joint_id/);
+  const bad = run(`from pymycobot import MyCobot280RDKX5
+mc = MyCobot280RDKX5("/dev/ttyS1", 1000000)
+mc.jog_coord(2, -1, 30)
+`);
+  assert.equal(bad.error?.message, 'The direction not right, should be in (0, 1), but received -1.');
+  console.log(`  ok   jog_angle / jog_coord run until stop() or a limit (J1 ${Number(j1).toFixed(1)}° in 1 s, z ${down.toFixed(1)} mm), jog_increment_coord, jog_increment_angle fails as in pymycobot 4.0.x`);
+}
+{
+  const r = run(`from pymycobot import MyCobot280RDKX5, MyCobot280
+mc = MyCobot280RDKX5("/dev/ttyS1", 1000000)
+mc.set_gripper_state(gripper_state=1, gripper_speed=50, gripper_type=1, is_torque=1)
+print(mc.get_gripper_value())
+mc.set_gripper_value(60, 50, 1, is_torque=0)
+print(mc.get_gripper_value(gripper_type=1))
+mc.set_gripper_state(254, 50)
+print(mc.get_gripper_value())
+mc.set_gripper_state(0, 0)
+print(mc.get_gripper_value())
+MyCobot280("/dev/ttyAMA0", 1000000).set_gripper_state(flag=1, speed=50, _type_1=1)
+`);
+  assert.ok(r.ok, JSON.stringify(r.error));
+  const out = r.output.map((o) => o.text);
+  assert.deepEqual([out[0], out[1], out[3], out[4]], ['0', '60', '60', '100'], out.join(' / '));
+  assert.match(out[2], /^\[시뮬레이터\] 7번째 줄: 그리퍼의 힘을 풀었어요 \(254\)/);
+  assert.deepEqual(
+    r.events.map((e) => (e.kind === 'gripper' ? [e.line, e.open] : null)),
+    [
+      [3, false],
+      [5, false],
+      [9, true],
+      [11, false],
+    ],
+    '254 sends nothing (the fingers stay), 60 still holds',
+  );
+  const msg = (call: string) =>
+    run(`from pymycobot import MyCobot280RDKX5
+mc = MyCobot280RDKX5("/dev/ttyS1", 1000000)
+mc.${call}
+`).error;
+  assert.equal(msg('set_gripper_state(2, 50)')?.message, 'The gripper_state not right, should be in (0, 1, 254), but received 2.');
+  assert.equal(msg('set_gripper_state(0, 101)')?.message, 'The gripper_speed value not right, should be 0 ~ 100, the received speed is 101');
+  assert.equal(msg('set_gripper_state(0, 50, 5)')?.message, 'The gripper_type not right, should be in (1, 2, 3, 4), but received 5.');
+  assert.equal(msg('set_gripper_value(50, 50, 1, 2)')?.message, 'The is_torque not right, should be in (0, 1), but received 2.');
+  assert.equal(msg('set_gripper_value(50, 0)')?.message, 'speed value not right, should be 1 ~ 100, the received speed is 0');
+  assert.match(msg('get_gripper_value(0)')!.hint!, /gripper_type/);
+  assert.equal(msg('set_gripper_state(flag=1, speed=50)')?.type, 'TypeError', "MyCobot280RDKX5's names are gripper_state, gripper_speed");
+  console.log('  ok   gripper: pymycobot 4.0.x RDK X5 names and checks, 254 releases, get_gripper_value reports the opening');
+}
 
 /* --- 3D playback on the AI Kit ---------------------------------------------- */
 {

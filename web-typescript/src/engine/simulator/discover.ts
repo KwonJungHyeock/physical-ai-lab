@@ -12,7 +12,12 @@
  * meant for the local network (it must match the address, or Chrome refuses
  * the request; its name for "local" changed between versions, so both are
  * tried). A plain-HTTP page, like the robot's own console, needs none of it.
+ *
+ * [움직여 확인] (/api/identify) moves the robot, so the server takes it only from its own page and the
+ * PC program on this network (http on a loopback or private address), not from an HTTPS web page.
  */
+
+import { consoleId } from './robotLink';
 
 export const ROBOT_PORT = 8080;
 
@@ -183,16 +188,29 @@ export function otherWifiHint(lastRobotWifi: string, pcSsid: string): string | n
   return `로봇은 지난번 '${lastRobotWifi}' 에 붙어 있었는데, 이 PC 는 '${pcSsid}' 에 붙어 있어요. PC Wi-Fi 를 바꿔 '${lastRobotWifi}' 에 붙인 뒤 다시 찾아 주세요.`;
 }
 
-/** "이 로봇 맞나요?": that robot moves so the student sees which one it is (arm: straightens slowly and stays so). */
+/**
+ * "이 로봇 맞나요?": that robot moves so the student sees which one it is (arm: straightens slowly and stays so).
+ * It carries this console's id (robotLink's console headers), so the PC holding the arm is not told
+ * "다른 PC(its own name)가 쓰는 중"; a robot older than the id headers refuses them in its preflight
+ * (a TypeError), and is asked once more without.
+ */
 export async function identifyRobot(address: string): Promise<{ ok: boolean; error?: string }> {
-  try {
-    const r = await fetchLocal(address.split(':')[0], `http://${address}/api/identify`, {
+  const ask = (headers: Record<string, string>) =>
+    fetchLocal(address.split(':')[0], `http://${address}/api/identify`, {
       method: 'POST',
       mode: 'cors',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...headers },
       body: '{}',
       signal: AbortSignal.timeout(4000),
     });
+  try {
+    let r: Response;
+    try {
+      r = await ask({ 'X-Console-Id': consoleId() });
+    } catch (err) {
+      if ((err as Error).name !== 'TypeError') throw err;
+      r = await ask({});
+    }
     return (await r.json()) as { ok: boolean; error?: string };
   } catch {
     return { ok: false, error: '그 로봇이 대답하지 않아요.' };

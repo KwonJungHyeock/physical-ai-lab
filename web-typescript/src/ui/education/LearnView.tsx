@@ -35,6 +35,7 @@ import FinalExam from './lab/FinalExam';
 import LogisticsLab from './lab/LogisticsLab';
 import { LabGateContext, type LabGate } from './lab/SiteFlow';
 import Practice7 from './practice7/Practice7';
+import { P7_OPEN, takeP7Request } from '@/engine/education/practice7';
 import { LeadEnded, LeadInvite, LeadJoin } from './lead/LeadDialogs';
 import { useStudentLead } from './lead/useLead';
 import ParkView from './map/ParkView';
@@ -148,13 +149,14 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
   const [locked, setLocked] = useState<TopicId | null>(null);
   const [topicId, setTopicId] = useState<TopicId>(FIRST);
   /** The park (front page), the course, a lesson, or the problem-solving lab (opened once, then kept). */
-  const [screen, setScreen] = useState<Screen>('map');
+  // Opened by the simulator's [실물 검수 N] (openPractice7): straight into 로봇 실습 7.
+  const [screen, setScreen] = useState<Screen>(() => (takeP7Request() ? 'p7' : 'map'));
   const screenNow = useRef<Screen>('map');
   useEffect(() => {
     screenNow.current = screen;
   });
   /** 로봇 실습 7 mounts on first use (its own 3D view). */
-  const [p7Seen, setP7Seen] = useState(false);
+  const [p7Seen, setP7Seen] = useState(screen === 'p7');
   /** 대단원 마무리 평가: mounted the first time it is opened. */
   const [finalSeen, setFinalSeen] = useState(false);
   const openFinal = useCallback(() => {
@@ -467,7 +469,14 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
       setP7Seen(true);
       setScreen('p7');
     };
+    const toP7 = () => {
+      takeP7Request();
+      setP7Seen(true);
+      setScreen('p7');
+    };
+    window.addEventListener(P7_OPEN, toP7);
     return () => {
+      window.removeEventListener(P7_OPEN, toP7);
       delete window.__learnPick;
       delete window.__learnOpen;
       delete window.__learnLab;

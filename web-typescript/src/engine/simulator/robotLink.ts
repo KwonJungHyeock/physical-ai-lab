@@ -11,6 +11,7 @@
  * Anywhere else (Vercel, dev server) that request fails and the console stays a simulator.
  */
 
+import { clampJointAngles } from '../robot/limits';
 import type { RobotAction } from './sim';
 
 /** sessionStorage: host:port of the robot this window drives from its own screens. */
@@ -265,7 +266,9 @@ export function runOnRobot(actions: RobotAction[], gripperType?: number) {
   return post('/api/run', { actions: actions.map((a) => (a.type === 'gripper' ? { ...a, gripperType: gripperType ?? 1 } : a)) });
 }
 
-export const moveRobot = (angles: number[], speed = 20) => post('/api/move', { angles, speed });
+// The server refuses a pose even a hair past a limit; a joint read just over its limit (a servo resting at
+// J2 135.2°) is sent back inside it, so a nudge of another joint is not refused for it.
+export const moveRobot = (angles: number[], speed = 20) => post('/api/move', { angles: clampJointAngles(angles), speed });
 export const stopRobot = () => post('/api/stop');
 export const releaseRobot = () => post('/api/release');
 export const focusRobot = () => post('/api/focus');
@@ -281,7 +284,7 @@ export const jointServo = (joint: number, off: boolean) => post('/api/joint', { 
  * Real-time jog: the next target of a held jog key. The server sends it on at
  * once (no waiting for arrival) and stops the arm when targets stop coming.
  */
-export const targetRobot = (angles: number[], speed: number) => post('/api/target', { angles, speed });
+export const targetRobot = (angles: number[], speed: number) => post('/api/target', { angles: clampJointAngles(angles), speed });
 /** Reopen the robot's serial port on the server (after the arm was switched off and on, or a cable hiccup). */
 export const reconnectRobot = () => post('/api/reconnect');
 /**

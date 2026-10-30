@@ -73,28 +73,39 @@ export default function WifiPanel({ onFind }: { onFind(): void }) {
 
   // While switching: the robot keeps answering until it leaves (then the page loses it),
   // or answers with the result (joining failed and it came back, or it stayed reachable).
+  // One request at a time: the next one 1.5 s after the last has finished (a 2 s timeout must not overlap).
   useEffect(() => {
     if (phase.kind !== 'switching') return;
     let misses = 0;
-    const timer = setInterval(async () => {
+    let stopped = false;
+    let timer = 0;
+    const poll = async () => {
       const s = await fetchWifi(AbortSignal.timeout(2000));
-      if (!alive.current) return;
-      if (!s.ok && !s.mode) {
+      if (!alive.current || stopped) return;
+      // Only no answer at all counts as gone: the server's own replies carry its identity even when
+      // nmcli fails (503, ok: false), and a robot that answers has not moved.
+      if (!s.ok && s.robotId === undefined) {
         misses += 1;
-        if (misses >= 2) setPhase({ ...phase, kind: 'moved' });
-        return;
+        if (misses >= 2) return setPhase({ ...phase, kind: 'moved' });
+      } else {
+        misses = 0;
+        if (s.ok) setStatus(s);
+        if (s.last?.state === 'failed') {
+          setError(s.last.error || '연결하지 못했어요.');
+          return setPhase({ kind: 'idle' });
+        }
+        if (s.last?.state === 'ok') {
+          setError('');
+          return setPhase({ kind: 'idle' });
+        }
       }
-      misses = 0;
-      setStatus(s);
-      if (s.last?.state === 'failed') {
-        setError(s.last.error || '연결하지 못했어요.');
-        setPhase({ kind: 'idle' });
-      } else if (s.last?.state === 'ok') {
-        setPhase({ kind: 'idle' });
-        setError('');
-      }
-    }, 1500);
-    return () => clearInterval(timer);
+      timer = window.setTimeout(() => void poll(), 1500);
+    };
+    timer = window.setTimeout(() => void poll(), 1500);
+    return () => {
+      stopped = true;
+      window.clearTimeout(timer);
+    };
   }, [phase]);
 
   const join = async () => {

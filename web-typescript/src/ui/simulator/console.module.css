@@ -9027,3 +9027,26 @@ div.zeroFlow {
   color: #fff;
   font-weight: 600;
 }
+
+/* The speed key says its rate under the triangles (×1 · ×2 · ×4). */
+.runDock .runRate {
+  grid-auto-flow: row;
+  align-content: center;
+  gap: 1px;
+}
+.runRateX {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 실물 검수 N beside the chips (robot connected): a wider key, the robot's green. */
+.app .checkChips button.chipReal {
+  width: auto;
+  padding: 0 10px;
+  margin-left: 6px;
+  white-space: nowrap;
+  border-color: rgba(91, 209, 122, 0.7);
+  color: var(--hud-green);
+}

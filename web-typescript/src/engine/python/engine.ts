@@ -15,8 +15,10 @@
 
 import { Vector3 } from 'three';
 
-import { buildChain, forwardKinematics, solveIk } from '../robot/kinematics';
+import { buildChain, forwardKinematics, solveIk, type IkResult } from '../robot/kinematics';
 import { jointMax, jointMin } from '../robot/limits';
+import { MIN_MOVE_S, linearPosePath, peakJointSpeedDegS, peakToolSpeedMmS, type Trajectory } from '../robot/motion';
+import { shiftTool } from '../robot/tool';
 import { activeArm, setActiveArm } from '../robot/arms';
 import { ArmModel } from './arm';
 import { PY_FILES, PY_PRELUDE } from './pylib';
@@ -33,6 +35,8 @@ export interface PyodideLike {
 
 /** Classroom speed cap (same as the block level and the robot server). */
 const SPEED_CAP = 50;
+/** A step of a straight-line move or a coordinate jog jumping more than this in one joint means the arm flipped shape: it stops there. */
+const MAX_STEP_JUMP_DEG = 25;
 
 let installed = false;
 
@@ -66,7 +70,9 @@ export function runScript(py: PyodideLike, code: string, init: PyInit): PyResult
   const basic = new Map<number, number>();
   let gpioMode = 10; // BOARD (Hobot) unless set to BCM (RPi)
   let pumpOn = false;
-  let gripperOpen = true;
+  // The gripper's opening as get_gripper_value reports it: 100 open, 0 closed.
+  let gripperValue = 100;
+  let released = false;
   let t = 0;
 
   const coordsAt = (angles: readonly number[]) => {
@@ -74,10 +80,49 @@ export function runScript(py: PyodideLike, code: string, init: PyInit): PyResult
     return [p.position.x * 1000, p.position.y * 1000, p.position.z * 1000, p.rpyDeg.x, p.rpyDeg.y, p.rpyDeg.z];
   };
   const say = (text: string) => output.push({ t, text });
+
+  /*
+   * A move made of short joint moves one after another: send_coords(..., 1) along its straight line, and
+   * jog_coord. ArmModel holds one segment at a time and the playback and the real robot replay the same
+   * 'move' events, so each step is its own move, sent when the one before arrives. The steps are made as
+   * simulated time reaches them; a new move, stop() or the end of the program replaces what is left
+   * (the controller's fresh mode).
+   */
+  let steps: { at: number; speed: number; line: number; what: string; next: () => number[] | null } | null = null;
+  const flush = (now: number) => {
+    while (steps && steps.at <= now) {
+      const s = steps;
+      const to = s.next();
+      if (!to) {
+        steps = null;
+        break;
+      }
+      events.push({ t: s.at, line: s.line, kind: 'move', to, speed: s.speed, what: s.what });
+      s.at = arm.move(s.at, to, s.speed);
+    }
+  };
+  const emit = (e: PyEvent) => {
+    flush(e.t);
+    events.push(e);
+  };
+  const startSteps = (speed: number, what: string, line: number, next: () => number[] | null) => {
+    steps = { at: t, speed, line, what, next };
+    flush(t);
+  };
+  /** A planned straight line, as steps of about MIN_MOVE_S each (the plan's own easing in and out kept). */
+  const straight = (traj: Trajectory, speed: number, what: string, line: number) => {
+    const n = Math.max(1, Math.ceil(traj.durationS / MIN_MOVE_S));
+    let k = 0;
+    startSteps(speed, what, line, () => {
+      if (k >= n) return null;
+      k += 1;
+      return k === n ? traj.end.slice() : traj.sample((traj.durationS * k) / n);
+    });
+  };
   const setPump = (on: boolean, line: number) => {
     if (on === pumpOn) return;
     pumpOn = on;
-    events.push({ t, line, kind: 'pump', on });
+    emit({ t, line, kind: 'pump', on });
   };
   let capped = false;
   const cap = (speed: number) => {
@@ -105,45 +150,130 @@ export function runScript(py: PyodideLike, code: string, init: PyInit): PyResult
       t += s;
       if (t > MAX_SIM_S) throw new Error(`시뮬레이션은 ${MAX_SIM_S}초까지만 돌릴 수 있어요. 끝나지 않는 반복이 있는지 확인해 주세요.`);
     },
-    angles: () => arm.at(t),
-    coords: () => coordsAt(arm.at(t)),
+    angles: () => {
+      flush(t);
+      return arm.at(t);
+    },
+    coords: () => {
+      flush(t);
+      return coordsAt(arm.at(t));
+    },
     fk: (angles: unknown) => coordsAt(nums(angles)),
     dof: () => activeArm().dof,
     angles_min: () => [...jointMin()],
     angles_max: () => [...jointMax()],
     coords_min: () => [...activeArm().coordsMin],
     coords_max: () => [...activeArm().coordsMax],
-    moving: () => arm.moving(t),
+    moving: () => {
+      flush(t);
+      return arm.moving(t) || steps !== null;
+    },
     move: (angles: unknown, speed: number, what: string, line: number) => {
+      flush(t);
+      steps = null;
       const to = nums(angles);
       events.push({ t, line, kind: 'move', to, speed: cap(speed), what });
       arm.move(t, to, cap(speed));
     },
-    move_coords: (coords: unknown, speed: number, what: string, line: number) => {
+    // mode 0: each joint the short way (one joint move); 1: the tool in a straight line (coord_mode 1, linear).
+    move_coords: (coords: unknown, speed: number, mode: number, what: string, line: number) => {
+      flush(t);
       const c = nums(coords);
       const seed = arm.at(t);
+      const where = `[${c.map((v) => Math.round(v)).join(', ')}]`;
       const r = solveIk(chain, new Vector3(c[0] / 1000, c[1] / 1000, c[2] / 1000), seed, {
         matchOrientation: true,
         targetRpyDeg: [c[3], c[4], c[5]],
         restarts: 8,
       });
+      // The real arm takes an unreachable target and simply stays where it is: say so and go on with the program.
       if (!r.converged) {
-        throw new Error(`좌표 [${c.map((v) => Math.round(v)).join(', ')}] 에는 갈 수 없어요 (팔이 닿지 않거나 그 방향으로 돌 수 없어요).`);
+        say(`[시뮬레이터] ${line}번째 줄: 좌표 ${where} 에는 갈 수 없어요 (팔이 닿지 않거나 그 방향으로 돌 수 없어요). 실제 로봇처럼 움직이지 않고 다음 줄로 넘어가요.`);
+        return;
       }
       const to = r.anglesDeg.map((a, i) => Math.min(jointMax()[i], Math.max(jointMin()[i], a)));
+      if (Number(mode) === 1) {
+        // Position along the line, the tool turning evenly to the new orientation (the controller's linear move).
+        const plan = linearPosePath(chain, seed, to, 0, cap(speed));
+        if (!plan.ok) {
+          say(`[시뮬레이터] ${line}번째 줄: 좌표 ${where} 까지 직선으로는 갈 수 없어요 (가는 길에 팔이 닿지 않거나 자세가 뒤집혀요). 실제 로봇처럼 움직이지 않고 다음 줄로 넘어가요.`);
+          return;
+        }
+        steps = null;
+        straight(plan.trajectory, cap(speed), what, line);
+        return;
+      }
+      steps = null;
       events.push({ t, line, kind: 'move', to, speed: cap(speed), what });
       arm.move(t, to, cap(speed));
     },
+    /*
+     * jog_angle / jog_coord: on the real arm the joint (or the tool along one coordinate) moves at the jog
+     * speed until stop() or a limit. A joint jog is one move to the joint's limit (ArmModel's ramp, cruise,
+     * ramp; stop() ends it); a coordinate jog walks the line in steps, each solved from the one before,
+     * and ends at the coordinate's limit or where the arm cannot follow (its reach, a joint limit, a flip).
+     */
+    jog: (kind: string, axis: number, end: number, speed: number, what: string, line: number) => {
+      flush(t);
+      steps = null;
+      const v = cap(speed);
+      const from = arm.at(t);
+      if (kind === 'angle') {
+        const to = from.slice();
+        to[axis] = Math.min(jointMax()[axis], Math.max(jointMin()[axis], Number(end)));
+        events.push({ t, line, kind: 'move', to, speed: v, what });
+        arm.move(t, to, v);
+        return;
+      }
+      const turn = axis >= 3;
+      // About one MIN_MOVE_S per step at the jog speed (mm, or degrees for rx · ry · rz).
+      const step = Math.max(turn ? 1 : 2, ((turn ? peakJointSpeedDegS(v) : peakToolSpeedMmS(v)) * MIN_MOVE_S) / 2);
+      let q = from.slice();
+      const c = coordsAt(q);
+      startSteps(v, what, line, () => {
+        const left = Number(end) - c[axis];
+        if (Math.abs(left) < 1e-6) return null;
+        const d = Math.sign(left) * Math.min(step, Math.abs(left));
+        let r: IkResult | undefined;
+        if (!turn) {
+          r = shiftTool(chain, q, { x: axis === 0 ? d : 0, y: axis === 1 ? d : 0, z: axis === 2 ? d : 0 });
+        } else {
+          // Turn in 2° steps, each seeded from the one before, the flange staying where it is.
+          const n = Math.max(1, Math.ceil(Math.abs(d) / 2));
+          let seed = q;
+          for (let k = 1; k <= n; k += 1) {
+            const rpy = c.slice(3);
+            rpy[axis - 3] += (d * k) / n;
+            r = solveIk(chain, new Vector3(c[0] / 1000, c[1] / 1000, c[2] / 1000), seed, { matchOrientation: true, targetRpyDeg: rpy, damping: 0.01, maxIterations: 100, restarts: 0 });
+            if (!r.converged) break;
+            seed = r.anglesDeg;
+          }
+        }
+        if (!r || !r.converged || r.anglesDeg.some((a, i) => Math.abs(a - q[i]) > MAX_STEP_JUMP_DEG)) return null;
+        q = r.anglesDeg;
+        c[axis] += d;
+        return q.slice();
+      });
+    },
     stop: (line: number) => {
+      flush(t);
+      steps = null;
       events.push({ t, line, kind: 'stop' });
       arm.stop(t);
     },
-    servos: (on: boolean, line: number) => events.push({ t, line, kind: 'servos', on: Boolean(on) }),
-    gripper: (open: boolean, gripperType: number, line: number) => {
-      gripperOpen = Boolean(open);
-      events.push({ t, line, kind: 'gripper', open: gripperOpen, gripperType: Number(gripperType) });
+    servos: (on: boolean, line: number) => emit({ t, line, kind: 'servos', on: Boolean(on) }),
+    // value: the opening, 0 (closed) .. 100 (open). Open only near fully open: 82 (the kit cube's grip, ~36 mm apart) holds a block like a full close.
+    gripper: (value: number, gripperType: number, line: number) => {
+      gripperValue = Math.round(Math.min(100, Math.max(0, Number(value))));
+      released = false;
+      emit({ t, line, kind: 'gripper', open: gripperValue >= 90, gripperType: Number(gripperType) });
     },
-    gripper_value: () => (gripperOpen ? 100 : 0),
+    // set_gripper_state(254): the gripper's servo lets go of its torque; the fingers stay where they are.
+    gripper_release: (line: number) => {
+      if (!released) say(`[시뮬레이터] ${line}번째 줄: 그리퍼의 힘을 풀었어요 (254). 손가락은 그 자리에 그대로 있어요.`);
+      released = true;
+    },
+    gripper_value: () => gripperValue,
     gpio_mode: (mode: number) => {
       gpioMode = Number(mode);
     },
@@ -201,6 +331,8 @@ export function runScript(py: PyodideLike, code: string, init: PyInit): PyResult
       if (messages.length < 2000) messages.push({ t, topic: String(topic), type: String(type), data: String(data) });
     },
     driver_move: (angles: unknown, speed: number, line: number) => {
+      flush(t);
+      steps = null;
       const to = nums(angles).map((a, i) => Math.min(jointMax()[i], Math.max(jointMin()[i], a)));
       events.push({ t, line: Number(line), kind: 'move', to, speed: cap(speed), what: 'control_slider' });
       arm.move(t, to, cap(speed));
@@ -217,6 +349,8 @@ export function runScript(py: PyodideLike, code: string, init: PyInit): PyResult
   } catch (err) {
     error = explain(err instanceof Error ? err.message : String(err));
   }
+  // A straight-line move or a coordinate jog still going when the program ends goes on to its end (or the time limit).
+  flush(MAX_SIM_S);
   return {
     ok: !error,
     events,
@@ -252,6 +386,8 @@ function hintFor(type: string, message: string): string | undefined {
   if (type === 'AttributeError') return '그런 이름의 함수(명령)가 없어요. 철자를 확인해 주세요. 시뮬레이터에 아직 없는 명령일 수도 있어요.';
   if (type === 'ValueError' && /angles? not right/.test(message)) return '관절 각도가 로봇이 움직일 수 있는 범위를 벗어났어요 (pymycobot 이 실제 로봇에서도 같은 오류를 내요).';
   if (type === 'ValueError' && /coords? not right/.test(message)) return '좌표가 로봇의 작업 범위를 벗어났어요 (pymycobot 이 실제 로봇에서도 같은 오류를 내요).';
+  if (type === 'ValueError' && /gripper_|is_torque/.test(message)) return 'pymycobot 이 받지 않는 그리퍼 값이에요: gripper_state 는 0 (열기) · 1 (닫기) · 254 (힘 풀기), gripper_type 은 1 · 2 · 3 · 4, is_torque 는 0 · 1, 그리퍼 속도는 0~100 이에요.';
+  if (type === 'ValueError' && /coord_mode|direction/.test(message)) return 'coord_mode 는 0 (관절 이동) 이나 1 (직선 이동), direction 은 0 (줄이기) 이나 1 (늘리기) 이에요 (pymycobot 이 실제 로봇에서도 같은 오류를 내요).';
   if (type === 'ValueError' && /speed/.test(message)) return '속도는 1~100 이에요.';
   if (type === 'TypeError') return '함수에 넣은 값의 개수나 종류가 맞지 않아요.';
   if (type === 'ZeroDivisionError') return '0 으로 나눌 수 없어요.';

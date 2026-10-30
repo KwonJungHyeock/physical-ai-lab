@@ -368,6 +368,10 @@ class Handler(base.Handler):
         route = self.path.split("?")[0]
         if route.startswith("/api/wifi"):
             return super().do_POST()
+        # The arm server's guard: only JSON, only from this robot's own console or the PC program on this
+        # network. A text/plain POST from another web page needs no preflight and would otherwise drive it.
+        if not self.console_post():
+            return self.send_json({"ok": False, "error": "이 요청은 받을 수 없어요 (로봇 콘솔 화면에서만)."}, 403)
         try:
             body = self.read_json()
             if route == "/api/drive":
@@ -409,7 +413,7 @@ def main():
     base.WIFI = Wifi(args.demo, log)
     base.CAMERA = kit_camera.CameraSet(base.camera_spec(args.camera), log)
     base.IDENTITY.update(kind="agv", model=PROFILE["model"])
-    base.CROSS_ORIGIN = ("/api/state", "/api/identify")
+    base.CROSS_ORIGIN = ("/api/state",)   # as on the arm: other pages read the state, only consoles move it
     server = base.ConsoleServer(("0.0.0.0", args.port), Handler)
     base.refresh_identity(True)
     base.IDENTITY["host"] = os.uname().nodename

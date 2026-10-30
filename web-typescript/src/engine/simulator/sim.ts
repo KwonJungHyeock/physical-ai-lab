@@ -24,7 +24,8 @@ import { Matrix4, Vector3 } from 'three';
 import { forwardKinematicsFrames, type ChainSegment } from '../robot/kinematics';
 import { armCapsules } from '../physics/collide';
 import {
-  jointMoveDuration,
+  armMoveDuration,
+  armTrajectory,
   jointTrajectory,
   linearPath,
   QUINTIC_PEAK_RATE,
@@ -777,9 +778,10 @@ export async function runProcess(items: readonly ProcessItem[], hooks: RunHooks,
   }
 }
 
-function legTrajectory(rt: Runtime, from: readonly number[], leg: Leg): Trajectory {
+/** A leg on its own moves with the real arm's timing; in a blended run only its path counts, and the quintic's peak sets the cruise (runBlended). */
+function legTrajectory(rt: Runtime, from: readonly number[], leg: Leg, blended = false): Trajectory {
   const v = effectiveSpeed(rt, leg.speed);
-  if (leg.mode === 'J') return jointTrajectory(from, leg.joints, v);
+  if (leg.mode === 'J') return blended ? jointTrajectory(from, leg.joints, v) : armTrajectory(from, leg.joints, v);
   const plan = linearPosePath(rt.chain, from, leg.joints, tcp(rt), v);
   if (!plan.ok) {
     const err = new RunError(`${leg.line}번 줄 MOVE L: 손끝이 곧게 갈 수 없어요 (가는 길에 팔 자세가 뒤집혀요).`, 'MOVE J 로 바꾸거나, 사이에 점을 하나 더 넣어 주세요.');
@@ -823,7 +825,7 @@ async function runBlended(rt: Runtime, legs: readonly Leg[]): Promise<void> {
   let from = rt.world.angles.slice();
   for (const leg of legs) {
     rt.line = leg.line;
-    const traj = legTrajectory(rt, from, leg);
+    const traj = legTrajectory(rt, from, leg, true);
     durationS += traj.durationS;
     legDur.push(traj.durationS);
     const n = Math.max(2, Math.ceil(traj.durationS / 0.02));
@@ -1031,12 +1033,12 @@ async function moveJointsTimed(rt: Runtime, target: readonly number[], sec: numb
   const from = rt.world.angles;
   let lo = 1;
   let hi = SPEED_CAP;
-  if (jointMoveDuration(from, target, hi) > sec) {
-    rt.log?.('warn', `${rt.line}번째 줄: ${sec}초 안에 가기엔 너무 빨라요. 가장 빠른 속도(${SPEED_CAP})로 ${jointMoveDuration(from, target, hi).toFixed(1)}초 걸려요.`);
+  if (armMoveDuration(from, target, hi) > sec) {
+    rt.log?.('warn', `${rt.line}번째 줄: ${sec}초 안에 가기엔 너무 빨라요. 가장 빠른 속도(${SPEED_CAP})로 ${armMoveDuration(from, target, hi).toFixed(1)}초 걸려요.`);
     return moveJoints(rt, target, hi);
   }
-  if (jointMoveDuration(from, target, lo) <= sec) {
-    const took = jointMoveDuration(from, target, lo);
+  if (armMoveDuration(from, target, lo) <= sec) {
+    const took = armMoveDuration(from, target, lo);
     await moveJoints(rt, target, lo);
     const rest = Math.round((sec - took) * 10) / 10;
     if (rest > 0.05) {
@@ -1047,7 +1049,7 @@ async function moveJointsTimed(rt: Runtime, target: readonly number[], sec: numb
   }
   for (let k = 0; k < 20; k += 1) {
     const mid = (lo + hi) / 2;
-    if (jointMoveDuration(from, target, mid) > sec) lo = mid;
+    if (armMoveDuration(from, target, mid) > sec) lo = mid;
     else hi = mid;
   }
   return moveJoints(rt, target, Math.max(1, Math.round(hi * 10) / 10));
@@ -1055,7 +1057,7 @@ async function moveJointsTimed(rt: Runtime, target: readonly number[], sec: numb
 
 async function moveJoints(rt: Runtime, target: readonly number[], speed?: number): Promise<void> {
   const v = effectiveSpeed(rt, speed);
-  await play(rt, jointTrajectory(rt.world.angles, target, v));
+  await play(rt, armTrajectory(rt.world.angles, target, v));
   rt.record?.({ type: 'angles', angles: target.slice(), speed: v, line: rt.line });
   noteArrival(rt);
 }
@@ -1107,7 +1109,7 @@ async function moveTool(rt: Runtime, to: PointMm): Promise<void> {
   if (w.penDown) {
     throw new RunError(`펜을 내린 채로 (${fmt(to)})까지 곧게 갈 수 없어요.`, '펜을 올리고 옮기거나, 로봇에 더 가까운 곳에 그려 주세요.');
   }
-  await play(rt, jointTrajectory(w.angles, end.anglesDeg, speed));
+  await play(rt, armTrajectory(w.angles, end.anglesDeg, speed));
   rt.record?.({ type: 'angles', angles: end.anglesDeg.slice(), speed, line: rt.line });
   noteArrival(rt);
 }

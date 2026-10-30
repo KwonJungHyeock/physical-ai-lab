@@ -79,6 +79,69 @@ export function jointTrajectory(from: readonly number[], to: readonly number[], 
 }
 
 /**
+ * The real arm's joint move (the simulator's 실물 timing; the lessons keep the quintic above).
+ * Measured on the RDK X5 (docs/reports/console/08-robot-check.md): it does not ease over the whole
+ * move — it ramps up in a fraction of a second, cruises at about 2°/s × speed, and ramps down:
+ *   speed 20, J1 10° → 0.44 s and J6 20° → 0.75 s;  speed 10, 0.6 s into a 30° move → 10.7° gone.
+ * A cruise at 2 × speed °/s with smooth (raised-cosine) ramps of ARM_RAMP_ACC_DEG_S2 meets all
+ * three within 0.04 s / 0.2° (0.47 s, 0.72 s, 10.9°); the quintic gave 0.47 s, 0.94 s and 2°.
+ */
+export const ARM_RAMP_ACC_DEG_S2 = 180;
+/** After stop the real arm runs on about 3° from 20°/s (speed 10, same report): it slows at about v²/2d. */
+export const ARM_STOP_DEC_DEG_S2 = 67;
+
+/** Duration of the real-arm move of `largest` degrees (the joint travelling furthest) at a speed setting. */
+function armDuration(largest: number, speed: number): { T: number; ramp: number } {
+  const v = peakJointSpeedDegS(speed);
+  const ramp = v / ARM_RAMP_ACC_DEG_S2;
+  // Too short to reach the cruise: two ramps only, at the speed the distance allows.
+  const T = largest >= v * ramp ? largest / v + ramp : 2 * Math.sqrt(largest / ARM_RAMP_ACC_DEG_S2);
+  return { T: Math.max(MIN_MOVE_S, T), ramp };
+}
+
+/** 0..1 along a move with raised-cosine ramps making up the fraction `r` (≤ 0.5) of each end. */
+export function cruise(tau: number, r: number): number {
+  const t = Math.min(1, Math.max(0, tau));
+  if (r <= 1e-6) return t;
+  const peak = 1 / (1 - r);
+  const up = (u: number) => (peak * (u - (r / Math.PI) * Math.sin((Math.PI * u) / r))) / 2;
+  if (t < r) return up(t);
+  if (t > 1 - r) return 1 - up(1 - t);
+  return up(r) + peak * (t - r);
+}
+
+export function armMoveDuration(from: readonly number[], to: readonly number[], speed: number): number {
+  return armDuration(Math.max(0, ...to.map((v, i) => Math.abs(v - from[i]))), speed).T;
+}
+
+/** Synchronised joint move with the real arm's timing (ramp, cruise, ramp). */
+export function armTrajectory(from: readonly number[], to: readonly number[], speed: number): Trajectory {
+  const a = from.slice();
+  const b = to.slice();
+  const { T, ramp } = armDuration(Math.max(0, ...b.map((v, i) => Math.abs(v - a[i]))), speed);
+  const r = Math.min(0.5, ramp / T);
+  return {
+    durationS: T,
+    end: b,
+    sample(tS) {
+      const s = cruise(tS / T, r);
+      return a.map((v, i) => v + (b[i] - v) * s);
+    },
+  };
+}
+
+/** The arm running on after stop: each joint slows from its velocity (°/s) at one rate, all stopping together. */
+export function coastTrajectory(at: readonly number[], velocity: readonly number[]): Trajectory {
+  const fastest = Math.max(0, ...velocity.map(Math.abs));
+  const T = fastest / ARM_STOP_DEC_DEG_S2;
+  const sample = (tS: number) => {
+    const t = Math.min(T, Math.max(0, tS));
+    return at.map((q, i) => q + velocity[i] * (t - (T > 0 ? (t * t) / (2 * T) : 0)));
+  };
+  return { durationS: T, end: sample(T), sample };
+}
+
+/**
  * Trajectory through a list of joint-space waypoints (e.g. from `linearPath`).
  * The path parameter is arc length in joint space, so equal steps in space map
  * to equal steps in time, and the whole path gets one quintic profile.

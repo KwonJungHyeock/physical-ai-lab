@@ -491,3 +491,30 @@ export function findColours(data: ArrayLike<number>, width: number, height: numb
     return [{ color: c.color, box: { x0: a.x0, y0: a.y0, x1: a.x1, y1: a.y1 }, score: Math.min(0.99, a.n / area) }];
   });
 }
+
+/** The event 로봇 실습 7 listens for to open a unit (the simulator's [실물 검수 N]); detail = the unit. */
+export const P7_OPEN = 'practice7-open';
+const P7_REQUEST = 'practice7-open-request';
+
+/** Open 로봇 실습 7 at unit `unit` from elsewhere: remembered for a 교육 view not mounted yet, sent to one that is. */
+export function openPractice7(unit: UnitId): void {
+  try {
+    localStorage.setItem('practice7-unit', String(unit));
+    sessionStorage.setItem(P7_REQUEST, '1');
+  } catch {
+    /* the event still reaches a mounted view */
+  }
+  window.dispatchEvent(new CustomEvent(P7_OPEN, { detail: unit }));
+}
+
+/** Whether such a request is waiting (and clear it). */
+export function takeP7Request(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    const asked = sessionStorage.getItem(P7_REQUEST) === '1';
+    sessionStorage.removeItem(P7_REQUEST);
+    return asked;
+  } catch {
+    return false;
+  }
+}

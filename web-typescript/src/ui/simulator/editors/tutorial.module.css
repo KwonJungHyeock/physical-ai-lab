@@ -444,3 +444,8 @@
   padding: 5px 9px;
   font-size: 12px;
 }
+
+/* 처음 예제로 · 내 프로그램 sit at the row's end, also when there are no steps (터미널). */
+.steps .link:first-of-type {
+  margin-left: auto;
+}
