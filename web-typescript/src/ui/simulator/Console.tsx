@@ -3187,11 +3187,15 @@ export default function Console() {
   /** The fitted tool's own buttons: in the jog screen (the 도구 screen only fits and swaps the tool). */
   const toolRow = (
     <div className={css.toolRow}>
-      <div className={css.poseRow}>
-        {/* No tool: one way to fit one (no grip keys that could only say there is none). */}
+      {/* One plate: TOOL, the tool's name, its keys (no tool: one key to fit one). */}
+      <div className={`${css.poseRow} ${css.toolPlate}`}>
+        <span className={css.toolTag}>
+          <em>TOOL</em>
+          <b>{kind === 'none' ? '도구 없음' : EFFECTOR_BY_ID[effector].name}</b>
+        </span>
         {kind === 'none' && (
-          <button type="button" className={css.jogWide} disabled={busy} onClick={() => openWork('parts')}>
-            도구 달기
+          <button type="button" className={`${css.jogWide} ${css.toolFit}`} disabled={busy} onClick={() => openWork('parts')} aria-label="도구 달기">
+            달기 ›
           </button>
         )}
         {kind === 'grip' && (
@@ -4597,6 +4601,7 @@ export default function Console() {
                       lastRun={lastRun}
                       onSaveFile={saveProcessFile}
                       onOpenFile={() => procFile.current?.click()}
+                      onTools={() => openWork('parts')}
                       runBar={runBar}
                       editor={
                         <ProcessPanel

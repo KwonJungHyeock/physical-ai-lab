@@ -80,10 +80,11 @@ const TIP_STEPS = [1, 5, 10, 20];
 /** The rotation step that goes with each position step (same chip). */
 const TURN_STEPS = [1, 2, 5, 10];
 /** Turning the tool about a base axis, the tip kept in place: what that looks like with the tool pointing down. */
-const TURNS: { axis: Axis; color: string; what: string }[] = [
-  { axis: 'rx', color: '#ff7a72', what: '좌우 기울기' },
-  { axis: 'ry', color: '#5ad895', what: '앞뒤 기울기' },
-  { axis: 'rz', color: '#86abff', what: '손 돌리기' },
+const TURNS: { axis: Axis; color: string; what: string; icon: string }[] = [
+  // The tool (a stick) and how it turns: swung left-right (arc over it), front-back (arc beside it), twisted.
+  { axis: 'rx', color: '#ff7a72', what: '좌우 기울기', icon: 'M12 21V10M12 10l-1.5 2M5.5 8.5a8 8 0 0 1 13 0M18.5 8.5l.6-3M18.5 8.5l-3-.4' },
+  { axis: 'ry', color: '#5ad895', what: '앞뒤 기울기', icon: 'M12 21V6M16 3.5a8 8 0 0 1 0 11M16 14.5l-2.7.2M16 14.5l.6-2.6' },
+  { axis: 'rz', color: '#86abff', what: '손 돌리기', icon: 'M12 21V4M5 9.5c0 1.7 3.1 3 7 3s7-1.3 7-3M19 9.5c0-1.7-3.1-3-7-3M19 9.5l1.6-2.4M19 9.5l-2.8-.6' },
 ];
 /** The round pad's four keys, clockwise from the top, and the keyboard key for each (Shift / Space: 위 / 아래). */
 const PAD: { side: 'up' | 'right' | 'down' | 'left'; axis: 'x' | 'y'; dir: -1 | 1; word: string; key: string }[] = [
@@ -614,7 +615,7 @@ export default function ControlPanel(p: Props) {
               </span>
             </div>
           </div>
-          <p className={css.cap}>
+          <p className={`${css.cap} ${css.turnCap}`}>
             손 방향 <small>{turnStep}°</small>
             {p.onToolDown && (
               <button type="button" className={css.toolDown} disabled={p.busy} onClick={p.onToolDown} title="손(도구)을 똑바로 아래로 향하게 돌려요. 손끝 위치는 그대로예요">
@@ -622,18 +623,22 @@ export default function ControlPanel(p: Props) {
               </button>
             )}
           </p>
+          {/* 손 방향: three cards — the axis drawn, its name and value, ↺ ↻ under them (the words in the tooltip). */}
           <div className={css.turns}>
-            {TURNS.map(({ axis, color, what }) => {
+            {TURNS.map(({ axis, color, what, icon }) => {
               const name = axis.toUpperCase();
               const v = tip?.[axis];
               return (
                 <div key={axis} className={css.turn}>
-                  <JogKey kind="slim" dir={-1} state={stateOf(axis, -1)} label={`${what} (${name}) −${turnStep}°`} disabled={p.busy} onStep={() => p.onTipStep(axis, -turnStep)} onStart={() => p.onTipJog(axis, -1)} onStop={p.onJogStop} />
-                  <span className={css.turnMid} title={`${name}: 베이스의 ${name.slice(1)}축 둘레로 손을 돌려요. 손끝 위치는 그대로예요`}>
-                    <b>{what}</b>
+                  <span className={css.turnMid} title={`${what} (${name}): 베이스의 ${name.slice(1)}축 둘레로 손을 돌려요. 손끝 위치는 그대로예요`}>
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d={icon} />
+                    </svg>
                     <em style={{ color }}>{name}</em>
+                    <b className={css.turnWhat}>{what}</b>
                     <output>{v === undefined ? '—' : `${v.toFixed(1)}°`}</output>
                   </span>
+                  <JogKey kind="slim" dir={-1} state={stateOf(axis, -1)} label={`${what} (${name}) −${turnStep}°`} disabled={p.busy} onStep={() => p.onTipStep(axis, -turnStep)} onStart={() => p.onTipJog(axis, -1)} onStop={p.onJogStop} />
                   <JogKey kind="slim" dir={1} state={stateOf(axis, 1)} label={`${what} (${name}) +${turnStep}°`} disabled={p.busy} onStep={() => p.onTipStep(axis, turnStep)} onStart={() => p.onTipJog(axis, 1)} onStop={p.onJogStop} />
                 </div>
               );
