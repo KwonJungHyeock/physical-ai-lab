@@ -69,7 +69,7 @@
 .mark i {
   width: 1px;
   height: 30px;
-  background: rgba(214, 219, 224, 0.35);
+  background: rgba(213, 218, 225, 0.35);
 }
 .mark img:last-child {
   height: 30px;
@@ -131,7 +131,7 @@
   width: 18px;
   height: 3px;
   border-radius: 2px;
-  background: rgba(214, 219, 224, 0.25);
+  background: rgba(213, 218, 225, 0.25);
 }
 .caption li[data-on] {
   background: var(--hud-teal);
@@ -266,7 +266,7 @@
 .load {
   position: relative;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(214, 219, 224, 0.75) 50%, transparent);
+  background: linear-gradient(90deg, transparent, rgba(213, 218, 225, 0.75) 50%, transparent);
 }
 .load i {
   position: absolute;

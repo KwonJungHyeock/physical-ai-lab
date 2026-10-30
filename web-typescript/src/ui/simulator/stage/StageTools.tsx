@@ -13,14 +13,14 @@ import type { CameraFrame, StageApi, ViewName } from './Stage';
 import css from '../console.module.css';
 
 const DISPLAY_ITEMS: { key: keyof DisplayOpts; label: string; note: string; swatch: string[] }[] = [
-  { key: 'mini', label: '관절 각도 (작은 로봇)', note: '왼쪽 아래 반투명 로봇에 J1~J6 각도 · 손끝 위치와 회전', swatch: ['#e8eefc'] },
+  { key: 'mini', label: '관절 각도 (작은 로봇)', note: '왼쪽 아래 반투명 로봇에 J1~J6 각도 · 손끝 위치와 회전', swatch: ['#d6dbe0'] },
   { key: 'baseAxes', label: '베이스 좌표축', note: 'X 앞 · Y 왼쪽 · Z 위', swatch: [AXIS_COLORS.x, AXIS_COLORS.y, AXIS_COLORS.z] },
   { key: 'toolAxes', label: '도구 좌표축', note: '도구 끝의 방향', swatch: [AXIS_COLORS.x, AXIS_COLORS.y, AXIS_COLORS.z] },
-  { key: 'jointAxes', label: '관절 회전축', note: 'J1~J6 이 도는 축', swatch: ['#f08c00'] },
-  { key: 'path', label: '도구 궤적', note: '도구 끝이 지나간 길', swatch: ['#3e63dd'] },
-  { key: 'reach', label: '작업 범위', note: '팔이 닿는 3D 공간', swatch: ['#3454d1'] },
-  { key: 'grid', label: '바닥 격자', note: '1cm 칸 · 10cm 굵은 선', swatch: ['#c3ccd6'] },
-  { key: 'ghost', label: '끝 자세 미리보기', note: '블록 코딩: 프로그램이 끝날 때의 자세를 투명한 팔로', swatch: ['#6f9bff'] },
+  { key: 'jointAxes', label: '관절 회전축', note: 'J1~J6 이 도는 축', swatch: ['#f0a23b'] },
+  { key: 'path', label: '도구 궤적', note: '도구 끝이 지나간 길', swatch: ['#46d3e6'] },
+  { key: 'reach', label: '작업 범위', note: '팔이 닿는 3D 공간', swatch: ['#46d3e6'] },
+  { key: 'grid', label: '바닥 격자', note: '1cm 칸 · 10cm 굵은 선', swatch: ['#6c7177'] },
+  { key: 'ghost', label: '끝 자세 미리보기', note: '블록 코딩: 프로그램이 끝날 때의 자세를 투명한 팔로', swatch: ['#46d3e6'] },
   { key: 'autoFold', label: '실행할 때 패널 접기', note: '실행하는 동안 3D 를 크게, 끝나면 다시 펼침', swatch: ['#1d2636'] },
 ];
 

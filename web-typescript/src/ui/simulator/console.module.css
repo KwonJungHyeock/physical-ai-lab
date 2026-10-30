@@ -6,10 +6,10 @@
   --work: #f9fafb;
   --line: #e4e7ec;
   --ink: #101828;
-  --muted: #667085;
-  --faint: #98a2b3;
+  --muted: #6c6f74;
+  --faint: #9da1a7;
   --accent: #3454d1;
-  --accent-soft: #eef1fd;
+  --accent-soft: #ebf1f9;
   --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
   --shadow-md: 0 1px 2px rgba(16, 24, 40, 0.04), 0 4px 14px rgba(16, 24, 40, 0.06);
   --shadow-lg: 0 12px 32px rgba(16, 24, 40, 0.16), 0 2px 6px rgba(16, 24, 40, 0.06);
@@ -24,7 +24,7 @@
   --blk-grip: #f59a1b;
   --blk-eye: #e0457b;
   --blk-flow: #1ea7df;
-  --blk-adv: #7d8996;
+  --blk-adv: #84878c;
   --blk-cond: #c98a0c;
   --stage: #f4f6f9;
   --run: var(--sim);
@@ -301,7 +301,7 @@
   width: 100%;
   aspect-ratio: 4 / 3;
   border-radius: 10px;
-  background: #1f2933;
+  background: #25272b;
   display: block;
   image-rendering: auto;
 }
@@ -448,7 +448,7 @@
 }
 .jog:active:not(:disabled),
 .jogWide:active:not(:disabled) {
-  background: #efeaff;
+  background: #e8eef6;
   border-color: var(--blk-move);
 }
 .jog:disabled,
@@ -495,7 +495,7 @@
   overflow: auto;
   min-height: 460px;
   background-color: var(--work);
-  background-image: radial-gradient(circle, #dfe4ea 1px, transparent 1.2px);
+  background-image: radial-gradient(circle, #dde3eb 1px, transparent 1.2px);
   background-size: 18px 18px;
 }
 /* 되돌리기 · 다시 하기, over the top right of the blocks while they scroll (a row of no height,
@@ -521,7 +521,7 @@
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 8px;
   background: rgba(19, 26, 36, 0.92);
-  color: #dfe7f3;
+  color: #e0e6ee;
   font: inherit;
   font-size: 12.5px;
   font-weight: 700;
@@ -663,7 +663,7 @@ input.field {
   min-width: 10rem;
 }
 .dropInto {
-  background: #e3f4fb;
+  background: #eaf0f8;
 }
 .cFoot {
   height: 12px;
@@ -849,7 +849,7 @@ input.field {
   flex-direction: column;
   padding: 3px 10px;
   border-radius: 999px;
-  background: #efeaff;
+  background: #e8eef6;
   color: var(--blk-move);
   font-weight: 700;
 }
@@ -923,7 +923,7 @@ input.field {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  border: 1.5px solid #d0d5dd;
+  border: 1.5px solid #cfd4db;
   background: var(--page);
   color: var(--muted);
   font-size: 12.5px;
@@ -1017,7 +1017,7 @@ input.field {
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  background: #eef2ff;
+  background: #ecf2fa;
   color: #3e63dd;
 }
 .modeChip[data-mode='real'] {
@@ -1124,7 +1124,7 @@ input.field {
 .jog:hover:not(:disabled),
 .jogWide:hover:not(:disabled) {
   background: var(--soft);
-  border-color: #d0d5dd;
+  border-color: #cfd4db;
 }
 .jog:active:not(:disabled),
 .jogWide:active:not(:disabled) {
@@ -1349,7 +1349,7 @@ input.field {
   border: 2px solid #fff;
   border-radius: 12px;
   overflow: hidden;
-  background: #1f2933;
+  background: #25272b;
   box-shadow: var(--shadow-lg);
   cursor: zoom-in;
 }
@@ -1609,7 +1609,7 @@ div.zeroFlow {
 }
 .zeroReadings i {
   font-style: normal;
-  color: #64748b;
+  color: #6f7277;
 }
 .zeroReadings .zeroFar {
   color: #fcd34d;
@@ -1755,7 +1755,7 @@ div.zeroFlow {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #98a2b3;
+  background: #9da1a7;
 }
 .codeBox {
   position: relative;
@@ -1773,7 +1773,7 @@ div.zeroFlow {
   border-right: 1px solid #eef0f3;
   line-height: 21px;
   font-size: 12px;
-  color: #b0b8c4;
+  color: #b2b7be;
 }
 .ide .gutter span {
   padding-inline: 4px;
@@ -1850,7 +1850,7 @@ div.zeroFlow {
   color: #0a3069;
 }
 .tkComment {
-  color: #6e7781;
+  color: #72757a;
   font-style: italic;
 }
 .tkNumber,
@@ -1970,7 +1970,7 @@ div.zeroFlow {
 }
 .termText i {
   font-style: normal;
-  color: #98a2b3;
+  color: #9da1a7;
 }
 .termText b {
   font-weight: 600;
@@ -2313,10 +2313,10 @@ div.zeroFlow {
   font-size: 15px;
   -webkit-font-smoothing: auto;
   text-rendering: optimizeLegibility;
-  --muted: #475467;
-  --faint: #8a94a6;
+  --muted: #505256;
+  --faint: #8f9399;
   --head: #1d2636;
-  --head-2: #283246;
+  --head-2: #2f3135;
 }
 
 /* top bar */
@@ -2355,12 +2355,12 @@ div.zeroFlow {
   font-size: 16px;
 }
 .missionText p {
-  color: #c3cad6;
+  color: #c4c9d0;
   font-size: 13.5px;
 }
 .missionTagTopic {
   background: rgba(157, 180, 255, 0.2);
-  color: #c7d4ff;
+  color: #d0d5dc;
 }
 .missionTag {
   font-size: 13px;
@@ -2626,7 +2626,7 @@ div.zeroFlow {
     z-index: 30;
     min-height: 64px;
     border-radius: 16px;
-    border: 1px solid rgba(220, 226, 234, 0.95);
+    border: 1px solid rgba(219, 225, 233, 0.95);
     background: rgba(255, 255, 255, 0.95);
     box-shadow: 0 8px 24px rgba(16, 24, 40, 0.12);
   }
@@ -2966,7 +2966,7 @@ div.zeroFlow {
 /* panel finish: icon chips on section headers, softer cards */
 .jogWide {
   background: linear-gradient(180deg, #ffffff, #f6f8fb);
-  border-color: #d5dbe4;
+  border-color: #d5dae1;
 }
 .jogWide:hover:not(:disabled) {
   border-color: var(--accent);
@@ -3156,19 +3156,19 @@ div.zeroFlow {
  * ======================================================================== */
 .dock .jogWide {
   background: linear-gradient(180deg, #ffffff 0%, #f1f3f6 100%);
-  border: 1px solid #d3d9e2;
-  box-shadow: 0 2px 0 #d3d9e2, 0 4px 10px rgba(16, 24, 40, 0.07), inset 0 1px 0 #fff;
+  border: 1px solid #d3d8df;
+  box-shadow: 0 2px 0 #d3d8df, 0 4px 10px rgba(16, 24, 40, 0.07), inset 0 1px 0 #fff;
   transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.12s ease, border-color 0.12s ease;
 }
 .dock .jogWide:hover:not(:disabled) {
-  border-color: #b9c1cd;
+  border-color: #bbc0c7;
 }
 .dock .jogWide:active:not(:disabled) {
   transform: translateY(2px);
-  background: #efeaff;
+  background: #e8eef6;
   border-color: var(--blk-move);
   color: #5b3fd6;
-  box-shadow: 0 0 0 #d3d9e2, inset 0 2px 5px rgba(90, 60, 220, 0.2);
+  box-shadow: 0 0 0 #d3d8df, inset 0 2px 5px rgba(90, 60, 220, 0.2);
 }
 .dock .jogWide:disabled {
   box-shadow: none;
@@ -3728,7 +3728,7 @@ div.zeroFlow {
 .goalTrack {
   height: 5px;
   border-radius: 99px;
-  background: #e1e5ec;
+  background: #dfe5ed;
   overflow: hidden;
 }
 .goalTrack span {
@@ -3887,7 +3887,7 @@ div.zeroFlow {
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 9px;
   background: rgba(255, 255, 255, 0.08);
-  color: #dfe5f0;
+  color: #dee4ec;
   cursor: pointer;
 }
 .sideFold svg {
@@ -4027,7 +4027,7 @@ div.zeroFlow {
   gap: 4px;
   padding: 3px;
   border-radius: 13px;
-  background: #e9edf3;
+  background: #e6ecf4;
 }
 .runRate button {
   width: 52px;
@@ -4364,7 +4364,7 @@ div.zeroFlow {
   --cat: #6d4fe8;
 }
 .taskPick[data-cat='free'] {
-  --cat: #667085;
+  --cat: #6c6f74;
 }
 .taskPick[data-cat='check'] {
   --cat: #1d2636;
@@ -4382,11 +4382,11 @@ div.zeroFlow {
   border: 1px solid var(--line);
   border-radius: 12px;
   background: #eef1f6;
-  color: #8a94a6;
+  color: #8f9399;
   gap: 0;
 }
 .runDock .runRate:hover {
-  background: #e4e9f1;
+  background: #e2e8f0;
 }
 .runDock .runRate[data-rate='2'],
 .runDock .runRate[data-rate='4'] {
@@ -4422,7 +4422,7 @@ div.zeroFlow {
   gap: 12px;
   padding: 12px 14px;
   border-radius: 14px;
-  border: 1px solid #c9d4ff;
+  border: 1px solid #d0d5dc;
   background: #fff;
   box-shadow: 0 14px 36px rgba(16, 24, 40, 0.22);
 }
@@ -4534,7 +4534,7 @@ div.zeroFlow {
   background: #16955a;
 }
 .app .trackGo:disabled {
-  background: #9aa5b8;
+  background: #a0a4aa;
   cursor: default;
 }
 .app .trackStop {
@@ -4707,7 +4707,7 @@ div.zeroFlow {
     transform 0.15s ease;
 }
 .lineCard[data-ready]:hover {
-  border-color: #c7d2fe;
+  border-color: #cfd4db;
   box-shadow: 0 10px 26px rgba(16, 24, 40, 0.1);
   transform: translateY(-1px);
 }
@@ -4723,7 +4723,7 @@ div.zeroFlow {
   place-items: center;
   height: 168px;
   border-radius: 12px;
-  background: radial-gradient(110% 80% at 50% 100%, #e6eaf1 0%, #f3f5f8 55%, #fafbfc 100%);
+  background: radial-gradient(110% 80% at 50% 100%, #e4eaf2 0%, #f3f5f8 55%, #fafbfc 100%);
   overflow: hidden;
 }
 .lineImg img {
@@ -4796,7 +4796,7 @@ div.zeroFlow {
   background: transparent;
   font-size: 12.5px;
   font-weight: 700;
-  color: #475467;
+  color: #505256;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -4833,7 +4833,7 @@ div.zeroFlow {
   cursor: pointer;
 }
 .app .lineSelect:hover {
-  border-color: #c7d2fe;
+  border-color: #cfd4db;
 }
 .lineOne {
   display: flex;
@@ -4844,7 +4844,7 @@ div.zeroFlow {
   background: #eef0f4;
   font-size: 12.5px;
   font-weight: 700;
-  color: #475467;
+  color: #505256;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -4875,7 +4875,7 @@ div.zeroFlow {
 }
 .app .lineStart:disabled {
   background: #e4e7ec;
-  color: #98a2b3;
+  color: #9da1a7;
   box-shadow: none;
   cursor: default;
 }
@@ -4935,16 +4935,16 @@ div.zeroFlow {
  * status popover stay light (white surfaces, dark text), like the windows over the console.
  * ======================================================================== */
 .app .side {
-  --page: #2a3441;
-  --soft: #313c4a;
-  --work: #222b36;
-  --line: #3a4656;
+  --page: #303236;
+  --soft: #383a3e;
+  --work: #282a2e;
+  --line: #424448;
   --ink: #f1f4f9;
-  --muted: #a3afc1;
-  --faint: #7d899c;
+  --muted: #a9adb3;
+  --faint: #84878c;
   --accent: #ff6b62;
   --accent-soft: rgba(255, 255, 255, 0.072);
-  --head: #2a3441;
+  --head: #303236;
   --sim-soft: rgba(61, 220, 132, 0.12);
   --real-soft: rgba(255, 173, 31, 0.12);
   --stop-soft: rgba(255, 90, 78, 0.12);
@@ -4960,10 +4960,10 @@ div.zeroFlow {
   --work: #f9fafb;
   --line: #e4e7ec;
   --ink: #101828;
-  --muted: #667085;
-  --faint: #98a2b3;
+  --muted: #6c6f74;
+  --faint: #9da1a7;
   --accent: #3454d1;
-  --accent-soft: #eef1fd;
+  --accent-soft: #ebf1f9;
   --sim-soft: #e4f6ec;
   --real-soft: #fff0e1;
   --stop-soft: #fdeceb;
@@ -4986,8 +4986,8 @@ div.zeroFlow {
     border-bottom: 1px solid #e4e7ec;
     background: rgba(255, 255, 255, 0.97);
     box-shadow:
-      0 1px 2px rgba(37, 46, 58, 0.04),
-      0 6px 18px rgba(37, 46, 58, 0.05);
+      0 1px 2px rgba(43, 45, 49, 0.04),
+      0 6px 18px rgba(43, 45, 49, 0.05);
     padding: 8px 14px 8px 16px;
   }
 }
@@ -5006,7 +5006,7 @@ div.zeroFlow {
 .app .topBar .conn {
   background: #fff;
   border-color: #e4e7ec;
-  box-shadow: 0 1px 2px rgba(37, 46, 58, 0.04);
+  box-shadow: 0 1px 2px rgba(43, 45, 49, 0.04);
 }
 .app .topBar .menuChipBtn:hover {
   background: #f9fafb;
@@ -5021,8 +5021,8 @@ div.zeroFlow {
   background: #fff;
   border: 1px solid #e4e7ec;
   box-shadow:
-    0 18px 40px rgba(37, 46, 58, 0.16),
-    0 2px 6px rgba(37, 46, 58, 0.06);
+    0 18px 40px rgba(43, 45, 49, 0.16),
+    0 2px 6px rgba(43, 45, 49, 0.06);
 }
 .app .menuPop button:hover {
   background: #f4f5f7;
@@ -5037,7 +5037,7 @@ div.zeroFlow {
     --side-w: clamp(440px, 30vw, 540px);
   }
   .app .shell .side {
-    background: #2a3441;
+    background: #303236;
     border: 1px solid rgba(255, 255, 255, 0.084);
     border-radius: 16px;
     box-shadow:
@@ -5047,7 +5047,7 @@ div.zeroFlow {
   }
 }
 .app .side {
-  background: #2a3441;
+  background: #303236;
 }
 /* header: model, status lights, fold */
 .sideHeader {
@@ -5088,7 +5088,7 @@ div.zeroFlow {
 }
 .sideModel small {
   font-size: 10.5px;
-  color: #97a3b5;
+  color: #9da1a7;
   white-space: nowrap;
 }
 .sideModel em {
@@ -5131,14 +5131,14 @@ div.zeroFlow {
   gap: 3px;
   font-size: 9.5px;
   font-weight: 800;
-  color: #7d899c;
+  color: #84878c;
   white-space: nowrap;
 }
 .light i {
   width: 11px;
   height: 11px;
   border-radius: 50%;
-  background: #2a3441;
+  background: #303236;
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
 }
@@ -5160,11 +5160,11 @@ div.zeroFlow {
   box-shadow: 0 0 10px #ffad1f;
 }
 .light[data-on][data-tone='run'] {
-  color: #e6ebf2;
+  color: #e4eaf2;
 }
 .light[data-on][data-tone='run'] i {
-  background: #e6ebf2;
-  box-shadow: 0 0 10px #e6ebf2;
+  background: #e4eaf2;
+  box-shadow: 0 0 10px #e4eaf2;
   animation: lightBlink 1s ease-in-out infinite;
 }
 .light[data-on][data-tone='err'] {
@@ -5204,7 +5204,7 @@ div.zeroFlow {
   width: 11px;
   height: 11px;
   border-radius: 50%;
-  background: #cfd4dc;
+  background: #ced3da;
 }
 .statusRow b {
   color: var(--ink);
@@ -5226,8 +5226,8 @@ div.zeroFlow {
   box-shadow: 0 0 8px #ffad1f;
 }
 .statusRow[data-on][data-tone='run'] i {
-  background: #e6ebf2;
-  box-shadow: 0 0 8px #e6ebf2;
+  background: #e4eaf2;
+  box-shadow: 0 0 8px #e4eaf2;
   animation: lightBlink 1s ease-in-out infinite;
 }
 .statusRow[data-on][data-tone='servo'] i {
@@ -5259,8 +5259,8 @@ div.zeroFlow {
   background: #fff;
   border: 1px solid #e4e7ec;
   box-shadow:
-    0 18px 40px rgba(37, 46, 58, 0.18),
-    0 2px 6px rgba(37, 46, 58, 0.06);
+    0 18px 40px rgba(43, 45, 49, 0.18),
+    0 2px 6px rgba(43, 45, 49, 0.06);
 }
 .app .sideHeader .sideFold {
   position: static;
@@ -5270,7 +5270,7 @@ div.zeroFlow {
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: transparent;
-  color: #8b97aa;
+  color: #91959b;
   display: grid;
   place-items: center;
 }
@@ -5308,12 +5308,12 @@ div.zeroFlow {
 .app .side .poseDock {
   margin: auto -10px 0;
   padding: 14px 10px 0;
-  background: linear-gradient(rgba(42, 52, 65, 0.0), #2a3441 12px);
+  background: linear-gradient(rgba(48, 50, 54, 0.0), #303236 12px);
 }
 .app .side .poseDock button {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.09);
-  color: #e6ebf2;
+  color: #e4eaf2;
   box-shadow: none;
 }
 .app .side .poseDock button:hover:not(:disabled) {
@@ -5339,25 +5339,25 @@ div.zeroFlow {
 }
 /* the editor: a dark IDE */
 .app .side .ide {
-  background: #1f2833;
+  background: #25272b;
 }
 .app .side .fileTabs {
-  background: #2a3441;
+  background: #303236;
   border-bottom-color: rgba(255, 255, 255, 0.07);
 }
 .app .side .fileTab {
-  background: #1f2833;
+  background: #25272b;
   border-right-color: rgba(255, 255, 255, 0.07);
   box-shadow: inset 0 2px 0 #ff6b62;
-  color: #e6ebf2;
+  color: #e4eaf2;
 }
 .app .side .ide .gutter {
-  background: #1f2833;
+  background: #25272b;
   border-right-color: rgba(255, 255, 255, 0.06);
-  color: #5a687e;
+  color: #63666b;
 }
 .app .side .ide .gutter .gCursor {
-  color: #b4bfcf;
+  color: #b8bdc4;
 }
 .app .side .lineMark {
   background: rgba(255, 255, 255, 0.04);
@@ -5371,10 +5371,10 @@ div.zeroFlow {
   box-shadow: inset 3px 0 0 #3ddc84;
 }
 .app .side .codeHi {
-  color: #e6edf3;
+  color: #e6ecf4;
 }
 .app .side .ide .code {
-  caret-color: #e6edf3;
+  caret-color: #e6ecf4;
 }
 .app .side .ide .code::selection {
   background: rgba(229, 50, 45, 0.3);
@@ -5386,7 +5386,7 @@ div.zeroFlow {
   color: #a5d6ff;
 }
 .app .side .tkComment {
-  color: #7d8590;
+  color: #818489;
 }
 .app .side .tkNumber,
 .app .side .tkConst {
@@ -5395,27 +5395,27 @@ div.zeroFlow {
 .app .side .tkDef,
 .app .side .tkCall,
 .app .side .tkDecorator {
-  color: #d2a8ff;
+  color: #b9bec5;
 }
 .app .side .tkBuiltin,
 .app .side .tkSelf {
   color: #ffa657;
 }
 .app .side .statusBar {
-  background: #2a3441;
+  background: #303236;
   border-top-color: rgba(255, 255, 255, 0.07);
-  color: #8b97aa;
+  color: #91959b;
 }
 .app .side .kbd {
   background: rgba(255, 255, 255, 0.05);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 .app .side .termPanel {
-  background: #1f2833;
+  background: #25272b;
   border-top-color: rgba(255, 255, 255, 0.07);
 }
 .app .side .termTabs {
-  background: #2a3441;
+  background: #303236;
   border-bottom-color: rgba(255, 255, 255, 0.07);
 }
 .app .side .termTabs button[aria-selected='true'] {
@@ -5426,10 +5426,10 @@ div.zeroFlow {
   background: rgba(255, 255, 255, 0.07);
 }
 .app .side .termText {
-  color: #e6edf3;
+  color: #e6ecf4;
 }
 .app .side .termText i {
-  color: #7d899c;
+  color: #84878c;
 }
 .app .side .termText b {
   color: #3ddc84;
@@ -5441,7 +5441,7 @@ div.zeroFlow {
 .app .side .runRate button,
 .app .side .runRate > button {
   background: rgba(255, 255, 255, 0.04);
-  color: #9eaabd;
+  color: #a4a8ae;
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: none;
 }
@@ -5455,7 +5455,7 @@ div.zeroFlow {
 }
 .app .side .runReal:disabled {
   background: rgba(255, 255, 255, 0.04);
-  color: #8b97aa;
+  color: #91959b;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 /* the practice needs a tool that is not on: one amber line with [끼우기] */
@@ -5511,7 +5511,7 @@ div.zeroFlow {
   display: block;
   object-fit: contain;
   border-radius: 10px;
-  background: radial-gradient(circle at 50% 42%, #56657c 0%, #2c3644 58%, #313c4a 100%);
+  background: radial-gradient(circle at 50% 42%, #616367 0%, #333539 58%, #383a3e 100%);
 }
 .toolHero {
   display: flex;
@@ -5546,14 +5546,14 @@ div.zeroFlow {
 .toolHero em {
   font-style: normal;
   font-size: 11.5px;
-  color: #a3afc1;
+  color: #a9adb3;
 }
 .partsHead {
   margin: 4px 2px 0;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.04em;
-  color: #8b97aa;
+  color: #91959b;
 }
 .toolCards {
   display: grid;
@@ -5568,7 +5568,7 @@ div.zeroFlow {
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.07);
   background: rgba(255, 255, 255, 0.03);
-  color: #c8d1de;
+  color: #cbd0d7;
   font: inherit;
   cursor: pointer;
   transition:
@@ -5642,7 +5642,7 @@ div.zeroFlow {
 }
 .accText small {
   font-size: 11px;
-  color: #9eaabd;
+  color: #a4a8ae;
 }
 .accCard input[role='switch'] {
   appearance: none;
@@ -5650,7 +5650,7 @@ div.zeroFlow {
   height: 21px;
   margin: 0;
   border-radius: 999px;
-  background: #3a4656;
+  background: #424448;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
   position: relative;
   cursor: pointer;
@@ -5664,7 +5664,7 @@ div.zeroFlow {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #9eaabd;
+  background: #a4a8ae;
   transition:
     transform 0.15s,
     background 0.15s;
@@ -5694,7 +5694,7 @@ div.zeroFlow {
   border: 0;
   border-radius: 7px;
   background: rgba(255, 255, 255, 0.06);
-  color: #e6ebf2;
+  color: #e4eaf2;
   font-size: 15px;
   font-weight: 800;
   cursor: pointer;
@@ -5725,7 +5725,7 @@ div.zeroFlow {
 .stepper i {
   font-style: normal;
   font-size: 11px;
-  color: #9eaabd;
+  color: #a4a8ae;
   padding: 0 6px 0 2px;
 }
 
@@ -5752,7 +5752,7 @@ div.zeroFlow {
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(37, 46, 58, 0.55) 0 58%, transparent 60%);
+  background: radial-gradient(circle, rgba(43, 45, 49, 0.55) 0 58%, transparent 60%);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.084);
   perspective: 600px;
 }
@@ -5771,7 +5771,7 @@ div.zeroFlow {
   border: 1px solid rgba(255, 255, 255, 0.27);
   border-radius: 6px;
   background: linear-gradient(180deg, rgba(40, 56, 82, 0.96), rgba(22, 31, 46, 0.96));
-  color: #e6ebf2;
+  color: #e4eaf2;
   font: inherit;
   font-size: 11px;
   font-weight: 800;
@@ -5788,7 +5788,7 @@ div.zeroFlow {
   color: #fff;
 }
 .app span.cubeFace {
-  color: #8b97aa;
+  color: #91959b;
 }
 .viewRail {
   display: flex;
@@ -5796,7 +5796,7 @@ div.zeroFlow {
   gap: 2px;
   padding: 4px;
   border-radius: 12px;
-  background: rgba(37, 46, 58, 0.82);
+  background: rgba(43, 45, 49, 0.82);
   border: 1px solid rgba(255, 255, 255, 0.084);
   backdrop-filter: blur(12px);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
@@ -5811,7 +5811,7 @@ div.zeroFlow {
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: #b4bfcf;
+  color: #b8bdc4;
   cursor: pointer;
 }
 .app .viewRail button:hover {
@@ -5845,12 +5845,12 @@ div.zeroFlow {
 .viewRail .displayMenu {
   top: -6px;
   right: calc(100% + 10px);
-  background: #2a3441;
+  background: #303236;
   border-color: rgba(255, 255, 255, 0.108);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
   color: #f1f4f9;
   --ink: #f1f4f9;
-  --muted: #a3afc1;
+  --muted: #a9adb3;
   --soft: rgba(255, 255, 255, 0.06);
   --accent: #ff6b62;
 }
@@ -5876,7 +5876,7 @@ div.zeroFlow {
 }
 .viewRail .displayItem small {
   font-size: 10.5px;
-  color: #97a3b5;
+  color: #9da1a7;
 }
 .viewRail .displayItem:hover {
   background: rgba(255, 255, 255, 0.05);
@@ -5929,7 +5929,7 @@ div.zeroFlow {
 }
 .notice,
 .guide {
-  --c: #c9d3e0;
+  --c: #ccd1d8;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: start;
@@ -6107,7 +6107,7 @@ div.zeroFlow {
 }
 :is(.notice, .noticeHistory) .tag_info {
   background: none;
-  color: #c9d3e0;
+  color: #ccd1d8;
 }
 :is(.notice, .noticeHistory) :is(.tag_sim, .tag_ok) {
   background: none;
@@ -6147,7 +6147,7 @@ div.zeroFlow {
 /* 자세 저장 · 불러오기 in the dark panel */
 .app .side .dock .jogWide,
 .app .side .jogWide {
-  color: #e6ebf2;
+  color: #e4eaf2;
   background: rgba(255, 255, 255, 0.063);
   border: 1px solid rgba(255, 255, 255, 0.16);
   box-shadow: none;
@@ -6163,7 +6163,7 @@ div.zeroFlow {
   box-shadow: none;
 }
 .app .side .dock .jogWide:disabled {
-  color: #7d899c;
+  color: #84878c;
   background: rgba(255, 255, 255, 0.03);
   border-color: rgba(255, 255, 255, 0.08);
 }
@@ -6171,14 +6171,14 @@ div.zeroFlow {
 .app .side .lightsPop .jogWide {
   color: #101828;
   background: #f4f6fb;
-  border: 1px solid #d0d5dd;
+  border: 1px solid #cfd4db;
 }
 .app .side .lightsPop .jogWide:hover:not(:disabled) {
-  background: #eef1fd;
+  background: #ebf1f9;
   border-color: #3454d1;
 }
 .app .side .lightsPop .jogWide:disabled {
-  color: #98a2b3;
+  color: #9da1a7;
   background: #f9fafb;
   border-color: #eaecf0;
 }
@@ -6197,7 +6197,7 @@ div.zeroFlow {
 }
 .app .side .poseDel {
   background: transparent;
-  color: #9eaabd;
+  color: #a4a8ae;
   border-color: rgba(255, 255, 255, 0.08);
 }
 
@@ -6276,7 +6276,7 @@ div.zeroFlow {
   padding: 0 13px;
   border: 0;
   background: none;
-  color: #667085;
+  color: #6c6f74;
   font: inherit;
   font-size: 14.5px;
   font-weight: 700;
@@ -6333,7 +6333,7 @@ div.zeroFlow {
 
 .app .context .goal {
   flex-basis: 92px;
-  color: #667085;
+  color: #6c6f74;
 }
 .app .context .goalTrack {
   background: #e4e7ec;
@@ -6368,8 +6368,8 @@ div.zeroFlow {
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
 }
 .app .connPill:hover {
-  background: #eef1fd;
-  border-color: #c7d2fe;
+  background: #ebf1f9;
+  border-color: #cfd4db;
 }
 .connPill > span:last-child {
   display: grid;
@@ -6381,7 +6381,7 @@ div.zeroFlow {
 }
 .connPill small {
   font-size: 10.5px;
-  color: #667085;
+  color: #6c6f74;
 }
 .connOrb {
   position: relative;
@@ -6437,11 +6437,11 @@ div.zeroFlow {
   display: grid;
   place-items: center;
   border-radius: 12px;
-  color: #475467;
+  color: #505256;
 }
 .app .topBar .settingsChip .menuChipBtn[aria-expanded='true'] {
-  background: #eef1fd;
-  border-color: #c7d2fe;
+  background: #ebf1f9;
+  border-color: #cfd4db;
   color: #3454d1;
 }
 .app .topBar .topStop {
@@ -6501,7 +6501,7 @@ div.zeroFlow {
   color: var(--accent);
 }
 .app .pageActions button:hover:not(:disabled) {
-  border-color: #c9d2ea;
+  border-color: #cdd2d9;
   background: var(--accent-soft);
 }
 .app .pageActions button:disabled {
@@ -6532,7 +6532,7 @@ div.zeroFlow {
   background: #fff;
   color: var(--ink);
   border: 1px solid var(--line);
-  box-shadow: 0 14px 34px rgba(37, 46, 58, 0.22);
+  box-shadow: 0 14px 34px rgba(43, 45, 49, 0.22);
 }
 .demoBadge {
   flex: none;
@@ -6571,7 +6571,7 @@ div.zeroFlow {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #d0d5dd;
+  background: #cfd4db;
 }
 .demoDots i[data-done] {
   background: var(--accent);
@@ -6599,7 +6599,7 @@ div.zeroFlow {
   color: var(--accent);
 }
 .app .demoBlocks:hover {
-  background: #e0e6fc;
+  background: #e1e7ef;
 }
 .app .demoStop {
   border: 1px solid var(--line);
@@ -6662,14 +6662,14 @@ div.zeroFlow {
 }
 .app .connectBox {
   --ink: #101828;
-  --muted: #667085;
-  --faint: #98a2b3;
+  --muted: #6c6f74;
+  --faint: #9da1a7;
   --line: #e4e7ec;
   --soft: #f4f5f7;
   --work: #f9fafb;
   --page: #ffffff;
   --accent: #3454d1;
-  --accent-soft: #eef1fd;
+  --accent-soft: #ebf1f9;
   color-scheme: light;
   display: grid;
   grid-template-columns: 330px minmax(0, 1fr);
@@ -6705,7 +6705,7 @@ div.zeroFlow {
 }
 .app .connectBox .pickerClose {
   background: #f2f4f7;
-  color: #475467;
+  color: #505256;
 }
 .app .connectBox .connectTabs .connectTabOn {
   background: #fff;
@@ -6748,8 +6748,8 @@ div.zeroFlow {
 }
 .app .connectBox .ghost {
   background: #fff;
-  border-color: #d0d5dd;
-  color: #344054;
+  border-color: #cfd4db;
+  color: #3d3f43;
 }
 .app .connectBox .connectFoot {
   border-top-color: #eaecf0;
@@ -6839,7 +6839,7 @@ div.zeroFlow {
   margin: 0;
   font-size: 12.5px;
   font-weight: 700;
-  color: #667085;
+  color: #6c6f74;
   letter-spacing: 0.02em;
 }
 .radarSide[data-linked] p {
@@ -6863,7 +6863,7 @@ div.zeroFlow {
   gap: 5px;
   font-size: 12px;
   font-weight: 700;
-  color: #475467;
+  color: #505256;
   white-space: nowrap;
 }
 .linkNode i {
@@ -6931,7 +6931,7 @@ div.zeroFlow {
   gap: 7px;
   font-size: 12.5px;
   font-weight: 700;
-  color: #98a2b3;
+  color: #9da1a7;
 }
 .linkChecks li i {
   width: 18px;
@@ -6974,7 +6974,7 @@ div.zeroFlow {
 .linkNote {
   margin: 12px 0 0;
   font-size: 12.5px;
-  color: #667085;
+  color: #6c6f74;
 }
 .linkChecks li[data-state='fail'] {
   color: #d92d20;
@@ -7035,7 +7035,7 @@ div.zeroFlow {
   padding: 8px 10px 8px 10px;
   border-radius: 16px;
   color: #f1f4f9;
-  background: rgba(37, 46, 58, 0.86);
+  background: rgba(43, 45, 49, 0.86);
   border: 1px solid rgba(255, 255, 255, 0.096);
   backdrop-filter: blur(12px);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.32);
@@ -7089,12 +7089,12 @@ div.zeroFlow {
   margin-left: -5.5px;
   border-radius: 3px;
   background: #1a2333;
-  border: 1.5px solid #9eaabd;
+  border: 1.5px solid #a4a8ae;
   transform: rotate(45deg);
 }
 .tlMark[data-past] {
   background: #ff6b62;
-  border-color: #e6ebf2;
+  border-color: #e4eaf2;
 }
 .tlHead {
   position: absolute;
@@ -7124,7 +7124,7 @@ div.zeroFlow {
   flex: none;
   font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
   font-size: 11.5px;
-  color: #a3afc1;
+  color: #a9adb3;
 }
 .tlRate {
   display: flex;
@@ -7138,7 +7138,7 @@ div.zeroFlow {
   border: 0;
   border-radius: 6px;
   background: none;
-  color: #9eaabd;
+  color: #a4a8ae;
   font: inherit;
   font-size: 11px;
   font-weight: 800;
@@ -7157,7 +7157,7 @@ div.zeroFlow {
   border: 0;
   border-radius: 7px;
   background: transparent;
-  color: #9eaabd;
+  color: #a4a8ae;
   font-size: 17px;
   line-height: 1;
   cursor: pointer;
@@ -7230,7 +7230,7 @@ div.zeroFlow {
 }
 .resultStat small {
   font-size: 10.5px;
-  color: #a3afc1;
+  color: #a9adb3;
 }
 .app .resultGhost,
 .app .resultNext {
@@ -7245,7 +7245,7 @@ div.zeroFlow {
 .app .resultGhost {
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.06);
-  color: #e6ebf2;
+  color: #e4eaf2;
 }
 .app .resultNext {
   border: 0;
@@ -7273,7 +7273,7 @@ div.zeroFlow {
   gap: 20px;
   padding: 26px 24px;
   border-right: 0;
-  color: #dbe5f7;
+  color: #dee4ec;
   background:
     radial-gradient(120% 70% at 50% 42%, rgba(47, 91, 231, 0.28), transparent 62%),
     radial-gradient(80% 50% at 100% 100%, rgba(14, 165, 183, 0.14), transparent 70%),
@@ -7312,7 +7312,7 @@ div.zeroFlow {
 }
 .radarBrand small {
   font-size: 11.5px;
-  color: #8fa3c7;
+  color: #9da1a7;
 }
 .app .connectBox .radar {
   width: 256px;
@@ -7358,7 +7358,7 @@ div.zeroFlow {
   box-shadow: 0 0 12px rgba(56, 189, 248, 0.8);
 }
 .app .connectBox .radarBlip[data-off] {
-  background: #94a3b8;
+  background: #9da1a7;
   box-shadow: none;
   animation: none;
 }
@@ -7378,7 +7378,7 @@ div.zeroFlow {
   border-radius: 6px;
   background: rgba(10, 17, 32, 0.85);
   border: 1px solid rgba(140, 170, 255, 0.35);
-  color: #e6eeff;
+  color: #e7edf5;
   font-size: 11px;
   font-weight: 800;
   line-height: 1.4;
@@ -7390,7 +7390,7 @@ div.zeroFlow {
   width: 46px;
   height: 46px;
   margin: -23px;
-  color: #dbe7ff;
+  color: #e0e6ee;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(160, 190, 255, 0.55);
   box-shadow:
@@ -7402,7 +7402,7 @@ div.zeroFlow {
   margin: 0;
   font-size: 13.5px;
   font-weight: 700;
-  color: #cbd8f0;
+  color: #d2d7de;
   letter-spacing: 0.01em;
   text-align: center;
 }
@@ -7426,7 +7426,7 @@ div.zeroFlow {
 .radarStats dt {
   font-size: 11px;
   font-weight: 700;
-  color: #8fa3c7;
+  color: #9da1a7;
 }
 .radarStats dd {
   margin: 2px 0 0;
@@ -7442,7 +7442,7 @@ div.zeroFlow {
   margin-left: 2px;
   font-size: 11px;
   font-weight: 700;
-  color: #8fa3c7;
+  color: #9da1a7;
 }
 .radarStats .radarNet {
   font-size: 13.5px;
@@ -7485,8 +7485,8 @@ div.zeroFlow {
   width: 76px;
   height: 64px;
   border-radius: 13px;
-  background: radial-gradient(circle at 50% 35%, #ffffff, #e8eefc 70%);
-  border: 1px solid #e1e7f5;
+  background: radial-gradient(circle at 50% 35%, #ffffff, #e8eef6 70%);
+  border: 1px solid #e1e7ef;
 }
 .foundPic img {
   width: 58px;
@@ -7531,11 +7531,11 @@ div.zeroFlow {
   margin-right: 5px;
   border-radius: 50%;
   vertical-align: 1px;
-  background: #98a2b3;
+  background: #9da1a7;
 }
 .foundState {
   font-weight: 800;
-  color: #667085;
+  color: #6c6f74;
 }
 .foundCard[data-state='ready'] .foundDot {
   background: #12a150;
@@ -7561,7 +7561,7 @@ div.zeroFlow {
   justify-self: stretch;
   margin-top: 2px;
   padding: 6px 10px;
-  border: 1.5px dashed #c3cad6;
+  border: 1.5px dashed #c4c9d0;
   border-radius: 8px;
   background: transparent;
   color: var(--muted);
@@ -7690,25 +7690,25 @@ div.zeroFlow {
  * and 정지. The light top bar keeps its white, its open screen marked in red.
  * ======================================================================== */
 .app .side {
-  --raised: linear-gradient(180deg, #414e60, #36424f);
+  --raised: linear-gradient(180deg, #4a4c50, #3e4044);
   --raised-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 6px 14px -6px rgba(0, 0, 0, 0.6);
-  --key: linear-gradient(180deg, #3e4a5b, #343f4e);
-  --key-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), inset 0 0 0 1px #4a5769, 0 2px 0 rgba(0, 0, 0, 0.25);
+  --key: linear-gradient(180deg, #46484c, #3b3d41);
+  --key-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), inset 0 0 0 1px #535559, 0 2px 0 rgba(0, 0, 0, 0.25);
 }
 @media (min-width: 1000px) and (min-height: 600px) {
   .app .shell .side {
-    background: linear-gradient(180deg, #2e3946, #2a3441 30%, #252e3a);
-    border: 1px solid #3a4656;
+    background: linear-gradient(180deg, #35373b, #303236 30%, #2b2d31);
+    border: 1px solid #424448;
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.08),
       0 18px 44px -18px rgba(0, 0, 0, 0.65);
   }
 }
 .app .sideHeader {
-  box-shadow: inset 0 -1px 0 #3a4656;
+  box-shadow: inset 0 -1px 0 #424448;
 }
 .sideModel small {
-  color: #97a3b5;
+  color: #9da1a7;
 }
 .app .side .dockIcon {
   background: rgba(229, 50, 45, 0.16);
@@ -7717,8 +7717,8 @@ div.zeroFlow {
 }
 /* the pose row: raised keys; 정지 red with its key (Esc) */
 .app .side .poseDock {
-  background: linear-gradient(rgba(37, 46, 58, 0), #252e3a 12px);
-  border-top: 1px solid #3a4656;
+  background: linear-gradient(rgba(43, 45, 49, 0), #2b2d31 12px);
+  border-top: 1px solid #424448;
 }
 .app .side .poseDock button {
   border: 0;
@@ -7727,7 +7727,7 @@ div.zeroFlow {
   color: #f1f4f9;
 }
 .app .side .poseDock button:hover:not(:disabled) {
-  background: linear-gradient(180deg, #485569, #3c4859);
+  background: linear-gradient(180deg, #515357, #44464a);
 }
 .app .side .poseDock .poseStop {
   background: linear-gradient(180deg, #ef3f39, #cf2a25);
@@ -7754,7 +7754,7 @@ div.zeroFlow {
 }
 .app .side .dock .jogWide:hover:not(:disabled) {
   border: 0;
-  background: linear-gradient(180deg, #485569, #3c4859);
+  background: linear-gradient(180deg, #515357, #44464a);
 }
 .app .side .dock .jogWide:active:not(:disabled) {
   border: 0;
@@ -7766,17 +7766,17 @@ div.zeroFlow {
 }
 .app .side .poseList li,
 .app .side .poseGo {
-  background: #313c4a;
+  background: #383a3e;
   border-color: transparent;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 .app .side .poseGo:hover:not(:disabled) {
-  background: #3a4657;
+  background: #424448;
   border-color: transparent;
 }
 /* 도구: the tool on now as a raised card; the chosen picture raised with a red underline */
 .toolHero {
-  background: var(--raised, linear-gradient(180deg, #414e60, #36424f));
+  background: var(--raised, linear-gradient(180deg, #4a4c50, #3e4044));
   border: 0;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 6px 14px -6px rgba(0, 0, 0, 0.6);
 }
@@ -7786,21 +7786,21 @@ div.zeroFlow {
 .toolHero img,
 .toolCard img,
 .accCard img {
-  background: radial-gradient(circle at 50% 42%, #56657c 0%, #36414f 58%, #2c3644 100%);
+  background: radial-gradient(circle at 50% 42%, #616367 0%, #3d3f43 58%, #333539 100%);
 }
 .app .toolCard {
   position: relative;
   border: 0;
-  background: #313c4a;
+  background: #383a3e;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 .app .toolCard:hover:not(:disabled) {
   border: 0;
-  background: #3a4657;
+  background: #424448;
 }
 .app .toolCard[aria-pressed='true'] {
   border: 0;
-  background: linear-gradient(180deg, #4d5a6d, #3f4b5c);
+  background: linear-gradient(180deg, #56585c, #47494d);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.16),
     0 6px 14px -6px rgba(0, 0, 0, 0.6);
@@ -7818,62 +7818,62 @@ div.zeroFlow {
 }
 .accCard {
   border: 0;
-  background: #313c4a;
+  background: #383a3e;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 .accCard[data-on] {
   border: 0;
-  background: linear-gradient(180deg, #45526a, #3a4657);
+  background: linear-gradient(180deg, #4f5155, #424448);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 .accCard input[role='switch'] {
-  background: #222b36;
+  background: #282a2e;
 }
 .app .accCard input[role='switch']:checked {
   background: #e5322d;
   box-shadow: 0 0 10px rgba(229, 50, 45, 0.4);
 }
 .stepper {
-  background: #222b36;
-  border-color: #3a4656;
+  background: #282a2e;
+  border-color: #424448;
 }
 .app .stepper button {
   background: var(--key);
   box-shadow: var(--key-shadow);
 }
 .app .stepper button:hover:not(:disabled) {
-  background: linear-gradient(180deg, #485569, #3c4859);
+  background: linear-gradient(180deg, #515357, #44464a);
 }
 /* run bar: the chosen speed raised, not tinted */
 .app .side .runRate {
-  background: #222b36;
+  background: #282a2e;
 }
 .app .side .runRate button[aria-pressed='true'] {
-  background: linear-gradient(180deg, #4d5a6d, #3f4b5c);
+  background: linear-gradient(180deg, #56585c, #47494d);
   border-color: transparent;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 3px 8px -2px rgba(0, 0, 0, 0.55);
 }
 /* the 3D view's tools: slate glass; the one on raised, its icon red, a red mark beside it */
 .viewCube {
-  background: radial-gradient(circle, rgba(37, 46, 58, 0.6) 0 58%, transparent 60%);
+  background: radial-gradient(circle, rgba(43, 45, 49, 0.6) 0 58%, transparent 60%);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 .app .cubeFace {
   border-color: rgba(255, 255, 255, 0.22);
-  background: linear-gradient(180deg, rgba(70, 83, 102, 0.96), rgba(46, 57, 70, 0.96));
+  background: linear-gradient(180deg, rgba(79, 81, 85, 0.96), rgba(53, 55, 59, 0.96));
 }
 .app button.cubeFace:hover {
   background: linear-gradient(180deg, #ef3f39, #cf2a25);
   border-color: #ff9a95;
 }
 .viewRail {
-  background: rgba(37, 46, 58, 0.9);
+  background: rgba(43, 45, 49, 0.9);
   border-color: rgba(255, 255, 255, 0.09);
 }
 .app .viewRail button[aria-pressed='true'],
 .app .viewRail button[aria-expanded='true'] {
   color: #ff6b62;
-  background: linear-gradient(180deg, #414e60, #36424f);
+  background: linear-gradient(180deg, #4a4c50, #3e4044);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 4px 10px -4px rgba(0, 0, 0, 0.6);
 }
 .app .viewRail button[aria-pressed='true']::after,
@@ -7891,12 +7891,12 @@ div.zeroFlow {
   background: #e5322d;
 }
 .viewRail .displayCount {
-  border-color: #2a3441;
+  border-color: #303236;
 }
 /* the practice's tag on its card over the 3D view: neutral, not blue */
 .missionTagTopic {
   background: rgba(255, 255, 255, 0.1);
-  color: #e6ebf2;
+  color: #e4eaf2;
 }
 
 /* 공정 짜기: a taught place's pin label in 3D (PlanMarks.tsx). */
@@ -7906,7 +7906,7 @@ div.zeroFlow {
   gap: 6px;
   padding: 3px 9px 3px 4px;
   border-radius: 8px;
-  background: rgba(31, 39, 49, 0.9);
+  background: rgba(36, 38, 42, 0.9);
   box-shadow: inset 3px 0 0 #e5322d, 0 6px 16px -6px rgba(0, 0, 0, 0.6);
   color: #f1f4f9;
   font-size: 12px;
@@ -7927,9 +7927,9 @@ div.zeroFlow {
 
 /* --- 블록 코딩 (2026-10-23): a plain workspace, bigger blocks, 한 번에 하는 동작 ----------------- */
 .app .side .workspace {
-  background: #283240;
+  background: #2f3135;
   background-image: none;
-  box-shadow: inset 0 0 0 1px #3a4656;
+  box-shadow: inset 0 0 0 1px #424448;
   border-radius: 12px;
 }
 .app .side .workspace .block {
@@ -7955,7 +7955,7 @@ div.zeroFlow {
   font-size: 11.5px;
   font-weight: 800;
   letter-spacing: 0.04em;
-  color: #97a3b5;
+  color: #9da1a7;
 }
 .c_macro {
   background: #e5622d;
@@ -8089,8 +8089,8 @@ div.zeroFlow {
   background: rgba(16, 22, 30, 0.62);
 }
 .app .connectBox {
-  background: #27313e;
-  border: 1px solid #45526a;
+  background: #2d2f33;
+  border: 1px solid #4f5155;
   color: #fff;
   box-shadow: 0 40px 100px rgba(0, 0, 0, 0.55);
 }
@@ -8101,19 +8101,19 @@ div.zeroFlow {
 .app .connectBox .radarSide {
   background:
     radial-gradient(120% 70% at 50% 42%, rgba(232, 57, 47, 0.12), transparent 62%),
-    linear-gradient(180deg, #1d2530, #18202a);
-  border-right: 1px solid #3a4658;
+    linear-gradient(180deg, #222428, #1d1f23);
+  border-right: 1px solid #424448;
 }
 .app .connectBox .radarSide::after {
   display: none;
 }
 .app .connectBox .radar {
-  border-color: #3e4b5e;
+  border-color: #47494d;
   background:
-    repeating-radial-gradient(circle, transparent 0 41px, rgba(160, 175, 200, 0.14) 41px 42px),
-    linear-gradient(transparent 127.5px, rgba(160, 175, 200, 0.12) 127.5px 128.5px, transparent 128.5px),
-    linear-gradient(90deg, transparent 127.5px, rgba(160, 175, 200, 0.12) 127.5px 128.5px, transparent 128.5px),
-    radial-gradient(circle, #223044, #18202a 72%);
+    repeating-radial-gradient(circle, transparent 0 41px, rgba(169, 173, 179, 0.14) 41px 42px),
+    linear-gradient(transparent 127.5px, rgba(169, 173, 179, 0.12) 127.5px 128.5px, transparent 128.5px),
+    linear-gradient(90deg, transparent 127.5px, rgba(169, 173, 179, 0.12) 127.5px 128.5px, transparent 128.5px),
+    radial-gradient(circle, #223044, #1d1f23 72%);
   box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.45);
 }
 .app .connectBox .radarSweep {
@@ -8126,22 +8126,22 @@ div.zeroFlow {
 }
 .app .connectBox .radarPc {
   color: #fff;
-  background: #2f3b4c;
-  border-color: #5b6b82;
+  background: #37393d;
+  border-color: #66696e;
   box-shadow: none;
 }
 .app .connectBox .radarState {
   font-size: 15px;
-  color: #e6ebf2;
+  color: #e4eaf2;
 }
 .app .connectBox .radarStats div {
-  background: #252f3c;
-  border-color: #3a4658;
+  background: #2b2d31;
+  border-color: #424448;
 }
 .app .connectBox .radarStats dt,
 .app .connectBox .radarStats dd small,
 .radarBrand small {
-  color: #9aa6b6;
+  color: #a0a4aa;
 }
 
 /* the working side */
@@ -8150,13 +8150,13 @@ div.zeroFlow {
   font-size: 24px;
 }
 .app .connectBox .pickerHead p {
-  color: #c3cbd6;
+  color: #c5cad1;
   font-size: 14px;
   line-height: 1.5;
 }
 .app .connectBox .pickerClose {
-  background: #323d4c;
-  color: #dfe5ee;
+  background: #393b3f;
+  color: #dee4ec;
 }
 .app .connectBox .connectIcon {
   background: #e8392f;
@@ -8167,13 +8167,13 @@ div.zeroFlow {
   margin-bottom: 0;
   padding: 5px;
   gap: 5px;
-  background: #1d2530;
-  border: 1px solid #3a4658;
+  background: #222428;
+  border: 1px solid #424448;
 }
 .app .connectBox .connectTabs button {
   height: 46px;
   font-size: 16.5px;
-  color: #c3cbd6;
+  color: #c5cad1;
 }
 .app .connectBox .connectTabs button:hover {
   color: #fff;
@@ -8184,17 +8184,17 @@ div.zeroFlow {
   box-shadow: 0 4px 14px rgba(232, 57, 47, 0.35);
 }
 .app .connectBox .connectField {
-  color: #aeb8c6;
+  color: #b2b7be;
   font-size: 13.5px;
 }
 .app .connectBox input,
 .app .connectBox .findNet {
-  background: #1b222c;
+  background: #1f2125;
   color: #fff;
-  border-color: #4a586c;
+  border-color: #54565a;
 }
 .app .connectBox input::placeholder {
-  color: #7d8a9c;
+  color: #85888d;
 }
 .app .connectBox .findNet:focus,
 .app .connectBox .connectAddr:focus-within {
@@ -8202,12 +8202,12 @@ div.zeroFlow {
   box-shadow: 0 0 0 3px rgba(232, 57, 47, 0.22);
 }
 .app .connectBox .connectAddr {
-  border-color: #4a586c;
+  border-color: #54565a;
 }
 .app .connectBox .connectPrefix {
-  background: #232c38;
-  color: #c3cbd6;
-  border-right-color: #4a586c;
+  background: #292b2f;
+  color: #c5cad1;
+  border-right-color: #54565a;
 }
 .app .connectBox .connectGo,
 .app .connectBox .foundGo {
@@ -8221,57 +8221,57 @@ div.zeroFlow {
 }
 /* searching again is not the step to take: a dark button, white text */
 .app .connectBox .findBar .connectGo {
-  background: #3a4658;
-  border: 1px solid #56657c;
+  background: #424448;
+  border: 1px solid #616367;
   box-shadow: none;
 }
 .app .connectBox .findBar .connectGo:hover:not(:disabled) {
-  background: #45526a;
+  background: #4f5155;
 }
 .app .connectBox .connectGo:disabled {
   opacity: 1;
-  background: #3a4658;
-  color: #8f9bad;
+  background: #424448;
+  color: #95999f;
   box-shadow: none;
 }
 .app .connectBox .ghost {
   background: transparent;
-  border: 1.5px solid #6b7a90;
+  border: 1.5px solid #75787d;
   color: #fff;
   font-weight: 700;
 }
 .app .connectBox .ghost:hover:not(:disabled) {
-  border-color: #aeb8c6;
+  border-color: #b2b7be;
   background: rgba(255, 255, 255, 0.05);
 }
 .app .connectBox .findProgress {
-  background: #1d2530;
+  background: #222428;
 }
 .app .connectBox .findProgress i {
   background: #e8392f;
 }
 .app .connectBox .connectHint {
-  color: #c3cbd6;
+  color: #c5cad1;
   font-size: 14px;
 }
 .app .connectBox .connectHint b {
   color: #fff;
 }
 .app .connectBox .foundCard {
-  background: #313c4a;
-  border-color: #455268;
+  background: #383a3e;
+  border-color: #4f5155;
   box-shadow: none;
 }
 .app .connectBox .foundCard:hover {
-  border-color: #6b7a90;
+  border-color: #75787d;
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25);
 }
 .app .connectBox .foundPic {
-  background: radial-gradient(circle at 50% 35%, #4a586c, #3a4658 72%);
-  border-color: #4a586c;
+  background: radial-gradient(circle at 50% 35%, #54565a, #424448 72%);
+  border-color: #54565a;
 }
 .app .connectBox .foundInfo {
-  color: #c3cbd6;
+  color: #c5cad1;
 }
 .app .connectBox .foundInfo b,
 .app .connectBox .foundInfo .foundIp,
@@ -8279,41 +8279,41 @@ div.zeroFlow {
   color: #fff;
 }
 .app .connectBox .foundId {
-  background: #1b222c;
+  background: #1f2125;
   color: #fff;
-  border: 1px solid #56657c;
+  border: 1px solid #616367;
 }
 .app .connectBox .findFilter {
-  background: #1b222c;
-  border-color: #4a586c;
+  background: #1f2125;
+  border-color: #54565a;
   color: #fff;
 }
 .app .connectBox .idFold {
   background: transparent;
-  border: 1px dashed #56657c;
+  border: 1px dashed #616367;
 }
 .app .connectBox .idFold summary {
-  color: #dfe5ee;
+  color: #dee4ec;
   font-size: 15px;
 }
 .app .connectBox .connectRecent {
-  color: #aeb8c6;
+  color: #b2b7be;
 }
 .app .connectBox .connectRecent button {
-  background: #313c4a;
-  border-color: #56657c;
+  background: #383a3e;
+  border-color: #616367;
   color: #fff;
 }
 .app .connectBox .connectSteps {
-  background: #1d2530;
-  color: #c3cbd6;
+  background: #222428;
+  color: #c5cad1;
   font-size: 14px;
 }
 .app .connectBox .connectSteps b {
   color: #fff;
 }
 .app .connectBox .connectSteps code {
-  background: #313c4a;
+  background: #383a3e;
   color: #fff;
 }
 /* 랜선 직결: the order as three numbered cards */
@@ -8332,8 +8332,8 @@ div.zeroFlow {
   gap: 4px;
   padding: 14px;
   border-radius: 14px;
-  background: #313c4a;
-  border: 1px solid #455268;
+  background: #383a3e;
+  border: 1px solid #4f5155;
   line-height: 1.5;
 }
 .app .connectBox .stepCards li::before {
@@ -8354,11 +8354,11 @@ div.zeroFlow {
 }
 .app .connectBox .usbHint {
   background: rgba(255, 255, 255, 0.04);
-  border: 1.5px dashed #6b7a90;
+  border: 1.5px dashed #75787d;
   color: #fff;
 }
 .app .connectBox .usbHint small {
-  color: #c3cbd6;
+  color: #c5cad1;
 }
 /* a new robot: green, as the setup's done card */
 .app .connectBox .newHint {
@@ -8373,22 +8373,22 @@ div.zeroFlow {
   color: #cfe3d8;
 }
 .app .connectBox .connectFoot {
-  border-top-color: #3a4658;
+  border-top-color: #424448;
 }
 .app .connectBox .linkBox {
-  background: #1d2530;
-  border-color: #3a4658;
+  background: #222428;
+  border-color: #424448;
 }
 .app .connectBox .linkNode {
-  color: #dfe5ee;
+  color: #dee4ec;
 }
 .app .connectBox .linkNode i {
-  background: #313c4a;
-  border-color: #56657c;
+  background: #383a3e;
+  border-color: #616367;
   color: #fff;
 }
 .app .connectBox .linkChecks li {
-  color: #8f9bad;
+  color: #95999f;
 }
 .app .connectBox .linkChecks li[data-state='now'] {
   color: #fff;
@@ -8401,7 +8401,7 @@ div.zeroFlow {
   color: #4ade80;
 }
 .app .connectBox .linkNote {
-  color: #c3cbd6;
+  color: #c5cad1;
 }
 .app .connectBox .linkError {
   background: #3a2226;
@@ -8410,7 +8410,7 @@ div.zeroFlow {
 }
 .app .connectBox .wifi,
 .app .connectBox .wifi * {
-  border-color: #455268;
+  border-color: #4f5155;
 }
 .app .connectBox .connectGo,
 .app .connectBox .foundGo,
@@ -8465,8 +8465,8 @@ div.zeroFlow {
   background: rgba(16, 22, 30, 0.62);
 }
 .app .toolBox {
-  background: #27313e;
-  border: 1px solid #45526a;
+  background: #2d2f33;
+  border: 1px solid #4f5155;
   color: #fff;
   box-shadow: 0 40px 100px rgba(0, 0, 0, 0.55);
   padding: 26px 30px 24px;
@@ -8481,26 +8481,26 @@ div.zeroFlow {
 }
 .app .toolBox .pickerHead p {
   margin-top: 4px;
-  color: #c3cbd6;
+  color: #c5cad1;
   font-size: 14px;
   line-height: 1.5;
 }
 .app .toolBox .pickerClose {
   flex: none;
-  background: #323d4c;
-  color: #dfe5ee;
+  background: #393b3f;
+  color: #dee4ec;
 }
 .app .toolBox .connectTabs {
   margin-bottom: 0;
   padding: 5px;
   gap: 5px;
-  background: #1d2530;
-  border: 1px solid #3a4658;
+  background: #222428;
+  border: 1px solid #424448;
 }
 .app .toolBox .connectTabs button {
   height: 42px;
   font-size: 15px;
-  color: #c3cbd6;
+  color: #c5cad1;
 }
 .app .toolBox .connectTabs button:hover {
   color: #fff;
@@ -8543,7 +8543,7 @@ div.zeroFlow {
   height: 30px;
 }
 .lockup > i {
-  background: rgba(214, 219, 224, 0.3);
+  background: rgba(213, 218, 225, 0.3);
 }
 .product em {
   background: none;
@@ -8604,7 +8604,7 @@ div.zeroFlow {
   --page: #2f3337;
   --soft: #34383d;
   --work: #1b1e21;
-  --line: rgba(214, 219, 224, 0.14);
+  --line: rgba(213, 218, 225, 0.14);
   --ink: var(--hud-tx);
   --muted: var(--hud-sub);
   --faint: var(--hud-dim);
@@ -8625,7 +8625,7 @@ div.zeroFlow {
   }
 }
 .app .sideHeader {
-  box-shadow: inset 0 -1px 0 rgba(214, 219, 224, 0.12);
+  box-shadow: inset 0 -1px 0 rgba(213, 218, 225, 0.12);
 }
 .app .side .dockIcon {
   background: rgba(70, 211, 230, 0.1);
@@ -8634,7 +8634,7 @@ div.zeroFlow {
 }
 .app .side .poseDock {
   background: linear-gradient(rgba(39, 42, 46, 0), #272a2e 12px);
-  border-top: 1px solid rgba(214, 219, 224, 0.12);
+  border-top: 1px solid rgba(213, 218, 225, 0.12);
 }
 .app .side .poseDock button,
 .app .side .dock .jogWide,
@@ -8688,11 +8688,11 @@ div.zeroFlow {
 /* The 3D view's tools: the view cube in metal, the column of tools a metal plate, the one on teal. */
 .viewCube {
   background: radial-gradient(circle, rgba(20, 22, 25, 0.55) 0 58%, transparent 60%);
-  box-shadow: inset 0 0 0 1px rgba(214, 219, 224, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(213, 218, 225, 0.14);
 }
 .app .cubeFace {
-  border-color: rgba(214, 219, 224, 0.35);
-  background: linear-gradient(180deg, rgba(74, 79, 86, 0.97), rgba(42, 45, 50, 0.97));
+  border-color: rgba(213, 218, 225, 0.35);
+  background: linear-gradient(180deg, rgba(76, 78, 82, 0.97), rgba(42, 45, 50, 0.97));
   color: var(--hud-sub);
 }
 .app button.cubeFace:hover {
@@ -8750,4 +8750,280 @@ div.zeroFlow {
 .app .side .poseRow .jogWide {
   min-height: 0;
   height: 44px;
+}
+
+/* --- Metal Mission HUD, part 2: the run bar, blocks, menus, the connect window ------------------ */
+.app {
+  background: var(--hud-ground) fixed;
+  /* the block colours, a little quieter on the metal (each kind keeps its hue) */
+  --blk-start: #3a9d6e;
+  --blk-move: #7a6bcf;
+  --blk-grip: #d08a33;
+  --blk-eye: #c45d83;
+  --blk-flow: #3a96c2;
+  --blk-adv: #6c7177;
+  --blk-cond: #b08a33;
+}
+.c_macro {
+  background: #c76a3c;
+}
+.app .block select.field,
+.app .block .numChip,
+.app .block input.field {
+  background: rgba(16, 18, 21, 0.45);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+.app .block select.field option {
+  background: #2f3337;
+  color: var(--hud-tx);
+}
+/* the run bar: 시뮬레이션 a metal key lit teal, 정지 red outline (red is for stopping) */
+.runSim,
+.app .runDock .runSim {
+  border: 1px solid var(--hud-teal);
+  background: var(--hud-key);
+  color: var(--hud-teal);
+  letter-spacing: 0.04em;
+  box-shadow: var(--hud-key-shadow), var(--hud-key-on);
+}
+.runSim:hover:not(:disabled) {
+  filter: brightness(1.12);
+}
+.runSim:disabled {
+  border-color: rgba(214, 219, 224, 0.2);
+  background: var(--hud-key);
+  color: var(--hud-dim);
+  box-shadow: var(--hud-key-shadow);
+}
+.runStop,
+.app .runDock .runStop {
+  border: 1px solid rgba(235, 64, 52, 0.85);
+  background: var(--hud-key);
+  color: #ff6b61;
+  box-shadow: var(--hud-key-shadow), 0 0 12px rgba(235, 64, 52, 0.18);
+}
+.runStop:hover:not(:disabled),
+.app .runDock .runStop:hover:not(:disabled) {
+  background: linear-gradient(180deg, #ef3f39, #cf2a25);
+  color: #fff;
+}
+/* the task chip in the top bar: a groove, its kind as a small teal tag */
+.app .taskTag {
+  background: rgba(70, 211, 230, 0.12);
+  color: var(--hud-teal);
+  box-shadow: inset 0 0 0 1px rgba(70, 211, 230, 0.35);
+}
+.app .taskTitle {
+  color: var(--hud-tx);
+}
+/* menus over the console (설정, 표시 옵션, 로봇 상태): metal plates, dark like the panel */
+.app .menuPop,
+.app .lightsPop {
+  --page: #2f3337;
+  --soft: #34383d;
+  --work: #1b1e21;
+  --line: rgba(214, 219, 224, 0.14);
+  --ink: var(--hud-tx);
+  --muted: var(--hud-sub);
+  --faint: var(--hud-dim);
+  --accent: var(--hud-teal);
+  --accent-soft: rgba(70, 211, 230, 0.1);
+  color-scheme: dark;
+  color: var(--hud-tx);
+  border: 0;
+  border-radius: 10px;
+  background: var(--hud-plate);
+  box-shadow: var(--hud-plate-shadow);
+}
+.app .menuPop button:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.app .displayMenu {
+  border: 0;
+  border-radius: 10px;
+  background: var(--hud-plate);
+  box-shadow: var(--hud-plate-shadow);
+  color: var(--hud-tx);
+}
+.app .displayMenu input {
+  accent-color: var(--hud-teal);
+}
+/* 로봇 연결: the radar sweeps teal, the chosen tab and the mark teal (as on the intro's CONNECT) */
+.app .connectBox {
+  background: var(--hud-plate);
+  box-shadow: var(--hud-plate-shadow);
+  border: 0;
+}
+.app .connectBox .radarSide {
+  background:
+    radial-gradient(120% 70% at 50% 42%, rgba(70, 211, 230, 0.08), transparent 62%),
+    linear-gradient(180deg, #24272b, #1d2023);
+  border-right: 1px solid rgba(214, 219, 224, 0.12);
+}
+.app .connectBox .radar {
+  background:
+    repeating-radial-gradient(circle, transparent 0 41px, rgba(214, 219, 224, 0.12) 41px 42px),
+    linear-gradient(transparent 127.5px, rgba(214, 219, 224, 0.1) 127.5px 128.5px, transparent 128.5px),
+    linear-gradient(90deg, transparent 127.5px, rgba(214, 219, 224, 0.1) 127.5px 128.5px, transparent 128.5px),
+    var(--hud-groove);
+  border-color: rgba(214, 219, 224, 0.2);
+}
+.app .connectBox .radarSweep {
+  background: conic-gradient(from 0deg, rgba(70, 211, 230, 0.45), rgba(70, 211, 230, 0.06) 55deg, transparent 72deg);
+}
+.app .connectBox .radarStats div {
+  background: var(--hud-groove);
+  border: 0;
+  box-shadow: var(--hud-groove-shadow);
+}
+.app .connectBox .connectIcon {
+  background: rgba(70, 211, 230, 0.12);
+  color: var(--hud-teal);
+  box-shadow: inset 0 0 0 1px rgba(70, 211, 230, 0.45);
+}
+.app .connectBox .connectTabs {
+  background: var(--hud-groove);
+  border: 0;
+  box-shadow: var(--hud-groove-shadow);
+}
+.app .connectBox .connectTabs .connectTabOn,
+.app .toolBox .connectTabs .connectTabOn {
+  border: 1px solid var(--hud-teal);
+  background: var(--hud-key);
+  color: var(--hud-teal);
+  box-shadow: var(--hud-key-shadow), var(--hud-key-on);
+}
+.app .connectBox input,
+.app .connectBox .findNet {
+  background: var(--hud-groove);
+  border-color: rgba(214, 219, 224, 0.18);
+  box-shadow: var(--hud-groove-shadow);
+}
+.app .connectBox .pickerClose {
+  background: var(--hud-key);
+  box-shadow: var(--hud-key-shadow);
+}
+/* the work panel's own header card in each screen (전 축 구동 · 라이브러리에서 바꾸기 …) */
+.app .side .dockIcon,
+.app .side [class*='cardIcon'] {
+  background: rgba(70, 211, 230, 0.1);
+  color: var(--hud-teal);
+  box-shadow: inset 0 0 0 1px rgba(70, 211, 230, 0.4);
+}
+/* 공정 짜기 pins in 3D and the block workspace: teal marks, a dark groove to build in */
+.planMark {
+  border-radius: 4px;
+  background: rgba(16, 18, 21, 0.72);
+  box-shadow: inset 0 0 0 1px rgba(214, 219, 224, 0.25), inset 3px 0 0 var(--hud-teal);
+}
+.planMark b {
+  border-radius: 3px;
+  background: rgba(70, 211, 230, 0.16);
+  color: var(--hud-teal);
+  box-shadow: inset 0 0 0 1px rgba(70, 211, 230, 0.5);
+}
+.app .side .workspace {
+  background: var(--hud-groove);
+  box-shadow: var(--hud-groove-shadow);
+}
+/* 검수 1~7 in the top bar: small metal keys, the open one teal, the passed ones green */
+.app .checkChips button {
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  background: var(--hud-key);
+  color: var(--hud-sub);
+  box-shadow: var(--hud-key-shadow);
+}
+.app .checkChips button[aria-pressed='true'],
+.app .checkChips button[aria-current] {
+  border-color: var(--hud-teal);
+  color: var(--hud-teal);
+  box-shadow: var(--hud-key-shadow), var(--hud-key-on);
+}
+.app .checkChips button[data-done] {
+  border-color: rgba(91, 209, 122, 0.7);
+  color: var(--hud-green);
+}
+/* the actions beside a page's heading (검수 준비 점검 · 검수 결과표 저장): metal keys */
+.app .pageActions button,
+.app .pageActions a {
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  background: var(--hud-key);
+  color: var(--hud-tx);
+  box-shadow: var(--hud-key-shadow);
+}
+.app .pageActions button:disabled {
+  opacity: 0.5;
+}
+/* 블록: metal-dark blocks, each kind's colour as a tint and a bar down its left edge, light words;
+   a little smaller and lighter in weight so the program reads like the rest of the panel. */
+.app .side .block {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--c, var(--blk-adv)) 46%, #3c4046), color-mix(in srgb, var(--c, var(--blk-adv)) 32%, #2b2e32));
+  color: #f2f4f6;
+  box-shadow:
+    inset 4px 0 0 color-mix(in srgb, var(--c, var(--blk-adv)) 80%, #fff),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 2px 6px rgba(0, 0, 0, 0.35);
+}
+.app .start {
+  --c: var(--blk-start);
+}
+.app .c_move {
+  --c: var(--blk-move);
+}
+.app .c_grip {
+  --c: var(--blk-grip);
+}
+.app .c_eye {
+  --c: var(--blk-eye);
+}
+.app .c_flow,
+.app .repeat {
+  --c: var(--blk-flow);
+}
+.app .c_adv {
+  --c: var(--blk-adv);
+}
+.app .c_cond,
+.app .repeat.ifBlock {
+  --c: var(--blk-cond);
+}
+.app .c_macro {
+  --c: #c76a3c;
+}
+.app .side .workspace .block {
+  padding: 8px 12px;
+  border-radius: 7px;
+  font-size: 13.5px;
+  font-weight: 600;
+  box-shadow:
+    inset 4px 0 0 color-mix(in srgb, var(--c, var(--blk-adv)) 80%, #fff),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 2px 6px rgba(0, 0, 0, 0.35);
+}
+.app .side .palette .block {
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow:
+    inset 4px 0 0 color-mix(in srgb, var(--c, var(--blk-adv)) 80%, #fff),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 2px 6px rgba(0, 0, 0, 0.35);
+}
+.app .side .block .macroIcon {
+  background: rgba(255, 255, 255, 0.1);
+}
+.app .side .grp {
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--hud-dim);
+}
+.app .block select.field,
+.app .block .numChip,
+.app .block input.field {
+  background: rgba(10, 11, 13, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-weight: 600;
 }

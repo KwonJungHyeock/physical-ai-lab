@@ -8,7 +8,7 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  color: #e6ebf2;
+  color: #e4eaf2;
   font-size: 13.5px;
 }
 
@@ -33,9 +33,9 @@
   min-width: 0;
   height: 32px;
   padding: 0 10px;
-  border: 1px solid #4a5769;
+  border: 1px solid #535559;
   border-radius: 8px;
-  background: #222b36;
+  background: #282a2e;
   color: #fff;
   font: inherit;
   font-weight: 700;
@@ -43,7 +43,7 @@
 
 .seg {
   display: inline-flex;
-  border: 1px solid #4a5769;
+  border: 1px solid #535559;
   border-radius: 9px;
   overflow: hidden;
 }
@@ -51,7 +51,7 @@
   padding: 6px 11px;
   border: 0;
   background: transparent;
-  color: #8b97a8;
+  color: #91959b;
   font: inherit;
   font-size: 12.5px;
   font-weight: 800;
@@ -60,14 +60,14 @@
 .seg {
   padding: 2px;
   gap: 2px;
-  background: #222b36;
+  background: #282a2e;
 }
 .seg button {
   position: relative;
   border-radius: 7px;
 }
 .seg button[aria-checked='true'] {
-  background: linear-gradient(180deg, #4d5a6d, #3f4b5c);
+  background: linear-gradient(180deg, #56585c, #47494d);
   color: #fff;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 3px 8px -2px rgba(0, 0, 0, 0.55);
 }
@@ -80,17 +80,17 @@
   height: 2px;
   margin-left: -7px;
   border-radius: 2px;
-  background: #e5322d;
+  background: #1f8797;
 }
 
 .speed,
 .files select {
   height: 32px;
   padding: 0 8px;
-  border: 1px solid #4a5769;
+  border: 1px solid #535559;
   border-radius: 8px;
-  background: #222b36;
-  color: #e6ebf2;
+  background: #282a2e;
+  color: #e4eaf2;
   font: inherit;
   font-size: 12.5px;
 }
@@ -100,10 +100,10 @@
 .rowTools button {
   min-height: 32px;
   padding: 0 11px;
-  border: 1px solid #4a5769;
+  border: 1px solid #535559;
   border-radius: 9px;
-  background: #232c3a;
-  color: #e6ebf2;
+  background: #292b2f;
+  color: #e4eaf2;
   font: inherit;
   font-size: 12.5px;
   font-weight: 800;
@@ -117,7 +117,7 @@
 }
 .tools .j {
   border-color: #7a5cf5;
-  color: #d4c8ff;
+  color: #cdd2d9;
 }
 .tools .l {
   border-color: #1ea7df;
@@ -137,9 +137,9 @@
 }
 .edge {
   padding: 4px;
-  border: 1px dashed #3a465a;
+  border: 1px dashed #434549;
   border-radius: 9px;
-  color: #8b97a8;
+  color: #91959b;
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -147,21 +147,21 @@
 }
 .empty {
   padding: 14px 10px;
-  color: #8b97a8;
+  color: #91959b;
   font-size: 13px;
   text-align: center;
 }
 
 .row {
-  border: 1px solid #3a4656;
+  border: 1px solid #424448;
   border-radius: 10px;
-  background: #313c4a;
+  background: #383a3e;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .row[data-pick] {
-  border-color: #56657c;
-  background: linear-gradient(180deg, #3a4657, #333e4d);
-  box-shadow: inset 3px 0 0 #e5322d, 0 6px 14px -8px rgba(0, 0, 0, 0.6);
+  border-color: #616367;
+  background: linear-gradient(180deg, #424448, #3a3c40);
+  box-shadow: inset 3px 0 0 #46d3e6, 0 6px 14px -8px rgba(0, 0, 0, 0.6);
 }
 .row[data-run] {
   border-color: #1fae66;
@@ -188,7 +188,7 @@
 }
 .rowMain i {
   font-style: normal;
-  color: #8b97a8;
+  color: #91959b;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
@@ -198,15 +198,15 @@
 .badge {
   padding: 3px 0;
   border-radius: 6px;
-  background: #3a4656;
-  color: #c9d3e0;
+  background: #424448;
+  color: #ccd1d8;
   font-size: 11.5px;
   font-weight: 800;
   text-align: center;
 }
 .badge[data-mode='J'] {
   background: #3b2f73;
-  color: #d4c8ff;
+  color: #cdd2d9;
 }
 .badge[data-mode='L'] {
   background: #173f52;
@@ -218,7 +218,7 @@
 }
 .xyz {
   overflow: hidden;
-  color: #9aa6b8;
+  color: #a0a4aa;
   font-family: ui-monospace, monospace;
   font-size: 11.5px;
   white-space: nowrap;
@@ -254,9 +254,9 @@
   width: 64px;
   height: 32px;
   padding: 0 6px;
-  border: 1px solid #4a5769;
+  border: 1px solid #535559;
   border-radius: 8px;
-  background: #222b36;
+  background: #282a2e;
   color: #fff;
   font: inherit;
 }
@@ -271,4 +271,12 @@
   .rowMain {
     padding-block: 10px;
   }
+}
+
+/* Metal Mission HUD (2026-10-29): the save key as a metal key lit teal. */
+.rowTools .save {
+  border: 1px solid var(--hud-teal);
+  background: var(--hud-key);
+  color: var(--hud-teal);
+  box-shadow: var(--hud-key-shadow);
 }

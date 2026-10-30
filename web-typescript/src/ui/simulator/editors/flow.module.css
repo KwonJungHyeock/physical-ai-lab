@@ -6,18 +6,18 @@
  */
 
 .wrap {
-  --well: #222b36;
-  --cell: #313c4a;
-  --line: #3a4656;
-  --key-line: #4a5769;
+  --well: #282a2e;
+  --cell: #383a3e;
+  --line: #424448;
+  --key-line: #535559;
   --ink: #f1f4f9;
-  --ink2: #d0d8e4;
-  --muted: #97a3b5;
-  --faint: #6d798c;
+  --ink2: #d2d7de;
+  --muted: #9da1a7;
+  --faint: #74777c;
   --red: #e5322d;
   --red-hi: #ff6b62;
   --amber: #ffd58a;
-  --raised: linear-gradient(180deg, #4d5a6d, #3f4b5c);
+  --raised: linear-gradient(180deg, #56585c, #47494d);
   --raised-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 3px 8px -2px rgba(0, 0, 0, 0.55);
   flex: 1;
   min-height: 0;
@@ -80,7 +80,7 @@
   color: var(--ink2);
 }
 .flowbar button[data-done] i {
-  background: #56657c;
+  background: #616367;
   color: #fff;
 }
 .flowbar button[aria-current='step'] {
@@ -113,7 +113,7 @@
   min-height: 0;
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: #4a5769 transparent;
+  scrollbar-color: #535559 transparent;
   padding: 10px 12px 12px;
   display: flex;
   flex-direction: column;
@@ -254,11 +254,11 @@
   font-size: 12.5px;
   font-weight: 800;
   white-space: nowrap;
-  background: linear-gradient(#3e4a5b, #343f4e);
+  background: linear-gradient(#46484c, #3b3d41);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), inset 0 0 0 1px var(--key-line);
 }
 .btn:hover:not(:disabled) {
-  background: linear-gradient(#475569, #3b4757);
+  background: linear-gradient(#515357, #434549);
 }
 .btn[data-main] {
   background: #f1f4f9;
@@ -509,7 +509,7 @@
   text-align: left;
 }
 .card:hover {
-  background: #36424f;
+  background: #3e4044;
 }
 .card .th {
   width: 44px;
@@ -518,7 +518,7 @@
   background: var(--well);
   display: grid;
   place-items: center;
-  color: #aeb9c9;
+  color: #b2b7be;
 }
 .card .th svg {
   width: 28px;
@@ -640,7 +640,7 @@
   font-size: 12.5px;
   font-weight: 800;
   color: #fff;
-  background: #4a5769;
+  background: #535559;
 }
 .pt[data-done] > i {
   background: var(--red);
@@ -753,7 +753,7 @@
   font-size: 14px;
   font-weight: 800;
   color: #fff;
-  background: linear-gradient(#3e4a5b, #343f4e);
+  background: linear-gradient(#46484c, #3b3d41);
   box-shadow: inset 0 0 0 1px var(--key-line);
 }
 
@@ -789,7 +789,7 @@
 }
 .chips em[data-k='J'] {
   background: rgba(122, 92, 245, 0.3);
-  color: #d6ccff;
+  color: #d0d5dc;
 }
 .chips em[data-k='L'] {
   background: rgba(30, 167, 223, 0.26);
@@ -797,7 +797,7 @@
 }
 .chips em[data-k='grip'] {
   background: rgba(255, 255, 255, 0.12);
-  color: #e6ebf2;
+  color: #e4eaf2;
 }
 .chips > i {
   font-style: normal;
@@ -861,7 +861,7 @@
 }
 .rows li[data-run] {
   color: #fff;
-  background: linear-gradient(90deg, #3a4657, #333e4d);
+  background: linear-gradient(90deg, #424448, #3a3c40);
   box-shadow: inset 3px 0 0 var(--red);
 }
 .rows li em {
@@ -875,7 +875,7 @@
 }
 .rows li em[data-k='J'] {
   background: rgba(122, 92, 245, 0.3);
-  color: #d6ccff;
+  color: #d0d5dc;
 }
 .rows li em[data-k='L'] {
   background: rgba(30, 167, 223, 0.26);
@@ -996,7 +996,7 @@
   font-size: 14px;
   font-weight: 800;
   color: #fff;
-  background: linear-gradient(#3e4a5b, #343f4e);
+  background: linear-gradient(#46484c, #3b3d41);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), inset 0 0 0 1px var(--key-line);
 }
 .nav button[data-main] {
@@ -1024,4 +1024,42 @@
   .rule {
     padding: 5px 0;
   }
+}
+
+/* Metal Mission HUD (2026-10-29): the flow's accent teal (deeper where it is a fill under white
+   words), keys in metal, grooves neutral. */
+.wrap {
+  --red: #1f8797;
+  --red-hi: var(--hud-teal);
+  --amber: var(--hud-amber);
+  --well: #1b1e21;
+  --cell: #34383d;
+  --raised: var(--hud-key);
+  --raised-shadow: var(--hud-key-shadow), var(--hud-key-on);
+}
+.btn {
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  background: var(--hud-key);
+  box-shadow: var(--hud-key-shadow);
+}
+.btn:hover:not(:disabled) {
+  background: var(--hud-key);
+  filter: brightness(1.12);
+}
+.btn[data-main] {
+  border-color: var(--hud-teal);
+  background: var(--hud-key);
+  color: var(--hud-teal);
+  box-shadow: var(--hud-key-shadow), var(--hud-key-on);
+}
+.nav button {
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  background: var(--hud-key);
+  box-shadow: var(--hud-key-shadow);
+}
+.nav button[data-main] {
+  border-color: var(--hud-teal);
+  background: var(--hud-key);
+  color: var(--hud-teal);
+  box-shadow: var(--hud-key-shadow), var(--hud-key-on);
 }

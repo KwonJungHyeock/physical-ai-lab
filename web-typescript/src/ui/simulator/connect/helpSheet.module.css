@@ -31,7 +31,7 @@
 }
 .head p {
   margin: 2px 0 0;
-  color: #667085;
+  color: #6c6f74;
   font-size: 12.5px;
 }
 .mark {
@@ -40,7 +40,7 @@
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  background: #eef2ff;
+  background: #ecf2fa;
   color: #3454d1;
 }
 .close {
@@ -79,13 +79,13 @@
 .parts dd,
 .keys dd {
   margin: 0;
-  color: #475467;
+  color: #505256;
   line-height: 1.5;
 }
 .keys kbd {
   display: inline-block;
   padding: 2px 8px;
-  border: 1px solid #d0d5dd;
+  border: 1px solid #cfd4db;
   border-bottom-width: 2px;
   border-radius: 6px;
   background: #f9fafb;
@@ -116,7 +116,7 @@
   gap: 6px;
   margin-top: 10px;
   padding: 9px 14px;
-  border: 1px solid #d0d5dd;
+  border: 1px solid #cfd4db;
   border-radius: 10px;
   background: #fff;
   color: #101828;
@@ -129,4 +129,52 @@
   border-color: #3454d1;
   background: #3454d1;
   color: #fff;
+}
+
+/* Metal Mission HUD (2026-10-29): the sheet a metal plate, words light, the accent teal. */
+.sheet {
+  background: var(--hud-plate);
+  color: var(--hud-tx);
+  border: 0;
+  box-shadow: var(--hud-plate-shadow);
+  color-scheme: dark;
+}
+.sheet h2,
+.inner dt,
+.inner li {
+  color: var(--hud-tx);
+}
+.inner h3 {
+  color: var(--hud-teal);
+  letter-spacing: 0.08em;
+}
+.mark {
+  background: rgba(70, 211, 230, 0.12);
+  color: var(--hud-teal);
+}
+.close {
+  background: var(--hud-key);
+  color: var(--hud-tx);
+  box-shadow: var(--hud-key-shadow);
+}
+.sheet kbd {
+  background: var(--hud-groove);
+  color: var(--hud-tx);
+  border-color: rgba(214, 219, 224, 0.2);
+  box-shadow: var(--hud-groove-shadow);
+}
+.sheet button,
+.sheet a {
+  background: var(--hud-key);
+  color: var(--hud-tx);
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  box-shadow: var(--hud-key-shadow);
+}
+.sheet a {
+  border-color: var(--hud-teal);
+  color: var(--hud-teal);
+}
+.sheet small,
+.inner dd {
+  color: var(--hud-sub);
 }

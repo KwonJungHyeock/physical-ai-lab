@@ -1,9 +1,9 @@
 /* 실습 환경 panel (DeskPanel.tsx): opens above the 실습 환경 dock, stays open while dragging in 3D. */
 .panel {
   --ink: #f1f4f9;
-  --muted: #a3afc1;
+  --muted: #a9adb3;
   --line: rgba(255, 255, 255, 0.08);
-  --accent: #ff6b62;
+  --accent: #46d3e6;
   --accent-soft: rgba(255, 255, 255, 0.072);
   --field: rgba(255, 255, 255, 0.05);
   position: absolute;
@@ -16,7 +16,7 @@
   max-height: calc(100dvh - var(--top, 0px) - 150px);
   overflow: auto;
   color-scheme: dark;
-  background: rgba(37, 46, 58, 0.97);
+  background: rgba(43, 45, 49, 0.97);
   border: 1px solid rgba(255, 255, 255, 0.108);
   backdrop-filter: blur(12px);
   color: var(--ink);
@@ -133,7 +133,7 @@
   padding: 2px 8px 2px 7px;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.9);
-  background: rgba(37, 46, 58, 0.8);
+  background: rgba(43, 45, 49, 0.8);
   color: #fff;
   font: inherit;
   font-size: 11px;
@@ -146,9 +146,9 @@
 }
 .panel .scene[aria-pressed='true'] {
   border-color: transparent;
-  background: linear-gradient(180deg, #4d5a6d, #3f4b5c);
+  background: linear-gradient(180deg, #56585c, #47494d);
   box-shadow:
-    inset 0 -3px 0 #e5322d,
+    inset 0 -3px 0 #46d3e6,
     inset 0 1px 0 rgba(255, 255, 255, 0.14),
     0 6px 14px -6px rgba(0, 0, 0, 0.6);
 }
@@ -156,17 +156,17 @@
   display: grid;
   place-items: center;
   height: 58px;
-  background: #4a5769 center / cover no-repeat;
-  color: #b4bfcf;
+  background: #535559 center / cover no-repeat;
+  color: #b8bdc4;
   font-weight: 800;
 }
 .im[data-scene='kit'] {
-  background: #2a3441;
+  background: #303236;
 }
 .im[data-scene='empty'] {
   background:
-    radial-gradient(circle, #8b97aa 1px, transparent 1.2px) 0 0 / 10px 10px,
-    #4a5769;
+    radial-gradient(circle, #91959b 1px, transparent 1.2px) 0 0 / 10px 10px,
+    #535559;
 }
 .scene b {
   display: block;
@@ -230,7 +230,7 @@
   gap: 3px;
   font-size: 10.5px;
   font-weight: 700;
-  color: #d8dfe8;
+  color: #d8dee6;
   background: rgba(255, 255, 255, 0.03);
 }
 .panel .obj:hover:not(:disabled) {
@@ -256,9 +256,9 @@
 }
 .item[data-on] {
   border-color: transparent;
-  background: linear-gradient(180deg, #4d5a6d, #3f4b5c);
+  background: linear-gradient(180deg, #56585c, #47494d);
   color: #fff;
-  box-shadow: inset 0 -2px 0 #e5322d, inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 -2px 0 #46d3e6, inset 0 1px 0 rgba(255, 255, 255, 0.14);
 }
 .panel .list button {
   display: inline-flex;
@@ -358,7 +358,7 @@
   font-size: 12px;
 }
 .panel .seg button[aria-pressed='true'] {
-  background: linear-gradient(180deg, #4d5a6d, #3f4b5c);
+  background: linear-gradient(180deg, #56585c, #47494d);
   color: #fff;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 3px 8px -2px rgba(0, 0, 0, 0.55);
 }
@@ -442,4 +442,13 @@
 .soon {
   color: #c2410c;
   font-weight: 700;
+}
+
+/* Metal Mission HUD (2026-10-29): the window beside the menu bar is a metal plate. */
+.panel {
+  --accent: var(--hud-teal);
+  border: 0;
+  border-radius: 10px;
+  background: var(--hud-plate);
+  box-shadow: var(--hud-plate-shadow);
 }

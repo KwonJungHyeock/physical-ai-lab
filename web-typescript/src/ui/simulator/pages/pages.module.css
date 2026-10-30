@@ -12,9 +12,9 @@
   background: radial-gradient(900px 340px at 78% -120px, rgba(52, 84, 209, 0.07), transparent 70%), #f6f7f9;
   color-scheme: light;
   --edge: #e6e8ee;
-  --edge-strong: #d5d9e2;
+  --edge-strong: #d4d9e0;
   --hover: #f1f3f7;
-  --select: #eaf0ff;
+  --select: #eaf0f8;
   --select-edge: #b9c8f6;
   --card-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.04);
   --card-lift: 0 2px 4px rgba(16, 24, 40, 0.04), 0 12px 28px rgba(16, 24, 40, 0.1);
@@ -27,7 +27,7 @@
   gap: 2px;
   padding: 22px 12px;
   border-right: 1px solid var(--edge);
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(36, 39, 43, 0.72);
   backdrop-filter: blur(8px);
   overflow: auto;
 }
@@ -47,7 +47,7 @@
   border: 0;
   border-radius: 10px;
   background: none;
-  color: #475467;
+  color: var(--muted);
   font-weight: 650;
   font-size: 14px;
   text-align: left;
@@ -73,7 +73,7 @@
   color: var(--ink);
 }
 .page .pageNav button[aria-current='page'] {
-  background: #fff;
+  background: var(--card, #fff);
   color: var(--ink);
   box-shadow:
     0 0 0 1px var(--edge),
@@ -198,7 +198,7 @@
   overflow: hidden;
   border: 1px solid var(--edge);
   border-radius: 16px;
-  background: #fff;
+  background: var(--card, #fff);
   color: var(--ink);
   text-align: left;
   box-shadow: var(--card-shadow);
@@ -280,8 +280,8 @@
 }
 .cardBadge {
   left: 10px;
-  color: #1d2939;
-  background: rgba(255, 255, 255, 0.86);
+  color: var(--ink);
+  background: rgba(36, 39, 43, 0.86);
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.12);
 }
 .cardNow {
@@ -352,7 +352,7 @@
   font-weight: 650;
   padding: 2px 7px;
   border-radius: 6px;
-  color: #475467;
+  color: var(--muted);
   background: var(--soft);
   border: 1px solid var(--edge);
   white-space: nowrap;
@@ -435,7 +435,7 @@
   padding: 6px;
   border: 1px solid var(--edge);
   border-radius: 14px;
-  background: #fff;
+  background: var(--card, #fff);
   box-shadow: var(--card-shadow);
 }
 .page .toolBtn,
@@ -448,7 +448,7 @@
   border: 0;
   border-radius: 9px;
   background: none;
-  color: #475467;
+  color: var(--muted);
   cursor: pointer;
 }
 .page .toolBtn:hover:not(:disabled),
@@ -485,14 +485,14 @@
   border: 0;
   border-radius: 7px;
   background: none;
-  color: #475467;
+  color: var(--muted);
   font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
 }
 .page .crumbs button:hover {
-  background: #fff;
+  background: var(--card, #fff);
   color: var(--ink);
 }
 .page .crumbs button[aria-current='page'] {
@@ -507,7 +507,7 @@
   background: var(--soft);
 }
 .page .viewSeg button[aria-pressed='true'] {
-  background: #fff;
+  background: var(--card, #fff);
   color: var(--accent);
   box-shadow:
     0 0 0 1px var(--edge),
@@ -550,7 +550,7 @@
   text-align: center;
 }
 .page .entry:hover {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(36, 39, 43, 0.9);
   border-color: var(--edge);
 }
 .page .entry[aria-selected='true'] {
@@ -570,7 +570,7 @@
   max-width: 88%;
   object-fit: contain;
   border-radius: 3px;
-  background: #fff;
+  background: var(--card, #fff);
   box-shadow:
     0 0 0 1px rgba(16, 24, 40, 0.08),
     0 3px 8px rgba(16, 24, 40, 0.1);
@@ -688,7 +688,7 @@
   gap: 10px;
   padding: 22px 20px;
   border-left: 1px solid var(--edge);
-  background: #fff;
+  background: var(--card, #fff);
   overflow: auto;
 }
 .previewArt {
@@ -697,7 +697,7 @@
   min-height: 200px;
   padding: 18px;
   border-radius: 14px;
-  background: radial-gradient(circle at 50% 40%, #fff, transparent 70%), var(--soft);
+  background: radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0.08), transparent 70%), var(--soft);
   border: 1px solid var(--edge);
 }
 .previewArt img {
@@ -705,7 +705,7 @@
   max-width: 100%;
   max-height: 300px;
   border-radius: 4px;
-  background: #fff;
+  background: var(--card, #fff);
   box-shadow:
     0 0 0 1px rgba(16, 24, 40, 0.08),
     0 10px 24px rgba(16, 24, 40, 0.14);
@@ -753,7 +753,7 @@
 .facts dd {
   margin: 0;
   min-width: 0;
-  color: #344054;
+  color: var(--ink);
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
 }
@@ -797,8 +797,8 @@
 }
 .page .secondary {
   border: 1px solid var(--edge-strong);
-  color: #344054;
-  background: #fff;
+  color: var(--ink);
+  background: var(--card, #fff);
 }
 .page .secondary:hover {
   background: var(--hover);
@@ -830,4 +830,41 @@
     border-left: 0;
     border-top: 1px solid var(--edge);
   }
+}
+
+/* Metal Mission HUD (2026-10-29): the pages on the same dark metal ground as the console; cards as
+   plates, the chosen in teal. */
+.page {
+  --ink: var(--hud-tx);
+  --muted: var(--hud-sub);
+  --faint: var(--hud-dim);
+  --soft: #2f3337;
+  --line: rgba(214, 219, 224, 0.14);
+  --accent: var(--hud-teal);
+  --accent-soft: rgba(70, 211, 230, 0.1);
+  --card: linear-gradient(180deg, #3a3e44, #2c3035);
+  --edge: rgba(214, 219, 224, 0.12);
+  --edge-strong: rgba(214, 219, 224, 0.24);
+  --hover: rgba(255, 255, 255, 0.05);
+  --select: rgba(70, 211, 230, 0.1);
+  --select-edge: rgba(70, 211, 230, 0.55);
+  --card-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 4px 12px rgba(0, 0, 0, 0.35);
+  --card-lift: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 10px 26px rgba(0, 0, 0, 0.5);
+  color-scheme: dark;
+  background: var(--hud-ground);
+}
+.page .secondary {
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  background: var(--hud-key);
+  box-shadow: var(--hud-key-shadow);
+}
+.page .primary {
+  border: 1px solid var(--hud-teal);
+  background: var(--hud-key);
+  color: var(--hud-teal);
+  box-shadow: var(--hud-key-shadow), var(--hud-key-on);
+}
+.cardTags em {
+  background: var(--hud-groove);
+  box-shadow: var(--hud-groove-shadow);
 }

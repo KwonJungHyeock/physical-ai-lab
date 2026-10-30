@@ -29,8 +29,9 @@ import {
   Vector3,
 } from 'three';
 
-export const AXIS_COLORS = { x: '#e5484d', y: '#30a46c', z: '#3e63dd' } as const;
-const JOINT_COLOR = '#f08c00';
+/** X red, Y green, Z blue as everywhere, a little quieter on the HUD's dark metal. */
+export const AXIS_COLORS = { x: '#e86a5c', y: '#5fbf7a', z: '#5a9be8' } as const;
+const JOINT_COLOR = '#f0a23b';
 
 /** What the 3D view draws besides the scene (the 표시 menu). */
 export interface DisplayOpts {
@@ -122,9 +123,9 @@ export function textSprite(text: string, color: string, size = 0.016): Sprite {
   g.font = font;
   g.textAlign = 'center';
   g.textBaseline = 'middle';
-  // White halo so the label reads over the arm and the floor alike.
-  g.lineWidth = px * 0.14;
-  g.strokeStyle = 'rgba(255,255,255,0.92)';
+  // A dark outline (the HUD's ground) so the label reads over the white arm and the dark floor alike.
+  g.lineWidth = px * 0.16;
+  g.strokeStyle = 'rgba(16,18,21,0.88)';
   g.lineJoin = 'round';
   g.strokeText(text, w / 2, px / 2);
   g.fillStyle = color;
@@ -170,8 +171,8 @@ export function axesTriad(length: number, radius: number, labels: [string, strin
       g.add(s);
     }
   });
-  // A small white ball marks the origin.
-  const o = new Mesh(new CylinderGeometry(radius * 1.8, radius * 1.8, radius * 1.2, 16), basic('#ffffff'));
+  // A small silver disc marks the origin.
+  const o = new Mesh(new CylinderGeometry(radius * 1.8, radius * 1.8, radius * 1.2, 16), basic('#d6dbe0'));
   o.rotation.x = Math.PI / 2;
   g.add(o);
   onTop(g, layer);
@@ -201,10 +202,10 @@ export function addJointAxes(joints: readonly { group: Group; axis: Vector3 }[],
 export function reachDisc(z: number, layer: number, reachMm = REACH_MM): Group {
   const r = reachMm / 1000;
   const g = new Group();
-  const fill = new Mesh(new CircleGeometry(r, 96), new MeshBasicMaterial({ color: '#3454d1', transparent: true, opacity: 0.05, depthWrite: false, side: DoubleSide, toneMapped: false }));
-  const rim = new Mesh(new RingGeometry(r - 0.0015, r + 0.0015, 128), new MeshBasicMaterial({ color: '#3454d1', transparent: true, opacity: 0.55, depthWrite: false, side: DoubleSide, toneMapped: false }));
+  const fill = new Mesh(new CircleGeometry(r, 96), new MeshBasicMaterial({ color: '#46d3e6', transparent: true, opacity: 0.04, depthWrite: false, side: DoubleSide, toneMapped: false }));
+  const rim = new Mesh(new RingGeometry(r - 0.0015, r + 0.0015, 128), new MeshBasicMaterial({ color: '#46d3e6', transparent: true, opacity: 0.6, depthWrite: false, side: DoubleSide, toneMapped: false }));
   g.add(fill, rim);
-  const s = textSprite(`작업 범위 ${reachMm}mm`, '#3454d1', 0.014);
+  const s = textSprite(`작업 범위 ${reachMm} mm`, '#46d3e6', 0.013);
   s.position.set(r * 0.72, -r * 0.72, 0.012);
   g.add(s);
   g.position.z = z + 0.0006;

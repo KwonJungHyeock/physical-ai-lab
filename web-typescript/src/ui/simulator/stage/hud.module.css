@@ -23,7 +23,7 @@
   pointer-events: auto;
   flex: none;
   position: relative;
-  background: rgba(37, 46, 58, 0.8);
+  background: rgba(43, 45, 49, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.084);
   border-radius: 12px;
   backdrop-filter: blur(12px) saturate(1.2);
@@ -63,18 +63,18 @@
   border-radius: 8px;
   font-size: 12px;
   font-weight: 800;
-  color: #9eaabd;
+  color: #a4a8ae;
   position: relative;
   cursor: pointer;
 }
 .hud .bar button:hover,
 .hud .showBtn:hover {
-  color: #e6ebf2;
+  color: #e4eaf2;
   background: rgba(255, 255, 255, 0.05);
 }
 .hud .bar button[aria-pressed='true'] {
   color: #fff;
-  background: linear-gradient(180deg, #4d5a6d, #3f4b5c);
+  background: linear-gradient(180deg, #56585c, #47494d);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.16),
     0 3px 8px -2px rgba(0, 0, 0, 0.55);
@@ -87,10 +87,10 @@
   bottom: 2px;
   height: 2px;
   border-radius: 2px;
-  background: #e5322d;
+  background: #1f8797;
 }
 .hud .bar .hideBtn {
-  color: #8b97aa;
+  color: #91959b;
   border-left: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 0 8px 8px 0;
 }
@@ -99,9 +99,9 @@
   align-self: flex-start;
   padding: 0 12px;
   height: 34px;
-  color: #c8d1de;
+  color: #cbd0d7;
   pointer-events: auto;
-  background: rgba(37, 46, 58, 0.8);
+  background: rgba(43, 45, 49, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.084);
   border-radius: 10px;
   backdrop-filter: blur(12px) saturate(1.2);
@@ -112,7 +112,7 @@
   margin: 0 0 6px;
   font-size: 10.5px;
   letter-spacing: 0.06em;
-  color: #b4bfcf;
+  color: #b8bdc4;
   font-weight: 800;
   display: flex;
   justify-content: space-between;
@@ -132,7 +132,7 @@
 .glass h5 em {
   font-style: normal;
   letter-spacing: 0;
-  color: #8b97aa;
+  color: #91959b;
   font-weight: 600;
   font-size: 10px;
   text-align: right;
@@ -158,13 +158,13 @@
   box-shadow: 0 0 8px #3ddc84;
 }
 .status[data-tone='run'] {
-  color: #e6ebf2;
+  color: #e4eaf2;
   background: rgba(255, 255, 255, 0.054);
   border-color: rgba(255, 255, 255, 0.158);
 }
 .status[data-tone='run'] i {
-  background: #e6ebf2;
-  box-shadow: 0 0 8px rgba(230, 235, 242, 0.7);
+  background: #e4eaf2;
+  box-shadow: 0 0 8px rgba(228, 234, 242, 0.7);
   animation: blink 1s ease-in-out infinite;
 }
 .status[data-tone='real'] {
@@ -260,7 +260,7 @@
 }
 .fill,
 .glow {
-  stroke: #d0d8e4;
+  stroke: #d2d7de;
   stroke-width: 7;
   fill: none;
   stroke-linecap: round;
@@ -270,18 +270,18 @@
   filter: blur(2.4px);
 }
 .knob {
-  fill: #e5322d;
+  fill: #46d3e6;
   stroke: #fff;
   stroke-width: 2;
 }
 .goal {
-  fill: rgba(37, 46, 58, 0.6);
-  stroke: #e6ebf2;
+  fill: rgba(43, 45, 49, 0.6);
+  stroke: #e4eaf2;
   stroke-width: 1.6;
 }
 .minmax {
   font-size: 8px;
-  fill: #7d899c;
+  fill: #84878c;
   text-anchor: middle;
 }
 .loadPct {
@@ -303,10 +303,10 @@
   top: 0;
   font-size: 10.5px;
   font-weight: 800;
-  color: #b4bfcf;
+  color: #b8bdc4;
 }
 .lab span {
-  color: #8b97aa;
+  color: #91959b;
   font-weight: 600;
   margin-left: 2px;
 }
@@ -326,7 +326,7 @@
   right: 0;
   top: 63px;
   font-size: 9px;
-  color: #97a3b5;
+  color: #9da1a7;
 }
 .dial[data-warn] .fill,
 .dial[data-warn] .glow {
@@ -355,7 +355,7 @@
   justify-content: center;
   margin-top: 4px;
   font-size: 9.5px;
-  color: #97a3b5;
+  color: #9da1a7;
 }
 .legend i {
   display: inline-block;
@@ -367,17 +367,17 @@
   box-sizing: border-box;
 }
 .lgNow {
-  background: #e5322d;
+  background: #1f8797;
 }
 .lgGoal {
-  border: 1.6px solid #e6ebf2;
+  border: 1.6px solid #e4eaf2;
 }
 .lgLoad {
   background: #3ddc84;
 }
 .hint {
   margin: 5px 0 0;
-  color: #97a3b5;
+  color: #9da1a7;
   font-size: 10.5px;
 }
 
@@ -395,7 +395,7 @@
 }
 .cell small {
   display: block;
-  color: #97a3b5;
+  color: #9da1a7;
   font-weight: 800;
   font-size: 9.5px;
 }
@@ -413,12 +413,12 @@
 }
 .cell[data-rot] b {
   font-size: 11.5px;
-  color: #d8dfe8;
+  color: #d8dee6;
 }
 .cell b i {
   font-style: normal;
   font-size: 9px;
-  color: #97a3b5;
+  color: #9da1a7;
   margin-left: 2px;
   font-weight: 600;
 }
@@ -433,7 +433,7 @@
   font-size: 18px;
 }
 .speed span {
-  color: #97a3b5;
+  color: #9da1a7;
   margin-left: 4px;
   font-size: 10.5px;
 }
@@ -471,7 +471,7 @@
   padding: 1px 6px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.05);
-  color: #c8d1de;
+  color: #cbd0d7;
 }
 .chips i {
   display: inline-block;
@@ -486,4 +486,13 @@
 .hud[data-docked] {
   left: var(--inset-l, 12px);
   top: calc(var(--top, 0px) + 58px);
+}
+
+/* Metal Mission HUD (2026-10-29): the monitor's windows as metal plates, readouts in grooves. */
+.glass {
+  background: var(--hud-plate);
+  border: 0;
+  border-radius: 10px;
+  backdrop-filter: none;
+  box-shadow: var(--hud-plate-shadow);
 }

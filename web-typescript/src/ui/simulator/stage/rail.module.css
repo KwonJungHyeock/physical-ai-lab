@@ -10,8 +10,8 @@
   display: flex;
   flex-direction: column;
   padding: 6px 8px 8px;
-  background: linear-gradient(180deg, #232c38, #1f2833);
-  border-right: 1px solid #3a4656;
+  background: linear-gradient(180deg, #292b2f, #25272b);
+  border-right: 1px solid #424448;
   overflow-y: auto;
   scrollbar-width: none;
 }
@@ -32,14 +32,14 @@
   font-size: 12.5px;
   font-weight: 800;
   letter-spacing: 0.06em;
-  color: #97a3b5;
+  color: #9da1a7;
   white-space: nowrap;
 }
 .groupName::after {
   content: '';
   flex: 1;
   height: 1px;
-  background: #3a4656;
+  background: #424448;
 }
 .rail button {
   position: relative;
@@ -50,7 +50,7 @@
   border: 0;
   border-radius: 12px;
   background: transparent;
-  color: #d0d8e4;
+  color: #d2d7de;
   font: inherit;
   font-size: 14px;
   font-weight: 700;
@@ -68,7 +68,7 @@
 }
 /* The open one: a raised, lighter tile, its icon in brand red and a red mark on the bar's edge. */
 .rail button[aria-pressed="true"] {
-  background: linear-gradient(180deg, #414e60, #36424f);
+  background: linear-gradient(180deg, #4a4c50, #3e4044);
   color: #fff;
   font-weight: 800;
   box-shadow:
@@ -76,7 +76,7 @@
     0 6px 14px -6px rgba(0, 0, 0, 0.6);
 }
 .rail button[aria-pressed="true"] svg {
-  color: #ff6b62;
+  color: #46d3e6;
 }
 .rail button[aria-pressed="true"]::before {
   content: '';
@@ -86,8 +86,8 @@
   bottom: 14px;
   width: 4px;
   border-radius: 0 4px 4px 0;
-  background: #e5322d;
-  box-shadow: 0 0 12px rgba(229, 50, 45, 0.35);
+  background: #1f8797;
+  box-shadow: 0 0 12px rgba(70, 211, 230, 0.35);
 }
 .rail button:disabled {
   opacity: 0.35;
@@ -207,7 +207,7 @@
   content: '';
   height: 1px;
   margin: 0 6px 3px;
-  background: rgba(214, 219, 224, 0.18);
+  background: rgba(213, 218, 225, 0.18);
 }
 .rail button {
   gap: 2px;

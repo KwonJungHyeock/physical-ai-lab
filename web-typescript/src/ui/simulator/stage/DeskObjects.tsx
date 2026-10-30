@@ -34,7 +34,7 @@ function Shape({ o, selected }: { o: DeskObject; selected: boolean }) {
   const [sx, sy, sz] = o.size;
   const kind = OBJECT_KINDS[o.kind];
   // The picked object glows a little (its × is above it).
-  const hi = { emissive: selected ? '#e5322d' : '#000000', emissiveIntensity: selected ? 0.35 : 0 };
+  const hi = { emissive: selected ? '#46d3e6' : '#000000', emissiveIntensity: selected ? 0.35 : 0 };
   const plastic = <meshPhysicalMaterial color={o.color} roughness={0.42} clearcoat={0.35} clearcoatRoughness={0.4} bumpMap={grain([2, 2])} bumpScale={0.4} {...hi} />;
   const foot = [0, 0, -sz / 2] as const;
   switch (o.kind) {
