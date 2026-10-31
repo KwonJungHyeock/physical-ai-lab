@@ -2,8 +2,10 @@
 //   node tools/build/guides.mjs [basic-teacher|basic-student|teacher|simulator ...]
 //
 // Source: Markdown with a few extra blocks (see manuals/README.md "배포용 PDF 만들기"):
-//   front matter (title, subtitle, audience, version, cover), `# ` = chapter (new page), `## ` · `### `,
-//   `![캡션](img/x.png)` = numbered figure (`{w=60}` after it = 60 % wide), `> 팁:` / `> 주의:` / `> 참고:` boxes,
+//   front matter (title, subtitle, audience, version, cover; theme: edu with crumb, en, goal, parts, howto), `# ` = chapter (new page), `## ` · `### `,
+//   `![캡션](img/x.png)` = numbered figure (`{w=60}` after it = 60 % wide), `> 팁:` / `> 주의:` / `> 참고:` boxes
+//   (`> 학습 목표:` / `> 정리:` for a lesson), `# 장 {en=Control}` = the chapter's English name, a table whose first
+//   head cell is empty = a check list,
 //   `::: step 제목` … `:::` numbered step cards, `::: marks` numbered list matching the badges on a screenshot,
 //   `::: cols` … `+++` … `:::` side by side, `::: newpage` = a page break, `[버튼 이름]` = a key cap, GFM tables, ``` code.
 // Printing keeps a heading with what follows it, figures and cards whole, table rows whole, and Korean
@@ -93,14 +95,15 @@ function blocks(lines, ctx) {
     if ((m = line.match(/^(#{1,3}) (.+)$/))) {
       flush();
       const lv = m[1].length;
-      const text = m[2].trim();
+      const en = m[2].match(/\s*\{en=([^}]+)\}\s*$/);
+      const text = (en ? m[2].slice(0, en.index) : m[2]).trim();
       const id = `h${ctx.hid++}`;
       if (ctx.keep) ctx.breakHeads.push(text.replace(/\*\*|`|\[|\]/g, '').replace(/\s+/g, ''));
       if (lv === 1) {
         ctx.chapter++;
         ctx.section = 0;
         ctx.toc.push({ lv, text, id });
-        out.push({ t: 'h', lv, html: `<h1 id="${id}"><span class="chno">${String(ctx.chapter).padStart(2, '0')}</span>${inline(text)}</h1>`, text });
+        out.push({ t: 'h', lv, html: `<h1 id="${id}"${en ? ` data-en="${esc(en[1])}"` : ''}><span class="chno">${String(ctx.chapter).padStart(2, '0')}</span>${inline(text)}</h1>`, text });
       } else if (lv === 2) {
         ctx.section++;
         ctx.toc.push({ lv, text, id });
@@ -190,9 +193,9 @@ function blocks(lines, ctx) {
       } else ctx.problems.push(`모르는 블록: ::: ${kind}`);
       continue;
     }
-    if ((m = line.match(/^> (팁|주의|참고|안전):\s*(.*)$/))) {
+    if ((m = line.match(/^> (팁|주의|참고|안전|학습 목표|정리):\s*(.*)$/))) {
       flush();
-      const kind = { 팁: 'tip', 주의: 'warn', 참고: 'note', 안전: 'warn' }[m[1]];
+      const kind = { 팁: 'tip', 주의: 'warn', 참고: 'note', 안전: 'warn', '학습 목표': 'goal', 정리: 'sum' }[m[1]];
       const body = [m[2]];
       i++;
       while (i < lines.length && lines[i].startsWith('> ')) body.push(lines[i++].slice(2));
@@ -213,7 +216,7 @@ function blocks(lines, ctx) {
         if (items.length > 1) return `<${tag}>${items.map((x) => `<span class="li">${inline(x)}</span>`).join('')}</${tag}>`;
         return `<${tag}${printWidth(c.replace(/\*\*|`|\[|\]/g, '')) <= 7 ? ' class="nw"' : ''}>${inline(c)}</${tag}>`;
       };
-      out.push({ t: 'table', html: `<table><thead><tr>${head.map((h) => cell('th', h)).join('')}</tr></thead><tbody>${body.map((r) => `<tr>${r.map((c) => cell('td', c)).join('')}</tr>`).join('')}</tbody></table>` });
+      out.push({ t: 'table', html: `<table${head[0] === '' ? ' class="check"' : ''}><thead><tr>${head.map((h) => cell('th', h)).join('')}</tr></thead><tbody>${body.map((r) => `<tr>${r.map((c) => cell('td', c)).join('')}</tr>`).join('')}</tbody></table>` });
       continue;
     }
     if (/^(\s*)([-*]|\d+\.) /.test(line)) {
@@ -361,7 +364,82 @@ td .mk{background:var(--accent-soft);color:var(--accent);box-shadow:inset 0 0 0 
 .tip{background:#effaf3;border:1px solid #bfe6cd}.tip .calltag{background:var(--green);color:#fff}
 .note{background:var(--accent-soft);border:1px solid #cdd7fb}.note .calltag{background:var(--accent);color:#fff}
 .warn{background:#fff4e6;border:1px solid #ffd3a8}.warn .calltag{background:var(--orange);color:#fff}
+.goal{background:#f4f1ff;border:1px solid #d9d0fb}.goal .calltag{background:#6d4fe8;color:#fff}
+.sum{background:#f4f1ff;border:1px solid #d9d0fb}.sum .calltag{background:#6d4fe8;color:#fff}
+table.check td:first-child{width:16pt;font-size:12pt;line-height:1}
 `;
+}
+
+/**
+ * theme: edu — set like the 교육 탭 theory books (src/ui/education/print/print.module.css): white, one blue,
+ * an ink bar with a blue edge for each chapter, boxes with a coloured left edge and a small label, no
+ * shadows; the cover without a picture (a crumb line, the mark, the English name, 이 가이드를 마치면, the parts).
+ */
+const EDU_CSS = `
+:root{--ink:#101828;--muted:#667085;--line:#d0d5dd;--soft:#f2f4f7;--accent:#3454d1;--blue:#2a78d6}
+html{font-size:10pt;line-height:1.65}
+.cover{background:#fff;color:var(--ink);padding:20mm 20mm 18mm}
+.cover .crumb{font-size:8.5pt;color:var(--muted);border-bottom:.4mm solid var(--ink);padding-bottom:2mm}
+.cover .title{display:flex;align-items:center;gap:6mm;margin-top:26mm}
+.cover .title>span{flex:none;display:grid;place-items:center;width:30mm;height:30mm;border-radius:5mm;background:var(--accent)}
+.cover .title>span img{width:17mm}
+.cover h1.ct{margin:0;border:none;padding:0;display:block;font-size:28pt;letter-spacing:-.02em;line-height:1.2}
+.cover .title p{margin:1.5mm 0 0;font-size:12pt;color:var(--muted)}
+.cover .cgoal{margin-top:12mm;border-left:1.4mm solid var(--accent);background:var(--soft);border-radius:2mm;padding:3mm 4mm;font-size:11.5pt;font-weight:600;line-height:1.55}
+.cover .cgoal b{display:block;font-size:8.5pt;letter-spacing:.06em;color:var(--muted)}
+.cover ol{list-style:none;margin:10mm 0 0;padding:0;display:grid;gap:2.2mm}
+.cover li{display:flex;gap:4mm;align-items:baseline;border-bottom:.25mm dashed var(--line);padding-bottom:2.2mm}
+.cover li>b{flex:none;width:14mm;font-size:12pt;color:var(--accent)}
+.cover li>span{display:grid;font-size:12pt;font-weight:700}
+.cover li small{font-size:9pt;font-weight:400;color:var(--muted)}
+.cover .howto{margin-top:auto;font-size:9pt;color:#344054;background:var(--soft);border-radius:2mm;padding:3mm 4mm}
+.toc .c1{border-top:.25mm dashed var(--line)}
+main h1{border:none;background:var(--ink);color:#fff;border-left:2mm solid var(--accent);border-radius:2.5mm;padding:2.6mm 3.5mm;font-size:15pt;gap:3mm;align-items:center;margin:20pt 0 10pt}
+main h1 .chno{font-size:15pt;font-weight:700;color:#9db2ff}
+main h1 kbd{background:transparent;color:#c4cddc;border-color:#475467}
+main h1[data-en]::after{content:attr(data-en);margin-left:auto;font-size:8.5pt;color:#c4cddc;font-weight:500}
+h2{font-size:13pt}
+h2 .secno{font-size:10.5pt}
+h3{border-left:1mm solid var(--accent);padding-left:2.5mm}
+figure img{border:.3mm solid var(--line);border-radius:2mm;box-shadow:none}
+figcaption{text-align:left;color:#475467}
+th{background:var(--soft);border-bottom:.4mm solid var(--ink)}
+td{border-bottom:.25mm solid var(--line)}
+tbody tr:nth-child(even) td{background:#fff}
+li::marker{color:var(--ink)}
+kbd{border-color:#98a2b3;border-bottom-width:.5mm;border-radius:1mm;color:var(--ink);font-weight:700}
+.step{border:none;border-radius:0;padding:0;margin:0 0 7pt;gap:3mm;background:none}
+.stepno{width:6.5mm;height:6.5mm;border-radius:1.5mm;background:var(--blue);font-size:10pt}
+.steptitle{font-size:10.5pt;margin:0 0 2pt}
+.call{display:block;border:none;border-left:1mm solid var(--c);background:var(--bg);border-radius:2mm;padding:2.2mm 3mm 2.4mm 3.5mm}
+.call .calltag{display:block;background:none;color:var(--c);padding:0;height:auto;font-size:7.8pt;letter-spacing:.08em;font-weight:700;margin:0 0 .5mm}
+.tip{--c:#138a50;--bg:#ecf9f2}
+.note{--c:#2a78d6;--bg:#f6f9ff}
+.warn{--c:#c2410c;--bg:#fff6ef}
+.goal,.sum{--c:#6d4fe8;--bg:#f4f1ff}
+.goal{font-size:10.5pt;font-weight:600}
+table.check th{background:none}
+`;
+
+function cover(meta) {
+  if (meta.theme === 'edu') {
+    const parts = (meta.parts ?? '').split(';;').map((p) => p.split('|').map((x) => x.trim())).filter((p) => p.length === 3);
+    return `<section class="cover">
+  <div class="crumb">${esc(meta.crumb ?? '')}</div>
+  <div class="title"><span><img src="file://${path.join(web, 'public/brand/sim-mark-white.svg')}"/></span><div><h1 class="ct">${esc(meta.title)}</h1><p>${esc(meta.en ?? '')}</p></div></div>
+  ${meta.goal ? `<div class="cgoal"><b>이 가이드를 마치면</b>${inline(meta.goal)}</div>` : ''}
+  <ol>${parts.map(([k, name, what]) => `<li><b>${esc(k)}</b><span>${esc(name)}<small>${inline(what)}</small></span></li>`).join('')}</ol>
+  <div class="howto"><b>이렇게 써요</b> ${inline(meta.howto ?? '')}</div>
+</section>`;
+  }
+  return `<section class="cover">
+  <div class="brand"><img src="file://${path.join(web, 'public/brand/eduino-logo.png')}"/>Physical AI 학습 프로그램</div>
+  <div class="kicker">${esc(meta.kicker ?? 'MANUAL')}</div>
+  <h1 class="ct">${esc(meta.title)}</h1>
+  <div class="sub">${inline(meta.subtitle ?? '')}</div>
+  ${meta.cover ? `<div class="hero"><img src="file://${path.resolve(meta.dir, meta.cover)}"/></div>` : ''}
+  <div class="meta">${[meta.audience, meta.version].filter(Boolean).map((x) => `<span>${esc(x)}</span>`).join('')}</div>
+</section>`;
 }
 
 function page(meta, toc, bodyHtml, pages = {}, extraCss = '') {
@@ -372,15 +450,8 @@ function page(meta, toc, bodyHtml, pages = {}, extraCss = '') {
         : `<li class="c2"><span>${inline(t.text)}</span><span class="fill"></span><span class="pg">${pages[t.id] ?? ''}</span></li>`,
     )
     .join('');
-  return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${esc(meta.title)}</title><style>${css(meta)}${extraCss}</style></head><body>
-<section class="cover">
-  <div class="brand"><img src="file://${path.join(web, 'public/brand/eduino-logo.png')}"/>Physical AI 학습 프로그램</div>
-  <div class="kicker">${esc(meta.kicker ?? 'MANUAL')}</div>
-  <h1 class="ct">${esc(meta.title)}</h1>
-  <div class="sub">${inline(meta.subtitle ?? '')}</div>
-  ${meta.cover ? `<div class="hero"><img src="file://${path.resolve(meta.dir, meta.cover)}"/></div>` : ''}
-  <div class="meta">${[meta.audience, meta.version].filter(Boolean).map((x) => `<span>${esc(x)}</span>`).join('')}</div>
-</section>
+  return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${esc(meta.title)}</title><style>${css(meta)}${meta.theme === 'edu' ? EDU_CSS : ''}${extraCss}</style></head><body>
+${cover(meta)}
 <section class="toc"><h1 class="tt" style="break-before:auto;border:none;display:block">차례</h1><div class="lead">${inline(meta.toclead ?? '')}</div><ol>${tocHtml}</ol></section>
 <main>${bodyHtml}</main></body></html>`;
 }
