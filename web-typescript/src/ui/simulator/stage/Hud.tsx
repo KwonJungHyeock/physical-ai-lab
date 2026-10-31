@@ -193,7 +193,8 @@ export default function Hud({ world, chain, tcpMm, mountMm, loadModel, status, o
     let qdd = [0, 0, 0, 0, 0, 0];
     let tipSpeed = 0;
     let last: { t: number; q: number[]; tip: { x: number; y: number; z: number } } | null = null;
-    let frame = 0;
+    // Starts just before an every-8th frame: the numbers show the pose on the very first frame.
+    let frame = 7;
     let raf = 0;
     const tick = (now: number) => {
       raf = requestAnimationFrame(tick);

@@ -8,7 +8,7 @@
  * joint alerts the 3D view writes every frame (no React render per frame).
  */
 
-import { useEffect, useRef, type RefObject } from 'react';
+import { useEffect, useRef, type ReactNode, type RefObject } from 'react';
 
 import type { MonitorOut } from './MiniArm';
 import css from './stageHud.module.css';
@@ -31,6 +31,7 @@ export function StageTitle({
   arm,
   screen,
   onLink,
+  children,
 }: {
   link: LinkState;
   robotId?: string;
@@ -42,6 +43,8 @@ export function StageTitle({
   /** The open screen: [English, Korean], e.g. ['CONTROL', '제어']. */
   screen: [string, string];
   onLink(): void;
+  /** Under the link button (the 처음 시작 guide). */
+  children?: ReactNode;
 }) {
   const id = robotId ?? '';
   return (
@@ -65,6 +68,7 @@ export function StageTitle({
           <path d="M9 6l6 6-6 6" />
         </svg>
       </button>
+      {children}
     </div>
   );
 }

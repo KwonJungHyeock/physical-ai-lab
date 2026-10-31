@@ -161,7 +161,7 @@
   font-weight: 800;
 }
 .im[data-scene='kit'] {
-  background: #303236;
+  background-color: #303236;
 }
 .im[data-scene='empty'] {
   background:

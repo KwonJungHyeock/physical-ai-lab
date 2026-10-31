@@ -122,6 +122,7 @@ import RobotSetup from './connect/RobotSetup';
 import PartsPanel from './control/PartsPanel';
 import ProcessPanel from './editors/ProcessPanel';
 import { FullBar, LangSeg, Snippets, SlotCode, TutorialCard } from './editors/Tutorial';
+import { StartGuide, type StartStep } from './stage/StartGuide';
 import ProcessFlow, { activePlan, initialFlow, REF_MARK, type FlowState } from './editors/ProcessFlow';
 import PyPanel from './editors/PyPanel';
 import RunBar from './tasks/RunBar';
@@ -162,6 +163,8 @@ const Stage = memo(
 const URDF_URL = '/robot/rdkx5/mycobot_280_rdkx5.urdf';
 const GRIPPER_URDF_URL = '/robot/rdkx5/mycobot_280_rdkx5_adaptive_gripper.urdf';
 const TAB_KEY = 'robot-console-tab';
+/** 처음 시작: the steps done and whether the guide is folded (this PC). */
+const START_KEY = 'robot-console-start';
 /** The 공정 짜기 process being made (its project-file text). */
 const PROCESS_KEY = 'robot-console-process';
 /** 공정 짜기: the step, the practice, the taught places and the rules. */
@@ -526,9 +529,6 @@ export default function Console() {
   }, [robotId]);
   /** Drawing aids of the 3D view (frames, joint axes, path, grid, reach), kept in this browser. */
   const [display, setDisplay] = useState<DisplayOpts>(DEFAULT_DISPLAY);
-  useEffect(() => {
-    miniShown.current = display.mini;
-  }, [display.mini]);
   // A run is over when nothing is busy any more: the panels come back. The run flag is set a moment
   // before the program turns busy, so wait until it has been busy (or 3 s, for a run that never starts).
   const runSawBusy = useRef(false);
@@ -691,6 +691,9 @@ export default function Console() {
     const rect = (sel: string) => sh.ownerDocument.querySelector<HTMLElement>(sel)?.getBoundingClientRect();
     const hud = rect('[data-panel="hud"]');
     if (hud && hud.width) l = Math.max(l, hud.right - v.left + 12);
+    // The 처음 시작 card under the title: the robot is framed to its right while it is open.
+    const guide = rect('[data-panel="start"]');
+    if (guide && guide.width) l = Math.max(l, guide.right - v.left + 12);
     const tools = rect('[data-panel="viewtools"]');
     const top = rect('[data-panel="topbar"]');
     return {
@@ -706,6 +709,31 @@ export default function Console() {
 
   /** While a terminal python3 runs: the run's messages are printed there too. */
   const termSink = useRef<((kind: LogKind, msg: string, fix?: string) => void) | null>(null);
+  // 처음 시작: three steps for someone opening the simulator the first time (StartGuide).
+  const [start, setStart] = useState<{ done: StartStep[]; folded: boolean }>({ done: [], folded: false });
+  useEffect(() => {
+    try {
+      const s = JSON.parse(localStorage.getItem(START_KEY) ?? 'null') as { done?: StartStep[]; folded?: boolean } | null;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- read after hydration
+      if (s) setStart({ done: s.done ?? [], folded: !!s.folded });
+    } catch {
+      /* private window */
+    }
+  }, []);
+  const saveStart = (next: { done: StartStep[]; folded: boolean }) => {
+    setStart(next);
+    try {
+      localStorage.setItem(START_KEY, JSON.stringify(next));
+    } catch {
+      /* this session only */
+    }
+  };
+  const markStart = (step: StartStep) => {
+    if (start.done.includes(step)) return;
+    const done = [...start.done, step];
+    // All three done: the guide folds itself away.
+    saveStart({ done, folded: done.length >= 3 || start.folded });
+  };
   const addLog = useCallback((kind: LogKind, msg: string, fix?: string) => {
     termSink.current?.(kind, msg, fix);
     // A touch (the desk, the kit, an object): the joints it is about show red on the 3D arm for a moment.
@@ -1795,6 +1823,8 @@ export default function Console() {
         }
       : null;
   const passedRun = (text: string, actions: RobotAction[], start?: number[]) => {
+    if (tab === 'process') markStart('process');
+    else if (tab === 'basic') markStart('code');
     // A passed run of a coding tutorial moves it on to its next step.
     if (tab !== 'process' && tutStep < tut.steps.length - 1) setTutStep(tutStep + 1);
     setBadge(null);
@@ -2053,7 +2083,7 @@ export default function Console() {
    * 관절로 그려 보기 (pen practices, simulator): the drawing rows run as MOVE J instead of MOVE L,
    * and the pen line shows how far a joint move bends off the straight line (measured on the paper).
    */
-  const [jointTry, setJointTry] = useState<{ key: string; bowMm: number } | null>(null);
+  const [jointTry, setJointTry] = useState<{ key: string; bowMm: number; trail: [number, number][][] } | null>(null);
   const tryJointDraw = async () => {
     if (!loaded || busy || robotMode) return;
     const rows = proc.rows.map((r) => (r.kind === 'move' && r.mode === 'L' && /→/.test(r.note ?? '') ? { ...r, mode: 'J' as const } : r));
@@ -2074,7 +2104,7 @@ export default function Console() {
         ),
       );
     const bowMm = Math.round(Math.max(0, ...world.current.trail.flat().map(([x, y]) => off(x, y))) * 10) / 10;
-    setJointTry({ key: planKey, bowMm });
+    setJointTry({ key: planKey, bowMm, trail: world.current.trail.map((st) => st.slice()) });
     addLog('info', `관절로 그렸더니 선이 곧은 선에서 최대 ${bowMm} mm 휘었어요. 관절이 함께 돌면 손끝은 곡선으로 가요.`, '▶ 로 다시 실행하면 곧게(MOVE L) 그려요. 두 선을 비교해 보세요.');
   };
   /** 한 줄씩: one row from where the arm is (the simulated arm only). */
@@ -3478,7 +3508,7 @@ export default function Console() {
           }
         : flow.mode === 'free'
           ? null
-          : { spots: built.marks, path: built.path, legs: planLegs }
+          : { spots: built.marks, path: built.path, legs: planLegs, ghost: jointTry?.key === planKey ? jointTry.trail : undefined }
       : null;
   const runBar = (
     <RunBar
@@ -3507,14 +3537,29 @@ export default function Console() {
       busy={busy || !loaded || (robotMode && (!robot?.connected || !!robot?.released))}
       real={robotMode}
       onJointPreview={setJoint}
-      onJointCommit={jointCommit}
-      onJointStep={jointStep}
-      onTipStep={tipStep}
+      onJointCommit={(...a: Parameters<typeof jointCommit>) => {
+        markStart('move');
+        return jointCommit(...a);
+      }}
+      onJointStep={(i, d) => {
+        markStart('move');
+        jointStep(i, d);
+      }}
+      onTipStep={(a, d) => {
+        markStart('move');
+        tipStep(a, d);
+      }}
       blocked={tipBlocked}
       onToolDown={toolDown}
       onHome={() => goPose('home')}
-      onJointJog={(i, dir) => startJog({ joint: i, dir })}
-      onTipJog={(axis, dir, scale) => startJog({ axis, dir, scale })}
+      onJointJog={(i, dir) => {
+        markStart('move');
+        startJog({ joint: i, dir });
+      }}
+      onTipJog={(axis, dir, scale) => {
+        markStart('move');
+        startJog({ axis, dir, scale });
+      }}
       onJogStop={() => endJog()}
       selected={jogJoint}
       onSelect={setJogJoint}
@@ -3605,6 +3650,12 @@ export default function Console() {
       ],
     },
   ];
+  // The mini arm repeats the joint numbers the 제어 panel shows: off while that panel is open.
+  const miniWanted = display.mini && !(dockShown && workScreen === 'jog');
+  const miniOn = miniWanted && !railOpen && !cellAt;
+  useEffect(() => {
+    miniShown.current = miniWanted;
+  }, [miniWanted]);
   const barFoot: BarItem[] = [{ ...work('zero', '영점', 'zero', robotMode ? '영점 맞추기' : '로봇을 연결하면 영점을 맞춰요'), disabled: !robotMode || (busy && !zeroMode) }];
   /** The 3D view's top-left corner: the arm's name and ROBOT LINK, when no cell or window is there. */
   const stageTitle = !!loaded && view === 'sim' && !cellAt && !railOpen;
@@ -4240,7 +4291,7 @@ export default function Console() {
             checks={mode !== 'check' ? [] : [{ icon: 'doc', title: '검수 결과표', note: '검수 1~7 의 시각 · 실측값 한 장 (열어서 인쇄 → PDF)', action: '저장', run: saveReport, file: '검수결과표.html' }]}
           />
         )}
-        <div ref={shellRef} className={css.shell} data-dock={dockShown ? 'open' : 'closed'} data-side={side} data-tab={shownTab === 'direct' ? 'direct' : 'code'} data-mini={display.mini && !railOpen ? 'on' : 'off'} style={view !== 'sim' ? { display: 'none' } : undefined}>
+        <div ref={shellRef} className={css.shell} data-dock={dockShown ? 'open' : 'closed'} data-side={side} data-tab={shownTab === 'direct' ? 'direct' : 'code'} data-mini={miniOn ? 'on' : 'off'} style={view !== 'sim' ? { display: 'none' } : undefined}>
           <section className={`${css.panel} ${css.stageCol}`} aria-label="시뮬레이션">
             <div className={css.viewport} data-viewport>
               {loadError ? (
@@ -4255,7 +4306,7 @@ export default function Console() {
                   mountMm={mountMm}
                   ghost={ghostWanted && !replay && ghost && ghost.code === code ? ghost.angles : null}
                   monitor={monitor}
-                  miniRect={display.mini && view === 'sim' && !railOpen && !cellAt ? miniPlace : null}
+                  miniRect={miniOn && view === 'sim' ? miniPlace : null}
                   desk={{
                     scene: desk.scene,
                     objects: desk.objects,
@@ -4281,7 +4332,7 @@ export default function Console() {
                   cellTags={cellTags.length ? cellTags : cellAt?.mission && !busy ? cellStepTags(cellAt.cell, missionById(cellAt.mission)?.n ?? 1) : []}
                   display={display}
                   frameInsets={frameInsets}
-                  layoutKey={`${dockShown}:${side}:${camOpen}:${display.mini}`}
+                  layoutKey={`${dockShown}:${side}:${camOpen}:${miniWanted}:${start.folded}`}
                   onReady={onStageReady}
                   onRenderError={onRenderError}
                   onSlow={onSlow}
@@ -4435,7 +4486,7 @@ export default function Console() {
                 />
               )}
               {loaded && view === 'sim' && cellAt && railOpen !== 'monitor' && cellLayout(cellAt.cell).line.camera && <CellCamera world={world} cell={cellAt.cell} />}
-              {loaded && view === 'sim' && display.mini && !railOpen && !cellAt && <MiniArmLabels monitor={monitor} live={live} tipOf={tipOf} side="right" />}
+              {loaded && view === 'sim' && miniOn && <MiniArmLabels monitor={monitor} live={live} tipOf={tipOf} side="right" />}
               {stageTitle && (
                 <StageTitle
                   link={!robotMode ? 'sim' : robot?.connected ? 'real' : 'lost'}
@@ -4446,7 +4497,19 @@ export default function Console() {
                   arm={arm.name}
                   screen={[SCREEN_EN[workScreen] ?? 'VIEW', SCREEN_TITLE[workScreen] ?? '보기']}
                   onLink={() => setConnectOpen(true)}
-                />
+                >
+                  <StartGuide
+                    done={start.done}
+                    folded={start.folded}
+                    onFold={(folded) => saveStart({ ...start, folded })}
+                    onOpen={(step) => {
+                      const id = step === 'move' ? 'jog' : step === 'process' ? 'process' : 'basic';
+                      if (dockShown && workScreen === id) return;
+                      if (step === 'code') openTab('basic');
+                      else openWork(id);
+                    }}
+                  />
+                </StageTitle>
               )}
               {loaded && view === 'sim' && !railOpen && !cellAt && <HudGauges speed={jogSpeed} monitor={monitor} dock={dockShown ? 'open' : 'closed'} />}
               {loaded && view === 'sim' && (

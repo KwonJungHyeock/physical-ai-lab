@@ -225,3 +225,138 @@
     opacity: 0.4;
   }
 }
+
+/* 처음 시작 (StartGuide.tsx): three steps under ROBOT LINK; the step to do now is the lit one. */
+.start {
+  pointer-events: auto;
+  margin-top: 12px;
+  width: 300px;
+  padding: 10px 10px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  background: rgba(30, 33, 38, 0.86);
+  box-shadow: var(--hud-key-shadow);
+  backdrop-filter: blur(6px);
+}
+.start header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 0 2px 6px;
+}
+.start header b {
+  font-size: 14px;
+  color: #fff;
+}
+.start header small {
+  font-size: 12px;
+  color: var(--hud-sub);
+}
+.start header button {
+  margin-left: auto;
+  border: 0;
+  background: none;
+  color: var(--hud-sub);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.start ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+.start li button {
+  width: 100%;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--hud-tx);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.start li button:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.start li i {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: var(--hud-sub);
+}
+.start li span {
+  display: grid;
+  gap: 1px;
+}
+.start li b {
+  font-size: 13px;
+}
+.start li small {
+  font-size: 11.5px;
+  color: var(--hud-sub);
+}
+.start li[data-now] button {
+  background: var(--hud-silver);
+  box-shadow: var(--hud-silver-shadow);
+  color: var(--hud-ink);
+}
+.start li[data-now] small {
+  color: var(--hud-ink-sub);
+}
+.start li[data-now] i {
+  border-color: var(--hud-ink);
+  color: var(--hud-ink);
+}
+.start li[data-done] i {
+  border-color: transparent;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+.start li[data-done] b {
+  color: var(--hud-sub);
+}
+.start p {
+  margin: 6px 2px 0;
+  font-size: 12px;
+  color: var(--hud-sub);
+}
+.startChip {
+  pointer-events: auto;
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  background: var(--hud-key);
+  box-shadow: var(--hud-key-shadow);
+  color: var(--hud-sub);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.startChip b {
+  color: #fff;
+}
+.startChip svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}

@@ -89,7 +89,7 @@ const ICON: Record<ObjectKind, ReactNode> = {
   ),
 };
 
-const THUMB: Partial<Record<SceneId, string>> = { lab: '/sim/scenes/lab.jpg', factory: '/sim/scenes/factory.jpg', logistics: '/sim/scenes/logistics.jpg', home: '/sim/scenes/home.jpg' };
+const THUMB: Partial<Record<SceneId, string>> = { kit: '/library/scene-kit.gif', lab: '/sim/scenes/lab.jpg', factory: '/sim/scenes/factory.jpg', logistics: '/sim/scenes/logistics.jpg', home: '/sim/scenes/home.jpg' };
 
 interface Props {
   desk: Desk;
@@ -189,7 +189,6 @@ export default function DeskPanel(p: Props) {
                 <span key={s.id} className={css.sceneItem}>
                   <button type="button" className={css.scene} aria-pressed={!inCell && p.scene === s.id} disabled={p.busy} onClick={() => p.onScene(s.id)}>
                     <span className={css.im} data-scene={s.id} style={THUMB[s.id] ? { backgroundImage: `url(${THUMB[s.id]})` } : undefined}>
-                      {s.id === 'kit' ? 'AI 키트' : s.id === 'empty' ? '' : null}
                     </span>
                     <b>{s.name}</b>
                     <small>{s.note}</small>

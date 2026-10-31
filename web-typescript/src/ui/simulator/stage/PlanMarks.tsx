@@ -17,6 +17,8 @@ export interface PlanMarksData {
   path: { x: number; y: number; z: number }[];
   /** The path leg by leg as the arm goes (else `path` as one line): J (관절로) a dashed curve, L (곧게) a solid straight line. */
   legs?: { mode: 'J' | 'L'; pts: { x: number; y: number; z: number }[] }[];
+  /** The pen line of the last 관절로 그려 보기 (mm on the paper), kept faint to compare with the straight one. */
+  ghost?: [number, number][][];
 }
 
 const m = (mm: number) => mm / 1000;
@@ -31,6 +33,11 @@ export default function PlanMarks({ marks, layer }: { marks: PlanMarksData; laye
   });
   return (
     <group ref={g}>
+      {marks.ghost
+        ?.filter((st) => st.length > 1)
+        .map((st, k) => (
+          <Line key={`g${k}`} points={st.map(([x, y]) => [m(x), m(y), 0.0006] as [number, number, number])} color="#7f8a96" lineWidth={2} transparent opacity={0.7} depthTest={false} />
+        ))}
       {marks.legs
         ? marks.legs.map((l, k) =>
             l.mode === 'J' ? (

@@ -897,6 +897,7 @@ function JointTry(p: Props) {
         </dt>
         <dd>손끝이 직선으로 가요. 그릴 때 · 블록에 내려갈 때 써요.</dd>
       </dl>
+      <small>3D 의 회색 선이 방금 관절로 그린 선이에요. 곧게 다시 그려 두 선을 비교해 보세요.</small>
       <button type="button" className={css.btn} disabled={p.busy} onClick={p.onRun}>
         곧게 다시 그리기
       </button>
