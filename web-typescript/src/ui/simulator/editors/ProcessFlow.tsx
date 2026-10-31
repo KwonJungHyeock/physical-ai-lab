@@ -61,6 +61,8 @@ export interface FlowState {
   /** 영점 확인: the marks lined up (robot), and how far the tip missed the + mark, mm. */
   marksOk: boolean | null;
   missMm: number | null;
+  /** 손 시연: the rows came from 손 따라하기 ([공정으로]), apart from any practice — no places or tool to fit. */
+  demo?: boolean;
 }
 
 export const REF_MARK: Spot = { x: 200, y: 0, z: 0 };
@@ -215,14 +217,14 @@ function Fold({ icon, title, open, children }: { icon: string; title: ReactNode;
 }
 
 /** The step's head: its icon, "n / 4", its name and the one line of what to do now. */
-function Head({ step, now }: { step: FlowStep; now: { tone: string; text: string } }) {
+function Head({ step, now, title }: { step: FlowStep; now: { tone: string; text: string }; title?: string }) {
   const s = STEPS[step - 1];
   return (
     <div className={css.head}>
       <span className={css.headIcon}>{ICON[s.icon]}</span>
       <div>
         <em>{step} / 4</em>
-        <h3>{s.name}</h3>
+        <h3>{title ?? s.name}</h3>
       </div>
       <p data-tone={now.tone || undefined}>{now.text}</p>
     </div>
@@ -243,6 +245,9 @@ function Item({ icon, done, bad, now, title, line, children }: { icon: string; d
   );
 }
 
+/** Back from a 손 시연 to the practices: their own rows again (바꿔 보기). */
+const leaveDemo: Partial<FlowState> = { step: 2, demo: false, mode: 'change' };
+
 export default function ProcessFlow(p: Props) {
   const f = p.flow;
   const set = (patch: Partial<FlowState>) => p.onFlow({ ...f, ...patch });
@@ -255,7 +260,7 @@ export default function ProcessFlow(p: Props) {
       {STEPS.map((s, k) => {
         const n = (k + 1) as FlowStep;
         return (
-          <button key={s.name} type="button" aria-current={f.step === n ? 'step' : undefined} data-done={f.step > n || undefined} disabled={p.busy} onClick={() => set({ step: n })} title={s.name}>
+          <button key={s.name} type="button" aria-current={f.step === n ? 'step' : undefined} data-done={f.step > n || undefined} disabled={p.busy} onClick={() => set(f.demo && n === 2 ? leaveDemo : { step: n })} title={s.name}>
             <i>{f.step > n ? ICON.tick : ICON[s.icon]}</i>
             <span>{s.short}</span>
           </button>
@@ -269,7 +274,7 @@ export default function ProcessFlow(p: Props) {
       {steps}
       {f.step === 1 && <BaseStep {...p} />}
       {f.step === 2 && <ChooseStep {...p} />}
-      {f.step === 3 && <TeachStep {...p} plan={plan} teach={teach} setPlan={setPlan} />}
+      {f.step === 3 && (f.demo ? <DemoStep {...p} /> : <TeachStep {...p} plan={plan} teach={teach} setPlan={setPlan} />)}
       {f.step === 4 && <ResultStep {...p} />}
     </div>
   );
@@ -582,6 +587,33 @@ function ChooseStep(p: Props) {
           이 실습으로 시작 ›
         </button>
       </div>
+    </>
+  );
+}
+
+/* --- 3 손 시연: the shown path's rows, to run, fix and save ------------------------- */
+
+function DemoStep(p: Props) {
+  const moves = p.process.rows.filter((r) => r.kind === 'move').length;
+  return (
+    <>
+      <div className={css.body}>
+        <div className={css.practice}>
+          {ICON.points}
+          <b>손 시연</b>
+          <button type="button" className={css.link} disabled={p.busy} onClick={() => p.onFlow({ ...p.flow, ...leaveDemo })} title="실습을 골라 그 실습의 공정으로 돌아가요">
+            실습 고르기로
+          </button>
+        </div>
+        <Head step={3} title="손 시연 고치기" now={{ tone: '', text: '손으로 보여 준 길이에요. ▶ 시뮬레이션으로 확인하고, 줄을 고치거나 공정 파일로 저장해요.' }} />
+        <section className={css.sec}>
+          <h4>
+            동작 줄 <small>점 {moves}개 · MOVE J 로 첫 점에 가서 MOVE L 로 이어요</small>
+          </h4>
+          <div className={css.free}>{p.editor}</div>
+        </section>
+      </div>
+      {p.runBar}
     </>
   );
 }
@@ -948,8 +980,8 @@ function ResultStep(p: Props) {
           </div>
           <div>
             {ICON.cube}
-            <small>{prac.group === 'carry' ? '옮긴 블록' : '동작 줄'}</small>
-            <b>{prac.group === 'carry' ? (r?.total ? `${r.placed ?? 0} / ${r.total}` : '–') : `${rows.length} 줄`}</b>
+            <small>{prac.group === 'carry' && !p.flow.demo ? '옮긴 블록' : '동작 줄'}</small>
+            <b>{prac.group === 'carry' && !p.flow.demo ? (r?.total ? `${r.placed ?? 0} / ${r.total}` : '–') : `${rows.length} 줄`}</b>
           </div>
         </div>
         {prac.group === 'path' && p.flow.mode !== 'free' && p.onTryJoint && (r || p.jointTry != null) && <JointTry {...p} />}

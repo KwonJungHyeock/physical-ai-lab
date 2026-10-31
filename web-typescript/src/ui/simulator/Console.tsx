@@ -112,7 +112,6 @@ import DemoCaption from './stage/DemoCaption';
 import { ResultCard, RunTimeline, applyFrame, snapshot, type Replay } from './stage/RunReplay';
 import Hud, { type HudStatus } from './stage/Hud';
 import Intro, { skipIntroOnce } from './connect/Intro';
-import FirstGuide, { resetFirstGuide } from './connect/FirstGuide';
 import HelpSheet from './connect/HelpSheet';
 import { announceRobotStop } from './connect/robotStop';
 import ModelPicker from './connect/ModelPicker';
@@ -458,9 +457,8 @@ export default function Console() {
   // 공정 works on the practice mat too (its example picks a block from it).
   setMatNeeded(practiceUsesMat(practice.id) || tab === 'process' || aiMat);
   const [picking, setPicking] = useState(false);
-  /** [?] 도움말 open; the first-run guide's mount number (a new one shows the steps again). */
+  /** [?] 도움말 open. */
   const [helpOpen, setHelpOpen] = useState(false);
-  const [guideRun, setGuideRun] = useState(0);
   const router = useRouter();
   /** The 로봇 연결 dialog. */
   const [connectOpen, setConnectOpen] = useState(false);
@@ -3295,7 +3293,7 @@ export default function Console() {
     if (!handDemo?.points.length) return;
     const p = demoProcess(handDemo.points, handGrip);
     changeProcess(p);
-    setFlow({ ...flow, mode: 'free', step: 3 });
+    setFlow({ ...flow, mode: 'free', step: 3, demo: true });
     openWork('process');
     addLog('info', `시연을 공정 ${p.rows.length}줄로 옮겼어요. 직접 짜기에서 점을 고치거나 저장해요.`);
   };
@@ -4090,9 +4088,8 @@ export default function Console() {
         <HelpSheet
           onClose={() => setHelpOpen(false)}
           onGuide={() => {
-            resetFirstGuide();
             chooseView('sim');
-            setGuideRun((n) => n + 1);
+            saveStart({ ...start, folded: false });
           }}
         />
       )}
@@ -4508,7 +4505,6 @@ export default function Console() {
                     : '3D 로봇 모델이 아직 안 보여요. 새로고침(F5) 해 보고, 그래도 안 되면 크롬이나 엣지 최신 버전으로 열어 주세요.'}
                 </div>
               )}
-              {view === 'sim' && !showPicker && !connectOpen && !pcOffer && <FirstGuide key={guideRun} side={side} />}
               {pcOffer && !showPicker && !connectOpen && (
                 <div className={css.pcOffer} role="dialog" aria-label="PC 프로그램 받기">
                   <span className={css.pcOfferIcon}>
@@ -4662,6 +4658,7 @@ export default function Console() {
                   <StartGuide
                     done={start.done}
                     folded={start.folded}
+                    tip={!miniOn}
                     onFold={(folded) => saveStart({ ...start, folded })}
                     onOpen={(step) => {
                       const id = step === 'move' ? 'jog' : step === 'process' ? 'process' : 'basic';

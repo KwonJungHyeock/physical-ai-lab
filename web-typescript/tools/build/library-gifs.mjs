@@ -66,7 +66,7 @@ await ctx.addInitScript(() => {
   try {
     localStorage.setItem('robot-console-model', 'mycobot280-rdkx5');
     localStorage.setItem('robot-console-level', 'basic');
-    localStorage.setItem('console-guide-done', '1');
+    localStorage.setItem('robot-console-start', JSON.stringify({ done: [], folded: true }));
     localStorage.setItem('robot-console-pc-offered', '1');
     // No axes, joint points or see-through arm over the robot; the panels stay put while a program runs.
     localStorage.setItem('robot-console-display', JSON.stringify({ baseAxes: false, ghost: false, autoFold: false }));

@@ -27,7 +27,7 @@ export async function launch({ width = 1600, height = 900, storage = {} } = {}) 
     } catch {
       /* private */
     }
-  }, { 'console-guide-done': '1', ...storage });
+  }, { 'robot-console-start': JSON.stringify({ done: [], folded: true }), ...storage });
   const page = await ctx.newPage();
   page.setDefaultTimeout(15000);
   return { browser, ctx, page };

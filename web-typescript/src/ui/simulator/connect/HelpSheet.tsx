@@ -100,7 +100,7 @@ export default function HelpSheet({ onClose, onGuide }: { onClose(): void; onGui
               onClose();
             }}
           >
-            처음 쓰는 방법 다시 보기
+            처음 시작 안내 다시 보기
           </button>
           <a href="/guides/basic-student.pdf" target="_blank" rel="noreferrer">
             <Icon name="book" size={16} /> 기초 사용 매뉴얼 (PDF)
