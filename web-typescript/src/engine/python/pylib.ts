@@ -169,9 +169,6 @@ class MyCobot280RDKX5:
     def get_angles(self):
         return [round(a, 2) for a in _sim.angles().to_py()][: _dof()]
 
-    def get_radians(self):
-        return [round(math.radians(a), 3) for a in self.get_angles()]
-
     def get_coords(self):
         c = [round(c, 2) for c in _sim.coords().to_py()]
         return _four(c) if _dof() == 4 else c
@@ -209,9 +206,6 @@ class MyCobot280RDKX5:
         target[joint_id - 1] = angle
         _sim.move(_six(target), speed, "send_angle", line())
         return 1
-
-    def send_radians(self, radians, speed):
-        return self.send_angles([math.degrees(r) for r in radians], speed)
 
     def send_coords(self, coords, speed, coord_mode=None, _async=False):
         # coord_mode: 0 (or left out) = angular, each joint the short way; 1 = linear, the tool in a straight line.
@@ -312,17 +306,6 @@ class MyCobot280RDKX5:
         # The opening the gripper was last set to: 0 closed .. 100 open.
         _check(gripper_type=gripper_type)
         return int(_sim.gripper_value())
-
-    def set_basic_output(self, pin_no, pin_signal):
-        if pin_signal not in (0, 1):
-            raise ValueError(f"The data supported by parameter pin_signal is 0 or 1, but the received value is {pin_signal}")
-        _sim.basic_out(int(pin_no), int(pin_signal), line())
-        return 1
-
-    def get_basic_input(self, pin_no):
-        return _sim.basic_get(int(pin_no))
-
-
 class MyCobot280RDKX5Socket(MyCobot280RDKX5):
     """PC 에서 로봇의 소켓 서버(포트 30002)로 제어할 때 쓰는 클래스 (시뮬레이터에서는 같은 동작)."""
 
@@ -363,6 +346,22 @@ class _Classic(MyCobot280RDKX5):
 
     def jog_increment_coord(self, id, increment, speed, _async=False):
         return super().jog_increment_coord(id, increment, speed)
+
+    # Older pymycobot classes (CommandGenerator) have these; MyCobot280RDKX5 (4.0.x) does not.
+    def get_radians(self):
+        return [round(math.radians(a), 3) for a in self.get_angles()]
+
+    def send_radians(self, radians, speed):
+        return self.send_angles([math.degrees(r) for r in radians], speed)
+
+    def set_basic_output(self, pin_no, pin_signal):
+        if pin_signal not in (0, 1):
+            raise ValueError(f"The data supported by parameter pin_signal is 0 or 1, but the received value is {pin_signal}")
+        _sim.basic_out(int(pin_no), int(pin_signal), line())
+        return 1
+
+    def get_basic_input(self, pin_no):
+        return _sim.basic_get(int(pin_no))
 
 
 class MyCobot280(_Classic):

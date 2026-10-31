@@ -323,6 +323,15 @@ time.sleep(3)
   console.log('  ok   a collision during playback points at the line that sent the move');
 }
 
+// MyCobot280RDKX5 has only what pymycobot 4.0.x's class has: no basic IO, no radians (the older arms' classes do).
+{
+  for (const call of ['mc.set_basic_output(5, 0)', 'mc.get_basic_input(1)', 'mc.get_radians()', 'mc.send_radians([0, 0, 0, 0, 0, 0], 50)']) {
+    const r = run(`from pymycobot import MyCobot280RDKX5\nmc = MyCobot280RDKX5("/dev/ttyS1")\n${call}\n`);
+    assert.ok(!r.ok && r.error?.type === 'AttributeError' && r.error.line === 3, `${call}: ${JSON.stringify(r.error)}`);
+  }
+  console.log('  ok   MyCobot280RDKX5 refuses set_basic_output · get_basic_input · get_radians · send_radians (AttributeError, as on the robot)');
+}
+
 /* --- ROS 2 ---------------------------------------------------------------------- */
 {
   const r = run(

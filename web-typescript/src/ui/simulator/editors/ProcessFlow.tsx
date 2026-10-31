@@ -674,9 +674,7 @@ function TeachStep(p: Props & { plan: Plan; teach: ReturnType<typeof teachOf>; s
                 <div className={css.pt} data-on={on || undefined} data-done={s ? true : undefined} onClick={() => !locked && setPicked(k)}>
                   <i>{s ? ICON.tick : t.tag}</i>
                   <span>
-                    <b>
-                      {t.tag} {t.label}
-                    </b>
+                    <b>{t.label.startsWith(t.tag) ? t.label : `${t.tag} ${t.label}`}</b>
                     <small>{s ? (t.zOnly ? `Z ${r1(s.z)} (종이 높이)` : xyz(s)) : on ? '[제어]로 팔을 옮긴 뒤 저장하세요' : '아직 저장 안 함'}</small>
                   </span>
                   <span className={css.ptEnd}>
