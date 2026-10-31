@@ -3285,16 +3285,19 @@ export default function Console() {
       world.current.version += 1;
     }
     addLog('sim', `시연을 재생해요: 점 ${handDemo.points.length}개를 MOVE J · L 로 이어요.`);
-    const { ok } = await execute((h) => runProcess(compileProcess(p), h, p.speed), { reset: false, label: true });
+    // The timeline names its marks by the demonstration's rows (MOVE L 시연 3), not by the program in the code tab.
+    const names = p.rows.map((r) => (r.kind === 'move' ? `MOVE ${r.mode} ${r.note ?? ''}` : r.kind === 'grip' ? `그리퍼 ${r.open ? '열기' : '닫기'}` : `대기 ${r.sec}초`)).join('\n');
+    const { ok } = await execute((h) => runProcess(compileProcess(p), h, p.speed), { reset: false, label: true, program: names });
     if (ok) addLog('ok', '로봇이 시연한 길을 따라 했어요.', '[공정으로]를 누르면 줄을 고치거나 파일로 저장할 수 있어요.');
   };
   /** 공정으로: the demonstration as rows of 공정 직접 짜기. */
   const demoToProcess = () => {
     if (!handDemo?.points.length) return;
-    changeProcess(demoProcess(handDemo.points, handGrip));
+    const p = demoProcess(handDemo.points, handGrip);
+    changeProcess(p);
     setFlow({ ...flow, mode: 'free', step: 3 });
     openWork('process');
-    addLog('info', `시연을 공정 ${handDemo.points.length + (handGrip ? 1 : 0)}줄 이상으로 옮겼어요. 직접 짜기에서 점을 고치거나 저장해요.`);
+    addLog('info', `시연을 공정 ${p.rows.length}줄로 옮겼어요. 직접 짜기에서 점을 고치거나 저장해요.`);
   };
 
   const goPose = (which: 'home' | 'zero') => void goJoints(which === 'home' ? arm.home.slice() : arm.zero.slice(), which === 'home' ? '기본 자세' : '0° 자세');
