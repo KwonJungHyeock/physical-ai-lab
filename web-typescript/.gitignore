@@ -40,4 +40,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 /public/pyodide/
+/public/vision/vision_wasm_*
 /public/sw.js

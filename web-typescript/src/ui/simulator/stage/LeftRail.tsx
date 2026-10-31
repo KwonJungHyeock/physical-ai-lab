@@ -29,7 +29,7 @@ export interface BarItem {
 }
 
 /** Each item's English tag over its Korean name (Metal Mission HUD). */
-const EN: Record<string, string> = { jog: 'CONTROL', parts: 'TOOL', pose: 'POSE', process: 'TASK', code: 'CODE', ai: 'AI', env: 'SCENE', objects: 'ITEM', camera: 'CAMERA', monitor: 'DATA', zero: 'ZERO' };
+const EN: Record<string, string> = { jog: 'CONTROL', parts: 'TOOL', pose: 'POSE', process: 'TASK', hand: 'HAND', code: 'CODE', ai: 'AI', env: 'SCENE', objects: 'ITEM', camera: 'CAMERA', monitor: 'DATA', zero: 'ZERO' };
 
 export default function LeftRail({ groups, foot, sheetOpen, onCloseSheet, children }: { groups: { name: string; items: BarItem[] }[]; foot?: BarItem[]; sheetOpen: boolean; onCloseSheet(): void; children?: ReactNode }) {
   useEffect(() => {

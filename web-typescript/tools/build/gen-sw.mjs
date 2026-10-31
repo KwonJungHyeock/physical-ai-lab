@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 
 const web = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const pub = join(web, 'public');
-const DIRS = ['robot', 'draco', 'pyodide', 'icons', 'brand', 'materials', 'guides', 'education', 'library'];
+const DIRS = ['robot', 'draco', 'pyodide', 'vision', 'icons', 'brand', 'materials', 'guides', 'education', 'library'];
 
 const files = [];
 const walk = (dir) => {

@@ -10,6 +10,7 @@ const web = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const target = join(web, '..', 'robot-python', 'server', 'static');
 
 execSync('node tools/build/copy-pyodide.mjs', { cwd: web, stdio: 'inherit' });
+execSync('node tools/build/copy-vision.mjs', { cwd: web, stdio: 'inherit' });
 execSync('node tools/build/gen-sw.mjs', { cwd: web, stdio: 'inherit' });
 execSync('npx next build', { cwd: web, stdio: 'inherit', env: { ...process.env, ROBOT_EXPORT: '1' } });
 // With distDir set (next.config.ts), the static export lands in that folder.

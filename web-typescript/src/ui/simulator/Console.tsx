@@ -87,7 +87,7 @@ import type { PyOutput, PyResult } from '@/engine/python/types';
 import { buildChain, forwardKinematics, forwardKinematicsFrames, liftChain, solveIk, type ChainSegment } from '@/engine/robot/kinematics';
 import { jointMax, jointMin } from '@/engine/robot/limits';
 import { ARM_STOP_DEC_DEG_S2, tcpPositionMm } from '@/engine/robot/motion';
-import { STRAIGHT_DOWN, coordJogBlocked, currentOrientation, shiftTool, solveToolPose, toolTiltDeg, toolYawDeg, turnTool } from '@/engine/robot/tool';
+import { STRAIGHT_DOWN, coordJogBlocked, currentOrientation, shiftTool, solveToolPose, toolTiltDeg, toolYawDeg, turnTool, type PointMm } from '@/engine/robot/tool';
 import { parseUrdf, type UrdfRobot } from '@/engine/robot/urdf';
 import type { ImageLike } from '@/engine/vision/color';
 import { Divergence, findColor, offCentre, probeJacobian, stepTowards, type Seen } from '@/engine/vision/track';
@@ -123,6 +123,8 @@ import PartsPanel from './control/PartsPanel';
 import ProcessPanel from './editors/ProcessPanel';
 import { FullBar, LangSeg, Snippets, SlotCode, TutorialCard } from './editors/Tutorial';
 import { StartGuide, type StartStep } from './stage/StartGuide';
+import HandPanel, { type HandState } from './control/HandPanel';
+import { HandMapper, demoProcess, simplifyDemo, type DemoPoint, type DemoSample, type HandPose } from '@/engine/vision/hand';
 import ProcessFlow, { activePlan, initialFlow, REF_MARK, type FlowState } from './editors/ProcessFlow';
 import PyPanel from './editors/PyPanel';
 import RunBar from './tasks/RunBar';
@@ -957,6 +959,8 @@ export default function Console() {
   } | null>(null);
   /** The running 색 따라가기 (see startTracking); `alive` false asks it to stop. */
   const tracker = useRef<{ alive: boolean } | null>(null);
+  /** 손 따라하기 while the arm follows the hand (and records it). */
+  const follower = useRef<{ alive: boolean; mapper: HandMapper; target: PointMm | null; closed: boolean; rec: DemoSample[] | null; t0: number } | null>(null);
   /** Reused canvas for reading real camera frames. */
   const trackCanvas = useRef<HTMLCanvasElement | null>(null);
   /** The server's id for the run "로봇에서 실행" started; 0 when none. */
@@ -2342,7 +2346,8 @@ export default function Console() {
   );
 
   const stop = useCallback(() => {
-    const running = !!token.current || !!tracker.current?.alive || !!realRunRef.current || !!jog.current;
+    const running = !!token.current || !!tracker.current?.alive || !!realRunRef.current || !!jog.current || !!follower.current?.alive;
+    if (follower.current) follower.current.alive = false;
     // A held jog key (or a dragged slider) stops too, before the key is let go.
     if (jog.current) endJogRef.current?.();
     if (token.current) token.current.aborted = true;
@@ -3141,6 +3146,155 @@ export default function Console() {
     }
   };
 
+  /* --- 손 따라하기 (the PC camera's hand moves the tool; a shown path is replayed) ------- */
+  const handSeen = useRef<HandPose | null>(null);
+  const [handState, setHandState] = useState<HandState>('idle');
+  const [handWarn, setHandWarn] = useState<string | null>(null);
+  const [handClosed, setHandClosed] = useState(false);
+  const [handDemo, setHandDemo] = useState<{ seconds: number; points: DemoPoint[]; blocks: WorldState['blocks'] } | null>(null);
+  const [handRecS, setHandRecS] = useState(0);
+  const handGrip = EFFECTOR_BY_ID[effector].kind === 'grip';
+  const onHandPose = (pose: HandPose | null) => {
+    handSeen.current = pose;
+    const f = follower.current;
+    if (!f) return;
+    // Out of sight: the tool stays where it is until the hand comes back.
+    const out = pose ? f.mapper.update(pose) : null;
+    f.target = out?.target ?? null;
+    if (out) f.closed = out.closed;
+  };
+  /** Follow the hand: the tool goes after it at up to 150 mm/s, each step checked like a jog; a touch stops it. */
+  const followHand = async () => {
+    if (!loaded || busy || robotMode || follower.current) return;
+    const pose = handSeen.current;
+    const tip = tipOf(basePose());
+    if (!pose || !tip) return addLog('err', '손이 안 보여요.', '손바닥을 카메라 쪽으로 펴 주세요.');
+    const mapper = new HandMapper();
+    mapper.reference(pose, tip);
+    const f = { alive: true, mapper, target: null as PointMm | null, closed: mapper.closed, rec: null as DemoSample[] | null, t0: 0 };
+    follower.current = f;
+    if (jog.current) endJog();
+    setBusy(true);
+    setBadge(null);
+    setHandState('follow');
+    setHandWarn(null);
+    token.current = { aborted: false };
+    const isOpen = () => world.current.gapMm >= (EFFECTOR_BY_ID[world.current.effector].gapMm?.open ?? 0) - 0.5;
+    let closedNow = handGrip && !isOpen();
+    setHandClosed(closedNow);
+    let warn: string | null = null;
+    const say = (w: string | null) => {
+      if (w !== warn) setHandWarn((warn = w));
+    };
+    let failure: string | null = null;
+    let last = performance.now();
+    let lastRec = 0;
+    let frame = 0;
+    try {
+      while (f.alive) {
+        await new Promise((r) => requestAnimationFrame(() => r(null)));
+        const now = performance.now();
+        const dt = Math.min(0.1, (now - last) / 1000);
+        last = now;
+        if (handGrip && f.closed !== closedNow) {
+          await runProgram([{ type: 'grip', open: !f.closed, line: 0 }], { chain: loaded.chain, world: world.current, poses, animate, see: async () => null, log: (k, m) => addLog(k, m) });
+          closedNow = f.closed;
+          setHandClosed(closedNow);
+        }
+        const from = world.current.angles.slice();
+        const goal = f.target;
+        const cur = tipOf(from);
+        if (goal && cur) {
+          const d = { x: goal.x - cur.x, y: goal.y - cur.y, z: goal.z - cur.z };
+          const len = Math.hypot(d.x, d.y, d.z);
+          if (len > 0.8) {
+            const k = Math.min(len, 150 * dt) / len;
+            const sol = shiftTool(loaded.chain, from, { x: d.x * k, y: d.y * k, z: d.z * k }, 0.2);
+            if (!sol.converged || sol.anglesDeg.some((a, i) => Math.abs(a - from[i]) > 8)) say('팔이 그쪽으로 더 닿지 않아요. 손을 조금 되돌려 주세요.');
+            else {
+              const to = sol.anglesDeg.map((a, i) => Math.min(jointMax()[i], Math.max(jointMin()[i], a)));
+              const bad = jogTo(loaded.chain, world.current, to);
+              if (bad) {
+                world.current.angles = from;
+                failure = bad;
+                break;
+              }
+              say(null);
+            }
+          }
+        }
+        if (f.rec && now - lastRec >= 100) {
+          lastRec = now;
+          const at = tipOf(world.current.angles);
+          if (at) f.rec.push({ t: (now - f.t0) / 1000, tip: at, joints: world.current.angles.slice(), closed: closedNow });
+          if (f.rec.length % 5 === 0) setHandRecS((now - f.t0) / 1000);
+        }
+        if (++frame % 2 === 0) setAnglesView(world.current.angles.slice());
+      }
+    } catch (err) {
+      if (!(err instanceof Stop)) failure = err instanceof Error ? err.message : String(err);
+    } finally {
+      if (f.rec) finishDemo(f);
+      if (follower.current === f) follower.current = null;
+      f.alive = false;
+      token.current = null;
+      setAnglesView(world.current.angles.slice());
+      setHandState('idle');
+      setHandWarn(null);
+      setBusy(false);
+      if (failure) {
+        addLog('err', `손 따라하기: ${failure}`, '손을 천천히 움직여 다시 해 보세요.');
+        setBadge({ kind: 'stop', text: '손 따라하기 멈춤' });
+      }
+    }
+  };
+  /** The recording ends: the shown path, simplified to a few points (hand.ts simplifyDemo). */
+  const finishDemo = (f: NonNullable<typeof follower.current>) => {
+    const samples = f.rec ?? [];
+    f.rec = null;
+    if (samples.length < 3) return addLog('info', '녹화가 너무 짧아요. 손을 움직이며 다시 녹화해 보세요.');
+    const points = simplifyDemo(samples, 5);
+    const seconds = samples[samples.length - 1].t;
+    setHandDemo((d) => ({ seconds, points, blocks: d?.blocks ?? [] }));
+    addLog('ok', `시연을 ${seconds.toFixed(1)}초 녹화했어요. 지나간 길을 점 ${points.length}개로 줄였어요.`, '[재생]을 누르면 로봇이 같은 길을 따라 해요.');
+  };
+  const recordHand = (on: boolean) => {
+    const f = follower.current;
+    if (!f) return;
+    if (on) {
+      f.rec = [];
+      f.t0 = performance.now();
+      setHandRecS(0);
+      // The desk as it was when the showing began: 재생 starts from it again.
+      setHandDemo({ seconds: 0, points: [], blocks: world.current.blocks.map((b) => ({ ...b })) });
+      setHandState('record');
+    } else {
+      finishDemo(f);
+      setHandState('follow');
+    }
+  };
+  /** 재생: the desk back as it was, then the shown path as a process (MOVE J to its start, MOVE L along it). */
+  const replayHand = async () => {
+    if (!loaded || busy || !handDemo?.points.length) return;
+    const p = demoProcess(handDemo.points, handGrip);
+    if (handDemo.blocks.length) {
+      world.current.blocks = handDemo.blocks.map((b) => ({ ...b }));
+      world.current.held = null;
+      world.current.version += 1;
+    }
+    addLog('sim', `시연을 재생해요: 점 ${handDemo.points.length}개를 MOVE J · L 로 이어요.`);
+    const { ok } = await execute((h) => runProcess(compileProcess(p), h, p.speed), { reset: false, label: true });
+    if (ok) addLog('ok', '로봇이 시연한 길을 따라 했어요.', '[공정으로]를 누르면 줄을 고치거나 파일로 저장할 수 있어요.');
+  };
+  /** 공정으로: the demonstration as rows of 공정 직접 짜기. */
+  const demoToProcess = () => {
+    if (!handDemo?.points.length) return;
+    changeProcess(demoProcess(handDemo.points, handGrip));
+    setFlow({ ...flow, mode: 'free', step: 3 });
+    openWork('process');
+    addLog('info', `시연을 공정 ${handDemo.points.length + (handGrip ? 1 : 0)}줄 이상으로 옮겼어요. 직접 짜기에서 점을 고치거나 저장해요.`);
+  };
+
   const goPose = (which: 'home' | 'zero') => void goJoints(which === 'home' ? arm.home.slice() : arm.zero.slice(), which === 'home' ? '기본 자세' : '0° 자세');
 
   const toolStep = (step: Step, quiet = false) => {
@@ -3589,7 +3743,7 @@ export default function Console() {
       setRingJoint(null);
       setZeroMode(false);
     }
-    if (id === 'jog' || id === 'parts' || id === 'pose') {
+    if (id === 'jog' || id === 'parts' || id === 'pose' || id === 'hand') {
       openSection(id);
       return openTab('direct');
     }
@@ -3636,6 +3790,7 @@ export default function Console() {
       name: '작업',
       items: [
         work('process', '공정', 'flag', '공정 짜기: 위치를 가르쳐 옮기기 · 그리기'),
+        ...(!robotMode ? [{ ...work('hand', '손', 'hand', '손 따라하기: PC 카메라로 손을 보여 주면 로봇이 따라 하고, 시연한 길을 재생해요'), on: dockShown && workScreen === 'hand' }] : []),
         { ...work('code', '코딩', 'code', '코딩: 블록 · Python · ROS 2 (튜토리얼)'), on: dockShown && (workScreen === 'basic' || workScreen === 'python' || workScreen === 'ros') },
         ...(aiAvailable ? [work('ai', 'AI', 'spark', 'AI 에게 시키기: 말로 시키면 바로 움직이거나 블록을 짜 줘요', true)] : []),
       ],
@@ -3660,8 +3815,8 @@ export default function Console() {
   /** The 3D view's top-left corner: the arm's name and ROBOT LINK, when no cell or window is there. */
   const stageTitle = !!loaded && view === 'sim' && !cellAt && !railOpen;
   /** The open screen in the 3D view's corner: [English, Korean]. */
-  const SCREEN_EN: Record<string, string> = { jog: 'CONTROL', parts: 'TOOL', pose: 'POSE', zero: 'ZERO', process: 'TASK', basic: 'CODE', python: 'CODE', ros: 'CODE', ai: 'AI' };
-  const SCREEN_TITLE: Record<string, string> = { jog: '제어', parts: '도구', pose: '자세', zero: '영점', process: '공정', basic: '코딩', python: '코딩', ros: '코딩', ai: 'AI 에게 시키기' };
+  const SCREEN_EN: Record<string, string> = { hand: 'HAND', jog: 'CONTROL', parts: 'TOOL', pose: 'POSE', zero: 'ZERO', process: 'TASK', basic: 'CODE', python: 'CODE', ros: 'CODE', ai: 'AI' };
+  const SCREEN_TITLE: Record<string, string> = { hand: '손 따라하기', jog: '제어', parts: '도구', pose: '자세', zero: '영점', process: '공정', basic: '코딩', python: '코딩', ros: '코딩', ai: 'AI 에게 시키기' };
 
   const zeroPanel = (
     <ZeroPanel
@@ -4723,6 +4878,23 @@ export default function Console() {
                       </div>
                     ) : workScreen === 'pose' ? (
                       <div className={css.screen}>{recordRow}</div>
+                    ) : workScreen === 'hand' ? (
+                      <div className={css.screen}>
+                        <HandPanel
+                          state={handState}
+                          demo={handState === 'record' ? { seconds: handRecS, points: 0 } : handDemo?.points.length ? { seconds: handDemo.seconds, points: handDemo.points.length } : null}
+                          closed={handGrip ? handClosed : null}
+                          warn={handWarn}
+                          busy={busy}
+                          robotMode={robotMode}
+                          onPose={onHandPose}
+                          onFollow={(on) => (on ? void followHand() : stop())}
+                          onRecord={recordHand}
+                          onReplay={() => void replayHand()}
+                          onToProcess={demoToProcess}
+                          onTools={() => openWork('parts')}
+                        />
+                      </div>
                     ) : (
                       <div className={css.screen}>
                         {controlPanel}
