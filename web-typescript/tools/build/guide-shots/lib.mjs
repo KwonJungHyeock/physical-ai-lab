@@ -16,11 +16,13 @@ async function loadPlaywright() {
   }
 }
 
-export async function launch({ width = 1600, height = 900, storage = {} } = {}) {
+/** `camera`: a .y4m video the page sees as its camera (손 따라하기), allowed without asking. */
+export async function launch({ width = 1600, height = 900, storage = {}, camera } = {}) {
   const { chromium } = await loadPlaywright();
   const exe = process.env.CHROMIUM ?? (existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined);
-  const browser = await chromium.launch({ executablePath: exe, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
-  const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1.5 });
+  const cam = camera ? ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', `--use-file-for-fake-video-capture=${camera}`] : [];
+  const browser = await chromium.launch({ executablePath: exe, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', ...cam] });
+  const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1.5, ...(camera ? { permissions: ['camera'] } : {}) });
   await ctx.addInitScript((s) => {
     try {
       for (const [k, v] of Object.entries(s)) localStorage.setItem(k, v);

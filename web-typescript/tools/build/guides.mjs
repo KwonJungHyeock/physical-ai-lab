@@ -1,5 +1,5 @@
 // The guides in manuals/ → print-ready PDFs (A4), with a layout check of the printed pages.
-//   node tools/build/guides.mjs [basic-teacher|basic-student|teacher ...]
+//   node tools/build/guides.mjs [basic-teacher|basic-student|teacher|simulator ...]
 //
 // Source: Markdown with a few extra blocks (see manuals/README.md "배포용 PDF 만들기"):
 //   front matter (title, subtitle, audience, version, cover), `# ` = chapter (new page), `## ` · `### `,
@@ -17,11 +17,12 @@ import { launch } from './guide-shots/lib.mjs';
 
 const web = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const repo = path.dirname(web);
-// pub: the copy for the console's 자료실 (pages/archiveTree.ts), served at /guides/<pub>.pdf.
+// pub: the copy for the console's 자료실 (pages/archiveTree.ts), served at /guides/<pub>.pdf (none: not copied).
 const GUIDES = {
   'basic-teacher': { src: 'manuals/basic/teacher.md', out: 'manuals/basic/기초 사용 매뉴얼 (교사용).pdf', pub: 'basic-teacher' },
   'basic-student': { src: 'manuals/basic/student.md', out: 'manuals/basic/기초 사용 매뉴얼 (학생용).pdf', pub: 'basic-student' },
   teacher: { src: 'manuals/course/teacher-guide.md', out: 'manuals/course/교사용 교육 가이드라인.pdf', pub: 'teacher-guide' },
+  simulator: { src: 'manuals/simulator/guide.md', out: 'manuals/simulator/시뮬레이터 사용 가이드.pdf' },
 };
 const publicCopy = (name) => path.join(web, 'public', 'guides', `${GUIDES[name].pub}.pdf`);
 const pick = process.argv.slice(2);
@@ -589,12 +590,14 @@ async function build(name) {
   for (const c of sym) if ((c >= 0x2190 && c <= 0x21ff) || (c >= 0x2500 && c <= 0x27bf) || (c >= 0x2900 && c <= 0x29ff)) have.add(c);
   const missing = [...used].filter((c) => c.codePointAt(0) > 0x20 && !have.has(c.codePointAt(0)) && !/[\u0000-\u001f]/.test(c));
   if (missing.length) problems.push(`글꼴에 없는 글자: ${missing.join(' ')}`);
-  mkdirSync(path.dirname(publicCopy(name)), { recursive: true });
-  copyFileSync(outFile, publicCopy(name));
-  // The 자료실 preview: the cover, 240 px wide.
-  const thumb = path.join(web, 'public', 'guides', 'thumbs', GUIDES[name].pub);
-  mkdirSync(path.dirname(thumb), { recursive: true });
-  execFileSync('pdftoppm', ['-jpeg', '-jpegopt', 'quality=82', '-f', '1', '-l', '1', '-scale-to-x', '240', '-scale-to-y', '-1', '-singlefile', outFile, thumb]);
+  if (GUIDES[name].pub) {
+    mkdirSync(path.dirname(publicCopy(name)), { recursive: true });
+    copyFileSync(outFile, publicCopy(name));
+    // The 자료실 preview: the cover, 240 px wide.
+    const thumb = path.join(web, 'public', 'guides', 'thumbs', GUIDES[name].pub);
+    mkdirSync(path.dirname(thumb), { recursive: true });
+    execFileSync('pdftoppm', ['-jpeg', '-jpegopt', 'quality=82', '-f', '1', '-l', '1', '-scale-to-x', '240', '-scale-to-y', '-1', '-singlefile', outFile, thumb]);
+  }
   console.log(`${path.basename(outFile)}: ${n}쪽, 그림 ${ctx.fig}${problems.length ? `, 문제 ${problems.length}` : ', 문제 없음'}`);
   console.log(`  문장 ${wraps.n}개 중 두 줄 넘는 문장 ${wraps.out.length}개${process.env.SENTENCES ? '' : ' (SENTENCES=1 로 목록)'}`);
   if (process.env.SENTENCES) for (const [k, t] of wraps.out) console.log(`    ${k}줄  ${t}`);
