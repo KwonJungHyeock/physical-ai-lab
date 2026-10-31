@@ -104,6 +104,8 @@ interface Props {
   onError(msg: string, fix?: string): void;
   /** 고칠 곳 (tutorial): the blocks on these lines blink yellow. */
   hotLines?: readonly number[];
+  /** 넓게 보기: the work panel widened for the blocks (PC window only). */
+  wide?: { on: boolean; set(on: boolean): void };
 }
 
 const COLOR_CLASS: Record<Step['type'], string> = {
@@ -160,7 +162,7 @@ function toolProtos(effector: EffectorId): Proto[] {
   }
 }
 
-export default function BlockEditor({ code, onCode, effector, cameraFlange, theme, poseNames, live, runningLine, onError, hotLines, cell }: Props) {
+export default function BlockEditor({ code, onCode, effector, cameraFlange, theme, poseNames, live, runningLine, onError, hotLines, cell, wide }: Props) {
   const drag = useRef<Drag | null>(null);
   const [dropKey, setDropKey] = useState<string | null>(null);
   const [draggingKey, setDraggingKey] = useState<string | null>(null);
@@ -1033,6 +1035,13 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
         }}
       >
         <div className={css.undoBar} onClick={(e) => e.stopPropagation()}>
+          {wide && (
+            <button type="button" className={css.wideKey} onClick={() => wide.set(!wide.on)} aria-pressed={wide.on} aria-label={wide.on ? '좁게 보기' : '넓게 보기'} title={wide.on ? '좁게 보기: 작업 칸을 원래 폭으로' : '넓게 보기: 작업 칸을 넓혀 블록을 크게 봐요 (3D 화면은 그만큼 좁아져요)'}>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d={wide.on ? 'M2 12h7M15 12h7M6 8l4 4-4 4M18 8l-4 4 4 4' : 'M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4'} />
+              </svg>
+            </button>
+          )}
           <button type="button" onClick={undo} disabled={!hist.past.length} title="되돌리기 (Ctrl+Z)" aria-label="되돌리기">
             ↶
           </button>

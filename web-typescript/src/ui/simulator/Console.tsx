@@ -713,6 +713,8 @@ export default function Console() {
   const termSink = useRef<((kind: LogKind, msg: string, fix?: string) => void) | null>(null);
   // 처음 시작: three steps for someone opening the simulator the first time (StartGuide).
   const [start, setStart] = useState<{ done: StartStep[]; folded: boolean }>({ done: [], folded: false });
+  /** 넓게 보기: the work panel widened while the blocks are shown. */
+  const [blockWide, setBlockWide] = useState(false);
   useEffect(() => {
     try {
       const s = JSON.parse(localStorage.getItem(START_KEY) ?? 'null') as { done?: StartStep[]; folded?: boolean } | null;
@@ -3724,6 +3726,7 @@ export default function Console() {
   // AI 에게 시키기: a screen of the work panel, beside the 3D (only the desktop program has the AI).
   const aiAvailable = !!aiStatus?.program && !!loaded && !robotMode && mode !== 'check' && !cellAt && !demo;
   const aiShown = aiOpen && aiAvailable && !zeroMode;
+  const wideOn = blockWide && dockShown && !aiShown && shownTab !== 'direct' && shownTab !== 'process' && (cellAt ? !cellTerm : level === 'basic');
   const workScreen = aiShown ? 'ai' : zeroMode ? 'zero' : shownTab === 'direct' ? section || 'jog' : shownTab;
   const openWork = (id: string) => {
     if (dockShown && workScreen === id) return toggleDock();
@@ -4446,7 +4449,7 @@ export default function Console() {
             checks={mode !== 'check' ? [] : [{ icon: 'doc', title: '검수 결과표', note: '검수 1~7 의 시각 · 실측값 한 장 (열어서 인쇄 → PDF)', action: '저장', run: saveReport, file: '검수결과표.html' }]}
           />
         )}
-        <div ref={shellRef} className={css.shell} data-dock={dockShown ? 'open' : 'closed'} data-side={side} data-tab={shownTab === 'direct' ? 'direct' : 'code'} data-mini={miniOn ? 'on' : 'off'} style={view !== 'sim' ? { display: 'none' } : undefined}>
+        <div ref={shellRef} className={css.shell} data-dock={dockShown ? 'open' : 'closed'} data-side={side} data-tab={shownTab === 'direct' ? 'direct' : 'code'} data-mini={miniOn ? 'on' : 'off'} data-wide={wideOn || undefined} style={view !== 'sim' ? { display: 'none' } : undefined}>
           <section className={`${css.panel} ${css.stageCol}`} aria-label="시뮬레이션">
             <div className={css.viewport} data-viewport>
               {loadError ? (
@@ -4487,7 +4490,7 @@ export default function Console() {
                   cellTags={cellTags.length ? cellTags : cellAt?.mission && !busy ? cellStepTags(cellAt.cell, missionById(cellAt.mission)?.n ?? 1) : []}
                   display={display}
                   frameInsets={frameInsets}
-                  layoutKey={`${dockShown}:${side}:${camOpen}:${miniWanted}:${start.folded}`}
+                  layoutKey={`${dockShown}:${side}:${camOpen}:${miniWanted}:${start.folded}:${wideOn}`}
                   onReady={onStageReady}
                   onRenderError={onRenderError}
                   onSlow={onSlow}
@@ -5100,6 +5103,7 @@ export default function Console() {
                           runningLine={runningLine}
                           onError={(m, f) => addLog('err', m, f)}
                           cell={cellAt?.cell ?? null}
+                          wide={{ on: blockWide, set: setBlockWide }}
                           hotLines={cellAt ? [] : findSlots(code, tut)
                             .filter((h) => tut.steps[tutStep]?.slots.includes(h.index))
                             .map((h) => h.line)}

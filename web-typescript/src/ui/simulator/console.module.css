@@ -530,6 +530,22 @@
 .undoBar button:hover:not(:disabled) {
   border-color: #6f9bff;
 }
+.undoBar .wideKey {
+  display: none;
+}
+.undoBar .wideKey svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vertical-align: middle;
+}
+.undoBar .wideKey[aria-pressed='true'] {
+  border-color: #6f9bff;
+}
 .undoBar button:disabled {
   opacity: 0.35;
   cursor: default;
@@ -5035,6 +5051,24 @@ div.zeroFlow {
   }
   .app .shell[data-tab='code'] {
     --side-w: clamp(440px, 30vw, 540px);
+  }
+  /* 넓게 보기 (block tab): about 450px of program instead of 290px; the 3D view keeps at least 560px */
+  .app .shell[data-wide] {
+    --side-w: max(440px, min(600px, calc(100vw - 560px)));
+  }
+  .app .undoBar .wideKey {
+    display: block;
+  }
+}
+/* 넓게 보기 on a window under ~1700px leaves the board over the 3D view about 260px: tag, text and
+   buttons one under another instead of three columns (the text was squeezed to a letter a line) */
+@media (min-width: 1000px) and (min-height: 600px) and (max-width: 1700px) {
+  .shell[data-wide] .notice,
+  .shell[data-wide] .guide {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .shell[data-wide] .noticeEnd {
+    justify-self: start;
   }
   .app .shell .side {
     background: #303236;
