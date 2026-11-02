@@ -26,6 +26,25 @@ function readRemote(): string {
   }
 }
 let remote = readRemote();
+
+/**
+ * Opened from a robot's own address: its server sends the browser to this site with #robot=<host:port>
+ * (server.py TO_WEB), so the newest screens drive that robot at once. Only a private address and port.
+ */
+if (typeof window !== 'undefined') {
+  const m = /(?:^#|&)robot=([^&]+)/.exec(window.location.hash);
+  const addr = m ? decodeURIComponent(m[1]) : '';
+  const ip = addr.split(':')[0];
+  if (/^\d{1,3}(\.\d{1,3}){3}:\d{2,5}$/.test(addr) && /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.)/.test(ip)) {
+    remote = addr;
+    try {
+      sessionStorage.setItem(REMOTE_KEY, addr);
+    } catch {
+      /* this page only */
+    }
+    history.replaceState(null, '', window.location.pathname + window.location.search);
+  }
+}
 /** The robot this window drives from afar ('' when none: the page's own server, if any). */
 export const remoteRobot = () => remote;
 /** Drive the robot at `address` (host:port) from this window's own screens, or stop (null). */

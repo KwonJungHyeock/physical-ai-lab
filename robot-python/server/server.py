@@ -1001,10 +1001,34 @@ CROSS_ORIGIN = ("/api/state",)
 # Web sites (https) whose own screens drive the arm, like the PC program on this network: the
 # platform's simulator. More can be listed, one https://… per line, in web_origins.txt beside this file.
 WEB_ORIGINS = {"https://physical-ai-lab-lake.vercel.app"}
+# WEB_HOME: where this robot's own address sends a browser (the newest screens, connected to this robot);
+# the first line of web_origins.txt when there is one.
+WEB_HOME = "https://physical-ai-lab-lake.vercel.app"
 _WEB_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web_origins.txt")
 if os.path.isfile(_WEB_FILE):
     with open(_WEB_FILE, encoding="utf-8") as _f:
-        WEB_ORIGINS |= {ln.strip().rstrip("/") for ln in _f if ln.strip().startswith("https://")}
+        _listed = [ln.strip().rstrip("/") for ln in _f if ln.strip().startswith("https://")]
+    WEB_ORIGINS |= set(_listed)
+    WEB_HOME = _listed[0] if _listed else WEB_HOME
+
+# http://<robot>:8080/ and /console: the web site's newest screens, driving this robot (#robot=<host:port>).
+# Only when the web site answers (the classroom has internet) and not on the robot's own screen (localhost):
+# otherwise this robot's own copy (/console?local=1), the same app as when it was installed.
+TO_WEB = """<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>로봇 연결</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;height:100vh;display:grid;place-items:center;background:#1b2029;color:#cfd5df;font-family:sans-serif">
+<p>최신 화면으로 여는 중…</p>
+<script>
+(function () {
+  var web = %s, host = location.host;
+  var local = function () { location.replace('/console?local=1' + location.hash); };
+  if (/^(localhost|127\.)/.test(location.hostname)) return local();
+  var go = function () { location.replace(web + '/console#robot=' + encodeURIComponent(host)); };
+  var t = setTimeout(local, 4000);
+  fetch(web + '/favicon.ico', { mode: 'no-cors', cache: 'no-store' }).then(function () { clearTimeout(t); go(); }, function () { clearTimeout(t); local(); });
+})();
+</script></body></html>
+"""
 # Different on every start: a console that sees it change knows the server restarted (its run ids start over).
 BOOT_ID = os.urandom(4).hex()
 # Files whose names change with every build (and the Python runtime): kept by the browser.
@@ -1266,6 +1290,15 @@ class Handler(SimpleHTTPRequestHandler):
             return 0
 
     def do_GET(self):
+        route, _, query = self.path.partition("?")
+        if route in ("/", "/console") and "local=1" not in query:
+            body = (TO_WEB % json.dumps(WEB_HOME)).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            return self.wfile.write(body)
         if self.path.split("?")[0] == "/api/state":
             refresh_identity()
             # Only this robot's own console keeps a run alive: another PC's 로봇 찾기 asking the
