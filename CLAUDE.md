@@ -6,19 +6,19 @@
 - `robot-python/` — Python that runs on or for the robot. `server/` = the on-robot console server (installed on the
   robot as `~/robot_console/`), `checks/` = hardware checks run on the RDK X5, `tools/` = developer utilities,
   `usb-kit/` = the USB stick's installer and forms. Standard library + pymycobot only.
-- `desktop-go/` — Go program that embeds the web app's static export into one Windows `.exe`
-  (the simulator to run and show without a robot or internet). Build with `sh desktop-go/build.sh`.
-  Its own tools: 로봇 USB 만들기 and 새 로봇 설치 (they need this PC's USB and LAN, so the web app has them only here).
-  The class server (accounts, learning records) and the local LLM were removed for the web platform
-  (docs/reports/system/42-web-platform.md says what was there and how to bring it back).
-  Delivering it: during development send the zip split in two (`zip -s 30m`, under the 30 MB file limit);
-  a build to test or deliver goes on the `release` branch as two files + README: `PhysicalAI-Simulator.zip`
-  (built without the kit: `sh desktop-go/build.sh`) and `eduino_usb.zip` (`robot-python/tools/make_usb_kit.py`, signed),
-  each under GitHub's 100 MB file limit; the program takes the kit from beside it for 로봇 USB 만들기
-  and 새 로봇 설치 (`setup.go`: a new robot over one LAN cable, factory 192.168.127.10 · sunrise/sunrise).
-  The release branch's `.github/workflows/bundle.yml` joins the two into one `PhysicalAI-Simulator.zip`
-  (files at the top, no folder in a folder) on the GitHub release: the download link people get is
-  `https://github.com/KwonJungHyeock/physical-ai-lab/releases/latest/download/PhysicalAI-Simulator.zip`.
+- `desktop-go/` — Go program that embeds the web app's static export into one Windows `.exe`.
+  Two builds from the same source: `sh desktop-go/build.sh` = the offline simulator, and
+  `sh desktop-go/build.sh tool` = the 로봇 설치 도구 (`로봇 설치 도구.exe`, only the `/robot-tool` page:
+  로봇 USB 만들기 and 새 로봇 설치, which need this PC's USB and LAN, so the web app cannot do them).
+  The simulator itself is the web site (Vercel). The class server and the local LLM were removed for the web
+  platform (docs/reports/system/42-web-platform.md says what was there and how to bring it back).
+  Delivering it: a build goes on the `release` branch as two files + README: `PhysicalAI-RobotTool.zip`
+  (`sh desktop-go/build.sh tool`) and `eduino_usb.zip` (`robot-python/tools/make_usb_kit.py`, signed),
+  each under GitHub's 100 MB file limit; the tool takes the kit from beside it
+  (`setup.go`: a new robot over one LAN cable, factory 192.168.127.10 · sunrise/sunrise).
+  The release branch's `.github/workflows/bundle.yml` puts the kit into `PhysicalAI-RobotTool.zip`
+  (files at the top, no folder in a folder) on the GitHub release; the web app's 자료실 › 프로그램 links
+  `https://github.com/KwonJungHyeock/physical-ai-lab/releases/latest/download/PhysicalAI-RobotTool.zip`.
 - `content-markdown/` — the lesson sources the app reads (8 md + `reference/`), Korean; `sites/` = the 산업단지 site labs' lesson scripts (story, activities, answers, teacher's plan).
   `npm run gen:curriculum` turns them into `web-typescript/src/engine/education/curriculum.gen.ts`.
 - `manuals/` — step-by-step guides for people (Korean), by audience: `simulator/`, `setup/`, `robot-arm/`, `myagv/`, `course/`.

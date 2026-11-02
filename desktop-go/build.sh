@@ -4,17 +4,37 @@
 #   EDUINO_SIGNING_KEY=~/keys/eduino-kit-signing.pem sh desktop-go/build.sh
 #                                     → the same, carrying the signed robot kit (⚙ → 로봇 USB 만들기, usbkit.go)
 #   KIT=path/eduino_usb.zip sh desktop-go/build.sh   → carrying a kit made before
+#   sh desktop-go/build.sh tool       → desktop-go/dist/PhysicalAI-RobotTool.zip: "로봇 설치 도구.exe", only the
+#                                     로봇 USB 만들기 · 새 로봇 설치 page (/robot-tool), no simulator (that is the web site)
 # Needs Go 1.24+ and the web app's npm packages. The program's icon needs go-winres: it is installed
 # here when missing (go install github.com/tc-hib/go-winres@v0.3.3), and the build stops rather than
 # make a program without its icon (NO_ICON=1 builds one anyway, for a quick test).
 set -e
 cd "$(dirname "$0")"
 VERSION=$(date +%Y.%m.%d)
+TOOL=$([ "$1" = tool ] && echo 1 || true)
+if [ -n "$TOOL" ]; then
+  EXE="로봇 설치 도구.exe"; ZIP=PhysicalAI-RobotTool.zip; README=README-tool.txt
+  PRODUCT="Physical AI 로봇 설치 도구"; DESC="ROBODYNE SYSTEMS Physical AI 로봇 USB 만들기 · 새 로봇 설치"
+else
+  EXE="Physical AI 시뮬레이터.exe"; ZIP=PhysicalAI-Simulator.zip; README=README.txt
+  PRODUCT="Physical AI 시뮬레이터"; DESC="ROBODYNE SYSTEMS Physical AI 로봇 학습 프로그램 시뮬레이터"
+fi
 
 (cd ../web-typescript && npm run build:robot)
 rm -rf site dist
 mkdir -p dist
-cp -R ../robot-python/server/static site
+if [ -n "$TOOL" ]; then
+  # Only what the /robot-tool page loads: its page, the app's scripts and styles, the logo and icons.
+  mkdir -p site
+  S=../robot-python/server/static
+  cp -R "$S/_next" "$S/brand" "$S/icons" "$S/favicon.ico" site/
+  cp "$S"/robot-tool.html site/
+  cp "$S"/robot-tool*.txt site/ 2>/dev/null || true
+  [ -d "$S/robot-tool" ] && cp -R "$S/robot-tool" site/
+else
+  cp -R ../robot-python/server/static site
+fi
 
 # The robot kit the program writes onto USB sticks: made now with the signing key, or given as KIT.
 rm -f kit/eduino_usb.zip
@@ -36,9 +56,9 @@ if [ ! -x "$WINRES" ] && [ -z "$NO_ICON" ]; then
 fi
 if [ -x "$WINRES" ]; then
   "$WINRES" simply --arch amd64 --icon ../web-typescript/public/icons/icon-512.png --manifest cli \
-    --product-name "Physical AI 시뮬레이터" --file-description "ROBODYNE SYSTEMS Physical AI 로봇 학습 프로그램 시뮬레이터" \
+    --product-name "$PRODUCT" --file-description "$DESC" \
     --product-version "$VERSION" --file-version "$VERSION" --copyright "ROBODYNE SYSTEMS" \
-    --original-filename "Physical AI 시뮬레이터.exe"
+    --original-filename "$EXE"
 elif [ -n "$NO_ICON" ]; then
   echo "go-winres 가 없어 아이콘 없이 만듭니다 (NO_ICON)."
 else
@@ -46,15 +66,15 @@ else
   exit 1
 fi
 
-GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o "dist/Physical AI 시뮬레이터.exe" .
-cp README.txt "dist/읽어보세요.txt"
+GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.toolMode=$TOOL" -o "dist/$EXE" .
+cp "$README" "dist/읽어보세요.txt"
 # The files at the zip's top: Windows' [압축 풀기] makes the one folder (PhysicalAI-Simulator\) itself,
 # so there is no folder inside a folder. The release joins eduino_usb.zip to it (.github/bundle.yml on
 # the release branch): the program finds the kit beside it (usbkit.go kitBeside).
-(cd dist && python3 -c "
-import zipfile
-with zipfile.ZipFile('PhysicalAI-Simulator.zip', 'w', zipfile.ZIP_DEFLATED) as z:
-    for name in ('Physical AI 시뮬레이터.exe', '읽어보세요.txt'):
+(cd dist && EXE="$EXE" ZIP="$ZIP" python3 -c "
+import os, zipfile
+with zipfile.ZipFile(os.environ['ZIP'], 'w', zipfile.ZIP_DEFLATED) as z:
+    for name in (os.environ['EXE'], '읽어보세요.txt'):
         z.write(name, name)
 ")
 ls -la dist

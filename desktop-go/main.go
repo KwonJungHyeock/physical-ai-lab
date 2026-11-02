@@ -8,6 +8,9 @@
 // 로봇 찾기 on this PC's own networks (/__physical-ai-simulator/lan): robots on
 // the same Wi-Fi are listed with their names and addresses, one click opens one.
 //
+// Built as the 로봇 설치 도구 (`sh build.sh tool`, -ldflags "-X main.toolMode=1") it carries only the
+// 로봇 USB 만들기 · 새 로봇 설치 page (/robot-tool): the simulator itself is the web site.
+//
 // Build with build.sh (it copies the app into site/ first).
 package main
 
@@ -34,6 +37,11 @@ var site embed.FS
 // page (chosen model, progress, saved poses) is there again on the next start.
 const port = 47280
 
+// toolMode: set at build time for the 로봇 설치 도구 (its own port, so both programs can run).
+var toolMode = ""
+
+const toolPort = 47281
+
 const hello = "/__physical-ai-simulator"
 
 func main() {
@@ -53,14 +61,19 @@ func main() {
 		_ = mime.AddExtensionType(ext, typ)
 	}
 
-	addr := fmt.Sprintf("127.0.0.1:%d", port)
-	url := fmt.Sprintf("http://%s/console?from=sim", addr)
+	tool := toolMode != ""
+	p, page, name := port, "/console?from=sim", "시뮬레이터"
+	if tool {
+		p, page, name = toolPort, "/robot-tool", "로봇 설치 도구"
+	}
+	addr := fmt.Sprintf("127.0.0.1:%d", p)
+	url := fmt.Sprintf("http://%s%s", addr, page)
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
 		// Already running (double-clicked twice): just open another window.
 		if running(addr) {
 			openApp(url)
-			fmt.Println("시뮬레이터가 이미 켜져 있어 창만 새로 열었어요.")
+			fmt.Println(name + "가 이미 켜져 있어 창만 새로 열었어요.")
 			time.Sleep(3 * time.Second)
 			return
 		}
@@ -69,19 +82,21 @@ func main() {
 		if err != nil {
 			fail(err)
 		}
-		url = fmt.Sprintf("http://%s/console?from=sim", ln.Addr())
+		url = fmt.Sprintf("http://%s%s", ln.Addr(), page)
 	}
 
 	fmt.Println("============================================================")
-	fmt.Println("  ROBODYNE SYSTEMS · Physical AI 로봇 학습 프로그램 — 시뮬레이터")
+	fmt.Println("  ROBODYNE SYSTEMS · Physical AI 로봇 학습 프로그램 — " + name)
 	fmt.Println("============================================================")
 	fmt.Println()
 	fmt.Println("  화면을 여는 중이에요 (크롬 또는 엣지 앱 창).")
 	fmt.Println("  창이 안 열리면 이 주소를 크롬·엣지 주소창에 넣으세요:")
 	fmt.Println("    " + url)
 	fmt.Println()
-	fmt.Println("  이 검은 창을 닫으면 시뮬레이터가 꺼져요.")
-	fmt.Println("  로봇과 같은 Wi-Fi 에 연결돼 있으면 처음 화면에서 로봇을 찾아 보여 줘요.")
+	fmt.Println("  이 검은 창을 닫으면 " + name + "가 꺼져요.")
+	if !tool {
+		fmt.Println("  로봇과 같은 Wi-Fi 에 연결돼 있으면 처음 화면에서 로봇을 찾아 보여 줘요.")
+	}
 	if nets := lanPrefixes(); len(nets) > 0 {
 		fmt.Println("  이 PC 의 네트워크: " + strings.Join(nets, ", "))
 	} else {

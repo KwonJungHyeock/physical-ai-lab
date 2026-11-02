@@ -212,8 +212,8 @@ const POSES_KEY = 'robot-console-poses';
 /** The corner camera preview is drawn at 240 × 180: a sixth of the pixels to render and read back. */
 const PIP_SCALE = 0.5;
 const MODEL_KEY = 'robot-console-model';
-/** 자료실 › 프로그램: the Windows program with the robot kit (로봇 USB 만들기 · 새 로봇 설치), the newest GitHub release. */
-const INSTALLER_URL = 'https://github.com/KwonJungHyeock/physical-ai-lab/releases/latest/download/PhysicalAI-Simulator.zip';
+/** 자료실 › 프로그램: the 로봇 설치 도구 (로봇 USB 만들기 · 새 로봇 설치, with the robot kit), the newest GitHub release. */
+const INSTALLER_URL = 'https://github.com/KwonJungHyeock/physical-ai-lab/releases/latest/download/PhysicalAI-RobotTool.zip';
 /** The simulator opens on the arm alone; the AI kit is one click away (the 실습 환경 dock). */
 const START_THEME: Theme = 'arm';
 const SECTION_KEY = 'robot-console-section';
@@ -4349,12 +4349,12 @@ export default function Console() {
               },
               {
                 icon: 'usb',
-                title: '로봇 설치 프로그램 (Windows)',
-                note: '로봇 USB 만들기 · 새 로봇 설치 · 시뮬레이터. 압축을 풀고 exe 를 더블클릭 (GitHub 최신 릴리스)',
+                title: '로봇 설치 도구 (Windows)',
+                note: '로봇 USB 만들기 · 새 로봇 설치. 압축을 풀고 「로봇 설치 도구.exe」 를 더블클릭 (약 100 MB, 로봇 키트 포함)',
                 action: '받기',
                 // releases/latest always serves the newest release, so this link never needs updating.
                 run: () => window.location.assign(INSTALLER_URL),
-                file: 'PhysicalAI-Simulator.zip',
+                file: 'PhysicalAI-RobotTool.zip',
               },
               ...(!robotMode && !desktop && pcApp.install
                 ? [{ icon: 'install', title: '이 PC 에 앱으로 설치', note: '인터넷 없이도 시뮬레이션 · 시작 메뉴에서 열기', action: '설치', run: () => void pcApp.install?.() }]
