@@ -30,10 +30,8 @@ import { useEffect, useRef, useState } from 'react';
 import { remoteRobot, setRemoteRobot } from '@/engine/simulator/robotLink';
 import { identifyRobot, networkPrefix, otherWifiHint, pcLan, probeRobot, ROBOT_PORT, sameRobot, scanNetwork, type FoundRobot } from '@/engine/simulator/discover';
 
-import { sessionHandoff } from '@/engine/account';
 import { DIRECT_IP } from '@/engine/simulator/usbKit';
 
-import { useAccount } from '../../account/AccountProvider';
 import Icon from '../Icon';
 import { skipIntroOnce } from './Intro';
 import WifiPanel from './WifiPanel';
@@ -120,19 +118,14 @@ export default function ConnectDialog({ current, auto, carry, start, onUsb, onSe
   }, [start]);
   // The latest program at the moment of leaving (the console redraws while the dialog is open).
   const carryNow = useRef(carry);
-  const session = useAccount().session;
-  const sessionNow = useRef(session);
   useEffect(() => {
     carryNow.current = carry;
-    sessionNow.current = session;
   });
-  /** The robot's own console (an older robot): the class login and the open program go along
+  /** The robot's own console (an older robot, or from a secure page): the open program goes along
    *  (a robot's page is another address with its own store). */
   const openOwn = (addr: string) => {
     const program = (carryNow.current?.() ?? '').replace(/^#/, '');
-    const login = sessionNow.current ? sessionHandoff(sessionNow.current) : '';
-    const hash = [login, program].filter(Boolean).join('&');
-    window.location.href = `http://${addr}/console${hash ? `#${hash}` : ''}`;
+    window.location.href = `http://${addr}/console${program ? `#${program}` : ''}`;
   };
   // The first step asks the robot itself (its address may be a typed ID, a recent one, or a robot
   // switched off since the search): the console opens only after it answered — never onto a

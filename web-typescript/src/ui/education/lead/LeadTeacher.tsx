@@ -4,29 +4,27 @@
  * The teacher's screen of a led lesson (로봇 실습 7 "선생님과 함께"). Two parts side by side:
  *  - the stage: what the projector shows the class, large (the step's headline, one line, a picture of
  *    the class's answers or the live 3D, and 지금 할 일);
- *  - the rail: the teacher's own notes (what to say, what to ask, the answer to expect), the class at a
- *    glance (done · still at it · asking for help, the groups' robots) and the controls (open the next
- *    step, show the answer, let the robots move, stop every robot).
+ *  - the rail: the teacher's own notes (what to say, what to ask, the answer to expect) and the controls
+ *    (open the next step, show the answer, let the robots move, stop every robot).
  * On an extended display the rail stays on the laptop; when the projector mirrors the laptop the rail
  * can be hidden ([진행 칸 숨기기]) and the steps moved with a clicker (→ / PageDown, ← / PageUp).
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
-import { ROBOT_WORD, groupsReady, loadRoster, browserStore, summarize, type Lead } from '@/engine/account';
-import { HAND_PHOTO, answerIndex, answerOptions, lessonMinutes, nextLesson, type LeadLesson, type LeadStep } from '@/engine/education/lead';
+import { HAND_PHOTO, lessonMinutes, nextLesson, type LeadLesson, type LeadStep } from '@/engine/education/lead';
+import type { Lead } from '@/engine/education/leadState';
 
 import { Lines } from '../lesson/Rich';
 import type { LeadKit } from './kit';
-import { Card, Flow, HandPhoto, RED_BLOCK, RedBoard, Tally } from './pieces';
-import type { HostState, LeadSession } from './useLead';
+import { Flow, HandPhoto, RED_BLOCK, RedBoard, Tally } from './pieces';
+import type { HostState } from './useLead';
 import css from './lead.module.css';
 
 interface Props {
   lesson: LeadLesson;
   lead: Lead;
   host: HostState;
-  sess: LeadSession;
   kit: LeadKit;
   /** Where the live 3D view goes (a ref callback). */
   slot(el: HTMLElement | null): void;
@@ -35,11 +33,9 @@ interface Props {
 
 const mmss = (ms: number) => `${Math.max(0, Math.floor(ms / 60000))}분`;
 
-export default function LeadTeacher({ lesson, lead, host, sess, kit, slot, onEnd }: Props) {
+export default function LeadTeacher({ lesson, lead, host, kit, slot, onEnd }: Props) {
   const step = lesson.steps[Math.min(lead.step, lesson.steps.length - 1)];
   const act = step.act;
-  const sum = useMemo(() => summarize(lead, host.marks, sess.total), [lead, host.marks, sess.total]);
-  const roster = useMemo(() => (sess.classId ? loadRoster(browserStore(), sess.classId) : {}), [sess.classId]);
   const [railHidden, setRailHidden] = useState(false);
   const [showExpect, setShowExpect] = useState<number | null>(null);
   const [confirmEnd, setConfirmEnd] = useState(false);
@@ -76,9 +72,7 @@ export default function LeadTeacher({ lesson, lead, host, sess, kit, slot, onEnd
 
   const total = lessonMinutes(lesson);
   const passed = now - lead.at;
-  const counts = (options: readonly string[]) => options.map((_, i) => [...sum.answers].filter(([a]) => answerIndex(act, a) === i).reduce((s, [, n]) => s + n, 0));
   const hasAnswer = act.kind === 'quiz' || act.kind === 'wrap' || act.kind === 'pick' || act.kind === 'tap';
-  const name = (no: number) => (roster[no] ? `${no} ${roster[no]}` : `${no}번`);
 
   return (
     <div className={css.teacher} data-rail={railHidden ? 'hidden' : undefined}>
@@ -91,7 +85,7 @@ export default function LeadTeacher({ lesson, lead, host, sess, kit, slot, onEnd
           {lesson.unit}. {kit.unit.title}
           <small>
             로봇 실습 7 · {lesson.period}
-            {sess.className ? ` · ${sess.className}` : ' · 이 PC 만 (학생 화면 연결 없음)'}
+ · 프로젝터
           </small>
         </div>
         <span className={css.sp} />
@@ -131,7 +125,7 @@ export default function LeadTeacher({ lesson, lead, host, sess, kit, slot, onEnd
             <h2>{step.title}</h2>
             <p className={css.say}>{step.say}</p>
             <div className={css.vis}>
-              <StageVis step={step} lead={lead} kit={kit} slot={slot} counts={counts} shared={sess.host.shared} groups={sum.groups} done={sum.done} />
+              <StageVis step={step} lead={lead} kit={kit} slot={slot} />
             </div>
             <div className={css.doNow}>
               <em>지금 할 일</em>
@@ -167,69 +161,15 @@ export default function LeadTeacher({ lesson, lead, host, sess, kit, slot, onEnd
                 )}
                 {hasAnswer && (
                   <button type="button" className={css.revealBtn} aria-pressed={lead.reveal} onClick={() => host.set({ reveal: !lead.reveal })}>
-                    {lead.reveal ? '✓ 모든 화면에 정답이 보여요 · 숨기기' : '모든 화면에 정답 보이기'}
+                    {lead.reveal ? '✓ 정답이 보여요 · 숨기기' : '프로젝터에 정답 보이기'}
                   </button>
                 )}
               </section>
-              {sess.host.shared ? (
-                <section className={css.rsec}>
-                  <h3>
-                    반 현황 · {sum.joined} / {sum.total}명 들어옴
-                  </h3>
-                  <div className={css.meter}>
-                    <b>{sum.done}</b>
-                    <span>명 다 했어요</span>
-                  </div>
-                  <div className={css.bar}>
-                    <i style={{ width: `${sum.joined ? (sum.done / sum.joined) * 100 : 0}%`, background: '#3ccf7b' }} />
-                    <i style={{ width: `${sum.joined ? (sum.doing / sum.joined) * 100 : 0}%`, background: '#4f6ef7' }} />
-                    <i style={{ width: `${sum.joined ? (sum.help.length / sum.joined) * 100 : 0}%`, background: '#f04438' }} />
-                  </div>
-                  <div className={css.legend}>
-                    <span style={{ '--c': '#3ccf7b' } as React.CSSProperties}>다 함 {sum.done}</span>
-                    <span style={{ '--c': '#4f6ef7' } as React.CSSProperties}>하는 중 {sum.doing}</span>
-                    <span style={{ '--c': '#f04438' } as React.CSSProperties}>도움 요청 {sum.help.length}</span>
-                  </div>
-                  {sum.help.length > 0 && (
-                    <div className={css.chips}>
-                      {sum.help.map((n) => (
-                        <span key={n} className={css.chip}>
-                          {name(n)} ✋
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  {sum.joined === 0 && <p className={css.note}>학생이 교육 탭에서 [함께하기] 를 누르면 여기에 나와요.</p>}
-                </section>
-              ) : (
-                <section className={css.rsec}>
-                  <h3>학생 화면</h3>
-                  <p className={css.note}>학급 서버 없이 이 PC 에서만 진행해요. 학생 화면을 함께 넘기려면 학급 서버로 로그인한 뒤 수업을 시작해요.</p>
-                </section>
-              )}
-              {act.kind === 'real' && sess.host.shared && (
-                <section className={css.rsec}>
-                  <h3>조별 로봇</h3>
-                  {sum.groups.length ? (
-                    <div className={css.groups}>
-                      {sum.groups.map((g) => (
-                        <div key={g.group} className={css.grp} data-s={g.robot || 'none'}>
-                          <b>{g.group}조</b>
-                          {g.robotNo === null ? '로봇 담당 없음' : ROBOT_WORD[g.robot]}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className={css.note}>조를 고른 학생이 아직 없어요.</p>
-                  )}
-                </section>
-              )}
-              {host.error && <p className={css.err}>학급 서버에 연결할 수 없어요. 다시 시도하는 중… ({host.error})</p>}
             </div>
             <div className={css.railFoot}>
               {act.kind === 'real' && (
                 <button type="button" className={css.gateBtn} aria-pressed={lead.gate} onClick={() => host.set({ gate: !lead.gate })}>
-                  {lead.gate ? '✓ 로봇 움직이기 허용됨 · 다시 잠그기' : sess.host.shared && !groupsReady(sum) ? '모든 조 로봇 움직여도 돼요 (아직 준비 중인 조 있음)' : '모든 조 로봇 움직여도 돼요'}
+                  {lead.gate ? '✓ 로봇 움직이기 허용됨 · 다시 잠그기' : '로봇 움직여도 돼요'}
                 </button>
               )}
               <div className={css.subRow}>
@@ -249,7 +189,7 @@ export default function LeadTeacher({ lesson, lead, host, sess, kit, slot, onEnd
               {!last ? (
                 <button type="button" className={css.nextBtn} onClick={() => go(lead.step + 1)}>
                   <span>
-                    <small>다음 단계 열기 · 학생 화면이 함께 넘어가요</small>
+                    <small>다음 단계 열기</small>
                     {lead.step + 2}. {lesson.steps[lead.step + 1].name}
                   </span>
                   <span>→</span>
@@ -257,7 +197,7 @@ export default function LeadTeacher({ lesson, lead, host, sess, kit, slot, onEnd
               ) : next ? (
                 <button type="button" className={css.nextBtn} onClick={() => host.set({ lesson: next.id, step: 0, gate: false, reveal: false })}>
                   <span>
-                    <small>다음 수업 · 학생 화면이 함께 넘어가요</small>
+                    <small>다음 수업</small>
                     7-{next.unit}. {next.period}
                   </span>
                   <span>→</span>
@@ -300,32 +240,16 @@ export default function LeadTeacher({ lesson, lead, host, sess, kit, slot, onEnd
 }
 
 /** The middle of the projector card: what the class should look at on this step. */
-function StageVis({
-  step,
-  lead,
-  kit,
-  slot,
-  counts,
-  shared,
-  groups,
-  done,
-}: {
-  step: LeadStep;
-  lead: Lead;
-  kit: LeadKit;
-  slot(el: HTMLElement | null): void;
-  counts(options: readonly string[]): number[];
-  shared: boolean;
-  groups: ReturnType<typeof summarize>['groups'];
-  done: number;
-}) {
+function StageVis({ step, lead, kit, slot }: { step: LeadStep; lead: Lead; kit: LeadKit; slot(el: HTMLElement | null): void }) {
   const act = step.act;
+  // The class answers by raising hands: the projector shows the choices, not counts.
+  const counts = (options: readonly string[]) => options.map(() => 0);
   if (act.kind === 'vote' || act.kind === 'quiz')
     return (
       <div className={css.visCol}>
         <Tally options={act.options} counts={counts(act.options)} right={act.kind === 'quiz' && lead.reveal ? act.answer : null} big />
         {act.kind === 'quiz' && lead.reveal && <p className={css.why}>{act.why}</p>}
-        {!shared && <p className={css.note}>학생들이 손을 들어 고르게 해요.</p>}
+        <p className={css.note}>학생들이 손을 들어 고르게 해요.</p>
       </div>
     );
   if (act.kind === 'sim')
@@ -354,12 +278,6 @@ function StageVis({
       <div className={css.visRow}>
         <HandPhoto marks={lead.reveal ? HAND_PHOTO.blocks : []} />
         <div className={css.visSide}>
-          <Card title="4개 모두 찾은 학생">
-            <div className={css.count}>
-              {done}
-              <small>명</small>
-            </div>
-          </Card>
           {lead.reveal && <p className={css.why}>로봇도 사진 속 색으로 블록을 찾아요.</p>}
         </div>
       </div>
@@ -373,42 +291,21 @@ function StageVis({
         <div className={css.arrow}>→</div>
         <div className={css.visCol}>
           <RedBoard pick={null} reveal={lead.reveal} />
-          {shared && <Tally options={answerOptions(act)} counts={counts(answerOptions(act))} right={lead.reveal ? 1 : null} />}
         </div>
       </div>
     );
-  if (act.kind === 'real') {
-    if (!shared)
-      return (
-        <div className={css.visRow}>
-          <div className={css.slot} ref={slot} />
-          <div className={css.visSide}>
-            <div className={css.realBox}>{kit.real.controls(!lead.gate)}</div>
-            {!lead.gate && <p className={css.note}>[로봇 허용] 을 누르면 실물 버튼이 열려요.</p>}
-            {kit.real.msg && <p className={css.realMsg}>{kit.real.msg}</p>}
-            {kit.real.media}
-          </div>
-        </div>
-      );
+  if (act.kind === 'real')
     return (
-      <div className={css.visCol}>
-        <div className={css.groupGrid}>
-          {groups.map((g) => (
-            <div key={g.group} className={css.gCard} data-s={g.robot || 'none'}>
-              <b>{g.group}조</b>
-              <strong>{g.robotNo === null ? '로봇 담당 없음' : ROBOT_WORD[g.robot]}</strong>
-              {g.result && <small>{g.result}</small>}
-            </div>
-          ))}
-          {!groups.length && <p className={css.note}>조를 고른 학생이 아직 없어요.</p>}
-        </div>
-        <div className={css.predict}>
-          <small>모둠원 예상: {act.predict.q}</small>
-          <Tally options={act.predict.options} counts={counts(act.predict.options)} />
+      <div className={css.visRow}>
+        <div className={css.slot} ref={slot} />
+        <div className={css.visSide}>
+          <div className={css.realBox}>{kit.real.controls(!lead.gate)}</div>
+          {!lead.gate && <p className={css.note}>[로봇 허용] 을 누르면 실물 버튼이 열려요.</p>}
+          {kit.real.msg && <p className={css.realMsg}>{kit.real.msg}</p>}
+          {kit.real.media}
         </div>
       </div>
     );
-  }
   return (
     <div className={css.visCol}>
       <Flow flow={act.flow} />

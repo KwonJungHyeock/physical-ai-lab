@@ -36,8 +36,6 @@ import LogisticsLab from './lab/LogisticsLab';
 import { LabGateContext, type LabGate } from './lab/SiteFlow';
 import Practice7 from './practice7/Practice7';
 import { P7_OPEN, takeP7Request } from '@/engine/education/practice7';
-import { LeadEnded, LeadInvite, LeadJoin } from './lead/LeadDialogs';
-import { useStudentLead } from './lead/useLead';
 import ParkView from './map/ParkView';
 import { FollowBar, FollowContext, useRealFollow } from './stage/RealFollow';
 import LessonBar from './lesson/LessonBar';
@@ -47,9 +45,6 @@ import { TOPIC_PANELS } from './topics';
 import { TCP } from './topics/kit';
 import type { ResultRow, StepView } from './topics/types';
 import type { RunLab } from '@/engine/education/runLog';
-import { events, lessonObject } from '@/engine/account';
-import { REAL_ROBOT, operatedObject, useAccount } from '../account/AccountProvider';
-import LessonLocked from '../account/LessonLocked';
 import css from './learn.module.css';
 import ViewHint from '../simulator/ViewHint';
 
@@ -70,7 +65,6 @@ const AI_KEY = 'lab-solved-ai';
 const ENERGY_KEY = 'lab-solved-energy';
 const ALL_OPEN_KEY = 'park-all-open';
 const FIRST: TopicId = TOPICS[0].id;
-const KEYS_ABC: readonly StepKey[] = ['A', 'B', 'C'];
 /** Stable "no results yet" (a fresh {} each render would re-render the memoised panel). */
 const NO_RESULTS: Partial<Record<StepKey, ResultRow>> = {};
 
@@ -135,18 +129,6 @@ const FOLLOW_LAB: Partial<Record<string, RunLab>> = { lab: 'factory', logistics:
 type Screen = 'map' | 'course' | 'topic' | 'lab' | 'logistics' | 'bio' | 'farm' | 'cafe' | 'ai' | 'energy' | 'data' | 'final' | 'p7';
 
 export default function LearnView({ robot, chain, gripperRobot, real, hidden }: Props) {
-  /** Class accounts: a student's events, and the 차시 the teacher opened (free mode: all, nothing recorded). */
-  const account = useAccount();
-  const { track, lessonOpen } = account;
-  const student = account.role === 'student';
-  /** A lesson the teacher leads (로봇 실습 7 "선생님과 함께"): a student is invited, joins, and follows it there. */
-  const clientOf = account.client;
-  const leadClient = useMemo(() => (student ? clientOf() : null), [student, clientOf]);
-  const studentLead = useStudentLead(leadClient);
-  const [joinOpen, setJoinOpen] = useState(false);
-  const studentNo = account.session?.role === 'student' ? account.session.student.no : null;
-  /** A 차시 a student tried to open before the teacher opened it. */
-  const [locked, setLocked] = useState<TopicId | null>(null);
   const [topicId, setTopicId] = useState<TopicId>(FIRST);
   /** The park (front page), the course, a lesson, or the problem-solving lab (opened once, then kept). */
   // Opened by the simulator's [실물 검수 N] (openPractice7): straight into 로봇 실습 7.
@@ -345,17 +327,8 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
     const r = readJson<Partial<ResumeSpot> | null>(RESUME_KEY, null);
     if (r && TOPIC_BY_ID.has(r.topic as TopicId) && PAGES.includes(r.page as PageId)) setResume({ topic: r.topic as TopicId, page: r.page as PageId });
   }, []);
-  /** The 차시 on screen as last started (a jump to another of its pages is not a new start). */
-  const started = useRef<TopicId | null>(null);
-  useEffect(() => {
-    if (screen !== 'topic') started.current = null;
-  }, [screen]);
   /** Open a 차시 at a step (its first by default). */
   const openLesson = useCallback((t: TopicId, at: PageId = 'intro') => {
-    if (started.current !== t) {
-      started.current = t;
-      track(() => events.lessonStarted(t));
-    }
     setTopicId(t);
     setStep(stepFor(at, 'A'));
     setPageRaw(at);
@@ -364,15 +337,8 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
     const spot = { topic: t, page: at };
     setResume(spot);
     writeJson(RESUME_KEY, spot);
-  }, [track]);
-  /** The same, unless the teacher has not opened the 차시 yet (students in class mode): then say so. */
-  const choose = useCallback(
-    (t: TopicId, at: PageId = 'intro') => {
-      if (lessonOpen(t)) openLesson(t, at);
-      else setLocked(t);
-    },
-    [lessonOpen, openLesson],
-  );
+  }, []);
+  const choose = openLesson;
   const markDone = useCallback((t: TopicId) => {
     setDone((d) => {
       if (d[t]) return d;
@@ -389,18 +355,9 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
       return next;
     });
   }, []);
-  const resultsNow = useRef(results);
-  useEffect(() => {
-    resultsNow.current = results;
-  });
   const record = useCallback(
     (s: StepKey, row: ResultRow) => {
-      // An activity's result is in: a learning event (students in class mode), and the 차시 when all three are.
-      const before = resultsNow.current[topicId];
-      if (!before?.[s]) {
-        track(() => events.completed(lessonObject(topicId, s)));
-        if (KEYS_ABC.every((k) => k === s || before?.[k])) track(() => events.completed(lessonObject(topicId)));
-      }
+      // An activity's result is in: the 차시 is done when all three are.
       setResults((r) => {
         const cur = { ...r[topicId], [s]: row };
         if (cur.A && cur.B && cur.C) markDone(topicId);
@@ -410,17 +367,8 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
         return next;
       });
     },
-    [topicId, markDone, track],
+    [topicId, markDone],
   );
-  // The lesson page on screen (once per page: switching tabs back and forth is not a new visit).
-  const lastPage = useRef('');
-  useEffect(() => {
-    if (hidden || screen !== 'topic') return;
-    const at = `${topicId}:${page}`;
-    if (lastPage.current === at) return;
-    lastPage.current = at;
-    track(() => events.pageOpened(topicId, page));
-  }, [hidden, screen, topicId, page, track]);
 
   // The workspace takes a moment to sample (~250k poses): after the first paint.
   const [workspace, setWorkspace] = useState<WorkspaceProfile | null>(null);
@@ -522,8 +470,8 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
   );
 
   const gate = useMemo<LabGate>(
-    () => ({ locks: labLocks(progress, allOpen && !student), onLearn: fromLab, onMap: () => setScreen('map'), start: labStart }),
-    [progress, allOpen, student, fromLab, labStart],
+    () => ({ locks: labLocks(progress, allOpen), onLearn: fromLab, onMap: () => setScreen('map'), start: labStart }),
+    [progress, allOpen, fromLab, labStart],
   );
 
   const topic = TOPIC_BY_ID.get(topicId)!;
@@ -553,12 +501,8 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
   }, [progress, topicId, choose, openSiteLab, openData]);
   const inLesson = !hidden && screen === 'topic';
   // 실물 연동: a lesson, or the site lab on screen (it says itself when the arm may follow).
-  const onFollow = useCallback(
-    (place: string, prob: number | null) => track(() => events.operated(operatedObject(place === 'topic' ? { lesson: topicId } : { lab: place, problem: prob ?? undefined }), REAL_ROBOT)),
-    [track, topicId],
-  );
   const followAt = screen === 'topic' ? 'topic' : (FOLLOW_LAB[screen] ?? null);
-  const follow = useRealFollow(real, chain, hidden ? null : followAt, onFollow);
+  const follow = useRealFollow(real, chain, hidden ? null : followAt);
   // A lesson's own [실물로] buttons take the arm over from 실물 연동 first (they would fight over it).
   const { handOver } = follow;
   const lessonReal = useMemo<RealArm>(
@@ -581,8 +525,8 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
       <FollowContext.Provider value={follow.link}>
       <ParkView
         progress={progress}
-        allOpen={allOpen && !student}
-        onAllOpen={student ? undefined : setAllOpen}
+        allOpen={allOpen}
+        onAllOpen={setAllOpen}
         hidden={hidden || screen !== 'map'}
         onTopic={fromMap}
         onLab={openSiteLab}
@@ -602,26 +546,8 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
           gripperRobot={gripperRobot}
           real={real}
           hidden={hidden || screen !== 'p7'}
-          teacher={!student}
-          studentLead={student ? studentLead : null}
-          studentNo={studentNo}
+          teacher
           onBack={() => setScreen('map')}
-        />
-      )}
-      {student && !hidden && studentLead.lead && !studentLead.joined && !joinOpen && <LeadInvite lead={studentLead.lead} onJoin={() => setJoinOpen(true)} />}
-      {student && !hidden && studentLead.ended && <LeadEnded onClose={studentLead.dismissEnded} />}
-      {joinOpen && studentLead.lead && (
-        <LeadJoin
-          robotOnline={real.online}
-          onClose={() => setJoinOpen(false)}
-          onJoin={async (j) => {
-            const why = await studentLead.join(j);
-            if (why) return why;
-            setJoinOpen(false);
-            setP7Seen(true);
-            setScreen('p7');
-            return null;
-          }}
         />
       )}
       {dataSeen && <DataCenter hidden={hidden || screen !== 'data'} onBack={() => setScreen('map')} onOpenLab={(lab) => openSiteLab(lab)} />}
@@ -676,10 +602,7 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
             page={page}
             onPage={setPage}
             results={results[topicId] ?? NO_RESULTS}
-            onChecked={() => {
-              if (!done[topicId]) track(() => events.completed(lessonObject(topicId)));
-              markDone(topicId);
-            }}
+            onChecked={() => markDone(topicId)}
             level={level}
             onSite={toSite}
             onward={onward}
@@ -713,16 +636,6 @@ export default function LearnView({ robot, chain, gripperRobot, real, hidden }: 
       </SymbolsProvider>
       {/* Only where the real arm can follow (a lesson, a site lab): not over the map, 마무리 평가 or the 관제센터. */}
       <FollowBar {...follow} hidden={hidden || !followAt} stage={screen === 'topic' ? 'right' : 'lab'} />
-      {locked && !hidden && (
-        <LessonLocked
-          topic={locked}
-          onClose={() => setLocked(null)}
-          onOpen={() => {
-            setLocked(null);
-            openLesson(locked);
-          }}
-        />
-      )}
       </FollowContext.Provider>
     </LabGateContext.Provider>
   );

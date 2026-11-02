@@ -8,8 +8,9 @@
   `usb-kit/` = the USB stick's installer and forms. Standard library + pymycobot only.
 - `desktop-go/` — Go program that embeds the web app's static export into one Windows `.exe`
   (the simulator to run and show without a robot or internet). Build with `sh desktop-go/build.sh`.
-  Started with `-class` it is the teacher's LAN class server (accounts, learning events: `classroom/`);
-  `cloud/` = the reference receiver for the pseudonymised cloud sync (docs/reports/system/23-accounts-hybrid.md).
+  Its own tools: 로봇 USB 만들기 and 새 로봇 설치 (they need this PC's USB and LAN, so the web app has them only here).
+  The class server (accounts, learning records) and the local LLM were removed for the web platform
+  (docs/reports/system/42-web-platform.md says what was there and how to bring it back).
   Delivering it: during development send the zip split in two (`zip -s 30m`, under the 30 MB file limit);
   a build to test or deliver goes on the `release` branch as two files + README: `PhysicalAI-Simulator.zip`
   (built without the kit: `sh desktop-go/build.sh`) and `eduino_usb.zip` (`robot-python/tools/make_usb_kit.py`, signed),
@@ -29,9 +30,9 @@ Keep code sorted by language (TypeScript only under `web-typescript/`, Python on
 Go only under `desktop-go/`), then by part — don't drop new files into one flat folder:
 - `web-typescript/src/ui/simulator/{stage,editors,control,connect,tasks,pages}/`,
   `web-typescript/src/ui/education/{map,roadmap,lesson,stage,topics,fig,print,lab,data,practice7}/` (the 교육 home = the 산업단지 map in `map/`, lesson screens in `topics/<N-학문>/`, problem-solving labs in `lab/`, the 디지털 트윈 관제센터 in `data/`, 로봇 실습 7 = the seven acceptance checks as easy practices in `practice7/`),
-  `web-typescript/src/ui/agv/`, `web-typescript/src/ui/account/` (class accounts: the login, the top bar's account chip, 학급 관리 = the teacher dashboard, login cards; engine in `src/engine/account/`).
-- `web-typescript/src/engine/{robot,physics,simulator,python,vision,education,agv,serial,account}/` — no React or DOM UI here.
-- `web-typescript/tests/{robot,simulator,agv,education,account}/`, `web-typescript/tools/{build,check}/`.
+  `web-typescript/src/ui/agv/`.
+- `web-typescript/src/engine/{robot,physics,simulator,python,vision,education,agv,serial}/` — no React or DOM UI here.
+- `web-typescript/tests/{robot,simulator,agv,education}/`, `web-typescript/tools/{build,check}/`.
 - `web-typescript/public/education/` = 교육 tab pictures (served at `/education/...`); `park/kit/` = the map's Kenney Factory Kit models (CC0, recoloured atlas, see its ATTRIBUTION.md).
 - New reports go into the matching `docs/reports/<category>/`, new manuals into the matching `manuals/<category>/`;
   add them to `docs/README.md` / `manuals/README.md`.

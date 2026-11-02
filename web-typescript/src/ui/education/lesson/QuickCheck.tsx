@@ -8,13 +8,11 @@
 
 import { useMemo, useState, type ReactNode } from 'react';
 
-import { events, lessonObject, quizObject } from '@/engine/account';
 import type { TopicId } from '@/engine/education/catalog';
 import { questionsOf, type Question } from '@/engine/education/questions';
 import { recordAnswer } from '@/engine/education/wrong';
 
 import type { StudyLevel } from '@/engine/education/roadmap';
-import { useAccount } from '../../account/AccountProvider';
 import { Rich } from './Rich';
 import css from '../learn.module.css';
 
@@ -75,7 +73,6 @@ export function QuickCheck({ topic, level = 'hs', onAllRight }: { topic: TopicId
     return [...take(qs.filter((q) => q.kind === 'ox'), 3, round), ...take(qs.filter((q) => q.kind === 'mc'), 2, round)];
   }, [topic, level, round]);
   const [picked, setPicked] = useState<Record<string, number>>({});
-  const { track } = useAccount();
   if (!items.length) return <p className={css.note}>이 주제의 문항이 아직 없어요.</p>;
   const answered = items.filter((q) => q.id in picked).length;
   const right = items.filter((q) => picked[q.id] === answerOf(q)).length;
@@ -84,12 +81,6 @@ export function QuickCheck({ topic, level = 'hs', onAllRight }: { topic: TopicId
     const next = { ...picked, [q.id]: v };
     recordAnswer(q.id, v === answerOf(q));
     setPicked(next);
-    // Class mode (students): the answer (the choice's number), and the round's score once all are answered.
-    track(() => events.answered(quizObject(topic, q.id), q.kind === 'ox' ? (v === 0 ? 'O' : 'X') : String(v + 1), v === answerOf(q)));
-    if (items.every((x) => x.id in next)) {
-      const right = items.filter((x) => next[x.id] === answerOf(x)).length;
-      track(() => events.scored(lessonObject(topic, 'check'), right, items.length, right === items.length));
-    }
     if (items.every((x) => x.id in next && next[x.id] === answerOf(x))) onAllRight?.();
   };
   return (

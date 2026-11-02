@@ -168,7 +168,7 @@ myAGV `agv_server.py` 는 같은 화면 파일에 `GET /api/state`, `POST /api/d
 `/api/straight` · `/api/trim` · `/api/led` · `/api/identify` · `/api/reconnect`, `GET /api/camera.jpg`, `/api/wifi…` 를 둡니다.
 exe(`desktop-go`)는 `/api/*` 에 404 를 돌려 시뮬레이터로 두고, `GET /__physical-ai-simulator/lan` 으로 이 PC 의 네트워크 대역을 알려 줍니다.
 로봇 USB 만들기(`desktop-go/usbkit.go`)는 `/__physical-ai-simulator/usb` (USB 목록 · `/pcwifi` · `/make` · `/job` · `/results` · `/eject`):
-127.0.0.1 에서만, `X-Physical-AI: 1` 머리글이 있는 요청만 받습니다 (학급 서버 모드에는 없음).
+127.0.0.1 에서만, `X-Physical-AI: 1` 머리글이 있는 요청만 받습니다.
 
 ## 문서 · 배포
 

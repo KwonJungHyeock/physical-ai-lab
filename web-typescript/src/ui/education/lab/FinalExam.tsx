@@ -44,7 +44,6 @@ import PalletCell, { PalletPlayback } from './PalletCell';
 import { Playback } from './playback';
 import { Lines } from '../lesson/Rich';
 import { fmt, near } from './SiteFlow';
-import { useAccount } from '../../account/AccountProvider';
 import css from './lab.module.css';
 import lg from './site.module.css';
 import fx from './final.module.css';
@@ -118,7 +117,6 @@ export default function FinalExam({ robot, chain, gripperRobot, hidden, onBack }
   const [sheet, setSheet] = useState(false);
   const [klass, setKlass] = useState<Submitted[]>([]);
   const [classOpen, setClassOpen] = useState(false);
-  const student = useAccount().role === 'student';
   // What was kept on this computer, read after hydration (the page is a static export).
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -242,33 +240,29 @@ export default function FinalExam({ robot, chain, gripperRobot, hidden, onBack }
                 <button type="button" className={css.primary} onClick={() => setSheet(true)}>
                   결과지 보기 · 인쇄
                 </button>
-                {/* 반 기록 (several students on one PC): the teacher's; a logged-in student's go to the class server. */}
-                {!student && (
-                  <>
-                    <button
-                      type="button"
-                      className={css.primary}
-                      title="이 학생의 결과를 반 기록에 넣고, 다음 학생이 새로 시작해요"
-                      onClick={() => {
-                        const who = saved.name.trim();
-                        if (!who) {
-                          window.alert('이름을 먼저 적어 주세요.');
-                          return;
-                        }
-                        if (!window.confirm(`${who} 학생의 결과(${total.score}점)를 반 기록에 저장하고 다음 학생을 시작할까요?`)) return;
-                        const next = [...klass, { name: who, date: new Date().toISOString(), records: saved.records }];
-                        writeClass(next);
-                        setKlass(next);
-                        save(() => ({ name: '', records: {} }));
-                      }}
-                    >
-                      제출하고 다음 학생
-                    </button>
-                    <button type="button" className={fx.reset} onClick={() => setClassOpen(true)} title="교사용: 이 컴퓨터에서 제출한 학생들의 점수">
-                      반 결과 ({klass.length}명)
-                    </button>
-                  </>
-                )}
+                {/* 반 기록 (several students on one PC): the teacher's. */}
+                <button
+                  type="button"
+                  className={css.primary}
+                  title="이 학생의 결과를 반 기록에 넣고, 다음 학생이 새로 시작해요"
+                  onClick={() => {
+                    const who = saved.name.trim();
+                    if (!who) {
+                      window.alert('이름을 먼저 적어 주세요.');
+                      return;
+                    }
+                    if (!window.confirm(`${who} 학생의 결과(${total.score}점)를 반 기록에 저장하고 다음 학생을 시작할까요?`)) return;
+                    const next = [...klass, { name: who, date: new Date().toISOString(), records: saved.records }];
+                    writeClass(next);
+                    setKlass(next);
+                    save(() => ({ name: '', records: {} }));
+                  }}
+                >
+                  제출하고 다음 학생
+                </button>
+                <button type="button" className={fx.reset} onClick={() => setClassOpen(true)} title="교사용: 이 컴퓨터에서 제출한 학생들의 점수">
+                  반 결과 ({klass.length}명)
+                </button>
                 <button
                   type="button"
                   className={fx.reset}

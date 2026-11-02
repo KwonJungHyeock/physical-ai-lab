@@ -1,14 +1,14 @@
 /**
  * 로봇 실습 7 "선생님과 함께": the seven led lessons fit their units (3D steps that exist, questions with
- * one right answer, picks the class server takes), the 기초교육 차시 add up, and the teacher's summary
- * counts the class right (engine/account/lead.ts, the same shapes as desktop-go/classroom/lead.go).
+ * one right answer), the 기초교육 차시 add up, and the lead on the projector keeps its rules
+ * (engine/education/leadState.ts).
  */
 
 import assert from 'node:assert/strict';
 
 const P = await import('../../src/engine/education/practice7');
 const L = await import('../../src/engine/education/lead');
-const A = await import('../../src/engine/account/lead');
+const A = await import('../../src/engine/education/leadState');
 
 let n = 0;
 const ok = async (name: string, f: () => void | Promise<void>) => {
@@ -18,7 +18,7 @@ const ok = async (name: string, f: () => void | Promise<void>) => {
 };
 const runes = (s: string) => [...s].length;
 
-await ok('one lesson per unit, ids the class server takes', () => {
+await ok('one lesson per unit, ids in one form', () => {
   assert.deepEqual(L.LESSONS.map((l) => l.unit), [1, 2, 3, 4, 5, 6, 7]);
   for (const l of L.LESSONS) {
     assert.match(l.id, /^[a-z0-9][a-z0-9-]{0,39}$/);
@@ -99,58 +99,21 @@ await ok('기초교육 1차시 · 2차시: 50분 안, every unit once, the next 
   assert.equal(L.nextLesson('p7-7'), null);
 });
 
-/* --- the teacher's summary ---------------------------------------------------------------------- */
+/* --- the lead on this PC -------------------------------------------------------------------------- */
 
-const lead = { lesson: 'p7-4', step: 4, gate: false, reveal: false, stop: 0, rev: 3, at: 0, since: 0 };
-const mark = (no: number, m: Partial<import('../../src/engine/account/lead').Mark>) => ({ ...A.emptyMark(), no, at: 0, lesson: 'p7-4', step: 4, ...m });
-
-await ok('summary: done, help, still at it, answers of this step only', () => {
-  const marks = [
-    mark(1, { group: 1, role: 'robot', done: true, robot: 'done', result: '4개 옮김' }),
-    mark(2, { group: 1, role: 'screen', done: true, answer: '4' }),
-    mark(3, { group: 1, role: 'screen', answer: '3' }),
-    mark(4, { group: 2, role: 'robot', robot: 'ready' }),
-    mark(5, { group: 2, role: 'screen', help: true }),
-    mark(6, { step: 3, done: true, answer: '9' }),
-    mark(7, { lesson: 'p7-3', step: 2, done: true, group: 3, role: 'robot', robot: 'done' }),
-  ];
-  const s = A.summarize(lead, marks, 24);
-  assert.equal(s.total, 24);
-  assert.equal(s.joined, 7);
-  assert.equal(s.done, 2);
-  assert.deepEqual(s.help, [5]);
-  assert.equal(s.doing, 4);
-  assert.deepEqual([...s.answers], [['4', 1], ['3', 1]]);
-  assert.deepEqual(s.groups.map((g) => [g.group, g.robotNo, g.robot, g.members]), [[1, 1, 'done', [1, 2, 3]], [2, 4, 'ready', [4, 5]], [3, 7, '', [7]]]);
-  assert.equal(A.groupsReady(s), false, "group 3's robot did nothing in this lesson");
-  assert.equal(A.groupsReady(A.summarize(lead, marks.slice(0, 5))), true);
-});
-
-await ok('a mark is cut to what the server takes', () => {
-  const m = A.cleanMark({ ...A.emptyMark(), group: 40, step: -2, answer: '가'.repeat(60), result: 'x'.repeat(200) });
-  assert.equal(m.group, A.LEAD_MAX_GROUP);
-  assert.equal(m.step, 0);
-  assert.equal(runes(m.answer), 40);
-  assert.equal(m.result.length, 80);
-  assert.ok(A.sameMark(m, { ...m }));
-  assert.ok(!A.sameMark(m, { ...m, help: true }));
-});
-
-await ok('leading on this PC alone: the same rules as the server (stop never goes back, since moves with the step)', async () => {
-  let t = 1000;
-  const h = new A.LocalLead(() => t);
-  assert.equal(h.shared, false);
-  assert.equal((await h.get()).lead, null);
-  let v = await h.set({ lesson: 'p7-1', step: 0, gate: false, reveal: false, stop: 0 });
-  assert.equal(v.lead!.rev, 1);
-  t = 5000;
-  v = await h.set({ lesson: 'p7-1', step: 0, gate: false, reveal: true, stop: 2 });
-  assert.equal(v.lead!.since, 1000);
-  v = await h.set({ lesson: 'p7-1', step: 1, gate: false, reveal: false, stop: 0 });
-  assert.equal(v.lead!.since, 5000);
-  assert.equal(v.lead!.stop, 2);
-  await h.end();
-  assert.equal((await h.get()).lead, null);
+await ok('leading on the projector: stop never goes back, since moves with the step', () => {
+  let v = A.applyLead(null, { lesson: 'p7-1', step: 0, gate: false, reveal: false, stop: 0 }, 1000);
+  assert.equal(v.at, 1000);
+  assert.equal(v.since, 1000);
+  v = A.applyLead(v, { lesson: 'p7-1', step: 0, gate: false, reveal: true, stop: 2 }, 5000);
+  assert.equal(v.since, 1000);
+  assert.equal(v.reveal, true);
+  v = A.applyLead(v, { lesson: 'p7-1', step: 1, gate: false, reveal: false, stop: 0 }, 6000);
+  assert.equal(v.since, 6000);
+  assert.equal(v.stop, 2);
+  assert.equal(v.at, 1000);
+  v = A.applyLead(v, { lesson: 'p7-2', step: 1, gate: false, reveal: false, stop: 2 }, 7000);
+  assert.equal(v.since, 7000, 'another lesson at the same step is a new step');
 });
 
 console.log(`lead: ${n} checks passed`);

@@ -27,7 +27,6 @@ import { THEORY_PAGE } from '@/engine/education/theoryPages.gen';
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 
-import { useAccount } from '../../account/AccountProvider';
 import { QuickCheck } from './QuickCheck';
 import { Rich, TermChips } from './Rich';
 import { TopicArt } from './TopicArt';
@@ -117,9 +116,8 @@ export default function LessonRail({ topic, page, onPage, results, onChecked, le
   const i = PAGES.indexOf(page);
   const act = isActivity(page) ? topic.steps.find((s) => s.key === page)! : null;
   const [teacherOn, setTeacher] = useState(false);
-  // 교사용 보기: free mode and teachers keep the switch; a student in class mode never sees teacher blocks.
-  const teacherAllowed = useAccount().role !== 'student';
-  const teacher = teacherOn && teacherAllowed;
+  // 교사용 보기: the switch above the mission shows the teacher blocks.
+  const teacher = teacherOn;
   const [notes, setNotes] = useState(false);
   /** The guesses made in this lesson (index into the activity's 보기). */
   const [guess, setGuess] = useState<Partial<Record<StepKey, number>>>({});
@@ -188,20 +186,18 @@ export default function LessonRail({ topic, page, onPage, results, onChecked, le
       <header className={css.mission} aria-label="미션">
         <div className={css.missionTop}>
           <small>오늘의 질문</small>
-          {teacherAllowed && (
-            <button
-              type="button"
-              className={css.teacherBtn}
-              aria-pressed={teacher}
-              onClick={() => {
-                setTeacher(!teacher);
-                remember(TEACHER_KEY, !teacher);
-              }}
-              title="선생님이 물어볼 것과 정답을 보여 줘요"
-            >
-              교사용 {teacher ? '켜짐' : '보기'}
-            </button>
-          )}
+          <button
+            type="button"
+            className={css.teacherBtn}
+            aria-pressed={teacher}
+            onClick={() => {
+              setTeacher(!teacher);
+              remember(TEACHER_KEY, !teacher);
+            }}
+            title="선생님이 물어볼 것과 정답을 보여 줘요"
+          >
+            교사용 {teacher ? '켜짐' : '보기'}
+          </button>
         </div>
         <p className={css.missionQ}>
           <Rich text={glossFirst([topic.question])[0]} inert />
@@ -389,7 +385,7 @@ export default function LessonRail({ topic, page, onPage, results, onChecked, le
             또는 다음 차시: {onward.alt.title}
           </button>
         )}
-        {teacherAllowed && (locked || (i === PAGES.length - 1 && onward && !passed)) && (
+        {(locked || (i === PAGES.length - 1 && onward && !passed)) && (
           <button
             type="button"
             className={css.skip}

@@ -10,8 +10,7 @@
 //
 // The robot side is unchanged: it reads eduino/wifi.txt and updates itself from the signed kit.
 //
-// Only for the person at this PC: answered on 127.0.0.1 only (not by the class server, which is on
-// the LAN), with this program's own Host, and only to requests carrying the X-Physical-AI header
+// Only for the person at this PC: answered on 127.0.0.1 only, with this program's own Host, and only to requests carrying the X-Physical-AI header
 // (a web page elsewhere cannot send it without asking first, and nothing here says yes).
 package main
 

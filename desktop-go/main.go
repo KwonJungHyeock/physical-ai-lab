@@ -8,9 +8,6 @@
 // 로봇 찾기 on this PC's own networks (/__physical-ai-simulator/lan): robots on
 // the same Wi-Fi are listed with their names and addresses, one click opens one.
 //
-// Started with -class it is the teacher's class server instead (classmode.go, classroom/): the app on
-// the local network, class accounts and learning records on this PC.
-//
 // Build with build.sh (it copies the app into site/ first).
 package main
 
@@ -55,10 +52,6 @@ func main() {
 	} {
 		_ = mime.AddExtensionType(ext, typ)
 	}
-	if classModeWanted(os.Args[1:]) {
-		runClassServer(root, classDataDir(os.Args[1:]), classDevOrigins(os.Args[1:]))
-		return
-	}
 
 	addr := fmt.Sprintf("127.0.0.1:%d", port)
 	url := fmt.Sprintf("http://%s/console?from=sim", addr)
@@ -99,8 +92,8 @@ func main() {
 		time.Sleep(300 * time.Millisecond)
 		openApp(url)
 	}()
-	// The USB maker (usbkit.go) only here, on 127.0.0.1: not in the class server on the LAN.
-	srv := &http.Server{Handler: setupHandler(usbHandler(aiHandler(handler(root)))), ReadHeaderTimeout: 10 * time.Second}
+	// The USB maker (usbkit.go) and 새 로봇 설치 (setup.go): on 127.0.0.1 only.
+	srv := &http.Server{Handler: setupHandler(usbHandler(handler(root))), ReadHeaderTimeout: 10 * time.Second}
 	if err := srv.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		fail(err)
 	}

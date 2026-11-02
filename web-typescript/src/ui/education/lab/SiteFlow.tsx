@@ -18,14 +18,12 @@ import { TOPIC_BY_ID, type TopicId } from '@/engine/education/catalog';
 import type { LabId, ProblemNo } from '@/engine/education/park';
 import type { StudyLevel } from '@/engine/education/roadmap';
 import type { RunLab } from '@/engine/education/runLog';
-import { events, siteObject } from '@/engine/account';
 import { EFFORT_KEY } from '@/engine/education/classReport';
 import type { CheckQ, SiteProblem, SiteStepId, SiteText } from '@/engine/education/lab/siteText';
 
 import { sentencesOf } from '@/engine/education/sentences';
 import { Lines } from '../lesson/Rich';
 import { useFollowGate } from '../stage/RealFollow';
-import { useAccount } from '../../account/AccountProvider';
 import css from './lab.module.css';
 import lg from './site.module.css';
 import dk from './deck.module.css';
@@ -489,17 +487,13 @@ function Predict({ T, st, patch }: { T: SiteText; st: FlowState; patch: FlowPatc
   );
 }
 
-/** Hints in three levels (each one costs a little on the stars). Opening one is a learning event in class mode. */
-function Hints({ T, st, patch, lab }: { T: SiteText; st: FlowState; patch: FlowPatch; lab: RunLab }) {
-  const { track } = useAccount();
+/** Hints in three levels (each one costs a little on the stars). */
+function Hints({ T, st, patch }: { T: SiteText; st: FlowState; patch: FlowPatch }) {
   return (
     <div className={lg.hints}>
       <button
         type="button"
-        onClick={() => {
-          track(() => events.hint(siteObject(lab, T.id), st.hints + 1));
-          patch((x) => ({ hints: Math.min(3, x.hints + 1) }));
-        }}
+        onClick={() => patch((x) => ({ hints: Math.min(3, x.hints + 1) }))}
         disabled={st.hints >= 3}
       >
         💡 막히면 힌트 보기 ({st.hints}/3)
@@ -785,7 +779,6 @@ export function SitePanel(p: SitePanelProps) {
 
 function SiteSteps(p: SitePanelProps) {
   const { T, st, busy } = p;
-  const { track } = useAccount();
   // 카드 모드: no step guide over the cards (each card says what to do).
   const guide = p.deck ? null : <p className={lg.guide}><Lines text={STEP_GUIDE[st.step]} /></p>;
   // 카드 모드: which card of this step is on screen (back to the first when the step changes).
@@ -834,10 +827,7 @@ function SiteSteps(p: SitePanelProps) {
             <span />
             <SiteBtn
               disabled={busy}
-              onClick={() => {
-                track(() => events.problemStarted(p.lab, T.id));
-                p.onRunBefore();
-              }}
+              onClick={() => p.onRunBefore()}
             >
               {busy ? '계산 중…' : '▶ 라인 가동'}
             </SiteBtn>
@@ -940,7 +930,7 @@ function SiteSteps(p: SitePanelProps) {
             <Sec n={2} title="조작반에서 값 바꾸기" kind="do" state={parts[1].state} wait="계산이 맞으면 조작반이 열려요.">
               <p className={lg.secText}><Lines text={T.calc.after} /></p>
               {p.hmi}
-              <Hints T={T} st={st} patch={p.patch} lab={p.lab} />
+              <Hints T={T} st={st} patch={p.patch} />
             </Sec>
             <Sec n={3} title="결과 예상하기" kind="ask" state={parts[2].state} wait="조작반이 열리면 함께 열려요.">
               <p className={lg.secText}>가동하기 전에, 이 값이면 어떻게 될지 하나 골라요.</p>
