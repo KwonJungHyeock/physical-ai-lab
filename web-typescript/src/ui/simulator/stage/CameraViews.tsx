@@ -12,7 +12,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 're
 
 import { BLOCK_MM, COLOR_HEX, type ColorName } from '@/engine/simulator/board';
 import type { CameraId } from '@/engine/simulator/program';
-import { cameraFrameUrl } from '@/engine/simulator/robotLink';
+import { cameraFrameUrl, robotFetch } from '@/engine/simulator/robotLink';
 import { OFFICIAL_HSV, classify, detectKit, findBlobs, pixelToPlane, type BoardCalibration, type ImageLike, type Marker } from '@/engine/vision/color';
 
 import type { CameraFrame } from './Stage';
@@ -322,7 +322,7 @@ const CameraViews = forwardRef<CameraViewsHandle, Props>(function CameraViews(
       img.onerror = async () => {
         if (!alive) return;
         try {
-          const r = await fetch(cameraFrameUrl(cam));
+          const r = await robotFetch(cameraFrameUrl(cam));
           const j = (await r.json()) as { error?: string };
           setRealError(j.error ?? '카메라 영상을 받지 못했어요.');
         } catch {

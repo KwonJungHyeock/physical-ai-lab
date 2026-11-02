@@ -43,6 +43,8 @@ export interface FoundRobot {
   version: string;
   /** The Wi-Fi it is on ('' on a cable, or a robot older than that). */
   wifi: string;
+  /** Web sites (https origins) whose own screens it takes commands from; [] on robots older than that. */
+  web: string[];
   /** Round trip of the answer, ms. */
   ms: number;
 }
@@ -60,6 +62,7 @@ interface StateReply {
   remote?: boolean;
   version?: string;
   wifi?: string;
+  web?: string[];
 }
 
 /** Chrome's Local Network Access options to try for `ip` (other browsers ignore the field). */
@@ -113,6 +116,7 @@ export async function probeRobot(ip: string, timeoutMs = 1500, port = ROBOT_PORT
       remote: !!s.remote,
       version: typeof s.version === 'string' ? s.version.slice(0, 64) : '',
       wifi: typeof s.wifi === 'string' ? s.wifi.slice(0, 32) : '',
+      web: Array.isArray(s.web) ? s.web.filter((o): o is string => typeof o === 'string').slice(0, 20) : [],
       ms: Math.round(performance.now() - t0),
     };
   } catch {

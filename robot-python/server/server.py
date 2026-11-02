@@ -998,6 +998,13 @@ WIFI = None
 # Only reading: /api/identify moves the arm, so it is taken from this robot's own console and the PC
 # program on this network only (remote_console), like every other command.
 CROSS_ORIGIN = ("/api/state",)
+# Web sites (https) whose own screens drive the arm, like the PC program on this network: the
+# platform's simulator. More can be listed, one https://… per line, in web_origins.txt beside this file.
+WEB_ORIGINS = {"https://physical-ai-lab-lake.vercel.app"}
+_WEB_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web_origins.txt")
+if os.path.isfile(_WEB_FILE):
+    with open(_WEB_FILE, encoding="utf-8") as _f:
+        WEB_ORIGINS |= {ln.strip().rstrip("/") for ln in _f if ln.strip().startswith("https://")}
 # Different on every start: a console that sees it change knows the server restarted (its run ids start over).
 BOOT_ID = os.urandom(4).hex()
 # Files whose names change with every build (and the Python runtime): kept by the browser.
@@ -1157,11 +1164,13 @@ class Handler(SimpleHTTPRequestHandler):
 
     def remote_console(self):
         """The request comes from the PC program on this classroom network (its window at
-        http://localhost / 127.0.0.1, or the class server at a private address), which drives the
-        arm from its own screens. Not any page on the internet."""
+        http://localhost / 127.0.0.1, or a PC at a private address), or from the platform's web site
+        (WEB_ORIGINS), which drive the arm from their own screens. Not any other page on the internet."""
         origin = self.headers.get("Origin")
         if not origin:
             return False
+        if origin.rstrip("/") in WEB_ORIGINS:
+            return True
         parts = urllib.parse.urlsplit(origin)
         if parts.scheme != "http" or not parts.hostname:
             return False
@@ -1274,7 +1283,7 @@ class Handler(SimpleHTTPRequestHandler):
             state = {k: v for k, v in ROBOT.state.items() if k != "arrivals"}
             state["arrivalCount"] = len(ROBOT.state["arrivals"])
             return self.send_json({**state, **IDENTITY, "boot": BOOT_ID, "speedCap": SPEED_CAP, "age": age, "camera": CAMERA.available, "cameras": CAMERA.count,
-                                   "pump": ROBOT.pump.available, "pumpError": ROBOT.pump.error, "remote": True, "version": VERSION,
+                                   "pump": ROBOT.pump.available, "pumpError": ROBOT.pump.error, "remote": True, "web": sorted(WEB_ORIGINS), "version": VERSION,
                                    "owner": OWNER.view(ROBOT.state["running"])})
         if self.path.split("?")[0] == "/api/wifi":
             try:

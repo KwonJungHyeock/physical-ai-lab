@@ -21,6 +21,7 @@ import {
   aiOnRobot,
   calibrateRobot,
   cameraFrameUrl,
+  robotFetch,
   fetchArrivals,
   handVisionOnRobot,
   fetchRobotState,
@@ -2897,7 +2898,7 @@ export default function Console() {
   /** One hand-camera picture (320 px wide): the robot's newest frame, or the simulated camera. */
   const grabHand = async (): Promise<ImageLike | null> => {
     if (robotMode) {
-      const r = await fetch(cameraFrameUrl(Math.max(0, handCam))).catch(() => null);
+      const r = await robotFetch(cameraFrameUrl(Math.max(0, handCam))).catch(() => null);
       if (!r?.ok) return null;
       const bmp = await createImageBitmap(await r.blob());
       const c = (trackCanvas.current ??= document.createElement('canvas'));

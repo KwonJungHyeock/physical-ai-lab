@@ -8,7 +8,9 @@
  *    and only the arm's commands go to the robot (its address is kept for this window, see
  *    setRemoteRobot). A robot whose server is older than that has no `remote` in its state; the
  *    connect window then opens the robot's own page instead.
- * Anywhere else (Vercel, dev server) that request fails and the console stays a simulator.
+ * The web site (Vercel) drives a robot the same way when the robot lists the site in its `web` origins
+ * (server.py WEB_ORIGINS); an older robot does not, and then its own page opens instead.
+ * Anywhere else (dev server, no robot) that request fails and the console stays a simulator.
  */
 
 import { clampJointAngles } from '../robot/limits';
@@ -38,6 +40,23 @@ export function setRemoteRobot(address: string | null) {
 }
 /** A robot API path, on the remote robot when there is one. */
 const api = (path: string) => (remote ? `http://${remote}${path}` : path);
+
+/**
+ * fetch to the robot. From a secure (https) page — the web site driving a robot on the classroom network —
+ * Chrome's Local Network Access needs to be told the request is for the local network (it asks the user
+ * once); its name for that space changed between versions, so both are tried. Elsewhere a plain fetch.
+ */
+export async function robotFetch(url: string, init: RequestInit = {}): Promise<Response> {
+  if (typeof location === 'undefined' || location.protocol !== 'https:' || !url.startsWith('http://')) return fetch(url, init);
+  const spaces = ['local', 'private'];
+  for (let i = 0; ; i++) {
+    try {
+      return await fetch(url, { ...({ targetAddressSpace: spaces[i] } as RequestInit), ...init });
+    } catch (err) {
+      if (i + 1 >= spaces.length || (err as Error).name !== 'TypeError') throw err;
+    }
+  }
+}
 
 /**
  * Who this console is, for the robot's one-console-at-a-time rule (server.py Owner): a random id per
@@ -128,6 +147,8 @@ export interface RobotState {
   host?: string;
   /** The robot's server takes commands from the PC program's own screens (로봇 연결 without leaving them). */
   remote?: boolean;
+  /** Web sites (https origins) it takes commands from as well; absent on older servers. */
+  web?: string[];
   /** The console moving the arm now ({id, name}, see consoleId), null when none; absent on older servers. */
   owner?: { id: string; name: string } | null;
 }
@@ -140,7 +161,7 @@ export interface Arrival {
 
 export async function fetchArrivals(): Promise<Arrival[]> {
   try {
-    const r = await fetch(api('/api/arrivals'), { cache: 'no-store' });
+    const r = await robotFetch(api('/api/arrivals'), { cache: 'no-store' });
     return ((await r.json()) as { arrivals: Arrival[] }).arrivals ?? [];
   } catch {
     return [];
@@ -162,7 +183,7 @@ export interface RobotVision {
 
 export async function visionOnRobot(cam = 0): Promise<RobotVision> {
   try {
-    const r = await fetch(api('/api/vision'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cam }), signal: AbortSignal.timeout(VISION_MS) });
+    const r = await robotFetch(api('/api/vision'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cam }), signal: AbortSignal.timeout(VISION_MS) });
     return (await r.json()) as RobotVision;
   } catch (err) {
     return { ok: false, error: String(err), ms: 0, engine: '', markers: [], detections: [] };
@@ -176,7 +197,7 @@ export async function visionOnRobot(cam = 0): Promise<RobotVision> {
  */
 export async function handVisionOnRobot(cam: number, planeZ: number): Promise<RobotVision> {
   try {
-    const r = await fetch(api('/api/vision/hand'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cam, planeZ }), signal: AbortSignal.timeout(VISION_MS) });
+    const r = await robotFetch(api('/api/vision/hand'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cam, planeZ }), signal: AbortSignal.timeout(VISION_MS) });
     const j = (await r.json()) as RobotVision;
     return { ...j, markers: j.markers ?? [], detections: j.detections ?? [] };
   } catch (err) {
@@ -198,7 +219,7 @@ export interface RobotAi {
 
 export async function aiOnRobot(cam = 0): Promise<RobotAi> {
   try {
-    const r = await fetch(api('/api/ai'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cam }), signal: AbortSignal.timeout(AI_MS) });
+    const r = await robotFetch(api('/api/ai'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cam }), signal: AbortSignal.timeout(AI_MS) });
     const j = (await r.json()) as RobotAi;
     return { ...j, detections: j.detections ?? [] };
   } catch (err) {
@@ -209,7 +230,7 @@ export async function aiOnRobot(cam = 0): Promise<RobotAi> {
 /** Before the acceptance demonstration: what the robot has for each check (/api/selfcheck). */
 export async function fetchSelfcheck(): Promise<{ ok: boolean; error?: string; items: import('./evidence').PrepItem[] }> {
   try {
-    const r = await fetch(api('/api/selfcheck'), { cache: 'no-store' });
+    const r = await robotFetch(api('/api/selfcheck'), { cache: 'no-store' });
     const j = (await r.json()) as { items?: import('./evidence').PrepItem[] };
     return { ok: r.ok, items: j.items ?? [] };
   } catch (err) {
@@ -220,7 +241,7 @@ export async function fetchSelfcheck(): Promise<{ ok: boolean; error?: string; i
 /** What is on the flange (/api/tool): a gripper's opening, null when no gripper answers; undefined when not known (running, an older robot). */
 export async function fetchTool(): Promise<number | null | undefined> {
   try {
-    const r = await fetch(api('/api/tool'), { cache: 'no-store', signal: AbortSignal.timeout(4000) });
+    const r = await robotFetch(api('/api/tool'), { cache: 'no-store', signal: AbortSignal.timeout(4000) });
     if (!r.ok) return undefined;
     const j = (await r.json()) as { busy?: boolean; gripper?: number | null };
     if (j.busy) return undefined;
@@ -232,7 +253,7 @@ export async function fetchTool(): Promise<number | null | undefined> {
 
 export async function fetchRobotState(signal?: AbortSignal): Promise<RobotState | null> {
   try {
-    const r = await fetch(api(remote ? '/api/state?console=1' : '/api/state'), { cache: 'no-store', signal });
+    const r = await robotFetch(api(remote ? '/api/state?console=1' : '/api/state'), { cache: 'no-store', signal });
     if (!r.ok) return null;
     const s = (await r.json()) as RobotState;
     if (typeof s.connected !== 'boolean') return null;
@@ -254,7 +275,7 @@ export interface PostResult {
 
 async function post(path: string, body: unknown = {}): Promise<PostResult> {
   try {
-    const r = await fetch(api(path), { method: 'POST', headers: { 'Content-Type': 'application/json', ...consoleHeaders() }, body: JSON.stringify(body), signal: AbortSignal.timeout(POST_MS) });
+    const r = await robotFetch(api(path), { method: 'POST', headers: { 'Content-Type': 'application/json', ...consoleHeaders() }, body: JSON.stringify(body), signal: AbortSignal.timeout(POST_MS) });
     return { ...((await r.json()) as PostResult), status: r.status };
   } catch (err) {
     return { ok: false, error: `로봇 서버에 연결할 수 없어요 (${err instanceof Error ? err.message : String(err)})` };
@@ -318,7 +339,7 @@ export interface WifiNetwork {
 
 export async function fetchWifi(signal?: AbortSignal): Promise<WifiStatus> {
   try {
-    const r = await fetch(api('/api/wifi'), { cache: 'no-store', signal });
+    const r = await robotFetch(api('/api/wifi'), { cache: 'no-store', signal });
     return (await r.json()) as WifiStatus;
   } catch (err) {
     return { ok: false, error: `로봇이 대답하지 않아요 (${err instanceof Error ? err.message : String(err)})` };
@@ -327,7 +348,7 @@ export async function fetchWifi(signal?: AbortSignal): Promise<WifiStatus> {
 
 export async function scanWifi(): Promise<{ ok: boolean; error?: string; networks: WifiNetwork[] }> {
   try {
-    const r = await fetch(api('/api/wifi/scan'), { cache: 'no-store', signal: AbortSignal.timeout(40000) });
+    const r = await robotFetch(api('/api/wifi/scan'), { cache: 'no-store', signal: AbortSignal.timeout(40000) });
     return (await r.json()) as { ok: boolean; error?: string; networks: WifiNetwork[] };
   } catch (err) {
     return { ok: false, error: `Wi-Fi 목록을 받지 못했어요 (${err instanceof Error ? err.message : String(err)})`, networks: [] };

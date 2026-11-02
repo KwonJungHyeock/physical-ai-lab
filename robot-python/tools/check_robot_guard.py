@@ -3,7 +3,7 @@
 
 Starts the arm server and the myAGV server in demo mode on spare ports and checks:
   - 로봇 찾기 [움직여 확인] (/api/identify) is taken from the robot's own page, the PC program's window
-    (http://127.0.0.1:47280) and the class server on a private address, and refused (no CORS either)
+    (http://127.0.0.1:47280), a PC on a private address and the platform's web site, and refused (no CORS either)
     from any other web page; /api/state stays readable by every page;
   - 움직여 확인 from the PC holding the arm is not refused as "another PC" (it sends its console id);
   - joint angles are strict: 0.3° past a limit is refused with the server's own message (run, move,
@@ -29,6 +29,7 @@ SERVER_DIR = os.path.join(HERE, "..", "server")
 EVIL = "https://evil.example"
 PC = "http://127.0.0.1:47280"
 CLASS = "http://192.168.0.5:47280"
+WEB = "https://physical-ai-lab-lake.vercel.app"
 
 
 def free_port():
@@ -117,7 +118,7 @@ try:
     code, _, h = call(ARM, "/api/identify", method="OPTIONS", origin=PC)
     ok(code == 204 and h.get("Access-Control-Allow-Origin") == PC and h.get("Access-Control-Allow-Private-Network") == "true",
        "PC 프로그램 창의 사전 요청은 받음")
-    for origin, who in ((PC, "PC 프로그램 창 (127.0.0.1:47280)"), (CLASS, "학급 서버 (사설 주소)"), (None, "로봇 자기 화면 (같은 주소)")):
+    for origin, who in ((PC, "PC 프로그램 창 (127.0.0.1:47280)"), (CLASS, "다른 PC (사설 주소)"), (WEB, "웹 사이트 (Vercel)"), (None, "로봇 자기 화면 (같은 주소)")):
         code, r, h = call(ARM, "/api/identify", {}, origin=origin)
         ok(code == 200 and r.get("ok") and (origin is None or h.get("Access-Control-Allow-Origin") == origin), f"{who} 의 움직여 확인은 받음")
         wait_idle(ARM)
