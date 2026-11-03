@@ -16,7 +16,7 @@ import type { ChainSegment } from '../../robot/kinematics';
 import { toShop } from './cells';
 
 export type AlertLevel = 'info' | 'warn' | 'stop' | 'fault';
-export type AlertKind = 'limit' | 'load' | 'heat' | 'collision' | 'damage' | 'drop' | 'jam' | 'empty' | 'timeout' | 'order';
+export type AlertKind = 'limit' | 'load' | 'heat' | 'collision' | 'damage' | 'drop' | 'jam' | 'empty' | 'timeout' | 'order' | 'safety';
 
 export const LEVEL_NAME: Record<AlertLevel, string> = { info: '알림', warn: '주의', stop: '정지', fault: '고장' };
 

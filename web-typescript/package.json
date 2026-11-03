@@ -21,7 +21,7 @@
     "check:plan": "tsx tests/simulator/plan-check.mts",
     "check:tutorial": "tsx tests/simulator/tutorial-check.mts",
     "check:hand": "tsx tests/simulator/hand-check.mts",
-    "check:cell": "tsx tests/simulator/cell-check.mts && tsx tests/simulator/cell-scenes-check.mts && tsx tests/simulator/cell-b-check.mts && tsx tests/simulator/cell-c-check.mts && tsx tests/simulator/cell-d-check.mts && tsx tests/simulator/cell-e-check.mts && tsx tests/simulator/terminal-check.mts",
+    "check:cell": "tsx tests/simulator/cell-check.mts && tsx tests/simulator/cell-scenes-check.mts && tsx tests/simulator/cell-b-check.mts && tsx tests/simulator/cell-c-check.mts && tsx tests/simulator/cell-d-check.mts && tsx tests/simulator/cell-e-check.mts && tsx tests/simulator/cell-f-check.mts && tsx tests/simulator/terminal-check.mts",
     "check:self": "tsx tests/simulator/self-collision-check.mts",
     "check:kitcollide": "tsx tests/simulator/kit-collision-check.mts",
     "check:coordjog": "tsx tests/robot/coord-jog-check.mts",

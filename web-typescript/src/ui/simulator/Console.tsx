@@ -864,9 +864,9 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     }
     // 실습 셀 (not on screen yet): ?cell=feed&mission=A8 opens the cell with the step's reference program.
     const q = new URLSearchParams(window.location.search);
-    const qc = q.get('cell') as CellId | null;
+    const qc = (q.get('cell') ?? track?.start?.cell ?? null) as CellId | null;
     if (qc && CELL_BY_ID[qc]) {
-      const m = q.get('mission');
+      const m = q.get('mission') ?? (qc === track?.start?.cell ? track.start.mission : null);
       const c = { cell: qc, mission: m && missionById(m)?.cell === qc && CELL_BY_ID[qc].built ? m : null };
       cellRef.current = c;
       setCellAt(c);

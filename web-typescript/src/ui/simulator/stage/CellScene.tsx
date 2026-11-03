@@ -20,6 +20,7 @@ import { VisionCell } from './cell/cellB';
 import { InspectCell } from './cell/cellC';
 import { TendCell } from './cell/cellD';
 import { AssemblyCell } from './cell/cellE';
+import { CafeCell } from './cell/cellF';
 import { Backdrop, Cabinet, Conveyor, Fence, Floor, MarkedPlate, Pedestal, StackGlow, Tagged, m } from './cell/kit';
 
 type Tags = Record<string, { at: [number, number, number]; note: string }>;
@@ -31,6 +32,7 @@ const CABINET: Record<CellId, { x: number; y: number }> = {
   inspect: { x: -80, y: -300 },
   tend: { x: -80, y: 170 },
   assembly: { x: -80, y: -300 },
+  cafe: { x: -190, y: 210 },
 };
 const cabinetTag = (cell: CellId): Tags => ({ 제어함: { at: [CABINET[cell].x, CABINET[cell].y, 130], note: '경광등 · 신호 램프 · 비상 정지' } });
 
@@ -83,6 +85,14 @@ const TAGS: Record<CellId, Tags> = {
     '완성 상자': { at: [200, -165, 50], note: '핀을 다 꽂은 하우징이 모여요' },
     ...cabinetTag('assembly'),
   },
+  cafe: {
+    '컵 디스펜서': { at: [95, 222, 175], note: '[컵 내리기] → 컵 준비됨' },
+    제빙기: { at: [248, 116, 150], note: '[얼음] 3초 · 얼음 145 ml' },
+    '커피 머신': { at: [278, 16, 150], note: '[추출 시작] 28초 · 2샷 60 ml · 컵 감지' },
+    정수기: { at: [244, -85, 135], note: '[물] 4초 · 물 150 ml' },
+    픽업대: { at: [98, -200, 120], note: '문이 열리면 손님이 가져가요 · 손 감지' },
+    ...cabinetTag('cafe'),
+  },
 };
 
 /** Each cell's painted work area on the floor, mm. */
@@ -92,6 +102,7 @@ const ZONE: Record<CellId, { x0: number; x1: number; y0: number; y1: number }> =
   inspect: { x0: -170, x1: 360, y0: -480, y1: 230 },
   tend: { x0: -170, x1: 280, y0: -400, y1: 230 },
   assembly: { x0: -170, x1: 310, y0: -340, y1: 350 },
+  cafe: { x0: -250, x1: 360, y0: -300, y1: 300 },
 };
 
 /**
@@ -106,6 +117,7 @@ export const CELL_VIEW: Record<CellId, { min: readonly [number, number, number];
   inspect: { min: [-60, -450, -30], max: [340, 190, 90], home: [1, 0.95, -0.55] },
   tend: { min: [-80, -370, -30], max: [240, 180, 210], home: [1, 0.95, -0.55] },
   assembly: { min: [-60, -320, -30], max: [280, 340, 90], home: [1, 0.95, -0.55] },
+  cafe: { min: [-60, -235, -20], max: [320, 250, 160], home: [1, 0.95, -0.55] },
 };
 
 function FeedCell({ world, onHover }: { world: RefObject<WorldState | null>; onHover: (n: string | null) => void }) {
@@ -131,6 +143,7 @@ const EQUIPMENT: Record<CellId, (p: { world: RefObject<WorldState | null>; onHov
   inspect: InspectCell,
   tend: TendCell,
   assembly: AssemblyCell,
+  cafe: CafeCell,
 };
 
 export default function CellScene({ world, cell, tags = [] }: { world: RefObject<WorldState | null>; cell: CellId; tags?: readonly string[] }) {
@@ -142,7 +155,7 @@ export default function CellScene({ world, cell, tags = [] }: { world: RefObject
     <group>
       <Backdrop />
       <Floor box={ZONE[cell]} />
-      <Fence />
+      {cell !== 'cafe' && <Fence />}
       <Pedestal />
       <Equipment world={world} onHover={setHover} />
       <Tagged name="제어함" onHover={setHover}>

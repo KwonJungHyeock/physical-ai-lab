@@ -14,6 +14,7 @@
 
 import type { Box } from '../../physics/collide';
 import { makeObject, type DeskObject, type FixedBox } from '../desk';
+import type { CafeDef } from './cafe';
 
 /** Shop size per simulator size. */
 export const CELL_SCALE = 5;
@@ -25,11 +26,11 @@ export const toShop = (mm: number) => Math.round(mm * CELL_SCALE);
 /** Shop mm as simulator mm. */
 export const fromShop = (mm: number) => mm / CELL_SCALE;
 
-export type CellId = 'feed' | 'vision' | 'inspect' | 'tend' | 'assembly';
+export type CellId = 'feed' | 'vision' | 'inspect' | 'tend' | 'assembly' | 'cafe';
 
 export interface CellInfo {
   id: CellId;
-  letter: 'A' | 'B' | 'C' | 'D' | 'E';
+  letter: 'A' | 'B' | 'C' | 'D' | 'E' | 'F';
   name: string;
   /** One line: what happens in the cell. */
   note: string;
@@ -71,6 +72,13 @@ export const CELLS: readonly CellInfo[] = [
     letter: 'E',
     name: '조립 · 삽입 셀',
     note: '핀 피더 · 클램프 지그 · 하우징',
+    built: true,
+  },
+  {
+    id: 'cafe',
+    letter: 'F',
+    name: '로봇 카페',
+    note: '컵 디스펜서 · 제빙기 · 커피 머신 · 정수기 · 픽업대',
     built: true,
   },
 ];
@@ -227,6 +235,8 @@ export interface LineDef {
   clamp?: { place: string; locked: string };
   /** E's pin insertion into the housing at the jig. */
   insert?: InsertDef;
+  /** F: the café's cup dispenser, stations and pickup (cell/cafe.ts). */
+  cafe?: CafeDef;
 }
 
 /**
@@ -868,12 +878,106 @@ function assemblyLayout(): CellLayout {
   };
 }
 
+
+/* --- F: 로봇 카페 ------------------------------------------------------------------- */
+
+/**
+ * F: a robot café counter (docs/reports/education/43-track-life-robot-cafe.md). The arm stands for a
+ * café cobot of ~1,300 mm reach (RB10-1300N class, ref. [4]) at the cells' 1/5: a 12 oz cold cup
+ * (Ø90 × 120 mm) is 18 × 24 mm here. Round the arm, left to right: the cup dispenser, the ice maker,
+ * the coffee machine, the water dispenser, and the pickup shelf behind its door on the customer's side.
+ * Each spout stands 35 mm off its body's face, so the gripper reaches the cup from above.
+ */
+export const CAFE_AT = {
+  cup: { x: 95, y: 165 },
+  ice: { x: 185, y: 115 },
+  coffee: { x: 210, y: 15 },
+  water: { x: 185, y: -85 },
+  pickup: [
+    { x: 118, y: -168 },
+    { x: 78, y: -184 },
+  ],
+  shelfTop: 4,
+  door: { x0: 48, x1: 148, y0: -214, y1: -208, h: 70 },
+} as const;
+
+function cafeLayout(): CellLayout {
+  const A = CAFE_AT;
+  const D = A.door;
+  const fixed: FixedBox[] = [
+    box('컵 디스펜서', [70, 200, 0], [120, 245, 150], 4),
+    box('제빙기', [222, 90, 0], [275, 142, 130], 4),
+    box('커피 머신', [245, -22, 0], [312, 55, 125], 4),
+    box('정수기', [222, -112, 0], [266, -58, 115], 4),
+    box('픽업대', [D.x0, D.y1 + 6, 0], [D.x1, -150, A.shelfTop], 2),
+  ];
+  const solids: Box[] = [PED, under('카페 카운터', [-110, -250], [330, 260], 0)];
+  const places: Record<string, CellPlace> = {
+    '컵 나오는 곳': { ...A.cup, z: 0 },
+    제빙기: { ...A.ice, z: 0 },
+    '커피 머신': { ...A.coffee, z: 0 },
+    정수기: { ...A.water, z: 0 },
+    '픽업 1': { ...A.pickup[0], z: A.shelfTop },
+    '픽업 2': { ...A.pickup[1], z: A.shelfTop },
+  };
+  const cafe: CafeDef = {
+    dispenser: { output: '컵 내리기', place: '컵 나오는 곳', ready: '컵 준비됨', stock: 20 },
+    stations: [
+      { name: '제빙기', output: '얼음', place: '제빙기', cup: '제빙기 컵 감지', busy: '얼음 나오는 중', done: '얼음 끝', timeS: 3, pours: 'ice', ml: 145 },
+      { name: '커피 머신', output: '추출 시작', place: '커피 머신', cup: '머신 컵 감지', busy: '추출 중', done: '추출 끝', timeS: 28, pours: 'shot', ml: 60 },
+      { name: '정수기', output: '물', place: '정수기', cup: '정수기 컵 감지', busy: '물 나오는 중', done: '물 끝', timeS: 4, pours: 'water', ml: 150 },
+    ],
+    pickup: { places: ['픽업 1', '픽업 2'], door: '픽업 문', open: '문 열림', closed: '문 닫힘', hand: '손 감지', zone: { min: [D.x0, D.y0], max: [D.x1, -145] } },
+  };
+  return {
+    id: 'cafe',
+    fixed,
+    solids,
+    places,
+    grids: {},
+    line: {
+      sensors: [],
+      actuators: [
+        // The pickup door slides up to let the customer in (on = open).
+        {
+          output: '픽업 문',
+          timeS: 1.2,
+          guard: '픽업 문',
+          onEnd: '문 열림',
+          offEnd: '문 닫힘',
+          box: {
+            off: [
+              [D.x0, D.y0, 0],
+              [D.x1, D.y1, D.h],
+            ],
+            on: [
+              [D.x0, D.y0, D.h],
+              [D.x1, D.y1, D.h * 2],
+            ],
+          },
+        },
+      ],
+      cafe,
+    },
+    inputs: ['컵 준비됨', '제빙기 컵 감지', '얼음 나오는 중', '얼음 끝', '머신 컵 감지', '추출 중', '추출 끝', '정수기 컵 감지', '물 나오는 중', '물 끝', '문 열림', '문 닫힘', '손 감지'],
+    outputs: ['컵 내리기', '얼음', '추출 시작', '물', '픽업 문'],
+    keys: {
+      '컵 내리기': ['내리기', '멈춤'],
+      얼음: ['받기', '멈춤'],
+      '추출 시작': ['추출', '멈춤'],
+      물: ['받기', '멈춤'],
+      '픽업 문': ['열기', '닫기'],
+    },
+  };
+}
+
 const LAYOUTS: Record<CellId, () => CellLayout> = {
   feed: feedLayout,
   vision: visionLayout,
   inspect: inspectLayout,
   tend: tendLayout,
   assembly: assemblyLayout,
+  cafe: cafeLayout,
 };
 
 const cache = new Map<CellId, CellLayout>();

@@ -25,6 +25,8 @@ export interface Track {
   menu: readonly string[];
   /** Top bar screens open (교육 · 시뮬레이터 · 라이브러리 · 자료실 ids). */
   screens: readonly string[];
+  /** The 현장 it opens on: a 실습 셀 and its first step. */
+  start?: { cell: string; mission: string };
 }
 
 export const TRACKS: Record<TrackId, Track> = {
@@ -36,6 +38,7 @@ export const TRACKS: Record<TrackId, Track> = {
     levels: ['basic'],
     menu: ['jog', 'parts', 'pose', 'process', 'code', 'env', 'objects', 'monitor'],
     screens: ['sim'],
+    start: { cell: 'cafe', mission: 'F1' },
   },
   food: {
     id: 'food',

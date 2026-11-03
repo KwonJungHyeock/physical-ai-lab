@@ -14,6 +14,7 @@ import { CELLS, C_AT, PART_HEIGHT, fromShop, gridPlace, magazineParts, makePart,
 import { REJECT, outlineOf, type Outline, type VisionState } from './vision';
 import type { CellAlert } from './faults';
 import type { LineState } from './line';
+import { drinkVerdict, type CafeState } from './cafe';
 
 export interface MissionSetup {
   /** The parts the cell starts with. */
@@ -28,6 +29,8 @@ export interface MissionSetup {
   queue?(l: CellLayout): DeskObject[];
   /** The equipment's state at the start (D4: the machine already at work). */
   line?(s: LineState): void;
+  /** F: drinks ordered (the café's queue). */
+  orders?: number;
 }
 
 /** What a check needs: the parts where they are, the run's record. */
@@ -41,6 +44,8 @@ export interface Judge {
   elapsed: number;
   /** B's camera: what it was taught (for the 모양 학습 step). */
   vision?: VisionState;
+  /** F: the café (cups served, spills, the door). */
+  cafe?: CafeState;
 }
 
 export type CellEvent =
@@ -1046,7 +1051,147 @@ const E: CellMission[] = [
   },
 ];
 
-export const MISSIONS: readonly CellMission[] = [...A, ...B, ...C, ...D, ...E];
+
+/* --- F: 로봇 카페 ------------------------------------------------------------------ */
+// Steps and their grounds: docs/reports/education/43-track-life-robot-cafe.md §5.
+
+const HEAD_F = 'from edu import robot, cell\n\nrobot.home()\n';
+/** One station: start it, wait for its 끝, stop the start signal. */
+const pour = (out: string, done: string) => `cell.set("${out}", True)\ncell.wait("${done}")\ncell.set("${out}", False)\n`;
+const CUP = 'cell.set("컵 내리기", True)\ncell.wait("컵 준비됨")\ncell.set("컵 내리기", False)\n';
+const ICE = pour('얼음', '얼음 끝');
+const SHOT = pour('추출 시작', '추출 끝');
+const WATER = pour('물', '물 끝');
+/** A whole iced americano, from the dispenser to the pickup shelf (door shut). */
+const AMERICANO = (shelf: string) =>
+  `${CUP}robot.pick("컵 나오는 곳")\nrobot.place("제빙기")\n${ICE}robot.pick("제빙기")\nrobot.place("커피 머신")\n${SHOT}robot.pick("커피 머신")\nrobot.place("정수기")\n${WATER}robot.pick("정수기")\nrobot.place("${shelf}")\nrobot.home()\n`;
+/** Hand the drinks over: open the door, the customer takes them, close it. */
+const HAND_OVER = 'cell.set("픽업 문", True)\ncell.wait("문 열림")\ncell.wait("손 감지")\ncell.wait("손 감지", False)\ncell.set("픽업 문", False)\ncell.wait("문 닫힘")\n';
+
+const cupAt = (j: Judge, place: string) => {
+  const p = j.l.places[place];
+  return partAt(j, p.x, p.y, p.z);
+};
+
+const cupOn = (place: string, label: string): Check => ({
+  label,
+  judge: (j) => (cupAt(j, place) ? { ok: true } : { ok: false, detail: `${place}에 컵이 없어요` }),
+});
+
+/** A cup standing at `place` with at least what `need` says (and nothing spilled). */
+function drinkOn(place: string, label: string, need: 'shot' | 'all'): Check {
+  return {
+    label,
+    judge: (j) => {
+      const o = cupAt(j, place);
+      if (!o) return { ok: false, detail: `${place}에 컵이 없어요` };
+      const d = o.drink;
+      if (need === 'shot') return d && d.shot >= 59 && d.spilled < 1 ? { ok: true, detail: '2샷 60 ml' } : { ok: false, detail: d?.spilled ? '넘쳤어요' : `샷 ${Math.round(d?.shot ?? 0)} / 60 ml` };
+      const v = drinkVerdict(d);
+      return { ok: v.ok, detail: v.why };
+    },
+  };
+}
+
+const noTrayPour: Check = {
+  label: '컵 없이 붓거나 붓는 중에 컵을 빼지 않았어요',
+  judge: (j) => {
+    const n = j.cafe?.trayPours.length ?? 0;
+    return n ? { ok: false, detail: `${j.cafe!.trayPours.join(', ')}에서 ${n}번 쏟아짐` } : { ok: true };
+  },
+};
+
+const served = (n: number): Check => ({
+  label: `손님에게 아이스 아메리카노 ${n}잔`,
+  judge: (j) => {
+    const s = j.cafe?.served ?? [];
+    const good = s.filter((d) => d.ok).length;
+    const bad = s.find((d) => !d.ok);
+    return { ok: good >= n, detail: bad ? `${good} / ${n}잔 · ${bad.why}` : `${good} / ${n}잔` };
+  },
+});
+
+const doorSafe: Check = {
+  label: '문이 열린 픽업대에 팔이 들어가지 않았어요',
+  judge: (j) => (j.cafe?.doorBreaches ? { ok: false, detail: `${j.cafe.doorBreaches}번` } : { ok: true }),
+};
+
+const F: CellMission[] = [
+  {
+    id: 'F1',
+    cell: 'cafe',
+    n: 1,
+    title: '둘러보기: 아이스 아메리카노 한 잔',
+    adds: '완성된 순서로 한 잔이 만들어지는 걸 보기',
+    goal: '준비된 순서로 아이스 아메리카노 한 잔을 만들어 손님에게 건네요. 장비 4곳을 어떤 순서로 도는지 보세요.',
+    hint: '실제 로봇 카페도 컵 디스펜서 → 제빙기 → 커피 머신 → 픽업대 순서로 돌아요. 그대로 실행해 보고, 각 장비 앞에서 로봇이 무엇을 기다리는지 보세요.',
+    setup: { parts: () => [], auto: false, orders: 1 },
+    checks: [served(1), noTrayPour, safe],
+    solution: `${HEAD_F}${AMERICANO('픽업 1')}${HAND_OVER}`,
+  },
+  {
+    id: 'F2',
+    cell: 'cafe',
+    n: 2,
+    title: '컵 옮기기',
+    adds: '컵을 받아 커피 머신 아래에 놓기',
+    goal: '컵 디스펜서에서 컵을 받아 커피 머신 아래에 놓아요.',
+    hint: '[컵 내리기]로 컵을 받고 [컵 준비됨]이 켜지면 집어요. 로봇은 컵 위에서 내려가 잡고, 올라와서 옮긴 뒤 내려놓아요.',
+    setup: { parts: () => [], auto: false, orders: 1 },
+    checks: [cupOn('커피 머신', '커피 머신 아래에 컵'), noTrayPour, safe],
+    solution: `${HEAD_F}${CUP}robot.pick("컵 나오는 곳")\nrobot.place("커피 머신")\nrobot.home()\n`,
+  },
+  {
+    id: 'F3',
+    cell: 'cafe',
+    n: 3,
+    title: '신호 기다리기',
+    adds: '추출이 끝날 때까지 기다렸다가 컵 꺼내기',
+    goal: '커피 머신에 컵을 놓고 2샷을 추출한 뒤, [추출 끝]이 켜지면 컵을 픽업 1에 놓아요.',
+    hint: '추출은 28초 걸려요. [추출 끝]을 기다리지 않고 컵을 빼면 나머지 커피가 받침대로 쏟아져요. 실제 카페 로봇도 머신의 완료 신호를 받고 움직여요.',
+    setup: { parts: () => [], auto: false, orders: 1 },
+    checks: [drinkOn('픽업 1', '픽업 1에 2샷이 든 컵', 'shot'), noTrayPour, safe],
+    solution: `${HEAD_F}${CUP}robot.pick("컵 나오는 곳")\nrobot.place("커피 머신")\n${SHOT}robot.pick("커피 머신")\nrobot.place("픽업 1")\nrobot.home()\n`,
+  },
+  {
+    id: 'F4',
+    cell: 'cafe',
+    n: 4,
+    title: '레시피: 얼음 → 2샷 → 물',
+    adds: '세 장비를 차례로 돌아 한 잔 완성',
+    goal: '얼음 145 ml, 에스프레소 2샷 60 ml, 물 150 ml가 든 아이스 아메리카노를 픽업 1에 놓아요.',
+    hint: '컵은 355 ml예요. 한 장비를 두 번 누르면 넘치고, 하나를 빼먹으면 맛이 달라져요. 얼음을 먼저 넣어 두면 뜨거운 샷이 바로 식어요.',
+    setup: { parts: () => [], auto: false, orders: 1 },
+    checks: [drinkOn('픽업 1', '픽업 1에 아이스 아메리카노', 'all'), noTrayPour, safe],
+    solution: `${HEAD_F}${AMERICANO('픽업 1')}`,
+  },
+  {
+    id: 'F5',
+    cell: 'cafe',
+    n: 5,
+    title: '픽업과 안전',
+    adds: '문을 열어 건네고, 문이 열린 동안 팔은 밖에',
+    goal: '음료를 픽업 1에 놓은 뒤 문을 열어 손님에게 건네요. 손님이 가져가면 문을 닫아요.',
+    hint: '문이 열려 있고 손님 손이 있을 때 팔이 픽업대에 들어가면 멈춰요. 놓기 → 팔 빼기 → 문 열기 → [손 감지]가 꺼질 때까지 기다리기 → 문 닫기 순서예요.',
+    setup: { parts: () => [], auto: false, orders: 1 },
+    checks: [served(1), doorSafe, noTrayPour, safe],
+    solution: `${HEAD_F}${AMERICANO('픽업 1')}${HAND_OVER}`,
+  },
+  {
+    id: 'F6',
+    cell: 'cafe',
+    n: 6,
+    title: '주문 3잔',
+    adds: '반복으로 3잔, 사이클 타임 줄이기',
+    goal: '주문 3잔을 모두 손님에게 건네요.',
+    hint: '한 잔씩 반복하면 돼요. 더 빨리 하려면 추출을 기다리는 28초 동안 다음 컵을 미리 받아 얼음을 넣어 두세요. 실제 로봇 카페는 한 잔에 40초~1분, 시간당 90~120잔을 만들어요.',
+    setup: { parts: () => [], auto: false, orders: 3 },
+    checks: [served(3), doorSafe, noTrayPour, safe],
+    solution: `${HEAD_F}for _ in range(3):\n${ind(`${AMERICANO('픽업 1')}${HAND_OVER}`)}`,
+  },
+];
+
+export const MISSIONS: readonly CellMission[] = [...A, ...B, ...C, ...D, ...E, ...F];
 
 export const missionsOf = (cell: CellId) => MISSIONS.filter((m) => m.cell === cell);
 export const missionById = (id: string) => MISSIONS.find((m) => m.id === id) ?? null;
