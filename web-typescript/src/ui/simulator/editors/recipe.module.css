@@ -1,0 +1,195 @@
+/* 작업 순서 카드 (RecipeCards.tsx): a list of cards on the dark panel, one action each. */
+.recipe {
+  padding: 0 12px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  height: 100%;
+  color: #eef2f7;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.head b {
+  font-size: 15px;
+}
+
+.times {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #aeb6c4;
+}
+
+.times em {
+  font-style: normal;
+  font-weight: 800;
+  color: #fff;
+  min-width: 34px;
+  text-align: center;
+}
+
+.times button,
+.tools button {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  border: 1px solid #343b48;
+  background: #252b36;
+  color: #dfe5ee;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.times button:disabled,
+.tools button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1;
+}
+
+.card {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #2b3240;
+  border-left: 5px solid #6b7280;
+  background: #1f2530;
+}
+
+.card[data-on] {
+  background: #2a3a2f;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.55);
+}
+
+.n {
+  font-weight: 800;
+  color: #8b95a6;
+  text-align: center;
+}
+
+.body {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.title select {
+  background: #11151c;
+  color: #fff;
+  border: 1px solid #3b4454;
+  border-radius: 6px;
+  font: inherit;
+  font-weight: 700;
+  padding: 2px 4px;
+}
+
+.body small {
+  color: #9aa4b4;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.wait {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: #cfe8dc;
+}
+
+.tools {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.empty {
+  padding: 18px 12px;
+  border: 1px dashed #3b4454;
+  border-radius: 10px;
+  color: #9aa4b4;
+  font-size: 13px;
+  text-align: center;
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.add,
+.ghost {
+  padding: 8px 12px;
+  border-radius: 9px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.add {
+  border: 0;
+  background: #0f6b4c;
+  color: #fff;
+}
+
+.ghost {
+  border: 1px solid #3b4454;
+  background: transparent;
+  color: #dfe5ee;
+}
+
+.add:disabled,
+.ghost:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.palette {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.palette button {
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #2b3240;
+  border-left: 5px solid #6b7280;
+  background: #252b36;
+  color: #eef2f7;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}

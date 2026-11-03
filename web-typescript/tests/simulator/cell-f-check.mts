@@ -91,4 +91,26 @@ await fails('F2', (c) => c.replace('robot.home()\ncell.set', 'robot.home()\ncell
 await fails('F4', (c) => c.replace('cell.set("물", False)\n', 'cell.set("물", False)\nrobot.wait(0.5)\ncell.set("물", True)\ncell.wait("물 나오는 중")\ncell.wait("물 끝")\ncell.set("물", False)\n'), 'water twice', '넘쳤어요');
 await fails('F5', (c) => c.replace('robot.place("픽업 1")\nrobot.home()\ncell.set("픽업 문", True)\ncell.wait("문 열림")\n', 'cell.set("픽업 문", True)\ncell.wait("문 열림")\nrobot.place("픽업 1")\nrobot.home()\n'), 'into the open pickup', '픽업 문');
 
+// 작업 순서 카드 (입문 트랙): each step's answer cards make a program that passes; F3's start (the shot
+// not waited for) fails, and its answer is the same program as the reference solution.
+const { RECIPE_ANSWER, RECIPE_START, recipeCode } = await import('../../src/engine/simulator/cell/cafeRecipe');
+for (const m of missionsOf('cafe')) {
+  const { w, run } = await cell(m.id);
+  const { code } = recipeCode(RECIPE_ANSWER[m.id]);
+  const err = await run(code);
+  assert.ok(!err && allOk(w), `${m.id} answer cards: ${err ? (err as Error).message : ''} | ${summary(w)}`);
+  console.log(`  ok   ${m.id} answer cards: ${summary(w)}`);
+}
+assert.equal(recipeCode(RECIPE_ANSWER.F3).code, missionById('F3')!.solution, 'F3 cards = the reference program');
+{
+  const { w, run } = await cell('F3');
+  const err = await run(recipeCode(RECIPE_START.F3).code);
+  assert.ok(err || !allOk(w), `F3 start cards passed anyway | ${summary(w)}`);
+  console.log(`  ok   F3 start cards (shot not waited for) fail: ${summary(w)}`);
+}
+{
+  const { lines } = recipeCode({ cards: RECIPE_ANSWER.F2.cards, times: 2 });
+  assert.deepEqual(lines[0], [5, 8], `card lines in a loop: ${JSON.stringify(lines)}`);
+}
+
 console.log('cell F: ok');

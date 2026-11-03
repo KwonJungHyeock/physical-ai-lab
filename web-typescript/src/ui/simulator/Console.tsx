@@ -119,6 +119,7 @@ import RobotSetup from './connect/RobotSetup';
 import PartsPanel from './control/PartsPanel';
 import ProcessPanel from './editors/ProcessPanel';
 import { FullBar, LangSeg, Snippets, SlotCode, TutorialCard } from './editors/Tutorial';
+import RecipeCards from './editors/RecipeCards';
 import { StartGuide, type StartStep } from './stage/StartGuide';
 import HandPanel, { type HandState } from './control/HandPanel';
 import { HandMapper, demoProcess, simplifyDemo, type DemoPoint, type DemoSample, type HandPose } from '@/engine/vision/hand';
@@ -558,6 +559,11 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const world = useRef<WorldState>(createWorld('none', false, BLOCK_START, START_THEME));
   /** 실습 셀 open (its world replaces the desk's), or null. */
   const [cellAt, setCellAt] = useState<{ cell: CellId; mission: string | null } | null>(null);
+  // 작업 순서 카드 (입문 트랙's café) write the program here.
+  const onRecipeCode = useCallback((c: string) => {
+    setCode(c);
+    setErrorLines([]);
+  }, []);
   const cellRef = useRef(cellAt);
   const [cellTags, setCellTags] = useState<string[]>([]);
   /** Steps passed (kept in this browser) and the last finished run of the open step. */
@@ -3719,6 +3725,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     onClick: () => toggleRail(id),
   });
   // 제어: moving the arm by hand. 작업: programs that run (a process of points, blocks, Python, ROS 2). 보기: windows.
+  // 입문 트랙's café: the program is 작업 순서 카드, not code (RecipeCards).
+  const recipeOn = !!track && cellAt?.cell === 'cafe';
   const barGroups = [
     { name: '제어', items: [work('jog', '제어', 'move', '제어: 관절 · 좌표로 움직이기 (조그)', true), { ...work('parts', '도구', 'tool', '도구 · 액세서리', true), hintFor: '끼우기, 도구' }, { ...work('pose', '자세', 'home', '자세 저장 · 불러오기', true), hintFor: '기본 자세, 일자로 펴기, 카메라 자세, 이 자세로, 자세' }] },
     {
@@ -3726,7 +3734,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       items: [
         work('process', '공정', 'flag', '공정 짜기: 위치를 가르쳐 옮기기 · 그리기'),
         ...(!robotMode ? [{ ...work('hand', '손', 'hand', '손 따라하기: PC 카메라로 손을 보여 주면 로봇이 따라 하고, 시연한 길을 재생해요'), on: dockShown && workScreen === 'hand' }] : []),
-        { ...work('code', '코딩', 'code', '코딩: 블록 · Python · ROS 2 (튜토리얼)'), on: dockShown && (workScreen === 'basic' || workScreen === 'python' || workScreen === 'ros') },
+        { ...(recipeOn ? work('code', '순서', 'code', '작업 순서: 카드로 로봇이 할 일을 차례로') : work('code', '코딩', 'code', '코딩: 블록 · Python · ROS 2 (튜토리얼)')), on: dockShown && (workScreen === 'basic' || workScreen === 'python' || workScreen === 'ros') },
       ],
     },
     {
@@ -3752,7 +3760,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const stageTitle = !!loaded && view === 'sim' && !cellAt && !railOpen;
   /** The open screen in the 3D view's corner: [English, Korean]. */
   const SCREEN_EN: Record<string, string> = { hand: 'HAND', jog: 'CONTROL', parts: 'TOOL', pose: 'POSE', zero: 'ZERO', process: 'TASK', basic: 'CODE', python: 'CODE', ros: 'CODE', ai: 'AI' };
-  const SCREEN_TITLE: Record<string, string> = { hand: '손 따라하기', jog: '제어', parts: '도구', pose: '자세', zero: '영점', process: '공정', basic: '코딩', python: '코딩', ros: '코딩' };
+  const SCREEN_TITLE: Record<string, string> = { hand: '손 따라하기', jog: '제어', parts: '도구', pose: '자세', zero: '영점', process: '공정', basic: recipeOn ? '작업 순서' : '코딩', python: '코딩', ros: '코딩' };
 
   const zeroPanel = (
     <ZeroPanel
@@ -4883,21 +4891,21 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                     />
                   </div>
                 ) : (
-                  <div className={css.codeTab} role="region" aria-label={LEVEL_TAB[level].name}>
-                    <LangSeg
+                  <div className={css.codeTab} role="region" aria-label={recipeOn ? '작업 순서' : LEVEL_TAB[level].name}>
+                    {!recipeOn && <LangSeg
                       level={cellAt ? (cellTerm ? 'python' : 'basic') : level}
                       levels={track?.levels}
                       busy={busy}
                       onLevel={(lv) => (cellAt ? (lv === 'ros' ? addLog('info', '실습 셀의 ROS 2 터미널 실습은 다음 차례에 열려요.') : setCellTerm(lv === 'python')) : openTab(lv))}
                       extra={(cellAt && cellTerm) || (!cellAt && level === 'python') ? <ModeSeg mode={cellAt ? pyMode.cell : pyMode.arm} busy={busy} onMode={(m) => setPyMode(cellAt ? 'cell' : 'arm', m)} /> : undefined}
-                    />
+                    />}
                     {cellAt ? (
                       <div className={css.cellCodeHead}>
                         <b>
                           실습 셀 · {cellAt.mission ? `${cellAt.mission} ${missionById(cellAt.mission)?.title ?? ''}` : '자유 실습'}
                         </b>
                         <small>
-                          {cellTermOn ? '터미널에서 명령으로 파이썬 파일을 실행해요.' : cellTerm ? '블록 프로그램을 파이썬 코드로 고쳐요. 블록과 같은 프로그램이에요.' : '블록으로 로봇과 장비를 움직여요.'} 목표와 채점은 3D 왼쪽 카드에 있어요.
+                          {recipeOn ? '카드 순서대로 로봇과 장비가 움직여요. 코드는 쓰지 않아요.' : cellTermOn ? '터미널에서 명령으로 파이썬 파일을 실행해요.' : cellTerm ? '블록 프로그램을 파이썬 코드로 고쳐요. 블록과 같은 프로그램이에요.' : '블록으로 로봇과 장비를 움직여요.'} 목표와 채점은 3D 왼쪽 카드에 있어요.
                         </small>
                         <button type="button" className={css.cellLeave} disabled={busy} onClick={leaveCell}>
                           셀에서 나가기
@@ -4938,7 +4946,11 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                       }}
                     />
                     )}
-                    {cellAt && cellTermOn ? (
+                    {recipeOn ? (
+                      <div className={css.pane}>
+                        <RecipeCards key={cellAt!.mission ?? 'free'} mission={cellAt!.mission} busy={busy} runningLine={runningLine} onCode={onRecipeCode} />
+                      </div>
+                    ) : cellAt && cellTermOn ? (
                       <div className={css.pane}>
                         <CellTerminal cell={cellAt.cell} mission={cellAt.mission} busy={busy} onPython={runTermPython} onStop={stop} onOpenStep={(m) => openCell(cellAt.cell, m)} />
                       </div>
