@@ -80,6 +80,13 @@ function Shape({ o, selected }: { o: DeskObject; selected: boolean }) {
         </Turned>
       );
     case 'cup':
+      // 로봇 카페 (o.drink): a clear PET cold cup, so the ice and the coffee show through.
+      if (o.drink)
+        return (
+          <Turned at={foot} profile={vessel(sx * 0.38, sx / 2, sz, 0.8, 1.2)}>
+            <meshPhysicalMaterial color="#e6f1f8" transparent opacity={0.45} roughness={0.05} metalness={0.05} clearcoat={1} clearcoatRoughness={0.04} depthWrite={false} {...hi} />
+          </Turned>
+        );
       return (
         <Turned at={foot} profile={vessel(sx * 0.38, sx / 2, sz)}>
           <meshPhysicalMaterial color={o.color} roughness={0.28} clearcoat={0.6} clearcoatRoughness={0.2} {...hi} />
