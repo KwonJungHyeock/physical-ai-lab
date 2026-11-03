@@ -75,6 +75,7 @@
 | [`35-imitation-teaching-plan.md`](reports/education/35-imitation-teaching-plan.md) | 보고 #35 — 가변저항 티칭 팔(아두이노) → 시뮬레이터 · 280 따라 하기 → 기록 · 재생 · 학습: 시험용 기획(구성 · 시험 T1~T7 · 8차시 초안 · 준비물 · 걱정되는 점) |
 | [`36-education-direction.md`](reports/education/36-education-direction.md) | 보고 #36 — 교육 자료 방향(보류): 자료는 모두 자료실 · 화면은 안내만, 실습 매뉴얼 + 이론 PDF 두 층, PinkLAB 모방학습 자료 분석, 실습 매뉴얼 초안(검수 7종과 겹침) |
 | [`37-theory-review-u38.md`](reports/education/37-theory-review-u38.md) | 보고 #37 — 로봇공학 이론 검토 3 ~ 8단원(보고 #32 후속): 오류 61 (상 5) · 보완 · 추가 제안 · 삭제 · 확인 필요, 위치와 고친 문장 · 다시 계산한 숫자 |
+| [`43-track-life-robot-cafe.md`](reports/education/43-track-life-robot-cafe.md) | 보고 #43 — 입문 트랙 ① 생활 로봇 · 로봇 카페 시뮬레이터 설계와 근거: 실제 로봇 카페 조사(비트 · 레인보우 · HD현대 · 라운지랩 · Artly), 1/3 축척 · 장비 상태와 신호, 6단계와 단계별 근거 · 참고 자료 |
 
 ### [`system/`](reports/system/) — 시스템 구성
 | 문서 | 내용 |
