@@ -91,6 +91,8 @@ const TAGS: Record<CellId, Tags> = {
     '커피 머신': { at: [278, 16, 150], note: '[추출 시작] 28초 · 2샷 60 ml · 컵 감지' },
     정수기: { at: [244, -85, 135], note: '[물] 4초 · 물 150 ml' },
     픽업대: { at: [98, -200, 120], note: '문이 열리면 손님이 가져가요 · 손 감지' },
+    키오스크: { at: [372, -236, 160], note: '손님이 주문 · 결제 → 주문 번호' },
+    셀프바: { at: [372, -150, 80], note: '뚜껑 · 빨대 · 냅킨' },
     ...cabinetTag('cafe'),
   },
 };
@@ -117,7 +119,7 @@ export const CELL_VIEW: Record<CellId, { min: readonly [number, number, number];
   inspect: { min: [-60, -450, -30], max: [340, 190, 90], home: [1, 0.95, -0.55] },
   tend: { min: [-80, -370, -30], max: [240, 180, 210], home: [1, 0.95, -0.55] },
   assembly: { min: [-60, -320, -30], max: [280, 340, 90], home: [1, 0.95, -0.55] },
-  cafe: { min: [-60, -235, -20], max: [320, 250, 160], home: [1, 0.95, -0.55] },
+  cafe: { min: [-80, -330, -20], max: [400, 260, 200], home: [0.3, 1.3, 0.95] },
 };
 
 function FeedCell({ world, onHover }: { world: RefObject<WorldState | null>; onHover: (n: string | null) => void }) {
@@ -154,14 +156,18 @@ export default function CellScene({ world, cell, tags = [] }: { world: RefObject
   return (
     <group>
       <Backdrop />
-      <Floor box={ZONE[cell]} />
+      {cell !== 'cafe' && <Floor box={ZONE[cell]} />}
       {cell !== 'cafe' && <Fence />}
-      <Pedestal />
+      {cell !== 'cafe' && <Pedestal />}
       <Equipment world={world} onHover={setHover} />
-      <Tagged name="제어함" onHover={setHover}>
-        <Cabinet world={world} cell={cell} at={CABINET[cell]} />
-      </Tagged>
-      <StackGlow world={world} at={CABINET[cell]} />
+      {cell !== 'cafe' && (
+        <>
+          <Tagged name="제어함" onHover={setHover}>
+            <Cabinet world={world} cell={cell} at={CABINET[cell]} />
+          </Tagged>
+          <StackGlow world={world} at={CABINET[cell]} />
+        </>
+      )}
       {shown.map((n) => (
         <Html key={n} position={[m(T[n].at[0]), m(T[n].at[1]), m(T[n].at[2])]} center zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
           <div data-celltag style={{ background: 'rgba(24,32,29,0.92)', color: '#fff', borderRadius: 7, padding: '4px 9px', font: '700 12.5px Pretendard, sans-serif', whiteSpace: 'nowrap', boxShadow: '0 2px 8px rgba(0,0,0,0.25)' }}>
