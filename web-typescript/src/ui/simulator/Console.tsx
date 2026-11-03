@@ -68,6 +68,7 @@ import {
 } from '@/engine/simulator/desk';
 import { usbAvailable } from '@/engine/simulator/usbKit';
 import { carryHash, loadAside, loadLastPractice, loadProgram, readCarried, saveAside, saveLastPractice, saveProgram } from '@/engine/simulator/programs';
+import { TRACKS, trackLevel, type TrackId } from '@/engine/simulator/tracks';
 import { isStarter, newSession, placedBlocks, practiceFor, practicesFor, repeatability, starterFor, toolFits, toolNeeded, type Level, type PracticeId, type Session } from '@/engine/simulator/practices';
 import { check, parse, type CameraId, type Problem, type Step } from '@/engine/simulator/program';
 import { checkProcess, compileProcess, emptyProcess, processFromFile, processListing, processToFile, PROCESS_EXT, type Process } from '@/engine/simulator/process';
@@ -290,7 +291,9 @@ const FOLLOW_LEAD = 12;
 /** `chain` stands on the base (G base) when one is fitted; `rawChain` is the arm alone, for drawing it. */
 type Loaded = { robot: UrdfRobot; chain: ChainSegment[]; rawChain: ChainSegment[]; gripper: UrdfRobot };
 
-export default function Console() {
+export default function Console({ track: trackId }: { track?: TrackId } = {}) {
+  /** The 트랙 this page sells (engine/simulator/tracks.ts); none = the full package. */
+  const track = trackId ? TRACKS[trackId] : null;
   const pcApp = usePcApp();
   const [loadedArm, setLoaded] = useState<Omit<Loaded, 'rawChain'> | null>(null);
   /** The 교육 tab always teaches on myCobot 280 RDK X5, whichever arm the simulator has open. */
@@ -796,7 +799,7 @@ export default function Console() {
         simRateRef.current = rate;
         setSimRate(rate);
       }
-      if (localStorage.getItem(MODE_KEY) === 'check') setMode('check');
+      if (!track && localStorage.getItem(MODE_KEY) === 'check') setMode('check');
       const savedPoses = JSON.parse(localStorage.getItem(POSES_KEY) ?? 'null') as Record<string, number[]> | null;
       if (savedPoses && typeof savedPoses === 'object') {
         setPoses(Object.fromEntries(Object.entries(savedPoses).filter(([, q]) => Array.isArray(q) && q.length === 6 && q.every((v) => Number.isFinite(v)))));
@@ -818,7 +821,7 @@ export default function Console() {
       const carried = readCarried(window.location.hash);
       if (carried) window.history.replaceState(null, '', window.location.pathname + window.location.search);
       const stored = localStorage.getItem(LEVEL_KEY) as Level | null;
-      const savedLevel: Level = carried?.level ?? (stored === 'python' || stored === 'ros' ? stored : 'basic');
+      const savedLevel: Level = trackLevel(track, carried?.level ?? (stored === 'python' || stored === 'ros' ? stored : 'basic'));
       const th: Theme = carried?.theme ?? START_THEME;
       const p = practiceFor(savedLevel, th, carried?.id ?? loadLastPractice(savedLevel) ?? 'joints');
       const left = loadProgram(activeArm().id, savedLevel, th, p.id);
@@ -2396,6 +2399,8 @@ export default function Console() {
   /** A language tab: that language's program as it was left, or the same task in the new language. */
   const openTab = (t: PanelTab) => {
     if (t === 'direct' || t === 'process' || t === level) return chooseTab(t);
+    // A 트랙 opens only its coding languages.
+    if (track && (t === 'basic' || t === 'python' || t === 'ros') && !track.levels.includes(t)) return chooseTab(level);
     if (busy) return;
     const back = kept.current[t];
     if (back && back.theme === theme) selectPractice(t, theme, back.id, back.code);
@@ -3734,6 +3739,8 @@ export default function Console() {
       ],
     },
   ];
+  // A 트랙 opens only its menus.
+  const shownGroups = track ? barGroups.map((g) => ({ ...g, items: g.items.filter((i) => track.menu.includes(i.id)) })).filter((g) => g.items.length) : barGroups;
   // The mini arm (angles, load, tip position) stays on every screen, 제어 too.
   const miniWanted = display.mini;
   const miniOn = miniWanted && !railOpen && !cellAt;
@@ -4184,6 +4191,7 @@ export default function Console() {
       <div className={css.inner}>
         <TopBar
           view={view}
+          track={track ? { name: track.name, grade: track.grade, color: track.color, screens: track.screens } : undefined}
           onView={(v) => {
             chooseView(v);
           }}
@@ -4301,6 +4309,7 @@ export default function Console() {
                   <small>Wi-Fi 를 적어 USB 를 만들고, 로봇에 꽂았던 결과를 봐요</small>
                 </button>
               )}
+              {!track && (
               <button
                 type="button"
                 role="menuitem"
@@ -4317,6 +4326,7 @@ export default function Console() {
                 </b>
                 <small>{mode === 'check' ? '학생 실습 화면으로 돌아가요' : '납품 검수 7종 · 검수 서류'}</small>
               </button>
+              )}
               {!robotMode && !MODEL_CHOICE && (
                 <button
                   type="button"
@@ -4590,7 +4600,7 @@ export default function Console() {
               )}
               {loaded && view === 'sim' && !railOpen && !cellAt && <HudGauges speed={jogSpeed} monitor={monitor} dock={dockShown ? 'open' : 'closed'} />}
               {loaded && view === 'sim' && (
-                <LeftRail groups={barGroups} foot={barFoot} sheetOpen={railOpen !== null} onCloseSheet={() => setRailOpen(null)}>
+                <LeftRail groups={shownGroups} foot={barFoot} sheetOpen={railOpen !== null} onCloseSheet={() => setRailOpen(null)}>
                   {(railOpen === 'env' || railOpen === 'objects') && (
                     <DeskPanel
                       key={railOpen}
@@ -4876,6 +4886,7 @@ export default function Console() {
                   <div className={css.codeTab} role="region" aria-label={LEVEL_TAB[level].name}>
                     <LangSeg
                       level={cellAt ? (cellTerm ? 'python' : 'basic') : level}
+                      levels={track?.levels}
                       busy={busy}
                       onLevel={(lv) => (cellAt ? (lv === 'ros' ? addLog('info', '실습 셀의 ROS 2 터미널 실습은 다음 차례에 열려요.') : setCellTerm(lv === 'python')) : openTab(lv))}
                       extra={(cellAt && cellTerm) || (!cellAt && level === 'python') ? <ModeSeg mode={cellAt ? pyMode.cell : pyMode.arm} busy={busy} onMode={(m) => setPyMode(cellAt ? 'cell' : 'arm', m)} /> : undefined}

@@ -9180,3 +9180,17 @@ div.zeroFlow {
     outline-color: rgba(255, 255, 255, 0.45);
   }
 }
+
+/* 트랙 page (engine/simulator/tracks.ts): the track's name beside the product name */
+.trackBadge {
+  flex: none;
+  align-self: center;
+  margin-left: 14px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}

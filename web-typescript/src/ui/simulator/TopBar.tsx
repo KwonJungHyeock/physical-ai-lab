@@ -37,6 +37,8 @@ interface Props {
   onStop(): void;
   /** [?] 도움말: the screen, the order of work, the keys, the manual. */
   onHelp(): void;
+  /** A 트랙 page (engine/simulator/tracks.ts): its badge, and only its screens. */
+  track?: { name: string; grade: string; color: string; screens: readonly string[] };
 }
 
 /** A chip with a small menu under it; closes on a click outside or Esc. */
@@ -112,7 +114,7 @@ function FullscreenChip() {
   );
 }
 
-export default function TopBar({ view, onView, busy, context, settings, status, robotStop, onStop, onHelp }: Props) {
+export default function TopBar({ view, onView, busy, context, settings, status, robotStop, onStop, onHelp, track }: Props) {
   return (
     <header className={css.topBar} data-panel="topbar">
       <button type="button" className={css.lockup} onClick={() => onView('sim')} title="ROBODYNE SYSTEMS · Physical AI 로봇 학습 시뮬레이터 (시뮬레이터로)">
@@ -125,8 +127,13 @@ export default function TopBar({ view, onView, busy, context, settings, status, 
         </span>
       </button>
 
-      <nav className={css.screens} role="tablist" aria-label="화면">
-        {SCREENS.map((s) => (
+      {track && (
+        <span className={css.trackBadge} style={{ background: track.color }} title={`${track.name} 트랙 (${track.grade})`}>
+          {track.name} · {track.grade}
+        </span>
+      )}
+      <nav className={css.screens} role="tablist" aria-label="화면" hidden={!!track && track.screens.length < 2}>
+        {SCREENS.filter((s) => !track || track.screens.includes(s.id)).map((s) => (
           <button key={s.id} type="button" role="tab" aria-label={s.name} aria-selected={view === s.id} disabled={busy && view !== s.id} onClick={() => onView(s.id)} title={s.title}>
             <Icon name={s.icon} size={17} />
             <span>{s.name}</span>

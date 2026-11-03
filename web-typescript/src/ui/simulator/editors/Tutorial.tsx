@@ -23,10 +23,10 @@ export const LANGS: { level: Level; name: string; sub: string }[] = [
 ];
 
 /** The coding languages in one row; `extra` (the Python tab's 코드 | 터미널) sits at its end, so the panel spends one row on getting about. */
-export function LangSeg({ level, busy, onLevel, extra }: { level: Level; busy: boolean; onLevel(l: Level): void; extra?: ReactNode }) {
+export function LangSeg({ level, levels, busy, onLevel, extra }: { level: Level; levels?: readonly Level[]; busy: boolean; onLevel(l: Level): void; extra?: ReactNode }) {
   return (
     <div className={css.langs} role="tablist" aria-label="코딩 언어">
-      {LANGS.map((l) => (
+      {LANGS.filter((l) => !levels || levels.includes(l.level)).map((l) => (
         <button key={l.level} type="button" role="tab" aria-selected={level === l.level} disabled={busy && level !== l.level} onClick={() => onLevel(l.level)}>
           {l.name} <small>{l.sub}</small>
         </button>
