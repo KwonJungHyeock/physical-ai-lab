@@ -3734,8 +3734,8 @@ export default function Console() {
       ],
     },
   ];
-  // The mini arm repeats the joint numbers the 제어 panel shows: off while that panel is open.
-  const miniWanted = display.mini && !(dockShown && workScreen === 'jog');
+  // The mini arm (angles, load, tip position) stays on every screen, 제어 too.
+  const miniWanted = display.mini;
   const miniOn = miniWanted && !railOpen && !cellAt;
   useEffect(() => {
     miniShown.current = miniWanted;
@@ -3957,6 +3957,94 @@ export default function Console() {
       },
     }),
     [robotMode, robot?.connected, robot?.angles, effector, readFlange],
+  );
+
+  // Banners about the robot (another PC drives it · the tool does not match · the link is down): they
+  // share the top-centre column with the notices (Notices `above`), so the 기록 button never sits under them.
+  const bannerOn = !!(
+    (robotMode && !serverLost && robot?.connected && otherOwner(robot)) ||
+    (mismatch && !pcOffer && flangeHidden !== mismatchKey && !otherOwner(robot)) ||
+    (robotMode && (serverLost || (robot && !robot.connected)))
+  );
+  const banners = (
+    <>
+        {robotMode && !serverLost && robot?.connected && otherOwner(robot) && (
+          <div className={css.ownerBanner} role="status">
+            <b>다른 PC({otherOwner(robot)})가 이 로봇을 움직이는 중이에요.</b>
+            <span>그동안 이 화면의 로봇 명령은 로봇이 받지 않아요. 그 PC 가 끝내고 15초가 지나면 다시 쓸 수 있어요. 멈추기는 언제나 돼요.</span>
+          </div>
+        )}
+        {mismatch && !pcOffer && flangeHidden !== mismatchKey && !otherOwner(robot) && (
+          <div className={css.ownerBanner} role="status" aria-label="도구 확인">
+            <b>
+              {mismatch === 'no-gripper'
+                ? `화면의 도구는 ${EFFECTOR_BY_ID[effector].name}인데, 로봇의 그리퍼가 대답하지 않아요.`
+                : `로봇에 그리퍼가 끼워져 있어요. 화면의 도구는 ${EFFECTOR_BY_ID[effector].name}예요.`}
+            </b>
+            <span>
+              {mismatch === 'no-gripper'
+                ? '그리퍼가 끼워져 있는지, 그리퍼 케이블이 팔 끝에 꽂혀 있는지 확인해요. 다른 도구를 끼웠다면 도구 칸에서 그 도구로 바꿔요.'
+                : '이대로 실행하면 손끝 길이가 달라 블록에 닿지 않거나 부딪힐 수 있어요. 화면 도구를 그리퍼로 바꿔요.'}
+            </span>
+            <span className={css.ownerActions}>
+              {mismatch === 'gripper-fitted' && (
+                <button type="button" className={css.primary} disabled={busy} onClick={() => changeTool('adaptive', cameraFlange)}>
+                  어댑티브 그리퍼로 바꾸기
+                </button>
+              )}
+              <button type="button" className={css.ghost} onClick={() => void readFlange()}>
+                다시 확인
+              </button>
+              <button type="button" className={css.ghost} onClick={() => setFlangeHidden(mismatchKey)}>
+                닫기
+              </button>
+            </span>
+          </div>
+        )}
+        {robotMode && (serverLost || (robot && !robot.connected)) && (
+          <div className={css.connBanner} role="alert">
+            <b>{serverLost ? '로봇 서버와 연결이 끊겼어요' : '로봇 팔이 대답하지 않아요'}</b>
+            <ol>
+              {serverLost ? (
+                <>
+                  <li>로봇 전원이 켜져 있는지 확인해요.</li>
+                  <li>PC 와 로봇이 같은 공유기(와이파이)에 연결돼 있는지 확인해요.</li>
+                  <li>로봇의 서버가 켜져 있는지 확인해요 (자동 시작, 또는 로봇 터미널의 python3 server.py).</li>
+                </>
+              ) : (
+                <>
+                  <li>로봇 베이스의 전원 스위치와 전원 어댑터를 확인해요.</li>
+                  <li>로봇 포트를 쓰는 다른 프로그램(공식 앱, ROS 2 예제 등)을 꺼요.</li>
+                  <li>로봇을 껐다 켰다면 아래 [다시 연결]을 눌러요.</li>
+                </>
+              )}
+            </ol>
+            <div className={css.connBannerRow}>
+              <button type="button" className={css.btnAction} disabled={retry.busy} onClick={() => void reconnect()}>
+                <Icon name="refresh" size={15} /> {retry.busy ? '연결하는 중…' : '다시 연결'}
+              </button>
+              {/* The robot may have a new address (Wi-Fi changed, new lease): find it again, or go on without it. */}
+              <button type="button" className={css.ghost} onClick={() => setConnectOpen(true)}>
+                로봇 다시 찾기
+              </button>
+              {remoteRobot() && (
+                <button
+                  type="button"
+                  className={css.ghost}
+                  onClick={() => {
+                    setRemoteRobot(null);
+                    skipIntroOnce();
+                    window.location.reload();
+                  }}
+                >
+                  시뮬레이션으로
+                </button>
+              )}
+              {retry.note && <span>{retry.note}</span>}
+            </div>
+          </div>
+        )}
+    </>
   );
 
   return (
@@ -4447,82 +4535,6 @@ export default function Console() {
                   </button>
                 </div>
               )}
-              {robotMode && !serverLost && robot?.connected && otherOwner(robot) && (
-                <div className={css.ownerBanner} role="status">
-                  <b>다른 PC({otherOwner(robot)})가 이 로봇을 움직이는 중이에요.</b>
-                  <span>그동안 이 화면의 로봇 명령은 로봇이 받지 않아요. 그 PC 가 끝내고 15초가 지나면 다시 쓸 수 있어요. 멈추기는 언제나 돼요.</span>
-                </div>
-              )}
-              {mismatch && !pcOffer && flangeHidden !== mismatchKey && !otherOwner(robot) && (
-                <div className={css.ownerBanner} role="status" aria-label="도구 확인">
-                  <b>
-                    {mismatch === 'no-gripper'
-                      ? `화면의 도구는 ${EFFECTOR_BY_ID[effector].name}인데, 로봇의 그리퍼가 대답하지 않아요.`
-                      : `로봇에 그리퍼가 끼워져 있어요. 화면의 도구는 ${EFFECTOR_BY_ID[effector].name}예요.`}
-                  </b>
-                  <span>
-                    {mismatch === 'no-gripper'
-                      ? '그리퍼가 끼워져 있는지, 그리퍼 케이블이 팔 끝에 꽂혀 있는지 확인해요. 다른 도구를 끼웠다면 도구 칸에서 그 도구로 바꿔요.'
-                      : '이대로 실행하면 손끝 길이가 달라 블록에 닿지 않거나 부딪힐 수 있어요. 화면 도구를 그리퍼로 바꿔요.'}
-                  </span>
-                  <span className={css.ownerActions}>
-                    {mismatch === 'gripper-fitted' && (
-                      <button type="button" className={css.primary} disabled={busy} onClick={() => changeTool('adaptive', cameraFlange)}>
-                        어댑티브 그리퍼로 바꾸기
-                      </button>
-                    )}
-                    <button type="button" className={css.ghost} onClick={() => void readFlange()}>
-                      다시 확인
-                    </button>
-                    <button type="button" className={css.ghost} onClick={() => setFlangeHidden(mismatchKey)}>
-                      닫기
-                    </button>
-                  </span>
-                </div>
-              )}
-              {robotMode && (serverLost || (robot && !robot.connected)) && (
-                <div className={css.connBanner} role="alert">
-                  <b>{serverLost ? '로봇 서버와 연결이 끊겼어요' : '로봇 팔이 대답하지 않아요'}</b>
-                  <ol>
-                    {serverLost ? (
-                      <>
-                        <li>로봇 전원이 켜져 있는지 확인해요.</li>
-                        <li>PC 와 로봇이 같은 공유기(와이파이)에 연결돼 있는지 확인해요.</li>
-                        <li>로봇의 서버가 켜져 있는지 확인해요 (자동 시작, 또는 로봇 터미널의 python3 server.py).</li>
-                      </>
-                    ) : (
-                      <>
-                        <li>로봇 베이스의 전원 스위치와 전원 어댑터를 확인해요.</li>
-                        <li>로봇 포트를 쓰는 다른 프로그램(공식 앱, ROS 2 예제 등)을 꺼요.</li>
-                        <li>로봇을 껐다 켰다면 아래 [다시 연결]을 눌러요.</li>
-                      </>
-                    )}
-                  </ol>
-                  <div className={css.connBannerRow}>
-                    <button type="button" className={css.btnAction} disabled={retry.busy} onClick={() => void reconnect()}>
-                      <Icon name="refresh" size={15} /> {retry.busy ? '연결하는 중…' : '다시 연결'}
-                    </button>
-                    {/* The robot may have a new address (Wi-Fi changed, new lease): find it again, or go on without it. */}
-                    <button type="button" className={css.ghost} onClick={() => setConnectOpen(true)}>
-                      로봇 다시 찾기
-                    </button>
-                    {remoteRobot() && (
-                      <button
-                        type="button"
-                        className={css.ghost}
-                        onClick={() => {
-                          setRemoteRobot(null);
-                          skipIntroOnce();
-                          window.location.reload();
-                        }}
-                      >
-                        시뮬레이션으로
-                      </button>
-                    )}
-                    {retry.note && <span>{retry.note}</span>}
-                  </div>
-                </div>
-              )}
               {loaded && view === 'sim' && railOpen === 'monitor' && (
                 <Hud world={world} chain={loaded.chain} tcpMm={tcpNow} mountMm={mountMm} loadModel={arm.family === 'mycobot280'} status={hudStatus} onClose={() => setRailOpen(null)} />
               )}
@@ -4628,18 +4640,23 @@ export default function Console() {
                 entries={log}
                 guide={guide}
                 above={
-                  goalCard && view === 'sim' ? (
-                    <ResultCard
-                      title={practice.title}
-                      goal={goalCard.goal}
-                      done={goalCard.done}
-                      total={goalCard.total}
-                      seconds={replay ? replay.duration : null}
-                      onReplay={replay ? () => setReplayPlay((n) => n + 1) : undefined}
-                      onNext={nextPractice ? () => openTask({ level, theme, id: nextPractice.id }) : undefined}
-                      nextTitle={nextPractice?.title}
-                      onClose={closeGoalCard}
-                    />
+                  bannerOn || (goalCard && view === 'sim') ? (
+                    <>
+                      {banners}
+                      {goalCard && view === 'sim' && (
+                        <ResultCard
+                          title={practice.title}
+                          goal={goalCard.goal}
+                          done={goalCard.done}
+                          total={goalCard.total}
+                          seconds={replay ? replay.duration : null}
+                          onReplay={replay ? () => setReplayPlay((n) => n + 1) : undefined}
+                          onNext={nextPractice ? () => openTask({ level, theme, id: nextPractice.id }) : undefined}
+                          nextTitle={nextPractice?.title}
+                          onClose={closeGoalCard}
+                        />
+                      )}
+                    </>
                   ) : undefined
                 }
               />

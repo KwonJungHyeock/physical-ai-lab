@@ -5945,6 +5945,13 @@ div.zeroFlow {
   transform: none;
   max-width: 100%;
 }
+/* the robot's banners (another PC · tool check · link down) sit in the same column, over the 기록 button */
+.notices > .ownerBanner,
+.notices > .connBanner {
+  position: static;
+  transform: none;
+  width: min(460px, 100%);
+}
 /* No card: text straight over the 3D view (shadowed to read on any part of it), a hairline in the
    message's colour, outline buttons — an instrument display's notice, not a dialog. */
 .board {
