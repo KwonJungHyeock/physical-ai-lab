@@ -16,6 +16,8 @@
 import type { WorldState } from '../sim';
 import { CAFE_AT } from './cells';
 import { CARD_HOME, CARD_MM } from './draw';
+import { BOARD, pointXY, robotStones } from './board';
+import { STONE_TRAY } from './cells';
 import type { CellRun } from './run';
 
 export interface Observation {
@@ -51,6 +53,12 @@ const WATER: [number, number, number] = [A.water.x, A.water.y, 100];
 const PICKUP: [number, number, number] = [98, -190, 100];
 const CARD: [number, number, number] = [CARD_HOME.x + CARD_MM.w / 2, CARD_HOME.y + CARD_MM.h / 2, 60];
 const LAMP: [number, number, number] = [312, -140, 90];
+const MID = pointXY({ c: 5, r: 5 });
+const BOARD_AT: [number, number, number] = [MID.x, MID.y, 60];
+const NEAR_PERSON: [number, number, number] = [MID.x, BOARD.y0 - 10, 70];
+const TRAY_AT: [number, number, number] = [STONE_TRAY.x + STONE_TRAY.pitch, STONE_TRAY.y + 2 * STONE_TRAY.pitch, 50];
+const placed = (n: number) => (run: CellRun) => (run.board ? robotStones(run.board).length : 0) >= n;
+const held = (_run: CellRun, w: WorldState) => !!w.carry;
 
 export const STEP_GUIDES: Record<string, StepGuide> = {
   /* --- F: 로봇 카페 --- */
@@ -148,6 +156,52 @@ export const STEP_GUIDES: Record<string, StepGuide> = {
       { id: 'two', text: '2장 완성: 줄 끝', at: LAMP, when: cardsDone(2) },
     ],
     concept: { term: '그리기 이동과 빈 이동', def: '일하는 구간(펜이 닿음)과 옮기는 구간(펜을 듦)을 나눠 움직이는 것이에요.', real: '용접 · 도포 로봇도 작업 구간에서만 토치 · 노즐을 켜고, 옮길 때는 끄고 들어 올려요.' },
+  },
+
+  /* --- H: 보드게임 로봇 --- */
+  H1: {
+    predict: { q: '로봇은 언제 판 위로 움직이기 시작할까요?', options: ['프로그램을 켜자마자', '사람이 돌을 두고 손을 뺀 뒤', '사람이 손을 뻗을 때'], answer: 1, why: '[로봇 차례] 신호가 켜져야 움직여요. 사람이 손을 뺀 뒤에 켜져요.' },
+    observe: [
+      { id: 'hand', text: '[손 감지]: 사람이 돌을 두는 중', at: NEAR_PERSON, when: on('손 감지') },
+      { id: 'turn', text: '[로봇 차례] 켜짐: 이제 움직여요', at: BOARD_AT, when: on('로봇 차례') },
+      { id: 'held', text: '흡착 펌프가 흰 돌을 들었어요', at: TRAY_AT, when: held },
+    ],
+    concept: { term: '한 수의 흐름', def: '차례 기다리기 → 돌 집기 → 칸으로 옮겨 내려놓기 → 기본 자세. 한 수마다 같은 흐름을 반복해요.', real: '체스 · 바둑을 두는 로봇도 사람의 수를 확인한 뒤 같은 흐름으로 말을 옮겨요.' },
+  },
+  H2: {
+    predict: {
+      q: '칸 간격을 16 mm 대신 15 mm로 알려 주면 가로 7 · 세로 6의 돌은?',
+      options: ['정확히 그 교차점에 놓인다', '가로 1 쪽으로 몇 mm 벗어난다', '판 밖으로 떨어진다'],
+      answer: 1,
+      why: '칸마다 1 mm씩 모자라서 가로로 6 mm, 세로로 5 mm 벗어나요.',
+    },
+    observe: [
+      { id: 'held', text: '흰 돌을 들고 계산한 좌표로 가요', at: TRAY_AT, when: held },
+      { id: 'placed', text: '돌이 교차점 위에 놓였는지 보세요', at: BOARD_AT, when: placed(1) },
+    ],
+    concept: { term: '격자 좌표 → 로봇 좌표', def: 'x = 가로 1의 x + (가로 − 1) × 칸 간격. 칸 번호를 mm로 바꿔야 로봇이 움직일 수 있어요.', real: '창고의 선반 칸, 반도체 웨이퍼의 칩 자리도 이렇게 칸 번호를 좌표로 바꿔 찾아가요.' },
+  },
+  H3: {
+    predict: { q: '차례를 기다리지 않고 바로 판 위로 가면?', options: ['더 빨리 두어서 좋다', '사람 손과 겹쳐 로봇이 멈춘다', '사람이 기다려 준다'], answer: 1, why: '사람 손이 판 위에 있는 동안 팔이 오면 안전 정지해요.' },
+    observe: [
+      { id: 'hand', text: '[손 감지]: 사람 손이 판 위에 있어요', at: NEAR_PERSON, when: on('손 감지') },
+      { id: 'turn', text: '[로봇 차례]를 기다렸다가 움직여요', at: BOARD_AT, when: on('로봇 차례') },
+      { id: 'two', text: '흰 돌 2개: 수마다 차례를 기다렸어요', at: BOARD_AT, when: placed(2) },
+    ],
+    concept: { term: '차례 = 신호 (주고받기)', def: '사람과 로봇이 같은 판에서 일할 때, 차례 신호로 번갈아 움직이고 손이 있으면 멈춰요.', real: '사람과 함께 조립하는 협동로봇도 작업자가 버튼을 누르거나 손을 뺀 뒤에 움직여요.' },
+  },
+  H4: {
+    predict: { q: "규칙이 '빈 칸 차례대로'면 누가 이길까요?", options: ['로봇', '사람', '비긴다'], answer: 1, why: '판을 보지 않고 빈 칸에만 두면 사람의 줄을 막지 못해요.' },
+    observe: [
+      { id: 'turn', text: '[로봇 차례]: 판 센서로 돌을 읽어요', at: BOARD_AT, when: on('로봇 차례') },
+      { id: 'placed', text: '규칙으로 고른 칸에 두었어요', at: BOARD_AT, when: placed(1) },
+      { id: 'over', text: '[게임 끝]: 5개가 이어졌어요', at: BOARD_AT, when: on('게임 끝') },
+    ],
+    concept: {
+      term: '센서로 읽고 규칙으로 판단하기',
+      def: '상황을 읽고(판의 돌), 정한 순서의 규칙(이기기 → 막기 → 잇기)으로 할 일을 고르는 것. 피지컬 AI의 가장 기본이에요.',
+      real: '청소 로봇이 장애물을 보면 피하고, 아니면 앞으로 가는 것도 같은 방식이에요. 더 똑똑한 AI는 이 규칙을 데이터로 배워요.',
+    },
   },
 };
 

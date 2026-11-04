@@ -74,9 +74,10 @@ export const LIFE_STOPS: LifeStop[] = [
     title: '보드게임 로봇',
     img: '/brand/life/boardgame.webp',
     does: '사람과 번갈아 오목을 둬요',
-    learns: ['격자 좌표', '차례 기다리기', '손 감지'],
+    learns: ['격자 좌표', '차례 신호', '손 감지', '판단 규칙'],
     fields: ['pai', 'safety', 'control'],
-    flow: '사람과 오목 두기 · 격자 좌표 · 차례 기다리기',
+    opens: 'board',
+    flow: '차례 기다리기 → 돌 집기 → 칸에 두기',
   },
 ];
 

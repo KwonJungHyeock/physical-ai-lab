@@ -12,6 +12,8 @@
 import type { CellId } from './cells';
 import { CAFE_AT } from './cells';
 import { CARD_HOME, CARD_MM } from './draw';
+import { BOARD } from './board';
+import { STONE_TRAY } from './cells';
 
 export type V3 = readonly [number, number, number];
 
@@ -44,6 +46,8 @@ function near(name: string, x: number, y: number, z = 40, off: V3 = [175, -510, 
 
 const A = CAFE_AT;
 const CARD_MID: [number, number] = [CARD_HOME.x + CARD_MM.w / 2, CARD_HOME.y + CARD_MM.h / 2];
+const BOARD_MID: [number, number] = [BOARD.x0 + ((BOARD.n - 1) * BOARD.pitch) / 2, BOARD.y0 + ((BOARD.n - 1) * BOARD.pitch) / 2];
+const TRAY_MID: [number, number] = [STONE_TRAY.x + STONE_TRAY.pitch, STONE_TRAY.y + 2 * STONE_TRAY.pitch];
 
 export const TOUR: Partial<Record<CellId, TourShot[]>> = {
   cafe: [
@@ -59,11 +63,21 @@ export const TOUR: Partial<Record<CellId, TourShot[]>> = {
     { name: '펜 홀더', line: '로봇이 펜 홀더로 한 획씩 써요.', eye: [170, -360, 330], target: [40, 0, 150] },
     { name: '완성 램프', line: '다 쓰면 완성 램프가 켜지고 손님이 카드를 가져가요.', eye: [460, -330, 210], target: [312, -140, 30] },
   ],
+  board: [
+    { name: '보드게임 로봇', line: '보드게임 카페예요. 로봇이 사람과 번갈아 오목을 둬요.', eye: [980, -1150, 720], target: [110, 0, 0] },
+    { name: '오목판', line: '9 × 9 판, 줄 사이 16 mm. 가장자리 눈금이 로봇 좌표(mm)예요.', eye: [BOARD_MID[0] + 60, BOARD_MID[1] - 300, 300], target: [BOARD_MID[0], BOARD_MID[1], 0] },
+    { name: '흰 돌 상자', line: '로봇은 흡착 펌프로 흰 돌을 하나씩 집어요.', eye: [TRAY_MID[0] + 160, TRAY_MID[1] - 260, 260], target: [TRAY_MID[0], TRAY_MID[1], 0] },
+    { name: '차례 램프', line: '사람이 두고 손을 빼면 초록 램프: 이제 로봇 차례예요.', eye: [470, -360, 210], target: [300, -128, 20] },
+  ],
 };
 
 export const STATIONS: Partial<Record<CellId, Station[]>> = {
   cafe: [near('컵 디스펜서', A.cup.x, A.cup.y), near('제빙기', A.ice.x, A.ice.y), near('커피 머신', A.coffee.x, A.coffee.y), near('정수기', A.water.x, A.water.y), near('픽업대', 98, -176, 30)],
   draw: [{ name: '카드', at: CARD_MID, r: 110, eye: [CARD_MID[0] + 40, CARD_MID[1] - 330, 340], target: [CARD_MID[0], CARD_MID[1], 0] }],
+  board: [
+    { name: '오목판', at: BOARD_MID, r: 95, eye: [BOARD_MID[0] + 50, BOARD_MID[1] - 340, 360], target: [BOARD_MID[0], BOARD_MID[1], 0] },
+    { name: '흰 돌 상자', at: TRAY_MID, r: 60, eye: [TRAY_MID[0] + 150, TRAY_MID[1] - 300, 330], target: [TRAY_MID[0], TRAY_MID[1], 0] },
+  ],
 };
 
 /** The station the tool tip is working at now (nearest within its reach, low enough), or null. */

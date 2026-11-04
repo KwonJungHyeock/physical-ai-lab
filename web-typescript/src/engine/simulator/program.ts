@@ -22,6 +22,7 @@ import { activeArm } from '../robot/arms';
 import { BIN_NAMES, COLORS, COLOR_TO_BIN, SPOT_NAMES, type BinName, type ColorName, type SpotName, type Theme } from './board';
 import { EFFECTOR_BY_ID, fittedPhrase, type EffectorId, type EffectorKind } from './effectors';
 import { CELL_BY_ID, cellLayout, type CellId } from './cell/cells';
+import { RULES } from './cell/board';
 import { LIMIT_NAMES, OUTLINES, REJECT, RULE_WORDS, VISION_COLORS } from './cell/vision';
 
 export type CameraId = 'top' | 'hand';
@@ -599,7 +600,9 @@ export function check(steps: readonly Step[], ctx: CheckContext): { errors: Prob
           if ((s.type === 'cellPick' || s.type === 'cellPlace') && !picks) errors.push({ line: s.line, msg: `집기 · 놓기인데 ${fittedPhrase(ctx.effector)}.`, fix: '왼쪽 [도구]에서 그리퍼나 흡착 펌프를 달아 주세요.' });
           if (s.type === 'cellPick' || s.type === 'cellPlace') {
             const grid = s.place.match(/^(.+) 다음 칸$/)?.[1];
-            if (grid ? !l.grids[grid] : !l.places[s.place])
+            // H: the places a rule picks on the board (보드게임 로봇's 규칙으로 두기).
+            const ruled = s.type === 'cellPlace' && !!l.line.board && (RULES as readonly string[]).includes(s.place);
+            if (!ruled && (grid ? !l.grids[grid] : !l.places[s.place]))
               errors.push({ line: s.line, msg: `'${s.place}'이라는 곳은 ${CELL_BY_ID[ctx.cell].name}에 없어요.`, fix: `${[...Object.keys(l.places).filter((n) => !/[2-9]$/.test(n)), ...Object.keys(l.grids).map((g) => `${g} 다음 칸`)].map((n) => `"${n}"`).join(', ')} 중에서 골라 주세요.` });
           }
           if (s.type === 'cellPlace' && [s.dx, s.dy, s.dz].some((v) => Math.abs(v) > 1000)) errors.push({ line: s.line, msg: '1000 mm보다 멀리 비켜 놓을 수 없어요.', fix: 'x · y · z는 -1000에서 1000 mm 사이로 정해 주세요.' });

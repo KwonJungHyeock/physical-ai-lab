@@ -21,6 +21,7 @@ import { freeSetup, judge, missionById, type CellEvent, type CellMission } from 
 import { newVision, type VisionState } from './vision';
 import { newCafe, stepCafe, type CafeState } from './cafe';
 import { newDraw, stepDraw, type DrawState } from './draw';
+import { newBoard, stepBoard, type BoardState } from './board';
 import { observe } from './guides';
 
 /** A machined workpiece's colour (D): bright turned steel. */
@@ -52,6 +53,8 @@ export interface CellRun {
   cafe?: CafeState;
   /** G: the calligraphy booth's cards and customers (cell/draw.ts). */
   draw?: DrawState;
+  /** H: the board, the turns and the person (cell/board.ts). */
+  board?: BoardState;
   /** 단계 안내: the step's moments seen so far, by id, at cell time (cell/guides.ts). */
   observed: Record<string, number>;
 }
@@ -73,6 +76,7 @@ export function newCellRun(id: CellId, missionId: string | null): { run: CellRun
   const run: CellRun = { id, layout, mission: m?.id ?? null, line, health: newHealth(), alerts: [], fresh: [], halt: null, events: [], next: {}, startT: null, endT: null, lastTip: null, vision: newVision(), observed: {} };
   if (layout.line.cafe) run.cafe = newCafe(layout.line.cafe, setup.orders ?? 1);
   if (layout.line.draw) run.draw = newDraw(setup.orders ?? 1, setup.card);
+  if (layout.line.board) run.board = newBoard();
   return { run, parts: setup.parts(layout) };
 }
 
@@ -143,6 +147,17 @@ export function stepCell(w: WorldState, phys: PhysicsWorld, dt: number, chain: r
     if (ds.took) w.trail = [];
     ds.alerts.forEach((a) => raise(run, a));
   }
+  // H: the person's turn (a black stone put down), the robot's stones on the board, the interlock.
+  const bd = run.layout.line.board;
+  if (bd && run.board) {
+    const bs = stepBoard(bd, run.line, run.board, w.objects, w.carry?.id ?? null, tcpPositionMm(chain, angles, tcpMm));
+    for (const o of bs.spawned) {
+      w.objects.push(o);
+      phys.add(objectSpec(o));
+    }
+    if (bs.spawned.length) w.version += 1;
+    bs.alerts.forEach((a) => raise(run, a));
+  }
   // The door moves: the arm keeps off it where it is now.
   if (run.layout.line.actuators?.some((a) => a.guard)) w.fixed = cellFixed(run);
   // D: the workpiece in the machine comes out machined, or spoiled when its cycle was cut short.
@@ -209,6 +224,6 @@ export function cellChecks(w: WorldState): { mission: CellMission; items: Return
   if (!run || !m) return null;
   const end = run.endT ?? run.line.t;
   // A part still in the tool is not placed anywhere.
-  const items = judge(m, { parts: w.objects.filter((o) => o.id !== w.carry?.id), l: run.layout, line: run.line, alerts: run.alerts, events: run.events, elapsed: run.startT === null ? 0 : end - run.startT, vision: run.vision, cafe: run.cafe, draw: run.draw, trail: w.trail });
+  const items = judge(m, { parts: w.objects.filter((o) => o.id !== w.carry?.id), l: run.layout, line: run.line, alerts: run.alerts, events: run.events, elapsed: run.startT === null ? 0 : end - run.startT, vision: run.vision, cafe: run.cafe, draw: run.draw, board: run.board, trail: w.trail });
   return { mission: m, items };
 }

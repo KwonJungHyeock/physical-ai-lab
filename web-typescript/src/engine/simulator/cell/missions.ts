@@ -10,13 +10,15 @@
 
 import { makeObject, type DeskObject } from '../desk';
 import { COLOR_HEX, type ColorName } from '../board';
-import { CELLS, C_AT, PART_HEIGHT, fromShop, gridPlace, magazineParts, makePart, type CellId, type CellLayout } from './cells';
+import { CELLS, C_AT, PART_HEIGHT, STONE_TRAY, fromShop, gridPlace, magazineParts, makePart, type CellId, type CellLayout } from './cells';
 import { REJECT, outlineOf, type Outline, type VisionState } from './vision';
 import type { CellAlert } from './faults';
 import type { LineState } from './line';
 import { drinkVerdict, type CafeState } from './cafe';
 import { G3_CARD, LIFT_MM, cardsOf, inkVerdict, readInk, type DrawState, type Phrase, type Strokes } from './draw';
 import { G_ANSWER, drawCode, type DrawRecipe } from './drawRecipe';
+import { ON_POINT_MM, robotStones, stoneAt, type BoardState, type Pt } from './board';
+import { H_ANSWER, boardCode, type BoardRecipe } from './boardRecipe';
 
 export interface MissionSetup {
   /** The parts the cell starts with. */
@@ -53,6 +55,8 @@ export interface Judge {
   /** G: the booth's cards, and the pen's ink on the one on the mat now. */
   draw?: DrawState;
   trail?: Strokes;
+  /** H: the board, its stones and the game. */
+  board?: BoardState;
 }
 
 export type CellEvent =
@@ -1281,7 +1285,103 @@ const G: CellMission[] = [
   },
 ];
 
-export const MISSIONS: readonly CellMission[] = [...A, ...B, ...C, ...D, ...E, ...F, ...G];
+/* --- H: 보드게임 로봇 (입문 트랙 ① 생활 로봇) ---------------------------------------------- */
+
+/** H: the robot's 15 white stones in their tray. */
+function trayStones(): DeskObject[] {
+  const T = STONE_TRAY;
+  const out: DeskObject[] = [];
+  for (let i = 0; i < T.rows; i += 1) for (let j = 0; j < T.cols; j += 1) out.push(stoneAt(2, T.x + i * T.pitch, T.y + j * T.pitch, T.top));
+  return out;
+}
+
+function stoneOn(p: Pt): Check {
+  return {
+    label: `가로 ${p.c} · 세로 ${p.r} 교차점에 흰 돌`,
+    judge: (j) => {
+      const mine = j.board ? robotStones(j.board) : [];
+      const k = mine.find((s) => s.p.c === p.c && s.p.r === p.r);
+      if (k && k.off <= ON_POINT_MM) return { ok: true };
+      if (k) return { ok: false, detail: `교차점에서 ${k.off.toFixed(1)} mm 벗어났어요` };
+      const near = mine[0];
+      return { ok: false, detail: near ? `가로 ${near.p.c} · 세로 ${near.p.r} 근처에 뒀어요 (${near.off.toFixed(1)} mm 벗어남)` : '판에 흰 돌이 없어요' };
+    },
+  };
+}
+
+const afterTurns = (n: number): Check => ({
+  label: `사람 차례가 끝난 뒤에 흰 돌 ${n}개`,
+  judge: (j) => {
+    const mine = j.board ? robotStones(j.board).length : 0;
+    if (j.board?.breaches) return { ok: false, detail: '사람이 두는 중에 팔이 판 위로 갔어요' };
+    return mine >= n ? { ok: true } : { ok: false, detail: `${mine} / ${n}개` };
+  },
+});
+
+const robotWins: Check = {
+  label: '흰 돌 5개를 먼저 이었어요',
+  judge: (j) => {
+    const w = j.board?.winner;
+    if (w === 2) return { ok: true, detail: `흰 돌 ${j.board ? robotStones(j.board).length : 0}개째에` };
+    return { ok: false, detail: w === 1 ? '사람이 먼저 5개를 이었어요' : '아직 승부가 나지 않았어요' };
+  },
+};
+
+const hAnswer = (r: BoardRecipe) => boardCode(r).code;
+const hSetup: MissionSetup = { parts: trayStones, auto: false };
+
+const H: CellMission[] = [
+  {
+    id: 'H1',
+    cell: 'board',
+    n: 1,
+    title: '둘러보기: 흰 돌 한 수',
+    adds: '완성된 순서로 로봇이 한 수 두는 걸 보기',
+    goal: '사람이 먼저 가운데에 검은 돌을 두면, 로봇이 흰 돌을 집어 가로 5 · 세로 4에 둬요. 로봇이 언제 움직이기 시작하는지 보세요.',
+    hint: '한 수는 차례 기다리기 → 돌 집기 → 칸으로 옮겨 내려놓기 → 기본 자세로 순서예요. 흡착 펌프는 돌 윗면에 닿아서 공기를 빨아들여 들어 올려요.',
+    setup: hSetup,
+    checks: [stoneOn({ c: 5, r: 4 }), safe],
+    solution: hAnswer(H_ANSWER.H1),
+  },
+  {
+    id: 'H2',
+    cell: 'board',
+    n: 2,
+    title: '격자 좌표: 칸 간격',
+    adds: '가로 · 세로 칸 번호를 로봇 좌표(mm)로 바꾸기',
+    goal: '흰 돌을 가로 7 · 세로 6 교차점에 정확히 둬요(교차점에서 3 mm 안). 판 눈금으로 줄 사이 간격을 재서 맞춰요.',
+    hint: '로봇은 칸 번호를 몰라요. x = 가로 1의 x + (가로 − 1) × 칸 간격으로 계산해서 움직여요. 간격이 1 mm만 틀려도 판 끝으로 갈수록 크게 벗어나요.',
+    setup: hSetup,
+    checks: [stoneOn({ c: 7, r: 6 }), safe],
+    solution: hAnswer(H_ANSWER.H2),
+  },
+  {
+    id: 'H3',
+    cell: 'board',
+    n: 3,
+    title: '차례 기다리기',
+    adds: '사람 차례가 끝난 뒤에만 판 위로 가기',
+    goal: '흰 돌 2개를 가로 5 · 세로 4, 가로 6 · 세로 4에 둬요. 사람이 돌을 두는 동안 팔이 판 위로 오면 안 돼요.',
+    hint: '[로봇 차례]는 사람이 돌을 두고 손을 뺀 뒤에 켜져요. 사람 손이 판 위에 있는 동안([손 감지]) 팔이 판 위로 오면 멈춰요. 수마다 차례를 기다려요.',
+    setup: hSetup,
+    checks: [stoneOn({ c: 5, r: 4 }), stoneOn({ c: 6, r: 4 }), afterTurns(2), safe],
+    solution: hAnswer(H_ANSWER.H3),
+  },
+  {
+    id: 'H4',
+    cell: 'board',
+    n: 4,
+    title: '판단 규칙: 한 판 이기기',
+    adds: '판 센서로 돌을 읽고 규칙으로 칸 고르기',
+    goal: '한 판을 둬서 흰 돌 5개를 먼저 이어요. 정해진 칸 대신, 판을 읽고 규칙으로 칸을 골라야 해요.',
+    hint: "규칙의 순서가 중요해요. ① 내가 5개를 만들 수 있으면 둔다(이기기) ② 사람이 5개를 만들 칸이 있으면 먼저 막는다(막기) ③ 아니면 내 돌을 가장 길게 잇는다(잇기). '빈 칸 차례대로'나 '잇기만'으로는 사람이 먼저 이겨요.",
+    setup: hSetup,
+    checks: [robotWins, safe],
+    solution: hAnswer(H_ANSWER.H4),
+  },
+];
+
+export const MISSIONS: readonly CellMission[] = [...A, ...B, ...C, ...D, ...E, ...F, ...G, ...H];
 
 export const missionsOf = (cell: CellId) => MISSIONS.filter((m) => m.cell === cell);
 export const missionById = (id: string) => MISSIONS.find((m) => m.id === id) ?? null;

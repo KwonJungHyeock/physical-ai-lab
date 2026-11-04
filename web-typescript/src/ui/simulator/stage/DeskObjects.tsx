@@ -21,6 +21,7 @@ import { createPhysics, type BlockSpec, type PhysicsWorld } from '@/engine/physi
 import { objectSpec } from '@/engine/simulator/deskPhysics';
 import { CELL_ENV, cellSolids, stepCell } from '@/engine/simulator/cell/run';
 import { cellLayout } from '@/engine/simulator/cell/cells';
+import { STONE, WHITE } from '@/engine/simulator/cell/board';
 
 import css from '../console.module.css';
 import { RBox, Turned, brushed, cardboard, grain, pill, stripes, vessel } from './sceneKit';
@@ -163,6 +164,34 @@ function Shape({ o, selected }: { o: DeskObject; selected: boolean }) {
  * 실습 셀's workpiece: a turned aluminium part with chamfered edges and a centre mark on top; a
  * broken one turns dark with a red glow (the world's `damaged`, read every frame).
  */
+/** 실습 셀 H's go stones (cell/board.ts STONE): a puck of that size. */
+const isStone = (o: DeskObject) => o.size[0] === STONE.d && o.size[2] === STONE.h;
+
+/** A go stone: lens-shaped, glossy slate for black, shell-white with a soft sheen for white. */
+function GoStone({ o }: { o: DeskObject }) {
+  const [d, , h] = o.size;
+  const r = d / 2;
+  const white = o.color === WHITE;
+  // A lens: the rim at a third of the height, domed above and below.
+  const profile = useMemo(() => {
+    const pts: [number, number][] = [[0, 0]];
+    for (let k = 1; k <= 8; k += 1) {
+      const a = (k / 8) * (Math.PI / 2);
+      pts.push([r * Math.sin(a), h * 0.38 * (1 - Math.cos(a))]);
+    }
+    for (let k = 7; k >= 0; k -= 1) {
+      const a = (k / 8) * (Math.PI / 2);
+      pts.push([r * Math.sin(a), h - h * 0.62 * (1 - Math.cos(a))]);
+    }
+    return pts;
+  }, [r, h]);
+  return (
+    <Turned at={[0, 0, -h / 2]} segments={36} profile={profile}>
+      {white ? <meshPhysicalMaterial color={o.color} roughness={0.28} clearcoat={0.8} clearcoatRoughness={0.2} sheen={0.4} /> : <meshPhysicalMaterial color={o.color} roughness={0.35} clearcoat={0.9} clearcoatRoughness={0.25} />}
+    </Turned>
+  );
+}
+
 function Puck({ o, world }: { o: DeskObject; world: RefObject<WorldState | null> }) {
   const [d, , h] = o.size;
   const mat = useRef<MeshStandardMaterial>(null);
@@ -250,7 +279,7 @@ function Item({ o, world, selected, edit, onDown }: { o: DeskObject; world: RefO
   };
   return (
     <group ref={g} onPointerDown={onDown} onPointerOver={cursor('grab')} onPointerOut={cursor('')}>
-      {o.kind === 'puck' ? <Puck o={o} world={world} /> : o.pins ? <Housing o={o} world={world} /> : <Shape o={o} selected={selected} />}
+      {o.kind === 'puck' && isStone(o) ? <GoStone o={o} /> : o.kind === 'puck' ? <Puck o={o} world={world} /> : o.pins ? <Housing o={o} world={world} /> : <Shape o={o} selected={selected} />}
       {selected && edit && (
         // The selected object's own delete button, just above it (the Delete key does the same).
         <Html position={[0, 0, m(o.size[2] / 2) + 0.022]} center zIndexRange={[6, 5]}>

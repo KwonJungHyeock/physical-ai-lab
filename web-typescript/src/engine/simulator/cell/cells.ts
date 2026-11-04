@@ -16,6 +16,7 @@ import type { Box } from '../../physics/collide';
 import { makeObject, type DeskObject, type FixedBox } from '../desk';
 import type { CafeDef } from './cafe';
 import type { DrawDef } from './draw';
+import type { BoardDef } from './board';
 import type { EffectorId } from '../effectors';
 
 /** Shop size per simulator size. */
@@ -28,11 +29,11 @@ export const toShop = (mm: number) => Math.round(mm * CELL_SCALE);
 /** Shop mm as simulator mm. */
 export const fromShop = (mm: number) => mm / CELL_SCALE;
 
-export type CellId = 'feed' | 'vision' | 'inspect' | 'tend' | 'assembly' | 'cafe' | 'draw';
+export type CellId = 'feed' | 'vision' | 'inspect' | 'tend' | 'assembly' | 'cafe' | 'draw' | 'board';
 
 export interface CellInfo {
   id: CellId;
-  letter: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G';
+  letter: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H';
   name: string;
   /** One line: what happens in the cell. */
   note: string;
@@ -96,6 +97,15 @@ export const CELLS: readonly CellInfo[] = [
     built: true,
     life: true,
     effector: 'pen',
+  },
+  {
+    id: 'board',
+    letter: 'H',
+    name: '보드게임 로봇',
+    note: '흡착 펌프 · 9 × 9 오목판 · 흰 돌 상자 · 차례 램프',
+    built: true,
+    life: true,
+    effector: 'pump',
   },
 ];
 
@@ -255,6 +265,8 @@ export interface LineDef {
   cafe?: CafeDef;
   /** G: the calligraphy booth's card, customer and lamp (cell/draw.ts). */
   draw?: DrawDef;
+  /** H: the board-game robot's board, turns and person (cell/board.ts). */
+  board?: BoardDef;
 }
 
 /**
@@ -1011,6 +1023,38 @@ function drawLayout(): CellLayout {
   };
 }
 
+/* --- H: 보드게임 로봇 ---------------------------------------------------------------- */
+
+/** H: the robot's white stones, 3 × 5 in a tray at its right (robot mm; the tray's top is z 6). */
+export const STONE_TRAY = { x: 118, y: 92, rows: 3, cols: 5, pitch: 18, top: 6 } as const;
+
+/**
+ * H: a board-game robot at a café table (docs/reports/education/45-track-life-board-game-robot.md).
+ * At full size like G: the arm with the suction pump, the 9 × 9 board in front of it (cell/board.ts
+ * BOARD), the white stones' tray at its right, the person across the board at −y. The board and the
+ * tray are physics solids only (the pump comes down onto them); the table top is z 0.
+ */
+function boardLayout(): CellLayout {
+  const T = STONE_TRAY;
+  const b0 = { x: 136 - 14, y: -64 - 14 };
+  const b1 = { x: 136 + 128 + 14, y: -64 + 128 + 14 };
+  return {
+    id: 'board',
+    fixed: [],
+    solids: [
+      PED,
+      { name: '테이블', min: [-120, -230, -20], max: [340, 230, 0] },
+      { name: '오목판', min: [b0.x, b0.y, 0], max: [b1.x, b1.y, 6] },
+      { name: '돌 상자', min: [T.x - 12, T.y - 12, 0], max: [T.x + (T.rows - 1) * T.pitch + 12, T.y + (T.cols - 1) * T.pitch + 12, T.top] },
+    ],
+    places: {},
+    grids: { '돌 상자': { name: '돌 상자', origin: { x: T.x, y: T.y, z: T.top }, rows: T.rows, cols: T.cols, pitch: T.pitch, layers: 1, layerH: 5 } },
+    line: { sensors: [], board: { turn: '로봇 차례', hand: '손 감지', over: '게임 끝' } },
+    inputs: ['로봇 차례', '손 감지', '게임 끝'],
+    outputs: [],
+  };
+}
+
 const LAYOUTS: Record<CellId, () => CellLayout> = {
   feed: feedLayout,
   vision: visionLayout,
@@ -1019,6 +1063,7 @@ const LAYOUTS: Record<CellId, () => CellLayout> = {
   assembly: assemblyLayout,
   cafe: cafeLayout,
   draw: drawLayout,
+  board: boardLayout,
 };
 
 const cache = new Map<CellId, CellLayout>();

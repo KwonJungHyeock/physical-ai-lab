@@ -121,6 +121,7 @@ import ProcessPanel from './editors/ProcessPanel';
 import { FullBar, LangSeg, Snippets, SlotCode, TutorialCard } from './editors/Tutorial';
 import RecipeCards from './editors/RecipeCards';
 import DrawCards from './editors/DrawCards';
+import BoardCards from './editors/BoardCards';
 import ThemePanel from './tasks/ThemePanel';
 import TutorialStrip from './tasks/TutorialStrip';
 import { PredictCard, StepResult, loadPredictions, savePrediction } from './stage/StepGuide';
@@ -3728,7 +3729,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       : null;
   // 입문: while a step runs, the view goes to the station the tool works at (from its side, the cup in
   // view), unless the user has moved the view; back to the whole place when the run is over.
-  const lifeCell = track && (cellAt?.cell === 'cafe' || cellAt?.cell === 'draw') ? cellAt.cell : null;
+  const lifeCell = track && (cellAt?.cell === 'cafe' || cellAt?.cell === 'draw' || cellAt?.cell === 'board') ? cellAt.cell : null;
   // A run ends the place's tour (the run's own camera takes over).
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- the tour stops when a run starts
@@ -3879,7 +3880,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   });
   // 제어: moving the arm by hand. 작업: programs that run (a process of points, blocks, Python, ROS 2). 보기: windows.
   // 입문 트랙's café and calligraphy booth: the program is 작업 순서 카드, not code (RecipeCards · DrawCards).
-  const recipeOn = !!track && (cellAt?.cell === 'cafe' || cellAt?.cell === 'draw');
+  const recipeOn = !!track && (cellAt?.cell === 'cafe' || cellAt?.cell === 'draw' || cellAt?.cell === 'board');
   const controlGroup = { name: '제어', items: [work('jog', '제어', 'move', '제어: 관절 · 좌표로 움직이기 (조그)', true), { ...work('parts', '도구', 'tool', '도구 · 액세서리', true), hintFor: '끼우기, 도구' }, { ...work('pose', '자세', 'home', '자세 저장 · 불러오기', true), hintFor: '기본 자세, 일자로 펴기, 카메라 자세, 이 자세로, 자세' }] };
   const objectsItem = theme === 'kit' ? [] : [viewItem('objects', '물건', 'box', '책상에 물건 놓기', desk.objects.length ? String(desk.objects.length) : undefined)];
   const monitorItem = viewItem('monitor', '모니터', 'chart', '관절 · 손끝 · 그래프 · 부하');
@@ -5241,6 +5242,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                       <div className={css.pane}>
                         {cellAt!.cell === 'draw' ? (
                           <DrawCards key={cellAt!.mission ?? 'free'} mission={cellAt!.mission} busy={busy} runningLine={runningLine} onCode={onRecipeCode} />
+                        ) : cellAt!.cell === 'board' ? (
+                          <BoardCards key={cellAt!.mission ?? 'free'} mission={cellAt!.mission} busy={busy} runningLine={runningLine} onCode={onRecipeCode} />
                         ) : (
                           <RecipeCards key={cellAt!.mission ?? 'free'} mission={cellAt!.mission} busy={busy} runningLine={runningLine} onCode={onRecipeCode} />
                         )}

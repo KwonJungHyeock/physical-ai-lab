@@ -73,6 +73,7 @@ import {
 } from './effectors';
 import { DEFAULT_SPEED, SPEED_CAP, type CameraId, type Cond, type Step, type Target } from './program';
 import { CELL_BY_ID, PART_HEIGHT, fromShop, gridPlace, type CellId, type CellPlace } from './cell/cells';
+import { BOARD, RULES, pointXY, ruleMove, type Rule } from './cell/board';
 import { collisionAlert } from './cell/faults';
 import { setIn, setOut } from './cell/line';
 import { cellFixed, newCellRun, raise, type CellRun } from './cell/run';
@@ -484,6 +485,14 @@ function cellPlaceAt(run: CellRun, name: string): { p: CellPlace; grid?: string 
     const k = run.next[grid] ?? 0;
     if (!g || k >= g.rows * g.cols * g.layers) throw new RunError(`${grid}에 남은 칸이 없어요.`, `${grid}는 ${g ? g.rows * g.cols * g.layers : 0}칸이에요.`);
     return { p: gridPlace(g, k), grid };
+  }
+  // H: the point the board sensor and a rule choose (보드게임 로봇's 규칙으로 두기).
+  if (run.board && (RULES as readonly string[]).includes(name)) {
+    if (run.board.winner) throw new RunError('게임이 끝났어요.', 'cell.is_on("게임 끝")이 켜지면 그만 둬요.');
+    const at = ruleMove(run.board.grid, name as Rule);
+    if (!at) throw new RunError('판에 빈 칸이 없어요.');
+    const q = pointXY(at);
+    return { p: { x: q.x, y: q.y, z: BOARD.top } };
   }
   const p = run.layout.places[name];
   if (!p) throw new RunError(`'${name}'이라는 곳은 이 셀에 없어요.`);

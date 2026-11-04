@@ -24,6 +24,7 @@ import { TendCell } from './cell/cellD';
 import { AssemblyCell } from './cell/cellE';
 import { CafeCell } from './cell/cellF';
 import { DrawCell } from './cell/cellG';
+import { BoardCell } from './cell/cellH';
 import { Backdrop, Cabinet, Conveyor, Fence, Floor, MarkedPlate, Pedestal, StackGlow, Tagged, m } from './cell/kit';
 
 type Tags = Record<string, { at: [number, number, number]; note: string }>;
@@ -37,6 +38,7 @@ const CABINET: Record<CellId, { x: number; y: number }> = {
   assembly: { x: -80, y: -300 },
   cafe: { x: -190, y: 210 },
   draw: { x: -190, y: 210 },
+  board: { x: -190, y: 210 },
 };
 const cabinetTag = (cell: CellId): Tags => ({ 제어함: { at: [CABINET[cell].x, CABINET[cell].y, 130], note: '경광등 · 신호 램프 · 비상 정지' } });
 
@@ -106,6 +108,12 @@ const TAGS: Record<CellId, Tags> = {
     '펜 꽂이': { at: [55, 135, 150], note: '여분 펜 · 펜 홀더에 끼워 써요' },
     '샘플 보드': { at: [-110, 150, 230], note: '로봇이 쓸 수 있는 글귀' },
   },
+  board: {
+    오목판: { at: [200, -40, 30], note: '9 × 9 · 줄 사이 16 mm · 가장자리 눈금 = 로봇 좌표 x · y (mm) · 판 센서' },
+    '흰 돌 상자': { at: [136, 128, 40], note: '로봇의 흰 돌 15개 · 흡착 펌프로 집어요' },
+    '검은 돌 통': { at: [200, -122, 50], note: '사람의 검은 돌' },
+    '차례 램프': { at: [300, -128, 70], note: '초록 = 로봇 차례 · 사람 손이 판 위에 있으면 손 감지' },
+  },
 };
 
 /** Each cell's painted work area on the floor, mm. */
@@ -117,6 +125,7 @@ const ZONE: Record<CellId, { x0: number; x1: number; y0: number; y1: number }> =
   assembly: { x0: -170, x1: 310, y0: -340, y1: 350 },
   cafe: { x0: -250, x1: 360, y0: -300, y1: 300 },
   draw: { x0: -250, x1: 360, y0: -300, y1: 300 },
+  board: { x0: -250, x1: 360, y0: -300, y1: 300 },
 };
 
 /**
@@ -133,6 +142,7 @@ export const CELL_VIEW: Record<CellId, { min: readonly [number, number, number];
   assembly: { min: [-60, -320, -30], max: [280, 340, 90], home: [1, 0.95, -0.55] },
   cafe: { min: [-80, -330, -20], max: [400, 260, 200], home: [0.3, 1.3, 0.95] },
   draw: { min: [-60, -150, -10], max: [330, 170, 230], home: [0.35, 1.25, 1] },
+  board: { min: [-60, -150, -10], max: [320, 180, 230], home: [0.35, 1.25, 1] },
 };
 
 function FeedCell({ world, onHover }: { world: RefObject<WorldState | null>; onHover: (n: string | null) => void }) {
@@ -160,6 +170,7 @@ const EQUIPMENT: Record<CellId, (p: { world: RefObject<WorldState | null>; onHov
   assembly: AssemblyCell,
   cafe: CafeCell,
   draw: DrawCell,
+  board: BoardCell,
 };
 
 /** How long a 관찰 bubble stays after its moment, cell seconds. */
@@ -203,7 +214,7 @@ export default function CellScene({ world, cell, tags = [], callouts = false }: 
   const shown = [...new Set([...tags, ...(hover ? [hover] : [])])].filter((n) => T[n]);
   const Equipment = EQUIPMENT[cell];
   // The 생활 로봇 places (a café, an event booth) have their own floor and no cell fence or cabinet.
-  const shop = cell === 'cafe' || cell === 'draw';
+  const shop = cell === 'cafe' || cell === 'draw' || cell === 'board';
   return (
     <group>
       <Backdrop />
