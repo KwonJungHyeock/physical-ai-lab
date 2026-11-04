@@ -1,0 +1,102 @@
+/* 현장 둘러보기 (SiteTour.tsx): a film's lower third over the 3D view — the intro's own type (an
+   English tag, a big name, one line, the scene dashes) on a dark fade at the bottom. */
+.tour {
+  position: absolute;
+  z-index: 18;
+  left: var(--inset-l, 12px);
+  right: var(--inset-r, 12px);
+  bottom: 0;
+  height: 230px;
+  pointer-events: none;
+  background: linear-gradient(
+    0deg,
+    rgba(10, 12, 16, 0.82),
+    rgba(10, 12, 16, 0)
+  );
+}
+
+.third {
+  position: absolute;
+  left: 40px;
+  bottom: 34px;
+  max-width: min(640px, calc(100% - 200px));
+  color: #f4f7fb;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  animation: thirdIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes thirdIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.third em {
+  font:
+    700 11px ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  font-style: normal;
+  letter-spacing: 0.22em;
+  color: #c9ced5;
+}
+
+.third b {
+  display: block;
+  margin-top: 6px;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.third p {
+  margin: 6px 0 0;
+  font-size: 16px;
+  line-height: 1.5;
+  word-break: keep-all;
+  color: #e4eaf2;
+}
+
+.dots {
+  display: flex;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.dots i {
+  width: 18px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.dots i[data-done] {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.dots i[data-on] {
+  width: 30px;
+  background: #fff;
+}
+
+.skip {
+  position: absolute;
+  right: 28px;
+  bottom: 34px;
+  pointer-events: auto;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(20, 24, 30, 0.55);
+  color: #f4f7fb;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+}
+
+.skip:hover {
+  background: rgba(40, 46, 54, 0.75);
+}

@@ -134,6 +134,10 @@ export interface StageApi {
   snapshot(): string | null;
   /** Where the view looks from: azimuth around the vertical and the angle down from it, radians. */
   orient(): { azimuth: number; polar: number } | null;
+  /** Glide the view to look from `eye` at `target` (robot frame, mm); `slow`: a long, cinematic glide (a tour). */
+  lookAt(eye: readonly [number, number, number], target: readonly [number, number, number], slow?: boolean): void;
+  /** Has the user turned, zoomed or moved the view since the last glide? */
+  userMoved(): boolean;
 }
 
 /**
@@ -588,6 +592,8 @@ function World({
   const fitReq = useRef<{ name: ViewName; animate: boolean } | null>({ name: 'home', animate: false });
   const lastView = useRef<ViewName>('home');
   const userMoved = useRef(false);
+  /** A glide by lookAt (a tour, a station) holds until the next view: a resize does not re-frame it. */
+  const held = useRef(false);
   useFrame(() => {
     const req = fitReq.current;
     if (!req || !controls || !root.current) return;
@@ -605,7 +611,7 @@ function World({
     fitReq.current = { name: 'home', animate: true };
   }, [theme, cell]);
   useEffect(() => {
-    if (!userMoved.current && !fitReq.current) fitReq.current = { name: lastView.current, animate: true };
+    if (!userMoved.current && !held.current && !fitReq.current) fitReq.current = { name: lastView.current, animate: true };
   }, [size.width, size.height, layoutKey]);
   useEffect(() => {
     if (!controls) return;
@@ -619,6 +625,9 @@ function World({
   const getThree = useThree((s) => s.get);
   const viewApi: Omit<StageApi, 'capture'> = {
     view: (name: ViewName) => {
+      const c = getThree().controls as CameraControlsImpl | null;
+      if (c) c.smoothTime = 0.25;
+      held.current = false;
       fitReq.current = { name, animate: true };
     },
     zoom: (direction: 1 | -1) => {
@@ -660,6 +669,16 @@ function World({
       }
     },
     orient: () => (controls ? { azimuth: controls.azimuthAngle, polar: controls.polarAngle } : null),
+    lookAt: (eye, target, slow = false) => {
+      const c = getThree().controls as CameraControlsImpl | null;
+      if (!c) return;
+      c.smoothTime = slow ? 1.1 : 0.45;
+      // Robot frame (z up) to three.js (y up): x -> x, y -> -z, z -> y.
+      void c.setLookAt(eye[0] / 1000, eye[2] / 1000, -eye[1] / 1000, target[0] / 1000, target[2] / 1000, -target[1] / 1000, true);
+      userMoved.current = false;
+      held.current = true;
+    },
+    userMoved: () => userMoved.current,
   };
 
   // Drawing aids (표시 menu).

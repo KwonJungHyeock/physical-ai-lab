@@ -9,12 +9,11 @@
  * notices as they happen.
  */
 
-import { useEffect, useRef, useState, type RefObject } from 'react';
+import { useEffect, useState, type RefObject } from 'react';
 
 import { CELL_BY_ID, cellLayout, gridPlace, type CellId } from '@/engine/simulator/cell/cells';
 import type { CellAlert } from '@/engine/simulator/cell/faults';
 import { setOut } from '@/engine/simulator/cell/line';
-import { guideOf } from '@/engine/simulator/cell/guides';
 import { missionById, missionsOf } from '@/engine/simulator/cell/missions';
 import { cellChecks } from '@/engine/simulator/cell/run';
 import type { WorldState } from '@/engine/simulator/sim';
@@ -98,34 +97,15 @@ export interface CellHudProps {
   onAlert(a: CellAlert): void;
   /** 자유 실습: a fresh cell (parts back, the line stopped). */
   onReset(): void;
-  /** 입문 트랙: each step goes 예측 → 관찰 → 개념 (cell/guides.ts). */
+  /** 입문 트랙: the step tabs only, the lamps folded (the rest: StepGuide.tsx). */
   guides?: boolean;
 }
 
-const PREDICT_KEY = 'robot-console-life-predict';
-function loadPredictions(): Record<string, number> {
-  try {
-    return JSON.parse(localStorage.getItem(PREDICT_KEY) ?? '{}') as Record<string, number>;
-  } catch {
-    return {};
-  }
-}
-const MARK = ['①', '②', '③', '④'];
+
 
 export default function CellHud(p: CellHudProps) {
   const [snap, setSnap] = useState<Snap | null>(() => snapOf(p.world.current));
   const [hint, setHint] = useState(false);
-  /** 예측: the option chosen per step (kept in this browser, not graded). */
-  const [predicted, setPredicted] = useState<Record<string, number>>(loadPredictions);
-  const predict = (id: string, k: number) => {
-    const next = { ...predicted, [id]: k };
-    setPredicted(next);
-    try {
-      localStorage.setItem(PREDICT_KEY, JSON.stringify(next));
-    } catch {
-      /* private window */
-    }
-  };
   const { world, onAlert } = p;
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -138,15 +118,10 @@ export default function CellHud(p: CellHudProps) {
 
   const steps = missionsOf(p.cell);
   const m = p.mission ? missionById(p.mission) : null;
-  const guide = p.guides ? guideOf(p.mission) : null;
-  const chosen = m ? predicted[m.id] : undefined;
-  // The run is over (the step's checks have their verdict): time for the comparison and the concept.
-  const after = p.result !== null && !p.busy;
-  // The concept appears under the checks once the run is over: bring it into view in the card.
-  const conceptRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (after) conceptRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-  }, [after]);
+  // 입문 트랙: the step tabs only (the goal, the prediction, the result and the idea are where they are
+  // looked at — the notice board, the run button, the scene; StepGuide.tsx); the signal lamps folded.
+  const compact = !!p.guides;
+  const [lampsOpen, setLampsOpen] = useState(false);
   // A cell whose ladder is still to come: its steps stay shut, its equipment is run by hand.
   const built = CELL_BY_ID[p.cell].built;
   const layout = cellLayout(p.cell);
@@ -213,7 +188,7 @@ export default function CellHud(p: CellHudProps) {
         </section>
       )}
 
-      {m ? (
+      {m && compact ? null : m ? (
         <section className={css.card}>
           <header>
             <b>
@@ -225,70 +200,6 @@ export default function CellHud(p: CellHudProps) {
           </header>
           <p className={css.adds}>+ 이번에 더해진 조건: {m.adds}</p>
           <p className={css.goal}>{m.goal}</p>
-          {guide && (
-            <div className={css.gsec} aria-label="예측">
-              <h5>
-                <em>PREDICT</em> 예측<small>채점 없음</small>
-              </h5>
-              {after ? (
-                chosen !== undefined ? (
-                  <p className={css.gline} data-ok={chosen === guide.predict.answer || undefined}>
-                    <i aria-hidden="true">{chosen === guide.predict.answer ? '✓' : '✗'}</i>
-                    <span>
-                      내 예측 {MARK[chosen]} → 실제 {MARK[guide.predict.answer]} {guide.predict.options[guide.predict.answer]}
-                      <small>{guide.predict.why}</small>
-                    </span>
-                  </p>
-                ) : (
-                  <p className={css.gline}>
-                    <i aria-hidden="true">·</i>
-                    <span>
-                      실제: {MARK[guide.predict.answer]} {guide.predict.options[guide.predict.answer]}
-                      <small>{guide.predict.why}</small>
-                    </span>
-                  </p>
-                )
-              ) : (
-                <>
-                  <p className={css.gq}>{guide.predict.q}</p>
-                  <ul className={css.glist}>
-                    {guide.predict.options.map((o, k) => (
-                      <li key={o}>
-                        <button type="button" disabled={p.busy} aria-pressed={chosen === k} onClick={() => predict(m.id, k)}>
-                          <i aria-hidden="true">{MARK[k]}</i>
-                          <span>{o}</span>
-                          {chosen === k && <em>내 예측</em>}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
-            </div>
-          )}
-          {guide && (
-            <div className={css.gsec} data-kind="observe" aria-label="관찰">
-              <h5>
-                <em>OBSERVE</em> 관찰
-                <small>
-                  {guide.observe.filter((o) => snap?.observed[o.id] !== undefined).length}/{guide.observe.length}
-                </small>
-              </h5>
-              <ul className={css.glist}>
-                {guide.observe.map((o) => (
-                  <li key={o.id} className={css.glamp} data-on={snap?.observed[o.id] !== undefined || undefined}>
-                    <i aria-hidden="true" />
-                    <span>{o.text}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {guide && (
-            <h5 className={css.ghead} data-kind="goal">
-              <em>GOAL</em> 목표
-            </h5>
-          )}
           {snap?.checks && (
             <ul className={css.checks}>
               {snap.checks.map((c) => (
@@ -318,19 +229,6 @@ export default function CellHud(p: CellHudProps) {
             )}
           </div>
           {hint && m.hint && <p className={css.hint}>{m.hint}</p>}
-          {guide && after && (
-            <div className={css.gsec} data-kind="concept" ref={conceptRef} aria-label="개념">
-              <h5>
-                <em>CONCEPT</em> 개념
-              </h5>
-              <p className={css.gterm}>{guide.concept.term}</p>
-              <p className={css.gdef}>{guide.concept.def}</p>
-              <p className={css.greal}>
-                <b>실제 현장</b>
-                {guide.concept.real}
-              </p>
-            </div>
-          )}
         </section>
       ) : (
         <section className={css.card}>
@@ -419,8 +317,16 @@ export default function CellHud(p: CellHudProps) {
         </section>
       )}
 
+      {compact && snap && (
+        <button type="button" className={css.lampsToggle} aria-expanded={lampsOpen} onClick={() => setLampsOpen((o) => !o)}>
+          <em>SIGNAL</em> 신호 {lampsOpen ? '접기' : '보기'}
+          <span aria-hidden="true">
+            {snap.inputs.filter(([, on]) => on).length + snap.outputs.filter(([, on]) => on).length} 켜짐
+          </span>
+        </button>
+      )}
       {/* Signal lamps, cycle time, parts stacked. */}
-      {snap && (
+      {snap && (!compact || lampsOpen) && (
         <footer className={css.lamps} aria-label="신호">
           <span className={css.grp}>
             <b>입력</b>

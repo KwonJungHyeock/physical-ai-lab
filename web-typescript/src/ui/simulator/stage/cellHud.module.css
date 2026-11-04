@@ -423,171 +423,35 @@
   color: #9fd8bf;
 }
 
-/* 단계 안내 (입문 트랙): 예측 · 관찰 · 목표 · 개념 as sections of the mission card, in the HUD's own
-   language — an English tag over the Korean name (as the menu bar), line lists with dividers (as the
-   checks), lamp dots (as the signal strip). Colour only on the tag: grey 예측, orange 관찰 (the scene's
-   bubbles), green 목표, blue 개념. */
-.gsec {
-  margin: 10px 0 0;
-  padding-top: 8px;
-  border-top: 1px solid #333d39;
-}
-.gsec h5,
-.ghead {
-  margin: 0 0 4px;
-  display: flex;
+/* 입문 트랙: the folded signal lamps' toggle, at the foot of the column. */
+.lampsToggle {
+  margin-top: auto;
+  align-self: flex-start;
+  display: inline-flex;
   align-items: baseline;
-  gap: 6px;
+  gap: 7px;
+  padding: 7px 11px;
+  border-radius: 10px;
+  border: 1px solid #3f4c46;
+  background: rgba(24, 32, 29, 0.93);
+  color: #e9eeeb;
+  font: inherit;
   font-size: 12.5px;
-  font-weight: 800;
-  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
 }
-.ghead {
-  margin: 10px 0 0;
-  padding-top: 8px;
-  border-top: 1px solid #333d39;
-}
-.gsec h5 em,
-.ghead em {
+.lampsToggle em {
   font-style: normal;
   font-size: 9.5px;
   font-weight: 800;
   letter-spacing: 0.12em;
   color: #9aa7a1;
 }
-.gsec[data-kind='observe'] h5 em {
-  color: #fb923c;
-}
-.ghead[data-kind='goal'] em {
-  color: #34d399;
-}
-.gsec[data-kind='concept'] h5 em {
-  color: #93b4ff;
-}
-.gsec h5 small {
-  margin-left: auto;
+.lampsToggle span {
   font-size: 11.5px;
   font-weight: 600;
-  color: #b9c4bf;
-  font-variant-numeric: tabular-nums;
-}
-.gq {
-  margin: 2px 0 2px;
-  color: #e9eeeb;
-}
-.glist {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.glist li {
-  border-top: 1px solid rgba(233, 238, 235, 0.08);
-}
-.glist li:first-child {
-  border-top: 0;
-}
-.glist button {
-  width: 100%;
-  display: flex;
-  align-items: baseline;
-  gap: 7px;
-  padding: 5px 4px;
-  background: none;
-  border: 0;
-  border-radius: 6px;
-  color: #d7dfdb;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-.glist button:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.05);
-  color: #fff;
-}
-.glist button[aria-pressed='true'] {
-  color: #fff;
-  font-weight: 700;
-}
-.glist button i {
-  font-style: normal;
-  width: 14px;
-  text-align: center;
-  color: #9aa7a1;
-}
-.glist button[aria-pressed='true'] i {
   color: #34d399;
 }
-.glist button em {
-  margin-left: auto;
-  font-style: normal;
-  font-size: 11px;
-  font-weight: 700;
-  color: #34d399;
-  white-space: nowrap;
-}
-/* 관찰: the signal strip's lamp, lit orange when the moment has been seen. */
-.glamp {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 4px;
-  color: #b9c4bf;
-}
-.glamp i {
-  flex: none;
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-  background: #3a4440;
-  border: 1.5px solid #59645f;
-}
-.glamp[data-on] {
-  color: #fff;
-}
-.glamp[data-on] i {
-  background: #f97316;
-  border-color: #fed7aa;
-  box-shadow: 0 0 7px #f97316;
-}
-.gline {
-  display: flex;
-  gap: 7px;
-  align-items: baseline;
-  margin: 2px 0 0;
-  padding: 3px 4px;
-}
-.gline i {
-  font-style: normal;
-  font-weight: 800;
-  width: 14px;
-  text-align: center;
-  color: #fb923c;
-}
-.gline[data-ok] i {
-  color: #34d399;
-}
-.gline small,
-.greal {
-  display: block;
-  font-size: 12px;
-  color: #b9c4bf;
-}
-.gterm {
-  margin: 2px 0 0;
-  font-weight: 800;
-  font-size: 14px;
-  color: #fff;
-}
-.gdef {
-  margin: 2px 0 0;
-  color: #e3e9e6;
-}
-.greal {
-  margin: 6px 0 0;
-}
-.greal b {
-  margin-right: 6px;
-  font-size: 9.5px;
-  letter-spacing: 0.08em;
-  color: #93b4ff;
+.lampsToggle[aria-expanded='true'] + .lamps {
+  margin-top: 0;
 }

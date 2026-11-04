@@ -1,0 +1,236 @@
+/* 단계 안내 (StepGuide.tsx): the 예측 card by the run button and the result card at the top centre,
+   in the console's result-card look — dark glass, a thin coloured edge, English tags. */
+.predict,
+.result {
+  color: #f1f4f9;
+  background: linear-gradient(
+    135deg,
+    rgba(24, 30, 38, 0.95),
+    rgba(12, 16, 22, 0.95)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(12px);
+  word-break: keep-all;
+  animation: guideIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes guideIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.predict em,
+.result em {
+  font:
+    800 10px ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  font-style: normal;
+  letter-spacing: 0.12em;
+}
+
+/* 예측: over the 3D view's bottom right, by the run button. */
+.predict {
+  position: absolute;
+  z-index: 16;
+  right: calc(var(--inset-r, 12px) + 16px);
+  bottom: 96px;
+  width: min(380px, calc(100% - 32px));
+  padding: 13px 14px 12px;
+  border-color: rgba(255, 138, 61, 0.45);
+}
+.predict header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.predict header em {
+  color: #ff8a3d;
+}
+.predict header b {
+  font-size: 14px;
+}
+.predict p {
+  margin: 8px 0 9px;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.opts {
+  display: grid;
+  gap: 6px;
+}
+.opts button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-align: left;
+  padding: 9px 11px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: #f1f4f9;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.opts button:hover {
+  border-color: #ff8a3d;
+  background: rgba(255, 138, 61, 0.12);
+}
+.opts i {
+  font-style: normal;
+  color: #ff8a3d;
+  font-weight: 800;
+}
+.predict small {
+  display: block;
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: #9aa4b4;
+}
+.x {
+  margin-left: auto;
+  border: 0;
+  background: none;
+  color: #9aa4b4;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.x:hover {
+  color: #fff;
+}
+
+/* 결과: in the notices column at the top centre. */
+.result {
+  width: min(460px, 100%);
+  padding: 12px 14px 13px;
+  border-color: rgba(255, 138, 61, 0.45);
+  white-space: normal;
+}
+.result[data-ok] {
+  border-color: rgba(61, 220, 132, 0.5);
+  background: linear-gradient(
+    135deg,
+    rgba(18, 48, 34, 0.95),
+    rgba(12, 20, 28, 0.95)
+  );
+}
+.result header {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.result header b {
+  display: block;
+  font-size: 16px;
+}
+.result header small {
+  font-size: 12px;
+  color: #b9c4bf;
+}
+.result header .x {
+  font-size: 18px;
+  align-self: flex-start;
+}
+.medal {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  background: #c2410c;
+  color: #fff;
+}
+.result[data-ok] .medal {
+  background: #22c55e;
+  color: #052e1a;
+}
+.checks {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  font-size: 13px;
+}
+.checks li {
+  display: flex;
+  gap: 7px;
+  align-items: baseline;
+  padding: 4px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.checks i {
+  font-style: normal;
+  font-weight: 800;
+  width: 14px;
+  text-align: center;
+  color: #fb923c;
+}
+.checks li[data-ok] i {
+  color: #34d399;
+}
+.checks em {
+  margin-left: auto;
+  font: 600 12px inherit;
+  font-family: inherit;
+  letter-spacing: 0;
+  color: #b9c4bf;
+  white-space: nowrap;
+}
+.compare {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: #fde3d3;
+}
+.compare[data-ok] {
+  color: #d5f5e6;
+}
+.compare em {
+  margin-right: 7px;
+  color: #9aa4b4;
+}
+.concept {
+  margin-top: 9px;
+  padding-top: 9px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+.concept em {
+  color: #93b4ff;
+  margin-right: 7px;
+}
+.concept b {
+  font-size: 14px;
+}
+.concept p {
+  margin: 3px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.concept small {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #b9c4bf;
+  line-height: 1.45;
+}
+.next {
+  margin-top: 11px;
+  height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #ef3f39, #cf2a25);
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}

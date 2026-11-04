@@ -123,6 +123,10 @@ import RecipeCards from './editors/RecipeCards';
 import DrawCards from './editors/DrawCards';
 import ThemePanel from './tasks/ThemePanel';
 import TutorialStrip from './tasks/TutorialStrip';
+import { PredictCard, StepResult, loadPredictions, savePrediction } from './stage/StepGuide';
+import { guideOf } from '@/engine/simulator/cell/guides';
+import { stationAt } from '@/engine/simulator/cell/shots';
+import SiteTour from './stage/SiteTour';
 import { LIFE_TUTORIALS, lifeTutorialById, type TutCtx, type TutMem } from '@/engine/simulator/lifeTutorials';
 import { StartGuide, type StartStep } from './stage/StartGuide';
 import HandPanel, { type HandState } from './control/HandPanel';
@@ -581,6 +585,13 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const [tutDone, setTutDone] = useState<Record<string, boolean>>({});
   /** Process runs that finished well (튜토리얼 '위치 가르쳐 옮기기'). */
   const [procRuns, setProcRuns] = useState(0);
+  /** 입문 단계 안내: the 예측 card open (▶ pressed before predicting), steps skipped, the last run's checks for the result card. */
+  const [asking, setAsking] = useState(false);
+  const [skipped, setSkipped] = useState<Record<string, boolean>>({});
+  const [lastChecks, setLastChecks] = useState<{ label: string; ok: boolean; detail?: string }[] | null>(null);
+  /** 입문: the place being toured (its opening look round, SiteTour.tsx). */
+  const [touring, setTouring] = useState<CellId | null>(null);
+  const toured = useRef(false);
   useEffect(() => {
     try {
       // Read after hydration (this browser's record).
@@ -1831,6 +1842,9 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
           hint: namedButtons(tutNow.text).length ? namedButtons(tutNow.text) : tutNow.slots.length ? [] : ['시뮬레이션'],
         }
       : null;
+  /** 입문 트랙: the step's goal on the notice board (what to do now), its first check in one line. */
+  const lifeStep = track && cellAt?.mission ? missionById(cellAt.mission) : null;
+  const lifeGuide: Guide | null = lifeStep && view === 'sim' ? { head: `${lifeStep.id} · ${lifeStep.title}`, text: `목표 · ${lifeStep.checks?.[0]?.label ?? lifeStep.goal}` } : null;
   const passedRun = (text: string, actions: RobotAction[], start?: number[]) => {
     if (tab === 'process') markStart('process');
     else if (tab === 'basic') markStart('code');
@@ -2181,6 +2195,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     if (!res) return;
     const all = ok && res.items.every((i) => i.ok);
     setCellResult(all);
+    setLastChecks(res.items);
     if (all) {
       addLog('ok', `${res.mission.id} ${res.mission.title} 통과!`);
       recordPass(res.mission.id);
@@ -3701,6 +3716,46 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
           ? null
           : { spots: built.marks, path: built.path, legs: planLegs, ghost: jointTry?.key === planKey ? jointTry.trail : undefined }
       : null;
+  // 입문: while a step runs, the view goes to the station the tool works at (from its side, the cup in
+  // view), unless the user has moved the view; back to the whole place when the run is over.
+  const lifeCell = track && (cellAt?.cell === 'cafe' || cellAt?.cell === 'draw') ? cellAt.cell : null;
+  // A run ends the place's tour (the run's own camera takes over).
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the tour stops when a run starts
+    if (busy) setTouring(null);
+  }, [busy]);
+  useEffect(() => {
+    if (!lifeCell || !busy || touring) return;
+    let last: string | null = null;
+    let seen: string | null = null;
+    let followed = false;
+    const id = window.setInterval(() => {
+      const api = stageApi.current;
+      if (!api || api.userMoved()) return;
+      const tip = tipOf(world.current.angles);
+      const st = tip ? stationAt(lifeCell, tip) : null;
+      // Two looks in a row at the same station before moving (passing by is not working there).
+      if (!st || st.name !== seen) {
+        seen = st?.name ?? null;
+        return;
+      }
+      if (st.name === last) return;
+      last = st.name;
+      followed = true;
+      api.lookAt(st.eye, st.target);
+    }, 350);
+    return () => {
+      window.clearInterval(id);
+      const api = stageApi.current;
+      if (followed && api && !api.userMoved()) window.setTimeout(() => api.view('home'), 1200);
+    };
+  }, [lifeCell, busy, touring, tipOf]);
+  /** 입문: the step's 예측 first (once per step, unless skipped), then the run. */
+  const simulateLife = () => {
+    const ms = cellAt?.mission;
+    if (track && ms && guideOf(ms) && loadPredictions()[ms] === undefined && !skipped[ms] && !busy) return setAsking(true);
+    void simulate();
+  };
   const runBar = (
     <RunBar
       passed={gateOpen}
@@ -3711,7 +3766,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       realProgress={realRun && robot && robot.step >= 0 ? `${robot.step + 1}/${robot.total}` : null}
       realDisabled={!gateOpen || (robotMode && !robot?.connected)}
       realBlocked={robotMode && !robot?.connected ? '로봇 연결 필요' : !gateOpen ? '시뮬레이션 통과 후' : null}
-      onSim={simulate}
+      onSim={track ? simulateLife : simulate}
       simRate={simRate}
       onSimRate={chooseSimRate}
       onReal={robotMode ? runReal : openExport}
@@ -3936,6 +3991,14 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const modelNow = robotMode || !choice ? DEFAULT_MODEL : model;
   /** Past the intro's last frame (CONNECT or SIMULATOR); on a robot's own console the intro steps aside by itself. */
   const [entered, setEntered] = useState(false);
+  // 입문: the first place is toured once the console is entered (the intro's [시작]).
+  useEffect(() => {
+    if (!track || !entered || !loaded || !cellAt || toured.current) return;
+    toured.current = true;
+    // After the intro has faded out.
+    const id = window.setTimeout(() => setTouring(cellAt.cell), 1400);
+    return () => window.clearTimeout(id);
+  }, [track, entered, loaded, cellAt]);
   const pastIntro = entered || robotMode || picking;
   const showPicker = splashDone && pastIntro && !connectOpen && (picking || !modelNow);
 
@@ -4661,6 +4724,22 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
               {loaded && view === 'sim' && railOpen === 'monitor' && (
                 <Hud world={world} chain={loaded.chain} tcpMm={tcpNow} mountMm={mountMm} loadModel={arm.family === 'mycobot280'} status={hudStatus} onClose={() => setRailOpen(null)} />
               )}
+              {loaded && view === 'sim' && touring && cellAt?.cell === touring && <SiteTour key={touring} cell={touring} api={getStage} onDone={() => setTouring(null)} />}
+              {loaded && view === 'sim' && asking && cellAt?.mission && (
+                <PredictCard
+                  mission={cellAt.mission}
+                  onAnswer={(k) => {
+                    savePrediction(cellAt.mission!, k);
+                    setAsking(false);
+                    void simulate();
+                  }}
+                  onSkip={() => {
+                    setSkipped((s) => ({ ...s, [cellAt.mission!]: true }));
+                    setAsking(false);
+                    void simulate();
+                  }}
+                />
+              )}
               {loaded && view === 'sim' && cellAt && railOpen !== 'monitor' && (
                 <CellHud
                   world={world}
@@ -4764,11 +4843,25 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
               )}
               <Notices
                 entries={log}
-                guide={guide}
+                guide={guide ?? lifeGuide}
                 above={
-                  bannerOn || (goalCard && view === 'sim') ? (
+                  bannerOn || (goalCard && view === 'sim') || (lifeStep && cellResult !== null && lastChecks && !busy) ? (
                     <>
                       {banners}
+                      {lifeStep && cellAt && cellResult !== null && lastChecks && !busy && view === 'sim' && (
+                        <StepResult
+                          cell={cellAt.cell}
+                          mission={lifeStep.id}
+                          passed={cellResult}
+                          checks={lastChecks}
+                          chosen={loadPredictions()[lifeStep.id]}
+                          onNext={() => {
+                            const next = missionsOf(cellAt.cell)[lifeStep.n];
+                            if (next) openCell(cellAt.cell, next.id);
+                          }}
+                          onClose={() => setLastChecks(null)}
+                        />
+                      )}
                       {goalCard && view === 'sim' && (
                         <ResultCard
                           title={practice.title}
@@ -4908,7 +5001,10 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                       <div className={css.screen}>{zeroPanel}</div>
                     ) : workScreen === 'theme' ? (
                       <div className={css.screen}>
-                        <ThemePanel cell={cellAt?.cell ?? null} passed={cellPassed} tutorial={lifeTut?.id ?? null} tutorialsDone={tutDone} busy={busy} onSite={(id) => enterCell(id)} onTutorial={startTutorial} />
+                        <ThemePanel cell={cellAt?.cell ?? null} passed={cellPassed} tutorial={lifeTut?.id ?? null} tutorialsDone={tutDone} busy={busy} onSite={(id) => {
+                            enterCell(id);
+                            setTouring(id);
+                          }} onTutorial={startTutorial} />
                       </div>
                     ) : workScreen === 'parts' ? (
                       <div className={css.screen}>
