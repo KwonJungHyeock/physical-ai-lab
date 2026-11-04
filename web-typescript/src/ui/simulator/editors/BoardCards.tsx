@@ -39,6 +39,8 @@ interface Props {
   /** 퀘스트 모드: the cards to change now (1-based) and whether one has to be added ([+ 카드] lit). */
   glow?: readonly number[];
   glowAdd?: boolean;
+  /** Under the quest card in one scrolling panel: the cards take their own height (no inner scroll). */
+  flow?: boolean;
 }
 
 /** A number box that only takes what it may (whole mm), written as it is typed. */
@@ -51,7 +53,7 @@ function Num({ value, min, max, busy, label, onChange }: { value: number; min: n
   );
 }
 
-export default function BoardCards({ mission, busy, runningLine, onCode, glow, glowAdd }: Props) {
+export default function BoardCards({ mission, busy, runningLine, onCode, glow, glowAdd, flow }: Props) {
   const start = (m: string | null) => copy(H_START[m ?? ''] ?? { cards: [], times: 1 });
   const [recipe, setRecipe] = useState<BoardRecipe>(() => start(mission));
   const [open, setOpen] = useState(false);
@@ -130,7 +132,7 @@ export default function BoardCards({ mission, busy, runningLine, onCode, glow, g
   };
 
   return (
-    <div className={css.recipe}>
+    <div className={css.recipe} data-flow={flow || undefined}>
       <div className={css.head}>
         <b>작업 순서</b>
         <span className={css.times}>

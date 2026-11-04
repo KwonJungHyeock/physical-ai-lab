@@ -953,9 +953,9 @@ function cafeLayout(): CellLayout {
   const cafe: CafeDef = {
     dispenser: { output: '컵 내리기', place: '컵 나오는 곳', ready: '컵 준비됨', stock: 20 },
     stations: [
-      { name: '제빙기', output: '얼음', place: '제빙기', cup: '제빙기 컵 감지', busy: '얼음 나오는 중', done: '얼음 끝', timeS: 3, pours: 'ice', ml: 145 },
-      { name: '커피 머신', output: '추출 시작', place: '커피 머신', cup: '머신 컵 감지', busy: '추출 중', done: '추출 끝', timeS: 28, pours: 'shot', ml: 60 },
-      { name: '정수기', output: '물', place: '정수기', cup: '정수기 컵 감지', busy: '물 나오는 중', done: '물 끝', timeS: 4, pours: 'water', ml: 150 },
+      { name: '제빙기', output: '얼음', place: '제빙기', cup: '제빙기 컵 감지', busy: '얼음 나오는 중', done: '얼음 끝', timeS: 3, pours: 'ice', ml: 145, unit: 'ml', range: [0, 300] },
+      { name: '커피 머신', output: '추출 시작', place: '커피 머신', cup: '머신 컵 감지', busy: '추출 중', done: '추출 끝', timeS: 28, pours: 'shot', ml: 60, unit: 'shot', range: [1, 4] },
+      { name: '정수기', output: '물', place: '정수기', cup: '정수기 컵 감지', busy: '물 나오는 중', done: '물 끝', timeS: 4, pours: 'water', ml: 150, unit: 'ml', range: [0, 300] },
     ],
     pickup: { places: ['픽업 1', '픽업 2'], door: '픽업 문', open: '문 열림', closed: '문 닫힘', hand: '손 감지', zone: { min: [D.x0, D.y0], max: [D.x1, -145] } },
   };

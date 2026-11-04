@@ -456,6 +456,12 @@ async function runStep(s: Step, rt: Runtime): Promise<void> {
     case 'cellLimit':
       needCell(rt).vision.limits[s.what as LimitName] = s.value;
       return;
+    case 'cellAmount': {
+      const run = needCell(rt);
+      if (!run.cafe) throw new RunError('양 정하기는 로봇 카페에서만 써요.');
+      run.cafe.amount[s.station] = s.value;
+      return;
+    }
     case 'cellSet': {
       const run = needCell(rt);
       // 자동 운전 drives the line's own outputs; a lamp is the program's.

@@ -103,53 +103,46 @@ export interface CellHudProps {
   /** 입문 트랙: the step tabs only, the lamps folded (the rest: StepGuide.tsx). */
   guides?: boolean;
   /** 입문 퀘스트 모드: the quest card's phase, the checklist as the last run ended (null: not run yet), what to do now, the places' list. */
-  quest?: { phase: QuestPhase; checks: { label: string; ok: boolean; detail?: string }[] | null; now: string; onList(): void };
+  quest?: QuestInfo;
+  /** 퀘스트 모드: the quest card stands in the side panel, not here. */
+  questOut?: boolean;
 }
 
+/** 입문 퀘스트 모드: the quest card's phase, the checklist as the last run ended (null: not run yet), what to do now, the places' list. */
+export interface QuestInfo {
+  phase: QuestPhase;
+  checks: { label: string; ok: boolean; detail?: string }[] | null;
+  now: string;
+  onList(): void;
+}
 
+interface QuestCardProps {
+  cell: CellId;
+  mission: string | null;
+  passed: Record<string, boolean>;
+  allOpen: boolean;
+  busy: boolean;
+  onMission(id: string | null): void;
+  quest?: QuestInfo;
+  /** At the top of the side panel (퀘스트 모드). */
+  inPanel?: boolean;
+}
 
-export default function CellHud(p: CellHudProps) {
-  const [snap, setSnap] = useState<Snap | null>(() => snapOf(p.world.current));
+/**
+ * 입문: the quest card — the place and its quests on a line, then the quest open now: its checklist
+ * (✓ · ✗ and what was off, as the last run ended) and the one thing to do now. In 퀘스트 모드 it is
+ * the top of the side panel, over the cards it points at and the run button (시뮬레이션 챕터 공통
+ * 양식 v2: 미션 · 지금 할 일 at the top of the right rail); the scene stays clear.
+ */
+export function QuestCard(p: QuestCardProps) {
   const [hint, setHint] = useState(false);
-  const { world, onAlert } = p;
-  useEffect(() => {
-    const id = window.setInterval(() => {
-      const run = world.current?.cell;
-      if (run?.fresh.length) run.fresh.splice(0).forEach(onAlert);
-      setSnap(snapOf(world.current));
-    }, 250);
-    return () => window.clearInterval(id);
-  }, [world, onAlert]);
-
   const steps = missionsOf(p.cell);
   const m = p.mission ? missionById(p.mission) : null;
-  // 입문 트랙: the step tabs only (the goal, the prediction, the result and the idea are where they are
-  // looked at — the notice board, the run button, the scene; StepGuide.tsx); the signal lamps folded.
-  const compact = !!p.guides;
-  // The place's fields (the 학습 로드맵's ticks), on the card's header.
-  const stop = compact ? LIFE_STOPS.find((s) => s.opens === p.cell) : undefined;
-  const [lampsOpen, setLampsOpen] = useState(false);
-  // A cell whose ladder is still to come: its steps stay shut, its equipment is run by hand.
+  const stop = LIFE_STOPS.find((s) => s.opens === p.cell);
   const built = CELL_BY_ID[p.cell].built;
-  const layout = cellLayout(p.cell);
-  const keys = (name: string): [string, string] => layout.keys?.[name] ?? (name.includes('실린더') ? ['전진', '후진'] : ['운전', '정지']);
   const open = (i: number) => built && (p.allOpen || i === 0 || !!p.passed[steps[i - 1].id]);
-  const run = () => p.world.current?.cell ?? null;
-  const out = (name: string, on: boolean) => {
-    const r = run();
-    if (r) setOut(r.line, name, on);
-  };
-  const ask = (what: 'send' | 'eject') => {
-    const r = run();
-    if (r && r.line.phase === 'held') r.line.ask = what;
-  };
-
   return (
-    <div className={css.hud} aria-label="실습 셀">
-      {/* 입문: the quest card — the place and its quests on a line, then the quest open now: its checklist
-          and the one thing to do now (퀘스트 모드; the goal, the prediction and the result are in the side panel). */}
-      {compact && (
-        <nav className={css.stepper} aria-label="퀘스트">
+        <nav className={css.stepper} data-panel={p.inPanel || undefined} aria-label="퀘스트">
           <header>
             <em>{stop?.phase ?? 'QUEST'}</em>
             <b>{CELL_BY_ID[p.cell].name}</b>
@@ -157,6 +150,11 @@ export default function CellHud(p: CellHudProps) {
             <span>
               {steps.filter((s) => p.passed[s.id]).length}/{steps.length}
             </span>
+            {p.inPanel && p.quest && (
+              <button type="button" className={css.qListHead} onClick={p.quest.onList} disabled={p.busy}>
+                목록
+              </button>
+            )}
           </header>
           <ol>
             {steps.map((s, i) => (
@@ -185,6 +183,7 @@ export default function CellHud(p: CellHudProps) {
                     <li key={c.label} data-ok={r?.ok || undefined} data-bad={(r && !r.ok) || undefined}>
                       <i aria-hidden="true">{r ? (r.ok ? '✓' : '✗') : ''}</i>
                       <span>{c.label}</span>
+                      {r && !r.ok && r.detail && <em>{r.detail}</em>}
                     </li>
                   );
                 })}
@@ -208,13 +207,55 @@ export default function CellHud(p: CellHudProps) {
               자유 연습 · 채점 없이 메뉴를 모두 써 봐요
             </p>
           )}
-          {p.quest && (
+          {p.quest && !p.inPanel && (
             <button type="button" className={css.qList} onClick={p.quest.onList} disabled={p.busy}>
               현장 · 퀘스트 목록
             </button>
           )}
         </nav>
-      )}
+  );
+}
+
+
+
+export default function CellHud(p: CellHudProps) {
+  const [snap, setSnap] = useState<Snap | null>(() => snapOf(p.world.current));
+  const [hint, setHint] = useState(false);
+  const { world, onAlert } = p;
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      const run = world.current?.cell;
+      if (run?.fresh.length) run.fresh.splice(0).forEach(onAlert);
+      setSnap(snapOf(world.current));
+    }, 250);
+    return () => window.clearInterval(id);
+  }, [world, onAlert]);
+
+  const steps = missionsOf(p.cell);
+  const m = p.mission ? missionById(p.mission) : null;
+  // 입문 트랙: the step tabs only (the goal, the prediction, the result and the idea are where they are
+  // looked at — the notice board, the run button, the scene; StepGuide.tsx); the signal lamps folded.
+  const compact = !!p.guides;
+  const [lampsOpen, setLampsOpen] = useState(false);
+  // A cell whose ladder is still to come: its steps stay shut, its equipment is run by hand.
+  const built = CELL_BY_ID[p.cell].built;
+  const layout = cellLayout(p.cell);
+  const keys = (name: string): [string, string] => layout.keys?.[name] ?? (name.includes('실린더') ? ['전진', '후진'] : ['운전', '정지']);
+  const open = (i: number) => built && (p.allOpen || i === 0 || !!p.passed[steps[i - 1].id]);
+  const run = () => p.world.current?.cell ?? null;
+  const out = (name: string, on: boolean) => {
+    const r = run();
+    if (r) setOut(r.line, name, on);
+  };
+  const ask = (what: 'send' | 'eject') => {
+    const r = run();
+    if (r && r.line.phase === 'held') r.line.ask = what;
+  };
+
+  return (
+    <div className={css.hud} aria-label="실습 셀">
+      {/* 입문: the quest card (자유 연습 here; a quest's own card stands at the top of the side panel). */}
+      {compact && !p.questOut && <QuestCard cell={p.cell} mission={p.mission} passed={p.passed} allOpen={p.allOpen} busy={p.busy} onMission={p.onMission} quest={p.quest} />}
       {/* Step ladder. */}
       {!compact && <nav className={css.ladder} aria-label="단계">
         <b className={css.cellName}>

@@ -38,6 +38,26 @@ export const CUP_ML = 355;
 export const CUP_SIZE: [number, number, number] = [18, 18, 24];
 /** A tall iced americano (ref. [13]): what each station pours once. */
 export const RECIPE: Drink = { ice: 145, shot: 60, water: 150, spilled: 0 };
+/** One espresso shot, ml (a double = 60 ml in 28 s). */
+export const SHOT_ML = 30;
+
+/**
+ * An order, as the café's order screen sends it (주문 층): the drink and its amounts. The robot's
+ * program sets each station's amount (cell.amount) before starting it, as a café controller sends
+ * the recipe's portion to a machine; the drink handed over is judged against this order.
+ */
+export interface CafeOrder {
+  name: string;
+  /** What the customer asked for on top of the menu (shown with the name), e.g. '얼음 적게 · 샷 추가'. */
+  note?: string;
+  ice: number;
+  shots: number;
+  water: number;
+}
+export const ICED_AMERICANO: CafeOrder = { name: '아이스 아메리카노', ice: RECIPE.ice, shots: RECIPE.shot / SHOT_ML, water: RECIPE.water };
+/** The order's drink in ml. */
+export const orderDrink = (o: CafeOrder): Drink => ({ ice: o.ice, shot: o.shots * SHOT_ML, water: o.water, spilled: 0 });
+export const orderName = (o: CafeOrder) => (o.note ? `${o.name} (${o.note})` : o.name);
 
 export interface StationDef {
   /** The station's name on screen. */
@@ -53,6 +73,10 @@ export interface StationDef {
   timeS: number;
   pours: keyof Omit<Drink, 'spilled'>;
   ml: number;
+  /** The amount the program sets (cell.amount): ml, or shots (SHOT_ML each); timeS is for `ml`. */
+  unit: 'ml' | 'shot';
+  /** What cell.amount may set, in the unit. */
+  range: [number, number];
 }
 
 export interface CafeDef {
@@ -66,6 +90,9 @@ export interface StationState {
   t: number | null;
   /** The cup it pours into (null: none — onto the tray). */
   cup: string | null;
+  /** This pour: ml and how long it takes (the amount set when it started). */
+  ml: number;
+  timeS: number;
   /** The output a frame ago (a start is its rising edge). */
   was: boolean;
 }
@@ -96,24 +123,42 @@ export interface CafeState {
   /** The arm reached into the pickup while the door was open (counted once per time). */
   doorBreaches: number;
   breaching: boolean;
+  /** The order being made (every cup of it the same). */
+  order: CafeOrder;
+  /** Each station's amount as the program set it (cell.amount), in its unit, by station name. */
+  amount: Record<string, number>;
 }
 
-export function newCafe(def: CafeDef, orders: number): CafeState {
-  const stations = Object.fromEntries(def.stations.map((s) => [s.output, { t: null, cup: null, was: false }]));
-  return { stations, stock: def.dispenser.stock, dropped: 0, dropWas: false, trayPours: [], served: [], orders, handUntil: null, doorBreaches: 0, breaching: false };
+export function newCafe(def: CafeDef, orders: number, order: CafeOrder = ICED_AMERICANO): CafeState {
+  const stations = Object.fromEntries(def.stations.map((s) => [s.output, { t: null, cup: null, was: false, ml: s.ml, timeS: s.timeS }]));
+  const amount = Object.fromEntries(def.stations.map((s) => [s.name, s.unit === 'shot' ? s.ml / SHOT_ML : s.ml]));
+  return { stations, stock: def.dispenser.stock, dropped: 0, dropWas: false, trayPours: [], served: [], orders, handUntil: null, doorBreaches: 0, breaching: false, order, amount };
+}
+
+/** What a station pours now: the amount set (ml), and the time it takes at the station's own rate. */
+export function stationPour(st: StationDef, c: CafeState): { ml: number; timeS: number } {
+  const a = c.amount[st.name] ?? (st.unit === 'shot' ? st.ml / SHOT_ML : st.ml);
+  const ml = st.unit === 'shot' ? a * SHOT_ML : a;
+  return { ml, timeS: (st.timeS * ml) / st.ml };
 }
 
 export const emptyDrink = (): Drink => ({ ice: 0, shot: 0, water: 0, spilled: 0 });
 export const drinkMl = (d: Drink) => d.ice + d.shot + d.water;
 
-/** How a drink compares with the recipe: ok, or what is off (one line, the first thing to fix). */
-export function drinkVerdict(d: Drink | undefined): { ok: boolean; why: string } {
+/** How a drink compares with the order: ok, or what is off (one line, the first thing to fix). */
+export function drinkVerdict(d: Drink | undefined, o: CafeOrder = ICED_AMERICANO): { ok: boolean; why: string } {
+  const want = orderDrink(o);
   if (!d || drinkMl(d) === 0) return { ok: false, why: '빈 컵이에요' };
   if (d.spilled >= 1) return { ok: false, why: `컵이 넘쳤어요 (${Math.round(d.spilled)} ml)` };
-  if (d.shot < RECIPE.shot - 1) return { ok: false, why: d.shot ? '샷이 덜 들어갔어요' : '커피가 없어요' };
-  if (d.ice < RECIPE.ice - 1) return { ok: false, why: d.ice ? '얼음이 덜 들어갔어요' : '얼음이 없어요 (뜨거운 커피가 됐어요)' };
-  if (d.water < RECIPE.water - 1) return { ok: false, why: d.water ? '물이 덜 들어갔어요 (진해요)' : '물이 없어요 (너무 진해요)' };
-  return { ok: true, why: '아이스 아메리카노 완성' };
+  const off = (k: 'shot' | 'ice' | 'water', name: string, none: string, less: string) => {
+    const got = Math.round(d[k]);
+    if (want[k] > 0 && got < 1) return none;
+    if (got < want[k] - 1) return `${less} (${got} / ${want[k]} ml)`;
+    if (got > want[k] + 1) return `${name}이 많아요 (${got} / ${want[k]} ml)`;
+    return null;
+  };
+  const why = off('shot', '샷', '커피가 없어요', '샷이 덜 들어갔어요') ?? off('ice', '얼음', '얼음이 없어요 (뜨거운 커피가 됐어요)', '얼음이 덜 들어갔어요') ?? off('water', '물', '물이 없어요 (너무 진해요)', '물이 덜 들어갔어요 (진해요)');
+  return why ? { ok: false, why } : { ok: true, why: `${o.name} 완성` };
 }
 
 const near = (o: DeskObject, p: { x: number; y: number; z: number }) => Math.hypot(o.x - p.x, o.y - p.y) < 8 && Math.abs(o.z - p.z) < 6;
@@ -161,6 +206,7 @@ export function stepCafe(l: CellLayout, def: CafeDef, s: LineState, c: CafeState
     if (on && !ss.was && ss.t === null) {
       ss.t = 0;
       ss.cup = cup?.id ?? null;
+      Object.assign(ss, stationPour(st, c));
       setIn(s, st.done, false);
       if (!cup) {
         c.trayPours.push(st.name);
@@ -170,8 +216,8 @@ export function stepCafe(l: CellLayout, def: CafeDef, s: LineState, c: CafeState
     ss.was = on;
     if (ss.t !== null) {
       const before = ss.t;
-      ss.t = Math.min(st.timeS, ss.t + dt);
-      const share = ((ss.t - before) / st.timeS) * st.ml;
+      ss.t = Math.min(ss.timeS, ss.t + dt);
+      const share = ss.timeS > 0 ? ((ss.t - before) / ss.timeS) * ss.ml : 0;
       const target = ss.cup ? parts.find((p) => p.id === ss.cup) : undefined;
       // The cup is still under the spout: it fills (an overflow spills); taken away, the rest spills.
       if (target && near(target, l.places[st.place]) && target.id !== carried) {
@@ -188,7 +234,7 @@ export function stepCafe(l: CellLayout, def: CafeDef, s: LineState, c: CafeState
         c.trayPours.push(st.name);
         out.alerts.push({ t, level: 'warn', kind: 'order', title: `${st.name}: 붓는 중에 컵이 빠졌어요`, msg: `'${st.done}'을 기다리지 않고 컵을 옮겨 나머지가 쏟아졌어요.` });
       }
-      if (ss.t >= st.timeS) {
+      if (ss.t >= ss.timeS) {
         ss.t = null;
         ss.cup = null;
         setIn(s, st.done, true);
@@ -211,7 +257,7 @@ export function stepCafe(l: CellLayout, def: CafeDef, s: LineState, c: CafeState
     for (const name of pk.places) {
       const p = at(name);
       if (!p) continue;
-      const v = drinkVerdict(p.drink);
+      const v = drinkVerdict(p.drink, c.order);
       c.served.push({ t, drink: { ...(p.drink ?? emptyDrink()) }, ok: v.ok, why: v.why });
       c.orders = Math.max(0, c.orders - 1);
       out.taken.push(p.id);

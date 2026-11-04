@@ -31,7 +31,11 @@ export interface Observation {
 }
 
 export interface StepGuide {
-  predict: { q: string; options: string[]; answer: number; why: string };
+  /**
+   * 예측: asked over the scene at the moment the result splits (`at`; the scene holds still until
+   * it is answered), once per step; without `at`, at the step's first moment to observe.
+   */
+  predict: { q: string; options: string[]; answer: number; why: string; at?(run: CellRun, w: WorldState): boolean };
   observe: Observation[];
   concept: { term: string; def: string; real: string };
 }
@@ -64,20 +68,27 @@ export const STEP_GUIDES: Record<string, StepGuide> = {
   /* --- F: 로봇 카페 --- */
   F1: {
     predict: {
-      q: '로봇이 커피 머신 앞에서 가장 오래 기다리는 까닭은?',
-      options: ['컵이 무거워서', '에스프레소 추출(28초)이 끝나길 기다려서', '손님 주문을 기다려서'],
+      q: '로봇이 커피 머신 앞에서 멈췄어요. 왜 기다릴까요?',
+      options: ['손님 주문을 기다려서', '샷 추출(28초)이 끝나길 기다려서'],
       answer: 1,
       why: '커피 머신이 [추출 끝] 신호를 보낼 때까지 로봇은 다음 동작을 하지 않아요.',
+      at: on('추출 중'),
     },
     observe: [
       { id: 'cup', text: '[컵 준비됨] 켜짐: 컵이 내려왔어요', at: CUP, when: on('컵 준비됨') },
       { id: 'shot', text: '[추출 중] 28초: 로봇은 기다려요', at: COFFEE, when: on('추출 중') },
       { id: 'hand', text: '[손 감지]: 손님 손이 있는 동안 팔은 밖에', at: PICKUP, when: on('손 감지') },
     ],
-    concept: { term: '작업 순서 (레시피)', def: '어느 장비를 어떤 순서로 돌고, 장비마다 어떤 신호를 기다릴지 정한 것이에요.', real: '실제 로봇 카페도 주문이 들어오면 정해진 레시피대로 컵 → 얼음 → 샷 → 물 → 픽업 순서로 돌아요.' },
+    concept: { term: '공정 (작업 순서)', def: '어느 장비를 어떤 순서로 돌고, 장비마다 어떤 신호를 기다릴지 정한 것이에요.', real: '실제 로봇 카페도 주문이 들어오면 정해진 공정대로 컵 → 얼음 → 샷 → 물 → 픽업 순서로 돌아요.' },
   },
   F2: {
-    predict: { q: '[추출 끝]을 기다리지 않고 컵을 빼면?', options: ['커피가 더 빨리 완성된다', '남은 커피가 받침대로 쏟아진다', '아무 일도 없다'], answer: 1, why: '추출은 28초 동안 계속돼요. 컵이 빠지면 남은 커피는 받침대로 떨어져요.' },
+    predict: {
+      q: '[추출 끝]을 기다리지 않고 지금 컵을 빼면?',
+      options: ['커피가 더 빨리 완성된다', '남은 커피가 받침대로 쏟아진다'],
+      answer: 1,
+      why: '추출은 28초 동안 계속돼요. 컵이 빠지면 남은 커피는 받침대로 떨어져요.',
+      at: on('추출 중'),
+    },
     observe: [
       { id: 'cup', text: '[컵 준비됨] 켜짐: 이제 집어도 돼요', at: CUP, when: on('컵 준비됨') },
       { id: 'shot', text: '[추출 중]: 28초 동안 커피가 나와요', at: COFFEE, when: on('추출 중') },
@@ -86,20 +97,27 @@ export const STEP_GUIDES: Record<string, StepGuide> = {
     concept: { term: '인터록 (신호 기다리기)', def: '앞 장비가 "끝났어요" 신호를 보내야 다음 동작을 하도록 묶어 두는 것이에요.', real: '공장 로봇도 기계의 완료 신호를 받고 나서 문을 열고 부품을 꺼내요.' },
   },
   F3: {
-    predict: { q: '얼음 → 샷 → 물 순서로 넣는 까닭은?', options: ['뜨거운 샷이 얼음에 바로 식어서', '물이 가장 무거워서', '순서는 상관없어서'], answer: 0, why: '얼음을 먼저 넣으면 뜨거운 에스프레소가 바로 식고, 물로 농도를 맞춰요.' },
+    predict: {
+      q: '주문은 샷 3개(90 ml)예요. 얼음 145 ml를 그대로 두고 물 150 ml까지 넣으면 355 ml 컵은?',
+      options: ['넘친다', '딱 맞는다'],
+      answer: 0,
+      why: '145 + 90 + 150 = 385 ml로 컵보다 30 ml 많아요. 그래서 샷을 늘리면 얼음을 줄여요.',
+      at: on('추출 중'),
+    },
     observe: [
-      { id: 'ice', text: '[얼음 나오는 중]: 얼음 145 ml', at: ICE, when: on('얼음 나오는 중') },
-      { id: 'shot', text: '[추출 중]: 2샷 60 ml', at: COFFEE, when: on('추출 중') },
-      { id: 'water', text: '[물 나오는 중]: 물 150 ml', at: WATER, when: on('물 나오는 중') },
+      { id: 'ice', text: '[얼음 나오는 중]: 카드에 적은 양만큼', at: ICE, when: on('얼음 나오는 중') },
+      { id: 'shot', text: '[추출 중]: 샷 1개에 30 ml', at: COFFEE, when: on('추출 중') },
+      { id: 'water', text: '[물 나오는 중]: 마지막에 농도 맞추기', at: WATER, when: on('물 나오는 중') },
     ],
-    concept: { term: '레시피 = 순서 + 양', def: '무엇을, 어떤 순서로, 얼마나 넣을지 정해 두면 누가 만들어도 같은 맛이 나요.', real: '톨 아이스 아메리카노(355 ml 컵): 얼음 145 · 샷 60 · 물 150 ml. 한 번 더 누르면 넘쳐요.' },
+    concept: { term: '레시피 = 순서 + 양', def: '무엇을, 어떤 순서로, 얼마나 넣을지 정해 두면 누가 만들어도 같은 맛이 나요.', real: '로봇 카페는 주문 화면이 얼음 · 샷 · 물의 양을 장비에 보내요. 톨 컵 355 ml를 넘기면 넘쳐요.' },
   },
   F4: {
     predict: {
-      q: '손님이 음료를 가져가는 동안 로봇 팔은 어디에 있어야 할까요?',
-      options: ['픽업대 안에서 컵을 잡고', '픽업대 밖 (기본 자세)', '문 바로 앞'],
+      q: '문이 열렸어요. 손님이 가져가는 동안 로봇 팔은 어디에 있어야 할까요?',
+      options: ['픽업대 안에서 컵을 잡고', '픽업대 밖 (기본 자세)'],
       answer: 1,
       why: '문이 열린 동안 사람과 로봇이 같은 곳에 있으면 안 돼요. 팔은 빼고 기다려요.',
+      at: on('문 열림'),
     },
     observe: [
       { id: 'open', text: '[문 열림]: 손님 쪽 문이 열렸어요', at: PICKUP, when: on('문 열림') },
@@ -206,6 +224,14 @@ export const STEP_GUIDES: Record<string, StepGuide> = {
 };
 
 export const guideOf = (mission: string | null) => (mission ? (STEP_GUIDES[mission] ?? null) : null);
+
+/** Is it the moment to ask the step's 예측 (the scene holds still until it is answered)? */
+export function predictNow(run: CellRun, w: WorldState): boolean {
+  const g = guideOf(run.mission);
+  if (!g) return false;
+  const at = g.predict.at ?? g.observe[0]?.when;
+  return !!at && at(run, w);
+}
 
 /** Note the step's moments as they happen (the cell time each was first seen). */
 export function observe(run: CellRun, w: WorldState): void {

@@ -236,122 +236,120 @@
   cursor: pointer;
 }
 
-/* 퀘스트 브리핑 (Briefing): in the side panel, the 학습 로드맵's plate; the checklist's empty boxes. */
-.brief {
-  margin: 0 12px 10px;
-  padding: 13px 14px 14px;
-  border-radius: 14px;
-  background: var(--hud-plate);
-  box-shadow: var(--hud-plate-shadow);
-  color: var(--hud-tx);
-  word-break: keep-all;
-}
-.brief header {
-  display: grid;
-  gap: 4px;
-}
-.brief header em {
-  color: var(--hud-light);
-}
-.brief header b {
-  font-size: 16px;
-  font-weight: 800;
-}
-.goal {
-  margin: 9px 0 0;
-  font-size: 13.5px;
-  line-height: 1.5;
-  color: var(--hud-sub);
-}
-.goals {
-  list-style: none;
-  margin: 10px 0 0;
-  padding: 0;
-  display: grid;
-  gap: 5px;
-  font-size: 13.5px;
-  font-weight: 700;
-}
-.goals li {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.goals i {
-  flex: none;
-  width: 13px;
-  height: 13px;
-  border-radius: 3px;
-  box-shadow: inset 0 0 0 1.5px var(--hud-sub);
-}
-.ask {
-  margin-top: 13px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-.ask p {
-  margin: 6px 0 9px;
-  font-size: 15px;
-  font-weight: 700;
-  line-height: 1.4;
-}
-.ask .opts button {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  width: 100%;
-  text-align: left;
-  padding: 9px 11px;
-  border-radius: 10px;
-  border: 0;
-  background: var(--hud-key);
-  box-shadow: var(--hud-key-shadow);
-  color: var(--hud-tx);
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.ask .opts button:hover {
-  filter: brightness(1.12);
-  box-shadow: var(--hud-key-shadow), var(--hud-key-on);
-}
-.ask small {
-  display: block;
-  margin-top: 8px;
-  font-size: 11.5px;
-  color: var(--hud-dim);
-}
-.brief .skip {
-  margin-top: 11px;
-  height: 34px;
-  padding: 0 13px;
-  border: 0;
-  border-radius: 9px;
-  background: var(--hud-key);
-  box-shadow: var(--hud-key-shadow);
-  color: var(--hud-sub);
-  font: inherit;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-}
 /* The result card in the side panel (퀘스트 모드), above the cards. */
 .result[data-panel] {
   width: auto;
   margin: 0 12px 10px;
 }
-.brief em,
-.ask em {
+/* 예측 at the moment (MomentAsk): over the stopped scene's centre, big keys — read at a glance,
+   pressed without aiming. White is the accent; the amber dot says the scene is held. */
+.moment {
+  position: absolute;
+  z-index: 16;
+  left: calc((var(--inset-l, 0px) + 100% - var(--inset-r, 0px)) / 2);
+  top: 56%;
+  transform: translate(-50%, -50%);
+  width: min(
+    560px,
+    calc(100% - var(--inset-l, 0px) - var(--inset-r, 0px) - 32px)
+  );
+  padding: 18px 20px 14px;
+  border-radius: 16px;
+  color: var(--hud-tx);
+  background: var(--hud-plate);
+  box-shadow:
+    var(--hud-plate-shadow),
+    0 0 0 1px rgba(255, 255, 255, 0.3),
+    0 18px 60px rgba(0, 0, 0, 0.55);
+  word-break: keep-all;
+  /* No fade in: on a slow computer the held scene may draw a frame a second, and the question must be there at once. */
+}
+.moment header {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.moment header em {
   font:
-    700 10.5px ui-monospace,
+    700 12px ui-monospace,
     SFMono-Regular,
     Menlo,
     monospace;
   font-style: normal;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.16em;
+  color: var(--hud-amber);
+}
+.pause {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--hud-amber);
+  box-shadow: 0 0 10px var(--hud-amber);
+  animation: held 1.2s ease-in-out infinite;
+}
+@keyframes held {
+  50% {
+    opacity: 0.35;
+  }
+}
+.moment p {
+  margin: 10px 0 14px;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.4;
+  color: #fff;
+}
+.big {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.big[data-n='3'] {
+  grid-template-columns: 1fr;
+}
+.moment .big button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 64px;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--hud-key);
+  box-shadow: var(--hud-key-shadow);
+  color: #fff;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: left;
+  cursor: pointer;
+}
+.moment .big button:hover,
+.moment .big button:focus-visible {
+  box-shadow: var(--hud-key-shadow), var(--hud-key-on);
+  filter: brightness(1.12);
+}
+.moment .big i {
+  font-style: normal;
+  font-size: 20px;
+  color: var(--hud-light);
+}
+.moment small {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 11px;
+  font-size: 12.5px;
   color: var(--hud-dim);
 }
-.brief header em {
-  color: var(--hud-light);
+.moment small button {
+  border: 0;
+  background: none;
+  color: var(--hud-sub);
+  font: inherit;
+  font-size: 12.5px;
+  text-decoration: underline;
+  cursor: pointer;
 }

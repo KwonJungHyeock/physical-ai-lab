@@ -1,0 +1,184 @@
+/* 로봇 카페의 공정 띠 (CafeStrip.tsx): one brushed plate over the scene's top centre, in the HUD's
+   dress — white is the accent (the process pouring now), green for an amount met, amber for one
+   short or over; the cup's layers in the drink's own colours. */
+.strip {
+  position: absolute;
+  z-index: 5;
+  /* The scene's top left (the quest card is in the side panel), under the run record's button. */
+  top: calc(var(--top, 0px) + 50px);
+  left: calc(var(--inset-l, 0px) + 12px);
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  padding: 9px 12px;
+  border-radius: 14px;
+  background: var(--hud-plate);
+  box-shadow: var(--hud-plate-shadow);
+  color: var(--hud-tx);
+  pointer-events: none;
+  white-space: nowrap;
+  word-break: keep-all;
+  max-width: calc(100% - var(--inset-l, 12px) - var(--inset-r, 12px) - 24px);
+}
+
+.order {
+  display: grid;
+  align-content: center;
+  gap: 1px;
+  padding-right: 12px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+.order em {
+  font:
+    700 10px ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  font-style: normal;
+  letter-spacing: 0.18em;
+  color: var(--hud-amber);
+}
+.order b {
+  font-size: 13px;
+  font-weight: 800;
+}
+.order small {
+  font-size: 11.5px;
+  color: var(--hud-sub);
+}
+
+.flow {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+.flow li {
+  position: relative;
+  display: grid;
+  align-content: center;
+  gap: 1px;
+  min-width: 62px;
+  padding: 5px 8px;
+  border-radius: 9px;
+  background: var(--hud-groove);
+  box-shadow: var(--hud-groove-shadow);
+}
+.flow li + li::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 50%;
+  width: 6px;
+  height: 2px;
+  background: rgba(213, 218, 225, 0.25);
+}
+.flow b {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--hud-sub);
+}
+.flow small {
+  white-space: nowrap;
+  font:
+    700 11.5px ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  color: var(--hud-dim);
+}
+.flow li[data-done] b,
+.flow li[data-state='done'] b {
+  color: var(--hud-tx);
+}
+.flow li[data-done] small,
+.flow li[data-state='done'] small {
+  color: var(--hud-green);
+}
+.flow li[data-state='short'] small,
+.flow li[data-state='over'] small {
+  color: var(--hud-amber);
+}
+.flow li[data-state='on'] {
+  background: linear-gradient(180deg, #565c64 0%, #3d4248 42%, #2e3136 100%);
+  box-shadow: var(--hud-key-on);
+}
+.flow li[data-state='on'] b,
+.flow li[data-state='on'] small {
+  color: #fff;
+}
+
+.timer {
+  position: relative;
+  display: block;
+  margin-top: 3px;
+  padding-top: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--hud-light);
+}
+.timer i {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 2px;
+  border-radius: 1px;
+  background: #fff;
+}
+
+.cup {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-left: 12px;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+.glass {
+  position: relative;
+  width: 22px;
+  height: 46px;
+  display: flex;
+  flex-direction: column-reverse;
+  border-radius: 2px 2px 6px 6px;
+  box-shadow: inset 0 0 0 1.5px rgba(230, 236, 242, 0.55);
+  overflow: hidden;
+}
+.glass[data-over] {
+  box-shadow:
+    inset 0 0 0 1.5px var(--hud-amber),
+    0 0 10px rgba(240, 162, 59, 0.6);
+}
+.glass i {
+  display: block;
+  flex: none;
+}
+.ice {
+  background: #d9eef7;
+}
+.shot {
+  background: #5a3420;
+}
+.water {
+  background: #7fb2d0;
+}
+.glass u {
+  position: absolute;
+  left: -2px;
+  right: -2px;
+  height: 0;
+  border-top: 1.5px dashed #fff;
+}
+.cup small {
+  font:
+    700 11px ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  line-height: 1.3;
+  color: var(--hud-sub);
+}
+.cup small b {
+  color: var(--hud-amber);
+}

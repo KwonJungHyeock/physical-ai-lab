@@ -2,10 +2,10 @@
 
 /**
  * 단계 안내 (입문 트랙) where each part is looked at, not in a column of text beside the scene
- * (engine/simulator/cell/guides.ts): the 예측 question comes up as a small card the moment ▶
- * 시뮬레이션 is pressed (one tap answers it and the run starts); the 관찰 moments are the scene's
- * bubbles (CellScene); after the run, one card at the top centre — passed or not, the checks, the
- * prediction against what happened, and the idea of the step.
+ * (engine/simulator/cell/guides.ts): in 퀘스트 모드 the 예측 is asked over the scene at the moment
+ * the result splits (MomentAsk: the scene holds still); outside it, as a small card when ▶
+ * 시뮬레이션 is pressed. The 관찰 moments are the scene's bubbles (CellScene); after the run, one
+ * card — passed or not, the checks, the prediction against what happened, and the idea of the step.
  */
 
 import { useEffect } from 'react';
@@ -68,50 +68,35 @@ export function PredictCard({ mission, onAnswer, onSkip }: { mission: string; on
 }
 
 /**
- * 퀘스트 브리핑 (입문 퀘스트 모드), in the side panel before anything is run: the quest's goal and its
- * checklist, then the 예측 question; choosing an option (or [예측 없이 시작]) starts the quest's
- * 해 보기. Nothing runs from here: ▶ 시뮬레이션 stays the student's own press.
+ * 예측 at the moment (입문 퀘스트 모드): the scene has stopped where the result splits; the question
+ * and two or three big keys over the scene. A tap answers it and the run goes on from there, so the
+ * answer is seen at once (예측 → 관찰). Not graded.
  */
-export function Briefing({ mission, onAnswer, onSkip }: { mission: string; onAnswer(k: number): void; onSkip(): void }) {
-  const m = missionById(mission);
+export function MomentAsk({ mission, onAnswer, onSkip }: { mission: string; onAnswer(k: number): void; onSkip(): void }) {
   const g = guideOf(mission);
-  if (!m) return null;
+  if (!g) return null;
   return (
-    <section className={css.brief} aria-label="퀘스트 브리핑">
+    <div className={css.moment} role="dialog" aria-label="예측">
       <header>
-        <em>BRIEFING</em>
-        <b>
-          퀘스트 {m.n} · {m.title}
-        </b>
+        <span className={css.pause} aria-hidden="true" />
+        <em>장면 멈춤 · 예측</em>
       </header>
-      <p className={css.goal}>{m.goal}</p>
-      <ul className={css.goals}>
-        {(m.checks ?? []).map((c) => (
-          <li key={c.label}>
-            <i aria-hidden="true" />
-            {c.label}
-          </li>
+      <p>{g.predict.q}</p>
+      <div className={css.big} data-n={g.predict.options.length}>
+        {g.predict.options.map((o, k) => (
+          <button key={o} type="button" onClick={() => onAnswer(k)}>
+            <i>{MARK[k]}</i>
+            {o}
+          </button>
         ))}
-      </ul>
-      {g && (
-        <div className={css.ask}>
-          <em>PREDICT</em>
-          <p>{g.predict.q}</p>
-          <div className={css.opts}>
-            {g.predict.options.map((o, k) => (
-              <button key={o} type="button" onClick={() => onAnswer(k)}>
-                <i>{MARK[k]}</i>
-                {o}
-              </button>
-            ))}
-          </div>
-          <small>하나 고르면 퀘스트가 시작돼요 · 채점하지 않아요</small>
-        </div>
-      )}
-      <button type="button" className={css.skip} onClick={onSkip}>
-        {g ? '예측 없이 시작' : '시작'}
-      </button>
-    </section>
+      </div>
+      <small>
+        고르면 바로 이어서 실행돼요 · 채점하지 않아요
+        <button type="button" onClick={onSkip}>
+          예측 없이 계속
+        </button>
+      </small>
+    </div>
   );
 }
 
@@ -150,15 +135,18 @@ export function StepResult(p: ResultProps) {
           ×
         </button>
       </header>
-      <ul className={css.checks}>
-        {p.checks.map((c) => (
-          <li key={c.label} data-ok={c.ok || undefined}>
-            <i aria-hidden="true">{c.ok ? '✓' : '✗'}</i>
-            <span>{c.label}</span>
-            {c.detail && <em>{c.detail}</em>}
-          </li>
-        ))}
-      </ul>
+      {/* In the side panel the quest card above has the checklist. */}
+      {!p.inPanel && (
+        <ul className={css.checks}>
+          {p.checks.map((c) => (
+            <li key={c.label} data-ok={c.ok || undefined}>
+              <i aria-hidden="true">{c.ok ? '✓' : '✗'}</i>
+              <span>{c.label}</span>
+              {c.detail && <em>{c.detail}</em>}
+            </li>
+          ))}
+        </ul>
+      )}
       {g && p.chosen !== undefined && (
         <p className={css.compare} data-ok={p.chosen === g.predict.answer || undefined}>
           <em>PREDICT</em>내 예측 {MARK[p.chosen]} → 실제 {MARK[g.predict.answer]} {g.predict.options[g.predict.answer]}

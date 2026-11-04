@@ -411,6 +411,13 @@
   flex-direction: column;
   min-height: 0;
 }
+/* 입문 퀘스트 모드: the quest card, the result and the cards scroll together. */
+.pane[data-scroll] {
+  overflow-y: auto;
+}
+.pane[data-scroll] > * {
+  flex: none;
+}
 
 /* 1: direct control */
 .direct {

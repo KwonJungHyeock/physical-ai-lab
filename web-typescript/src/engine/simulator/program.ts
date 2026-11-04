@@ -75,6 +75,8 @@ export type Step =
   | { type: 'cellWait'; signal: string; on: boolean; line: number }
   /** Switch an output (when 자동 운전 is off). */
   | { type: 'cellSet'; signal: string; on: boolean; line: number }
+  /** F (로봇 카페): the amount a station pours when next started (ml, or shots at the coffee machine). */
+  | { type: 'cellAmount'; station: string; value: number; line: number }
   /** 실습 셀 B: the camera reads the part nearest the belt's end (part = camera.look()). */
   | { type: 'cellLook'; variable: string; line: number }
   /** Teach the outline classifier: the part under the camera is this outline (camera.learn("육각")). */
@@ -174,6 +176,7 @@ const RE = {
   cellFeed: /^cell\.feed\(\s*\)$/,
   cellWait: new RegExp(String.raw`^cell\.wait\(\s*${STR}\s*(?:,\s*(True|False)\s*)?\)$`),
   cellSet: new RegExp(String.raw`^cell\.set\(\s*${STR}\s*,\s*(True|False)\s*\)$`),
+  cellAmount: new RegExp(String.raw`^cell\.amount\(\s*${STR}\s*,\s*(${NUM})\s*\)$`),
   cellLook: new RegExp(String.raw`^${IDENT}\s*=\s*camera\.look\(\s*\)$`),
   cellLearn: new RegExp(String.raw`^camera\.learn\(\s*${STR}\s*\)$`),
   cellPickVar: new RegExp(String.raw`^robot\.pick\(\s*${IDENT}\s*\)$`),
@@ -255,6 +258,7 @@ function parseLine(body: string, line: number, errors: Problem[]): Step | null {
   if (RE.cellFeed.test(body)) return { type: 'cellFeed', line };
   if ((m = body.match(RE.cellWait))) return { type: 'cellWait', signal: m[1], on: m[2] !== 'False', line };
   if ((m = body.match(RE.cellSet))) return { type: 'cellSet', signal: m[1], on: m[2] === 'True', line };
+  if ((m = body.match(RE.cellAmount))) return { type: 'cellAmount', station: m[1], value: Number(m[2]), line };
   if ((m = body.match(RE.cellLook))) return { type: 'cellLook', variable: m[1], line };
   if ((m = body.match(RE.cellLearn))) return { type: 'cellLearn', outline: m[1], line };
   if ((m = body.match(RE.cellPickVar))) return { type: 'cellPickVar', variable: m[1], line };
@@ -467,6 +471,8 @@ function serializeOne(s: Step): string {
       return `cell.wait("${s.signal}"${s.on ? '' : ', False'})`;
     case 'cellSet':
       return `cell.set("${s.signal}", ${s.on ? 'True' : 'False'})`;
+    case 'cellAmount':
+      return `cell.amount("${s.station}", ${s.value})`;
     case 'cellLook':
       return `${s.variable} = camera.look()`;
     case 'cellLearn':
@@ -608,6 +614,18 @@ export function check(steps: readonly Step[], ctx: CheckContext): { errors: Prob
           if (s.type === 'cellPlace' && [s.dx, s.dy, s.dz].some((v) => Math.abs(v) > 1000)) errors.push({ line: s.line, msg: '1000 mm보다 멀리 비켜 놓을 수 없어요.', fix: 'x · y · z는 -1000에서 1000 mm 사이로 정해 주세요.' });
           if (s.type === 'cellWait' && !l.inputs.includes(s.signal)) errors.push({ line: s.line, msg: `'${s.signal}'이라는 입력 신호는 없어요.`, fix: `${l.inputs.map((n) => `"${n}"`).join(', ')} 중에서 골라 주세요.` });
           if (s.type === 'cellSet' && !l.outputs.includes(s.signal)) errors.push({ line: s.line, msg: `'${s.signal}'이라는 출력 신호는 없어요.`, fix: `${l.outputs.map((n) => `"${n}"`).join(', ')} 중에서 골라 주세요.` });
+          break;
+        }
+        case 'cellAmount': {
+          const st = ctx.cell ? cellLayout(ctx.cell).line.cafe?.stations : undefined;
+          if (!st) {
+            errors.push({ line: s.line, msg: '양 정하기는 로봇 카페에서만 써요.', fix: '로봇 카페 현장을 열어 주세요.' });
+            break;
+          }
+          const one = st.find((x) => x.name === s.station);
+          if (!one) errors.push({ line: s.line, msg: `'${s.station}'이라는 장비는 없어요.`, fix: `${st.map((x) => `"${x.name}"`).join(', ')} 중에서 골라 주세요.` });
+          else if (!(s.value >= one.range[0] && s.value <= one.range[1]) || (one.unit === 'shot' && !Number.isInteger(s.value)))
+            errors.push({ line: s.line, msg: `${s.station}의 양 ${s.value}${one.unit === 'shot' ? '샷' : ' ml'}은 정할 수 없어요.`, fix: `${one.range[0]}에서 ${one.range[1]}${one.unit === 'shot' ? '샷' : ' ml'} 사이로 정해 주세요.` });
           break;
         }
         case 'repeat':

@@ -267,3 +267,136 @@
 .recipe .add[data-glow] {
   animation: questGlow 1.6s ease-in-out infinite;
 }
+
+/* 로봇 카페 공정 카드: the order on top, a card's amount box, ▾ and its rows. */
+.order {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: baseline;
+  gap: 0 8px;
+  min-width: 0;
+}
+.order em {
+  grid-row: span 2;
+  font:
+    800 10px ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  letter-spacing: 0.14em;
+  color: var(--hud-amber);
+}
+.head .order b {
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+}
+.order small {
+  font-size: 12px;
+  color: var(--hud-sub);
+}
+
+/* Under the quest card, the whole panel scrolls: the cards take their own height. */
+.recipe[data-flow] {
+  height: auto;
+}
+.recipe[data-flow] .list {
+  overflow: visible;
+  flex: none;
+}
+
+.card[data-step] {
+  grid-template-columns: 24px 1fr auto;
+  align-items: start;
+}
+.card[data-step] .n {
+  font-size: 16px;
+  line-height: 26px;
+}
+.card[data-step] .tools {
+  padding-top: 0;
+}
+
+.amt {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--hud-sub);
+}
+.amt input {
+  width: 58px;
+  background: var(--hud-groove);
+  box-shadow: var(--hud-groove-shadow);
+  color: #fff;
+  border: 0;
+  border-radius: 6px;
+  font: inherit;
+  font-weight: 800;
+  padding: 2px 6px;
+}
+.title small {
+  margin-left: 6px;
+  font-weight: 500;
+}
+.sum {
+  display: block;
+}
+
+.recipe .tools .more {
+  background: var(--hud-silver);
+  box-shadow: var(--hud-silver-shadow);
+  color: var(--hud-ink);
+}
+
+.rows {
+  list-style: none;
+  margin: 6px 0 2px;
+  padding: 6px 0 0;
+  border-top: 1px dotted rgba(213, 218, 225, 0.22);
+  display: grid;
+  gap: 4px;
+  counter-reset: row;
+}
+.rows li {
+  counter-increment: row;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--hud-tx);
+  padding: 3px 6px;
+  border-radius: 6px;
+}
+.rows li::before {
+  content: counter(row);
+  font:
+    700 10.5px ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  color: var(--hud-dim);
+  width: 12px;
+}
+.rows li label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.rows li[data-off] {
+  color: var(--hud-amber);
+}
+.rows li[data-on] {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.recipe .palette button small {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--hud-sub);
+}

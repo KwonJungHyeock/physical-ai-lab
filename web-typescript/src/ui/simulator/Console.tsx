@@ -79,7 +79,8 @@ import { missionById, missionsOf } from '@/engine/simulator/cell/missions';
 import { LEVEL_NAME, type CellAlert } from '@/engine/simulator/cell/faults';
 import { cellChecks, repairCell } from '@/engine/simulator/cell/run';
 import CellCamera from './stage/CellCamera';
-import CellHud from './stage/CellHud';
+import CellHud, { QuestCard } from './stage/CellHud';
+import CafeStrip from './stage/CafeStrip';
 import { RunError, SelfCollision, Stop, contactJoints, createCellWorld, createWorld, poseContact, emptyStats, instantAnimate, jogTo, moveCheck, moveProblem, playTimeline, preflight, runProcess, runProgram, type RobotAction, type RunHooks, type WorldState } from '@/engine/simulator/sim';
 import { demoFits, demoFor, demoStepAt } from '@/engine/simulator/demos';
 import { runPython, warmPython } from '@/engine/python/client';
@@ -124,9 +125,9 @@ import DrawCards from './editors/DrawCards';
 import BoardCards from './editors/BoardCards';
 import ThemePanel from './tasks/ThemePanel';
 import TutorialStrip from './tasks/TutorialStrip';
-import { Briefing, PredictCard, StepResult, loadPredictions, savePrediction } from './stage/StepGuide';
+import { MomentAsk, PredictCard, StepResult, loadPredictions, savePrediction } from './stage/StepGuide';
 import { QUESTS, questNow, type QuestPhase } from '@/engine/simulator/cell/quests';
-import { guideOf } from '@/engine/simulator/cell/guides';
+import { guideOf, predictNow } from '@/engine/simulator/cell/guides';
 import { stationAt } from '@/engine/simulator/cell/shots';
 import SiteTour from './stage/SiteTour';
 import Roadmap from './connect/Roadmap';
@@ -554,6 +555,19 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   /** Simulation playback speed (the real robot always runs at its real speed). */
   const [simRate, setSimRate] = useState(1);
   const simRateRef = useRef(1);
+  /**
+   * 입문 퀘스트 모드: the scene held still (the 예측 asked at its moment): the program's clock and the
+   * cell's both read the rate through `runRate`, which is 0 while held.
+   */
+  const heldRef = useRef(false);
+  const runRate = useMemo(
+    () => ({
+      get current() {
+        return heldRef.current ? 0 : simRateRef.current;
+      },
+    }),
+    [],
+  );
   const chooseSimRate = (r: number) => {
     simRateRef.current = r;
     setSimRate(r);
@@ -601,6 +615,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     setPreds(loadPredictions());
   }, []);
   const [lastChecks, setLastChecks] = useState<{ label: string; ok: boolean; detail?: string }[] | null>(null);
+  /** 입문 퀘스트 모드: the step whose 예측 is being asked now, the scene held (MomentAsk). */
+  const [moment, setMoment] = useState<string | null>(null);
   /** 입문: the place being toured (its opening look round, SiteTour.tsx). */
   const [touring, setTouring] = useState<CellId | null>(null);
   /** 입문: the 학습 로드맵 over the intro (its [ROADMAP]). */
@@ -1604,7 +1620,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       // the same move goes on with its clock slowing to a halt over coastS.
       let coast: { s: number; left: number } | null = null;
       const step = (now: number) => {
-        let dt = (Math.min(now - last, 250) / 1000) * rate;
+        // (Nothing moves while the scene is held for a 예측.)
+        let dt = (Math.min(now - last, 250) / 1000) * (heldRef.current ? 0 : rate);
         if (tk?.aborted && !coast) {
           const at = world.current.angles.slice();
           const ahead = Math.min(durationS, t + 0.02);
@@ -1867,10 +1884,28 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const questOn = !!track && (!!lifeStep || !!lifeTut);
   const questQ = lifeStep ? QUESTS[lifeStep.id] : undefined;
   const questPhase: QuestPhase | null =
-    lifeStep && cellAt ? (busy ? 'run' : cellResult !== null && lastChecks ? 'result' : guideOf(lifeStep.id) && preds[lifeStep.id] === undefined && !skipped[lifeStep.id] ? 'brief' : 'do') : null;
+    lifeStep && cellAt ? (busy ? 'run' : cellResult !== null && lastChecks ? 'result' : 'do') : null;
   // The card to change lights while there is something to do (not over a passed result).
   const questGlow = (questPhase === 'do' || (questPhase === 'result' && !cellResult)) && questQ ? questQ.cards : undefined;
   const questGlowAdd = (questPhase === 'do' || (questPhase === 'result' && !cellResult)) && !!questQ?.add;
+  // 예측 at its moment: while a quest runs, the scene holds still the first time the moment comes
+  // (guides.ts predictNow) until the student answers over it; once per step (this browser).
+  const askId = busy && questOn && lifeStep && guideOf(lifeStep.id) && preds[lifeStep.id] === undefined && !skipped[lifeStep.id] ? lifeStep.id : null;
+  useEffect(() => {
+    if (!askId) return;
+    const id = window.setInterval(() => {
+      const run = world.current.cell;
+      if (!run || run.mission !== askId || !predictNow(run, world.current)) return;
+      heldRef.current = true;
+      setMoment(askId);
+      window.clearInterval(id);
+    }, 40);
+    return () => window.clearInterval(id);
+  }, [askId]);
+  const letGo = () => {
+    heldRef.current = false;
+    setMoment(null);
+  };
   const passedRun = (text: string, actions: RobotAction[], start?: number[]) => {
     if (tab === 'process') markStart('process');
     else if (tab === 'basic') markStart('code');
@@ -2369,6 +2404,9 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     if (follower.current) follower.current.alive = false;
     // A held jog key (or a dragged slider) stops too, before the key is let go.
     if (jog.current) endJogRef.current?.();
+    // A held scene (예측 at its moment) lets go, so the stop can run its course.
+    heldRef.current = false;
+    setMoment(null);
     if (token.current) token.current.aborted = true;
     if (tracker.current) tracker.current.alive = false;
     if (realRunRef.current || robotMode) {
@@ -4737,7 +4775,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   ringJoint={ringJoint}
                   planMarks={planMarks}
                   cell={cellAt?.cell ?? null}
-                  simRate={simRateRef}
+                  simRate={runRate}
                   cellCallouts={!!track}
                   cellTags={cellTags.length ? cellTags : cellAt?.mission && !busy ? cellStepTags(cellAt.cell, missionById(cellAt.mission)?.n ?? 1) : []}
                   display={stageDisplay}
@@ -4801,6 +4839,22 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                     }
                   }}
                 />}
+              {/* 입문 로봇 카페: the order, the five processes and the cup, over the scene. */}
+              {loaded && view === 'sim' && track && cellAt?.cell === 'cafe' && <CafeStrip world={world} />}
+              {loaded && view === 'sim' && moment && (
+                <MomentAsk
+                  mission={moment}
+                  onAnswer={(k) => {
+                    savePrediction(moment, k);
+                    setPreds((p) => ({ ...p, [moment]: k }));
+                    letGo();
+                  }}
+                  onSkip={() => {
+                    setSkipped((x) => ({ ...x, [moment]: true }));
+                    letGo();
+                  }}
+                />
+              )}
               {loaded && view === 'sim' && asking && cellAt?.mission && (
                 <PredictCard
                   mission={cellAt.mission}
@@ -4856,6 +4910,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                     setBadge(null);
                   }}
                   guides={!!track}
+                  questOut={questOn && !!lifeStep}
                   quest={
                     track && lifeStep && questPhase
                       ? { phase: questPhase, checks: questPhase === 'result' ? lastChecks : null, now: questNow(questPhase, lifeStep.id, cellResult), onList: () => setRoadmapOpen(true) }
@@ -5260,20 +5315,21 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                       }}
                     />
                     )}
-                    {recipeOn && questPhase === 'brief' && lifeStep ? (
-                      <div className={css.pane}>
-                        <Briefing
-                          key={lifeStep.id}
-                          mission={lifeStep.id}
-                          onAnswer={(k) => {
-                            savePrediction(lifeStep.id, k);
-                            setPreds((p) => ({ ...p, [lifeStep.id]: k }));
-                          }}
-                          onSkip={() => setSkipped((x) => ({ ...x, [lifeStep.id]: true }))}
-                        />
-                      </div>
-                    ) : recipeOn ? (
-                      <div className={css.pane}>
+                    {recipeOn ? (
+                      <div className={css.pane} data-scroll={(questOn && !!lifeStep) || undefined}>
+                        {/* 퀘스트 모드: the quest card at the top of the side panel (미션 · 지금 할 일), over the cards it points at. */}
+                        {questOn && lifeStep && cellAt && questPhase && (
+                          <QuestCard
+                            inPanel
+                            cell={cellAt.cell}
+                            mission={cellAt.mission}
+                            passed={cellPassed}
+                            allOpen={false}
+                            busy={busy}
+                            onMission={(id) => openCell(cellAt.cell, id)}
+                            quest={{ phase: questPhase, checks: questPhase === 'result' ? lastChecks : null, now: questNow(questPhase, lifeStep.id, cellResult), onList: () => setRoadmapOpen(true) }}
+                          />
+                        )}
                         {questPhase === 'result' && lifeStep && cellAt && lastChecks && cellResult !== null && (
                           <StepResult
                             inPanel
@@ -5290,11 +5346,11 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                           />
                         )}
                         {cellAt!.cell === 'draw' ? (
-                          <DrawCards key={cellAt!.mission ?? 'free'} mission={cellAt!.mission} busy={busy} runningLine={runningLine} onCode={onRecipeCode} glow={questGlow} glowAdd={questGlowAdd} />
+                          <DrawCards key={cellAt!.mission ?? 'free'} mission={cellAt!.mission} busy={busy} runningLine={runningLine} onCode={onRecipeCode} glow={questGlow} glowAdd={questGlowAdd} flow={questOn && !!lifeStep} />
                         ) : cellAt!.cell === 'board' ? (
-                          <BoardCards key={cellAt!.mission ?? 'free'} mission={cellAt!.mission} busy={busy} runningLine={runningLine} onCode={onRecipeCode} glow={questGlow} glowAdd={questGlowAdd} />
+                          <BoardCards key={cellAt!.mission ?? 'free'} mission={cellAt!.mission} busy={busy} runningLine={runningLine} onCode={onRecipeCode} glow={questGlow} glowAdd={questGlowAdd} flow={questOn && !!lifeStep} />
                         ) : (
-                          <RecipeCards key={cellAt!.mission ?? 'free'} mission={cellAt!.mission} busy={busy} runningLine={runningLine} onCode={onRecipeCode} glow={questGlow} glowAdd={questGlowAdd} />
+                          <RecipeCards key={cellAt!.mission ?? 'free'} mission={cellAt!.mission} busy={busy} runningLine={runningLine} onCode={onRecipeCode} glow={questGlow} glowAdd={questGlowAdd} flow={questOn && !!lifeStep} />
                         )}
                       </div>
                     ) : cellAt && cellTermOn ? (

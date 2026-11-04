@@ -689,7 +689,7 @@
 .qNow[data-phase='result'] {
   box-shadow: var(--hud-groove-shadow), inset 3px 0 0 var(--hud-green);
 }
-.hud .qHint {
+.stepper .qHint {
   margin-top: 7px;
   padding: 0;
   border: 0;
@@ -710,7 +710,7 @@
   color: var(--hud-sub);
   word-break: keep-all;
 }
-.hud .qList {
+.stepper .qList {
   margin-top: 10px;
   width: 100%;
   height: 30px;
@@ -723,4 +723,56 @@
   font-size: 12.5px;
   font-weight: 700;
   cursor: pointer;
+}
+
+/* 퀘스트 모드: the quest card at the top of the side panel (not over the scene). */
+.stepper[data-panel] {
+  width: auto;
+  margin: 0 12px 10px;
+  flex: none;
+}
+.stepper .qListHead {
+  height: 22px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--hud-key);
+  box-shadow: var(--hud-key-shadow);
+  color: var(--hud-sub);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.stepper[data-panel] {
+  padding: 10px 12px 11px;
+}
+.stepper[data-panel] ol {
+  margin-top: 9px;
+}
+.stepper[data-panel] .qTitle {
+  margin-top: 9px;
+  font-size: 14px;
+}
+.stepper[data-panel] .qChecks {
+  margin-top: 6px;
+  gap: 3px;
+}
+.stepper[data-panel] .qChecks li {
+  font-size: 12.5px;
+}
+.stepper[data-panel] .qNow {
+  margin-top: 8px;
+  padding: 7px 10px 8px;
+}
+/* What was off, under a ✗ (the quest card's checklist after a run). */
+.qChecks li {
+  flex-wrap: wrap;
+}
+.qChecks li em {
+  flex-basis: 100%;
+  padding-left: 23px;
+  font-style: normal;
+  font-size: 12px;
+  color: var(--hud-amber);
 }
