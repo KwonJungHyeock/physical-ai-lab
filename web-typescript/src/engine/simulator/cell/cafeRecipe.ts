@@ -113,24 +113,20 @@ const HAND_OVER: Card[] = [{ k: 'open' }, { k: 'customer' }, { k: 'close' }];
 /** Each step's answer (the same program as its reference solution in missions.ts). */
 export const RECIPE_ANSWER: Record<string, Recipe> = {
   F1: { cards: [...AMERICANO, ...HAND_OVER], times: 1 },
-  F2: { cards: [{ k: 'cup' }, { k: 'place', to: '커피 머신' }, { k: 'home' }], times: 1 },
-  F3: { cards: [{ k: 'cup' }, { k: 'place', to: '커피 머신' }, P('shot'), { k: 'pick', from: '커피 머신' }, { k: 'place', to: '픽업 1' }, { k: 'home' }], times: 1 },
-  F4: { cards: AMERICANO, times: 1 },
-  F5: { cards: [...AMERICANO, ...HAND_OVER], times: 1 },
-  F6: { cards: [...AMERICANO, ...HAND_OVER], times: 3 },
+  F2: { cards: [{ k: 'cup' }, { k: 'place', to: '커피 머신' }, P('shot'), { k: 'pick', from: '커피 머신' }, { k: 'place', to: '픽업 1' }, { k: 'home' }], times: 1 },
+  F3: { cards: AMERICANO, times: 1 },
+  F4: { cards: [...AMERICANO, ...HAND_OVER], times: 2 },
 };
 
 /**
- * What each step starts with: F1 the whole thing to watch; then a start with the step's one gap
- * (F3: the shot not waited for; F4: no water; F5: no door; F6: one drink).
+ * What each step starts with: F1 the whole thing to watch; then a start with the step's gap
+ * (F2: only the cup taken; F3: no water; F4: no door, the 2잔 already set).
  */
 export const RECIPE_START: Record<string, Recipe> = {
   F1: RECIPE_ANSWER.F1,
-  F2: { cards: [{ k: 'cup' }], times: 1 },
-  F3: { cards: [{ k: 'cup' }, { k: 'place', to: '커피 머신' }, P('shot', false), { k: 'pick', from: '커피 머신' }, { k: 'place', to: '픽업 1' }, { k: 'home' }], times: 1 },
-  F4: { cards: AMERICANO.filter((c, k) => k < 7).concat([{ k: 'place', to: '픽업 1' }, { k: 'home' }]), times: 1 },
-  F5: { cards: AMERICANO, times: 1 },
-  F6: { cards: [...AMERICANO, ...HAND_OVER], times: 1 },
+  F2: { cards: [{ k: 'cup' }, { k: 'place', to: '커피 머신' }, P('shot', false), { k: 'pick', from: '커피 머신' }, { k: 'place', to: '픽업 1' }, { k: 'home' }], times: 1 },
+  F3: { cards: AMERICANO.filter((c, k) => k < 7).concat([{ k: 'place', to: '픽업 1' }, { k: 'home' }]), times: 1 },
+  F4: { cards: AMERICANO, times: 2 },
 };
 
 /** The cards to add from the palette. */

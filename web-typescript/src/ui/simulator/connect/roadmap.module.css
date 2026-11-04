@@ -317,3 +317,66 @@
     display: none;
   }
 }
+
+/* 학습 카테고리: five fields in a row under the title, a coloured rule on each; the same colours
+   mark the stops' pictures. */
+.cats {
+  list-style: none;
+  margin: clamp(20px, 3.4vh, 34px) 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+.cats li {
+  display: grid;
+  gap: 3px;
+  padding: 11px 13px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 2px solid var(--c);
+}
+.cats em {
+  font:
+    700 10px ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  font-style: normal;
+  letter-spacing: 0.16em;
+  color: var(--c);
+}
+.cats b {
+  font-size: 15px;
+  font-weight: 800;
+}
+.cats small {
+  font-size: 12px;
+  line-height: 1.45;
+  color: #a7b0ba;
+}
+.catDots {
+  position: absolute;
+  z-index: 1;
+  left: 12px;
+  right: 12px;
+  bottom: 34px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.catDots i {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: #0e1114;
+  background: var(--c);
+}
+@media (max-width: 1100px) {
+  .cats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

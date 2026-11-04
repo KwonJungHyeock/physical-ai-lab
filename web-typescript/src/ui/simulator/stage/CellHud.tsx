@@ -139,7 +139,7 @@ export default function CellHud(p: CellHudProps) {
 
   return (
     <div className={css.hud} aria-label="실습 셀">
-      {/* 입문: one card — the place, its six steps as a stepper on a line, the step open now. */}
+      {/* 입문: one card — the place, its steps as a stepper on a line, the step open now. */}
       {compact && (
         <nav className={css.stepper} aria-label="단계">
           <header>

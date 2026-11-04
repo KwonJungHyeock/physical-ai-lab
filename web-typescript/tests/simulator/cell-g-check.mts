@@ -1,8 +1,8 @@
 /**
  * 실습 셀 G (로봇 캘리그라피, 입문 트랙 ① 생활 로봇): every step's reference program (made from its
  * answer cards) runs with the booth (cell/draw.ts) and passes its checks; and each step's start
- * cards — the one mistake the step is about — fail: the pen 3 mm up (no line), the usual corner
- * on a card put elsewhere (off the card), joint moves (bent sides), the pen down between strokes
+ * cards — the mistakes the step is about — fail: the pen 3 mm up and the usual corner on a card
+ * put elsewhere (no line, off the card), joint moves (bent sides), the pen down between strokes
  * (lines between letters), and reaching over the card while the customer's hand is there.
  *
  * Run with: npm run check:cell
@@ -98,8 +98,8 @@ for (const m of missionsOf('draw')) {
   console.log(`  ok   ${m.id} ${m.title}: ${summary(w)}  [${el.toFixed(0)} s cell · ${((Date.now() - t0) / 1000).toFixed(1)} s]`);
 }
 
-/** A step's start cards (G2 … G6): they must not pass. */
-for (const id of ['G2', 'G3', 'G4', 'G5', 'G6']) {
+/** A step's start cards (G2 … G4): they must not pass. */
+for (const id of ['G2', 'G3', 'G4']) {
   const { w, run } = await cell(id);
   const err = await run(drawCode(G_START[id]).code);
   assert.ok(err || !allOk(w), `${id} start cards passed anyway | ${summary(w)}`);

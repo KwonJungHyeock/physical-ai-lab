@@ -3,7 +3,7 @@
 /**
  * 테마학습 (입문 트랙 ① 생활 로봇): what to learn with, in the side panel. 실생활 협동로봇 — the
  * places where cobots work in everyday life (the café, the calligraphy booth; the board-game robot
- * is coming), each a ladder of six steps — and three 튜토리얼 on the controls every step uses.
+ * is coming), each a ladder of four steps — and three 튜토리얼 on the controls every step uses.
  * Picking a place opens it in the 3D view with its 작업 순서 cards; picking a tutorial leaves the
  * place for the desk and starts the quest card over the 3D view.
  */
@@ -38,7 +38,7 @@ export default function ThemePanel(p: Props) {
     <div className={css.theme}>
       <section>
         <h4>
-          실생활 협동로봇 <em>현장마다 6단계</em>
+          실생활 협동로봇 <em>현장마다 4단계</em>
         </h4>
         <div className={css.sites}>
           {SITES.map((s) => {

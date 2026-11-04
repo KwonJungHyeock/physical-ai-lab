@@ -135,24 +135,20 @@ const flow = (write: DrawCard, corner: { x: number; y: number } = CARD_HOME, z =
 /** Each step's answer (its reference solution in missions.ts is this program). */
 export const G_ANSWER: Record<string, DrawRecipe> = {
   G1: { cards: flow(W('사랑해')), times: 1 },
-  G2: { cards: flow(W('HELLO')), times: 1 },
-  G3: { cards: flow(W('HELLO'), G3_CARD), times: 1 },
-  G4: { cards: flow(W('네모')), times: 1 },
-  G5: { cards: flow(W('사랑해')), times: 1 },
-  G6: { cards: flow(W('하트')), times: 3 },
+  G2: { cards: flow(W('HELLO'), G3_CARD), times: 1 },
+  G3: { cards: flow(W('네모')), times: 1 },
+  G4: { cards: flow(W('사랑해')), times: 2 },
 };
 
 /**
- * What each step starts with: G1 the whole thing to watch; then the step's one gap (G2: the pen
- * 3 mm up; G3: the usual corner; G4: joint moves; G5: the pen down between strokes; G6: one card).
+ * What each step starts with: G1 the whole thing to watch; then the step's gap (G2: the pen 3 mm
+ * up and the usual corner; G3: joint moves; G4: the pen down between strokes, 2명 already set).
  */
 export const G_START: Record<string, DrawRecipe> = {
   G1: G_ANSWER.G1,
   G2: { cards: flow(W('HELLO'), CARD_HOME, 3), times: 1 },
-  G3: { cards: flow(W('HELLO')), times: 1 },
-  G4: { cards: flow(W('네모', true, false)), times: 1 },
-  G5: { cards: flow(W('사랑해', false)), times: 1 },
-  G6: { cards: flow(W('하트')), times: 1 },
+  G3: { cards: flow(W('네모', true, false)), times: 1 },
+  G4: { cards: flow(W('사랑해', false)), times: 2 },
 };
 
 /** The cards to add from the palette. */
