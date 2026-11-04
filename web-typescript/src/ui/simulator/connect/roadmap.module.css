@@ -204,44 +204,10 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(10, 12, 15, 0) 45%,
-    rgba(10, 12, 15, 0.78)
-  );
+  background:
+    linear-gradient(180deg, rgba(10, 12, 15, 0.5), rgba(10, 12, 15, 0) 26%),
+    linear-gradient(180deg, rgba(10, 12, 15, 0) 40%, rgba(10, 12, 15, 0.86));
 }
-.pic em {
-  position: absolute;
-  z-index: 1;
-  left: 14px;
-  bottom: 12px;
-  font:
-    700 11px ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    monospace;
-  font-style: normal;
-  letter-spacing: 0.2em;
-  color: #e4eaf2;
-}
-.badge {
-  position: absolute;
-  z-index: 1;
-  top: 12px;
-  right: 12px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: #fff;
-  color: #111418;
-  font-size: 12px;
-  font-weight: 800;
-}
-.badge[data-soon] {
-  background: rgba(20, 24, 30, 0.75);
-  color: #fdba74;
-  border: 1px solid rgba(251, 146, 60, 0.6);
-}
-
 .body {
   display: grid;
   gap: 7px;
@@ -318,65 +284,171 @@
   }
 }
 
-/* 학습 카테고리: five fields in a row under the title, a coloured rule on each; the same colours
-   mark the stops' pictures. */
-.cats {
+/* 학습 카테고리 (Metal Mission HUD): one brushed plate cut into five fields by grooves; each field
+   is a tracked number + English tag, its Korean name and one line, and its place in the row of
+   five ticks the stops' pictures carry. Pointing at a field lights its stops and dims the rest. */
+.fields {
   list-style: none;
   margin: clamp(20px, 3.4vh, 34px) 0 0;
   padding: 0;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 12px;
-}
-.cats li {
-  display: grid;
-  gap: 3px;
-  padding: 11px 13px 12px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-top: 2px solid var(--c);
+  background: var(--hud-plate);
+  box-shadow: var(--hud-plate-shadow);
+  overflow: hidden;
 }
-.cats em {
-  font:
-    700 10px ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    monospace;
-  font-style: normal;
-  letter-spacing: 0.16em;
-  color: var(--c);
+.fields li {
+  display: grid;
+  align-content: start;
+  gap: 5px;
+  padding: 14px 18px 16px;
+  cursor: default;
+  transition: background 0.2s;
 }
-.cats b {
-  font-size: 15px;
-  font-weight: 800;
+.fields li + li {
+  box-shadow:
+    inset 1px 0 0 rgba(0, 0, 0, 0.5),
+    inset 2px 0 0 rgba(255, 255, 255, 0.07);
 }
-.cats small {
-  font-size: 12px;
-  line-height: 1.45;
-  color: #a7b0ba;
+.fields li[data-hot] {
+  background: rgba(255, 255, 255, 0.05);
 }
-.catDots {
-  position: absolute;
-  z-index: 1;
-  left: 12px;
-  right: 12px;
-  bottom: 34px;
+.fieldTag {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.fieldTag em {
+  font-size: 11px;
+  font-weight: 700;
+  font-style: normal;
+  letter-spacing: 0.2em;
+  color: var(--hud-dim);
+}
+.fields li[data-hot] .fieldTag em {
+  color: var(--hud-light);
+}
+.fields b {
+  margin-top: 4px;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--hud-tx);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.55);
+}
+.fields small {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--hud-sub);
+}
+
+/* The row of five ticks (the intro's scene ticks): lit = taught here. */
+.ticks {
+  display: flex;
   gap: 4px;
 }
-.catDots i {
-  font-style: normal;
-  font-size: 11px;
-  font-weight: 800;
-  padding: 2px 8px;
-  border-radius: 999px;
-  color: #0e1114;
-  background: var(--c);
+.ticks i {
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(213, 218, 225, 0.22);
+  transition:
+    background 0.2s,
+    box-shadow 0.2s;
 }
+.ticks i[data-on] {
+  background: var(--hud-light);
+  box-shadow: 0 0 8px rgba(236, 241, 248, 0.55);
+}
+.ticks i[data-hot] {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.5),
+    0 0 12px rgba(236, 241, 248, 0.9);
+}
+
+/* The picture's caption, in its shade: the phase and the ticks, a hairline, the fields by name. */
+.caption {
+  position: absolute;
+  z-index: 1;
+  left: 16px;
+  right: 16px;
+  bottom: 13px;
+  display: grid;
+  gap: 7px;
+  color: var(--hud-light);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+.caption > span {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.caption em {
+  font-size: 11px;
+  font-weight: 700;
+  font-style: normal;
+  letter-spacing: 0.22em;
+}
+.caption .ticks {
+  margin-left: auto;
+}
+.caption small {
+  padding-top: 7px;
+  border-top: 1px solid rgba(236, 241, 248, 0.38);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--hud-sub);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The stop's state, top right in the picture's top shade: a lamp and a tracked word. */
+.flag {
+  position: absolute;
+  z-index: 1;
+  top: 14px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: var(--hud-light);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+.flag::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--hud-light);
+  box-shadow: 0 0 10px rgba(236, 241, 248, 0.9);
+}
+.flag[data-soon] {
+  color: #dfe4ea;
+}
+.flag[data-soon]::before {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px #dfe4ea;
+}
+
+/* A field pointed at: the stops that do not teach it step back. */
+.stop {
+  transition: opacity 0.25s;
+}
+.stop[data-dim] {
+  opacity: 0.38;
+}
+
 @media (max-width: 1100px) {
-  .cats {
+  .fields {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .fields li + li {
+    box-shadow: none;
   }
 }

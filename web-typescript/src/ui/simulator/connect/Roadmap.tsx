@@ -8,7 +8,7 @@
  * course apps); a stop still to come is shown, dimmed. Pressing a stop opens it in the simulator.
  */
 
-import { useEffect, type CSSProperties } from 'react';
+import { useEffect, useState } from 'react';
 
 import type { CellId } from '@/engine/simulator/cell/cells';
 import { missionsOf } from '@/engine/simulator/cell/missions';
@@ -19,17 +19,31 @@ import css from './roadmap.module.css';
 export type RoadmapPick = { kind: 'tutorial' } | { kind: 'site'; cell: CellId };
 
 /**
- * 학습 카테고리: the five fields the stops teach, each a colour (the stops' badges carry them). 피지컬 AI
- * is '기초' here: 입문 has no camera or AI decision, only the robot reading its sensors and acting.
+ * 학습 카테고리: the five fields the stops teach, numbered. The console's HUD keeps colour for
+ * meaning (amber warns, red stops, green links), so a field is a place in a row of five ticks, the
+ * same row on the plate above and on each stop's picture: a lit tick is a field that stop teaches.
+ * 피지컬 AI is '기초' here: 입문 has no camera or AI decision, only the robot reading its sensors and acting.
  */
 type Cat = 'control' | 'auto' | 'safety' | 'twin' | 'pai';
-const CATS: Record<Cat, { name: string; en: string; color: string; what: string }> = {
-  control: { name: '로봇 제어', en: 'CONTROL', color: '#e4eaf2', what: '관절 · 좌표로 움직이고 자세 · 위치를 가르쳐요' },
-  auto: { name: '자동화 순서', en: 'AUTOMATION', color: '#60a5fa', what: '작업 순서를 짜고 장비 신호에 맞춰 움직여요' },
-  safety: { name: '협동로봇 안전', en: 'SAFETY', color: '#fb923c', what: '사람이 있을 때 멈추고 기다리는 규칙을 익혀요' },
-  twin: { name: '디지털 트윈', en: 'DIGITAL TWIN', color: '#34d399', what: '가상 현장에서 확인한 프로그램을 실제 로봇에 그대로 써요' },
-  pai: { name: '피지컬 AI 기초', en: 'PHYSICAL AI', color: '#c084fc', what: '로봇이 센서로 상황을 읽고 판단해 몸으로 움직이는 원리' },
+const CATS: Record<Cat, { name: string; short: string; en: string; what: string }> = {
+  control: { name: '로봇 제어', short: '제어', en: 'CONTROL', what: '관절 · 좌표로 움직이고 자세 · 위치를 가르쳐요' },
+  auto: { name: '자동화 순서', short: '자동화', en: 'AUTOMATION', what: '작업 순서를 짜고 장비 신호에 맞춰 움직여요' },
+  safety: { name: '협동로봇 안전', short: '안전', en: 'SAFETY', what: '사람이 있을 때 멈추고 기다리는 규칙을 익혀요' },
+  twin: { name: '디지털 트윈', short: '디지털 트윈', en: 'DIGITAL TWIN', what: '가상 현장에서 확인한 프로그램을 실제 로봇에 그대로 써요' },
+  pai: { name: '피지컬 AI 기초', short: '피지컬 AI', en: 'PHYSICAL AI', what: '로봇이 센서로 상황을 읽고 판단해 몸으로 움직이는 원리' },
 };
+const CAT_KEYS = Object.keys(CATS) as Cat[];
+
+/** The five ticks; `on` lit, `hot` the one pointed at on the plate. */
+function Ticks({ on, hot }: { on: (c: Cat) => boolean; hot: Cat | null }) {
+  return (
+    <span className={css.ticks} aria-hidden="true">
+      {CAT_KEYS.map((c) => (
+        <i key={c} data-on={on(c) || undefined} data-hot={(hot === c && on(c)) || undefined} />
+      ))}
+    </span>
+  );
+}
 
 interface Stop {
   cats: Cat[];
@@ -95,6 +109,8 @@ export default function Roadmap({ passed, tutorialsDone, onPick, onClose }: Prop
     window.addEventListener('keydown', esc);
     return () => window.removeEventListener('keydown', esc);
   }, [onClose]);
+  // The field pointed at on the plate: its stops stay lit, the others dim.
+  const [hot, setHot] = useState<Cat | null>(null);
   const doneOf = (s: Stop) => s.steps.filter((id) => (s.key === 'basics' ? tutorialsDone[id] : passed[id])).length;
   // The stop to do next: the first one not finished.
   const next = STOPS.findIndex((s) => s.pick && doneOf(s) < s.steps.length);
@@ -120,23 +136,28 @@ export default function Roadmap({ passed, tutorialsDone, onPick, onClose }: Prop
         </button>
       </header>
 
-      {/* What the whole course covers: five fields, each lit on the stops that teach it. */}
-      <ul className={css.cats} aria-label="학습 카테고리">
-        {(Object.keys(CATS) as Cat[]).map((k) => (
-          <li key={k} style={{ '--c': CATS[k].color } as CSSProperties}>
-            <em>{CATS[k].en}</em>
+      {/* What the whole course covers: one plate, five fields, each a tick in the row the stops carry. */}
+      <ol className={css.fields} aria-label="학습 카테고리" onMouseLeave={() => setHot(null)}>
+        {CAT_KEYS.map((k, n) => (
+          <li key={k} data-hot={hot === k || undefined} onMouseEnter={() => setHot(k)}>
+            <span className={css.fieldTag}>
+              <Ticks on={(c) => c === k} hot={hot} />
+              <em>
+                {String(n + 1).padStart(2, '0')} {CATS[k].en}
+              </em>
+            </span>
             <b>{CATS[k].name}</b>
             <small>{CATS[k].what}</small>
           </li>
         ))}
-      </ul>
+      </ol>
 
       <ol className={css.path}>
         {STOPS.map((s, i) => {
           const d = doneOf(s);
           const complete = s.steps.length > 0 && d >= s.steps.length;
           return (
-            <li key={s.key} className={css.stop} data-next={i === next || undefined} data-done={complete || undefined} data-soon={!s.pick || undefined}>
+            <li key={s.key} className={css.stop} data-next={i === next || undefined} data-done={complete || undefined} data-soon={!s.pick || undefined} data-dim={(hot && !s.cats.includes(hot)) || undefined}>
               <span className={css.node} aria-hidden="true">
                 <i>{complete ? '✓' : String(i + 1).padStart(2, '0')}</i>
               </span>
@@ -144,17 +165,21 @@ export default function Roadmap({ passed, tutorialsDone, onPick, onClose }: Prop
                 <span className={css.pic}>
                   {/* eslint-disable-next-line @next/next/no-img-element -- the roadmap's pictures, also in the static export */}
                   <img src={s.img} alt="" />
-                  <em>{s.phase}</em>
-                  <span className={css.catDots}>
-                    {s.cats.map((c) => (
-                      <i key={c} style={{ '--c': CATS[c].color } as CSSProperties}>
-                        {CATS[c].name}
-                      </i>
-                    ))}
+                  {/* The stop's name and fields, set in the picture's shade as the intro's scene caption is. */}
+                  <span className={css.caption}>
+                    <span>
+                      <em>{s.phase}</em>
+                      <Ticks on={(c) => s.cats.includes(c)} hot={hot} />
+                    </span>
+                    <small>
+                      {CAT_KEYS.filter((c) => s.cats.includes(c))
+                        .map((c) => CATS[c].short)
+                        .join(' · ')}
+                    </small>
                   </span>
-                  {i === next && <span className={css.badge}>여기부터</span>}
+                  {i === next && <span className={css.flag}>여기부터</span>}
                   {!s.pick && (
-                    <span className={css.badge} data-soon>
+                    <span className={css.flag} data-soon>
                       준비 중
                     </span>
                   )}
