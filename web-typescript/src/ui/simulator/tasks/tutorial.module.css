@@ -1,5 +1,5 @@
-/* 입문 튜토리얼 (TutorialStrip.tsx): a slate groove at the top of the right panel, in the 제어 panel's
-   own language — an English tag, the step segments (the one now raised with the brand's red mark),
+/* 입문 튜토리얼 (TutorialStrip.tsx): a groove at the top of the right panel, in the 학습 로드맵's
+   language — a tracked English tag, the step segments (the one now lit white, done ones silver),
    one line, a monospace meter. */
 .strip {
   margin: 0 12px 10px;
@@ -19,14 +19,11 @@
 }
 
 .strip header em {
-  font:
-    800 10px ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    monospace;
+  font-size: 10.5px;
+  font-weight: 700;
   font-style: normal;
-  letter-spacing: 0.12em;
-  color: #ff8a3d;
+  letter-spacing: 0.22em;
+  color: var(--hud-dim);
   white-space: nowrap;
 }
 
@@ -67,18 +64,18 @@
 }
 
 .segs li {
-  height: 4px;
+  height: 3px;
   border-radius: 2px;
-  background: #3a3d42;
+  background: rgba(213, 218, 225, 0.22);
 }
 
 .segs li[data-done] {
-  background: #c9ced5;
+  background: var(--hud-green);
 }
 
 .segs li[data-on] {
-  background: #e5484d;
-  box-shadow: 0 0 6px rgba(229, 72, 77, 0.6);
+  background: var(--hud-light);
+  box-shadow: 0 0 8px rgba(236, 241, 248, 0.6);
 }
 
 .now {
@@ -131,7 +128,8 @@
 .meter > i > i {
   display: block;
   height: 100%;
-  background: #ff8a3d;
+  background: var(--hud-light);
+  box-shadow: 0 0 6px rgba(236, 241, 248, 0.5);
   transition: width 0.2s;
 }
 
@@ -166,7 +164,7 @@
 }
 
 .ok {
-  color: #34d399;
+  color: var(--hud-green);
   font-weight: 800;
 }
 

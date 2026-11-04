@@ -1,0 +1,23 @@
+/* FieldTicks.tsx: five short bars, lit white where the field is taught (the intro's scene ticks). */
+.ticks {
+  display: flex;
+  gap: 4px;
+}
+.ticks i {
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(213, 218, 225, 0.22);
+  transition:
+    background 0.2s,
+    box-shadow 0.2s;
+}
+.ticks i[data-on] {
+  background: var(--hud-light);
+  box-shadow: 0 0 8px rgba(236, 241, 248, 0.55);
+}
+.ticks i[data-hot] {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.5),
+    0 0 12px rgba(236, 241, 248, 0.9);
+}

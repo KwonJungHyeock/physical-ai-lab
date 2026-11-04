@@ -12,88 +12,24 @@ import { useEffect, useState } from 'react';
 
 import type { CellId } from '@/engine/simulator/cell/cells';
 import { missionsOf } from '@/engine/simulator/cell/missions';
+import { FIELD_KEYS, FIELDS, fieldsLine, LIFE_STOPS, type Field, type LifeStop } from '@/engine/simulator/lifeFields';
 import { LIFE_TUTORIALS } from '@/engine/simulator/lifeTutorials';
 
+import FieldTicks from '../tasks/FieldTicks';
 import css from './roadmap.module.css';
 
 export type RoadmapPick = { kind: 'tutorial' } | { kind: 'site'; cell: CellId };
 
 /**
- * 학습 카테고리: the five fields the stops teach, numbered. The console's HUD keeps colour for
- * meaning (amber warns, red stops, green links), so a field is a place in a row of five ticks, the
- * same row on the plate above and on each stop's picture: a lit tick is a field that stop teaches.
- * 피지컬 AI is '기초' here: 입문 has no camera or AI decision, only the robot reading its sensors and acting.
+ * 학습 분야 (lifeFields.ts): the console's HUD keeps colour for meaning (amber warns, red stops,
+ * green links), so a field is a place in a row of five ticks, the same row on the plate above and on
+ * each stop's picture: a lit tick is a field that stop teaches.
  */
-type Cat = 'control' | 'auto' | 'safety' | 'twin' | 'pai';
-const CATS: Record<Cat, { name: string; short: string; en: string; what: string }> = {
-  control: { name: '로봇 제어', short: '제어', en: 'CONTROL', what: '관절 · 좌표로 움직이고 자세 · 위치를 가르쳐요' },
-  auto: { name: '자동화 순서', short: '자동화', en: 'AUTOMATION', what: '작업 순서를 짜고 장비 신호에 맞춰 움직여요' },
-  safety: { name: '협동로봇 안전', short: '안전', en: 'SAFETY', what: '사람이 있을 때 멈추고 기다리는 규칙을 익혀요' },
-  twin: { name: '디지털 트윈', short: '디지털 트윈', en: 'DIGITAL TWIN', what: '가상 현장에서 확인한 프로그램을 실제 로봇에 그대로 써요' },
-  pai: { name: '피지컬 AI 기초', short: '피지컬 AI', en: 'PHYSICAL AI', what: '로봇이 센서로 상황을 읽고 판단해 몸으로 움직이는 원리' },
-};
-const CAT_KEYS = Object.keys(CATS) as Cat[];
-
-/** The five ticks; `on` lit, `hot` the one pointed at on the plate. */
-function Ticks({ on, hot }: { on: (c: Cat) => boolean; hot: Cat | null }) {
-  return (
-    <span className={css.ticks} aria-hidden="true">
-      {CAT_KEYS.map((c) => (
-        <i key={c} data-on={on(c) || undefined} data-hot={(hot === c && on(c)) || undefined} />
-      ))}
-    </span>
-  );
-}
-
-interface Stop {
-  cats: Cat[];
-  key: string;
-  phase: string;
-  title: string;
-  img: string;
-  does: string;
-  learns: string[];
-  pick?: RoadmapPick;
-  /** Steps in it, for the count and the progress. */
-  steps: string[];
-}
-
-const STOPS: Stop[] = [
-  {
-    key: 'basics',
-    phase: 'BASICS',
-    title: '기초 조작',
-    img: '/brand/life/basics.webp',
-    does: '팔을 움직이고 자세를 저장하고 위치를 가르쳐요',
-    learns: ['관절 · 좌표', '티칭', '공정'],
-    cats: ['control', 'twin'],
-    pick: { kind: 'tutorial' },
-    steps: LIFE_TUTORIALS.map((t) => t.id),
-  },
-  {
-    key: 'cafe',
-    phase: 'SITE 01',
-    title: '로봇 카페',
-    img: '/brand/life/cafe.webp',
-    does: '컵을 받아 얼음 · 샷 · 물을 넣고 손님에게 건네요',
-    learns: ['작업 순서', '센서 신호', '인터록', '안전문'],
-    cats: ['auto', 'safety', 'pai', 'twin'],
-    pick: { kind: 'site', cell: 'cafe' },
-    steps: missionsOf('cafe').map((m) => m.id),
-  },
-  {
-    key: 'draw',
-    phase: 'SITE 02',
-    title: '로봇 캘리그라피',
-    img: '/brand/life/draw.webp',
-    does: '손님의 메시지 카드에 펜으로 글씨를 써 줘요',
-    learns: ['접촉 보정', '좌표계', '직선 이동', '펜 들기'],
-    cats: ['control', 'safety', 'twin'],
-    pick: { kind: 'site', cell: 'draw' },
-    steps: missionsOf('draw').map((m) => m.id),
-  },
-  { key: 'board', phase: 'SITE 03', title: '보드게임 로봇', img: '/brand/life/boardgame.webp', does: '사람과 번갈아 오목을 둬요', learns: ['격자 좌표', '차례 기다리기', '손 감지'], cats: ['pai', 'safety', 'control'], steps: [] },
-];
+const pickOf = (s: LifeStop): RoadmapPick | undefined => (s.opens === 'tutorial' ? { kind: 'tutorial' } : s.opens ? { kind: 'site', cell: s.opens } : undefined);
+/** Steps in a stop, for the count and the progress. */
+const stepsOf = (s: LifeStop): string[] => (s.opens === 'tutorial' ? LIFE_TUTORIALS.map((t) => t.id) : s.opens ? missionsOf(s.opens).map((m) => m.id) : []);
+const STOPS = LIFE_STOPS.map((s) => ({ ...s, pick: pickOf(s), steps: stepsOf(s) }));
+type Stop = (typeof STOPS)[number];
 
 interface Props {
   /** Steps passed (by id) and tutorials finished (by id). */
@@ -110,7 +46,7 @@ export default function Roadmap({ passed, tutorialsDone, onPick, onClose }: Prop
     return () => window.removeEventListener('keydown', esc);
   }, [onClose]);
   // The field pointed at on the plate: its stops stay lit, the others dim.
-  const [hot, setHot] = useState<Cat | null>(null);
+  const [hot, setHot] = useState<Field | null>(null);
   const doneOf = (s: Stop) => s.steps.filter((id) => (s.key === 'basics' ? tutorialsDone[id] : passed[id])).length;
   // The stop to do next: the first one not finished.
   const next = STOPS.findIndex((s) => s.pick && doneOf(s) < s.steps.length);
@@ -138,16 +74,16 @@ export default function Roadmap({ passed, tutorialsDone, onPick, onClose }: Prop
 
       {/* What the whole course covers: one plate, five fields, each a tick in the row the stops carry. */}
       <ol className={css.fields} aria-label="학습 카테고리" onMouseLeave={() => setHot(null)}>
-        {CAT_KEYS.map((k, n) => (
+        {FIELD_KEYS.map((k, n) => (
           <li key={k} data-hot={hot === k || undefined} onMouseEnter={() => setHot(k)}>
             <span className={css.fieldTag}>
-              <Ticks on={(c) => c === k} hot={hot} />
+              <FieldTicks on={(c) => c === k} hot={hot} />
               <em>
-                {String(n + 1).padStart(2, '0')} {CATS[k].en}
+                {String(n + 1).padStart(2, '0')} {FIELDS[k].en}
               </em>
             </span>
-            <b>{CATS[k].name}</b>
-            <small>{CATS[k].what}</small>
+            <b>{FIELDS[k].name}</b>
+            <small>{FIELDS[k].what}</small>
           </li>
         ))}
       </ol>
@@ -157,7 +93,7 @@ export default function Roadmap({ passed, tutorialsDone, onPick, onClose }: Prop
           const d = doneOf(s);
           const complete = s.steps.length > 0 && d >= s.steps.length;
           return (
-            <li key={s.key} className={css.stop} data-next={i === next || undefined} data-done={complete || undefined} data-soon={!s.pick || undefined} data-dim={(hot && !s.cats.includes(hot)) || undefined}>
+            <li key={s.key} className={css.stop} data-next={i === next || undefined} data-done={complete || undefined} data-soon={!s.pick || undefined} data-dim={(hot && !s.fields.includes(hot)) || undefined}>
               <span className={css.node} aria-hidden="true">
                 <i>{complete ? '✓' : String(i + 1).padStart(2, '0')}</i>
               </span>
@@ -169,13 +105,9 @@ export default function Roadmap({ passed, tutorialsDone, onPick, onClose }: Prop
                   <span className={css.caption}>
                     <span>
                       <em>{s.phase}</em>
-                      <Ticks on={(c) => s.cats.includes(c)} hot={hot} />
+                      <FieldTicks className={css.capTicks} on={(c) => s.fields.includes(c)} hot={hot} />
                     </span>
-                    <small>
-                      {CAT_KEYS.filter((c) => s.cats.includes(c))
-                        .map((c) => CATS[c].short)
-                        .join(' · ')}
-                    </small>
+                    <small>{fieldsLine(s)}</small>
                   </span>
                   {i === next && <span className={css.flag}>여기부터</span>}
                   {!s.pick && (

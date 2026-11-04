@@ -15,9 +15,11 @@ import { CELL_BY_ID, cellLayout, gridPlace, type CellId } from '@/engine/simulat
 import type { CellAlert } from '@/engine/simulator/cell/faults';
 import { setOut } from '@/engine/simulator/cell/line';
 import { missionById, missionsOf } from '@/engine/simulator/cell/missions';
+import { LIFE_STOPS } from '@/engine/simulator/lifeFields';
 import { cellChecks } from '@/engine/simulator/cell/run';
 import type { WorldState } from '@/engine/simulator/sim';
 
+import FieldTicks from '../tasks/FieldTicks';
 import css from './cellHud.module.css';
 
 /** The ladder's bands: robot only, the line on 자동 운전, the signals by hand. */
@@ -121,6 +123,8 @@ export default function CellHud(p: CellHudProps) {
   // 입문 트랙: the step tabs only (the goal, the prediction, the result and the idea are where they are
   // looked at — the notice board, the run button, the scene; StepGuide.tsx); the signal lamps folded.
   const compact = !!p.guides;
+  // The place's fields (the 학습 로드맵's ticks), on the card's header.
+  const stop = compact ? LIFE_STOPS.find((s) => s.opens === p.cell) : undefined;
   const [lampsOpen, setLampsOpen] = useState(false);
   // A cell whose ladder is still to come: its steps stay shut, its equipment is run by hand.
   const built = CELL_BY_ID[p.cell].built;
@@ -145,6 +149,7 @@ export default function CellHud(p: CellHudProps) {
           <header>
             <em>STEP</em>
             <b>{CELL_BY_ID[p.cell].name}</b>
+            {stop && <FieldTicks className={css.stepTicks} on={(f) => stop.fields.includes(f)} />}
             <span>
               {steps.filter((s) => p.passed[s.id]).length}/{steps.length}
             </span>

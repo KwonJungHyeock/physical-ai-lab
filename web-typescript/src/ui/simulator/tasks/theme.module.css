@@ -1,195 +1,287 @@
-/* 테마학습 (ThemePanel.tsx): the places and the tutorials, on the dark side panel. */
+/* 테마학습 (ThemePanel.tsx), in the 학습 로드맵's dress (roadmap.module.css): the places as pictures
+   with the caption in their shade and the five field ticks, the four steps as ticks; the tutorials
+   cut into one brushed plate by grooves. White is the accent; green marks what is done. */
 .theme {
   padding: 4px 12px 12px;
   display: grid;
-  gap: 18px;
-  color: #eef2f7;
+  gap: 14px;
+  color: var(--hud-tx);
+  word-break: keep-all;
 }
 
 .theme h4 {
-  margin: 0 0 9px;
-  font-size: 14px;
+  margin: 0 0 8px;
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: 9px;
 }
-
 .theme h4 em {
+  font-size: 10.5px;
+  font-weight: 700;
   font-style: normal;
-  font-weight: 500;
+  letter-spacing: 0.22em;
+  color: var(--hud-dim);
+}
+.theme h4 b {
+  font-size: 14px;
+  font-weight: 800;
+}
+.theme h4 small {
+  margin-left: auto;
   font-size: 12px;
-  color: #9aa4b4;
+  color: var(--hud-dim);
 }
 
 .sites {
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
-
 .site {
   display: grid;
-  grid-template-columns: 34px 1fr auto;
-  grid-template-areas:
-    'l n e'
-    'l f f'
-    'l b b';
-  align-items: center;
-  gap: 2px 10px;
+  padding: 0;
   text-align: left;
-  padding: 11px 12px;
   border-radius: 12px;
-  border: 1px solid #2b3240;
-  background: #1f2530;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(22, 26, 31, 0.92);
   color: inherit;
   font: inherit;
   cursor: pointer;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
-
 .site:hover:not(:disabled):not([data-soon]) {
-  border-color: #3f6f5c;
+  border-color: rgba(255, 255, 255, 0.32);
 }
-
 .site[aria-pressed='true'] {
-  border-color: #0f6b4c;
-  background: #1d2f28;
-  box-shadow: 0 0 0 1px #0f6b4c inset;
+  border-color: rgba(255, 255, 255, 0.45);
+  box-shadow: var(--hud-key-on);
 }
-
 .site:disabled {
   cursor: default;
   opacity: 0.6;
 }
-
-.site i {
-  grid-area: l;
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
-  display: grid;
-  place-items: center;
-  font-style: normal;
-  font-weight: 800;
-  background: #0f6b4c;
-  color: #fff;
-}
-
-.site b {
-  grid-area: n;
-  font-size: 14px;
-}
-
-.site small {
-  grid-area: f;
-  color: #9aa4b4;
-  font-size: 12px;
-}
-
-.site em {
-  grid-area: e;
-  font-style: normal;
-  font-size: 12px;
-  font-weight: 700;
-  color: #9fd8bf;
-}
-
-.bar {
-  grid-area: b;
-  height: 4px;
-  border-radius: 2px;
-  background: #2b3240;
-  overflow: hidden;
-  margin-top: 5px;
-}
-
-.bar span {
-  display: block;
-  height: 100%;
-  background: #22c55e;
-}
-
 .site[data-soon] {
   cursor: default;
-  border-style: dashed;
+  opacity: 0.62;
+}
+.site[data-soon] .pic {
+  aspect-ratio: 16 / 3.6;
+}
+
+.pic {
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 5;
+  overflow: hidden;
+}
+.pic img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.site:hover:not(:disabled):not([data-soon]) .pic img {
+  transform: scale(1.04);
+}
+.pic::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(10, 12, 15, 0.5), rgba(10, 12, 15, 0) 34%),
+    linear-gradient(180deg, rgba(10, 12, 15, 0) 30%, rgba(10, 12, 15, 0.88));
+}
+
+/* The caption in the picture's shade (the roadmap's): the tag and the ticks, a hairline, the fields. */
+.caption {
+  position: absolute;
+  z-index: 1;
+  left: 12px;
+  right: 12px;
+  bottom: 9px;
+  display: grid;
+  gap: 5px;
+  color: var(--hud-light);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+.caption > span {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.caption em {
+  font-size: 10.5px;
+  font-weight: 700;
+  font-style: normal;
+  letter-spacing: 0.22em;
+}
+.capTicks {
+  margin-left: auto;
+}
+.caption small {
+  padding-top: 5px;
+  border-top: 1px solid rgba(236, 241, 248, 0.38);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--hud-sub);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The place's state, top right in the picture's top shade: a lamp and a tracked word. */
+.flag {
+  position: absolute;
+  z-index: 1;
+  top: 10px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: var(--hud-light);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+.flag::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--hud-light);
+  box-shadow: 0 0 10px rgba(236, 241, 248, 0.9);
+}
+.flag[data-soon] {
+  color: #dfe4ea;
+}
+.flag[data-soon]::before {
   background: transparent;
+  box-shadow: inset 0 0 0 1.5px #dfe4ea;
 }
 
-.site[data-soon] i {
-  background: #343b48;
-  color: #b8c0cc;
+.body {
+  display: grid;
+  gap: 3px;
+  padding: 8px 12px 10px;
+}
+.body b {
+  font-size: 15px;
+  font-weight: 800;
+}
+.body > small {
+  font-size: 12px;
+  color: var(--hud-sub);
+}
+.prog {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+.steps {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+.steps i {
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(213, 218, 225, 0.18);
+}
+.steps i[data-done] {
+  background: var(--hud-green);
+  box-shadow: 0 0 6px rgba(91, 209, 122, 0.5);
+}
+.prog em {
+  font:
+    700 11.5px ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  font-style: normal;
+  color: var(--hud-dim);
+  white-space: nowrap;
 }
 
-.site em.soon {
-  color: #fb923c;
-}
-
+/* The tutorials: one brushed plate, a groove between rows. */
 .tuts {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: grid;
-  gap: 6px;
+  border-radius: 12px;
+  background: var(--hud-plate);
+  box-shadow: var(--hud-plate-shadow);
+  overflow: hidden;
 }
-
+.tuts li + li {
+  box-shadow:
+    inset 0 1px 0 rgba(0, 0, 0, 0.5),
+    inset 0 2px 0 rgba(255, 255, 255, 0.06);
+}
 .tuts button {
   width: 100%;
   display: grid;
-  grid-template-columns: 26px 1fr auto;
+  grid-template-columns: 28px 1fr auto;
   align-items: center;
   gap: 10px;
   text-align: left;
-  padding: 9px 11px;
-  border-radius: 10px;
-  border: 1px solid #2b3240;
-  background: #1f2530;
+  padding: 8px 13px;
+  border: 0;
+  background: transparent;
   color: inherit;
   font: inherit;
   cursor: pointer;
+  transition: background 0.2s;
 }
-
+.tuts button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+}
 .tuts button[aria-pressed='true'] {
-  border-color: #2f6fed;
-  background: #1c2540;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 2px 0 0 var(--hud-light);
 }
-
 .tuts button:disabled {
   cursor: default;
   opacity: 0.6;
 }
-
 .tuts i {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
+  font:
+    800 12px ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
   font-style: normal;
-  font-weight: 800;
-  font-size: 12.5px;
-  background: #2b3240;
-  color: #dfe5ee;
+  letter-spacing: 0.06em;
+  color: var(--hud-dim);
 }
-
+.tuts button[aria-pressed='true'] i {
+  color: var(--hud-light);
+}
 .tuts i[data-done] {
-  background: #0f6b4c;
-  color: #fff;
+  color: var(--hud-green);
 }
-
 .tuts span {
   display: grid;
-  gap: 1px;
+  gap: 2px;
 }
-
 .tuts b {
   font-size: 13.5px;
+  font-weight: 800;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.55);
 }
-
 .tuts small {
   font-size: 12px;
-  color: #9aa4b4;
+  color: var(--hud-sub);
 }
-
 .tuts em {
   font-style: normal;
   font-size: 11.5px;
-  color: #9aa4b4;
+  letter-spacing: 0.04em;
+  color: var(--hud-dim);
 }
