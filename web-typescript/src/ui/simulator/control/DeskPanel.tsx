@@ -125,6 +125,8 @@ interface Props {
   /** The 실습 셀 open (it replaces the desk's scene), or null. */
   cell?: CellId | null;
   onCell?: (id: CellId) => void;
+  /** The cells this page shows (a 트랙's own); all when left out. */
+  cells?: readonly CellId[];
 }
 
 export type Tab = 'scene' | 'objects';
@@ -205,7 +207,7 @@ export default function DeskPanel(p: Props) {
                 <em>단계마다 조건이 하나씩</em>
               </h4>
               <div className={css.cells}>
-                {CELLS.map((c) => (
+                {CELLS.filter((c) => !p.cells || p.cells.includes(c.id)).map((c) => (
                   <button key={c.id} type="button" className={css.cellCard} aria-pressed={p.cell === c.id} disabled={p.busy} onClick={() => p.onCell?.(c.id)}>
                     <i>{c.letter}</i>
                     <b>{c.name}</b>

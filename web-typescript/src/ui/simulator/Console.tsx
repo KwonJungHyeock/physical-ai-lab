@@ -120,6 +120,7 @@ import PartsPanel from './control/PartsPanel';
 import ProcessPanel from './editors/ProcessPanel';
 import { FullBar, LangSeg, Snippets, SlotCode, TutorialCard } from './editors/Tutorial';
 import RecipeCards from './editors/RecipeCards';
+import DrawCards from './editors/DrawCards';
 import { StartGuide, type StartStep } from './stage/StartGuide';
 import HandPanel, { type HandState } from './control/HandPanel';
 import { HandMapper, demoProcess, simplifyDemo, type DemoPoint, type DemoSample, type HandPose } from '@/engine/vision/hand';
@@ -879,8 +880,9 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       setLevel('basic');
       setTheme('arm');
       setTab('basic');
-      setEffector('adaptive');
-      world.current = createCellWorld(c.cell, c.mission, 'adaptive');
+      const tool = CELL_BY_ID[qc].effector ?? 'adaptive';
+      setEffector(tool);
+      world.current = createCellWorld(c.cell, c.mission, tool);
       setCode((c.mission && missionById(c.mission)?.solution) || 'from edu import robot, cell\n\nrobot.home()\n');
     }
     setRestored(true);
@@ -2254,7 +2256,13 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     if (theme === 'kit') setTheme('arm');
     let e = effector;
     const k = EFFECTOR_BY_ID[e].kind;
-    if (k !== 'grip' && k !== 'suction') {
+    const tool = CELL_BY_ID[cell].effector;
+    if (tool && tool !== e) {
+      e = tool;
+      setEffector(e);
+      setCameraFlange(false);
+      addLog('info', `이 셀은 ${EFFECTOR_BY_ID[e].name}로 일해서 도구를 바꿔 달았어요.`);
+    } else if (!tool && k !== 'grip' && k !== 'suction') {
       e = 'adaptive';
       setEffector(e);
       setCameraFlange(false);
@@ -3725,8 +3733,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     onClick: () => toggleRail(id),
   });
   // 제어: moving the arm by hand. 작업: programs that run (a process of points, blocks, Python, ROS 2). 보기: windows.
-  // 입문 트랙's café: the program is 작업 순서 카드, not code (RecipeCards).
-  const recipeOn = !!track && cellAt?.cell === 'cafe';
+  // 입문 트랙's café and calligraphy booth: the program is 작업 순서 카드, not code (RecipeCards · DrawCards).
+  const recipeOn = !!track && (cellAt?.cell === 'cafe' || cellAt?.cell === 'draw');
   const barGroups = [
     { name: '제어', items: [work('jog', '제어', 'move', '제어: 관절 · 좌표로 움직이기 (조그)', true), { ...work('parts', '도구', 'tool', '도구 · 액세서리', true), hintFor: '끼우기, 도구' }, { ...work('pose', '자세', 'home', '자세 저장 · 불러오기', true), hintFor: '기본 자세, 일자로 펴기, 카메라 자세, 이 자세로, 자세' }] },
     {
@@ -4633,6 +4641,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                         deskScene(id);
                       }}
                       cell={cellAt?.cell ?? null}
+                      cells={track?.cells}
                       onCell={(id) => {
                         setRailOpen(null);
                         enterCell(id);
@@ -4948,7 +4957,11 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                     )}
                     {recipeOn ? (
                       <div className={css.pane}>
-                        <RecipeCards key={cellAt!.mission ?? 'free'} mission={cellAt!.mission} busy={busy} runningLine={runningLine} onCode={onRecipeCode} />
+                        {cellAt!.cell === 'draw' ? (
+                          <DrawCards key={cellAt!.mission ?? 'free'} mission={cellAt!.mission} busy={busy} runningLine={runningLine} onCode={onRecipeCode} />
+                        ) : (
+                          <RecipeCards key={cellAt!.mission ?? 'free'} mission={cellAt!.mission} busy={busy} runningLine={runningLine} onCode={onRecipeCode} />
+                        )}
                       </div>
                     ) : cellAt && cellTermOn ? (
                       <div className={css.pane}>

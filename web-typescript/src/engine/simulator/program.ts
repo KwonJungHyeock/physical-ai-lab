@@ -44,7 +44,8 @@ export type Step =
   /** `sec`: arrive in this many seconds (the speed is chosen for it); null = at the set speed. */
   | { type: 'joint'; j: number; deg: number; sec?: number | null; line: number }
   | { type: 'move'; joints: number[]; speed: number | null; sec?: number | null; line: number }
-  | { type: 'moveTo'; x: number; y: number; z: number; line: number }
+  /** `linear` false: one joint move (the tool tip curves between the points, as MoveJ); left out = the usual move. */
+  | { type: 'moveTo'; x: number; y: number; z: number; linear?: false; line: number }
   | { type: 'above'; target: Target; line: number }
   | { type: 'down'; target: Target; line: number }
   | { type: 'find'; variable: string; camera: CameraId; color: ColorName; line: number }
@@ -158,7 +159,7 @@ const RE = {
   pose: new RegExp(String.raw`^robot\.go_pose\(\s*${STR}\s*\)$`),
   joint: new RegExp(String.raw`^robot\.move_joint\(\s*(\d+)\s*,\s*(${NUM})\s*(?:,\s*time\s*=\s*(${NUM}))?\s*\)$`),
   move: new RegExp(String.raw`^robot\.move_joints\(\s*\[([^\]]*)\]\s*(?:,\s*(speed|time)\s*=\s*(${NUM}))?\s*\)$`),
-  moveTo: new RegExp(String.raw`^robot\.move_to\(\s*(${NUM})\s*,\s*(${NUM})\s*,\s*(${NUM})\s*\)$`),
+  moveTo: new RegExp(String.raw`^robot\.move_to\(\s*(${NUM})\s*,\s*(${NUM})\s*,\s*(${NUM})\s*(?:,\s*linear\s*=\s*(False)\s*)?\)$`),
   aboveStr: new RegExp(String.raw`^robot\.move_above\(\s*${STR}\s*\)$`),
   aboveVar: new RegExp(String.raw`^robot\.move_above\(\s*${IDENT}\s*\)$`),
   downStr: new RegExp(String.raw`^robot\.move_down\(\s*${STR}\s*\)$`),
@@ -242,7 +243,7 @@ function parseLine(body: string, line: number, errors: Problem[]): Step | null {
   if ((m = body.match(RE.speed))) return { type: 'speed', value: Number(m[1]), line };
   if ((m = body.match(RE.pose))) return { type: 'pose', name: m[1], line };
   if ((m = body.match(RE.joint))) return { type: 'joint', j: Number(m[1]), deg: Number(m[2]), sec: m[3] !== undefined ? Number(m[3]) : null, line };
-  if ((m = body.match(RE.moveTo))) return { type: 'moveTo', x: Number(m[1]), y: Number(m[2]), z: Number(m[3]), line };
+  if ((m = body.match(RE.moveTo))) return { type: 'moveTo', x: Number(m[1]), y: Number(m[2]), z: Number(m[3]), ...(m[4] ? { linear: false as const } : {}), line };
   if (RE.sort.test(body)) return { type: 'sort', line };
   if ((m = body.match(RE.cellPick))) return { type: 'cellPick', place: m[1], line };
   if ((m = body.match(RE.cellPlace))) {
@@ -440,7 +441,7 @@ function serializeOne(s: Step): string {
     case 'move':
       return `robot.move_joints([${s.joints.slice(0, activeArm().dof).join(', ')}]${s.sec ? `, time=${s.sec}` : s.speed ? `, speed=${s.speed}` : ''})`;
     case 'moveTo':
-      return `robot.move_to(${s.x}, ${s.y}, ${s.z})`;
+      return `robot.move_to(${s.x}, ${s.y}, ${s.z}${s.linear === false ? ', linear=False' : ''})`;
     case 'above':
       return `robot.move_above(${targetCode(s.target)})`;
     case 'down':

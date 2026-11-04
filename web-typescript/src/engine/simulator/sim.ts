@@ -347,7 +347,7 @@ async function runStep(s: Step, rt: Runtime): Promise<void> {
     case 'break':
       throw new BreakLoop();
     case 'moveTo':
-      return moveTool(rt, { x: s.x, y: s.y, z: s.z });
+      return s.linear === false ? jointMoveTool(rt, { x: s.x, y: s.y, z: s.z }) : moveTool(rt, { x: s.x, y: s.y, z: s.z });
     // 한 번에 하는 동작: run as the plain steps they stand for (on the same line).
     case 'carry':
     case 'sort':
@@ -1082,6 +1082,24 @@ async function moveJoints(rt: Runtime, target: readonly number[], speed?: number
 function noteArrival(rt: Runtime): void {
   const p = tcpPositionMm(rt.chain, rt.world.angles, tcp(rt));
   rt.world.stats.arrivals.push({ x: p.x, y: p.y, z: p.z });
+}
+
+/**
+ * move_to(…, linear=False): the tool held as it is now (down), one joint move to the point — every
+ * joint turns at once, so the tip does not go in a straight line (a pen down draws a curve, and
+ * may leave the paper or press into it on the way).
+ */
+async function jointMoveTool(rt: Runtime, to: PointMm): Promise<void> {
+  const len = tcp(rt);
+  const w = rt.world;
+  const now = currentOrientation(rt.chain, w.angles, len);
+  let end = now ? solveToolPose(rt.chain, to, w.angles, { tcpMm: len, orientation: now }) : null;
+  if (!end?.converged) end = solveToolPose(rt.chain, to, w.angles, { tcpMm: len });
+  if (!end.converged) throw new RunError(`(${fmt(to)})에는 도구를 아래로 향한 채 닿을 수 없어요.`, '로봇에 더 가까운 곳이나 더 높은 곳으로 바꿔 주세요.');
+  const speed = effectiveSpeed(rt);
+  await play(rt, armTrajectory(w.angles, end.anglesDeg, speed));
+  rt.record?.({ type: 'angles', angles: end.anglesDeg.slice(), speed, line: rt.line });
+  noteArrival(rt);
 }
 
 /**

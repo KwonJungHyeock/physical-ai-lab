@@ -20,6 +20,7 @@ import { guardBoxes, newLine, stepLine, type LineState } from './line';
 import { freeSetup, judge, missionById, type CellEvent, type CellMission } from './missions';
 import { newVision, type VisionState } from './vision';
 import { newCafe, stepCafe, type CafeState } from './cafe';
+import { newDraw, stepDraw, type DrawState } from './draw';
 
 /** A machined workpiece's colour (D): bright turned steel. */
 export const MACHINED = '#e3e8ee';
@@ -48,6 +49,8 @@ export interface CellRun {
   vision: VisionState;
   /** F: the café's stations, cups and customers (cell/cafe.ts). */
   cafe?: CafeState;
+  /** G: the calligraphy booth's cards and customers (cell/draw.ts). */
+  draw?: DrawState;
 }
 
 /** The cell's start: its run state and the parts it begins with. */
@@ -66,6 +69,7 @@ export function newCellRun(id: CellId, missionId: string | null): { run: CellRun
   setup.line?.(line);
   const run: CellRun = { id, layout, mission: m?.id ?? null, line, health: newHealth(), alerts: [], fresh: [], halt: null, events: [], next: {}, startT: null, endT: null, lastTip: null, vision: newVision() };
   if (layout.line.cafe) run.cafe = newCafe(layout.line.cafe, setup.orders ?? 1);
+  if (layout.line.draw) run.draw = newDraw(setup.orders ?? 1, setup.card);
   return { run, parts: setup.parts(layout) };
 }
 
@@ -128,6 +132,13 @@ export function stepCell(w: WorldState, phys: PhysicsWorld, dt: number, chain: r
     }
     if (cs.spawned.length || cs.taken.length) w.version += 1;
     cs.alerts.forEach((a) => raise(run, a));
+  }
+  // G: the customer's card, hand and the 완성 lamp; a card taken goes with its ink.
+  const dd = run.layout.line.draw;
+  if (dd && run.draw) {
+    const ds = stepDraw(dd, run.line, run.draw, tcpPositionMm(chain, angles, tcpMm), w.trail);
+    if (ds.took) w.trail = [];
+    ds.alerts.forEach((a) => raise(run, a));
   }
   // The door moves: the arm keeps off it where it is now.
   if (run.layout.line.actuators?.some((a) => a.guard)) w.fixed = cellFixed(run);
@@ -194,6 +205,6 @@ export function cellChecks(w: WorldState): { mission: CellMission; items: Return
   if (!run || !m) return null;
   const end = run.endT ?? run.line.t;
   // A part still in the tool is not placed anywhere.
-  const items = judge(m, { parts: w.objects.filter((o) => o.id !== w.carry?.id), l: run.layout, line: run.line, alerts: run.alerts, events: run.events, elapsed: run.startT === null ? 0 : end - run.startT, vision: run.vision, cafe: run.cafe });
+  const items = judge(m, { parts: w.objects.filter((o) => o.id !== w.carry?.id), l: run.layout, line: run.line, alerts: run.alerts, events: run.events, elapsed: run.startT === null ? 0 : end - run.startT, vision: run.vision, cafe: run.cafe, draw: run.draw, trail: w.trail });
   return { mission: m, items };
 }

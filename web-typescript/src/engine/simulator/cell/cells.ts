@@ -15,6 +15,8 @@
 import type { Box } from '../../physics/collide';
 import { makeObject, type DeskObject, type FixedBox } from '../desk';
 import type { CafeDef } from './cafe';
+import type { DrawDef } from './draw';
+import type { EffectorId } from '../effectors';
 
 /** Shop size per simulator size. */
 export const CELL_SCALE = 5;
@@ -26,16 +28,18 @@ export const toShop = (mm: number) => Math.round(mm * CELL_SCALE);
 /** Shop mm as simulator mm. */
 export const fromShop = (mm: number) => mm / CELL_SCALE;
 
-export type CellId = 'feed' | 'vision' | 'inspect' | 'tend' | 'assembly' | 'cafe';
+export type CellId = 'feed' | 'vision' | 'inspect' | 'tend' | 'assembly' | 'cafe' | 'draw';
 
 export interface CellInfo {
   id: CellId;
-  letter: 'A' | 'B' | 'C' | 'D' | 'E' | 'F';
+  letter: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G';
   name: string;
   /** One line: what happens in the cell. */
   note: string;
   /** Its ladder's missions are built (the others: the cell to look round and run by hand, the steps 준비 중). */
   built: boolean;
+  /** The tool the cell is worked with (default: the adaptive gripper). */
+  effector?: EffectorId;
 }
 
 export const CELLS: readonly CellInfo[] = [
@@ -80,6 +84,14 @@ export const CELLS: readonly CellInfo[] = [
     name: '로봇 카페',
     note: '컵 디스펜서 · 제빙기 · 커피 머신 · 정수기 · 픽업대',
     built: true,
+  },
+  {
+    id: 'draw',
+    letter: 'G',
+    name: '로봇 캘리그라피',
+    note: '펜 홀더 · 메시지 카드 · 커팅 매트 · 완성 램프',
+    built: true,
+    effector: 'pen',
   },
 ];
 
@@ -237,6 +249,8 @@ export interface LineDef {
   insert?: InsertDef;
   /** F: the café's cup dispenser, stations and pickup (cell/cafe.ts). */
   cafe?: CafeDef;
+  /** G: the calligraphy booth's card, customer and lamp (cell/draw.ts). */
+  draw?: DrawDef;
 }
 
 /**
@@ -971,6 +985,28 @@ function cafeLayout(): CellLayout {
   };
 }
 
+/* --- G: 로봇 캘리그라피 ------------------------------------------------------------- */
+
+/**
+ * G: an event booth's calligraphy robot (docs/reports/education/44-track-life-robot-calligraphy.md).
+ * Unlike the other cells, at full size: the arm itself with a pen holder on a table (z 0 = the
+ * table top, where the card lies), the customer across the table at −y. Nothing on the table is in
+ * the arm's way; the pen stand and the sample board stand behind the mat (scene only).
+ */
+function drawLayout(): CellLayout {
+  return {
+    id: 'draw',
+    fixed: [box('펜 꽂이', [40, 120, 0], [70, 150, 60], 4)],
+    solids: [PED],
+    places: {},
+    grids: {},
+    line: { sensors: [], draw: { card: '카드 있음', hand: '손 감지', lamp: '완성 램프', margin: 10 } },
+    inputs: ['카드 있음', '손 감지'],
+    outputs: ['완성 램프'],
+    keys: { '완성 램프': ['켜기', '끄기'] },
+  };
+}
+
 const LAYOUTS: Record<CellId, () => CellLayout> = {
   feed: feedLayout,
   vision: visionLayout,
@@ -978,6 +1014,7 @@ const LAYOUTS: Record<CellId, () => CellLayout> = {
   tend: tendLayout,
   assembly: assemblyLayout,
   cafe: cafeLayout,
+  draw: drawLayout,
 };
 
 const cache = new Map<CellId, CellLayout>();

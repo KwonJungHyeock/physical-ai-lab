@@ -715,7 +715,8 @@ function World({
       )}
       <Blocks world={world} />
       {effector === 'cylinder' && <PushButton world={world} />}
-      <PenTrail world={world} />
+      {/* The calligraphy booth draws its own ink (cell/cellG.tsx). */}
+      {cell !== 'draw' && <PenTrail world={world} />}
       {mountMm > 0 && <MountBase mm={mountMm} />}
       {theme === 'arm' && !cell && <primitive object={dressing} />}
       {/* On a base the arm and its base axes stand mountMm above the table; the table, kit and blocks stay put. */}

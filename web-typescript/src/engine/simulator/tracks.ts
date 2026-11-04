@@ -8,6 +8,7 @@
  */
 
 import type { Level } from './practices';
+import type { CellId } from './cell/cells';
 
 export type TrackId = 'life' | 'food' | 'factory';
 
@@ -27,6 +28,8 @@ export interface Track {
   screens: readonly string[];
   /** The 현장 it opens on: a 실습 셀 and its first step. */
   start?: { cell: string; mission: string };
+  /** The 현장 (실습 셀) it sells, in the 환경 menu; all when left out. */
+  cells?: readonly CellId[];
 }
 
 export const TRACKS: Record<TrackId, Track> = {
@@ -39,6 +42,7 @@ export const TRACKS: Record<TrackId, Track> = {
     menu: ['jog', 'parts', 'pose', 'process', 'code', 'env', 'objects', 'monitor'],
     screens: ['sim'],
     start: { cell: 'cafe', mission: 'F1' },
+    cells: ['cafe', 'draw'],
   },
   food: {
     id: 'food',

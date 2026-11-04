@@ -193,3 +193,37 @@
   font-weight: 600;
   cursor: pointer;
 }
+
+/* DrawCards: number boxes and two switches on one card. */
+.nums,
+.switches {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+}
+
+.nums small {
+  color: #9aa4b4;
+  font-size: 12px;
+}
+
+.num {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #cfd6e2;
+}
+
+.num input {
+  width: 62px;
+  background: #11151c;
+  color: #fff;
+  border: 1px solid #3b4454;
+  border-radius: 6px;
+  font: inherit;
+  font-weight: 700;
+  padding: 2px 6px;
+}

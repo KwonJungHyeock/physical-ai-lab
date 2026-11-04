@@ -21,6 +21,7 @@ import { InspectCell } from './cell/cellC';
 import { TendCell } from './cell/cellD';
 import { AssemblyCell } from './cell/cellE';
 import { CafeCell } from './cell/cellF';
+import { DrawCell } from './cell/cellG';
 import { Backdrop, Cabinet, Conveyor, Fence, Floor, MarkedPlate, Pedestal, StackGlow, Tagged, m } from './cell/kit';
 
 type Tags = Record<string, { at: [number, number, number]; note: string }>;
@@ -33,6 +34,7 @@ const CABINET: Record<CellId, { x: number; y: number }> = {
   tend: { x: -80, y: 170 },
   assembly: { x: -80, y: -300 },
   cafe: { x: -190, y: 210 },
+  draw: { x: -190, y: 210 },
 };
 const cabinetTag = (cell: CellId): Tags => ({ 제어함: { at: [CABINET[cell].x, CABINET[cell].y, 130], note: '경광등 · 신호 램프 · 비상 정지' } });
 
@@ -95,6 +97,13 @@ const TAGS: Record<CellId, Tags> = {
     셀프바: { at: [372, -150, 80], note: '뚜껑 · 빨대 · 냅킨' },
     ...cabinetTag('cafe'),
   },
+  draw: {
+    '커팅 매트': { at: [200, -90, 30], note: '눈금 = 로봇 좌표 x · y (mm) · 노란 표시가 늘 놓는 자리' },
+    '메시지 카드': { at: [210, 0, 40], note: '120 × 80 mm · 왼쪽 아래 모서리가 기준점 · 카드 있음 센서' },
+    '완성 램프': { at: [312, -140, 80], note: '켜지면 손님이 카드를 가져가요 · 손 감지' },
+    '펜 꽂이': { at: [55, 135, 150], note: '여분 펜 · 펜 홀더에 끼워 써요' },
+    '샘플 보드': { at: [-110, 150, 230], note: '로봇이 쓸 수 있는 글귀' },
+  },
 };
 
 /** Each cell's painted work area on the floor, mm. */
@@ -105,6 +114,7 @@ const ZONE: Record<CellId, { x0: number; x1: number; y0: number; y1: number }> =
   tend: { x0: -170, x1: 280, y0: -400, y1: 230 },
   assembly: { x0: -170, x1: 310, y0: -340, y1: 350 },
   cafe: { x0: -250, x1: 360, y0: -300, y1: 300 },
+  draw: { x0: -250, x1: 360, y0: -300, y1: 300 },
 };
 
 /**
@@ -120,6 +130,7 @@ export const CELL_VIEW: Record<CellId, { min: readonly [number, number, number];
   tend: { min: [-80, -370, -30], max: [240, 180, 210], home: [1, 0.95, -0.55] },
   assembly: { min: [-60, -320, -30], max: [280, 340, 90], home: [1, 0.95, -0.55] },
   cafe: { min: [-80, -330, -20], max: [400, 260, 200], home: [0.3, 1.3, 0.95] },
+  draw: { min: [-60, -150, -10], max: [330, 170, 230], home: [0.35, 1.25, 1] },
 };
 
 function FeedCell({ world, onHover }: { world: RefObject<WorldState | null>; onHover: (n: string | null) => void }) {
@@ -146,6 +157,7 @@ const EQUIPMENT: Record<CellId, (p: { world: RefObject<WorldState | null>; onHov
   tend: TendCell,
   assembly: AssemblyCell,
   cafe: CafeCell,
+  draw: DrawCell,
 };
 
 export default function CellScene({ world, cell, tags = [] }: { world: RefObject<WorldState | null>; cell: CellId; tags?: readonly string[] }) {
@@ -153,14 +165,16 @@ export default function CellScene({ world, cell, tags = [] }: { world: RefObject
   const T = TAGS[cell];
   const shown = [...new Set([...tags, ...(hover ? [hover] : [])])].filter((n) => T[n]);
   const Equipment = EQUIPMENT[cell];
+  // The 생활 로봇 places (a café, an event booth) have their own floor and no cell fence or cabinet.
+  const shop = cell === 'cafe' || cell === 'draw';
   return (
     <group>
       <Backdrop />
-      {cell !== 'cafe' && <Floor box={ZONE[cell]} />}
-      {cell !== 'cafe' && <Fence />}
-      {cell !== 'cafe' && <Pedestal />}
+      {!shop && <Floor box={ZONE[cell]} />}
+      {!shop && <Fence />}
+      {!shop && <Pedestal />}
       <Equipment world={world} onHover={setHover} />
-      {cell !== 'cafe' && (
+      {!shop && (
         <>
           <Tagged name="제어함" onHover={setHover}>
             <Cabinet world={world} cell={cell} at={CABINET[cell]} />

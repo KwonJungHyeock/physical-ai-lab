@@ -15,6 +15,8 @@ import { REJECT, outlineOf, type Outline, type VisionState } from './vision';
 import type { CellAlert } from './faults';
 import type { LineState } from './line';
 import { drinkVerdict, type CafeState } from './cafe';
+import { G3_CARD, LIFT_MM, cardsOf, inkVerdict, readInk, type DrawState, type Phrase, type Strokes } from './draw';
+import { G_ANSWER, drawCode, type DrawRecipe } from './drawRecipe';
 
 export interface MissionSetup {
   /** The parts the cell starts with. */
@@ -29,8 +31,10 @@ export interface MissionSetup {
   queue?(l: CellLayout): DeskObject[];
   /** The equipment's state at the start (D4: the machine already at work). */
   line?(s: LineState): void;
-  /** F: drinks ordered (the café's queue). */
+  /** F: drinks ordered (the café's queue); G: cards to write. */
   orders?: number;
+  /** G: where the customers put their cards down (the corner; default CARD_HOME). */
+  card?: { x: number; y: number };
 }
 
 /** What a check needs: the parts where they are, the run's record. */
@@ -46,6 +50,9 @@ export interface Judge {
   vision?: VisionState;
   /** F: the café (cups served, spills, the door). */
   cafe?: CafeState;
+  /** G: the booth's cards, and the pen's ink on the one on the mat now. */
+  draw?: DrawState;
+  trail?: Strokes;
 }
 
 export type CellEvent =
@@ -1191,7 +1198,155 @@ const F: CellMission[] = [
   },
 ];
 
-export const MISSIONS: readonly CellMission[] = [...A, ...B, ...C, ...D, ...E, ...F];
+/* --- G: 로봇 캘리그라피 ------------------------------------------------------------- */
+// Steps and their grounds: docs/reports/education/44-track-life-robot-calligraphy.md §5.
+
+/** The cards so far with their ink (handed over first, then the one on the mat). */
+const cardsNow = (j: Judge) => (j.draw ? cardsOf(j.draw, j.trail ?? []) : []);
+
+/** The card on the mat (or the last one written) reads `phrase` well. */
+function written(phrase: Phrase, label: string): Check {
+  return {
+    label,
+    judge: (j) => {
+      const c = cardsNow(j).at(-1);
+      if (!c) return { ok: false, detail: '카드가 없어요' };
+      const v = inkVerdict(readInk(c.ink, phrase, c.corner));
+      return { ok: v.ok, detail: v.why };
+    },
+  };
+}
+
+/** The writing stands in the card's middle (within 3 mm). */
+const centred: Check = {
+  label: '글씨가 카드 가운데에 (3 mm 안)',
+  judge: (j) => {
+    const c = cardsNow(j).at(-1);
+    if (!c) return { ok: false, detail: '카드가 없어요' };
+    const r = readInk(c.ink, 'HELLO', c.corner);
+    if (r.length < 3) return { ok: false, detail: '아무것도 안 써졌어요' };
+    return r.offCentre <= 3 && r.outside <= 2 ? { ok: true, detail: `가운데에서 ${r.offCentre.toFixed(1)} mm` } : { ok: false, detail: r.outside > 2 ? `카드 밖으로 ${Math.round(r.outside)} mm` : `가운데에서 ${Math.round(r.offCentre)} mm 벗어났어요` };
+  },
+};
+
+/** Every side straight: no ink more than 1 mm off the square's lines. */
+const straight: Check = {
+  label: '네 변이 곧아요 (선에서 1 mm 안)',
+  judge: (j) => {
+    const c = cardsNow(j).at(-1);
+    if (!c) return { ok: false, detail: '카드가 없어요' };
+    const r = readInk(c.ink, '네모', c.corner);
+    if (r.length < 3) return { ok: false, detail: '아무것도 안 써졌어요' };
+    return r.maxDev <= 1 ? { ok: true, detail: `가장 많이 휜 곳 ${r.maxDev.toFixed(1)} mm` } : { ok: false, detail: `변이 ${r.maxDev.toFixed(1)} mm 휘었어요` };
+  },
+};
+
+/** No line between letters (ink off the phrase). */
+function noStray(phrase: Phrase): Check {
+  return {
+    label: '글자 사이에 줄이 없어요',
+    judge: (j) => {
+      const c = cardsNow(j).at(-1);
+      if (!c) return { ok: false, detail: '카드가 없어요' };
+      const r = readInk(c.ink, phrase, c.corner);
+      return r.length >= 3 && r.stray <= 3 ? { ok: true } : { ok: false, detail: r.length < 3 ? '아무것도 안 써졌어요' : `글자 밖 선 ${Math.round(r.stray)} mm` };
+    },
+  };
+}
+
+/** `n` cards handed to the customers, each reading `phrase` well. */
+function delivered(n: number, phrase: Phrase): Check {
+  return {
+    label: `손님 ${n}명에게 '${phrase}' 카드`,
+    judge: (j) => {
+      const done = j.draw?.done ?? [];
+      const verdicts = done.map((c) => inkVerdict(readInk(c.ink, phrase, c.corner)));
+      const good = verdicts.filter((v) => v.ok).length;
+      const bad = verdicts.find((v) => !v.ok);
+      return { ok: good >= n, detail: bad ? `${good} / ${n}장 · ${bad.why}` : `${good} / ${n}장` };
+    },
+  };
+}
+
+/** The usual cards (the one answer every step builds on). */
+const gAnswer = (r: DrawRecipe) => drawCode(r).code;
+
+const G: CellMission[] = [
+  {
+    id: 'G1',
+    cell: 'draw',
+    n: 1,
+    title: "둘러보기: '사랑해' 카드 한 장",
+    adds: '완성된 순서로 카드 한 장이 써지는 걸 보기',
+    goal: "준비된 순서로 손님의 메시지 카드에 '사랑해'를 써서 건네요. 펜이 언제 내려가고 언제 들리는지 보세요.",
+    hint: '실제 캘리그라피 부스도 카드 받기 → 쓰기 → 완성 알리기 순서예요. 펜은 획을 쓸 때만 종이에 닿고, 다음 획으로 갈 때는 들려요.',
+    setup: { parts: () => [], auto: false, orders: 1 },
+    checks: [delivered(1, '사랑해'), safe],
+    solution: gAnswer(G_ANSWER.G1),
+  },
+  {
+    id: 'G2',
+    cell: 'draw',
+    n: 2,
+    title: '펜 높이 맞추기',
+    adds: '펜이 종이에 닿는 높이를 정하기',
+    goal: "새 펜으로 갈았더니 선이 안 나와요. 펜 높이를 다시 맞춰 'HELLO'를 또렷하게 써요.",
+    hint: '펜 끝이 종이(높이 0 mm)에 닿아야 선이 나와요. 1 mm만 떠도 안 써지고, 더 누르면 펜 홀더의 스프링(1 mm)을 넘어 멈춰요. 실제 부스도 설치할 때 종이 높이와 누르는 힘부터 맞춰요.',
+    setup: { parts: () => [], auto: false, orders: 1 },
+    checks: [written('HELLO', "카드에 'HELLO'가 또렷하게"), safe],
+    solution: gAnswer(G_ANSWER.G2),
+  },
+  {
+    id: 'G3',
+    cell: 'draw',
+    n: 3,
+    title: '카드 위치 맞추기',
+    adds: '카드가 놓인 자리를 좌표로 알려 주기',
+    goal: "오늘은 카드가 다른 자리에 놓였어요. 매트 눈금을 읽어 카드의 왼쪽 아래 모서리 좌표를 넣고, 'HELLO'를 카드 가운데에 써요.",
+    hint: `로봇은 카드를 보지 못해요. 로봇 좌표(x는 앞, y는 왼쪽)에서 카드 모서리가 어디인지 알려 줘야 그 점을 기준으로 써요. 매트 눈금은 로봇 좌표 mm예요.`,
+    setup: { parts: () => [], auto: false, orders: 1, card: { ...G3_CARD } },
+    checks: [written('HELLO', "카드에 'HELLO'가 또렷하게"), centred, safe],
+    solution: gAnswer(G_ANSWER.G3),
+  },
+  {
+    id: 'G4',
+    cell: 'draw',
+    n: 4,
+    title: '곧은 선: 직선 이동',
+    adds: '관절 이동 대신 직선 이동으로 네모 그리기',
+    goal: '카드에 한 변 56 mm 네모를 그려요. 네 변이 곧아야 해요(선에서 1 mm 안).',
+    hint: '관절 이동은 모든 관절이 한꺼번에 돌아서 펜 끝이 휘어 가요. 직선 이동은 로봇이 길을 잘게 나눠 펜 끝이 곧게 가요. 공장의 실링 · 접착제 도포도 직선 이동을 써요.',
+    setup: { parts: () => [], auto: false, orders: 1 },
+    checks: [written('네모', '카드에 네모'), straight, safe],
+    solution: gAnswer(G_ANSWER.G4),
+  },
+  {
+    id: 'G5',
+    cell: 'draw',
+    n: 5,
+    title: '획 사이 펜 들기',
+    adds: '다음 획으로 갈 때 펜을 들어 옮기기',
+    goal: "'사랑해'를 써요. 획과 획 사이에 줄이 그어지면 안 돼요.",
+    hint: `펜을 내린 채로 다음 획의 시작점으로 가면 그 길도 선이 돼요. 획이 끝나면 펜을 ${LIFT_MM} mm 들고 옮긴 뒤 다시 내려요. 로봇 용어로 '그리기 이동'과 '빈 이동'이에요.`,
+    setup: { parts: () => [], auto: false, orders: 1 },
+    checks: [written('사랑해', "카드에 '사랑해'가 또렷하게"), noStray('사랑해'), safe],
+    solution: gAnswer(G_ANSWER.G5),
+  },
+  {
+    id: 'G6',
+    cell: 'draw',
+    n: 6,
+    title: '손님 3명',
+    adds: '반복으로 3장, 손님 손이 있을 때는 기다리기',
+    goal: "줄 선 손님 3명에게 '하트' 카드를 한 장씩 써서 건네요.",
+    hint: '한 장씩 반복해요. 손님이 카드를 놓거나 가져가는 동안 팔이 카드 위로 가면 멈춰요. [카드 있음]이 켜질 때까지 기다리고, 완성 램프를 켠 뒤 카드가 없어질 때까지 기다려요. 실제 부스는 한 장에 40초쯤 걸려요.',
+    setup: { parts: () => [], auto: false, orders: 3 },
+    checks: [delivered(3, '하트'), safe],
+    solution: gAnswer(G_ANSWER.G6),
+  },
+];
+
+export const MISSIONS: readonly CellMission[] = [...A, ...B, ...C, ...D, ...E, ...F, ...G];
 
 export const missionsOf = (cell: CellId) => MISSIONS.filter((m) => m.cell === cell);
 export const missionById = (id: string) => MISSIONS.find((m) => m.id === id) ?? null;
