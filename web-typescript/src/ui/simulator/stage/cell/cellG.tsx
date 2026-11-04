@@ -33,6 +33,32 @@ const CARD_T = 0.35;
 const FLOOR_Z = -742;
 const TABLE = { x0: -170, x1: 340, y0: -175, y1: 215 } as const;
 
+const smooth = (s: number) => s * s * (3 - 2 * s);
+/** The customer's hand over the mat: 0 away … 1 at the card, eased, over the 1.5 s it is there (in · rest · out). */
+function handAt(d: NonNullable<NonNullable<WorldState['cell']>['draw']>, t: number): number {
+  if (!d.hand) return 0;
+  const left = d.hand.until - t;
+  return smooth(Math.max(0, Math.min(1, Math.min(1.5 - left, left) / 0.5)));
+}
+
+/** A soft contact shadow under a thing on the table (a radial fade under the key light's sharp one). */
+function Contact({ at, w, d, k = 0.5 }: { at: [number, number]; w: number; d: number; k?: number }) {
+  const tex = useSheet('draw-contact', 64, 64, (ctx, cw, ch) => {
+    const g = ctx.createRadialGradient(cw / 2, ch / 2, 0, cw / 2, ch / 2, cw / 2);
+    g.addColorStop(0, 'rgba(0,0,0,0.8)');
+    g.addColorStop(0.55, 'rgba(0,0,0,0.4)');
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, cw, ch);
+  });
+  return (
+    <mesh position={[m(at[0]), m(at[1]), m(TABLE_Z + 0.15)]} renderOrder={1}>
+      <planeGeometry args={[m(w * 1.4), m(d * 1.4)]} />
+      <meshBasicMaterial map={tex} transparent opacity={k} depthWrite={false} />
+    </mesh>
+  );
+}
+
 /** The event table: a white laminate top with a rounded edge, a printed front skirt facing the customer, steel legs. */
 function BoothTable() {
   const T = TABLE;
@@ -224,15 +250,20 @@ function CardOnMat({ world }: { world: RefObject<WorldState | null> }) {
   });
   useFrame(() => {
     const d = world.current?.cell?.draw;
+    const t = world.current?.cell?.line.t ?? 0;
     if (!g.current) return;
     g.current.visible = !!d?.corner;
-    if (d?.corner) g.current.position.set(m(d.corner.x + CARD_MM.w / 2), m(d.corner.y + CARD_MM.h / 2), m(-CARD_T / 2 + 0.05));
+    if (!d?.corner) return;
+    // Being taken: once the hand is on it, the card goes away with the hand (lifted a little).
+    const taking = d.hand?.then === 'take' && d.hand.until - t < 0.5;
+    const f = taking ? handAt(d, t) : 1;
+    g.current.position.set(m(d.corner.x + CARD_MM.w / 2), m(d.corner.y + CARD_MM.h / 2 - 130 * (1 - f)), m(-CARD_T / 2 + 0.05 + 14 * (1 - f)));
   });
   return (
     <group ref={g}>
       <mesh castShadow receiveShadow>
         <boxGeometry args={[m(CARD_MM.w), m(CARD_MM.h), m(CARD_T)]} />
-        <meshStandardMaterial color="#f3ede2" roughness={0.9} />
+        <meshPhysicalMaterial color="#f3ede2" roughness={0.82} sheen={0.3} sheenRoughness={0.9} />
       </mesh>
       <mesh position={[0, 0, m(CARD_T / 2 + 0.01)]}>
         <planeGeometry args={[m(CARD_MM.w), m(CARD_MM.h)]} />
@@ -279,7 +310,7 @@ function Ink({ world }: { world: RefObject<WorldState | null> }) {
   });
   return (
     <mesh geometry={geo} frustumCulled={false}>
-      <meshStandardMaterial color="#141a33" roughness={0.35} side={2} polygonOffset polygonOffsetFactor={-2} />
+      <meshPhysicalMaterial color="#141a33" roughness={0.28} clearcoat={0.6} clearcoatRoughness={0.3} side={2} polygonOffset polygonOffsetFactor={-2} />
     </mesh>
   );
 }
@@ -294,21 +325,21 @@ function Hand({ world }: { world: RefObject<WorldState | null> }) {
     if (!g.current) return;
     g.current.visible = !!d?.hand;
     if (!d?.hand) return;
-    // In, rest, out over the 1.5 s the hand is there.
-    const left = d.hand.until - t;
-    const f = Math.min(1, Math.min(1.5 - left, left) / 0.5);
+    // In, rest, out over the 1.5 s the hand is there, eased at each end.
+    const f = handAt(d, t);
     const c = d.corner ?? d.place;
     g.current.position.set(m(c.x + CARD_MM.w / 2), m(c.y - 120 + f * 130), m(30 - f * 18));
+    // Putting a card down: it is in the hand until the hand is out again (then it lies on the mat).
     if (held.current) held.current.visible = d.hand.then === 'put';
   });
   return (
     <group ref={g} visible={false}>
       <RBox at={[0, -10, 14]} size={[62, 80, 22]} radius={10}>
-        <meshStandardMaterial color="#e2b48f" roughness={0.65} />
+        <meshPhysicalMaterial color="#e2b48f" roughness={0.55} sheen={0.5} sheenRoughness={0.6} clearcoat={0.1} />
       </RBox>
       {[-21, -7, 7, 21].map((d) => (
         <RBox key={d} at={[d, 40, 12]} size={[12, 34, 12]} radius={5.5}>
-          <meshStandardMaterial color="#e2b48f" roughness={0.65} />
+          <meshPhysicalMaterial color="#e2b48f" roughness={0.55} sheen={0.5} sheenRoughness={0.6} clearcoat={0.1} />
         </RBox>
       ))}
       <RBox at={[0, -95, 16]} size={[78, 70, 34]} radius={12}>
@@ -325,12 +356,15 @@ function Hand({ world }: { world: RefObject<WorldState | null> }) {
 /** The 완성 lamp at the customer's corner: a white cap that glows green when the card is ready. */
 function DoneLamp({ world }: { world: RefObject<WorldState | null> }) {
   const mat = useRef<MeshStandardMaterial>(null);
-  useFrame(() => {
+  const glow = useRef(0);
+  useFrame((_, dt) => {
     const on = !!world.current?.cell?.line.out['완성 램프'];
     if (!mat.current) return;
-    mat.current.color.set(on ? '#3ddc84' : '#e9ecef');
-    mat.current.emissive.set(on ? '#22c55e' : '#000000');
-    mat.current.emissiveIntensity = on ? 2 : 0;
+    // The lamp fades on and off.
+    glow.current += ((on ? 1 : 0) - glow.current) * (1 - Math.exp(-Math.min(dt, 0.1) / 0.1));
+    mat.current.color.setRGB(0.914 - 0.674 * glow.current, 0.925 - 0.063 * glow.current, 0.937 - 0.42 * glow.current);
+    mat.current.emissive.set('#22c55e');
+    mat.current.emissiveIntensity = 2 * glow.current;
   });
   const x = 312;
   const y = -140;
@@ -451,8 +485,8 @@ function SampleBoard() {
 function People() {
   return (
     <Suspense fallback={null}>
-      <Model group="people" name="customer" at={[720, -620]} z={FLOOR_Z} h={1640} yaw={-Math.PI * 0.75} pose="Idle" />
-      <Model group="people" name="workerMan" at={[900, -420]} z={FLOOR_Z} h={1720} yaw={-Math.PI * 0.6} pose="Idle" />
+      <Model group="people" name="customer" at={[720, -620]} z={FLOOR_Z} h={1640} yaw={-Math.PI * 0.75} pose="Idle" poseAt={0.3} smooth live />
+      <Model group="people" name="workerMan" at={[900, -420]} z={FLOOR_Z} h={1720} yaw={-Math.PI * 0.6} pose="Idle" poseAt={0.75} smooth live />
     </Suspense>
   );
 }
@@ -463,6 +497,11 @@ export function DrawCell({ world, onHover }: { world: RefObject<WorldState | nul
       <Hall />
       <People />
       <BoothTable />
+      {/* Soft contact shadows on the table: the robot's plate, the lamp, the pen stand, the card tray. */}
+      <Contact at={[0, 0]} w={170} d={170} k={0.35} />
+      <Contact at={[312, -140]} w={48} d={48} />
+      <Contact at={[55, 135]} w={30} d={30} />
+      <Contact at={[-95, -110]} w={140} d={100} k={0.35} />
       <Tagged name="커팅 매트" onHover={onHover}>
         <Mat />
       </Tagged>

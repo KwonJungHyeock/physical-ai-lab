@@ -38,6 +38,28 @@ const Chrome = () => <meshStandardMaterial color="#eef1f4" metalness={1} roughne
 const Gloss = ({ color }: { color: string }) => <meshPhysicalMaterial color={color} roughness={0.32} clearcoat={0.7} clearcoatRoughness={0.25} />;
 const Smoked = ({ opacity = 0.55 }) => <meshPhysicalMaterial color="#1b1f25" transparent opacity={opacity} roughness={0.05} metalness={0.2} />;
 
+/** Eased motion: `cur` follows `to` with a time constant `tau` (s), frame-rate independent. */
+const damp = (cur: number, to: number, dt: number, tau: number) => cur + (to - cur) * (1 - Math.exp(-Math.min(dt, 0.1) / tau));
+const smooth = (s: number) => s * s * (3 - 2 * s);
+
+/** A soft contact shadow under a thing standing on a surface (a radial fade; the key light's shadow is sharp). */
+function Contact({ at, w, d, z = 0.4, k = 0.55 }: { at: [number, number]; w: number; d: number; z?: number; k?: number }) {
+  const tex = useSheet('cafe-contact', 64, 64, (ctx, cw, ch) => {
+    const g = ctx.createRadialGradient(cw / 2, ch / 2, 0, cw / 2, ch / 2, cw / 2);
+    g.addColorStop(0, 'rgba(0,0,0,0.85)');
+    g.addColorStop(0.55, 'rgba(0,0,0,0.45)');
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, cw, ch);
+  });
+  return (
+    <mesh position={[m(at[0]), m(at[1]), m(z)]} renderOrder={1}>
+      <planeGeometry args={[m(w * 1.35), m(d * 1.35)]} />
+      <meshBasicMaterial map={tex} transparent opacity={k} depthWrite={false} />
+    </mesh>
+  );
+}
+
 /** A slotted grille (drip trays, vents): dark slots on stainless, as a texture. */
 function useGrille(key: string, slots = 9) {
   return useSheet(`cafe-grille-${key}`, 40, 40, (ctx, w, h) => {
@@ -116,11 +138,16 @@ function Tray({ x, y, spill }: { x: number; y: number; spill: RefObject<Mesh | n
 /** A stream from a spout down into the cup (or the tray): a thin glossy column that shimmers while it pours. */
 function Stream({ world, busy, from, to, color, thick = 1.6 }: { world: RefObject<WorldState | null>; busy: string; from: [number, number, number]; to: [number, number]; color: string; thick?: number }) {
   const r = useRef<Mesh>(null);
-  useFrame(({ clock }) => {
+  const amt = useRef(0);
+  useFrame(({ clock }, dt) => {
     if (!r.current) return;
     const on = !!world.current?.cell?.line.in[busy];
-    r.current.visible = on;
-    if (on) r.current.scale.x = r.current.scale.z = 0.85 + 0.15 * Math.sin(clock.elapsedTime * 40);
+    // The stream thickens as it starts and thins out as it stops (no blink).
+    amt.current = damp(amt.current, on ? 1 : 0, dt, 0.14);
+    r.current.visible = amt.current > 0.02;
+    const k = amt.current * (0.86 + 0.14 * Math.sin(clock.elapsedTime * 40));
+    r.current.scale.x = r.current.scale.z = Math.max(0.05, k);
+    (r.current.material as MeshPhysicalMaterial).opacity = 0.88 * Math.min(1, amt.current * 1.5);
   });
   const [x0, y0, z0] = from;
   const len = z0;
@@ -167,13 +194,17 @@ function IceFall({ world, from, to }: { world: RefObject<WorldState | null>; fro
 /** A station's lamp: off, amber while busy, green when done (a glowing LED in a chrome bezel). */
 function Lamp({ world, at, busy, done }: { world: RefObject<WorldState | null>; at: [number, number, number]; busy: string; done: string }) {
   const mat = useRef<MeshStandardMaterial>(null);
-  useFrame(() => {
+  const glow = useRef(0);
+  useFrame((_, dt) => {
     const s = world.current?.cell?.line.in;
     if (!mat.current) return;
+    const lit = !!(s?.[done] || s?.[busy]);
     const c = s?.[done] ? '#22c55e' : s?.[busy] ? '#f59e0b' : '#3a3f47';
+    // The LED fades on and off (a real one's driver ramps in a few frames).
+    glow.current = damp(glow.current, lit ? 1 : 0, dt, 0.09);
     mat.current.color.set(c);
-    mat.current.emissive.set(c);
-    mat.current.emissiveIntensity = s?.[done] || s?.[busy] ? 1.6 : 0;
+    if (lit) mat.current.emissive.set(c);
+    mat.current.emissiveIntensity = 1.6 * glow.current;
   });
   return (
     <group position={[m(at[0]), m(at[1]), m(at[2])]}>
@@ -426,9 +457,16 @@ function Pickup({ world }: { world: RefObject<WorldState | null> }) {
   const D = CAFE_AT.door;
   const door = useRef<Group>(null);
   const hand = useRef<Group>(null);
-  useFrame(() => {
-    if (door.current) door.current.position.z = m(travel(world, '픽업 문') * D.h);
-    if (hand.current) hand.current.visible = !!world.current?.cell?.line.in['손 감지'];
+  const reach = useRef(0);
+  useFrame((_, dt) => {
+    // The door eases at both ends of its stroke (the actuator's travel is linear in the model).
+    if (door.current) door.current.position.z = m(smooth(travel(world, '픽업 문')) * D.h);
+    // The customer's hand reaches in and draws back, rather than appearing.
+    reach.current = damp(reach.current, world.current?.cell?.line.in['손 감지'] ? 1 : 0, dt, 0.18);
+    if (hand.current) {
+      hand.current.visible = reach.current > 0.02;
+      hand.current.position.y = m(-70 * (1 - smooth(reach.current)));
+    }
   });
   const cx = (D.x0 + D.x1) / 2;
   const dy = (D.y0 + D.y1) / 2;
@@ -491,7 +529,7 @@ const BOOTH = { x0: -110, x1: 330, y0: -250, y1: 262, top: 390 } as const;
 function Glass({ at, size }: { at: [number, number, number]; size: [number, number, number] }) {
   return (
     <RBox at={at} size={size} radius={0.5} shadow={false}>
-      <meshPhysicalMaterial color="#dfeef6" transparent opacity={0.16} roughness={0.03} metalness={0.05} depthWrite={false} />
+      <meshPhysicalMaterial color="#e3f0f7" transparent opacity={0.14} roughness={0.02} metalness={0.08} clearcoat={1} clearcoatRoughness={0.02} envMapIntensity={1.6} depthWrite={false} />
     </RBox>
   );
 }
@@ -699,8 +737,8 @@ function Shop() {
       <Model group="cafe" name="chair" at={[580, -380]} z={fz} h={180} yaw={-Math.PI / 2} />
       <Model group="cafe" name="plant" at={[-190, 280]} z={fz} h={260} />
       <Model group="cafe" name="chalkboard" at={[-200, -300]} z={fz} h={230} yaw={0.5} />
-      <Model group="people" name="customer" at={[98, -330]} z={fz} h={340} yaw={Math.PI} pose="Idle" />
-      <Model group="people" name="customer" at={[402, -300]} z={fz} h={330} yaw={Math.PI * 0.95} pose="Idle" />
+      <Model group="people" name="customer" at={[98, -330]} z={fz} h={340} yaw={Math.PI} pose="Idle" poseAt={0.1} smooth live />
+      <Model group="people" name="customer" at={[402, -300]} z={fz} h={330} yaw={Math.PI * 0.95} pose="Idle" poseAt={0.6} smooth live />
     </Suspense>
   );
 }
@@ -804,6 +842,14 @@ export function CafeCell({ world, onHover }: { world: RefObject<WorldState | nul
         <SelfBar />
       </Tagged>
       <Counter />
+      {/* Soft contact shadows: the equipment on the counter, the people and the kiosk on the floor. */}
+      <Contact at={[95, 222]} w={52} d={46} />
+      <Contact at={[248, 116]} w={53} d={52} />
+      <Contact at={[279, 16]} w={66} d={77} />
+      <Contact at={[244, -85]} w={44} d={54} />
+      <Contact at={[98, -330]} w={46} d={36} z={F + 0.8} k={0.5} />
+      <Contact at={[402, -300]} w={46} d={36} z={F + 0.8} k={0.5} />
+      <Contact at={[372, -232]} w={36} d={26} z={F + 0.8} k={0.45} />
       <Tagged name="컵 디스펜서" onHover={onHover}>
         <CupDispenser />
       </Tagged>
