@@ -238,7 +238,7 @@ export default function Library(p: Props) {
         ...scenes.map((s) => (
           <Card key={s.id} kind="scene" id={s.id} title={s.name} desc={s.note} tags={[SCENE_USE[s.id]]} current={!p.cell && p.scene === s.id} disabled={p.busy} onOpen={() => p.onScene(s.id)} />
         )),
-        ...CELLS.map((c) => (
+        ...CELLS.filter((c) => !c.life).map((c) => (
           <Card key={c.id} kind="cell" id={c.id} title={`${c.letter} ${c.name}`} desc={c.note} badge="실습 셀" tags={[`단계 ${missionsOf(c.id).length}개`, '블록 · Python']} current={p.cell === c.id} disabled={p.busy} onOpen={() => p.onCell(c.id)} />
         )),
       ],

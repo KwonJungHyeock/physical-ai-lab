@@ -1,0 +1,184 @@
+/* 입문 튜토리얼 (TutorialStrip.tsx): a slate groove at the top of the right panel, in the 제어 panel's
+   own language — an English tag, the step segments (the one now raised with the brand's red mark),
+   one line, a monospace meter. */
+.strip {
+  margin: 0 12px 10px;
+  padding: 10px 12px 11px;
+  border-radius: 12px;
+  background: #282a2e;
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.35),
+    inset 0 0 0 1px #3a3d42;
+  color: #e4eaf2;
+}
+
+.strip header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.strip header em {
+  font:
+    800 10px ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  font-style: normal;
+  letter-spacing: 0.12em;
+  color: #ff8a3d;
+  white-space: nowrap;
+}
+
+.strip header b {
+  font-size: 13.5px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.close {
+  margin-left: auto;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #91959b;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.close:hover {
+  background: #383a3e;
+  color: #fff;
+}
+
+.segs {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+
+.segs li {
+  height: 4px;
+  border-radius: 2px;
+  background: #3a3d42;
+}
+
+.segs li[data-done] {
+  background: #c9ced5;
+}
+
+.segs li[data-on] {
+  background: #e5484d;
+  box-shadow: 0 0 6px rgba(229, 72, 77, 0.6);
+}
+
+.now {
+  margin-top: 9px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.n {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(180deg, #6b737c, #f4f6f9);
+  color: #1b1d20;
+  font:
+    800 12px ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+}
+
+.now p {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 800;
+  line-height: 1.3;
+  word-break: keep-all;
+}
+
+.meter {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: none;
+}
+
+.meter > i {
+  width: 56px;
+  height: 5px;
+  border-radius: 3px;
+  background: #3a3d42;
+  overflow: hidden;
+}
+
+.meter > i > i {
+  display: block;
+  height: 100%;
+  background: #ff8a3d;
+  transition: width 0.2s;
+}
+
+.meter output {
+  font:
+    700 12.5px ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  color: #c9ced5;
+  white-space: nowrap;
+  min-width: 54px;
+  text-align: right;
+}
+
+.end {
+  margin-top: 9px;
+  display: grid;
+  gap: 8px;
+}
+
+.end p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #c9ced5;
+  word-break: keep-all;
+}
+
+.end b {
+  color: #fff;
+}
+
+.ok {
+  color: #34d399;
+  font-weight: 800;
+}
+
+.next {
+  justify-self: start;
+  border: 0;
+  border-radius: 9px;
+  padding: 7px 13px;
+  background: linear-gradient(180deg, #f4f6f9, #c9ced5);
+  color: #1b1d20;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}

@@ -122,7 +122,7 @@ import { FullBar, LangSeg, Snippets, SlotCode, TutorialCard } from './editors/Tu
 import RecipeCards from './editors/RecipeCards';
 import DrawCards from './editors/DrawCards';
 import ThemePanel from './tasks/ThemePanel';
-import TutorialHud from './stage/TutorialHud';
+import TutorialStrip from './tasks/TutorialStrip';
 import { LIFE_TUTORIALS, lifeTutorialById, type TutCtx, type TutMem } from '@/engine/simulator/lifeTutorials';
 import { StartGuide, type StartStep } from './stage/StartGuide';
 import HandPanel, { type HandState } from './control/HandPanel';
@@ -3452,7 +3452,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       if (!step.done(now, lifeTut.start, lifeTut.mem)) return;
       const next = lifeTut.step + 1;
       setLifeTut({ ...lifeTut, step: next, start: now, mem: {} });
-      if (next < t.steps.length) return;
+      // The next step's panel opens by itself (the strip and its ringed control are there).
+      if (next < t.steps.length) return void (t.steps[next].panel !== step.panel && openTutPanelRef.current(t.steps[next].panel));
       setTutDone((d) => {
         const n = { ...d, [t.id]: true };
         try {
@@ -3471,6 +3472,10 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     openSection(panel);
     openTab('direct');
   };
+  const openTutPanelRef = useRef(openTutPanel);
+  useEffect(() => {
+    openTutPanelRef.current = openTutPanel;
+  });
   const startTutorial = (id: string) => {
     const t = lifeTutorialById(id);
     if (!t || busy) return;
@@ -3479,7 +3484,6 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     if (id === 'teach') setFlow({ ...flow, step: 1 });
     const start = tutCtx();
     setLifeTut({ id, step: 0, start: id === 'teach' ? { ...start, flowStep: 1 } : start, mem: {} });
-    addLog('info', `튜토리얼 '${t.title}': ${t.steps[0].text}`);
     openTutPanel(t.steps[0].panel);
   };
 
@@ -4657,20 +4661,6 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
               {loaded && view === 'sim' && railOpen === 'monitor' && (
                 <Hud world={world} chain={loaded.chain} tcpMm={tcpNow} mountMm={mountMm} loadModel={arm.family === 'mycobot280'} status={hudStatus} onClose={() => setRailOpen(null)} />
               )}
-              {loaded && view === 'sim' && !cellAt && lifeTut && railOpen !== 'monitor' && (
-                <TutorialHud
-                  id={lifeTut.id}
-                  step={lifeTut.step}
-                  n={LIFE_TUTORIALS.findIndex((t) => t.id === lifeTut.id) + 1}
-                  of={LIFE_TUTORIALS.length}
-                  onOpen={openTutPanel}
-                  onNext={() => {
-                    const k = LIFE_TUTORIALS.findIndex((t) => t.id === lifeTut.id);
-                    if (LIFE_TUTORIALS[k + 1]) startTutorial(LIFE_TUTORIALS[k + 1].id);
-                  }}
-                  onClose={() => setLifeTut(null)}
-                />
-              )}
               {loaded && view === 'sim' && cellAt && railOpen !== 'monitor' && (
                 <CellHud
                   world={world}
@@ -4899,6 +4889,21 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                 </div>
                 {shownTab === 'direct' ? (
                   <div className={css.dockScroll} role="region" aria-label={SCREEN_TITLE[workScreen]}>
+                    {lifeTut && (
+                  <TutorialStrip
+                    id={lifeTut.id}
+                    step={lifeTut.step}
+                    read={() => tutCtxRef.current()}
+                    start={lifeTut.start}
+                    n={LIFE_TUTORIALS.findIndex((x) => x.id === lifeTut.id) + 1}
+                    of={LIFE_TUTORIALS.length}
+                    onNext={() => {
+                      const k = LIFE_TUTORIALS.findIndex((x) => x.id === lifeTut.id);
+                      if (LIFE_TUTORIALS[k + 1]) startTutorial(LIFE_TUTORIALS[k + 1].id);
+                    }}
+                    onClose={() => setLifeTut(null)}
+                  />
+                )}
                     {zeroMode ? (
                       <div className={css.screen}>{zeroPanel}</div>
                     ) : workScreen === 'theme' ? (
@@ -4951,6 +4956,21 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   </div>
                 ) : shownTab === 'process' ? (
                   <div className={css.codeTab} role="region" aria-label="공정 짜기">
+                    {lifeTut && (
+                  <TutorialStrip
+                    id={lifeTut.id}
+                    step={lifeTut.step}
+                    read={() => tutCtxRef.current()}
+                    start={lifeTut.start}
+                    n={LIFE_TUTORIALS.findIndex((x) => x.id === lifeTut.id) + 1}
+                    of={LIFE_TUTORIALS.length}
+                    onNext={() => {
+                      const k = LIFE_TUTORIALS.findIndex((x) => x.id === lifeTut.id);
+                      if (LIFE_TUTORIALS[k + 1]) startTutorial(LIFE_TUTORIALS[k + 1].id);
+                    }}
+                    onClose={() => setLifeTut(null)}
+                  />
+                )}
                     <ProcessFlow
                       flow={flow}
                       onFlow={setFlow}

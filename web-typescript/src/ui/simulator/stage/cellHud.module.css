@@ -591,32 +591,3 @@
   letter-spacing: 0.08em;
   color: #93b4ff;
 }
-
-/* 입문 튜토리얼 (TutorialHud.tsx): the step to do now in a green band ('지금 할 일'), its panel's button. */
-.checks li[data-cur] span {
-  color: #fff;
-  font-weight: 800;
-}
-.checks li[data-cur] i {
-  color: #22c55e;
-}
-.gsec[data-kind='now'] h5 em {
-  color: #34d399;
-}
-.go {
-  margin-top: 8px;
-  border: 1px solid #34d399;
-  border-radius: 8px;
-  padding: 5px 13px;
-  background: rgba(52, 211, 153, 0.14);
-  color: #d5f5e6;
-  font: inherit;
-  font-size: 12.5px;
-  font-weight: 800;
-  cursor: pointer;
-  /* 지금 할 일: the place to press glows (box-shadow, no movement). */
-  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.18);
-}
-.go:hover {
-  background: rgba(52, 211, 153, 0.24);
-}

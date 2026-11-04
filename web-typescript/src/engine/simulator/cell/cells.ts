@@ -40,6 +40,8 @@ export interface CellInfo {
   built: boolean;
   /** The tool the cell is worked with (default: the adaptive gripper). */
   effector?: EffectorId;
+  /** A 생활 로봇 place (입문 트랙 /track/life): not listed in the full console. */
+  life?: boolean;
 }
 
 export const CELLS: readonly CellInfo[] = [
@@ -84,6 +86,7 @@ export const CELLS: readonly CellInfo[] = [
     name: '로봇 카페',
     note: '컵 디스펜서 · 제빙기 · 커피 머신 · 정수기 · 픽업대',
     built: true,
+    life: true,
   },
   {
     id: 'draw',
@@ -91,6 +94,7 @@ export const CELLS: readonly CellInfo[] = [
     name: '로봇 캘리그라피',
     note: '펜 홀더 · 메시지 카드 · 커팅 매트 · 완성 램프',
     built: true,
+    life: true,
     effector: 'pen',
   },
 ];

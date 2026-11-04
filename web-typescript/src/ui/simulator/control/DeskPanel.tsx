@@ -207,7 +207,7 @@ export default function DeskPanel(p: Props) {
                 <em>단계마다 조건이 하나씩</em>
               </h4>
               <div className={css.cells}>
-                {CELLS.filter((c) => !p.cells || p.cells.includes(c.id)).map((c) => (
+                {CELLS.filter((c) => (p.cells ? p.cells.includes(c.id) : !c.life)).map((c) => (
                   <button key={c.id} type="button" className={css.cellCard} aria-pressed={p.cell === c.id} disabled={p.busy} onClick={() => p.onCell?.(c.id)}>
                     <i>{c.letter}</i>
                     <b>{c.name}</b>
