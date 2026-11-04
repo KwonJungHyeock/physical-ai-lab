@@ -36,6 +36,19 @@
   animation: fadeIn 1s 0.1s ease-out forwards;
   pointer-events: none;
 }
+/* A 트랙's cover: its pictures cross-fade, each drifting in slowly (no movement once shown). */
+.picture {
+  animation: none;
+  opacity: 0;
+  transform: scale(1.04);
+  transition:
+    opacity 1.2s ease,
+    transform 6s ease-out;
+}
+.picture[data-on] {
+  opacity: 1;
+  transform: scale(1);
+}
 .vignette {
   position: absolute;
   inset: 0;

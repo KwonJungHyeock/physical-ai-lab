@@ -17,6 +17,8 @@
 import { useProgress } from '@react-three/drei';
 import { useEffect, useRef, useState } from 'react';
 
+import type { TrackIntro } from '@/engine/simulator/tracks';
+
 import css from './intro.module.css';
 
 /** The release number shown as VERSION v1.<n>: one up with each release (the release branch README). */
@@ -69,11 +71,16 @@ interface Props {
   ready: boolean;
   /** A short line under the bar. */
   note: string;
-  /** The last frame's choice; the intro stays until one is made. */
-  gate?: { onConnect(): void; onStart(): void };
+  /** The last frame's choice; the intro stays until one is made. `onRoadmap`: a 트랙's [ROADMAP] (테마학습) instead of [CONNECT]. */
+  gate?: { onConnect(): void; onStart(): void; onRoadmap?: () => void };
+  /** A 트랙's own cover (tracks.ts): its title and lines, its pictures taking turns instead of the film. */
+  brand?: TrackIntro;
 }
 
-export default function Intro({ progress, ready, note, gate }: Props) {
+/** How long each of a cover's pictures stays, ms. */
+const PICTURE_MS = 4500;
+
+export default function Intro({ progress, ready, note, gate, brand }: Props) {
   const [played, setPlayed] = useState(false);
   const [entered, setEntered] = useState(false);
   // Right after a reload of its own (to a robot or back): no sequence and no choice, the loading only.
@@ -93,6 +100,14 @@ export default function Intro({ progress, ready, note, gate }: Props) {
   // The scene's name follows the film (its time updates, a few a second; the film plays on its own).
   const film = useRef<HTMLVideoElement>(null);
   const [scene, setScene] = useState(0);
+  // A cover's pictures take turns (the film's scenes, for a 트랙).
+  const pictures = brand?.scenes.length ?? 0;
+  useEffect(() => {
+    if (!pictures) return;
+    const id = window.setInterval(() => setScene((s) => (s + 1) % pictures), PICTURE_MS);
+    return () => window.clearInterval(id);
+  }, [pictures]);
+  const scenes = brand?.scenes ?? SCENES;
   const final = ready && played;
   const done = final && (!gate || entered || quiet);
   // Paused once gone (it is still in the page, under the console).
@@ -131,7 +146,7 @@ export default function Intro({ progress, ready, note, gate }: Props) {
     const t = window.setTimeout(() => enter(gate.onStart), 0);
     return () => window.clearTimeout(t);
   });
-  const now = SCENES[scene];
+  const now = scenes[scene] ?? scenes[0];
   const choose = gate && final && !quiet;
   return (
     <div
@@ -145,7 +160,14 @@ export default function Intro({ progress, ready, note, gate }: Props) {
       aria-label="Physical AI 로봇 학습 프로그램"
       onClick={() => setPlayed(true)}
     >
-      <video ref={film} className={css.film} src="/brand/intro/roll.mp4" poster="/brand/intro/roll.jpg" autoPlay muted loop playsInline preload="auto" aria-hidden="true" onTimeUpdate={(e) => setScene(sceneAt(e.currentTarget.currentTime))} />
+      {brand ? (
+        brand.scenes.map((s, i) => (
+          // eslint-disable-next-line @next/next/no-img-element -- the cover's pictures, also in the static export
+          <img key={s.img} className={`${css.film} ${css.picture}`} data-on={i === scene || undefined} src={s.img} alt="" aria-hidden="true" />
+        ))
+      ) : (
+        <video ref={film} className={css.film} src="/brand/intro/roll.mp4" poster="/brand/intro/roll.jpg" autoPlay muted loop playsInline preload="auto" aria-hidden="true" onTimeUpdate={(e) => setScene(sceneAt(e.currentTarget.currentTime))} />
+      )}
       <div className={css.vignette} />
 
       <header className={css.top}>
@@ -164,12 +186,12 @@ export default function Intro({ progress, ready, note, gate }: Props) {
 
       <figure key={scene} className={css.caption} aria-hidden="true">
         <small>
-          SCENE {String(scene + 1).padStart(2, '0')} / {String(SCENES.length).padStart(2, '0')}
+          SCENE {String(scene + 1).padStart(2, '0')} / {String(scenes.length).padStart(2, '0')}
         </small>
         <b>{now.tag}</b>
         <span>{now.line}</span>
         <ol>
-          {SCENES.map((s, i) => (
+          {scenes.map((s, i) => (
             <li key={s.tag} data-on={i === scene || undefined} />
           ))}
         </ol>
@@ -177,36 +199,43 @@ export default function Intro({ progress, ready, note, gate }: Props) {
 
       <div className={css.hero}>
         <h1>
-          Physical AI
+          {brand?.title[0] ?? 'Physical AI'}
           <br />
-          Simulator
+          {brand?.title[1] ?? 'Simulator'}
         </h1>
-        <p className={css.ko}>로봇 학습 시뮬레이터</p>
+        <p className={css.ko}>{brand?.ko ?? '로봇 학습 시뮬레이터'}</p>
         <p className={css.lead}>
-          조그 · 공정 · 코딩 · AI 를 연습하고,
+          {brand?.lead[0] ?? '조그 · 공정 · 코딩 · AI 를 연습하고,'}
           <br />
-          같은 프로그램을 실제 로봇에서 돌려요.
+          {brand?.lead[1] ?? '같은 프로그램을 실제 로봇에서 돌려요.'}
         </p>
         {choose ? (
           <div className={css.actions}>
             <button
               type="button"
               className={css.connect}
-              aria-label="연결하기"
+              aria-label={gate.onRoadmap ? '학습 로드맵' : '연결하기'}
               autoFocus
               disabled={entered}
               onClick={(e) => {
                 e.stopPropagation();
-                enter(gate.onConnect);
+                enter(gate.onRoadmap ?? gate.onConnect);
               }}
             >
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1" />
-                <path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" />
-              </svg>
+              {gate.onRoadmap ? (
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 6h11M4 12h8M4 18h11" />
+                  <circle cx="18" cy="12" r="2.5" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1" />
+                  <path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" />
+                </svg>
+              )}
               <span>
-                <b>CONNECT</b>
-                <small>로봇 연결하기</small>
+                <b>{gate.onRoadmap ? 'ROADMAP' : 'CONNECT'}</b>
+                <small>{gate.onRoadmap ? '테마학습 · 단계별로' : '로봇 연결하기'}</small>
               </span>
               <svg className={css.chev} viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M9 6l6 6-6 6" />
@@ -228,7 +257,7 @@ export default function Intro({ progress, ready, note, gate }: Props) {
               </svg>
               <span>
                 <b>SIMULATOR</b>
-                <small>시뮬레이터로 시작</small>
+                <small>{gate.onRoadmap ? '현장 둘러보고 시작' : '시뮬레이터로 시작'}</small>
               </span>
               <svg className={css.chev} viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M9 6l6 6-6 6" />
@@ -245,7 +274,7 @@ export default function Intro({ progress, ready, note, gate }: Props) {
           <i ref={bar} />
         </div>
         <span className={css.row}>
-          <small className={css.note}>{choose ? '로봇과 같은 Wi-Fi 라면 CONNECT, 로봇 없이 연습하려면 SIMULATOR' : note}</small>
+          <small className={css.note}>{choose ? (gate.onRoadmap ? '처음이면 ROADMAP 에서 튜토리얼부터, 바로 해 보려면 SIMULATOR' : '로봇과 같은 Wi-Fi 라면 CONNECT, 로봇 없이 연습하려면 SIMULATOR') : note}</small>
           <span className={css.status} data-ready={ready || undefined}>
             <i />
             {ready ? 'SYSTEM READY' : 'LOADING'}

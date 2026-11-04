@@ -4233,6 +4233,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     // data-busy: a program or a move is running (read by the behaviour checks).
     <div className={css.app} data-busy={busy || undefined}>
       <Intro
+        brand={track?.intro}
         ready={splashDone}
         progress={loadError || started ? 1 : loaded ? 0.72 : 0.3}
         note={loadError ? '로봇 모델을 불러오지 못했어요' : started ? '준비됐어요' : loaded ? '3D 화면을 준비하고 있어요' : '로봇 모델을 불러오고 있어요'}
@@ -4245,6 +4246,17 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   setConnectOpen(true);
                 },
                 onStart: () => setEntered(true),
+                ...(track
+                  ? {
+                      onRoadmap: () => {
+                        // Straight to the list of places (each is toured as it is picked).
+                        toured.current = true;
+                        setEntered(true);
+                        openSection('theme');
+                        openTab('direct');
+                      },
+                    }
+                  : {}),
               }
         }
       />
