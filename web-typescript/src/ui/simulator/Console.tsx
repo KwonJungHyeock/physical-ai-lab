@@ -3502,10 +3502,17 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   useEffect(() => {
     openTutPanelRef.current = openTutPanel;
   });
+  /** 입문 기초 조작: out of a place, onto the empty desk (the arm only, nothing on the table). */
+  const toPlainDesk = () => {
+    if (busy) return;
+    if (cellRef.current) leaveCell();
+    if (theme === 'kit' || desk.scene !== 'empty' || desk.objects.length) deskScene('empty');
+  };
   const startTutorial = (id: string) => {
     const t = lifeTutorialById(id);
     if (!t || busy) return;
-    if (cellRef.current) leaveCell();
+    if (track) toPlainDesk();
+    else if (cellRef.current) leaveCell();
     // 공정 짜기 from its first screen.
     if (id === 'teach') setFlow({ ...flow, step: 1 });
     const start = tutCtx();
@@ -4664,8 +4671,9 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
               setRoadmapOpen(false);
               setEntered(true);
               if (pk.kind === 'tutorial') {
-                // The tutorials' list (the place's tour is not needed for them).
+                // 기초 조작: the plain desk with the arm only (out of the place the track opens in), then the tutorials' list.
                 toured.current = true;
+                toPlainDesk();
                 openSection('theme');
                 openTab('direct');
                 return;
