@@ -65,4 +65,5 @@ node tools/build/guides.mjs                  # md → PDF, 인쇄 쪽 검사 (�
 | 안내서 | 내용 |
 | --- | --- |
 | [`teacher-guide.md`](course/teacher-guide.md) | 교사용 교육 가이드라인의 원고 (그림은 `course/img/`) |
+| [`life-track-teacher.md`](course/life-track-teacher.md) | 입문 트랙 ① 생활 로봇 교사용 지도안 — 7차시 · 45분(기초 조작 · 로봇 카페 · 로봇 캘리그라피 · 보드게임 로봇), 차시 흐름, 단계별 틀린 곳 · 예측 정답 · 개념, 정리 · 평가 |
 | [`robotics-course.md`](course/robotics-course.md) | 로봇공학 · 피지컬 AI — 윗줄 [교육] 탭: 대상 · 장비 → 커리큘럼 지도(8개 단원 · 28차시) → 단원 미리보기 → 수업 화면(단계 막대 · 활동 패널 · 수업 카드), 자료실 PDF 26종, 시연 GIF |

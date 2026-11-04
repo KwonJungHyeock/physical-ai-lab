@@ -1,6 +1,6 @@
 # 보고 #44 — 입문 트랙 ① 생활 로봇: 로봇 캘리그라피 부스 시뮬레이터 설계와 근거
 
-> 상태: 1차 구현 (엔진 · 4단계 · 장면 · 작업 순서 카드, `engine/simulator/cell/draw.ts` · `drawRecipe.ts` · `tests/simulator/cell-g-check.mts`) · 2026-11-04 · 브랜치 `track/life` · 주소 `/track/life` (환경 › 실습 셀 › G 로봇 캘리그라피)
+> 상태: 1차 구현 (엔진 · 4단계 · 장면 · 작업 순서 카드, `engine/simulator/cell/draw.ts` · `drawRecipe.ts` · `tests/simulator/cell-g-check.mts`) · 2026-11-04 · 브랜치 `track/life` · 주소 `/track/life` (학습 로드맵 › SITE 02 로봇 캘리그라피)
 > 이 문서는 단계(차시)마다 **무엇을 실제처럼 만들었는지, 그 근거와 참고 자료가 무엇인지**를 적는다.
 > 숫자 옆의 [n]은 맨 아래 참고 자료 번호. 모든 결과는 **시뮬레이션** 기준이며, 실물 로봇의 펜 홀더로는 아직 확인하지 않았다(§6).
 
