@@ -588,7 +588,20 @@
   color: var(--hud-dim);
   margin-right: 7px;
 }
-.lampsToggle {
-  background: rgba(30, 32, 36, 0.94);
-  border-color: rgba(255, 255, 255, 0.08);
+/* 입문: the signals key, a HUD key with bright words (it read too faint over the scene). Two
+   classes: the console's `.app button { color: inherit }` outranks one. */
+.hud .lampsToggle {
+  border: 0;
+  background: var(--hud-key);
+  box-shadow: var(--hud-key-shadow);
+  color: var(--hud-tx);
+  text-shadow: none;
+  opacity: 1;
+}
+.hud .lampsToggle em {
+  color: var(--hud-dim);
+  letter-spacing: 0.2em;
+}
+.hud .lampsToggle span {
+  color: var(--hud-green);
 }

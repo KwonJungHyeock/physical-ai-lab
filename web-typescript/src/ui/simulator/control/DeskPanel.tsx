@@ -127,6 +127,8 @@ interface Props {
   onCell?: (id: CellId) => void;
   /** The cells this page shows (a 트랙's own); all when left out. */
   cells?: readonly CellId[];
+  /** 입문: the 물건 tab only (the places are chosen in 테마학습, the scenes are not offered). */
+  objectsOnly?: boolean;
 }
 
 export type Tab = 'scene' | 'objects';
@@ -157,7 +159,7 @@ export default function DeskPanel(p: Props) {
   const kit = p.scene === 'kit' && !p.cell;
   const inCell = !!p.cell;
   const sel = p.desk.objects.find((o) => o.id === p.selected) ?? null;
-  const shownTab: Tab = (kit || p.cell) && tab !== 'scene' ? 'scene' : tab;
+  const shownTab: Tab = p.objectsOnly ? 'objects' : (kit || p.cell) && tab !== 'scene' ? 'scene' : tab;
   return (
     <section className={css.panel} aria-label="실습 환경" data-docked={p.docked || undefined}>
       <header className={css.head}>
@@ -167,7 +169,7 @@ export default function DeskPanel(p: Props) {
           ✕
         </button>
       </header>
-      <div className={css.tabs} role="tablist">
+      {!p.objectsOnly && <div className={css.tabs} role="tablist">
         {(
           [
             ['scene', '환경'],
@@ -178,7 +180,7 @@ export default function DeskPanel(p: Props) {
             {name}
           </button>
         ))}
-      </div>
+      </div>}
 
       {shownTab === 'scene' && (
         <>
@@ -251,7 +253,15 @@ export default function DeskPanel(p: Props) {
         </>
       )}
 
-      {shownTab === 'objects' && (
+      {p.objectsOnly && inCell && (
+        <div className={css.sec}>
+          <p className={css.note}>현장에는 쓰는 물건이 정해져 있어요. 물건을 직접 놓으려면 현장에서 나가요.</p>
+          <button type="button" className={css.leave} disabled={p.busy} onClick={() => p.onScene('empty')}>
+            현장에서 나가기
+          </button>
+        </div>
+      )}
+      {shownTab === 'objects' && !(p.objectsOnly && inCell) && (
         <>
           <div className={css.sec}>
             <h4>

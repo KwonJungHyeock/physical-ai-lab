@@ -519,3 +519,8 @@
 .lgLoad {
   background: #e9edf2;
 }
+
+/* 입문 (Hud simple): position only, no orientation. */
+.hud[data-simple] .cell[data-rot] {
+  display: none;
+}

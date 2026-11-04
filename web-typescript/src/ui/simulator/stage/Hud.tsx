@@ -13,7 +13,7 @@
  * Numbers change every frame, so they are written straight into the page (refs), not through React.
  */
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import type { WorldState } from '@/engine/simulator/sim';
 import { forwardKinematics, type ChainSegment } from '@/engine/robot/kinematics';
@@ -147,13 +147,16 @@ interface Props {
   status: HudStatus;
   /** Opened from the left menu bar: always shown, its close button closes the window. */
   onClose?(): void;
+  /** 입문: the joints and the tool tip's X · Y · Z only (no graph, no load, no Rx · Ry · Rz). */
+  simple?: boolean;
 }
 
-export default function Hud({ world, chain, tcpMm, mountMm, loadModel, status, onClose }: Props) {
+export default function Hud({ world, chain, tcpMm, mountMm, loadModel, status, onClose, simple }: Props) {
   // The open arm's joints (a 4-axis arm has four).
   const NAMES = jointLabels().map((j) => j.name);
   const dof = activeArm().dof;
-  const [on, setOn] = useState<Record<Panel, boolean>>(DEFAULT_ON);
+  const [onSaved, setOn] = useState<Record<Panel, boolean>>(DEFAULT_ON);
+  const on = useMemo<Record<Panel, boolean>>(() => (simple ? { ...onSaved, graph: false, load: false } : onSaved), [simple, onSaved]);
   const [hiddenSaved, setHidden] = useState(false);
   const hidden = hiddenSaved && !onClose;
   useEffect(() => {
@@ -356,10 +359,10 @@ export default function Hud({ world, chain, tcpMm, mountMm, loadModel, status, o
   const lo = jointMin();
   const hi = jointMax();
   return (
-    <div className={css.hud} ref={root} data-panel="hud" data-docked={onClose ? true : undefined}>
+    <div className={css.hud} ref={root} data-panel="hud" data-docked={onClose ? true : undefined} data-simple={simple || undefined}>
       <div className={`${css.glass} ${css.bar}`} role="group" aria-label="모니터에 보일 것">
-        {PANELS.map((p) => (
-          <button key={p.id} type="button" aria-pressed={on[p.id]} title={p.title} onClick={() => save({ ...on, [p.id]: !on[p.id] }, false)}>
+        {PANELS.filter((p) => !simple || p.id === 'joints' || p.id === 'tcp').map((p) => (
+          <button key={p.id} type="button" aria-pressed={on[p.id]} title={p.title} onClick={() => save({ ...onSaved, [p.id]: !on[p.id] }, false)}>
             <Icon name={p.id} />
             {p.name}
           </button>

@@ -1,5 +1,5 @@
-/* 테마학습 (ThemePanel.tsx), in the 학습 로드맵's dress (roadmap.module.css): the places as pictures
-   with the caption in their shade and the five field ticks, the four steps as ticks; the tutorials
+/* 테마학습 (ThemePanel.tsx), in the 학습 로드맵's dress (roadmap.module.css): the places as rows with
+   a small picture, the tag and the five field ticks, the four steps as ticks; the tutorials
    cut into one brushed plate by grooves. White is the accent; green marks what is done. */
 .theme {
   padding: 4px 12px 12px;
@@ -38,25 +38,27 @@
 }
 .site {
   display: grid;
-  padding: 0;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 8px 10px 8px 8px;
   text-align: left;
+  border: 0;
   border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(22, 26, 31, 0.92);
+  background: var(--hud-plate);
+  box-shadow: var(--hud-plate-shadow);
   color: inherit;
   font: inherit;
   cursor: pointer;
   transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
+    box-shadow 0.2s,
+    filter 0.2s;
 }
 .site:hover:not(:disabled):not([data-soon]) {
-  border-color: rgba(255, 255, 255, 0.32);
+  filter: brightness(1.08);
 }
 .site[aria-pressed='true'] {
-  border-color: rgba(255, 255, 255, 0.45);
-  box-shadow: var(--hud-key-on);
+  box-shadow: var(--hud-plate-shadow), var(--hud-key-on);
 }
 .site:disabled {
   cursor: default;
@@ -66,87 +68,58 @@
   cursor: default;
   opacity: 0.62;
 }
-.site[data-soon] .pic {
-  aspect-ratio: 16 / 3.6;
-}
 
-.pic {
-  position: relative;
-  display: block;
-  aspect-ratio: 16 / 5;
-  overflow: hidden;
-}
-.pic img {
-  width: 100%;
-  height: 100%;
+.thumb {
+  width: 76px;
+  height: 64px;
+  border-radius: 8px;
   object-fit: cover;
   display: block;
-  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-.site:hover:not(:disabled):not([data-soon]) .pic img {
-  transform: scale(1.04);
-}
-.pic::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(180deg, rgba(10, 12, 15, 0.5), rgba(10, 12, 15, 0) 34%),
-    linear-gradient(180deg, rgba(10, 12, 15, 0) 30%, rgba(10, 12, 15, 0.88));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
-/* The caption in the picture's shade (the roadmap's): the tag and the ticks, a hairline, the fields. */
-.caption {
-  position: absolute;
-  z-index: 1;
-  left: 12px;
-  right: 12px;
-  bottom: 9px;
+.info {
   display: grid;
-  gap: 5px;
-  color: var(--hud-light);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+  gap: 3px;
+  min-width: 0;
 }
-.caption > span {
+.tagRow {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
 }
-.caption em {
+.tagRow em {
   font-size: 10.5px;
   font-weight: 700;
   font-style: normal;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.2em;
+  color: var(--hud-dim);
+  white-space: nowrap;
 }
-.capTicks {
-  margin-left: auto;
+.info b {
+  font-size: 14.5px;
+  font-weight: 800;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.55);
 }
-.caption small {
-  padding-top: 5px;
-  border-top: 1px solid rgba(236, 241, 248, 0.38);
-  font-size: 11.5px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+.info > small {
+  font-size: 12px;
   color: var(--hud-sub);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* The place's state, top right in the picture's top shade: a lamp and a tracked word. */
+/* The place's state at the row's end: a lamp and a tracked word. */
 .flag {
-  position: absolute;
-  z-index: 1;
-  top: 10px;
-  right: 12px;
+  margin-left: auto;
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.1em;
   color: var(--hud-light);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+  white-space: nowrap;
 }
 .flag::before {
   content: '';
@@ -157,31 +130,18 @@
   box-shadow: 0 0 10px rgba(236, 241, 248, 0.9);
 }
 .flag[data-soon] {
-  color: #dfe4ea;
+  color: var(--hud-sub);
 }
 .flag[data-soon]::before {
   background: transparent;
-  box-shadow: inset 0 0 0 1.5px #dfe4ea;
+  box-shadow: inset 0 0 0 1.5px var(--hud-sub);
 }
 
-.body {
-  display: grid;
-  gap: 3px;
-  padding: 8px 12px 10px;
-}
-.body b {
-  font-size: 15px;
-  font-weight: 800;
-}
-.body > small {
-  font-size: 12px;
-  color: var(--hud-sub);
-}
 .prog {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: 4px;
+  margin-top: 3px;
 }
 .steps {
   flex: 1;

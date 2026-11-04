@@ -1080,10 +1080,6 @@ const cupAt = (j: Judge, place: string) => {
   return partAt(j, p.x, p.y, p.z);
 };
 
-const cupOn = (place: string, label: string): Check => ({
-  label,
-  judge: (j) => (cupAt(j, place) ? { ok: true } : { ok: false, detail: `${place}에 컵이 없어요` }),
-});
 
 /** A cup standing at `place` with at least what `need` says (and nothing spilled). */
 function drinkOn(place: string, label: string, need: 'shot' | 'all'): Check {

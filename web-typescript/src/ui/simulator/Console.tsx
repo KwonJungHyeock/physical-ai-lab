@@ -573,9 +573,12 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   /** 실습 셀 open (its world replaces the desk's), or null. */
   const [cellAt, setCellAt] = useState<{ cell: CellId; mission: string | null } | null>(null);
   // 작업 순서 카드 (입문 트랙's café) write the program here.
-  const onRecipeCode = useCallback((c: string) => {
+  /** The card a program line came from (the replay bar names the card, not the code). */
+  const recipeCardOf = useRef<(line: number) => string>(() => '');
+  const onRecipeCode = useCallback((c: string, cardOf: (line: number) => string) => {
     setCode(c);
     setErrorLines([]);
+    recipeCardOf.current = cardOf;
   }, []);
   const cellRef = useRef(cellAt);
   const [cellTags, setCellTags] = useState<string[]>([]);
@@ -1847,7 +1850,10 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       : null;
   /** 입문 트랙: the step's goal on the notice board (what to do now), its first check in one line. */
   const lifeStep = track && cellAt?.mission ? missionById(cellAt.mission) : null;
-  const lifeGuide: Guide | null = lifeStep && view === 'sim' ? { head: `${lifeStep.id} · ${lifeStep.title}`, text: `목표 · ${lifeStep.checks?.[0]?.label ?? lifeStep.goal}` } : null;
+  // 입문: no base axes while a place runs or is toured (the close-up cameras put them over the cup or the pen).
+  const axesQuiet = !!track && !!cellAt && (busy || !!touring);
+  const stageDisplay = useMemo(() => (axesQuiet ? { ...display, baseAxes: false } : display), [axesQuiet, display]);
+  const lifeGuide: Guide | null = lifeStep && view === 'sim' ? { head: `${lifeStep.n}단계 · ${lifeStep.title}`, text: `목표 ${lifeStep.checks?.[0]?.label ?? lifeStep.goal}` } : null;
   const passedRun = (text: string, actions: RobotAction[], start?: number[]) => {
     if (tab === 'process') markStart('process');
     else if (tab === 'basic') markStart('code');
@@ -4386,7 +4392,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
           onHelp={() => setHelpOpen(true)}
           context={
             // A coding task belongs to the coding tabs (and the library): 수동 제어 shows none.
-            (view === 'sim' && tab !== 'direct') || view === 'library' ? (
+            // 입문: a place's step card (top left) already says where you are.
+            ((view === 'sim' && tab !== 'direct') || view === 'library') && !(track && cellAt) ? (
               <TaskChip
                 mode={mode}
                 practice={practice}
@@ -4668,7 +4675,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
             }}
           />
         )}
-        <div ref={shellRef} className={css.shell} data-dock={dockShown ? 'open' : 'closed'} data-side={side} data-tab={shownTab === 'direct' ? 'direct' : 'code'} data-mini={miniOn ? 'on' : 'off'} data-life={(!!track && !!cellAt) || undefined} data-wide={wideOn || undefined} style={view !== 'sim' ? { display: 'none' } : undefined}>
+        <div ref={shellRef} className={track ? `${css.shell} life-shell` : css.shell} data-dock={dockShown ? 'open' : 'closed'} data-side={side} data-tab={shownTab === 'direct' ? 'direct' : 'code'} data-mini={miniOn ? 'on' : 'off'} data-life={(!!track && !!cellAt) || undefined} data-wide={wideOn || undefined} style={view !== 'sim' ? { display: 'none' } : undefined}>
           <section className={`${css.panel} ${css.stageCol}`} aria-label="시뮬레이션">
             <div className={css.viewport} data-viewport>
               {loadError ? (
@@ -4708,7 +4715,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   simRate={simRateRef}
                   cellCallouts={!!track}
                   cellTags={cellTags.length ? cellTags : cellAt?.mission && !busy ? cellStepTags(cellAt.cell, missionById(cellAt.mission)?.n ?? 1) : []}
-                  display={display}
+                  display={stageDisplay}
                   frameInsets={frameInsets}
                   layoutKey={`${dockShown}:${side}:${camOpen}:${miniWanted}:${start.folded}:${wideOn}`}
                   onReady={onStageReady}
@@ -4753,7 +4760,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                 </div>
               )}
               {loaded && view === 'sim' && railOpen === 'monitor' && (
-                <Hud world={world} chain={loaded.chain} tcpMm={tcpNow} mountMm={mountMm} loadModel={arm.family === 'mycobot280'} status={hudStatus} onClose={() => setRailOpen(null)} />
+                <Hud world={world} chain={loaded.chain} tcpMm={tcpNow} mountMm={mountMm} loadModel={arm.family === 'mycobot280'} status={hudStatus} onClose={() => setRailOpen(null)} simple={!!track} />
               )}
               {loaded && view === 'sim' && touring && cellAt?.cell === touring && <SiteTour
                   key={touring}
@@ -4861,6 +4868,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                       }}
                       cell={cellAt?.cell ?? null}
                       cells={track?.cells}
+                      objectsOnly={!!track}
                       onCell={(id) => {
                         setRailOpen(null);
                         enterCell(id);
@@ -4885,6 +4893,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
               <Notices
                 entries={log}
                 guide={guide ?? lifeGuide}
+                quiet={!!(lifeStep && cellAt && cellResult !== null && lastChecks && !busy && view === 'sim')}
                 above={
                   bannerOn || (goalCard && view === 'sim') || (lifeStep && cellResult !== null && lastChecks && !busy) ? (
                     <>
@@ -4925,7 +4934,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   key={replay.duration}
                   replay={replay}
                   autoplay={replayPlay}
-                  lineLabel={(line) => (tab === 'process' && runText === null ? (procText.split('\n')[line - 1] ?? '') : lineName((runText ?? code).split('\n')[line - 1] ?? ''))}
+                  lineLabel={(line) => recipeOn ? recipeCardOf.current(line) : (tab === 'process' && runText === null ? (procText.split('\n')[line - 1] ?? '') : lineName((runText ?? code).split('\n')[line - 1] ?? ''))}
                   onSeek={(f, line) => {
                     applyFrame(world.current, f, replay.trail);
                     setAnglesView(world.current.angles.slice());
@@ -5179,15 +5188,18 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                       extra={(cellAt && cellTerm) || (!cellAt && level === 'python') ? <ModeSeg mode={cellAt ? pyMode.cell : pyMode.arm} busy={busy} onMode={(m) => setPyMode(cellAt ? 'cell' : 'arm', m)} /> : undefined}
                     />}
                     {cellAt ? (
-                      <div className={css.cellCodeHead}>
+                      <div className={css.cellCodeHead} data-life={recipeOn || undefined}>
                         <b>
-                          실습 셀 · {cellAt.mission ? `${cellAt.mission} ${missionById(cellAt.mission)?.title ?? ''}` : '자유 실습'}
+                          {recipeOn
+                            ? `${CELL_BY_ID[cellAt.cell].name} · ${cellAt.mission ? `${missionById(cellAt.mission)?.n ?? ''}단계 ${missionById(cellAt.mission)?.title ?? ''}` : '자유 실습'}`
+                            : `실습 셀 · ${cellAt.mission ? `${cellAt.mission} ${missionById(cellAt.mission)?.title ?? ''}` : '자유 실습'}`}
                         </b>
                         <small>
-                          {recipeOn ? '카드 순서대로 로봇과 장비가 움직여요. 코드는 쓰지 않아요.' : cellTermOn ? '터미널에서 명령으로 파이썬 파일을 실행해요.' : cellTerm ? '블록 프로그램을 파이썬 코드로 고쳐요. 블록과 같은 프로그램이에요.' : '블록으로 로봇과 장비를 움직여요.'} 목표와 채점은 3D 왼쪽 카드에 있어요.
+                          {recipeOn ? '카드 순서대로 로봇과 장비가 움직여요. 코드는 쓰지 않아요.' : cellTermOn ? '터미널에서 명령으로 파이썬 파일을 실행해요.' : cellTerm ? '블록 프로그램을 파이썬 코드로 고쳐요. 블록과 같은 프로그램이에요.' : '블록으로 로봇과 장비를 움직여요.'}
+                          {recipeOn ? '' : ' 목표와 채점은 3D 왼쪽 카드에 있어요.'}
                         </small>
                         <button type="button" className={css.cellLeave} disabled={busy} onClick={leaveCell}>
-                          셀에서 나가기
+                          {recipeOn ? '현장에서 나가기' : '셀에서 나가기'}
                         </button>
                       </div>
                     ) : (

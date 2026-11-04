@@ -15,15 +15,17 @@ import { CAFE_SPOTS, PALETTE, POURS, RECIPE_ANSWER, RECIPE_START, cardText, reci
 
 import css from './recipe.module.css';
 
+// The kind of card, as a quiet stripe (the HUD keeps colour for meaning): moves light, waits on a
+// machine mid-grey, settings dark; amber where a person is (the door, the customer).
 const KIND_COLOR: Record<Card['k'], string> = {
-  cup: '#8a5a2b',
-  place: '#2f6fed',
-  pick: '#2f6fed',
-  pour: '#0f766e',
-  home: '#6b7280',
-  open: '#c2410c',
-  customer: '#c2410c',
-  close: '#c2410c',
+  cup: '#8a9199',
+  place: '#d6dbe0',
+  pick: '#d6dbe0',
+  pour: '#8a9199',
+  home: '#5f666e',
+  open: '#f0a23b',
+  customer: '#f0a23b',
+  close: '#f0a23b',
 };
 
 const copy = (r: Recipe): Recipe => ({ cards: r.cards.map((c) => ({ ...c })), times: r.times });
@@ -34,7 +36,8 @@ interface Props {
   busy: boolean;
   /** The program line running now (the card that made it lights up); -1 when none. */
   runningLine: number;
-  onCode(code: string): void;
+  /** The program, and the card a program line came from (for the replay bar: no code is shown). */
+  onCode(code: string, cardOf: (line: number) => string): void;
 }
 
 export default function RecipeCards({ mission, busy, runningLine, onCode }: Props) {
@@ -42,7 +45,14 @@ export default function RecipeCards({ mission, busy, runningLine, onCode }: Prop
   const [recipe, setRecipe] = useState<Recipe>(() => start(mission));
   const [open, setOpen] = useState(false);
   const made = useMemo(() => recipeCode(recipe), [recipe]);
-  useEffect(() => onCode(made.code), [made.code, onCode]);
+  useEffect(
+    () =>
+      onCode(made.code, (line) => {
+        const k = made.lines.findIndex(([a, b]) => line >= a && line <= b);
+        return k < 0 ? '' : `카드 ${k + 1} · ${cardText(recipe.cards[k]).title}`;
+      }),
+    [made, onCode, recipe.cards],
+  );
 
   const set = (cards: Card[], times = recipe.times) => setRecipe({ cards, times });
   const edit = (k: number, c: Card) => set(recipe.cards.map((o, i) => (i === k ? c : o)));

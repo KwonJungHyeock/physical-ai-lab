@@ -2,10 +2,10 @@
 
 /**
  * 테마학습 (입문 트랙 ① 생활 로봇): what to learn with, in the side panel, in the 학습 로드맵's
- * dress (Roadmap.tsx). 실생활 협동로봇 — the places where cobots work in everyday life (the café,
- * the calligraphy booth; the board-game robot is coming) — each its picture with the caption in its
- * shade (the tag, the five field ticks, the fields by name), then its name, its order of work and
- * its four steps as ticks; and three 튜토리얼 on the controls every step uses, cut into one plate.
+ * dress (Roadmap.tsx). 실생활 협동로봇 — the places where cobots work in everyday life — each a
+ * row: a small picture (the roadmap shows them large), the tag and the five field ticks, its name,
+ * the fields by name and its four steps as ticks; and three 튜토리얼 on the controls every step
+ * uses, cut into one plate.
  * Picking a place opens it in the 3D view with its 작업 순서 cards; picking a tutorial leaves the
  * place for the desk and starts the quest card over the 3D view.
  */
@@ -50,41 +50,34 @@ export default function ThemePanel(p: Props) {
             const done = steps.filter((m) => p.passed[m.id]).length;
             const body = (
               <>
-                <span className={css.pic}>
-                  {/* eslint-disable-next-line @next/next/no-img-element -- the places' pictures, also in the static export */}
-                  <img src={s.img} alt="" />
-                  <span className={css.caption}>
-                    <span>
-                      <em>{cell ? s.phase : `${s.phase} · ${s.title}`}</em>
-                      <FieldTicks className={css.capTicks} on={(f) => s.fields.includes(f)} />
-                    </span>
-                    <small>{fieldsLine(s)}</small>
-                  </span>
-                  {cell && p.cell === cell && <span className={css.flag}>지금 여기</span>}
-                  {!cell && (
-                    <span className={css.flag} data-soon>
-                      준비 중
-                    </span>
-                  )}
-                </span>
-                {cell && (
-                  <span className={css.body}>
-                    <b>{s.title}</b>
-                    <small>{s.flow}</small>
-                    {steps.length > 0 && (
-                      <span className={css.prog} aria-label={`${done} / ${steps.length}단계 통과`}>
-                        <span className={css.steps}>
-                          {steps.map((m) => (
-                            <i key={m.id} data-done={p.passed[m.id] || undefined} />
-                          ))}
-                        </span>
-                        <em>
-                          {done}/{steps.length} 단계
-                        </em>
+                {/* eslint-disable-next-line @next/next/no-img-element -- the places' pictures, also in the static export */}
+                <img className={css.thumb} src={s.img} alt="" />
+                <span className={css.info}>
+                  <span className={css.tagRow}>
+                    <em>{s.phase}</em>
+                    <FieldTicks on={(f) => s.fields.includes(f)} />
+                    {cell && p.cell === cell && <span className={css.flag}>지금 여기</span>}
+                    {!cell && (
+                      <span className={css.flag} data-soon>
+                        준비 중
                       </span>
                     )}
                   </span>
-                )}
+                  <b>{s.title}</b>
+                  <small>{fieldsLine(s)}</small>
+                  {steps.length > 0 && (
+                    <span className={css.prog} aria-label={`${done} / ${steps.length}단계 통과`}>
+                      <span className={css.steps}>
+                        {steps.map((m) => (
+                          <i key={m.id} data-done={p.passed[m.id] || undefined} />
+                        ))}
+                      </span>
+                      <em>
+                        {done}/{steps.length} 단계
+                      </em>
+                    </span>
+                  )}
+                </span>
               </>
             );
             return cell ? (

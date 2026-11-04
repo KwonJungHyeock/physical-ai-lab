@@ -1693,3 +1693,11 @@
   pointer-events: auto;
   cursor: default;
 }
+
+/* 입문 on a 768 px-high school laptop: the six rows a little lower, so the tool row under them fits
+   without scrolling (the full version keeps its rows). */
+@media (max-height: 820px) {
+  :global(.life-shell) .row {
+    min-height: 54px;
+  }
+}

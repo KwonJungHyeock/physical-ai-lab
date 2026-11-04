@@ -157,7 +157,7 @@ export default function CellHud(p: CellHudProps) {
           <ol>
             {steps.map((s, i) => (
               <li key={s.id} data-cur={s.id === p.mission || undefined} data-done={p.passed[s.id] || undefined} data-locked={!open(i) || undefined}>
-                <button type="button" disabled={p.busy || !open(i)} onClick={() => p.onMission(s.id)} title={open(i) ? `${s.id} ${s.title}` : '앞 단계를 통과하면 열려요'} aria-pressed={s.id === p.mission} aria-label={`${s.id} ${s.title}`}>
+                <button type="button" disabled={p.busy || !open(i)} onClick={() => p.onMission(s.id)} title={open(i) ? `${s.n}단계 ${s.title}` : '앞 단계를 통과하면 열려요'} aria-pressed={s.id === p.mission} aria-label={`${s.n}단계 ${s.title}`}>
                   {p.passed[s.id] ? '✓' : s.n}
                 </button>
               </li>
@@ -171,7 +171,7 @@ export default function CellHud(p: CellHudProps) {
           <p>
             {m ? (
               <>
-                <i>{m.id}</i>
+                <i>{m.n}단계</i>
                 {m.title}
               </>
             ) : (

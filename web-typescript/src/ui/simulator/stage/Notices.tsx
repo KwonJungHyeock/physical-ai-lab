@@ -88,7 +88,8 @@ function LogList({ entries }: { entries: LogEntry[] }) {
 }
 
 /** `above`: a card that shares the top centre (the run's result): it sits over the board, both in one column, never on each other. */
-export default function Notices({ entries, guide, above }: { entries: LogEntry[]; guide?: Guide | null; above?: ReactNode }) {
+/** `quiet`: only `above` and the 기록 button (입문: the step's result card says it all, nothing else beside it). */
+export default function Notices({ entries, guide, above, quiet }: { entries: LogEntry[]; guide?: Guide | null; above?: ReactNode; quiet?: boolean }) {
   const last = entries[entries.length - 1];
   /** The id of the message the board shows; null when it has hidden or been closed. */
   const [shown, setShown] = useState<number | null>(last?.id ?? null);
@@ -154,7 +155,7 @@ export default function Notices({ entries, guide, above }: { entries: LogEntry[]
       <Icon name="chevron" size={12} className={history ? css.chevUp : undefined} />
     </button>
   );
-  const idle = !open && !guide;
+  const idle = quiet || (!open && !guide);
   return (
     <div className={css.notices} ref={box} data-panel="log" data-idle={(idle && !above) || undefined}>
       {above}

@@ -93,7 +93,7 @@ export function StepResult(p: ResultProps) {
           {p.passed ? '✓' : '!'}
         </span>
         <span>
-          <b>{p.passed ? `${m.id} 통과!` : `${m.id} 아직이에요`}</b>
+          <b>{p.passed ? `${m.n}단계 통과!` : `${m.n}단계 아직이에요`}</b>
           <small>{m.title}</small>
         </span>
         <button type="button" className={css.x} onClick={p.onClose} aria-label="닫기">
@@ -124,7 +124,7 @@ export function StepResult(p: ResultProps) {
       )}
       {next && p.onNext && (
         <button type="button" className={css.next} onClick={p.onNext}>
-          다음 단계 {next.id} →
+          다음 단계 ({next.n}단계) →
         </button>
       )}
     </div>

@@ -452,3 +452,18 @@
   background: var(--hud-plate);
   box-shadow: var(--hud-plate-shadow);
 }
+
+/* 입문: leaving a place for the desk (DeskPanel objectsOnly); two classes to outrank `.app button`. */
+.panel .leave {
+  margin-top: 8px;
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--hud-key);
+  box-shadow: var(--hud-key-shadow);
+  color: var(--hud-tx);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}

@@ -15,13 +15,15 @@ import type { Phrase } from '@/engine/simulator/cell/draw';
 
 import css from './recipe.module.css';
 
+// The kind of card, as a quiet stripe (the HUD keeps colour for meaning): writing light, settings
+// dark, the lamp mid-grey; amber where a person is (waiting for the customer's card).
 const KIND_COLOR: Record<DrawCard['k'], string> = {
-  wait: '#c2410c',
-  corner: '#8a5a2b',
-  pen: '#8a5a2b',
-  write: '#2f6fed',
-  home: '#6b7280',
-  done: '#0f766e',
+  wait: '#f0a23b',
+  corner: '#5f666e',
+  pen: '#5f666e',
+  write: '#d6dbe0',
+  home: '#5f666e',
+  done: '#8a9199',
 };
 
 const copy = (r: DrawRecipe): DrawRecipe => ({
@@ -35,7 +37,8 @@ interface Props {
   busy: boolean;
   /** The program line running now (the card that made it lights up); -1 when none. */
   runningLine: number;
-  onCode(code: string): void;
+  /** The program, and the card a program line came from (for the replay bar: no code is shown). */
+  onCode(code: string, cardOf: (line: number) => string): void;
 }
 
 /** A number box that only takes what it may (whole mm), written as it is typed. */
@@ -53,7 +56,14 @@ export default function DrawCards({ mission, busy, runningLine, onCode }: Props)
   const [recipe, setRecipe] = useState<DrawRecipe>(() => start(mission));
   const [open, setOpen] = useState(false);
   const made = useMemo(() => drawCode(recipe), [recipe]);
-  useEffect(() => onCode(made.code), [made.code, onCode]);
+  useEffect(
+    () =>
+      onCode(made.code, (line) => {
+        const k = made.lines.findIndex(([a, b]) => line >= a && line <= b);
+        return k < 0 ? '' : `카드 ${k + 1} · ${drawCardText(recipe.cards[k]).title}`;
+      }),
+    [made, onCode, recipe.cards],
+  );
 
   const set = (cards: DrawCard[], times = recipe.times) => setRecipe({ cards, times });
   const edit = (k: number, c: DrawCard) => set(recipe.cards.map((o, i) => (i === k ? c : o)));
