@@ -39,7 +39,8 @@ export const TRACKS: Record<TrackId, Track> = {
     grade: '입문',
     color: '#0f6b4c',
     levels: ['basic'],
-    menu: ['jog', 'parts', 'pose', 'process', 'code', 'env', 'objects', 'monitor'],
+    // 테마학습 (실생활 협동로봇 · 튜토리얼) instead of 공정 · 환경 · 손 (Console's lifeGroups).
+    menu: ['jog', 'parts', 'pose', 'theme', 'code', 'objects', 'monitor'],
     screens: ['sim'],
     start: { cell: 'cafe', mission: 'F1' },
     cells: ['cafe', 'draw'],

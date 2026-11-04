@@ -16,8 +16,8 @@
  * No React: run.ts steps it, tests/simulator/cell-g-check.mts runs the missions headless.
  */
 
-import type { CellAlert } from "./faults";
-import { setIn, type LineState } from "./line";
+import type { CellAlert } from './faults';
+import { setIn, type LineState } from './line';
 
 /** The message card: 120 mm along x (the text's way), 80 mm along y; the customer stands at −y and reads it. */
 export const CARD_MM = { w: 120, h: 80 } as const;
@@ -40,24 +40,16 @@ export type Pt = [number, number];
 /** Strokes (each a polyline the pen draws without lifting), in a phrase box from (0, 0), mm. */
 export type Strokes = Pt[][];
 
-export const PHRASES = ["HELLO", "사랑해", "하트", "네모"] as const;
+export const PHRASES = ['HELLO', '사랑해', '하트', '네모'] as const;
 export type Phrase = (typeof PHRASES)[number];
 
-const ellipse = (
-  cx: number,
-  cy: number,
-  rx: number,
-  ry: number,
-  n = 24,
-  from = Math.PI / 2,
-): Pt[] =>
+const ellipse = (cx: number, cy: number, rx: number, ry: number, n = 24, from = Math.PI / 2): Pt[] =>
   Array.from({ length: n + 1 }, (_, k) => {
     const a = from + (k * 2 * Math.PI) / n;
     return [r1(cx + rx * Math.cos(a)), r1(cy + ry * Math.sin(a))];
   });
 const r1 = (v: number) => Math.round(v * 10) / 10;
-const shift = (s: Strokes, dx: number): Strokes =>
-  s.map((l) => l.map(([x, y]) => [r1(x + dx), y] as Pt));
+const shift = (s: Strokes, dx: number): Strokes => s.map((l) => l.map(([x, y]) => [r1(x + dx), y] as Pt));
 
 /** Letters 16 mm wide, 30 mm tall, 6 mm apart. */
 const LETTER: Record<string, Strokes> = {
@@ -170,11 +162,7 @@ function heart(): Strokes {
   const pts: Pt[] = Array.from({ length: n + 1 }, (_, k) => {
     const t = Math.PI + (k * 2 * Math.PI) / n;
     const x = 16 * Math.sin(t) ** 3;
-    const y =
-      13 * Math.cos(t) -
-      5 * Math.cos(2 * t) -
-      2 * Math.cos(3 * t) -
-      Math.cos(4 * t);
+    const y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
     return [r1(25 + x * 1.5), r1(25.5 + y * 1.5)];
   });
   return [pts];
@@ -186,17 +174,17 @@ export function phraseStrokes(p: Phrase): {
   w: number;
   h: number;
 } {
-  if (p === "HELLO") {
-    const s = [..."HELLO"].flatMap((c, k) => shift(LETTER[c], k * 22));
+  if (p === 'HELLO') {
+    const s = [...'HELLO'].flatMap((c, k) => shift(LETTER[c], k * 22));
     return { strokes: s, w: 104, h: 30 };
   }
-  if (p === "사랑해")
+  if (p === '사랑해')
     return {
       strokes: HANGUL.flatMap((g, k) => shift(g, k * 35)),
       w: 100,
       h: 30,
     };
-  if (p === "하트") return { strokes: heart(), w: 50, h: 50 };
+  if (p === '하트') return { strokes: heart(), w: 50, h: 50 };
   return {
     strokes: [
       [
@@ -213,10 +201,7 @@ export function phraseStrokes(p: Phrase): {
 }
 
 /** Where a phrase stands written with the card's corner taken as (x, y): in the card's middle, robot mm. */
-export function placedStrokes(
-  p: Phrase,
-  corner: { x: number; y: number },
-): Strokes {
+export function placedStrokes(p: Phrase, corner: { x: number; y: number }): Strokes {
   const { strokes, w, h } = phraseStrokes(p);
   const ox = corner.x + (CARD_MM.w - w) / 2;
   const oy = corner.y + (CARD_MM.h - h) / 2;
@@ -229,20 +214,13 @@ function segDist(p: Pt, a: Pt, b: Pt): number {
   const vx = b[0] - a[0];
   const vy = b[1] - a[1];
   const l2 = vx * vx + vy * vy;
-  const t = l2
-    ? Math.max(0, Math.min(1, ((p[0] - a[0]) * vx + (p[1] - a[1]) * vy) / l2))
-    : 0;
+  const t = l2 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * vx + (p[1] - a[1]) * vy) / l2)) : 0;
   return Math.hypot(p[0] - a[0] - t * vx, p[1] - a[1] - t * vy);
 }
 function distTo(p: Pt, lines: Strokes): number {
   let best = Infinity;
-  for (const l of lines)
-    for (let i = 1; i < l.length; i += 1)
-      best = Math.min(best, segDist(p, l[i - 1], l[i]));
-  if (best === Infinity)
-    for (const l of lines)
-      for (const q of l)
-        best = Math.min(best, Math.hypot(p[0] - q[0], p[1] - q[1]));
+  for (const l of lines) for (let i = 1; i < l.length; i += 1) best = Math.min(best, segDist(p, l[i - 1], l[i]));
+  if (best === Infinity) for (const l of lines) for (const q of l) best = Math.min(best, Math.hypot(p[0] - q[0], p[1] - q[1]));
   return best;
 }
 /** Points every ~1 mm along strokes. */
@@ -252,11 +230,7 @@ function samples(lines: Strokes): Pt[] {
     for (let i = 1; i < l.length; i += 1) {
       const [a, b] = [l[i - 1], l[i]];
       const n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1])));
-      for (let k = 0; k < n; k += 1)
-        out.push([
-          a[0] + ((b[0] - a[0]) * k) / n,
-          a[1] + ((b[1] - a[1]) * k) / n,
-        ]);
+      for (let k = 0; k < n; k += 1) out.push([a[0] + ((b[0] - a[0]) * k) / n, a[1] + ((b[1] - a[1]) * k) / n]);
     }
   return out;
 }
@@ -277,11 +251,7 @@ export interface InkReport {
 }
 
 /** How the ink on a card compares with the phrase as it should stand on it. */
-export function readInk(
-  ink: Strokes,
-  phrase: Phrase,
-  corner: { x: number; y: number },
-): InkReport {
+export function readInk(ink: Strokes, phrase: Phrase, corner: { x: number; y: number }): InkReport {
   const want = placedStrokes(phrase, corner);
   const lines = ink.filter((l) => l.length > 1);
   const got = samples(lines);
@@ -294,13 +264,7 @@ export function readInk(
     const d = distTo(p, want);
     maxDev = Math.max(maxDev, d);
     if (d > 2) stray += 1;
-    if (
-      p[0] < corner.x ||
-      p[0] > corner.x + CARD_MM.w ||
-      p[1] < corner.y ||
-      p[1] > corner.y + CARD_MM.h
-    )
-      outside += 1;
+    if (p[0] < corner.x || p[0] > corner.x + CARD_MM.w || p[1] < corner.y || p[1] > corner.y + CARD_MM.h) outside += 1;
   }
   let offCentre = 0;
   if (got.length) {
@@ -308,10 +272,7 @@ export function readInk(
     const ys = got.map((p) => p[1]);
     const mx = (Math.min(...xs) + Math.max(...xs)) / 2;
     const my = (Math.min(...ys) + Math.max(...ys)) / 2;
-    offCentre = Math.hypot(
-      mx - (corner.x + CARD_MM.w / 2),
-      my - (corner.y + CARD_MM.h / 2),
-    );
+    offCentre = Math.hypot(mx - (corner.x + CARD_MM.w / 2), my - (corner.y + CARD_MM.h / 2));
   }
   return {
     coverage: wantN ? covered.length / wantN : 0,
@@ -325,7 +286,7 @@ export function readInk(
 
 /** Good enough to hand over: nearly all of it written, almost nothing off it, inside the card. */
 export function inkVerdict(r: InkReport): { ok: boolean; why: string } {
-  if (r.length < 3) return { ok: false, why: "카드에 아무것도 안 써졌어요" };
+  if (r.length < 3) return { ok: false, why: '카드에 아무것도 안 써졌어요' };
   if (r.outside > 2)
     return {
       ok: false,
@@ -341,7 +302,7 @@ export function inkVerdict(r: InkReport): { ok: boolean; why: string } {
       ok: false,
       why: `글자 사이에 줄이 그어졌어요 (${Math.round(r.stray)} mm)`,
     };
-  return { ok: true, why: "또렷하게 써졌어요" };
+  return { ok: true, why: '또렷하게 써졌어요' };
 }
 
 /* --- the booth --------------------------------------------------------------------- */
@@ -370,7 +331,7 @@ export interface DrawState {
   /** Where each next card is put down (the mission's). */
   place: { x: number; y: number };
   /** The customer's hand over the mat: putting a card down or taking it, until s; then what happens. */
-  hand: { until: number; then: "put" | "take" } | null;
+  hand: { until: number; then: 'put' | 'take' } | null;
   /** The next customer comes at s. */
   nextAt: number | null;
   done: DoneCard[];
@@ -378,10 +339,7 @@ export interface DrawState {
   breaching: boolean;
 }
 
-export function newDraw(
-  orders: number,
-  place: { x: number; y: number } = CARD_HOME,
-): DrawState {
+export function newDraw(orders: number, place: { x: number; y: number } = CARD_HOME): DrawState {
   // The first customer has just put their card down.
   return {
     orders,
@@ -406,31 +364,25 @@ const HAND_S = 1.5;
 const NEXT_S = 3;
 
 /** One frame of the booth. `tip`: the tool tip now; `ink`: the pen's trail (on the card on the mat). */
-export function stepDraw(
-  def: DrawDef,
-  s: LineState,
-  d: DrawState,
-  tip: { x: number; y: number; z: number },
-  ink: Strokes,
-): DrawStep {
+export function stepDraw(def: DrawDef, s: LineState, d: DrawState, tip: { x: number; y: number; z: number }, ink: Strokes): DrawStep {
   const out: DrawStep = { alerts: [], took: false };
   const t = s.t;
   const lamp = !!s.out[def.lamp];
   // The lamp on with a card there: the customer reaches in to take it.
-  if (lamp && d.corner && !d.hand) d.hand = { until: t + HAND_S, then: "take" };
+  if (lamp && d.corner && !d.hand) d.hand = { until: t + HAND_S, then: 'take' };
   // The next customer comes with a new card.
   if (!d.corner && !d.hand && d.nextAt !== null && t >= d.nextAt) {
     d.nextAt = null;
-    d.hand = { until: t + HAND_S, then: "put" };
+    d.hand = { until: t + HAND_S, then: 'put' };
   }
   if (d.hand && t >= d.hand.until) {
-    if (d.hand.then === "take" && d.corner) {
+    if (d.hand.then === 'take' && d.corner) {
       d.done.push({ t, corner: d.corner, ink: ink.map((l) => l.slice()) });
       d.corner = null;
       d.orders = Math.max(0, d.orders - 1);
       out.took = true;
       if (d.orders > 0) d.nextAt = t + NEXT_S;
-    } else if (d.hand.then === "put") d.corner = { ...d.place };
+    } else if (d.hand.then === 'put') d.corner = { ...d.place };
     d.hand = null;
   }
   setIn(s, def.card, !!d.corner);
@@ -438,21 +390,16 @@ export function stepDraw(
   // The interlock: the arm low over the card while a hand is there.
   const c = d.corner ?? d.place;
   const m = def.margin;
-  const over =
-    tip.x > c.x - m &&
-    tip.x < c.x + CARD_MM.w + m &&
-    tip.y > c.y - m &&
-    tip.y < c.y + CARD_MM.h + m &&
-    tip.z < 60;
+  const over = tip.x > c.x - m && tip.x < c.x + CARD_MM.w + m && tip.y > c.y - m && tip.y < c.y + CARD_MM.h + m && tip.z < 60;
   if (over && d.hand && !d.breaching) {
     d.breaching = true;
     d.breaches += 1;
     out.alerts.push({
       t,
-      level: "stop",
-      kind: "safety",
-      title: "손님 손이 카드 위에 있어요",
-      msg: "손님이 카드를 놓거나 가져가는 동안 팔이 카드 위로 와서 멈췄어요. [카드 있음]이 바뀔 때까지 기다려야 해요.",
+      level: 'stop',
+      kind: 'safety',
+      title: '손님 손이 카드 위에 있어요',
+      msg: '손님이 카드를 놓거나 가져가는 동안 팔이 카드 위로 와서 멈췄어요. [카드 있음]이 바뀔 때까지 기다려야 해요.',
     });
   }
   if (!over || !d.hand) d.breaching = false;
@@ -461,7 +408,5 @@ export function stepDraw(
 
 /** Every card so far (handed over, then the one on the mat) with its ink. */
 export function cardsOf(d: DrawState, trail: Strokes): DoneCard[] {
-  return d.corner
-    ? [...d.done, { t: Infinity, corner: d.corner, ink: trail }]
-    : d.done;
+  return d.corner ? [...d.done, { t: Infinity, corner: d.corner, ink: trail }] : d.done;
 }

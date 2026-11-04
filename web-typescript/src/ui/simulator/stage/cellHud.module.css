@@ -422,3 +422,158 @@
   font-weight: 800;
   color: #9fd8bf;
 }
+
+/* 단계 안내 (입문 트랙): 예측 (grey box) · 관찰 (orange marks, as the scene's bubbles) · 개념 (blue box). */
+.predict {
+  margin: 9px 0 0;
+  padding: 8px 10px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid #3a4540;
+}
+.predict b {
+  font-size: 12.5px;
+  color: #fff;
+}
+.predict b small {
+  margin-left: 6px;
+  font-weight: 600;
+  font-size: 11px;
+  color: #9aa7a1;
+}
+.predict p {
+  margin: 4px 0 0;
+}
+.options {
+  display: grid;
+  gap: 5px;
+  margin-top: 7px;
+}
+.options button {
+  text-align: left;
+  padding: 6px 9px;
+  border-radius: 7px;
+  border: 1px solid #4a5550;
+  background: #26302c;
+  color: #e9eeeb;
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.options button:hover:not(:disabled) {
+  border-color: #9fd8bf;
+}
+.mine {
+  color: #cfe8dc;
+  font-weight: 700;
+}
+.mine small {
+  display: block;
+  font-weight: 500;
+  font-size: 11px;
+  color: #9aa7a1;
+}
+.compare {
+  margin: 0 0 7px !important;
+  padding: 6px 8px;
+  border-radius: 7px;
+  background: rgba(194, 65, 12, 0.22);
+  color: #fde3d3;
+}
+.compare[data-ok] {
+  background: rgba(15, 107, 76, 0.35);
+  color: #d5f5e6;
+}
+.observe {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px 6px;
+  margin: 8px 0 0;
+}
+.observe b {
+  font-size: 12px;
+  color: #fdba74;
+  margin-right: 2px;
+}
+.observe span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  padding: 3px 8px 3px 5px;
+  border-radius: 999px;
+  border: 1px solid #5b3a26;
+  color: #e8cbb8;
+}
+.observe span i {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid #c2410c;
+  font-style: normal;
+  font-size: 9px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  color: #fff;
+}
+.observe span[data-seen] {
+  border-color: #c2410c;
+  color: #fff;
+}
+.observe span[data-seen] i {
+  background: #c2410c;
+}
+.concept {
+  margin: 10px 0 0;
+  padding: 9px 11px;
+  border-radius: 9px;
+  background: rgba(29, 78, 216, 0.28);
+  border: 1px solid #3b5bdb;
+}
+.concept b {
+  color: #dbe4ff;
+  font-size: 13px;
+}
+.concept p {
+  margin: 4px 0 0;
+  color: #e6ecff;
+}
+.concept .real {
+  font-size: 12px;
+  color: #b9c8f5;
+}
+
+/* 입문 튜토리얼 (TutorialHud.tsx): the step to do now in a green band ('지금 할 일'), its panel's button. */
+.checks li[data-cur] span {
+  color: #fff;
+  font-weight: 800;
+}
+.checks li[data-cur] i {
+  color: #22c55e;
+}
+.todo {
+  margin: 9px 0 0;
+  padding: 9px 11px;
+  border-radius: 9px;
+  background: rgba(15, 107, 76, 0.32);
+  border: 1px solid #0f6b4c;
+}
+.todo p {
+  margin: 0;
+  color: #eafff4;
+  font-weight: 600;
+}
+.go {
+  margin-top: 8px;
+  border: 0;
+  border-radius: 8px;
+  padding: 6px 14px;
+  background: #22c55e;
+  color: #052e1a;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.25);
+}

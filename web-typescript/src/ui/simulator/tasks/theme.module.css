@@ -1,0 +1,195 @@
+/* 테마학습 (ThemePanel.tsx): the places and the tutorials, on the dark side panel. */
+.theme {
+  padding: 4px 12px 12px;
+  display: grid;
+  gap: 18px;
+  color: #eef2f7;
+}
+
+.theme h4 {
+  margin: 0 0 9px;
+  font-size: 14px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.theme h4 em {
+  font-style: normal;
+  font-weight: 500;
+  font-size: 12px;
+  color: #9aa4b4;
+}
+
+.sites {
+  display: grid;
+  gap: 8px;
+}
+
+.site {
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+  grid-template-areas:
+    'l n e'
+    'l f f'
+    'l b b';
+  align-items: center;
+  gap: 2px 10px;
+  text-align: left;
+  padding: 11px 12px;
+  border-radius: 12px;
+  border: 1px solid #2b3240;
+  background: #1f2530;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.site:hover:not(:disabled):not([data-soon]) {
+  border-color: #3f6f5c;
+}
+
+.site[aria-pressed='true'] {
+  border-color: #0f6b4c;
+  background: #1d2f28;
+  box-shadow: 0 0 0 1px #0f6b4c inset;
+}
+
+.site:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.site i {
+  grid-area: l;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  font-style: normal;
+  font-weight: 800;
+  background: #0f6b4c;
+  color: #fff;
+}
+
+.site b {
+  grid-area: n;
+  font-size: 14px;
+}
+
+.site small {
+  grid-area: f;
+  color: #9aa4b4;
+  font-size: 12px;
+}
+
+.site em {
+  grid-area: e;
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 700;
+  color: #9fd8bf;
+}
+
+.bar {
+  grid-area: b;
+  height: 4px;
+  border-radius: 2px;
+  background: #2b3240;
+  overflow: hidden;
+  margin-top: 5px;
+}
+
+.bar span {
+  display: block;
+  height: 100%;
+  background: #22c55e;
+}
+
+.site[data-soon] {
+  cursor: default;
+  border-style: dashed;
+  background: transparent;
+}
+
+.site[data-soon] i {
+  background: #343b48;
+  color: #b8c0cc;
+}
+
+.site em.soon {
+  color: #fb923c;
+}
+
+.tuts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.tuts button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 26px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  padding: 9px 11px;
+  border-radius: 10px;
+  border: 1px solid #2b3240;
+  background: #1f2530;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.tuts button[aria-pressed='true'] {
+  border-color: #2f6fed;
+  background: #1c2540;
+}
+
+.tuts button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.tuts i {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-style: normal;
+  font-weight: 800;
+  font-size: 12.5px;
+  background: #2b3240;
+  color: #dfe5ee;
+}
+
+.tuts i[data-done] {
+  background: #0f6b4c;
+  color: #fff;
+}
+
+.tuts span {
+  display: grid;
+  gap: 1px;
+}
+
+.tuts b {
+  font-size: 13.5px;
+}
+
+.tuts small {
+  font-size: 12px;
+  color: #9aa4b4;
+}
+
+.tuts em {
+  font-style: normal;
+  font-size: 11.5px;
+  color: #9aa4b4;
+}

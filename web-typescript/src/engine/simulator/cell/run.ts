@@ -21,6 +21,7 @@ import { freeSetup, judge, missionById, type CellEvent, type CellMission } from 
 import { newVision, type VisionState } from './vision';
 import { newCafe, stepCafe, type CafeState } from './cafe';
 import { newDraw, stepDraw, type DrawState } from './draw';
+import { observe } from './guides';
 
 /** A machined workpiece's colour (D): bright turned steel. */
 export const MACHINED = '#e3e8ee';
@@ -51,6 +52,8 @@ export interface CellRun {
   cafe?: CafeState;
   /** G: the calligraphy booth's cards and customers (cell/draw.ts). */
   draw?: DrawState;
+  /** 단계 안내: the step's moments seen so far, by id, at cell time (cell/guides.ts). */
+  observed: Record<string, number>;
 }
 
 /** The cell's start: its run state and the parts it begins with. */
@@ -67,7 +70,7 @@ export function newCellRun(id: CellId, missionId: string | null): { run: CellRun
   }
   line.queue = setup.queue?.(layout) ?? [];
   setup.line?.(line);
-  const run: CellRun = { id, layout, mission: m?.id ?? null, line, health: newHealth(), alerts: [], fresh: [], halt: null, events: [], next: {}, startT: null, endT: null, lastTip: null, vision: newVision() };
+  const run: CellRun = { id, layout, mission: m?.id ?? null, line, health: newHealth(), alerts: [], fresh: [], halt: null, events: [], next: {}, startT: null, endT: null, lastTip: null, vision: newVision(), observed: {} };
   if (layout.line.cafe) run.cafe = newCafe(layout.line.cafe, setup.orders ?? 1);
   if (layout.line.draw) run.draw = newDraw(setup.orders ?? 1, setup.card);
   return { run, parts: setup.parts(layout) };
@@ -196,6 +199,7 @@ export function stepCell(w: WorldState, phys: PhysicsWorld, dt: number, chain: r
   run.lastTip = { x: tip.x, y: tip.y, z: tip.z };
   const held = w.carry ? w.objects.find((o) => o.id === w.carry!.id) : undefined;
   for (const a of watchLoad(run.health, chain, angles, held ? held.massG / 1000 : 0, tcpMm, t)) raise(run, a);
+  observe(run, w);
 }
 
 /** The mission's checks now. */

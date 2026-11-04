@@ -121,6 +121,9 @@ import ProcessPanel from './editors/ProcessPanel';
 import { FullBar, LangSeg, Snippets, SlotCode, TutorialCard } from './editors/Tutorial';
 import RecipeCards from './editors/RecipeCards';
 import DrawCards from './editors/DrawCards';
+import ThemePanel from './tasks/ThemePanel';
+import TutorialHud from './stage/TutorialHud';
+import { LIFE_TUTORIALS, lifeTutorialById, type TutCtx, type TutMem } from '@/engine/simulator/lifeTutorials';
 import { StartGuide, type StartStep } from './stage/StartGuide';
 import HandPanel, { type HandState } from './control/HandPanel';
 import { HandMapper, demoProcess, simplifyDemo, type DemoPoint, type DemoSample, type HandPose } from '@/engine/vision/hand';
@@ -221,6 +224,8 @@ const INSTALLER_URL = 'https://github.com/KwonJungHyeock/physical-ai-lab/release
 /** The simulator opens on the arm alone; the AI kit is one click away (the 실습 환경 dock). */
 const START_THEME: Theme = 'arm';
 const SECTION_KEY = 'robot-console-section';
+/** 입문 튜토리얼s finished (this browser). */
+const TUT_KEY = 'robot-console-life-tutorials';
 const MOUNT_KEY = 'robot-console-mount';
 const PC_OFFER_KEY = 'robot-console-pc-offered';
 /** Which real camera is which (kit / hand), when the robot has more than one. */
@@ -324,6 +329,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const [section, setSection] = useState<string>('jog');
   const openSection = (id: string) => {
     setSection(id);
+    // 테마학습 is the 입문 page's own: not kept for the full console.
+    if (id === 'theme') return;
     try {
       localStorage.setItem(SECTION_KEY, id);
     } catch {
@@ -569,6 +576,20 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const [cellTags, setCellTags] = useState<string[]>([]);
   /** Steps passed (kept in this browser) and the last finished run of the open step. */
   const [cellPassed, setCellPassed] = useState<Record<string, boolean>>({});
+  /** 입문 튜토리얼 (lifeTutorials.ts): the one running, its step and what the arm was when the step began. */
+  const [lifeTut, setLifeTut] = useState<{ id: string; step: number; start: TutCtx; mem: TutMem } | null>(null);
+  const [tutDone, setTutDone] = useState<Record<string, boolean>>({});
+  /** Process runs that finished well (튜토리얼 '위치 가르쳐 옮기기'). */
+  const [procRuns, setProcRuns] = useState(0);
+  useEffect(() => {
+    try {
+      // Read after hydration (this browser's record).
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setTutDone(JSON.parse(localStorage.getItem(TUT_KEY) ?? '{}') as Record<string, boolean>);
+    } catch {
+      /* private window */
+    }
+  }, []);
   const [cellResult, setCellResult] = useState<boolean | null>(null);
   /** 실습 셀's Python tab (the blocks otherwise). */
   const [cellTerm, setCellTerm] = useState(false);
@@ -2063,7 +2084,10 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     const done = ok && (theme !== 'arm' || placed === targets.length);
     if (ok && !done) addLog('err', `블록 ${targets.length - placed}개가 정한 높이에 놓이지 않고 떨어졌어요.`, flow.kind === 'stack' ? '쌓기 간격을 블록 높이(25 mm)에 맞춰 주세요.' : '내려놓는 곳의 높이(Z)를 블록이 놓일 높이에 맞춰 주세요.');
     setLastRun({ ok: done, seconds: simT, ...(carry ? { placed, total: targets.length } : {}) });
-    if (done) passedRun(text, actions, start);
+    if (done) {
+      passedRun(text, actions, start);
+      setProcRuns((n) => n + 1);
+    }
     else setPassed(null);
     if (done && flow.step === 3) setFlow({ ...flow, step: 4 });
   };
@@ -2238,6 +2262,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   /** Open a cell on a ladder step (or 자유 실습): its world, the gripper, the step's program. */
   /** Into a cell at its first step not passed yet (a cell whose ladder is still to come: to look round and run by hand). */
   const enterCell = (id: CellId) => {
+    setLifeTut(null);
     const steps = missionsOf(id);
     const first = steps.find((m) => !cellPassed[m.id]) ?? steps[0];
     openCell(id, CELL_BY_ID[id].built ? (first?.id ?? null) : null);
@@ -3407,6 +3432,57 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   );
   const camAvailable = theme === 'kit' || cameraFlange || (robotMode && !!robot?.camera);
 
+  /* --- 입문 튜토리얼: the arm read a few times a second; a step done moves the quest on ----------- */
+  const tutCtx = (): TutCtx => {
+    const a = world.current.angles.slice();
+    const tip = tipOf(a);
+    return { angles: a, home: arm.home, tip: tip ? { x: tip.x, y: tip.y, z: tip.z } : { x: 0, y: 0, z: 0 }, poses, flowStep: flow.step, runs: procRuns };
+  };
+  const tutCtxRef = useRef(tutCtx);
+  useEffect(() => {
+    tutCtxRef.current = tutCtx;
+  });
+  useEffect(() => {
+    if (!lifeTut) return;
+    const t = lifeTutorialById(lifeTut.id);
+    const step = t?.steps[lifeTut.step];
+    if (!t || !step) return;
+    const id = window.setInterval(() => {
+      const now = tutCtxRef.current();
+      if (!step.done(now, lifeTut.start, lifeTut.mem)) return;
+      const next = lifeTut.step + 1;
+      setLifeTut({ ...lifeTut, step: next, start: now, mem: {} });
+      if (next < t.steps.length) return;
+      setTutDone((d) => {
+        const n = { ...d, [t.id]: true };
+        try {
+          localStorage.setItem(TUT_KEY, JSON.stringify(n));
+        } catch {
+          /* private window */
+        }
+        return n;
+      });
+      addLog('ok', `튜토리얼 '${t.title}'를 마쳤어요.`);
+    }, 300);
+    return () => window.clearInterval(id);
+  }, [lifeTut, addLog]);
+  const openTutPanel = (panel: 'jog' | 'pose' | 'process') => {
+    if (panel === 'process') return openTab('process');
+    openSection(panel);
+    openTab('direct');
+  };
+  const startTutorial = (id: string) => {
+    const t = lifeTutorialById(id);
+    if (!t || busy) return;
+    if (cellRef.current) leaveCell();
+    // 공정 짜기 from its first screen.
+    if (id === 'teach') setFlow({ ...flow, step: 1 });
+    const start = tutCtx();
+    setLifeTut({ id, step: 0, start: id === 'teach' ? { ...start, flowStep: 1 } : start, mem: {} });
+    addLog('info', `튜토리얼 '${t.title}': ${t.steps[0].text}`);
+    openTutPanel(t.steps[0].panel);
+  };
+
   /** No tool fitted: the open/close buttons still show, and say what to do. */
   /** The fitted tool's own buttons: in the jog screen (the 도구 screen only fits and swaps the tool). */
   const toolRow = (
@@ -3692,7 +3768,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       setRingJoint(null);
       setZeroMode(false);
     }
-    if (id === 'jog' || id === 'parts' || id === 'pose' || id === 'hand') {
+    if (id === 'jog' || id === 'parts' || id === 'pose' || id === 'hand' || id === 'theme') {
       openSection(id);
       return openTab('direct');
     }
@@ -3735,8 +3811,23 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   // 제어: moving the arm by hand. 작업: programs that run (a process of points, blocks, Python, ROS 2). 보기: windows.
   // 입문 트랙's café and calligraphy booth: the program is 작업 순서 카드, not code (RecipeCards · DrawCards).
   const recipeOn = !!track && (cellAt?.cell === 'cafe' || cellAt?.cell === 'draw');
-  const barGroups = [
-    { name: '제어', items: [work('jog', '제어', 'move', '제어: 관절 · 좌표로 움직이기 (조그)', true), { ...work('parts', '도구', 'tool', '도구 · 액세서리', true), hintFor: '끼우기, 도구' }, { ...work('pose', '자세', 'home', '자세 저장 · 불러오기', true), hintFor: '기본 자세, 일자로 펴기, 카메라 자세, 이 자세로, 자세' }] },
+  const controlGroup = { name: '제어', items: [work('jog', '제어', 'move', '제어: 관절 · 좌표로 움직이기 (조그)', true), { ...work('parts', '도구', 'tool', '도구 · 액세서리', true), hintFor: '끼우기, 도구' }, { ...work('pose', '자세', 'home', '자세 저장 · 불러오기', true), hintFor: '기본 자세, 일자로 펴기, 카메라 자세, 이 자세로, 자세' }] };
+  const objectsItem = theme === 'kit' ? [] : [viewItem('objects', '물건', 'box', '책상에 물건 놓기', desk.objects.length ? String(desk.objects.length) : undefined)];
+  const monitorItem = viewItem('monitor', '모니터', 'chart', '관절 · 손끝 · 그래프 · 부하');
+  // 입문 트랙: 제어 · 도구 · 자세 always; 테마학습 (실생활 협동로봇 · 튜토리얼) and, in a place, its 작업 순서; 물건 · 모니터.
+  const lifeGroups = [
+    controlGroup,
+    {
+      name: '학습',
+      items: [
+        work('theme', '테마학습', 'flag', '테마학습: 실생활 협동로봇 · 튜토리얼'),
+        ...(recipeOn ? [{ ...work('code', '순서', 'code', '작업 순서: 카드로 로봇이 할 일을 차례로'), on: dockShown && (workScreen === 'basic' || workScreen === 'python' || workScreen === 'ros') }] : []),
+      ],
+    },
+    { name: '보기', items: [...objectsItem, monitorItem] },
+  ];
+  const fullGroups = [
+    controlGroup,
     {
       name: '작업',
       items: [
@@ -3749,12 +3840,13 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       name: '보기',
       items: [
         { ...viewItem('env', '환경', 'scene', '실습 환경 · 장면마다 ▶ 데모'), hintFor: '책상에 매트와 블록 놓기, 매트, 실습 환경, 블록 섞기, 처음 상태로, 물리' },
-        ...(theme === 'kit' ? [] : [viewItem('objects', '물건', 'box', '책상에 물건 놓기', desk.objects.length ? String(desk.objects.length) : undefined)]),
+        ...objectsItem,
         ...(camAvailable ? [viewItem('camera', '카메라', 'camera', '카메라 화면 · 영상 처리')] : []),
-        viewItem('monitor', '모니터', 'chart', '관절 · 손끝 · 그래프 · 부하'),
+        monitorItem,
       ],
     },
   ];
+  const barGroups = track?.menu.includes('theme') ? lifeGroups : fullGroups;
   // A 트랙 opens only its menus.
   const shownGroups = track ? barGroups.map((g) => ({ ...g, items: g.items.filter((i) => track.menu.includes(i.id)) })).filter((g) => g.items.length) : barGroups;
   // The mini arm (angles, load, tip position) stays on every screen, 제어 too.
@@ -3765,10 +3857,10 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   }, [miniWanted]);
   const barFoot: BarItem[] = [{ ...work('zero', '영점', 'zero', robotMode ? '영점 맞추기' : '로봇을 연결하면 영점을 맞춰요'), disabled: !robotMode || (busy && !zeroMode) }];
   /** The 3D view's top-left corner: the arm's name and ROBOT LINK, when no cell or window is there. */
-  const stageTitle = !!loaded && view === 'sim' && !cellAt && !railOpen;
+  const stageTitle = !!loaded && view === 'sim' && !cellAt && !railOpen && !lifeTut;
   /** The open screen in the 3D view's corner: [English, Korean]. */
   const SCREEN_EN: Record<string, string> = { hand: 'HAND', jog: 'CONTROL', parts: 'TOOL', pose: 'POSE', zero: 'ZERO', process: 'TASK', basic: 'CODE', python: 'CODE', ros: 'CODE', ai: 'AI' };
-  const SCREEN_TITLE: Record<string, string> = { hand: '손 따라하기', jog: '제어', parts: '도구', pose: '자세', zero: '영점', process: '공정', basic: recipeOn ? '작업 순서' : '코딩', python: '코딩', ros: '코딩' };
+  const SCREEN_TITLE: Record<string, string> = { theme: '테마학습', hand: '손 따라하기', jog: '제어', parts: '도구', pose: '자세', zero: '영점', process: '공정', basic: recipeOn ? '작업 순서' : '코딩', python: '코딩', ros: '코딩' };
 
   const zeroPanel = (
     <ZeroPanel
@@ -4516,6 +4608,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   planMarks={planMarks}
                   cell={cellAt?.cell ?? null}
                   simRate={simRateRef}
+                  cellCallouts={!!track}
                   cellTags={cellTags.length ? cellTags : cellAt?.mission && !busy ? cellStepTags(cellAt.cell, missionById(cellAt.mission)?.n ?? 1) : []}
                   display={display}
                   frameInsets={frameInsets}
@@ -4564,6 +4657,20 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
               {loaded && view === 'sim' && railOpen === 'monitor' && (
                 <Hud world={world} chain={loaded.chain} tcpMm={tcpNow} mountMm={mountMm} loadModel={arm.family === 'mycobot280'} status={hudStatus} onClose={() => setRailOpen(null)} />
               )}
+              {loaded && view === 'sim' && !cellAt && lifeTut && railOpen !== 'monitor' && (
+                <TutorialHud
+                  id={lifeTut.id}
+                  step={lifeTut.step}
+                  n={LIFE_TUTORIALS.findIndex((t) => t.id === lifeTut.id) + 1}
+                  of={LIFE_TUTORIALS.length}
+                  onOpen={openTutPanel}
+                  onNext={() => {
+                    const k = LIFE_TUTORIALS.findIndex((t) => t.id === lifeTut.id);
+                    if (LIFE_TUTORIALS[k + 1]) startTutorial(LIFE_TUTORIALS[k + 1].id);
+                  }}
+                  onClose={() => setLifeTut(null)}
+                />
+              )}
               {loaded && view === 'sim' && cellAt && railOpen !== 'monitor' && (
                 <CellHud
                   world={world}
@@ -4585,6 +4692,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                     resetWorld();
                     setBadge(null);
                   }}
+                  guides={!!track}
                 />
               )}
               {loaded && view === 'sim' && cellAt && railOpen !== 'monitor' && cellLayout(cellAt.cell).line.camera && <CellCamera world={world} cell={cellAt.cell} />}
@@ -4600,7 +4708,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   screen={[SCREEN_EN[workScreen] ?? 'VIEW', SCREEN_TITLE[workScreen] ?? '보기']}
                   onLink={() => setConnectOpen(true)}
                 >
-                  <StartGuide
+                  {/* The full console's first-steps card (공정 · 블록 코딩); 입문 has its own 튜토리얼. */}
+                  {!track && <StartGuide
                     done={start.done}
                     folded={start.folded}
                     tip={!miniOn}
@@ -4611,7 +4720,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                       if (step === 'code') openTab('basic');
                       else openWork(id);
                     }}
-                  />
+                  />}
                 </StageTitle>
               )}
               {loaded && view === 'sim' && !railOpen && !cellAt && <HudGauges speed={jogSpeed} monitor={monitor} dock={dockShown ? 'open' : 'closed'} />}
@@ -4792,6 +4901,10 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   <div className={css.dockScroll} role="region" aria-label={SCREEN_TITLE[workScreen]}>
                     {zeroMode ? (
                       <div className={css.screen}>{zeroPanel}</div>
+                    ) : workScreen === 'theme' ? (
+                      <div className={css.screen}>
+                        <ThemePanel cell={cellAt?.cell ?? null} passed={cellPassed} tutorial={lifeTut?.id ?? null} tutorialsDone={tutDone} busy={busy} onSite={(id) => enterCell(id)} onTutorial={startTutorial} />
+                      </div>
                     ) : workScreen === 'parts' ? (
                       <div className={css.screen}>
                         <PartsPanel effector={effector} cameraFlange={cameraFlange} busy={busy} onTool={changeTool} mount={mount} onMount={chooseMount} tools={arm.tools} flangeAvailable={arm.cameraFlange} mountAvailable={arm.family !== 'omx' && arm.family !== 'mg400'} />
@@ -4821,7 +4934,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                         {toolRow}
                       </div>
                     )}
-                    {!zeroMode && (
+                    {!zeroMode && workScreen !== 'theme' && (
                       // Always in reach, whatever section is open: back to the ready pose, straight up, stop.
                       <div className={css.poseDock}>
                         <button type="button" disabled={busy} onClick={() => goPose('home')} title="관찰 자세 (공식 AI 키트)">

@@ -227,6 +227,8 @@ interface StageProps {
   simRate?: RefObject<number>;
   /** Equipment whose name tags show (the step's equipment); others show while pointed at. */
   cellTags?: readonly string[];
+  /** 입문 트랙: the step's 관찰 bubbles in the cell (cell/guides.ts). */
+  cellCallouts?: boolean;
 }
 
 /**
@@ -394,6 +396,7 @@ function World({
   cell,
   simRate,
   cellTags,
+  cellCallouts = false,
 }: StageProps & { lights: Lights }) {
   // Every node of the arm's model files, by name (a later file wins a shared name).
   const gltfs = useGLTF(spec.glbs as string[], DRACO_PATH) as unknown as { nodes: GlbNodes }[];
@@ -696,7 +699,7 @@ function World({
       {!cell && <Desk z={theme === 'kit' ? DESK_Z : 0} finish={spec.finish} />}
       {cell ? (
         <>
-          <CellScene world={world} cell={cell} tags={cellTags} />
+          <CellScene world={world} cell={cell} tags={cellTags} callouts={cellCallouts} />
           <CellObjects world={world} />
           <CellPhysics world={world} chain={chain} tcpMm={tcpMm} effector={effector} rate={simRate} />
         </>

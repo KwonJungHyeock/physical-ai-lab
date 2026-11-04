@@ -9,11 +9,12 @@
  * notices as they happen.
  */
 
-import { useEffect, useState, type RefObject } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 
 import { CELL_BY_ID, cellLayout, gridPlace, type CellId } from '@/engine/simulator/cell/cells';
 import type { CellAlert } from '@/engine/simulator/cell/faults';
 import { setOut } from '@/engine/simulator/cell/line';
+import { guideOf } from '@/engine/simulator/cell/guides';
 import { missionById, missionsOf } from '@/engine/simulator/cell/missions';
 import { cellChecks } from '@/engine/simulator/cell/run';
 import type { WorldState } from '@/engine/simulator/sim';
@@ -45,6 +46,8 @@ interface Snap {
   fault: CellAlert | null;
   halt: CellAlert | null;
   checks: { label: string; ok: boolean; detail?: string }[] | null;
+  /** 단계 안내: the moments seen so far in this run. */
+  observed: Record<string, number>;
 }
 
 function snapOf(w: WorldState | null): Snap | null {
@@ -72,6 +75,7 @@ function snapOf(w: WorldState | null): Snap | null {
     fault: run.health.fault,
     halt: run.halt,
     checks: cellChecks(w)?.items ?? null,
+    observed: { ...run.observed },
   };
 }
 
@@ -94,11 +98,34 @@ export interface CellHudProps {
   onAlert(a: CellAlert): void;
   /** 자유 실습: a fresh cell (parts back, the line stopped). */
   onReset(): void;
+  /** 입문 트랙: each step goes 예측 → 관찰 → 개념 (cell/guides.ts). */
+  guides?: boolean;
 }
+
+const PREDICT_KEY = 'robot-console-life-predict';
+function loadPredictions(): Record<string, number> {
+  try {
+    return JSON.parse(localStorage.getItem(PREDICT_KEY) ?? '{}') as Record<string, number>;
+  } catch {
+    return {};
+  }
+}
+const MARK = ['①', '②', '③', '④'];
 
 export default function CellHud(p: CellHudProps) {
   const [snap, setSnap] = useState<Snap | null>(() => snapOf(p.world.current));
   const [hint, setHint] = useState(false);
+  /** 예측: the option chosen per step (kept in this browser, not graded). */
+  const [predicted, setPredicted] = useState<Record<string, number>>(loadPredictions);
+  const predict = (id: string, k: number) => {
+    const next = { ...predicted, [id]: k };
+    setPredicted(next);
+    try {
+      localStorage.setItem(PREDICT_KEY, JSON.stringify(next));
+    } catch {
+      /* private window */
+    }
+  };
   const { world, onAlert } = p;
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -111,6 +138,15 @@ export default function CellHud(p: CellHudProps) {
 
   const steps = missionsOf(p.cell);
   const m = p.mission ? missionById(p.mission) : null;
+  const guide = p.guides ? guideOf(p.mission) : null;
+  const chosen = m ? predicted[m.id] : undefined;
+  // The run is over (the step's checks have their verdict): time for the comparison and the concept.
+  const after = p.result !== null && !p.busy;
+  // The concept appears under the checks once the run is over: bring it into view in the card.
+  const conceptRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (after) conceptRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [after]);
   // A cell whose ladder is still to come: its steps stay shut, its equipment is run by hand.
   const built = CELL_BY_ID[p.cell].built;
   const layout = cellLayout(p.cell);
@@ -189,6 +225,38 @@ export default function CellHud(p: CellHudProps) {
           </header>
           <p className={css.adds}>+ 이번에 더해진 조건: {m.adds}</p>
           <p className={css.goal}>{m.goal}</p>
+          {guide && !after && (
+            <div className={css.predict}>
+              <b>
+                예측 <small>채점하지 않아요</small>
+              </b>
+              <p>{guide.predict.q}</p>
+              {chosen === undefined ? (
+                <div className={css.options}>
+                  {guide.predict.options.map((o, k) => (
+                    <button key={o} type="button" disabled={p.busy} onClick={() => predict(m.id, k)}>
+                      {MARK[k]} {o}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className={css.mine}>
+                  내 예측: {MARK[chosen]} {guide.predict.options[chosen]} <small>실행한 뒤 결과와 비교해요</small>
+                </p>
+              )}
+            </div>
+          )}
+          {guide && (
+            <div className={css.observe} aria-label="관찰">
+              <b>관찰</b>
+              {guide.observe.map((o) => (
+                <span key={o.id} data-seen={snap?.observed[o.id] !== undefined || undefined}>
+                  <i aria-hidden="true">{snap?.observed[o.id] !== undefined ? '✓' : ''}</i>
+                  {o.text}
+                </span>
+              ))}
+            </div>
+          )}
           {snap?.checks && (
             <ul className={css.checks}>
               {snap.checks.map((c) => (
@@ -218,6 +286,18 @@ export default function CellHud(p: CellHudProps) {
             )}
           </div>
           {hint && m.hint && <p className={css.hint}>{m.hint}</p>}
+          {guide && after && (
+            <div className={css.concept} ref={conceptRef}>
+              {chosen !== undefined && (
+                <p className={css.compare} data-ok={chosen === guide.predict.answer || undefined}>
+                  예측 {MARK[chosen]} → 실제 {MARK[guide.predict.answer]} {guide.predict.options[guide.predict.answer]}: {chosen === guide.predict.answer ? '맞았어요.' : '달랐어요.'} {guide.predict.why}
+                </p>
+              )}
+              <b>개념 · {guide.concept.term}</b>
+              <p>{guide.concept.def}</p>
+              <p className={css.real}>실제 현장: {guide.concept.real}</p>
+            </div>
+          )}
         </section>
       ) : (
         <section className={css.card}>

@@ -22,6 +22,7 @@ const { objectSpec } = await import('../../src/engine/simulator/deskPhysics');
 const G = await import('../../src/engine/simulator/program');
 const { CELL_ENV, cellChecks, cellSolids, stepCell } = await import('../../src/engine/simulator/cell/run');
 const { missionsOf, missionById } = await import('../../src/engine/simulator/cell/missions');
+const { guideOf } = await import('../../src/engine/simulator/cell/guides');
 
 const chain = buildChain(parseUrdf(readFileSync(new URL('../../public/robot/rdkx5/mycobot_280_rdkx5.urdf', import.meta.url), 'utf8')));
 const EFF = 'adaptive' as const;
@@ -71,6 +72,11 @@ for (const m of missionsOf('cafe')) {
   const { w, run, log } = await cell(m.id);
   const err = await run(m.solution!);
   assert.ok(!err && allOk(w), `${m.id} ${m.title}: ${err ? (err as Error).message : ''} | ${summary(w)} | ${alertsOf(w)} | ${log.slice(-6).join(' / ')}`);
+  // 단계 안내: the step's guide is there, its answer is one of its options, and the reference run shows every moment it points to.
+  const g = guideOf(m.id);
+  assert.ok(g && g.predict.answer < g.predict.options.length && g.observe.length >= 2, `${m.id}: a step guide (예측 · 관찰 2개 이상 · 개념)`);
+  const unseen = g.observe.filter((o) => w.cell!.observed[o.id] === undefined).map((o) => o.id);
+  assert.deepEqual(unseen, [], `${m.id}: moments to observe that the reference run never showed`);
   const el = w.cell!.startT === null ? 0 : w.cell!.endT! - w.cell!.startT;
   console.log(`  ok   ${m.id} ${m.title}: ${summary(w)}  [${el.toFixed(0)} s cell · ${((Date.now() - t0) / 1000).toFixed(1)} s]`);
 }

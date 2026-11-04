@@ -10,9 +10,11 @@
  */
 
 import { Html } from '@react-three/drei';
-import { useState, type ReactNode, type RefObject } from 'react';
+import { useFrame } from '@react-three/fiber';
+import { useRef, useState, type ReactNode, type RefObject } from 'react';
 
 import { cellLayout, type CellId } from '@/engine/simulator/cell/cells';
+import { guideOf } from '@/engine/simulator/cell/guides';
 import type { WorldState } from '@/engine/simulator/sim';
 
 import { Feeder } from './cell/cellA';
@@ -160,7 +162,42 @@ const EQUIPMENT: Record<CellId, (p: { world: RefObject<WorldState | null>; onHov
   draw: DrawCell,
 };
 
-export default function CellScene({ world, cell, tags = [] }: { world: RefObject<WorldState | null>; cell: CellId; tags?: readonly string[] }) {
+/** How long a 관찰 bubble stays after its moment, cell seconds. */
+const CALLOUT_S = 5;
+
+/** 단계 안내's 관찰 bubbles: each moment of the step, at its place, for a few seconds after it happens (입문 트랙). */
+function Callouts({ world }: { world: RefObject<WorldState | null> }) {
+  const [shown, setShown] = useState<string[]>([]);
+  const key = useRef('');
+  useFrame(() => {
+    const run = world.current?.cell;
+    const g = guideOf(run?.mission ?? null);
+    const ids = run && g ? g.observe.filter((o) => run.observed[o.id] !== undefined && run.line.t - run.observed[o.id] < CALLOUT_S).map((o) => o.id) : [];
+    const k = `${run?.mission}:${ids.join(',')}`;
+    if (k === key.current) return;
+    key.current = k;
+    setShown(ids);
+  });
+  const g = guideOf(world.current?.cell?.mission ?? null);
+  if (!g) return null;
+  return (
+    <>
+      {g.observe
+        .filter((o) => shown.includes(o.id))
+        .map((o) => (
+          <Html key={o.id} position={[m(o.at[0]), m(o.at[1]), m(o.at[2])]} center zIndexRange={[22, 0]} style={{ pointerEvents: 'none' }}>
+            <div data-callout style={{ position: 'relative', background: '#c2410c', color: '#fff', borderRadius: 9, padding: '6px 11px 6px 9px', font: '700 12.5px Pretendard, sans-serif', whiteSpace: 'nowrap', boxShadow: '0 6px 16px rgba(0,0,0,0.3)', transform: 'translateY(-24px)' }}>
+              <span style={{ fontSize: 10.5, fontWeight: 800, opacity: 0.85, marginRight: 6 }}>관찰</span>
+              {o.text}
+              <i style={{ position: 'absolute', left: '50%', bottom: -6, marginLeft: -6, width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '6px solid #c2410c' }} />
+            </div>
+          </Html>
+        ))}
+    </>
+  );
+}
+
+export default function CellScene({ world, cell, tags = [], callouts = false }: { world: RefObject<WorldState | null>; cell: CellId; tags?: readonly string[]; callouts?: boolean }) {
   const [hover, setHover] = useState<string | null>(null);
   const T = TAGS[cell];
   const shown = [...new Set([...tags, ...(hover ? [hover] : [])])].filter((n) => T[n]);
@@ -182,6 +219,7 @@ export default function CellScene({ world, cell, tags = [] }: { world: RefObject
           <StackGlow world={world} at={CABINET[cell]} />
         </>
       )}
+      {callouts && <Callouts world={world} />}
       {shown.map((n) => (
         <Html key={n} position={[m(T[n].at[0]), m(T[n].at[1]), m(T[n].at[2])]} center zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
           <div data-celltag style={{ background: 'rgba(24,32,29,0.92)', color: '#fff', borderRadius: 7, padding: '4px 9px', font: '700 12.5px Pretendard, sans-serif', whiteSpace: 'nowrap', boxShadow: '0 2px 8px rgba(0,0,0,0.25)' }}>
