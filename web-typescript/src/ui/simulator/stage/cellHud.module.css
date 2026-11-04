@@ -455,3 +455,153 @@
 .lampsToggle[aria-expanded='true'] + .lamps {
   margin-top: 0;
 }
+
+/* 입문 트랙: the step card — the place's name, six steps as nodes on a line (the one open raised with
+   the brand's red mark, done ones green), 자유 at its end, the open step's name under it. The console's
+   slate surfaces (the jog panel's), not the cells' green glass. */
+.stepper {
+  width: 284px;
+  padding: 11px 13px 12px;
+  border-radius: 14px;
+  background: rgba(30, 32, 36, 0.94);
+  box-shadow:
+    0 10px 26px rgba(0, 0, 0, 0.3),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  color: #e4eaf2;
+  backdrop-filter: blur(8px);
+}
+.stepper header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.stepper header em {
+  font: 800 10px ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-style: normal;
+  letter-spacing: 0.14em;
+  color: #9aa1a9;
+}
+.stepper header b {
+  font-size: 14px;
+  font-weight: 800;
+}
+.stepper header span {
+  margin-left: auto;
+  font: 700 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: #9aa1a9;
+}
+.stepper ol {
+  list-style: none;
+  margin: 11px 0 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  position: relative;
+}
+.stepper ol::before {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 54px;
+  top: 50%;
+  height: 2px;
+  margin-top: -1px;
+  background: #3a3d42;
+}
+.stepper li {
+  position: relative;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+.stepper li:first-child {
+  justify-content: flex-start;
+}
+.stepper li button {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 0;
+  display: grid;
+  place-items: center;
+  background: #2a2d32;
+  box-shadow: inset 0 0 0 1.5px #555a61;
+  color: #c9ced5;
+  font: 800 11.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+  cursor: pointer;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
+}
+.stepper li button:hover:not(:disabled) {
+  box-shadow: inset 0 0 0 1.5px #c9ced5;
+}
+.stepper li[data-done] button {
+  background: #0f6b4c;
+  box-shadow: inset 0 0 0 1.5px #34d399;
+  color: #fff;
+}
+.stepper li[data-cur] button {
+  background: linear-gradient(180deg, #f4f6f9, #c9ced5);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.1);
+  color: #15181c;
+  transform: scale(1.12);
+}
+.stepper li[data-cur]::after {
+  content: '';
+  position: absolute;
+  bottom: -9px;
+  left: 50%;
+  width: 14px;
+  height: 3px;
+  margin-left: -7px;
+  border-radius: 2px;
+  background: #e5484d;
+}
+.stepper li:first-child[data-cur]::after {
+  left: 13px;
+}
+.stepper li[data-locked] button {
+  background: #23262a;
+  box-shadow: inset 0 0 0 1px #3a3d42;
+  color: #5e646b;
+  cursor: default;
+}
+.stepper li.freeStep {
+  flex: none;
+  margin-left: 8px;
+}
+.stepper li.freeStep button {
+  width: auto;
+  height: 24px;
+  padding: 0 9px;
+  border-radius: 7px;
+  font: 700 11.5px inherit;
+  font-family: inherit;
+}
+.stepper li.freeStep[data-cur] button {
+  transform: none;
+}
+.stepper li.freeStep[data-cur]::after {
+  display: none;
+}
+.stepper p {
+  margin: 14px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #f4f7fb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.stepper p i {
+  font-style: normal;
+  font: 800 11px ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: #e5484d;
+  margin-right: 7px;
+}
+.lampsToggle {
+  background: rgba(30, 32, 36, 0.94);
+  border-color: rgba(255, 255, 255, 0.08);
+}

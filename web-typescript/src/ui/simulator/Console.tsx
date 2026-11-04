@@ -127,6 +127,7 @@ import { PredictCard, StepResult, loadPredictions, savePrediction } from './stag
 import { guideOf } from '@/engine/simulator/cell/guides';
 import { stationAt } from '@/engine/simulator/cell/shots';
 import SiteTour from './stage/SiteTour';
+import Roadmap from './connect/Roadmap';
 import { LIFE_TUTORIALS, lifeTutorialById, type TutCtx, type TutMem } from '@/engine/simulator/lifeTutorials';
 import { StartGuide, type StartStep } from './stage/StartGuide';
 import HandPanel, { type HandState } from './control/HandPanel';
@@ -591,6 +592,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const [lastChecks, setLastChecks] = useState<{ label: string; ok: boolean; detail?: string }[] | null>(null);
   /** 입문: the place being toured (its opening look round, SiteTour.tsx). */
   const [touring, setTouring] = useState<CellId | null>(null);
+  /** 입문: the 학습 로드맵 over the intro (its [ROADMAP]). */
+  const [roadmapOpen, setRoadmapOpen] = useState(false);
   const toured = useRef(false);
   useEffect(() => {
     try {
@@ -2317,7 +2320,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     setPassed(null);
     const m = mission ? missionById(mission) : null;
     const info = CELL_BY_ID[cell];
-    addLog('info', m ? `${m.id} ${m.title}: ${m.goal}` : info.built ? '자유 실습: 채점 없이 셀을 움직여 봐요.' : `${info.letter} ${info.name}: 단계 실습은 준비 중이에요. 왼쪽 조작판으로 장비를 직접 움직여 볼 수 있어요.`);
+    // (입문: the goal is on the notice board already, as 지금 할 일.)
+    if (!track || !m) addLog('info', m ? `${m.id} ${m.title}: ${m.goal}` : info.built ? '자유 실습: 채점 없이 셀을 움직여 봐요.' : `${info.letter} ${info.name}: 단계 실습은 준비 중이에요. 왼쪽 조작판으로 장비를 직접 움직여 볼 수 있어요.`);
   };
   /** Back to the desk: the practice's program as it was left. */
   const leaveCell = () => {
@@ -4238,7 +4242,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
         progress={loadError || started ? 1 : loaded ? 0.72 : 0.3}
         note={loadError ? '로봇 모델을 불러오지 못했어요' : started ? '준비됐어요' : loaded ? '3D 화면을 준비하고 있어요' : '로봇 모델을 불러오고 있어요'}
         gate={
-          robotMode || picking
+          robotMode || picking || entered
             ? undefined
             : {
                 onConnect: () => {
@@ -4248,13 +4252,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                 onStart: () => setEntered(true),
                 ...(track
                   ? {
-                      onRoadmap: () => {
-                        // Straight to the list of places (each is toured as it is picked).
-                        toured.current = true;
-                        setEntered(true);
-                        openSection('theme');
-                        openTab('direct');
-                      },
+                      onRoadmap: () => setRoadmapOpen(true),
                     }
                   : {}),
               }
@@ -4649,7 +4647,28 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
             checks={mode !== 'check' ? [] : [{ icon: 'doc', title: '검수 결과표', note: '검수 1~7 의 시각 · 실측값 한 장 (열어서 인쇄 → PDF)', action: '저장', run: saveReport, file: '검수결과표.html' }]}
           />
         )}
-        <div ref={shellRef} className={css.shell} data-dock={dockShown ? 'open' : 'closed'} data-side={side} data-tab={shownTab === 'direct' ? 'direct' : 'code'} data-mini={miniOn ? 'on' : 'off'} data-wide={wideOn || undefined} style={view !== 'sim' ? { display: 'none' } : undefined}>
+        {roadmapOpen && (
+          <Roadmap
+            passed={cellPassed}
+            tutorialsDone={tutDone}
+            onClose={() => setRoadmapOpen(false)}
+            onPick={(pk) => {
+              setRoadmapOpen(false);
+              setEntered(true);
+              if (pk.kind === 'tutorial') {
+                // The tutorials' list (the place's tour is not needed for them).
+                toured.current = true;
+                openSection('theme');
+                openTab('direct');
+                return;
+              }
+              toured.current = true;
+              enterCell(pk.cell);
+              setTouring(pk.cell);
+            }}
+          />
+        )}
+        <div ref={shellRef} className={css.shell} data-dock={dockShown ? 'open' : 'closed'} data-side={side} data-tab={shownTab === 'direct' ? 'direct' : 'code'} data-mini={miniOn ? 'on' : 'off'} data-life={(!!track && !!cellAt) || undefined} data-wide={wideOn || undefined} style={view !== 'sim' ? { display: 'none' } : undefined}>
           <section className={`${css.panel} ${css.stageCol}`} aria-label="시뮬레이션">
             <div className={css.viewport} data-viewport>
               {loadError ? (
@@ -4736,7 +4755,17 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
               {loaded && view === 'sim' && railOpen === 'monitor' && (
                 <Hud world={world} chain={loaded.chain} tcpMm={tcpNow} mountMm={mountMm} loadModel={arm.family === 'mycobot280'} status={hudStatus} onClose={() => setRailOpen(null)} />
               )}
-              {loaded && view === 'sim' && touring && cellAt?.cell === touring && <SiteTour key={touring} cell={touring} api={getStage} onDone={() => setTouring(null)} />}
+              {loaded && view === 'sim' && touring && cellAt?.cell === touring && <SiteTour
+                  key={touring}
+                  cell={touring}
+                  api={getStage}
+                  onDone={() => {
+                    setTouring(null);
+                    // After the look round: 제어 first (move the arm by hand), the 작업 순서 a tap away.
+                    openSection('jog');
+                    openTab('direct');
+                  }}
+                />}
               {loaded && view === 'sim' && asking && cellAt?.mission && (
                 <PredictCard
                   mission={cellAt.mission}

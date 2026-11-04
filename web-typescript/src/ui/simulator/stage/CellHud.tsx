@@ -139,8 +139,44 @@ export default function CellHud(p: CellHudProps) {
 
   return (
     <div className={css.hud} aria-label="실습 셀">
+      {/* 입문: one card — the place, its six steps as a stepper on a line, the step open now. */}
+      {compact && (
+        <nav className={css.stepper} aria-label="단계">
+          <header>
+            <em>STEP</em>
+            <b>{CELL_BY_ID[p.cell].name}</b>
+            <span>
+              {steps.filter((s) => p.passed[s.id]).length}/{steps.length}
+            </span>
+          </header>
+          <ol>
+            {steps.map((s, i) => (
+              <li key={s.id} data-cur={s.id === p.mission || undefined} data-done={p.passed[s.id] || undefined} data-locked={!open(i) || undefined}>
+                <button type="button" disabled={p.busy || !open(i)} onClick={() => p.onMission(s.id)} title={open(i) ? `${s.id} ${s.title}` : '앞 단계를 통과하면 열려요'} aria-pressed={s.id === p.mission} aria-label={`${s.id} ${s.title}`}>
+                  {p.passed[s.id] ? '✓' : s.n}
+                </button>
+              </li>
+            ))}
+            <li className={css.freeStep} data-cur={p.mission === null || undefined}>
+              <button type="button" disabled={p.busy} onClick={() => p.onMission(null)} aria-pressed={p.mission === null} title="채점 없이 셀을 자유롭게 움직여 봐요">
+                자유
+              </button>
+            </li>
+          </ol>
+          <p>
+            {m ? (
+              <>
+                <i>{m.id}</i>
+                {m.title}
+              </>
+            ) : (
+              '자유 실습 · 채점 없이 움직여 봐요'
+            )}
+          </p>
+        </nav>
+      )}
       {/* Step ladder. */}
-      <nav className={css.ladder} aria-label="단계">
+      {!compact && <nav className={css.ladder} aria-label="단계">
         <b className={css.cellName}>
           {CELL_BY_ID[p.cell].letter} {CELL_BY_ID[p.cell].name.replace(' 셀', '')}
           {!built && <small className={css.soon}>단계 준비 중</small>}
@@ -167,7 +203,7 @@ export default function CellHud(p: CellHudProps) {
         <button type="button" className={css.tile} data-cur={p.mission === null || undefined} data-free disabled={p.busy} onClick={() => p.onMission(null)} aria-pressed={p.mission === null} title="채점 없이 셀을 자유롭게 움직여 봐요">
           자유
         </button>
-      </nav>
+      </nav>}
 
       {/* A 고장: what broke and how to fix it, and the repair. */}
       {snap?.fault && (

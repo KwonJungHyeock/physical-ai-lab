@@ -219,7 +219,9 @@ export default function Intro({ progress, ready, note, gate, brand }: Props) {
               disabled={entered}
               onClick={(e) => {
                 e.stopPropagation();
-                enter(gate.onRoadmap ?? gate.onConnect);
+                // The roadmap opens over the intro (it stays behind, to come back to).
+                if (gate.onRoadmap) gate.onRoadmap();
+                else enter(gate.onConnect);
               }}
             >
               {gate.onRoadmap ? (

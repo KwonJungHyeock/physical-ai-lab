@@ -6557,6 +6557,10 @@ div.zeroFlow {
 .shell[data-mini='on'] {
   --left-col: 268px;
 }
+/* 입문 트랙 in a place: the step card at the top left (CellHud's stepper). */
+.shell[data-life] {
+  --left-col: 300px;
+}
 /* --- ▶ 데모 caption bar (stage/DemoCaption.tsx), centred on the free view ------------------- */
 .demoBar {
   position: absolute;
