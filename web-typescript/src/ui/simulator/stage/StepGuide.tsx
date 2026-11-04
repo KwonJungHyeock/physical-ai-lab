@@ -67,6 +67,54 @@ export function PredictCard({ mission, onAnswer, onSkip }: { mission: string; on
   );
 }
 
+/**
+ * 퀘스트 브리핑 (입문 퀘스트 모드), in the side panel before anything is run: the quest's goal and its
+ * checklist, then the 예측 question; choosing an option (or [예측 없이 시작]) starts the quest's
+ * 해 보기. Nothing runs from here: ▶ 시뮬레이션 stays the student's own press.
+ */
+export function Briefing({ mission, onAnswer, onSkip }: { mission: string; onAnswer(k: number): void; onSkip(): void }) {
+  const m = missionById(mission);
+  const g = guideOf(mission);
+  if (!m) return null;
+  return (
+    <section className={css.brief} aria-label="퀘스트 브리핑">
+      <header>
+        <em>BRIEFING</em>
+        <b>
+          퀘스트 {m.n} · {m.title}
+        </b>
+      </header>
+      <p className={css.goal}>{m.goal}</p>
+      <ul className={css.goals}>
+        {(m.checks ?? []).map((c) => (
+          <li key={c.label}>
+            <i aria-hidden="true" />
+            {c.label}
+          </li>
+        ))}
+      </ul>
+      {g && (
+        <div className={css.ask}>
+          <em>PREDICT</em>
+          <p>{g.predict.q}</p>
+          <div className={css.opts}>
+            {g.predict.options.map((o, k) => (
+              <button key={o} type="button" onClick={() => onAnswer(k)}>
+                <i>{MARK[k]}</i>
+                {o}
+              </button>
+            ))}
+          </div>
+          <small>하나 고르면 퀘스트가 시작돼요 · 채점하지 않아요</small>
+        </div>
+      )}
+      <button type="button" className={css.skip} onClick={onSkip}>
+        {g ? '예측 없이 시작' : '시작'}
+      </button>
+    </section>
+  );
+}
+
 interface ResultProps {
   cell: CellId;
   mission: string;
@@ -77,6 +125,8 @@ interface ResultProps {
   chosen: number | undefined;
   onNext?: () => void;
   onClose(): void;
+  /** In the side panel (퀘스트 모드), not over the scene. */
+  inPanel?: boolean;
 }
 
 /** After the run: passed or not, the checks, the prediction against what happened, the idea. */
@@ -87,13 +137,13 @@ export function StepResult(p: ResultProps) {
   const steps = missionsOf(p.cell);
   const next = p.passed ? steps[m.n] : undefined;
   return (
-    <div className={css.result} data-ok={p.passed || undefined} role="status">
+    <div className={css.result} data-ok={p.passed || undefined} data-panel={p.inPanel || undefined} role="status">
       <header>
         <span className={css.medal} aria-hidden="true">
           {p.passed ? '✓' : '!'}
         </span>
         <span>
-          <b>{p.passed ? `${m.n}단계 통과!` : `${m.n}단계 아직이에요`}</b>
+          <b>{p.passed ? `퀘스트 ${m.n} 통과!` : `퀘스트 ${m.n} 아직이에요`}</b>
           <small>{m.title}</small>
         </span>
         <button type="button" className={css.x} onClick={p.onClose} aria-label="닫기">
@@ -124,7 +174,7 @@ export function StepResult(p: ResultProps) {
       )}
       {next && p.onNext && (
         <button type="button" className={css.next} onClick={p.onNext}>
-          다음 단계 ({next.n}단계) →
+          다음 퀘스트 ({next.n}) →
         </button>
       )}
     </div>

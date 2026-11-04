@@ -9223,3 +9223,17 @@ div.zeroFlow {
   font-weight: 800;
   white-space: nowrap;
 }
+
+/* 입문 퀘스트 모드: the tutorial's quest card at the top left of the 3D view (the place's quest card stands there in a place). */
+.questSlot {
+  position: absolute;
+  z-index: 6;
+  top: calc(var(--top, 0px) + 12px);
+  left: 12px;
+  width: 300px;
+}
+.questSlot > section {
+  margin: 0;
+  background: var(--hud-plate);
+  box-shadow: var(--hud-plate-shadow);
+}

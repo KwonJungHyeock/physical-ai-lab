@@ -38,9 +38,12 @@ interface Props {
   runningLine: number;
   /** The program, and the card a program line came from (for the replay bar: no code is shown). */
   onCode(code: string, cardOf: (line: number) => string): void;
+  /** 퀘스트 모드: the cards to change now (1-based) and whether one has to be added ([+ 카드] lit). */
+  glow?: readonly number[];
+  glowAdd?: boolean;
 }
 
-export default function RecipeCards({ mission, busy, runningLine, onCode }: Props) {
+export default function RecipeCards({ mission, busy, runningLine, onCode, glow, glowAdd }: Props) {
   const start = (m: string | null) => copy(RECIPE_START[m ?? ''] ?? { cards: [], times: 1 });
   const [recipe, setRecipe] = useState<Recipe>(() => start(mission));
   const [open, setOpen] = useState(false);
@@ -85,7 +88,7 @@ export default function RecipeCards({ mission, busy, runningLine, onCode }: Prop
         {recipe.cards.map((c, k) => {
           const t = cardText(c);
           return (
-            <li key={k} className={css.card} data-on={k === running || undefined} style={{ borderLeftColor: KIND_COLOR[c.k] }}>
+            <li key={k} className={css.card} data-on={k === running || undefined} data-glow={(running < 0 && glow?.includes(k + 1)) || undefined} style={{ borderLeftColor: KIND_COLOR[c.k] }}>
               <span className={css.n}>{k + 1}</span>
               <div className={css.body}>
                 {c.k === 'place' || c.k === 'pick' ? (
@@ -132,7 +135,7 @@ export default function RecipeCards({ mission, busy, runningLine, onCode }: Prop
         {!recipe.cards.length && <li className={css.empty}>아래 [+ 카드]로 로봇이 할 일을 차례로 넣어요.</li>}
       </ol>
       <div className={css.foot}>
-        <button type="button" className={css.add} disabled={busy} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        <button type="button" className={css.add} disabled={busy} aria-expanded={open} data-glow={(glowAdd && !open) || undefined} onClick={() => setOpen((o) => !o)}>
           + 카드
         </button>
         {answer && (

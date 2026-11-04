@@ -124,7 +124,8 @@ import DrawCards from './editors/DrawCards';
 import BoardCards from './editors/BoardCards';
 import ThemePanel from './tasks/ThemePanel';
 import TutorialStrip from './tasks/TutorialStrip';
-import { PredictCard, StepResult, loadPredictions, savePrediction } from './stage/StepGuide';
+import { Briefing, PredictCard, StepResult, loadPredictions, savePrediction } from './stage/StepGuide';
+import { QUESTS, questNow, type QuestPhase } from '@/engine/simulator/cell/quests';
 import { guideOf } from '@/engine/simulator/cell/guides';
 import { stationAt } from '@/engine/simulator/cell/shots';
 import SiteTour from './stage/SiteTour';
@@ -593,6 +594,12 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   /** 입문 단계 안내: the 예측 card open (▶ pressed before predicting), steps skipped, the last run's checks for the result card. */
   const [asking, setAsking] = useState(false);
   const [skipped, setSkipped] = useState<Record<string, boolean>>({});
+  /** 입문 퀘스트 모드: the predictions made (this browser), read once and kept here so the briefing closes as one is chosen. */
+  const [preds, setPreds] = useState<Record<string, number>>({});
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- read after hydration
+    setPreds(loadPredictions());
+  }, []);
   const [lastChecks, setLastChecks] = useState<{ label: string; ok: boolean; detail?: string }[] | null>(null);
   /** 입문: the place being toured (its opening look round, SiteTour.tsx). */
   const [touring, setTouring] = useState<CellId | null>(null);
@@ -1855,6 +1862,15 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const axesQuiet = !!track && !!cellAt && (busy || !!touring);
   const stageDisplay = useMemo(() => (axesQuiet ? { ...display, baseAxes: false } : display), [axesQuiet, display]);
   const lifeGuide: Guide | null = lifeStep && view === 'sim' ? { head: `${lifeStep.n}단계 · ${lifeStep.title}`, text: `목표 ${lifeStep.checks?.[0]?.label ?? lifeStep.goal}` } : null;
+  // 입문 퀘스트 모드: a place's step (or a 기초 조작 tutorial) is a quest — 브리핑 → 해 보기 → 실행 · 관찰 → 결과.
+  // The quest card (top left) says what to do now; the side panel follows the phase; the left menu folds away.
+  const questOn = !!track && (!!lifeStep || !!lifeTut);
+  const questQ = lifeStep ? QUESTS[lifeStep.id] : undefined;
+  const questPhase: QuestPhase | null =
+    lifeStep && cellAt ? (busy ? 'run' : cellResult !== null && lastChecks ? 'result' : guideOf(lifeStep.id) && preds[lifeStep.id] === undefined && !skipped[lifeStep.id] ? 'brief' : 'do') : null;
+  // The card to change lights while there is something to do (not over a passed result).
+  const questGlow = (questPhase === 'do' || (questPhase === 'result' && !cellResult)) && questQ ? questQ.cards : undefined;
+  const questGlowAdd = (questPhase === 'do' || (questPhase === 'result' && !cellResult)) && !!questQ?.add;
   const passedRun = (text: string, actions: RobotAction[], start?: number[]) => {
     if (tab === 'process') markStart('process');
     else if (tab === 'basic') markStart('code');
@@ -3771,7 +3787,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   /** 입문: the step's 예측 first (once per step, unless skipped), then the run. */
   const simulateLife = () => {
     const ms = cellAt?.mission;
-    if (track && ms && guideOf(ms) && loadPredictions()[ms] === undefined && !skipped[ms] && !busy) return setAsking(true);
+    if (!questOn && track && ms && guideOf(ms) && loadPredictions()[ms] === undefined && !skipped[ms] && !busy) return setAsking(true);
     void simulate();
   };
   const runBar = (
@@ -4777,9 +4793,12 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   api={getStage}
                   onDone={() => {
                     setTouring(null);
-                    // After the look round: 제어 first (move the arm by hand), the 작업 순서 a tap away.
-                    openSection('jog');
-                    openTab('direct');
+                    // After the look round: a quest opens on its briefing in the side panel; 자유 연습 on 제어.
+                    if (cellRef.current?.mission) openTab(level);
+                    else {
+                      openSection('jog');
+                      openTab('direct');
+                    }
                   }}
                 />}
               {loaded && view === 'sim' && asking && cellAt?.mission && (
@@ -4796,6 +4815,24 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                     void simulate();
                   }}
                 />
+              )}
+              {/* 입문 기초 조작: the tutorial is a quest too — its card at the top left, where a place's quest card stands. */}
+              {loaded && view === 'sim' && lifeTut && (
+                <div className={css.questSlot}>
+                  <TutorialStrip
+                    id={lifeTut.id}
+                    step={lifeTut.step}
+                    read={() => tutCtxRef.current()}
+                    start={lifeTut.start}
+                    n={LIFE_TUTORIALS.findIndex((x) => x.id === lifeTut.id) + 1}
+                    of={LIFE_TUTORIALS.length}
+                    onNext={() => {
+                      const k = LIFE_TUTORIALS.findIndex((x) => x.id === lifeTut.id);
+                      if (LIFE_TUTORIALS[k + 1]) startTutorial(LIFE_TUTORIALS[k + 1].id);
+                    }}
+                    onClose={() => setLifeTut(null)}
+                  />
+                </div>
               )}
               {loaded && view === 'sim' && cellAt && railOpen !== 'monitor' && (
                 <CellHud
@@ -4819,6 +4856,13 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                     setBadge(null);
                   }}
                   guides={!!track}
+                  quest={
+                    track && lifeStep && questPhase
+                      ? { phase: questPhase, checks: questPhase === 'result' ? lastChecks : null, now: questNow(questPhase, lifeStep.id, cellResult), onList: () => setRoadmapOpen(true) }
+                      : track
+                        ? { phase: 'do', checks: null, now: '', onList: () => setRoadmapOpen(true) }
+                        : undefined
+                  }
                 />
               )}
               {loaded && view === 'sim' && cellAt && railOpen !== 'monitor' && cellLayout(cellAt.cell).line.camera && <CellCamera world={world} cell={cellAt.cell} />}
@@ -4850,7 +4894,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                 </StageTitle>
               )}
               {loaded && view === 'sim' && !railOpen && !cellAt && <HudGauges speed={jogSpeed} monitor={monitor} dock={dockShown ? 'open' : 'closed'} />}
-              {loaded && view === 'sim' && (
+              {loaded && view === 'sim' && !questOn && (
                 <LeftRail groups={shownGroups} foot={barFoot} sheetOpen={railOpen !== null} onCloseSheet={() => setRailOpen(null)}>
                   {(railOpen === 'env' || railOpen === 'objects') && (
                     <DeskPanel
@@ -4901,13 +4945,13 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
               )}
               <Notices
                 entries={log}
-                guide={guide ?? lifeGuide}
+                guide={questOn ? null : (guide ?? lifeGuide)}
                 quiet={!!(lifeStep && cellAt && cellResult !== null && lastChecks && !busy && view === 'sim')}
                 above={
-                  bannerOn || (goalCard && view === 'sim') || (lifeStep && cellResult !== null && lastChecks && !busy) ? (
+                  bannerOn || (goalCard && view === 'sim') || (!questOn && lifeStep && cellResult !== null && lastChecks && !busy) ? (
                     <>
                       {banners}
-                      {lifeStep && cellAt && cellResult !== null && lastChecks && !busy && view === 'sim' && (
+                      {!questOn && lifeStep && cellAt && cellResult !== null && lastChecks && !busy && view === 'sim' && (
                         <StepResult
                           cell={cellAt.cell}
                           mission={lifeStep.id}
@@ -5041,21 +5085,6 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                 </div>
                 {shownTab === 'direct' ? (
                   <div className={css.dockScroll} role="region" aria-label={SCREEN_TITLE[workScreen]}>
-                    {lifeTut && (
-                  <TutorialStrip
-                    id={lifeTut.id}
-                    step={lifeTut.step}
-                    read={() => tutCtxRef.current()}
-                    start={lifeTut.start}
-                    n={LIFE_TUTORIALS.findIndex((x) => x.id === lifeTut.id) + 1}
-                    of={LIFE_TUTORIALS.length}
-                    onNext={() => {
-                      const k = LIFE_TUTORIALS.findIndex((x) => x.id === lifeTut.id);
-                      if (LIFE_TUTORIALS[k + 1]) startTutorial(LIFE_TUTORIALS[k + 1].id);
-                    }}
-                    onClose={() => setLifeTut(null)}
-                  />
-                )}
                     {zeroMode ? (
                       <div className={css.screen}>{zeroPanel}</div>
                     ) : workScreen === 'theme' ? (
@@ -5111,21 +5140,6 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   </div>
                 ) : shownTab === 'process' ? (
                   <div className={css.codeTab} role="region" aria-label="공정 짜기">
-                    {lifeTut && (
-                  <TutorialStrip
-                    id={lifeTut.id}
-                    step={lifeTut.step}
-                    read={() => tutCtxRef.current()}
-                    start={lifeTut.start}
-                    n={LIFE_TUTORIALS.findIndex((x) => x.id === lifeTut.id) + 1}
-                    of={LIFE_TUTORIALS.length}
-                    onNext={() => {
-                      const k = LIFE_TUTORIALS.findIndex((x) => x.id === lifeTut.id);
-                      if (LIFE_TUTORIALS[k + 1]) startTutorial(LIFE_TUTORIALS[k + 1].id);
-                    }}
-                    onClose={() => setLifeTut(null)}
-                  />
-                )}
                     <ProcessFlow
                       flow={flow}
                       onFlow={setFlow}
@@ -5196,7 +5210,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                       onLevel={(lv) => (cellAt ? (lv === 'ros' ? addLog('info', '실습 셀의 ROS 2 터미널 실습은 다음 차례에 열려요.') : setCellTerm(lv === 'python')) : openTab(lv))}
                       extra={(cellAt && cellTerm) || (!cellAt && level === 'python') ? <ModeSeg mode={cellAt ? pyMode.cell : pyMode.arm} busy={busy} onMode={(m) => setPyMode(cellAt ? 'cell' : 'arm', m)} /> : undefined}
                     />}
-                    {cellAt ? (
+                    {cellAt && questOn ? null : cellAt ? (
                       <div className={css.cellCodeHead} data-life={recipeOn || undefined}>
                         <b>
                           {recipeOn
@@ -5246,14 +5260,41 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                       }}
                     />
                     )}
-                    {recipeOn ? (
+                    {recipeOn && questPhase === 'brief' && lifeStep ? (
                       <div className={css.pane}>
+                        <Briefing
+                          key={lifeStep.id}
+                          mission={lifeStep.id}
+                          onAnswer={(k) => {
+                            savePrediction(lifeStep.id, k);
+                            setPreds((p) => ({ ...p, [lifeStep.id]: k }));
+                          }}
+                          onSkip={() => setSkipped((x) => ({ ...x, [lifeStep.id]: true }))}
+                        />
+                      </div>
+                    ) : recipeOn ? (
+                      <div className={css.pane}>
+                        {questPhase === 'result' && lifeStep && cellAt && lastChecks && cellResult !== null && (
+                          <StepResult
+                            inPanel
+                            cell={cellAt.cell}
+                            mission={lifeStep.id}
+                            passed={cellResult}
+                            checks={lastChecks}
+                            chosen={preds[lifeStep.id]}
+                            onNext={() => {
+                              const next = missionsOf(cellAt.cell)[lifeStep.n];
+                              if (next) openCell(cellAt.cell, next.id);
+                            }}
+                            onClose={() => setLastChecks(null)}
+                          />
+                        )}
                         {cellAt!.cell === 'draw' ? (
-                          <DrawCards key={cellAt!.mission ?? 'free'} mission={cellAt!.mission} busy={busy} runningLine={runningLine} onCode={onRecipeCode} />
+                          <DrawCards key={cellAt!.mission ?? 'free'} mission={cellAt!.mission} busy={busy} runningLine={runningLine} onCode={onRecipeCode} glow={questGlow} glowAdd={questGlowAdd} />
                         ) : cellAt!.cell === 'board' ? (
-                          <BoardCards key={cellAt!.mission ?? 'free'} mission={cellAt!.mission} busy={busy} runningLine={runningLine} onCode={onRecipeCode} />
+                          <BoardCards key={cellAt!.mission ?? 'free'} mission={cellAt!.mission} busy={busy} runningLine={runningLine} onCode={onRecipeCode} glow={questGlow} glowAdd={questGlowAdd} />
                         ) : (
-                          <RecipeCards key={cellAt!.mission ?? 'free'} mission={cellAt!.mission} busy={busy} runningLine={runningLine} onCode={onRecipeCode} />
+                          <RecipeCards key={cellAt!.mission ?? 'free'} mission={cellAt!.mission} busy={busy} runningLine={runningLine} onCode={onRecipeCode} glow={questGlow} glowAdd={questGlowAdd} />
                         )}
                       </div>
                     ) : cellAt && cellTermOn ? (

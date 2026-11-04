@@ -16,6 +16,7 @@ import type { CellAlert } from '@/engine/simulator/cell/faults';
 import { setOut } from '@/engine/simulator/cell/line';
 import { missionById, missionsOf } from '@/engine/simulator/cell/missions';
 import { LIFE_STOPS } from '@/engine/simulator/lifeFields';
+import type { QuestPhase } from '@/engine/simulator/cell/quests';
 import { cellChecks } from '@/engine/simulator/cell/run';
 import type { WorldState } from '@/engine/simulator/sim';
 
@@ -101,6 +102,8 @@ export interface CellHudProps {
   onReset(): void;
   /** 입문 트랙: the step tabs only, the lamps folded (the rest: StepGuide.tsx). */
   guides?: boolean;
+  /** 입문 퀘스트 모드: the quest card's phase, the checklist as the last run ended (null: not run yet), what to do now, the places' list. */
+  quest?: { phase: QuestPhase; checks: { label: string; ok: boolean; detail?: string }[] | null; now: string; onList(): void };
 }
 
 
@@ -143,11 +146,12 @@ export default function CellHud(p: CellHudProps) {
 
   return (
     <div className={css.hud} aria-label="실습 셀">
-      {/* 입문: one card — the place, its steps as a stepper on a line, the step open now. */}
+      {/* 입문: the quest card — the place and its quests on a line, then the quest open now: its checklist
+          and the one thing to do now (퀘스트 모드; the goal, the prediction and the result are in the side panel). */}
       {compact && (
-        <nav className={css.stepper} aria-label="단계">
+        <nav className={css.stepper} aria-label="퀘스트">
           <header>
-            <em>STEP</em>
+            <em>{stop?.phase ?? 'QUEST'}</em>
             <b>{CELL_BY_ID[p.cell].name}</b>
             {stop && <FieldTicks className={css.stepTicks} on={(f) => stop.fields.includes(f)} />}
             <span>
@@ -157,27 +161,58 @@ export default function CellHud(p: CellHudProps) {
           <ol>
             {steps.map((s, i) => (
               <li key={s.id} data-cur={s.id === p.mission || undefined} data-done={p.passed[s.id] || undefined} data-locked={!open(i) || undefined}>
-                <button type="button" disabled={p.busy || !open(i)} onClick={() => p.onMission(s.id)} title={open(i) ? `${s.n}단계 ${s.title}` : '앞 단계를 통과하면 열려요'} aria-pressed={s.id === p.mission} aria-label={`${s.n}단계 ${s.title}`}>
+                <button type="button" disabled={p.busy || !open(i)} onClick={() => p.onMission(s.id)} title={open(i) ? `퀘스트 ${s.n} ${s.title}` : '앞 퀘스트를 통과하면 열려요'} aria-pressed={s.id === p.mission} aria-label={`퀘스트 ${s.n} ${s.title}`}>
                   {p.passed[s.id] ? '✓' : s.n}
                 </button>
               </li>
             ))}
             <li className={css.freeStep} data-cur={p.mission === null || undefined}>
-              <button type="button" disabled={p.busy} onClick={() => p.onMission(null)} aria-pressed={p.mission === null} title="채점 없이 셀을 자유롭게 움직여 봐요">
-                자유
+              <button type="button" disabled={p.busy} onClick={() => p.onMission(null)} aria-pressed={p.mission === null} title="채점 없이 메뉴를 모두 써서 자유롭게 움직여 봐요">
+                자유 연습
               </button>
             </li>
           </ol>
-          <p>
-            {m ? (
-              <>
-                <i>{m.n}단계</i>
+          {m ? (
+            <>
+              <p className={css.qTitle}>
+                <i>QUEST {m.n}</i>
                 {m.title}
-              </>
-            ) : (
-              '자유 실습 · 채점 없이 움직여 봐요'
-            )}
-          </p>
+              </p>
+              <ul className={css.qChecks}>
+                {(m.checks ?? []).map((c, k) => {
+                  const r = p.quest?.checks?.[k];
+                  return (
+                    <li key={c.label} data-ok={r?.ok || undefined} data-bad={(r && !r.ok) || undefined}>
+                      <i aria-hidden="true">{r ? (r.ok ? '✓' : '✗') : ''}</i>
+                      <span>{c.label}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+              {p.quest && (
+                <div className={css.qNow} data-phase={p.quest.phase}>
+                  <em>지금 할 일</em>
+                  <p>{p.quest.now}</p>
+                  {p.quest.phase === 'do' && (
+                    <button type="button" className={css.qHint} aria-expanded={hint} onClick={() => setHint((h) => !h)}>
+                      {hint ? '힌트 접기' : '힌트 보기'}
+                    </button>
+                  )}
+                  {hint && p.quest.phase === 'do' && <small className={css.qHintText}>{m.hint}</small>}
+                </div>
+              )}
+            </>
+          ) : (
+            <p className={css.qTitle}>
+              <i>FREE</i>
+              자유 연습 · 채점 없이 메뉴를 모두 써 봐요
+            </p>
+          )}
+          {p.quest && (
+            <button type="button" className={css.qList} onClick={p.quest.onList} disabled={p.busy}>
+              현장 · 퀘스트 목록
+            </button>
+          )}
         </nav>
       )}
       {/* Step ladder. */}

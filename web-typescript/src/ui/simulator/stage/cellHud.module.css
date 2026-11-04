@@ -460,7 +460,7 @@
    field ticks; four steps as nodes on a line (the one open lit white, done ones green), 자유 at its
    end, the open step's name under it. */
 .stepper {
-  width: 284px;
+  width: 300px;
   padding: 11px 13px 12px;
   border-radius: 14px;
   background: var(--hud-plate);
@@ -511,16 +511,16 @@
   margin-top: -1px;
   background: rgba(213, 218, 225, 0.22);
 }
-.stepper li {
+.stepper ol > li {
   position: relative;
   flex: 1;
   display: flex;
   justify-content: center;
 }
-.stepper li:first-child {
+.stepper ol > li:first-child {
   justify-content: flex-start;
 }
-.stepper li button {
+.stepper ol > li button {
   width: 26px;
   height: 26px;
   border-radius: 50%;
@@ -536,32 +536,32 @@
     transform 0.15s,
     box-shadow 0.15s;
 }
-.stepper li button:hover:not(:disabled) {
+.stepper ol > li button:hover:not(:disabled) {
   box-shadow: inset 0 0 0 1.5px #c9ced5;
 }
-.stepper li[data-done] button {
+.stepper ol > li[data-done] button {
   background: #0f6b4c;
   box-shadow: inset 0 0 0 1.5px #34d399;
   color: #fff;
 }
-.stepper li[data-cur] button {
+.stepper ol > li[data-cur] button {
   background: #fff;
   box-shadow:
     0 0 0 4px rgba(255, 255, 255, 0.12),
     0 0 16px rgba(255, 255, 255, 0.55);
   color: #15181c;
 }
-.stepper li[data-locked] button {
+.stepper ol > li[data-locked] button {
   background: #23262a;
   box-shadow: inset 0 0 0 1px #3a3d42;
   color: #5e646b;
   cursor: default;
 }
-.stepper li.freeStep {
+.stepper ol > li.freeStep {
   flex: none;
   margin-left: 8px;
 }
-.stepper li.freeStep button {
+.stepper ol > li.freeStep button {
   width: auto;
   height: 24px;
   padding: 0 9px;
@@ -569,7 +569,7 @@
   font: 700 11.5px inherit;
   font-family: inherit;
 }
-.stepper li.freeStep[data-cur] button {
+.stepper ol > li.freeStep[data-cur] button {
   transform: none;
 }
 .stepper p {
@@ -604,4 +604,123 @@
 }
 .hud .lampsToggle span {
   color: var(--hud-green);
+}
+
+/* 퀘스트 카드 (입문 퀘스트 모드): the quest open now — its title, its checklist (✓ / ✗ once run), the
+   one thing to do now on a lit band, a hint to unfold, and the way back to the places' list. */
+.stepper .qTitle {
+  margin: 13px 0 0;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.35;
+  white-space: normal;
+  color: var(--hud-tx);
+}
+.stepper .qTitle i {
+  display: block;
+  margin: 0 0 3px;
+  font: 700 10.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.2em;
+  color: var(--hud-dim);
+}
+.qChecks {
+  list-style: none;
+  margin: 9px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 5px;
+}
+.qChecks li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--hud-sub);
+}
+.qChecks i {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  margin-top: 1px;
+  border-radius: 4px;
+  display: grid;
+  place-items: center;
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 900;
+  box-shadow: inset 0 0 0 1.5px var(--hud-dim);
+}
+.qChecks li[data-ok] {
+  color: var(--hud-tx);
+}
+.qChecks li[data-ok] i {
+  background: var(--hud-green);
+  box-shadow: none;
+  color: var(--hud-ink);
+}
+.qChecks li[data-bad] i {
+  background: var(--hud-amber);
+  box-shadow: none;
+  color: var(--hud-ink);
+}
+.qNow {
+  margin-top: 11px;
+  padding: 9px 11px 10px;
+  border-radius: 10px;
+  background: var(--hud-groove);
+  box-shadow: var(--hud-groove-shadow), inset 3px 0 0 var(--hud-light);
+}
+.qNow em {
+  font: 700 10.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-style: normal;
+  letter-spacing: 0.2em;
+  color: var(--hud-light);
+}
+.stepper .qNow p {
+  margin: 4px 0 0;
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.45;
+  white-space: normal;
+  word-break: keep-all;
+  color: var(--hud-tx);
+}
+.qNow[data-phase='result'] {
+  box-shadow: var(--hud-groove-shadow), inset 3px 0 0 var(--hud-green);
+}
+.hud .qHint {
+  margin-top: 7px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--hud-sub);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.qHintText {
+  display: block;
+  margin-top: 5px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--hud-sub);
+  word-break: keep-all;
+}
+.hud .qList {
+  margin-top: 10px;
+  width: 100%;
+  height: 30px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--hud-key);
+  box-shadow: var(--hud-key-shadow);
+  color: var(--hud-sub);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
 }

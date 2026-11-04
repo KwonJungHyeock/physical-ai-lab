@@ -245,3 +245,25 @@
   font-weight: 700;
   padding: 2px 6px;
 }
+
+/* 퀘스트 모드: the card to change now (and [+ 카드] when one is missing) breathes a white ring. */
+@keyframes questGlow {
+  0%,
+  100% {
+    box-shadow:
+      var(--hud-plate-shadow),
+      0 0 0 1px rgba(255, 255, 255, 0.35);
+  }
+  50% {
+    box-shadow:
+      var(--hud-plate-shadow),
+      0 0 0 2px rgba(255, 255, 255, 0.9),
+      0 0 18px rgba(236, 241, 248, 0.45);
+  }
+}
+.card[data-glow] {
+  animation: questGlow 1.6s ease-in-out infinite;
+}
+.recipe .add[data-glow] {
+  animation: questGlow 1.6s ease-in-out infinite;
+}
