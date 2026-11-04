@@ -225,37 +225,69 @@ export default function CellHud(p: CellHudProps) {
           </header>
           <p className={css.adds}>+ 이번에 더해진 조건: {m.adds}</p>
           <p className={css.goal}>{m.goal}</p>
-          {guide && !after && (
-            <div className={css.predict}>
-              <b>
-                예측 <small>채점하지 않아요</small>
-              </b>
-              <p>{guide.predict.q}</p>
-              {chosen === undefined ? (
-                <div className={css.options}>
-                  {guide.predict.options.map((o, k) => (
-                    <button key={o} type="button" disabled={p.busy} onClick={() => predict(m.id, k)}>
-                      {MARK[k]} {o}
-                    </button>
-                  ))}
-                </div>
+          {guide && (
+            <div className={css.gsec} aria-label="예측">
+              <h5>
+                <em>PREDICT</em> 예측<small>채점 없음</small>
+              </h5>
+              {after ? (
+                chosen !== undefined ? (
+                  <p className={css.gline} data-ok={chosen === guide.predict.answer || undefined}>
+                    <i aria-hidden="true">{chosen === guide.predict.answer ? '✓' : '✗'}</i>
+                    <span>
+                      내 예측 {MARK[chosen]} → 실제 {MARK[guide.predict.answer]} {guide.predict.options[guide.predict.answer]}
+                      <small>{guide.predict.why}</small>
+                    </span>
+                  </p>
+                ) : (
+                  <p className={css.gline}>
+                    <i aria-hidden="true">·</i>
+                    <span>
+                      실제: {MARK[guide.predict.answer]} {guide.predict.options[guide.predict.answer]}
+                      <small>{guide.predict.why}</small>
+                    </span>
+                  </p>
+                )
               ) : (
-                <p className={css.mine}>
-                  내 예측: {MARK[chosen]} {guide.predict.options[chosen]} <small>실행한 뒤 결과와 비교해요</small>
-                </p>
+                <>
+                  <p className={css.gq}>{guide.predict.q}</p>
+                  <ul className={css.glist}>
+                    {guide.predict.options.map((o, k) => (
+                      <li key={o}>
+                        <button type="button" disabled={p.busy} aria-pressed={chosen === k} onClick={() => predict(m.id, k)}>
+                          <i aria-hidden="true">{MARK[k]}</i>
+                          <span>{o}</span>
+                          {chosen === k && <em>내 예측</em>}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </>
               )}
             </div>
           )}
           {guide && (
-            <div className={css.observe} aria-label="관찰">
-              <b>관찰</b>
-              {guide.observe.map((o) => (
-                <span key={o.id} data-seen={snap?.observed[o.id] !== undefined || undefined}>
-                  <i aria-hidden="true">{snap?.observed[o.id] !== undefined ? '✓' : ''}</i>
-                  {o.text}
-                </span>
-              ))}
+            <div className={css.gsec} data-kind="observe" aria-label="관찰">
+              <h5>
+                <em>OBSERVE</em> 관찰
+                <small>
+                  {guide.observe.filter((o) => snap?.observed[o.id] !== undefined).length}/{guide.observe.length}
+                </small>
+              </h5>
+              <ul className={css.glist}>
+                {guide.observe.map((o) => (
+                  <li key={o.id} className={css.glamp} data-on={snap?.observed[o.id] !== undefined || undefined}>
+                    <i aria-hidden="true" />
+                    <span>{o.text}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
+          )}
+          {guide && (
+            <h5 className={css.ghead} data-kind="goal">
+              <em>GOAL</em> 목표
+            </h5>
           )}
           {snap?.checks && (
             <ul className={css.checks}>
@@ -287,15 +319,16 @@ export default function CellHud(p: CellHudProps) {
           </div>
           {hint && m.hint && <p className={css.hint}>{m.hint}</p>}
           {guide && after && (
-            <div className={css.concept} ref={conceptRef}>
-              {chosen !== undefined && (
-                <p className={css.compare} data-ok={chosen === guide.predict.answer || undefined}>
-                  예측 {MARK[chosen]} → 실제 {MARK[guide.predict.answer]} {guide.predict.options[guide.predict.answer]}: {chosen === guide.predict.answer ? '맞았어요.' : '달랐어요.'} {guide.predict.why}
-                </p>
-              )}
-              <b>개념 · {guide.concept.term}</b>
-              <p>{guide.concept.def}</p>
-              <p className={css.real}>실제 현장: {guide.concept.real}</p>
+            <div className={css.gsec} data-kind="concept" ref={conceptRef} aria-label="개념">
+              <h5>
+                <em>CONCEPT</em> 개념
+              </h5>
+              <p className={css.gterm}>{guide.concept.term}</p>
+              <p className={css.gdef}>{guide.concept.def}</p>
+              <p className={css.greal}>
+                <b>실제 현장</b>
+                {guide.concept.real}
+              </p>
             </div>
           )}
         </section>

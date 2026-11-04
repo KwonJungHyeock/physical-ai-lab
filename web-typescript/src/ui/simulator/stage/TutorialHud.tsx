@@ -40,6 +40,9 @@ export default function TutorialHud(p: Props) {
             {Math.min(p.step + 1, t.steps.length)}/{t.steps.length}
           </span>
         </header>
+        <h5 className={css.ghead} data-kind="goal">
+          <em>STEPS</em> 단계
+        </h5>
         <ul className={css.checks}>
           {t.steps.map((s, k) => (
             <li key={s.title} data-ok={k < p.step || undefined} data-cur={k === p.step || undefined}>
@@ -49,8 +52,11 @@ export default function TutorialHud(p: Props) {
           ))}
         </ul>
         {cur && (
-          <div className={css.todo}>
-            <p>{cur.text}</p>
+          <div className={css.gsec} data-kind="now" aria-label="지금 할 일">
+            <h5>
+              <em>NOW</em> 지금 할 일
+            </h5>
+            <p className={css.gdef}>{cur.text}</p>
             <button type="button" className={css.go} onClick={() => p.onOpen(cur.panel)}>
               {PANEL_NAME[cur.panel]} 열기
             </button>
@@ -58,12 +64,15 @@ export default function TutorialHud(p: Props) {
         )}
         {over && (
           <>
-            <p className={`${css.result}`} data-ok>
+            <p className={css.result} data-ok>
               완료! 세 단계를 모두 해냈어요.
             </p>
-            <div className={css.concept}>
-              <b>개념 · {t.concept.term}</b>
-              <p>{t.concept.def}</p>
+            <div className={css.gsec} data-kind="concept" aria-label="개념">
+              <h5>
+                <em>CONCEPT</em> 개념
+              </h5>
+              <p className={css.gterm}>{t.concept.term}</p>
+              <p className={css.gdef}>{t.concept.def}</p>
             </div>
           </>
         )}

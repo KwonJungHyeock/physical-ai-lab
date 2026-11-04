@@ -423,126 +423,173 @@
   color: #9fd8bf;
 }
 
-/* 단계 안내 (입문 트랙): 예측 (grey box) · 관찰 (orange marks, as the scene's bubbles) · 개념 (blue box). */
-.predict {
-  margin: 9px 0 0;
-  padding: 8px 10px;
-  border-radius: 9px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid #3a4540;
+/* 단계 안내 (입문 트랙): 예측 · 관찰 · 목표 · 개념 as sections of the mission card, in the HUD's own
+   language — an English tag over the Korean name (as the menu bar), line lists with dividers (as the
+   checks), lamp dots (as the signal strip). Colour only on the tag: grey 예측, orange 관찰 (the scene's
+   bubbles), green 목표, blue 개념. */
+.gsec {
+  margin: 10px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid #333d39;
 }
-.predict b {
+.gsec h5,
+.ghead {
+  margin: 0 0 4px;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
   font-size: 12.5px;
+  font-weight: 800;
   color: #fff;
 }
-.predict b small {
-  margin-left: 6px;
-  font-weight: 600;
-  font-size: 11px;
+.ghead {
+  margin: 10px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid #333d39;
+}
+.gsec h5 em,
+.ghead em {
+  font-style: normal;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
   color: #9aa7a1;
 }
-.predict p {
-  margin: 4px 0 0;
+.gsec[data-kind='observe'] h5 em {
+  color: #fb923c;
 }
-.options {
-  display: grid;
-  gap: 5px;
-  margin-top: 7px;
+.ghead[data-kind='goal'] em {
+  color: #34d399;
 }
-.options button {
-  text-align: left;
-  padding: 6px 9px;
-  border-radius: 7px;
-  border: 1px solid #4a5550;
-  background: #26302c;
+.gsec[data-kind='concept'] h5 em {
+  color: #93b4ff;
+}
+.gsec h5 small {
+  margin-left: auto;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #b9c4bf;
+  font-variant-numeric: tabular-nums;
+}
+.gq {
+  margin: 2px 0 2px;
   color: #e9eeeb;
+}
+.glist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.glist li {
+  border-top: 1px solid rgba(233, 238, 235, 0.08);
+}
+.glist li:first-child {
+  border-top: 0;
+}
+.glist button {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 5px 4px;
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  color: #d7dfdb;
   font: inherit;
-  font-size: 12.5px;
+  text-align: left;
   cursor: pointer;
 }
-.options button:hover:not(:disabled) {
-  border-color: #9fd8bf;
+.glist button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
 }
-.mine {
-  color: #cfe8dc;
+.glist button[aria-pressed='true'] {
+  color: #fff;
   font-weight: 700;
 }
-.mine small {
-  display: block;
-  font-weight: 500;
-  font-size: 11px;
+.glist button i {
+  font-style: normal;
+  width: 14px;
+  text-align: center;
   color: #9aa7a1;
 }
-.compare {
-  margin: 0 0 7px !important;
-  padding: 6px 8px;
-  border-radius: 7px;
-  background: rgba(194, 65, 12, 0.22);
-  color: #fde3d3;
+.glist button[aria-pressed='true'] i {
+  color: #34d399;
 }
-.compare[data-ok] {
-  background: rgba(15, 107, 76, 0.35);
-  color: #d5f5e6;
-}
-.observe {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 5px 6px;
-  margin: 8px 0 0;
-}
-.observe b {
-  font-size: 12px;
-  color: #fdba74;
-  margin-right: 2px;
-}
-.observe span {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 11.5px;
-  padding: 3px 8px 3px 5px;
-  border-radius: 999px;
-  border: 1px solid #5b3a26;
-  color: #e8cbb8;
-}
-.observe span i {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  border: 1.5px solid #c2410c;
+.glist button em {
+  margin-left: auto;
   font-style: normal;
-  font-size: 9px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #34d399;
+  white-space: nowrap;
+}
+/* 관찰: the signal strip's lamp, lit orange when the moment has been seen. */
+.glamp {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 4px;
+  color: #b9c4bf;
+}
+.glamp i {
+  flex: none;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #3a4440;
+  border: 1.5px solid #59645f;
+}
+.glamp[data-on] {
+  color: #fff;
+}
+.glamp[data-on] i {
+  background: #f97316;
+  border-color: #fed7aa;
+  box-shadow: 0 0 7px #f97316;
+}
+.gline {
+  display: flex;
+  gap: 7px;
+  align-items: baseline;
+  margin: 2px 0 0;
+  padding: 3px 4px;
+}
+.gline i {
+  font-style: normal;
   font-weight: 800;
-  display: grid;
-  place-items: center;
-  color: #fff;
+  width: 14px;
+  text-align: center;
+  color: #fb923c;
 }
-.observe span[data-seen] {
-  border-color: #c2410c;
-  color: #fff;
+.gline[data-ok] i {
+  color: #34d399;
 }
-.observe span[data-seen] i {
-  background: #c2410c;
-}
-.concept {
-  margin: 10px 0 0;
-  padding: 9px 11px;
-  border-radius: 9px;
-  background: rgba(29, 78, 216, 0.28);
-  border: 1px solid #3b5bdb;
-}
-.concept b {
-  color: #dbe4ff;
-  font-size: 13px;
-}
-.concept p {
-  margin: 4px 0 0;
-  color: #e6ecff;
-}
-.concept .real {
+.gline small,
+.greal {
+  display: block;
   font-size: 12px;
-  color: #b9c8f5;
+  color: #b9c4bf;
+}
+.gterm {
+  margin: 2px 0 0;
+  font-weight: 800;
+  font-size: 14px;
+  color: #fff;
+}
+.gdef {
+  margin: 2px 0 0;
+  color: #e3e9e6;
+}
+.greal {
+  margin: 6px 0 0;
+}
+.greal b {
+  margin-right: 6px;
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  color: #93b4ff;
 }
 
 /* 입문 튜토리얼 (TutorialHud.tsx): the step to do now in a green band ('지금 할 일'), its panel's button. */
@@ -553,27 +600,23 @@
 .checks li[data-cur] i {
   color: #22c55e;
 }
-.todo {
-  margin: 9px 0 0;
-  padding: 9px 11px;
-  border-radius: 9px;
-  background: rgba(15, 107, 76, 0.32);
-  border: 1px solid #0f6b4c;
-}
-.todo p {
-  margin: 0;
-  color: #eafff4;
-  font-weight: 600;
+.gsec[data-kind='now'] h5 em {
+  color: #34d399;
 }
 .go {
   margin-top: 8px;
-  border: 0;
+  border: 1px solid #34d399;
   border-radius: 8px;
-  padding: 6px 14px;
-  background: #22c55e;
-  color: #052e1a;
+  padding: 5px 13px;
+  background: rgba(52, 211, 153, 0.14);
+  color: #d5f5e6;
   font: inherit;
+  font-size: 12.5px;
   font-weight: 800;
   cursor: pointer;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.25);
+  /* 지금 할 일: the place to press glows (box-shadow, no movement). */
+  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.18);
+}
+.go:hover {
+  background: rgba(52, 211, 153, 0.24);
 }
