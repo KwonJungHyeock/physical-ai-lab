@@ -80,7 +80,9 @@ import { LEVEL_NAME, type CellAlert } from '@/engine/simulator/cell/faults';
 import { cellChecks, repairCell } from '@/engine/simulator/cell/run';
 import CellCamera from './stage/CellCamera';
 import CellHud, { QuestCard } from './stage/CellHud';
+import type { CellClock } from './stage/DeskObjects';
 import CafeStrip from './stage/CafeStrip';
+import { BoardStrip, DrawStrip } from './stage/SiteStrips';
 import { RunError, SelfCollision, Stop, contactJoints, createCellWorld, createWorld, poseContact, emptyStats, instantAnimate, jogTo, moveCheck, moveProblem, playTimeline, preflight, runProcess, runProgram, type RobotAction, type RunHooks, type WorldState } from '@/engine/simulator/sim';
 import { demoFits, demoFor, demoStepAt } from '@/engine/simulator/demos';
 import { runPython, warmPython } from '@/engine/python/client';
@@ -560,6 +562,14 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
    * cell's both read the rate through `runRate`, which is 0 while held.
    */
   const heldRef = useRef(false);
+  /**
+   * 입문 트랙: a move is also sampled between the screen's frames, every 1/60 s of its time, so what
+   * it leaves (the pen's line, the path the checks read) does not depend on how fast the computer
+   * draws (a slow one would join far-apart points with straight lines). 0: once a frame (the full console).
+   */
+  const subRef = useRef(track ? 1 / 60 : 0);
+  /** 입문 트랙: while a program runs, the cell goes on by the program's steps (each 1/60 s and the arm's pose then, Stage → CellPhysics). */
+  const cellClock = useRef<CellClock>({ on: false, steps: [] });
   const runRate = useMemo(
     () => ({
       get current() {
@@ -1020,6 +1030,10 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     busyRef.current = busy;
     realRunRef.current = realRun;
   }, [busy, realRun]);
+  // 입문 트랙: the cell keeps the program's time while one runs in the simulator (not the real robot).
+  useEffect(() => {
+    cellClock.current = { on: !!track && busy && !robotMode, steps: [] };
+  }, [track, busy, robotMode]);
 
   const tcpNow = tcpFor(effector, cameraFlange);
 
@@ -1643,19 +1657,30 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
           coast.left = Math.max(0, coast.left - dt);
           dt = (was * was - coast.left * coast.left) / (2 * coast.s);
           if (coast.left <= 0 || t >= durationS) {
-            t = Math.min(durationS, t + dt);
+            const end = Math.min(durationS, t + dt);
             try {
-              frame(t);
+              frame(end);
+              if (cellClock.current.on && end > t) cellClock.current.steps.push({ dt: end - t, angles: world.current.angles.slice() });
+              t = end;
             } catch {
               /* stopped against something: it stays where it is */
             }
             return reject(new Stop());
           }
         }
-        t = Math.min(durationS, t + dt);
+        const next = Math.min(durationS, t + dt);
         last = now;
         try {
-          frame(t);
+          const sub = subRef.current;
+          const ck = cellClock.current;
+          // One step of the move: the pose at u, handed to the cell with the time since the last (입문).
+          const one = (u: number) => {
+            frame(u);
+            if (ck.on && u > t) ck.steps.push({ dt: u - t, angles: world.current.angles.slice() });
+            t = u;
+          };
+          if (sub > 0) for (let u = t + sub; u < next; u += sub) one(u);
+          one(next);
         } catch (err) {
           return reject(err);
         }
@@ -4776,6 +4801,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   planMarks={planMarks}
                   cell={cellAt?.cell ?? null}
                   simRate={runRate}
+                  cellClock={cellClock}
                   cellCallouts={!!track}
                   cellTags={cellTags.length ? cellTags : cellAt?.mission && !busy ? cellStepTags(cellAt.cell, missionById(cellAt.mission)?.n ?? 1) : []}
                   display={stageDisplay}
@@ -4839,8 +4865,10 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                     }
                   }}
                 />}
-              {/* 입문 로봇 카페: the order, the five processes and the cup, over the scene. */}
+              {/* 입문 현장의 공정 띠: the order (or the game) and what the step is about, over the scene. */}
               {loaded && view === 'sim' && track && cellAt?.cell === 'cafe' && <CafeStrip world={world} />}
+              {loaded && view === 'sim' && track && cellAt?.cell === 'draw' && <DrawStrip world={world} />}
+              {loaded && view === 'sim' && track && cellAt?.cell === 'board' && <BoardStrip world={world} />}
               {loaded && view === 'sim' && moment && (
                 <MomentAsk
                   mission={moment}

@@ -49,6 +49,12 @@ const inking = (_run: CellRun, w: WorldState) => w.penDown;
 /** The pen up between two strokes (off the paper, at travel height), after some ink. */
 const lifted = (run: CellRun, w: WorldState) => !w.penDown && w.trail.some((s) => s.length > 2) && !!run.line.in['카드 있음'];
 
+/** A cup standing on the pickup shelf (let go of: not in the gripper). */
+const onShelf = (run: CellRun, w: WorldState) => {
+  const p = run.layout.places['픽업 1'];
+  return w.objects.some((o) => o.kind === 'cup' && o.id !== w.carry?.id && Math.hypot(o.x - p.x, o.y - p.y) < 8 && Math.abs(o.z - p.z) < 6);
+};
+
 const A = CAFE_AT;
 const CUP: [number, number, number] = [A.cup.x, A.cup.y, 120];
 const ICE: [number, number, number] = [A.ice.x, A.ice.y, 110];
@@ -113,11 +119,11 @@ export const STEP_GUIDES: Record<string, StepGuide> = {
   },
   F4: {
     predict: {
-      q: '문이 열렸어요. 손님이 가져가는 동안 로봇 팔은 어디에 있어야 할까요?',
+      q: '음료를 픽업대에 놓았어요. 손님이 가져가는 동안 로봇 팔은 어디에 있어야 할까요?',
       options: ['픽업대 안에서 컵을 잡고', '픽업대 밖 (기본 자세)'],
       answer: 1,
       why: '문이 열린 동안 사람과 로봇이 같은 곳에 있으면 안 돼요. 팔은 빼고 기다려요.',
-      at: on('문 열림'),
+      at: onShelf,
     },
     observe: [
       { id: 'open', text: '[문 열림]: 손님 쪽 문이 열렸어요', at: PICKUP, when: on('문 열림') },
@@ -133,7 +139,7 @@ export const STEP_GUIDES: Record<string, StepGuide> = {
 
   /* --- G: 로봇 캘리그라피 --- */
   G1: {
-    predict: { q: '한 획을 다 쓰고 다음 획으로 옮길 때 펜은?', options: ['종이에 닿은 채로 간다', '조금 들어 올려서 간다', '꽂이에 꽂고 간다'], answer: 1, why: '펜을 들어야 옮기는 길이 선으로 남지 않아요.' },
+    predict: { q: '한 획을 다 썼어요. 다음 획으로 옮길 때 펜은?', options: ['종이에 닿은 채로 간다', '조금 들어 올려서 간다'], answer: 1, why: '펜을 들어야 옮기는 길이 선으로 남지 않아요.', at: lifted },
     observe: [
       { id: 'card', text: '[카드 있음]: 손님이 카드를 놓았어요', at: CARD, when: on('카드 있음') },
       { id: 'ink', text: '펜 끝이 종이에 닿으면 선이 나와요', at: CARD, when: inking },
@@ -143,10 +149,11 @@ export const STEP_GUIDES: Record<string, StepGuide> = {
   },
   G2: {
     predict: {
-      q: '카드가 다른 자리에 놓였는데 로봇에게 알려 주지 않으면?',
-      options: ['로봇이 알아서 카드를 찾는다', '글씨가 그만큼 비켜서 써진다', '로봇이 쓰지 않는다'],
+      q: '손님이 카드를 매트의 다른 자리에 놓았어요. 로봇에게 알려 주지 않으면?',
+      options: ['로봇이 알아서 카드를 찾는다', '글씨가 그만큼 비켜서 써진다'],
       answer: 1,
       why: '로봇은 카드를 보지 못해요. 알려 준 기준점(원점)과 높이에 맞춰 그대로 써요.',
+      at: on('카드 있음'),
     },
     observe: [
       { id: 'ink', text: '펜이 종이에 닿았어요: 선이 나와요', at: CARD, when: inking },
@@ -159,7 +166,7 @@ export const STEP_GUIDES: Record<string, StepGuide> = {
     },
   },
   G3: {
-    predict: { q: '관절 이동으로 네모를 그리면?', options: ['변이 곧다', '변이 휜다', '더 빨라서 더 곧다'], answer: 1, why: '관절 이동은 모든 관절이 한꺼번에 돌아서 펜 끝이 곡선으로 가요.' },
+    predict: { q: '네모를 관절 이동으로 그리고 있어요. 네 변은?', options: ['곧게 그려진다', '휘어진다'], answer: 1, why: '관절 이동은 모든 관절이 한꺼번에 돌아서 펜 끝이 곡선으로 가요.', at: inking },
     observe: [
       { id: 'ink', text: '펜 끝이 가는 길 = 선', at: CARD, when: inking },
       { id: 'lamp', text: '[완성 램프]: 변이 곧은지 보세요', at: LAMP, when: out('완성 램프') },
@@ -167,7 +174,7 @@ export const STEP_GUIDES: Record<string, StepGuide> = {
     concept: { term: '직선 이동 vs 관절 이동', def: '직선 이동은 펜 끝이 곧게 가고, 관절 이동은 관절이 한꺼번에 돌아서 끝이 휘어 가요.', real: '접착제를 바르는 공장 로봇도 직선 이동으로 곧고 고른 선을 그어요.' },
   },
   G4: {
-    predict: { q: '펜을 내린 채 다음 획의 시작점으로 가면?', options: ['글자 사이에 줄이 생긴다', '글씨가 굵어진다', '아무 일도 없다'], answer: 0, why: '펜이 닿은 채 움직인 길은 모두 선이 돼요.' },
+    predict: { q: '펜을 내린 채 다음 획의 시작점으로 가면?', options: ['글자 사이에 줄이 생긴다', '아무 일도 없다'], answer: 0, why: '펜이 닿은 채 움직인 길은 모두 선이 돼요.', at: inking },
     observe: [
       { id: 'ink', text: '그리기 이동: 펜이 닿아 있어요', at: CARD, when: inking },
       { id: 'up', text: '빈 이동: 펜을 들고 옮겨요', at: CARD, when: lifted },
@@ -178,7 +185,7 @@ export const STEP_GUIDES: Record<string, StepGuide> = {
 
   /* --- H: 보드게임 로봇 --- */
   H1: {
-    predict: { q: '로봇은 언제 판 위로 움직이기 시작할까요?', options: ['프로그램을 켜자마자', '사람이 돌을 두고 손을 뺀 뒤', '사람이 손을 뻗을 때'], answer: 1, why: '[로봇 차례] 신호가 켜져야 움직여요. 사람이 손을 뺀 뒤에 켜져요.' },
+    predict: { q: '사람이 돌을 두고 있어요. 로봇은 언제 움직일까요?', options: ['지금 바로', '사람이 손을 뺀 뒤'], answer: 1, why: '[로봇 차례] 신호가 켜져야 움직여요. 사람이 손을 뺀 뒤에 켜져요.', at: on('손 감지') },
     observe: [
       { id: 'hand', text: '[손 감지]: 사람이 돌을 두는 중', at: NEAR_PERSON, when: on('손 감지') },
       { id: 'turn', text: '[로봇 차례] 켜짐: 이제 움직여요', at: BOARD_AT, when: on('로봇 차례') },
@@ -188,10 +195,11 @@ export const STEP_GUIDES: Record<string, StepGuide> = {
   },
   H2: {
     predict: {
-      q: '칸 간격을 16 mm 대신 15 mm로 알려 주면 가로 7 · 세로 6의 돌은?',
-      options: ['정확히 그 교차점에 놓인다', '가로 1 쪽으로 몇 mm 벗어난다', '판 밖으로 떨어진다'],
+      q: '칸 간격을 15 mm로 알려 줬어요(판은 16 mm). 가로 7 · 세로 6의 돌은?',
+      options: ['정확히 그 교차점에 놓인다', '가로 1 쪽으로 몇 mm 벗어난다'],
       answer: 1,
       why: '칸마다 1 mm씩 모자라서 가로로 6 mm, 세로로 5 mm 벗어나요.',
+      at: held,
     },
     observe: [
       { id: 'held', text: '흰 돌을 들고 계산한 좌표로 가요', at: TRAY_AT, when: held },
@@ -200,7 +208,13 @@ export const STEP_GUIDES: Record<string, StepGuide> = {
     concept: { term: '격자 좌표 → 로봇 좌표', def: 'x = 가로 1의 x + (가로 − 1) × 칸 간격. 칸 번호를 mm로 바꿔야 로봇이 움직일 수 있어요.', real: '창고의 선반 칸, 반도체 웨이퍼의 칩 자리도 이렇게 칸 번호를 좌표로 바꿔 찾아가요.' },
   },
   H3: {
-    predict: { q: '차례를 기다리지 않고 바로 판 위로 가면?', options: ['더 빨리 두어서 좋다', '사람 손과 겹쳐 로봇이 멈춘다', '사람이 기다려 준다'], answer: 1, why: '사람 손이 판 위에 있는 동안 팔이 오면 안전 정지해요.' },
+    predict: {
+      q: '사람 손이 판 위에 있어요. 로봇이 차례를 기다리지 않고 지금 판 위로 가면?',
+      options: ['사람 손과 겹쳐 로봇이 멈춘다', '아무 문제 없다'],
+      answer: 0,
+      why: '사람 손이 판 위에 있는 동안 팔이 오면 안전 정지해요.',
+      at: (r) => placed(1)(r) && on('손 감지')(r),
+    },
     observe: [
       { id: 'hand', text: '[손 감지]: 사람 손이 판 위에 있어요', at: NEAR_PERSON, when: on('손 감지') },
       { id: 'turn', text: '[로봇 차례]를 기다렸다가 움직여요', at: BOARD_AT, when: on('로봇 차례') },
@@ -209,7 +223,13 @@ export const STEP_GUIDES: Record<string, StepGuide> = {
     concept: { term: '차례 = 신호 (주고받기)', def: '사람과 로봇이 같은 판에서 일할 때, 차례 신호로 번갈아 움직이고 손이 있으면 멈춰요.', real: '사람과 함께 조립하는 협동로봇도 작업자가 버튼을 누르거나 손을 뺀 뒤에 움직여요.' },
   },
   H4: {
-    predict: { q: "규칙이 '빈 칸 차례대로'면 누가 이길까요?", options: ['로봇', '사람', '비긴다'], answer: 1, why: '판을 보지 않고 빈 칸에만 두면 사람의 줄을 막지 못해요.' },
+    predict: {
+      q: '사람 돌이 한 줄로 길어지고 있어요. 로봇이 막지 않으면?',
+      options: ['사람이 다섯 개를 먼저 잇는다', '로봇이 먼저 다섯 개를 잇는다'],
+      answer: 0,
+      why: '판을 보지 않고 빈 칸에만 두거나 내 줄만 이으면 사람의 줄을 막지 못해요.',
+      at: placed(3),
+    },
     observe: [
       { id: 'turn', text: '[로봇 차례]: 판 센서로 돌을 읽어요', at: BOARD_AT, when: on('로봇 차례') },
       { id: 'placed', text: '규칙으로 고른 칸에 두었어요', at: BOARD_AT, when: placed(1) },

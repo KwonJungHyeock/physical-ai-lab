@@ -23,7 +23,7 @@ const { objectSpec } = await import('../../src/engine/simulator/deskPhysics');
 const G = await import('../../src/engine/simulator/program');
 const { CELL_ENV, cellChecks, cellSolids, stepCell } = await import('../../src/engine/simulator/cell/run');
 const { missionsOf, missionById } = await import('../../src/engine/simulator/cell/missions');
-const { guideOf } = await import('../../src/engine/simulator/cell/guides');
+const { guideOf, predictNow } = await import('../../src/engine/simulator/cell/guides');
 const { CELL_BY_ID } = await import('../../src/engine/simulator/cell/cells');
 const { H_ANSWER, H_START, boardCode } = await import('../../src/engine/simulator/cell/boardRecipe');
 
@@ -36,7 +36,12 @@ async function cell(mission: string) {
   const w = createCellWorld('board', mission, EFF);
   const phys = await createPhysics(chain, TCP, w.objects.map(objectSpec), cellSolids(w.cell!), w.angles, CELL_ENV);
   const DT = 1 / 60;
-  const frame = () => stepCell(w, phys, DT, chain, TCP);
+  // 퀘스트 모드: did the step's moment to ask the 예측 come (the scene holds there for it)?
+  const asked = { at: false };
+  const frame = () => {
+    stepCell(w, phys, DT, chain, TCP);
+    if (!asked.at && predictNow(w.cell!, w)) asked.at = true;
+  };
   for (let k = 0; k < 30; k += 1) frame();
   const animate = async (d: number, f: (t: number) => void) => {
     const n = Math.max(1, Math.round(d / DT));
@@ -75,7 +80,7 @@ async function cell(mission: string) {
     for (let k = 0; k < 90; k += 1) frame();
     return err;
   };
-  return { w, run, log };
+  return { w, run, log, asked };
 }
 
 type World = Awaited<ReturnType<typeof cell>>['w'];
@@ -99,9 +104,12 @@ for (const m of missionsOf('board')) {
 }
 
 /** A step's start cards (H2 … H4): they must not pass. */
-for (const id of ['H2', 'H3', 'H4']) {
-  const { w, run } = await cell(id);
+for (const id of ['H1', 'H2', 'H3', 'H4']) {
+  const { w, run, asked } = await cell(id);
   const err = await run(boardCode(H_START[id]).code);
+  // The 예측 is asked on the first run, which is on the start cards: its moment must come there.
+  assert.ok(asked.at, `${id}: the 예측's moment never came on the start cards`);
+  if (id.endsWith('1')) continue;
   assert.ok(err || !allOk(w), `${id} start cards passed anyway | ${summary(w)}`);
   console.log(`  ok   ${id} start cards fail: ${err ? (err as Error).message : summary(w)}  [${moves(w)}]`);
 }
@@ -109,16 +117,18 @@ for (const id of ['H2', 'H3', 'H4']) {
 // '잇기만' (no blocking) loses too: the order of the rules is the lesson.
 {
   const { w, run } = await cell('H4');
-  const code = boardCode({ ...H_ANSWER.H4, cards: H_ANSWER.H4.cards.map((c) => (c.k === 'rule' ? { k: 'rule', rule: '잇는 칸' } : c)) }).code;
+  const code = boardCode({ ...H_ANSWER.H4, cards: H_ANSWER.H4.cards.map((c) => (c.k === 'move' ? { ...c, rule: '잇는 칸' as const } : c)) }).code;
   const err = await run(code);
   assert.ok(w.cell!.board!.winner === 1 && !allOk(w), `H4 잇기만 should lose | ${err ? (err as Error).message : ''} | ${moves(w)}`);
   console.log(`  ok   H4 잇기만 loses: ${moves(w)}`);
 }
 
 {
-  const { lines } = boardCode(H_ANSWER.H1);
-  assert.deepEqual(lines[0], [4, 4], `wait card line: ${JSON.stringify(lines)}`);
-  assert.deepEqual(lines[1], [0, -1], 'a setting card makes no line');
+  const { lines, rows } = boardCode(H_ANSWER.H1);
+  assert.deepEqual(lines[0], [0, -1], 'a setting card makes no line');
+  assert.deepEqual(rows[1][0], [4, 4], `the wait row's line: ${JSON.stringify(rows)}`);
+  // The wait switched off makes no line (H3's start).
+  assert.deepEqual(boardCode(H_START.H3).rows[1][0], [0, -1], 'the wait off spans nothing');
 }
 
 console.log('cell H: ok');

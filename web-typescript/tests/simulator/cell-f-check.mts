@@ -22,7 +22,7 @@ const { objectSpec } = await import('../../src/engine/simulator/deskPhysics');
 const G = await import('../../src/engine/simulator/program');
 const { CELL_ENV, cellChecks, cellSolids, stepCell } = await import('../../src/engine/simulator/cell/run');
 const { missionsOf, missionById } = await import('../../src/engine/simulator/cell/missions');
-const { guideOf } = await import('../../src/engine/simulator/cell/guides');
+const { guideOf, predictNow } = await import('../../src/engine/simulator/cell/guides');
 
 const chain = buildChain(parseUrdf(readFileSync(new URL('../../public/robot/rdkx5/mycobot_280_rdkx5.urdf', import.meta.url), 'utf8')));
 const EFF = 'adaptive' as const;
@@ -33,7 +33,12 @@ async function cell(mission: string) {
   const reach = EFFECTOR_BY_ID[EFF].kind === 'grip' ? Math.max(0, TCP - 40) : TCP;
   const phys = await createPhysics(chain, reach, w.objects.map(objectSpec), cellSolids(w.cell!), w.angles, CELL_ENV);
   const DT = 1 / 60;
-  const frame = () => stepCell(w, phys, DT, chain, TCP);
+  // 퀘스트 모드: did the step's moment to ask the 예측 come (the scene holds there for it)?
+  const asked = { at: false };
+  const frame = () => {
+    stepCell(w, phys, DT, chain, TCP);
+    if (!asked.at && predictNow(w.cell!, w)) asked.at = true;
+  };
   for (let k = 0; k < 30; k += 1) frame();
   const animate = async (d: number, f: (t: number) => void) => {
     const n = Math.max(1, Math.round(d / DT));
@@ -59,7 +64,7 @@ async function cell(mission: string) {
     for (let k = 0; k < 90; k += 1) frame();
     return err;
   };
-  return { w, run, log };
+  return { w, run, log, asked };
 }
 
 type World = Awaited<ReturnType<typeof cell>>['w'];
@@ -69,8 +74,9 @@ const allOk = (w: World) => (cellChecks(w)?.items ?? []).every((i) => i.ok);
 
 for (const m of missionsOf('cafe')) {
   const t0 = Date.now();
-  const { w, run, log } = await cell(m.id);
+  const { w, run, log, asked } = await cell(m.id);
   const err = await run(m.solution!);
+  assert.ok(asked.at, `${m.id}: the 예측's moment never came on the reference run`);
   assert.ok(!err && allOk(w), `${m.id} ${m.title}: ${err ? (err as Error).message : ''} | ${summary(w)} | ${alertsOf(w)} | ${log.slice(-6).join(' / ')}`);
   // 단계 안내: the step's guide is there, its answer is one of its options, and the reference run shows every moment it points to.
   const g = guideOf(m.id);
@@ -105,8 +111,9 @@ await fails('F4', (c) => c.replace('    robot.place("픽업 1")\n    robot.home(
 for (const m of missionsOf('cafe')) {
   assert.equal(recipeCode(RECIPE_ANSWER[m.id]).code, m.solution, `${m.id} answer cards = the reference program`);
   if (m.id === 'F1') continue;
-  const { w, run } = await cell(m.id);
+  const { w, run, asked } = await cell(m.id);
   const err = await run(recipeCode(RECIPE_START[m.id]).code);
+  assert.ok(asked.at, `${m.id}: the 예측's moment never came on the start cards`);
   assert.ok(err || !allOk(w), `${m.id} start cards passed anyway | ${summary(w)}`);
   console.log(`  ok   ${m.id} start cards fail: ${err ? (err as Error).message : summary(w)}`);
 }

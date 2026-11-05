@@ -400,3 +400,24 @@
   font-weight: 500;
   color: var(--hud-sub);
 }
+
+/* 캘리그라피 · 보드게임 공정 카드: a choice in a card's title line, and the unit after its boxes. */
+.amt select {
+  background: var(--hud-groove);
+  box-shadow: var(--hud-groove-shadow);
+  color: #fff;
+  border: 0;
+  border-radius: 6px;
+  font: inherit;
+  font-weight: 800;
+  padding: 2px 4px;
+}
+.unit {
+  margin-left: 4px;
+  font-size: 12px;
+  color: var(--hud-sub);
+}
+.title {
+  flex-wrap: wrap;
+  row-gap: 4px;
+}

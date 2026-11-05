@@ -91,7 +91,7 @@ import StudioLight from './StudioLight';
 import { DESK_M, TOOL_LAYER, sceneFor, addJointAxes, axesTriad, deskSpot, framing, meshBox, reachDisc, type DisplayOpts, type FreeFrame } from './sceneHelpers';
 import { workspaceEnvelope } from '../../education/stage/learn3d';
 import type { ArmSpec } from '@/engine/robot/arms';
-import { CellObjects, CellPhysics, DeskObjects, DeskPhysics, type DeskEdit } from './DeskObjects';
+import { CellObjects, CellPhysics, DeskObjects, DeskPhysics, type CellClock, type DeskEdit } from './DeskObjects';
 import CellScene, { CELL_VIEW } from './CellScene';
 import type { CellId } from '@/engine/simulator/cell/cells';
 import { ScenePreset } from './ScenePreset';
@@ -229,6 +229,8 @@ interface StageProps {
   cell?: CellId | null;
   /** The simulation's speed (×1 ×2 ×4): the cell's line runs that much faster, as the arm does. */
   simRate?: RefObject<number>;
+  /** 입문 트랙: the cell keeps the running program's time (DeskObjects.tsx CellClock). */
+  cellClock?: RefObject<CellClock | null>;
   /** Equipment whose name tags show (the step's equipment); others show while pointed at. */
   cellTags?: readonly string[];
   /** 입문 트랙: the step's 관찰 bubbles in the cell (cell/guides.ts). */
@@ -399,6 +401,7 @@ function World({
   planMarks,
   cell,
   simRate,
+  cellClock,
   cellTags,
   cellCallouts = false,
 }: StageProps & { lights: Lights }) {
@@ -720,7 +723,7 @@ function World({
         <>
           <CellScene world={world} cell={cell} tags={cellTags} callouts={cellCallouts} />
           <CellObjects world={world} />
-          <CellPhysics world={world} chain={chain} tcpMm={tcpMm} effector={effector} rate={simRate} />
+          <CellPhysics world={world} chain={chain} tcpMm={tcpMm} effector={effector} rate={simRate} clock={cellClock} />
         </>
       ) : theme === 'kit' ? (
         <>

@@ -507,7 +507,23 @@ const yawQ = (deg: number): [number, number, number, number] => [0, 0, Math.sin(
  * again when the cell starts over (a new run state) or the tool changes. `rate`: the simulation
  * speed (×1 ×2 ×4), so the line keeps time with a running program.
  */
-export function CellPhysics({ world, chain, tcpMm, effector, rate }: { world: RefObject<WorldState | null>; chain: readonly ChainSegment[]; tcpMm: number; effector: EffectorId; rate?: RefObject<number> }) {
+/**
+ * 입문 트랙: while a program runs (`on`), the cell goes on by the program's own steps — every 1/60 s
+ * of its moves and waits, with the arm's pose at that moment (`steps`) — not by the screen's clock
+ * and a pose guessed between two frames. So a slow computer gives what the checks give: the same
+ * race between the robot and a person, and no arm sweeping through what a straight move passes.
+ */
+export interface CellClock {
+  on: boolean;
+  steps: { dt: number; angles: number[] }[];
+}
+
+/** The program's steps not yet given to the cell (and none left). */
+function takeSteps(ck: CellClock): CellClock['steps'] {
+  return ck.steps.splice(0);
+}
+
+export function CellPhysics({ world, chain, tcpMm, effector, rate, clock }: { world: RefObject<WorldState | null>; chain: readonly ChainSegment[]; tcpMm: number; effector: EffectorId; rate?: RefObject<number>; clock?: RefObject<CellClock | null> }) {
   const phys = useRef<PhysicsWorld | null>(null);
   const built = useRef<{ run: unknown; reach: number; loading: boolean; debt: number; prev: number[] | null }>({ run: null, reach: -1, loading: false, debt: 0, prev: null });
   useEffect(
@@ -539,6 +555,14 @@ export function CellPhysics({ world, chain, tcpMm, effector, rate }: { world: Re
     // The cell keeps the arm's time (the clock's, at most a quarter second a frame) in steps of
     // 1/60 s; the arm goes through the steps on its way to this frame's pose, so it never jumps
     // into a part.
+    const ck = clock?.current;
+    if (ck?.on) {
+      const steps = takeSteps(ck);
+      for (const st of steps) stepCell(w, phys.current, st.dt, chain, tcpMm, st.angles);
+      if (steps.length) b.prev = steps[steps.length - 1].angles.slice();
+      b.debt = 0;
+      return;
+    }
     b.debt = Math.min(b.debt + Math.min(dt, 0.25) * (rate?.current ?? 1), 1);
     const n = Math.floor(b.debt * 60 + 0.5);
     const from = b.prev && b.prev.length === w.angles.length ? b.prev : w.angles;

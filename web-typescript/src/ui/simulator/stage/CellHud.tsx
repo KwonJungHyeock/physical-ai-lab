@@ -253,7 +253,7 @@ export default function CellHud(p: CellHudProps) {
   };
 
   return (
-    <div className={css.hud} aria-label="실습 셀">
+    <div className={css.hud} data-strip={p.questOut || undefined} aria-label="실습 셀">
       {/* 입문: the quest card (자유 연습 here; a quest's own card stands at the top of the side panel). */}
       {compact && !p.questOut && <QuestCard cell={p.cell} mission={p.mission} passed={p.passed} allOpen={p.allOpen} busy={p.busy} onMission={p.onMission} quest={p.quest} />}
       {/* Step ladder. */}

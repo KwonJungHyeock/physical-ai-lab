@@ -23,7 +23,7 @@ const { objectSpec } = await import('../../src/engine/simulator/deskPhysics');
 const G = await import('../../src/engine/simulator/program');
 const { CELL_ENV, cellChecks, cellSolids, stepCell } = await import('../../src/engine/simulator/cell/run');
 const { missionsOf, missionById } = await import('../../src/engine/simulator/cell/missions');
-const { guideOf } = await import('../../src/engine/simulator/cell/guides');
+const { guideOf, predictNow } = await import('../../src/engine/simulator/cell/guides');
 const { CELL_BY_ID } = await import('../../src/engine/simulator/cell/cells');
 const { G_ANSWER, G_START, drawCode } = await import('../../src/engine/simulator/cell/drawRecipe');
 
@@ -36,7 +36,12 @@ async function cell(mission: string) {
   const w = createCellWorld('draw', mission, EFF);
   const phys = await createPhysics(chain, TCP, w.objects.map(objectSpec), cellSolids(w.cell!), w.angles, CELL_ENV);
   const DT = 1 / 60;
-  const frame = () => stepCell(w, phys, DT, chain, TCP);
+  // 퀘스트 모드: did the step's moment to ask the 예측 come (the scene holds there for it)?
+  const asked = { at: false };
+  const frame = () => {
+    stepCell(w, phys, DT, chain, TCP);
+    if (!asked.at && predictNow(w.cell!, w)) asked.at = true;
+  };
   for (let k = 0; k < 30; k += 1) frame();
   const animate = async (d: number, f: (t: number) => void) => {
     const n = Math.max(1, Math.round(d / DT));
@@ -75,7 +80,7 @@ async function cell(mission: string) {
     for (let k = 0; k < 90; k += 1) frame();
     return err;
   };
-  return { w, run, log };
+  return { w, run, log, asked };
 }
 
 type World = Awaited<ReturnType<typeof cell>>['w'];
@@ -99,9 +104,12 @@ for (const m of missionsOf('draw')) {
 }
 
 /** A step's start cards (G2 … G4): they must not pass. */
-for (const id of ['G2', 'G3', 'G4']) {
-  const { w, run } = await cell(id);
+for (const id of ['G1', 'G2', 'G3', 'G4']) {
+  const { w, run, asked } = await cell(id);
   const err = await run(drawCode(G_START[id]).code);
+  // The 예측 is asked on the first run, which is on the start cards: its moment must come there.
+  assert.ok(asked.at, `${id}: the 예측's moment never came on the start cards`);
+  if (id.endsWith('1')) continue;
   assert.ok(err || !allOk(w), `${id} start cards passed anyway | ${summary(w)}`);
   console.log(`  ok   ${id} start cards fail: ${err ? (err as Error).message : summary(w)}`);
 }
@@ -116,9 +124,10 @@ for (const id of ['G2', 'G3', 'G4']) {
 }
 
 {
-  const { lines } = drawCode(G_ANSWER.G1);
+  const { lines, rows } = drawCode(G_ANSWER.G1);
   assert.deepEqual(lines[0], [4, 4], `wait card line: ${JSON.stringify(lines)}`);
   assert.deepEqual(lines[1], [0, -1], 'a setting card makes no line');
+  assert.deepEqual(rows[2][1], [0, -1], 'a switch row makes no line');
 }
 
 console.log('cell G: ok');

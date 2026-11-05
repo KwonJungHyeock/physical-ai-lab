@@ -81,6 +81,20 @@ function lineAt(g: Grid, c: number, r: number, who: number, dc: number, dr: numb
   return { n, open };
 }
 
+/** The longest row of `who`'s stones on the board (the scene's 공정 띠 shows it). */
+export function longest(g: Grid, who: number): number {
+  let best = 0;
+  for (let c = 0; c < N; c += 1)
+    for (let r = 0; r < N; r += 1)
+      if (g[c][r] === who)
+        for (const [dc, dr] of DIRS) {
+          let k = 1;
+          while (inb(c + k * dc, r + k * dr) && g[c + k * dc][r + k * dr] === who) k += 1;
+          best = Math.max(best, k);
+        }
+  return best;
+}
+
 /** Five (or more) in a row for `who`. */
 export function hasFive(g: Grid, who: number): boolean {
   for (let c = 0; c < N; c += 1)
