@@ -151,5 +151,19 @@ console.log('  ok   "도형 그리기" draws 네모 · 원 · 삼각형 · 별 a
     const ctx = { angles: w.angles, home: w.angles, tip, poses: {}, flowStep: 1, runs: 0 };
     assert.ok(st.done(ctx, ctx, {}), `맛보기 ring ${k + 1}: done at the ring`);
   }
-  console.log(`  ok   입문 맛보기: ${LIFE_TASTE.steps.length} rings in reach, each done when the tip is in it`);
+  // The spotlight's key, pressed as it says (10 mm a press, the default step), takes the tip from
+  // the 기본 자세 into each ring in turn.
+  const { ringLead } = await import('../../src/engine/simulator/lifeTutorials');
+  const home = await run('from edu import robot\n\nrobot.home()\n', 'adaptive');
+  const tip = { ...tcpPositionMm(chain, home.angles, tcpFor('adaptive', false)) };
+  for (const [k, st] of LIFE_TASTE.steps.entries()) {
+    let n = 0;
+    for (; n < 60 && !st.done({ angles: [], home: [], tip, poses: {}, flowStep: 1, runs: 0 }, { angles: [], home: [], tip, poses: {}, flowStep: 1, runs: 0 }, {}); n += 1) {
+      const sel = 'sel' in ringLead(tip, st.ring!)[0] ? (ringLead(tip, st.ring!)[0] as { sel: string }).sel : '';
+      const [, axis, way] = /\((.)(.)\)/.exec(sel)!;
+      tip[axis.toLowerCase() as 'x' | 'y' | 'z'] += way === '+' ? 10 : -10;
+    }
+    assert.ok(n < 60, `맛보기 ring ${k + 1}: the spotlit keys lead the tip into it`);
+  }
+  console.log(`  ok   입문 맛보기: ${LIFE_TASTE.steps.length} rings in reach, each done when the tip is in it; the spotlit key leads there`);
 }

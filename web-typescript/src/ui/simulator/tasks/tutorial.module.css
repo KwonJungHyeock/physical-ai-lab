@@ -180,3 +180,79 @@
   font-weight: 800;
   cursor: pointer;
 }
+
+/* The control to press now (TutorialStrip.tsx Spotlight): the screen dimmed round it and the strip
+   until a press, an accent edge round it, and the line beside it. Never in the way of a press. */
+.spot {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.spot svg {
+  position: absolute;
+  inset: 0;
+}
+
+.shade {
+  fill: rgba(4, 8, 14, 0.66);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.spot[data-dim] .shade {
+  opacity: 1;
+}
+
+.edge {
+  fill: none;
+  stroke: #ffd257;
+  stroke-width: 2.5;
+  animation: spotEdge 1.4s ease-in-out infinite;
+}
+
+@keyframes spotEdge {
+  50% {
+    stroke-opacity: 0.35;
+  }
+}
+
+.say {
+  position: absolute;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #ffd257;
+  color: #1a1606;
+  font-size: 14px;
+  font-weight: 800;
+  white-space: nowrap;
+  transform: translateY(-50%);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+/* A pointer toward the control. */
+.say::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  border: 7px solid transparent;
+  transform: translateY(-50%);
+}
+
+.say[data-side='r']::after {
+  right: 100%;
+  border-right-color: #ffd257;
+}
+
+.say[data-side='l']::after {
+  left: 100%;
+  border-left-color: #ffd257;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .edge {
+    animation: none;
+  }
+}

@@ -26,8 +26,8 @@ export interface TutCtx {
 /** What a step remembers between two looks (e.g. the arm went away from a saved pose). */
 export type TutMem = Record<string, boolean>;
 
-/** A control to ring: by CSS selector, or by the text it shows. */
-export type TutTarget = { sel: string } | { text: string };
+/** A control to ring: by CSS selector, or by the text it shows; `say`: the line by its spotlight. */
+export type TutTarget = ({ sel: string } | { text: string }) & { say?: string };
 
 export interface TutStep {
   /** One short line: what to do. */
@@ -36,6 +36,11 @@ export interface TutStep {
   panel: 'jog' | 'pose' | 'process';
   /** The controls to press, ringed. */
   target: TutTarget[];
+  /**
+   * What to press now, from the arm (instead of `target`): the first of these on screen gets the
+   * spotlight (the screen dims round it until it is pressed), the others are where to go first.
+   */
+  lead?(now: TutCtx): TutTarget[];
   /** How far along, for a step that is a number. */
   meter?(now: TutCtx, start: TutCtx): { v: number; of: number; unit: string };
   /** Done now? `start`: the context when the step began. */
@@ -129,12 +134,26 @@ export const LIFE_TUTORIALS: LifeTutorial[] = [
 /** How close the tool tip has to come to a ring's centre, mm. */
 export const RING_MM = 15;
 const dist = (tip: TutCtx['tip'], r: readonly [number, number, number]) => Math.hypot(tip.x - r[0], tip.y - r[1], tip.z - r[2]);
+/** The 좌표 jog keys by axis and way (their labels end "(X+)", "(Y−)"), and what each is called on the pad. */
+const TIP_KEYS: Record<string, string> = { 'X+': '앞', 'X−': '뒤', 'Y+': '왼쪽', 'Y−': '오른쪽', 'Z+': '위', 'Z−': '아래' };
+const COORD_KEY: TutTarget = { sel: '[title^="좌표: 손끝"]', say: '좌표(COORD)를 눌러요' };
+/**
+ * The key that brings the tip nearest the ring now: the axis it is furthest off on. Where the 좌표
+ * keys are not on screen (관절 mode), the 좌표 button first.
+ */
+export function ringLead(tip: TutCtx['tip'], r: readonly [number, number, number]): TutTarget[] {
+  const d = [r[0] - tip.x, r[1] - tip.y, r[2] - tip.z];
+  const k = d.reduce((b, v, i) => (Math.abs(v) > Math.abs(d[b]) ? i : b), 0);
+  const key = `${'XYZ'[k]}${d[k] > 0 ? '+' : '−'}`;
+  return [{ sel: `[aria-label$="(${key})"]`, say: `${TIP_KEYS[key]} (${key}) 키를 눌러요` }, COORD_KEY];
+}
 /** A 맛보기 step: bring the tip into the ring (the meter: how much of the way is done). */
-function ringStep(n: number, r: readonly [number, number, number], target: TutTarget[] = []): TutStep {
+function ringStep(n: number, r: readonly [number, number, number]): TutStep {
   return {
     short: `손끝을 고리 ${n} 안으로 넣어요`,
     panel: 'jog',
-    target,
+    target: [],
+    lead: (now) => ringLead(now.tip, r),
     ring: r,
     meter: (now, start) => {
       const of = Math.max(1, Math.round(dist(start.tip, r) - RING_MM));
@@ -153,7 +172,7 @@ export const LIFE_TASTE: LifeTutorial = {
   id: 'taste',
   title: '맛보기 · 고리 3개 통과',
   note: '제어 키로 손끝을 빛나는 고리 안에',
-  steps: [ringStep(1, [170, 0, 150], [{ sel: '[title^="좌표: 손끝"]' }]), ringStep(2, [130, 120, 110]), ringStep(3, [130, -130, 190])],
+  steps: [ringStep(1, [170, 0, 150]), ringStep(2, [130, 120, 110]), ringStep(3, [130, -130, 190])],
   concept: { term: '손끝 (TCP)', def: '로봇이 일하는 곳은 손끝이에요. 관절을 돌리면 손끝이 움직여요.' },
 };
 
