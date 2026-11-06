@@ -71,7 +71,7 @@ interface Props {
   ready: boolean;
   /** A short line under the bar. */
   note: string;
-  /** The last frame's choice; the intro stays until one is made. `onRoadmap`: a 트랙's [ROADMAP] (테마학습) instead of [CONNECT]. */
+  /** The last frame's choice; the intro stays until one is made. `onRoadmap`: a 트랙's [THEME] (테마학습: straight into the café) instead of [CONNECT]. */
   gate?: { onConnect(): void; onStart(): void; onRoadmap?: () => void };
   /** A 트랙's own cover (tracks.ts): its title and lines, its pictures taking turns instead of the film. */
   brand?: TrackIntro;
@@ -185,16 +185,20 @@ export default function Intro({ progress, ready, note, gate, brand }: Props) {
       </header>
 
       <figure key={scene} className={css.caption} aria-hidden="true">
-        <small>
-          SCENE {String(scene + 1).padStart(2, '0')} / {String(scenes.length).padStart(2, '0')}
-        </small>
+        {scenes.length > 1 && (
+          <small>
+            SCENE {String(scene + 1).padStart(2, '0')} / {String(scenes.length).padStart(2, '0')}
+          </small>
+        )}
         <b>{now.tag}</b>
         <span>{now.line}</span>
-        <ol>
-          {scenes.map((s, i) => (
-            <li key={s.tag} data-on={i === scene || undefined} />
-          ))}
-        </ol>
+        {scenes.length > 1 && (
+          <ol>
+            {scenes.map((s, i) => (
+              <li key={s.tag} data-on={i === scene || undefined} />
+            ))}
+          </ol>
+        )}
       </figure>
 
       <div className={css.hero}>
@@ -214,14 +218,12 @@ export default function Intro({ progress, ready, note, gate, brand }: Props) {
             <button
               type="button"
               className={css.connect}
-              aria-label={gate.onRoadmap ? '학습 로드맵' : '연결하기'}
+              aria-label={gate.onRoadmap ? '테마학습' : '연결하기'}
               autoFocus
               disabled={entered}
               onClick={(e) => {
                 e.stopPropagation();
-                // The roadmap opens over the intro (it stays behind, to come back to).
-                if (gate.onRoadmap) gate.onRoadmap();
-                else enter(gate.onConnect);
+                enter(gate.onRoadmap ?? gate.onConnect);
               }}
             >
               {gate.onRoadmap ? (
@@ -236,8 +238,8 @@ export default function Intro({ progress, ready, note, gate, brand }: Props) {
                 </svg>
               )}
               <span>
-                <b>{gate.onRoadmap ? 'ROADMAP' : 'CONNECT'}</b>
-                <small>{gate.onRoadmap ? '테마학습 · 단계별로' : '로봇 연결하기'}</small>
+                <b>{gate.onRoadmap ? 'THEME' : 'CONNECT'}</b>
+                <small>{gate.onRoadmap ? '테마학습 · 로봇 카페부터' : '로봇 연결하기'}</small>
               </span>
               <svg className={css.chev} viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M9 6l6 6-6 6" />
@@ -259,7 +261,7 @@ export default function Intro({ progress, ready, note, gate, brand }: Props) {
               </svg>
               <span>
                 <b>SIMULATOR</b>
-                <small>{gate.onRoadmap ? '현장 둘러보고 시작' : '시뮬레이터로 시작'}</small>
+                <small>{gate.onRoadmap ? '로봇 팔만 자유롭게' : '시뮬레이터로 시작'}</small>
               </span>
               <svg className={css.chev} viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M9 6l6 6-6 6" />
@@ -276,7 +278,7 @@ export default function Intro({ progress, ready, note, gate, brand }: Props) {
           <i ref={bar} />
         </div>
         <span className={css.row}>
-          <small className={css.note}>{choose ? (gate.onRoadmap ? '처음이면 ROADMAP 에서 튜토리얼부터, 바로 해 보려면 SIMULATOR' : '로봇과 같은 Wi-Fi 라면 CONNECT, 로봇 없이 연습하려면 SIMULATOR') : note}</small>
+          <small className={css.note}>{choose ? (gate.onRoadmap ? '배우려면 THEME (로봇 카페부터), 팔만 움직여 보려면 SIMULATOR' : '로봇과 같은 Wi-Fi 라면 CONNECT, 로봇 없이 연습하려면 SIMULATOR') : note}</small>
           <span className={css.status} data-ready={ready || undefined}>
             <i />
             {ready ? 'SYSTEM READY' : 'LOADING'}

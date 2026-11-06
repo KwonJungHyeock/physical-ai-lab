@@ -16,6 +16,7 @@ import { useRef, useState, type ReactNode, type RefObject } from 'react';
 import { cellLayout, type CellId } from '@/engine/simulator/cell/cells';
 import { guideOf } from '@/engine/simulator/cell/guides';
 import { missionById } from '@/engine/simulator/cell/missions';
+import { NARRATE_AT, NARRATED, type Narration } from '@/engine/simulator/cell/narrate';
 import type { WorldState } from '@/engine/simulator/sim';
 
 import { Feeder } from './cell/cellA';
@@ -183,7 +184,7 @@ function Callouts({ world }: { world: RefObject<WorldState | null> }) {
   const key = useRef('');
   useFrame(() => {
     const run = world.current?.cell;
-    const g = guideOf(run?.mission ?? null);
+    const g = run?.mission === NARRATED ? null : guideOf(run?.mission ?? null);
     const ids = run && g ? g.observe.filter((o) => run.observed[o.id] !== undefined && run.line.t - run.observed[o.id] < CALLOUT_S).map((o) => o.id) : [];
     const k = `${run?.mission}:${ids.join(',')}`;
     if (k === key.current) return;
@@ -206,6 +207,36 @@ function Callouts({ world }: { world: RefObject<WorldState | null> }) {
           </Html>
         ))}
     </>
+  );
+}
+
+/** 주문 한 잔 따라가기 (로봇 카페 1단계): the line said now (CellRun.said, paced by Console), over the equipment it is about (narrate.ts). */
+function Narrate({ world }: { world: RefObject<WorldState | null> }) {
+  const [n, setN] = useState<Narration | null>(null);
+  const key = useRef('');
+  useFrame(() => {
+    const run = world.current?.cell;
+    const now = run && run.mission === NARRATED ? (run.said ?? null) : null;
+    const k = now?.key ?? '';
+    if (k === key.current) return;
+    key.current = k;
+    setN(now);
+  });
+  if (!n) return null;
+  const at = NARRATE_AT[n.place];
+  const tell = n.dir === 'in';
+  return (
+    <Html key={n.key} position={[m(at[0]), m(at[1]), m(at[2])]} center zIndexRange={[23, 0]} style={{ pointerEvents: 'none' }}>
+      <div data-narrate style={{ position: 'relative', transform: 'translateY(-50%)', background: 'rgba(22,24,27,0.94)', color: '#f1f4f7', borderRadius: 12, padding: '9px 13px 10px', font: '600 14px Pretendard, sans-serif', whiteSpace: 'nowrap', boxShadow: '0 0 0 1px rgba(255,255,255,0.16), 0 8px 22px rgba(0,0,0,0.45)' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 7, font: '600 12px Pretendard, sans-serif', color: '#aab1b9', marginBottom: 4 }}>
+          <i style={{ width: 8, height: 8, borderRadius: 4, background: tell ? '#34d399' : '#f1f4f7', boxShadow: `0 0 8px ${tell ? '#34d399' : '#ffffff'}` }} />
+          {n.place} {tell ? '→ 로봇' : '← 로봇'}
+          <b style={{ color: tell ? '#34d399' : '#fff', fontWeight: 700 }}>[{n.signal}]</b>
+        </span>
+        {n.text}
+        <i style={{ position: 'absolute', left: '50%', bottom: -7, marginLeft: -7, width: 0, height: 0, borderLeft: '7px solid transparent', borderRight: '7px solid transparent', borderTop: '7px solid rgba(22,24,27,0.94)' }} />
+      </div>
+    </Html>
   );
 }
 
@@ -256,6 +287,7 @@ export default function CellScene({ world, cell, tags = [], callouts = false }: 
         </>
       )}
       {callouts && <Callouts world={world} />}
+      {callouts && cell === 'cafe' && <Narrate world={world} />}
       {callouts && <TargetRing world={world} />}
       {shown.map((n) => (
         <Html key={n} position={[m(T[n].at[0]), m(T[n].at[1]), m(T[n].at[2])]} center zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>

@@ -45,18 +45,13 @@ function near(name: string, x: number, y: number, z = 40, off: V3 = [175, -510, 
 }
 
 const A = CAFE_AT;
+const CAFE_OFF: V3 = [50, -270, 650];
 const CARD_MID: [number, number] = [CARD_HOME.x + CARD_MM.w / 2, CARD_HOME.y + CARD_MM.h / 2];
 const BOARD_MID: [number, number] = [BOARD.x0 + ((BOARD.n - 1) * BOARD.pitch) / 2, BOARD.y0 + ((BOARD.n - 1) * BOARD.pitch) / 2];
 const TRAY_MID: [number, number] = [STONE_TRAY.x + STONE_TRAY.pitch, STONE_TRAY.y + 2 * STONE_TRAY.pitch];
 
 export const TOUR: Partial<Record<CellId, TourShot[]>> = {
-  cafe: [
-    { name: '로봇 카페', line: '쇼핑몰 안의 무인 카페 부스예요. 협동로봇 바리스타 한 대가 일해요.', eye: [760, -980, 560], target: [120, -20, 110] },
-    { name: '주문', line: '손님이 키오스크에서 주문하면 로봇이 만들기 시작해요.', eye: [760, -140, 360], target: [372, -232, 120] },
-    { name: '장비', line: '컵 디스펜서 → 제빙기 → 커피 머신 → 정수기 순서로 돌아요.', eye: [-280, -320, 640], target: [200, 40, 60] },
-    { name: '픽업', line: '다 만든 음료는 픽업대로. 문이 열리면 손님이 가져가요.', eye: [470, -640, 380], target: [98, -180, 40] },
-    { name: '로봇 팔', line: '로봇 팔은 6개 관절로 컵을 옮겨요.', eye: [560, -560, 460], target: [0, 0, 120] },
-  ],
+  // The café has no tour: it opens on its 1단계 (주문 한 잔 따라가기, narrate.ts · narrateShot).
   draw: [
     { name: '로봇 캘리그라피', line: '행사장 부스예요. 로봇이 손님의 메시지 카드에 글씨를 써 줘요.', eye: [980, -1150, 720], target: [100, 0, 0] },
     { name: '카드와 매트', line: '손님이 카드를 매트에 놓아요. 매트 눈금이 로봇 좌표(mm)예요.', eye: [330, -270, 230], target: [210, 0, 0] },
@@ -72,7 +67,8 @@ export const TOUR: Partial<Record<CellId, TourShot[]>> = {
 };
 
 export const STATIONS: Partial<Record<CellId, Station[]>> = {
-  cafe: [near('컵 디스펜서', A.cup.x, A.cup.y), near('제빙기', A.ice.x, A.ice.y), near('커피 머신', A.coffee.x, A.coffee.y), near('정수기', A.water.x, A.water.y), near('픽업대', 98, -176, 30)],
+  // The café from above and in front, steeply: over the booth's lit header, not through it.
+  cafe: [near('컵 디스펜서', A.cup.x, A.cup.y, 40, CAFE_OFF), near('제빙기', A.ice.x, A.ice.y, 40, CAFE_OFF), near('커피 머신', A.coffee.x, A.coffee.y, 40, CAFE_OFF), near('정수기', A.water.x, A.water.y, 40, CAFE_OFF), near('픽업대', 98, -176, 30, CAFE_OFF)],
   draw: [{ name: '카드', at: CARD_MID, r: 110, eye: [CARD_MID[0] + 40, CARD_MID[1] - 330, 340], target: [CARD_MID[0], CARD_MID[1], 0] }],
   board: [
     { name: '오목판', at: BOARD_MID, r: 95, eye: [BOARD_MID[0] + 50, BOARD_MID[1] - 340, 360], target: [BOARD_MID[0], BOARD_MID[1], 0] },
@@ -92,4 +88,11 @@ export function stationAt(cell: CellId, tip: { x: number; y: number; z: number }
     }
   }
   return best;
+}
+
+/** 주문 한 잔 따라가기: where the view looks when a line is said at a place (narrate.ts) — its station, or the kiosk. */
+export function narrateShot(place: string): Shot {
+  // The kiosk: wide, the customer ordering and the booth they order from.
+  if (place === '키오스크') return { eye: [820, -760, 620], target: [240, -150, 80] };
+  return STATIONS.cafe?.find((s) => s.name === place) ?? { eye: [560, -560, 460], target: [120, -20, 110] };
 }

@@ -15,6 +15,7 @@ import { CELL_BY_ID, cellLayout, gridPlace, type CellId } from '@/engine/simulat
 import type { CellAlert } from '@/engine/simulator/cell/faults';
 import { setOut } from '@/engine/simulator/cell/line';
 import { missionById, missionsOf } from '@/engine/simulator/cell/missions';
+import { CAFE_BOARD, type NarratePlace } from '@/engine/simulator/cell/narrate';
 import { LIFE_STOPS } from '@/engine/simulator/lifeFields';
 import type { QuestPhase } from '@/engine/simulator/cell/quests';
 import { cellChecks } from '@/engine/simulator/cell/run';
@@ -50,6 +51,10 @@ interface Snap {
   checks: { label: string; ok: boolean; detail?: string }[] | null;
   /** 단계 안내: the moments seen so far in this run. */
   observed: Record<string, number>;
+  /** 로봇 카페: the equipment a signal was just about (신호 관제판 lights it). */
+  said: NarratePlace | null;
+  /** 로봇 카페: drinks handed over. */
+  served: number;
 }
 
 function snapOf(w: WorldState | null): Snap | null {
@@ -78,6 +83,8 @@ function snapOf(w: WorldState | null): Snap | null {
     halt: run.halt,
     checks: cellChecks(w)?.items ?? null,
     observed: { ...run.observed },
+    said: run.said?.place ?? null,
+    served: run.cafe?.served.length ?? 0,
   };
 }
 
@@ -180,8 +187,8 @@ export function QuestCard(p: QuestCardProps) {
                 </i>
                 {m.title}
               </p>
-              {/* In the side panel the checklist shows once there is a result (the goal is the one thing to do now). */}
-              {(!p.inPanel || p.quest?.checks) && <ul className={css.qChecks}>
+              {/* In the side panel no checklist: the result (✓ · ✗) comes over the scene (StepResult modal). */}
+              {!p.inPanel && <ul className={css.qChecks}>
                 {(m.checks ?? []).map((c, k) => {
                   const r = p.quest?.checks?.[k];
                   return (
@@ -447,8 +454,10 @@ export default function CellHud(p: CellHudProps) {
           </span>
         </button>
       )}
+      {/* 로봇 카페 (입문): the signals by equipment, as a control room would show them. */}
+      {snap && compact && lampsOpen && p.cell === 'cafe' && <CafeBoard snap={snap} />}
       {/* Signal lamps, cycle time, parts stacked. */}
-      {snap && (!compact || lampsOpen) && (
+      {snap && (!compact || lampsOpen) && !(compact && p.cell === 'cafe') && (
         <footer className={css.lamps} aria-label="신호">
           <span className={css.grp}>
             <b>입력</b>
@@ -520,5 +529,60 @@ export default function CellHud(p: CellHudProps) {
         </footer>
       )}
     </div>
+  );
+}
+
+/**
+ * 신호 관제판 (로봇 카페): one card per piece of equipment, in the order a drink goes — its picture,
+ * what the robot sends it (출력, amber) and what it answers (입력, green); the one a signal was just
+ * about is lit. The cycle time and the drinks handed over at the end.
+ */
+function CafeBoard({ snap }: { snap: Snap }) {
+  const ins = new Map(snap.inputs);
+  const outs = new Map(snap.outputs);
+  return (
+    <section className={css.board} aria-label="신호 관제판">
+      <header>
+        <b>신호 관제판</b>
+        <span className={css.legend}>
+          <i data-out /> 로봇 → 장비 (출력)
+        </span>
+        <span className={css.legend}>
+          <i /> 장비 → 로봇 (입력)
+        </span>
+        <span className={css.boardKpi}>
+          사이클 <b>{snap.cycle === null ? '-' : `${snap.cycle.toFixed(0)}초`}</b>
+        </span>
+        <span className={css.boardKpi}>
+          완성 <b>{snap.served}잔</b>
+        </span>
+      </header>
+      <ol>
+        {CAFE_BOARD.map((st) => {
+          const lit = snap.said === st.place || st.outs.some((n) => outs.get(n));
+          return (
+            <li key={st.place} data-lit={lit || undefined}>
+              <span className={css.stTop}>
+                {/* eslint-disable-next-line @next/next/no-img-element -- a small picture of the 3D equipment, also in the static export */}
+                <img src={st.img} alt="" width={40} height={40} />
+                <b>{st.place}</b>
+              </span>
+              {st.outs.map((n) => (
+                <span key={n} className={css.sig} data-out data-on={outs.get(n) || undefined}>
+                  <i />
+                  {n}
+                </span>
+              ))}
+              {st.ins.map((n) => (
+                <span key={n} className={css.sig} data-on={ins.get(n) || undefined}>
+                  <i />
+                  {n}
+                </span>
+              ))}
+            </li>
+          );
+        })}
+      </ol>
+    </section>
   );
 }

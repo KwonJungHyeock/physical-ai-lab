@@ -76,8 +76,12 @@ export function PredictCard({ mission, onAnswer, onSkip }: { mission: string; on
 export function MomentAsk({ ask, ox, onAnswer, onSkip }: { ask: Ask; ox?: string; onAnswer(k: number): void; onSkip(): void }) {
   // O · X (미리보기): the answer and why first, then on; a 예측 goes on at once (it is compared after the run).
   const [chosen, setChosen] = useState<number | null>(null);
+  // O · X is a modal: the held scene dims behind it.
+  const scrim = ox ? <div className={css.scrim} aria-hidden="true" /> : null;
   if (ox && chosen !== null)
     return (
+      <>
+      {scrim}
       <div className={css.moment} role="dialog" aria-label="예측" data-ok={chosen === ask.answer || undefined}>
         <header>
           <span className={css.pause} aria-hidden="true" />
@@ -90,9 +94,12 @@ export function MomentAsk({ ask, ox, onAnswer, onSkip }: { ask: Ask; ox?: string
           이어서 보기 ▶
         </button>
       </div>
+      </>
     );
   return (
-    <div className={css.moment} role="dialog" aria-label="예측">
+    <>
+    {scrim}
+    <div className={css.moment} role="dialog" aria-modal={!!ox || undefined} aria-label={ox ? 'O X 퀴즈' : '예측'}>
       <header>
         <span className={css.pause} aria-hidden="true" />
         <em>{ox ?? '장면 멈춤 · 예측'}</em>
@@ -113,6 +120,7 @@ export function MomentAsk({ ask, ox, onAnswer, onSkip }: { ask: Ask; ox?: string
         </button>
       </small>
     </div>
+    </>
   );
 }
 
@@ -128,6 +136,8 @@ interface ResultProps {
   onClose(): void;
   /** In the side panel (퀘스트 모드), not over the scene. */
   inPanel?: boolean;
+  /** 퀘스트 모드: in the middle of the scene, the scene dimmed behind it (the side panel keeps to 제어 · 실습). */
+  modal?: boolean;
 }
 
 /** After the run: passed or not, the checks, the prediction against what happened, the idea. */
@@ -137,7 +147,7 @@ export function StepResult(p: ResultProps) {
   if (!m) return null;
   const steps = missionsOf(p.cell);
   const next = p.passed ? steps[m.n] : undefined;
-  return (
+  const card = (
     <div className={css.result} data-ok={p.passed || undefined} data-panel={p.inPanel || undefined} role="status">
       <header>
         <span className={css.medal} aria-hidden="true">
@@ -182,5 +192,14 @@ export function StepResult(p: ResultProps) {
         </button>
       )}
     </div>
+  );
+  if (!p.modal) return card;
+  return (
+    <>
+      <div className={css.scrim} aria-hidden="true" />
+      <div className={css.resultModal} role="dialog" aria-modal="true" aria-label="퀘스트 결과">
+        {card}
+      </div>
+    </>
   );
 }

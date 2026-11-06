@@ -2,7 +2,7 @@
 
 /**
  * 로봇 카페 1~3단계 in the side panel (입문 트랙): 미리보기 (the ready program is played, nothing to
- * set — the quest's O · X come over the scene) and 해 보기 (by hand: the coffee machine's button and
+ * set — 주문 한 잔 따라가기: the bubbles and the O · X come over the scene; here only how far the O · X went) and 해 보기 (by hand: the coffee machine's button and
  * its signals, or the jog). Their checks are read as it goes (Console), so there is no ▶ to press
  * for 해 보기.
  */
@@ -23,25 +23,17 @@ export function WatchPane({ mission, answered, onCode }: { mission: string; answ
     if (m?.solution) onCode(m.solution, () => '');
   }, [m, onCode]);
   const asks = asksOf(mission);
+  // Only how far the O · X have gone: what happens is said over the scene (말풍선), the questions come as a modal.
   return (
     <div className={css.maker}>
-      <section className={css.plate}>
-        <header>
-          <em>WATCH</em>
-          <b>실제 카페 로봇 보기</b>
-        </header>
-        <p className={css.tip} style={{ fontSize: 13, color: 'var(--hud-tx)' }}>
-          아래 ▶ 시뮬레이션을 누르면 로봇 카페가 주문 한 잔을 처음부터 끝까지 만들어요. 장면이 멈추면 O · X로 답해요.
-        </p>
-        <div className={css.stats} style={{ gridTemplateColumns: `repeat(${asks.length}, 1fr)` }}>
-          {asks.map((a, k) => (
-            <span key={a.key} data-ok={answered(a.key) || undefined}>
-              <b>{answered(a.key) ? '✓' : k + 1}</b>
-              {['컵', '샷', '건네기'][k] ?? `질문 ${k + 1}`}
-            </span>
-          ))}
-        </div>
-      </section>
+      <div className={css.stats} style={{ gridTemplateColumns: `repeat(${asks.length}, 1fr)` }} aria-label="O X 퀴즈">
+        {asks.map((a, k) => (
+          <span key={a.key} data-ok={answered(a.key) || undefined}>
+            <b>{answered(a.key) ? '✓' : 'O X'}</b>
+            {['컵', '샷', '건네기'][k] ?? `질문 ${k + 1}`}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

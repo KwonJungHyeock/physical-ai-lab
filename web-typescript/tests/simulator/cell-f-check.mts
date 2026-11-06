@@ -24,6 +24,7 @@ const G = await import('../../src/engine/simulator/program');
 const { CELL_ENV, cellChecks, cellSolids, stepCell } = await import('../../src/engine/simulator/cell/run');
 const { missionsOf, missionById } = await import('../../src/engine/simulator/cell/missions');
 const { asksOf } = await import('../../src/engine/simulator/cell/guides');
+const { narrationLines } = await import('../../src/engine/simulator/cell/narrate');
 
 const chain = buildChain(parseUrdf(readFileSync(new URL('../../public/robot/rdkx5/mycobot_280_rdkx5.urdf', import.meta.url), 'utf8')));
 const EFF = 'adaptive' as const;
@@ -84,6 +85,16 @@ for (const m of missionsOf('cafe')) {
   const t0 = Date.now();
   const { w, run, log, asked } = await cell(m.id);
   const err = await run(m.solution!);
+  // 주문 한 잔 따라가기: the lines said over the scene, in order (narrate.ts).
+  const said = narrationLines(w.cell!).map((n) => n.signal);
+  if (m.id === 'F1') {
+    // The order is told from the kiosk on, each machine's signals in the order they happen, the hand-over last.
+    const want = ['주문 1', '컵 내리기', '컵 준비됨', '얼음', '얼음 끝', '추출 시작', '추출 중', '추출 끝', '물', '물 끝', '픽업 문', '손 감지', '문 닫힘'];
+    let k = 0;
+    for (const x of said) if (x === want[k]) k += 1;
+    assert.ok(k === want.length && said[0] === '주문 1', `F1 narration: ${said.join(' · ')}`);
+    console.log(`  ok   F1 주문 한 잔 따라가기: ${said.length} lines · ${said[0]} … ${said[said.length - 1]}`);
+  }
   assert.ok(!err && allOk(w), `${m.id} ${m.title}: ${err ? (err as Error).message : ''} | ${summary(w)} | ${alertsOf(w)} | ${log.slice(-6).join(' / ')}`);
   assert.ok(asked.every(Boolean), `${m.id}: a question's moment never came: ${JSON.stringify(asked)}`);
   const el = w.cell!.startT === null ? 0 : w.cell!.endT! - w.cell!.startT;
@@ -126,3 +137,15 @@ await fails('F8', [shortShot(true, 60)], 10, 'a day too slow (60 s at the shot)'
 }
 
 console.log('cell F: ok');
+
+{
+  // 신호 관제판: every signal of the café is on its board once, under its machine.
+  const { CAFE_BOARD } = await import('../../src/engine/simulator/cell/narrate');
+  const { cellLayout } = await import('../../src/engine/simulator/cell/cells');
+  const l = cellLayout('cafe');
+  const ins = CAFE_BOARD.flatMap((b) => b.ins);
+  const outs = CAFE_BOARD.flatMap((b) => b.outs);
+  assert.deepEqual([...ins].sort(), [...l.inputs].sort(), 'board inputs = the café inputs');
+  assert.deepEqual([...outs].sort(), [...l.outputs].sort(), 'board outputs = the café outputs');
+  console.log(`  ok   신호 관제판: ${CAFE_BOARD.length} machines · ${ins.length} inputs · ${outs.length} outputs`);
+}

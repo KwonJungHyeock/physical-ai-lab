@@ -131,7 +131,8 @@ import TutorialStrip from './tasks/TutorialStrip';
 import { MomentAsk, PredictCard, StepResult, loadPredictions, savePrediction } from './stage/StepGuide';
 import { QUESTS, questNow, type QuestPhase } from '@/engine/simulator/cell/quests';
 import { askNow, asksOf, guideOf, type Ask } from '@/engine/simulator/cell/guides';
-import { stationAt } from '@/engine/simulator/cell/shots';
+import { NARRATE_HOLD_MS, NARRATED, narrationLines } from '@/engine/simulator/cell/narrate';
+import { narrateShot, stationAt } from '@/engine/simulator/cell/shots';
 import SiteTour from './stage/SiteTour';
 import Roadmap from './connect/Roadmap';
 import { LIFE_TUTORIALS, lifeTutorialById, type TutCtx, type TutMem } from '@/engine/simulator/lifeTutorials';
@@ -630,7 +631,11 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const [moment, setMoment] = useState<{ key: string; ask: Ask; ox: boolean } | null>(null);
   /** 입문: the place being toured (its opening look round, SiteTour.tsx). */
   const [touring, setTouring] = useState<CellId | null>(null);
-  /** 입문: the 학습 로드맵 over the intro (its [ROADMAP]). */
+  /** 입문 · 로봇 카페: 주문 한 잔 따라가기 — the 1단계's ready program played once on coming in (instead of a tour). */
+  const [film, setFilm] = useState(false);
+  /** Opening a place: the café plays its order through (its 1단계); the others are toured. */
+  const showPlace = (c: CellId) => (c === 'cafe' ? setFilm(true) : setTouring(c));
+  /** 입문: the 학습 로드맵 over the intro (the quest card's 목록). */
   const [roadmapOpen, setRoadmapOpen] = useState(false);
   const toured = useRef(false);
   useEffect(() => {
@@ -3851,6 +3856,17 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     const id = window.setInterval(() => {
       const api = stageApi.current;
       if (!api || api.userMoved()) return;
+      // 주문 한 잔 따라가기: the view goes where the signal is (the kiosk, a machine, the pickup door).
+      const run = world.current.cell;
+      if (run?.mission === NARRATED) {
+        const n = run.said;
+        if (!n || n.place === last) return;
+        last = n.place;
+        followed = true;
+        const sh = narrateShot(n.place);
+        api.lookAt(sh.eye, sh.target);
+        return;
+      }
       const tip = tipOf(world.current.angles);
       const st = tip ? stationAt(lifeCell, tip) : null;
       // Two looks in a row at the same station before moving (passing by is not working there).
@@ -3869,6 +3885,54 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       if (followed && api && !api.userMoved()) window.setTimeout(() => api.view('home'), 1200);
     };
   }, [lifeCell, busy, touring, tipOf]);
+  // 주문 한 잔 따라가기: the lines (narrate.ts) one by one, the scene held a moment on each so it is read
+  // (the bubble and the camera follow CellRun.said); an O · X holding the scene goes first.
+  const narrating = !!track && busy && cellAt?.mission === NARRATED;
+  useEffect(() => {
+    if (!narrating) return;
+    let shown = 0;
+    let since = 0;
+    let holding = false;
+    const release = () => {
+      if (holding) heldRef.current = false;
+      holding = false;
+    };
+    const id = window.setInterval(() => {
+      const run = world.current.cell;
+      if (!run || run.mission !== NARRATED) return;
+      const lines = narrationLines(run);
+      const now = performance.now();
+      if (now - since < NARRATE_HOLD_MS) return;
+      if (shown >= lines.length) return release();
+      // An O · X is up: wait for it.
+      if (heldRef.current && !holding) return;
+      run.said = lines[shown];
+      shown += 1;
+      since = now;
+      holding = true;
+      heldRef.current = true;
+    }, 50);
+    return () => {
+      window.clearInterval(id);
+      release();
+      const run = world.current.cell;
+      if (run) run.said = null;
+    };
+  }, [narrating]);
+  // 주문 한 잔 따라가기: once in the café's 1단계, its ready program plays by itself (the code is the step's own).
+  const filmRun = useRef<() => void>(() => {});
+  filmRun.current = () => {
+    const sol = cellAt?.mission === NARRATED ? missionById(NARRATED)?.solution : undefined;
+    if (sol) void simulateBlocks(sol);
+  };
+  useEffect(() => {
+    if (!film || !loaded) return;
+    const id = window.setTimeout(() => {
+      setFilm(false);
+      if (!busy) filmRun.current();
+    }, 600);
+    return () => window.clearTimeout(id);
+  }, [film, loaded, busy]);
   /** 입문: the step's 예측 first (once per step, unless skipped), then the run. */
   const simulateLife = () => {
     const ms = cellAt?.mission;
@@ -4115,7 +4179,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     if (!track || !entered || !loaded || !cellAt || toured.current) return;
     toured.current = true;
     // After the intro has faded out.
-    const id = window.setTimeout(() => setTouring(cellAt.cell), 1400);
+    const id = window.setTimeout(() => showPlace(cellAt.cell), 1400);
     return () => window.clearTimeout(id);
   }, [track, entered, loaded, cellAt]);
   const pastIntro = entered || robotMode || picking;
@@ -4364,10 +4428,19 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   setEntered(true);
                   setConnectOpen(true);
                 },
-                onStart: () => setEntered(true),
+                onStart: () => {
+                  setEntered(true);
+                  // 입문: SIMULATOR is the arm alone (기초 조작, the tutorials' list); 테마학습 is the café.
+                  if (!track) return;
+                  toured.current = true;
+                  toPlainDesk();
+                  openSection('theme');
+                  openTab('direct');
+                },
                 ...(track
                   ? {
-                      onRoadmap: () => setRoadmapOpen(true),
+                      // 테마학습: straight into the first place (the track's start, the café's 1단계).
+                      onRoadmap: () => setEntered(true),
                     }
                   : {}),
               }
@@ -4781,7 +4854,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
               }
               toured.current = true;
               enterCell(pk.cell);
-              setTouring(pk.cell);
+              showPlace(pk.cell);
             }}
           />
         )}
@@ -4891,11 +4964,27 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
               {loaded && view === 'sim' && track && cellAt?.cell === 'cafe' && <CafeStrip world={world} />}
               {loaded && view === 'sim' && track && cellAt?.cell === 'draw' && <DrawStrip world={world} />}
               {loaded && view === 'sim' && track && cellAt?.cell === 'board' && <BoardStrip world={world} />}
+              {/* 퀘스트 모드: the result over the scene (the side panel keeps to 제어 · 실습). */}
+              {loaded && view === 'sim' && questOn && questPhase === 'result' && lifeStep && cellAt && lastChecks && cellResult !== null && (
+                <StepResult
+                  modal
+                  cell={cellAt.cell}
+                  mission={lifeStep.id}
+                  passed={cellResult}
+                  checks={lastChecks}
+                  chosen={preds[lifeStep.id]}
+                  onNext={() => {
+                    const next = missionsOf(cellAt.cell)[lifeStep.n];
+                    if (next) openCell(cellAt.cell, next.id);
+                  }}
+                  onClose={() => setLastChecks(null)}
+                />
+              )}
               {loaded && view === 'sim' && moment && (
                 <MomentAsk
                   key={moment.key}
                   ask={moment.ask}
-                  ox={moment.ox ? '장면 멈춤 · O X' : undefined}
+                  ox={moment.ox ? 'O · X 퀴즈' : undefined}
                   onAnswer={(k) => {
                     savePrediction(moment.key, k);
                     setPreds((p) => ({ ...p, [moment.key]: k }));
@@ -5001,7 +5090,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                 </StageTitle>
               )}
               {loaded && view === 'sim' && !railOpen && !cellAt && <HudGauges speed={jogSpeed} monitor={monitor} dock={dockShown ? 'open' : 'closed'} />}
-              {loaded && view === 'sim' && !questOn && (
+              {loaded && view === 'sim' && (
                 <LeftRail groups={shownGroups} foot={barFoot} sheetOpen={railOpen !== null} onCloseSheet={() => setRailOpen(null)}>
                   {(railOpen === 'env' || railOpen === 'objects') && (
                     <DeskPanel
@@ -5198,7 +5287,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                       <div className={css.screen}>
                         <ThemePanel cell={cellAt?.cell ?? null} passed={cellPassed} tutorial={lifeTut?.id ?? null} tutorialsDone={tutDone} busy={busy} onSite={(id) => {
                             enterCell(id);
-                            setTouring(id);
+                            showPlace(id);
                           }} onTutorial={startTutorial} />
                       </div>
                     ) : workScreen === 'parts' ? (
@@ -5380,21 +5469,6 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                             busy={busy}
                             onMission={(id) => openCell(cellAt.cell, id)}
                             quest={{ phase: questPhase, checks: questPhase === 'result' ? lastChecks : null, now: questNow(questPhase, lifeStep.id, cellResult), onList: () => setRoadmapOpen(true) }}
-                          />
-                        )}
-                        {questPhase === 'result' && lifeStep && cellAt && lastChecks && cellResult !== null && (
-                          <StepResult
-                            inPanel
-                            cell={cellAt.cell}
-                            mission={lifeStep.id}
-                            passed={cellResult}
-                            checks={lastChecks}
-                            chosen={preds[lifeStep.id]}
-                            onNext={() => {
-                              const next = missionsOf(cellAt.cell)[lifeStep.n];
-                              if (next) openCell(cellAt.cell, next.id);
-                            }}
-                            onClose={() => setLastChecks(null)}
                           />
                         )}
                         {cellAt!.cell === 'draw' ? (

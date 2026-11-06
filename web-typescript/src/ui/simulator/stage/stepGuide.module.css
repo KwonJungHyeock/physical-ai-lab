@@ -264,6 +264,12 @@
   word-break: keep-all;
   /* No fade in: on a slow computer the held scene may draw a frame a second, and the question must be there at once. */
 }
+.scrim {
+  position: absolute;
+  z-index: 15;
+  inset: 0 var(--inset-r, 0px) 0 var(--inset-l, 0px);
+  background: rgba(8, 10, 12, 0.5);
+}
 .moment header {
   display: flex;
   align-items: center;
@@ -379,4 +385,23 @@
   font-size: 15px;
   font-weight: 800;
   cursor: pointer;
+}
+
+/* 퀘스트 모드: the result in the middle of the scene (StepResult modal). */
+.resultModal {
+  position: absolute;
+  z-index: 16;
+  left: calc((var(--inset-l, 0px) + 100% - var(--inset-r, 0px)) / 2);
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(480px, calc(100% - var(--inset-l, 0px) - var(--inset-r, 0px) - 32px));
+}
+.resultModal .result {
+  width: 100%;
+  max-height: calc(100vh - 220px);
+  overflow: auto;
+  box-shadow:
+    var(--hud-plate-shadow),
+    0 0 0 1px rgba(255, 255, 255, 0.3),
+    0 18px 60px rgba(0, 0, 0, 0.55);
 }

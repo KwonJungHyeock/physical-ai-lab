@@ -17,6 +17,7 @@ import type { WorldState } from '../sim';
 import { CELL_FLOOR_Z, cellLayout, magazineParts, type CellId, type CellLayout } from './cells';
 import { knockAlert, newHealth, repair, watchLoad, type CellAlert, type Health } from './faults';
 import { guardBoxes, newLine, stepLine, type LineState } from './line';
+import type { Narration } from './narrate';
 import { freeSetup, judge, missionById, type CellEvent, type CellMission } from './missions';
 import { newVision, type VisionState } from './vision';
 import { newCafe, stepCafe, type CafeState } from './cafe';
@@ -43,6 +44,8 @@ export interface CellRun {
   /** "다음 칸": how many places of each grid are used. */
   next: Record<string, number>;
   /** Cell time of the first motion and of the run's end (for 사이클 타임). */
+  /** 입문 · 로봇 카페 1단계: the line said over the scene now (narrate.ts, set by the page as it paces them). */
+  said?: Narration | null;
   startT: number | null;
   endT: number | null;
   /** The tool tip a frame ago, for its speed. */

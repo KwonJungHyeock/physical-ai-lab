@@ -58,12 +58,8 @@ export const TRACKS: Record<TrackId, Track> = {
       title: ['Life Cobot', 'Simulator'],
       ko: '생활 협동로봇 시뮬레이터',
       lead: ['카페 · 행사장 · 보드게임 카페처럼 우리 곁에서 일하는 협동로봇을', '직접 움직이고 순서를 짜 보며 배워요.'],
-      scenes: [
-        { img: '/brand/life/cafe.webp', tag: 'ROBOT CAFE', line: '로봇 카페 · 바리스타 협동로봇' },
-        { img: '/brand/life/draw.webp', tag: 'ROBOT CALLIGRAPHY', line: '행사장 캘리그라피 부스' },
-        { img: '/brand/life/boardgame.webp', tag: 'BOARD GAME ROBOT', line: '보드게임 카페 · 오목 두는 로봇' },
-        { img: '/brand/life/handover.webp', tag: 'COBOT', line: '사람 곁에서 함께 일하는 로봇' },
-      ],
+      // One picture of every place the track teaches (the three booths side by side).
+      scenes: [{ img: '/brand/life/sites.webp', tag: 'LIFE COBOT SITES', line: '로봇 카페 · 캘리그라피 부스 · 보드게임 카페' }],
     },
   },
   food: {
