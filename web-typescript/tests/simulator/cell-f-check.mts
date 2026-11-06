@@ -1,8 +1,9 @@
 /**
- * 실습 셀 F (로봇 카페, 입문 트랙 ① 생활 로봇): every step's reference program runs with the
- * rigid-body world and the café's equipment (cell/cafe.ts) and passes its checks; and the mistakes
- * each step is about fail: taking the cup before 추출 끝 (the rest spills), starting a station with
- * no cup, pressing the ice twice (the cup overflows), reaching into the pickup with its door open.
+ * 실습 셀 F (로봇 카페, 입문 트랙 ① 생활 로봇 — 미리보기 · 해 보기 · 나만의 카페 · 미션 · 운영): every
+ * step's reference program runs with the rigid-body world and the café's equipment (cell/cafe.ts)
+ * and passes its checks; and the mistakes each step is about fail: a wait shorter than the pour (it
+ * spills), no door (no customer takes it), a second cup before the first is taken, a second menu
+ * not made, a day too slow for the customers.
  *
  * Run with: npm run check:cell
  */
@@ -22,7 +23,7 @@ const { objectSpec } = await import('../../src/engine/simulator/deskPhysics');
 const G = await import('../../src/engine/simulator/program');
 const { CELL_ENV, cellChecks, cellSolids, stepCell } = await import('../../src/engine/simulator/cell/run');
 const { missionsOf, missionById } = await import('../../src/engine/simulator/cell/missions');
-const { guideOf, predictNow } = await import('../../src/engine/simulator/cell/guides');
+const { asksOf } = await import('../../src/engine/simulator/cell/guides');
 
 const chain = buildChain(parseUrdf(readFileSync(new URL('../../public/robot/rdkx5/mycobot_280_rdkx5.urdf', import.meta.url), 'utf8')));
 const EFF = 'adaptive' as const;
@@ -33,11 +34,14 @@ async function cell(mission: string) {
   const reach = EFFECTOR_BY_ID[EFF].kind === 'grip' ? Math.max(0, TCP - 40) : TCP;
   const phys = await createPhysics(chain, reach, w.objects.map(objectSpec), cellSolids(w.cell!), w.angles, CELL_ENV);
   const DT = 1 / 60;
-  // 퀘스트 모드: did the step's moment to ask the 예측 come (the scene holds there for it)?
-  const asked = { at: false };
+  // 미리보기: did each question's moment come (the scene holds there for it)?
+  const asks = asksOf(mission);
+  const asked = asks.map(() => false);
   const frame = () => {
     stepCell(w, phys, DT, chain, TCP);
-    if (!asked.at && predictNow(w.cell!, w)) asked.at = true;
+    asks.forEach((a, k) => {
+      if (!asked[k] && a.at(w.cell!, w)) asked[k] = true;
+    });
   };
   for (let k = 0; k < 30; k += 1) frame();
   const animate = async (d: number, f: (t: number) => void) => {
@@ -69,61 +73,56 @@ async function cell(mission: string) {
 
 type World = Awaited<ReturnType<typeof cell>>['w'];
 const summary = (w: World) => (cellChecks(w)?.items ?? []).map((i) => `${i.ok ? '✓' : '✗'} ${i.label}${i.detail ? ` (${i.detail})` : ''}`).join(' · ');
-const alertsOf = (w: World) => w.cell!.alerts.map((a) => `[${a.level}] ${a.title}`).join(', ');
+const alertsOf = (w: World) => [...new Set(w.cell!.alerts.map((a) => `[${a.level}] ${a.title}`))].join(', ');
 const allOk = (w: World) => (cellChecks(w)?.items ?? []).every((i) => i.ok);
+
+const { cafeProgram, newRecipe, MENU_PRESETS } = await import('../../src/engine/simulator/cell/cafeMenu');
+const { ICED_AMERICANO } = await import('../../src/engine/simulator/cell/cafe');
+type Recipe = ReturnType<typeof newRecipe>;
 
 for (const m of missionsOf('cafe')) {
   const t0 = Date.now();
   const { w, run, log, asked } = await cell(m.id);
   const err = await run(m.solution!);
-  assert.ok(asked.at, `${m.id}: the 예측's moment never came on the reference run`);
   assert.ok(!err && allOk(w), `${m.id} ${m.title}: ${err ? (err as Error).message : ''} | ${summary(w)} | ${alertsOf(w)} | ${log.slice(-6).join(' / ')}`);
-  // 단계 안내: the step's guide is there, its answer is one of its options, and the reference run shows every moment it points to.
-  const g = guideOf(m.id);
-  assert.ok(g && g.predict.answer < g.predict.options.length && g.observe.length >= 2, `${m.id}: a step guide (예측 · 관찰 2개 이상 · 개념)`);
-  const unseen = g.observe.filter((o) => w.cell!.observed[o.id] === undefined).map((o) => o.id);
-  assert.deepEqual(unseen, [], `${m.id}: moments to observe that the reference run never showed`);
+  assert.ok(asked.every(Boolean), `${m.id}: a question's moment never came: ${JSON.stringify(asked)}`);
   const el = w.cell!.startT === null ? 0 : w.cell!.endT! - w.cell!.startT;
   console.log(`  ok   ${m.id} ${m.title}: ${summary(w)}  [${el.toFixed(0)} s cell · ${((Date.now() - t0) / 1000).toFixed(1)} s]`);
 }
 
-/** A step's reference program changed by `edit`; it must not pass. */
-async function fails(id: string, edit: (code: string) => string, why: string, alert?: string) {
+/** A step run with other cards (the student's); it must not pass. */
+async function fails(id: string, recipes: Recipe[], orders: number, why: string, alert?: string) {
   const { w, run } = await cell(id);
-  const code = edit(missionById(id)!.solution!);
-  assert.notEqual(code, missionById(id)!.solution, `${id} ${why}: the edit changed nothing`);
-  const err = await run(code);
+  const err = await run(cafeProgram(recipes, orders).code);
   assert.ok(err || !allOk(w), `${id} ${why}: passed anyway | ${summary(w)}`);
   if (alert) assert.ok(w.cell!.alerts.some((a) => a.title.includes(alert)), `${id} ${why}: no '${alert}' alert | ${alertsOf(w)}`);
-  console.log(`  ok   ${id} ${why}: ${err ? (err as Error).message : summary(w)} | ${alertsOf(w)}`);
+  console.log(`  ok   ${id} ${why}: ${err ? (err as Error).message : summary(w)}`);
+  return w;
 }
+const shortShot = (door: boolean, s: number): Recipe => ({ ...newRecipe(ICED_AMERICANO, door), waits: { ice: { k: 'signal' }, shot: { k: 'sec', s }, water: { k: 'signal' } } });
+const HOT = MENU_PRESETS[2];
 
-const { RECIPE_ANSWER, RECIPE_START, recipeCode } = await import('../../src/engine/simulator/cell/cafeRecipe');
-
-await fails('F2', (c) => c.replace('cell.wait("추출 끝")\n', 'robot.wait(5)\n'), 'cup taken before 추출 끝', '컵이 빠졌어요');
-await fails('F2', (c) => c.replace('robot.home()\ncell.set', 'robot.home()\ncell.set("얼음", True)\nrobot.wait(4)\ncell.set("얼음", False)\ncell.set'), 'ice with no cup', '컵이 없어요');
-await fails('F3', (c) => c.replace('cell.amount("제빙기", 100)', 'cell.amount("제빙기", 145)'), 'the menu ice with the extra shot', '넘쳤어요');
-await fails('F3', (c) => c.replace('cell.amount("커피 머신", 3)', 'cell.amount("커피 머신", 2)'), 'two shots, not three');
-await fails('F4', (c) => c.replace('    robot.place("픽업 1")\n    robot.home()\n    cell.set("픽업 문", True)\n    cell.wait("문 열림")\n', '    cell.set("픽업 문", True)\n    cell.wait("문 열림")\n    robot.place("픽업 1")\n    robot.home()\n'), 'into the open pickup', '픽업 문');
-
-// 공정 카드 (입문 트랙): every step's start cards fail but F1's (it is to watch), each for the step's
-// own gap; the answer cards are the reference program (missions.ts makes it from them).
-for (const m of missionsOf('cafe')) {
-  assert.equal(recipeCode(RECIPE_ANSWER[m.id]).code, m.solution, `${m.id} answer cards = the reference program`);
-  if (m.id === 'F1') continue;
-  const { w, run, asked } = await cell(m.id);
-  const err = await run(recipeCode(RECIPE_START[m.id]).code);
-  assert.ok(asked.at, `${m.id}: the 예측's moment never came on the start cards`);
-  assert.ok(err || !allOk(w), `${m.id} start cards passed anyway | ${summary(w)}`);
-  console.log(`  ok   ${m.id} start cards fail: ${err ? (err as Error).message : summary(w)}`);
-}
+await fails('F4', [shortShot(false, 10)], 1, 'shot waited 10 s (28 s pour)', '컵이 빠졌어요');
 {
-  const r = recipeCode({ cards: RECIPE_ANSWER.F2.cards, times: 2 });
-  assert.deepEqual(r.lines[0], [5, 8], `card lines in a loop: ${JSON.stringify(r.lines)}`);
-  assert.deepEqual(r.rows[0], [[5, 7], [8, 8]], `row lines: ${JSON.stringify(r.rows[0])}`);
-  // The door row switched off makes no line.
-  const off = r.rows[4][2];
-  assert.ok(off[1] < off[0], `a row switched off spans nothing: ${JSON.stringify(off)}`);
+  // Waiting long enough by the clock is fine (slower than the signal).
+  const { w, run } = await cell('F4');
+  const err = await run(cafeProgram([shortShot(false, 30)], 1).code);
+  assert.ok(!err && allOk(w), `F4 shot waited 30 s should pass | ${summary(w)}`);
+  console.log(`  ok   F4 shot waited 30 s passes: ${summary(w)}`);
+}
+await fails('F5', [newRecipe(ICED_AMERICANO, false)], 1, 'no door: nobody takes it');
+await fails('F6', [newRecipe(ICED_AMERICANO, false)], 2, 'two cups, no door');
+await fails('F7', [newRecipe(ICED_AMERICANO, true)], 2, 'menu 2 never made');
+await fails('F8', [shortShot(true, 60)], 10, 'a day too slow (60 s at the shot)', '손님이 기다리다 갔어요');
+
+// The program: menus registered, one branch per menu, the loop's break at the day's end.
+{
+  const { code, lines } = cafeProgram([newRecipe(ICED_AMERICANO, true), newRecipe(HOT, true)], 3);
+  assert.ok(code.includes('cell.menu(2, "따뜻한 아메리카노", 0, 2, 200, True)') && code.includes('if cell.is_on("주문 2"):') && code.includes('cell.amount("온수", 200)'), 'menus and branches');
+  assert.equal(lines.length, 2);
+  assert.equal(lines[1].length, 4, 'hot americano: cup · shot · water · serve');
+  const steps = G.parse(code).steps;
+  assert.equal(G.serialize(steps), code, 'round-trip');
 }
 
 console.log('cell F: ok');

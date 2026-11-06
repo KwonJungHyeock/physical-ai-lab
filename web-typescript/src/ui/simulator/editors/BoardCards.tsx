@@ -2,7 +2,7 @@
 
 /**
  * 공정 카드 (입문 트랙 · 보드게임 로봇): the program as the robot's process instead of code
- * (engine/simulator/cell/boardRecipe.ts), as the café's (RecipeCards.tsx). On top, the game (the
+ * (engine/simulator/cell/boardRecipe.ts), as the other places (the café: CafeMaker.tsx). On top, the game (the
  * person plays black, first, from the middle; how many white moves); below, ① 판 (보정: the board's
  * corner point and its line spacing, number boxes) → ② 한 수 (a point, 가로 · 세로, or a rule; ▾
  * opens its rows — wait for the turn (a switch) → take a stone → put it → the arm out). A game is

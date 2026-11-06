@@ -173,10 +173,15 @@ export function QuestCard(p: QuestCardProps) {
           {m ? (
             <>
               <p className={css.qTitle}>
-                <i>QUEST {m.n}</i>
+                <i>
+                  QUEST {m.n}
+                  {m.stage ? ` · ${m.stage}` : ''}
+                  {p.inPanel && <span className={css.sheet}>학습지 p.{m.n}</span>}
+                </i>
                 {m.title}
               </p>
-              <ul className={css.qChecks}>
+              {/* In the side panel the checklist shows once there is a result (the goal is the one thing to do now). */}
+              {(!p.inPanel || p.quest?.checks) && <ul className={css.qChecks}>
                 {(m.checks ?? []).map((c, k) => {
                   const r = p.quest?.checks?.[k];
                   return (
@@ -187,7 +192,7 @@ export function QuestCard(p: QuestCardProps) {
                     </li>
                   );
                 })}
-              </ul>
+              </ul>}
               {p.quest && (
                 <div className={css.qNow} data-phase={p.quest.phase}>
                   <em>지금 할 일</em>

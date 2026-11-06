@@ -2,7 +2,7 @@
 
 /**
  * 공정 카드 (입문 트랙 · 로봇 캘리그라피): the program as the booth's process instead of code
- * (engine/simulator/cell/drawRecipe.ts), as the café's (RecipeCards.tsx). On top, the order (the
+ * (engine/simulator/cell/drawRecipe.ts), as the other places (the café: CafeMaker.tsx). On top, the order (the
  * customer's phrase, the cards to write); below, ① 카드 받기 → ② 보정 (카드 위치 · 펜 높이: number
  * boxes) → ③ 쓰기 (the phrase; ▾ opens its rows, two of them switches: 직선 이동, 획 사이 펜 들기)
  * → ④ 건네기. Every change makes the cell program at once (onCode); the card and the row being run

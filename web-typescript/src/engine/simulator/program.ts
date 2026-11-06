@@ -77,6 +77,8 @@ export type Step =
   | { type: 'cellSet'; signal: string; on: boolean; line: number }
   /** F (로봇 카페): the amount a station pours when next started (ml, or shots at the coffee machine). */
   | { type: 'cellAmount'; station: string; value: number; line: number }
+  /** F (로봇 카페): a menu registered with the café's order screen (slot 1 …): its name and recipe. */
+  | { type: 'cellMenu'; slot: number; name: string; ice: number; shots: number; water: number; hot: boolean; line: number }
   /** 실습 셀 B: the camera reads the part nearest the belt's end (part = camera.look()). */
   | { type: 'cellLook'; variable: string; line: number }
   /** Teach the outline classifier: the part under the camera is this outline (camera.learn("육각")). */
@@ -177,6 +179,7 @@ const RE = {
   cellWait: new RegExp(String.raw`^cell\.wait\(\s*${STR}\s*(?:,\s*(True|False)\s*)?\)$`),
   cellSet: new RegExp(String.raw`^cell\.set\(\s*${STR}\s*,\s*(True|False)\s*\)$`),
   cellAmount: new RegExp(String.raw`^cell\.amount\(\s*${STR}\s*,\s*(${NUM})\s*\)$`),
+  cellMenu: new RegExp(String.raw`^cell\.menu\(\s*(\d+)\s*,\s*${STR}\s*,\s*(${NUM})\s*,\s*(${NUM})\s*,\s*(${NUM})\s*,\s*(True|False)\s*\)$`),
   cellLook: new RegExp(String.raw`^${IDENT}\s*=\s*camera\.look\(\s*\)$`),
   cellLearn: new RegExp(String.raw`^camera\.learn\(\s*${STR}\s*\)$`),
   cellPickVar: new RegExp(String.raw`^robot\.pick\(\s*${IDENT}\s*\)$`),
@@ -259,6 +262,7 @@ function parseLine(body: string, line: number, errors: Problem[]): Step | null {
   if ((m = body.match(RE.cellWait))) return { type: 'cellWait', signal: m[1], on: m[2] !== 'False', line };
   if ((m = body.match(RE.cellSet))) return { type: 'cellSet', signal: m[1], on: m[2] === 'True', line };
   if ((m = body.match(RE.cellAmount))) return { type: 'cellAmount', station: m[1], value: Number(m[2]), line };
+  if ((m = body.match(RE.cellMenu))) return { type: 'cellMenu', slot: Number(m[1]), name: m[2], ice: Number(m[3]), shots: Number(m[4]), water: Number(m[5]), hot: m[6] === 'True', line };
   if ((m = body.match(RE.cellLook))) return { type: 'cellLook', variable: m[1], line };
   if ((m = body.match(RE.cellLearn))) return { type: 'cellLearn', outline: m[1], line };
   if ((m = body.match(RE.cellPickVar))) return { type: 'cellPickVar', variable: m[1], line };
@@ -473,6 +477,8 @@ function serializeOne(s: Step): string {
       return `cell.set("${s.signal}", ${s.on ? 'True' : 'False'})`;
     case 'cellAmount':
       return `cell.amount("${s.station}", ${s.value})`;
+    case 'cellMenu':
+      return `cell.menu(${s.slot}, "${s.name}", ${s.ice}, ${s.shots}, ${s.water}, ${s.hot ? 'True' : 'False'})`;
     case 'cellLook':
       return `${s.variable} = camera.look()`;
     case 'cellLearn':
@@ -616,6 +622,12 @@ export function check(steps: readonly Step[], ctx: CheckContext): { errors: Prob
           if (s.type === 'cellSet' && !l.outputs.includes(s.signal)) errors.push({ line: s.line, msg: `'${s.signal}'이라는 출력 신호는 없어요.`, fix: `${l.outputs.map((n) => `"${n}"`).join(', ')} 중에서 골라 주세요.` });
           break;
         }
+        case 'cellMenu':
+          if (!ctx.cell || !cellLayout(ctx.cell).line.cafe) errors.push({ line: s.line, msg: '메뉴 등록은 로봇 카페에서만 써요.', fix: '로봇 카페 현장을 열어 주세요.' });
+          else if (!(s.slot >= 1 && s.slot <= 3)) errors.push({ line: s.line, msg: `메뉴 ${s.slot}번은 없어요.`, fix: '메뉴는 1, 2, 3번까지 등록해요.' });
+          else if (!(s.shots >= 0 && s.shots <= 4 && Number.isInteger(s.shots)) || !(s.ice >= 0 && s.ice <= 300) || !(s.water >= 0 && s.water <= 300))
+            errors.push({ line: s.line, msg: '메뉴의 양을 정할 수 없어요.', fix: '얼음 · 물은 0~300 ml, 샷은 0~4개로 정해 주세요.' });
+          break;
         case 'cellAmount': {
           const st = ctx.cell ? cellLayout(ctx.cell).line.cafe?.stations : undefined;
           if (!st) {

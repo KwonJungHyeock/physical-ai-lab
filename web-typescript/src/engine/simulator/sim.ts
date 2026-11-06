@@ -456,6 +456,12 @@ async function runStep(s: Step, rt: Runtime): Promise<void> {
     case 'cellLimit':
       needCell(rt).vision.limits[s.what as LimitName] = s.value;
       return;
+    case 'cellMenu': {
+      const run = needCell(rt);
+      if (!run.cafe) throw new RunError('메뉴 등록은 로봇 카페에서만 써요.');
+      run.cafe.menus[s.slot - 1] = { name: s.name, ice: s.ice, shots: s.shots, water: s.water, hot: s.hot };
+      return;
+    }
     case 'cellAmount': {
       const run = needCell(rt);
       if (!run.cafe) throw new RunError('양 정하기는 로봇 카페에서만 써요.');

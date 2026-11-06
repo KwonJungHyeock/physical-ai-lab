@@ -956,6 +956,8 @@ function cafeLayout(): CellLayout {
       { name: '제빙기', output: '얼음', place: '제빙기', cup: '제빙기 컵 감지', busy: '얼음 나오는 중', done: '얼음 끝', timeS: 3, pours: 'ice', ml: 145, unit: 'ml', range: [0, 300] },
       { name: '커피 머신', output: '추출 시작', place: '커피 머신', cup: '머신 컵 감지', busy: '추출 중', done: '추출 끝', timeS: 28, pours: 'shot', ml: 60, unit: 'shot', range: [1, 4] },
       { name: '정수기', output: '물', place: '정수기', cup: '정수기 컵 감지', busy: '물 나오는 중', done: '물 끝', timeS: 4, pours: 'water', ml: 150, unit: 'ml', range: [0, 300] },
+      // The same tap's hot water (the red button): a hot drink.
+      { name: '온수', output: '온수', place: '정수기', cup: '정수기 컵 감지', busy: '온수 나오는 중', done: '온수 끝', timeS: 5, pours: 'water', ml: 150, unit: 'ml', range: [0, 300], hot: true },
     ],
     pickup: { places: ['픽업 1', '픽업 2'], door: '픽업 문', open: '문 열림', closed: '문 닫힘', hand: '손 감지', zone: { min: [D.x0, D.y0], max: [D.x1, -145] } },
   };
@@ -989,13 +991,14 @@ function cafeLayout(): CellLayout {
       ],
       cafe,
     },
-    inputs: ['컵 준비됨', '제빙기 컵 감지', '얼음 나오는 중', '얼음 끝', '머신 컵 감지', '추출 중', '추출 끝', '정수기 컵 감지', '물 나오는 중', '물 끝', '문 열림', '문 닫힘', '손 감지'],
-    outputs: ['컵 내리기', '얼음', '추출 시작', '물', '픽업 문'],
+    inputs: ['컵 준비됨', '제빙기 컵 감지', '얼음 나오는 중', '얼음 끝', '머신 컵 감지', '추출 중', '추출 끝', '정수기 컵 감지', '물 나오는 중', '물 끝', '온수 나오는 중', '온수 끝', '문 열림', '문 닫힘', '손 감지', '주문 확인', '영업 끝', '주문 1', '주문 2', '주문 3'],
+    outputs: ['컵 내리기', '얼음', '추출 시작', '물', '온수', '픽업 문'],
     keys: {
       '컵 내리기': ['내리기', '멈춤'],
       얼음: ['받기', '멈춤'],
       '추출 시작': ['추출', '멈춤'],
       물: ['받기', '멈춤'],
+      온수: ['받기', '멈춤'],
       '픽업 문': ['열기', '닫기'],
     },
   };

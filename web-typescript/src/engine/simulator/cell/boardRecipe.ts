@@ -1,6 +1,6 @@
 /**
- * 보드게임 로봇 (입문 트랙): the program as 공정 카드 — no code on screen (보고 #45; as on the café's,
- * cafeRecipe.ts): ① 판 (where the board is and how far apart its lines are: 보정) → ② 한 수 (one
+ * 보드게임 로봇 (입문 트랙): the program as 공정 카드 — no code on screen (보고 #45; as the process cards go,
+ * cafeMenu.ts): ① 판 (where the board is and how far apart its lines are: 보정) → ② 한 수 (one
  * of the robot's moves: wait for its turn → take a white stone → put it on a point, 가로 · 세로, or
  * where a rule says, the board sensor reading the stones → the arm out). A game is one 한 수 card
  * repeated; each card opens into its rows, the wait a switch. The cards become the cell program

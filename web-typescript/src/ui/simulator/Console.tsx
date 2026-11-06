@@ -122,14 +122,15 @@ import RobotSetup from './connect/RobotSetup';
 import PartsPanel from './control/PartsPanel';
 import ProcessPanel from './editors/ProcessPanel';
 import { FullBar, LangSeg, Snippets, SlotCode, TutorialCard } from './editors/Tutorial';
-import RecipeCards from './editors/RecipeCards';
+import CafeMaker from './editors/CafeMaker';
+import { HandPane, WatchPane } from './editors/CafeSteps';
 import DrawCards from './editors/DrawCards';
 import BoardCards from './editors/BoardCards';
 import ThemePanel from './tasks/ThemePanel';
 import TutorialStrip from './tasks/TutorialStrip';
 import { MomentAsk, PredictCard, StepResult, loadPredictions, savePrediction } from './stage/StepGuide';
 import { QUESTS, questNow, type QuestPhase } from '@/engine/simulator/cell/quests';
-import { guideOf, predictNow } from '@/engine/simulator/cell/guides';
+import { askNow, asksOf, guideOf, type Ask } from '@/engine/simulator/cell/guides';
 import { stationAt } from '@/engine/simulator/cell/shots';
 import SiteTour from './stage/SiteTour';
 import Roadmap from './connect/Roadmap';
@@ -626,7 +627,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   }, []);
   const [lastChecks, setLastChecks] = useState<{ label: string; ok: boolean; detail?: string }[] | null>(null);
   /** 입문 퀘스트 모드: the step whose 예측 is being asked now, the scene held (MomentAsk). */
-  const [moment, setMoment] = useState<string | null>(null);
+  const [moment, setMoment] = useState<{ key: string; ask: Ask; ox: boolean } | null>(null);
   /** 입문: the place being toured (its opening look round, SiteTour.tsx). */
   const [touring, setTouring] = useState<CellId | null>(null);
   /** 입문: the 학습 로드맵 over the intro (its [ROADMAP]). */
@@ -1913,17 +1914,20 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   // The card to change lights while there is something to do (not over a passed result).
   const questGlow = (questPhase === 'do' || (questPhase === 'result' && !cellResult)) && questQ ? questQ.cards : undefined;
   const questGlowAdd = (questPhase === 'do' || (questPhase === 'result' && !cellResult)) && !!questQ?.add;
-  // 예측 at its moment: while a quest runs, the scene holds still the first time the moment comes
-  // (guides.ts predictNow) until the student answers over it; once per step (this browser).
-  const askId = busy && questOn && lifeStep && guideOf(lifeStep.id) && preds[lifeStep.id] === undefined && !skipped[lifeStep.id] ? lifeStep.id : null;
+  // 예측 (and 미리보기's O · X) at its moment: while a quest runs, the scene holds still when a
+  // question's moment comes (guides.ts askNow) until the student answers over it; each once (this browser).
+  const answeredRef = useRef<(key: string) => boolean>(() => false);
+  answeredRef.current = (key) => preds[key] !== undefined || !!skipped[key];
+  const askId = busy && questOn && lifeStep && asksOf(lifeStep.id).some((a) => preds[a.key] === undefined && !skipped[a.key]) ? lifeStep.id : null;
   useEffect(() => {
     if (!askId) return;
     const id = window.setInterval(() => {
       const run = world.current.cell;
-      if (!run || run.mission !== askId || !predictNow(run, world.current)) return;
+      if (heldRef.current || !run || run.mission !== askId) return;
+      const due = askNow(run, world.current, (k) => answeredRef.current(k));
+      if (!due) return;
       heldRef.current = true;
-      setMoment(askId);
-      window.clearInterval(id);
+      setMoment({ ...due, ox: !!guideOf(askId)?.asks });
     }, 40);
     return () => window.clearInterval(id);
   }, [askId]);
@@ -2268,6 +2272,24 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       }
       return next;
     });
+  // 입문 카페 해 보기 (by hand): the step's checks are read as it goes; all met, it is passed.
+  const handStep = track && cellAt?.mission && missionById(cellAt.mission)?.mode === 'hand' && !busy && cellResult !== true ? cellAt.mission : null;
+  const recordPassRef = useRef(recordPass);
+  useEffect(() => {
+    recordPassRef.current = recordPass;
+  });
+  useEffect(() => {
+    if (!handStep) return;
+    const id = window.setInterval(() => {
+      const res = cellChecks(world.current);
+      if (!res || res.mission.id !== handStep || !res.items.every((i) => i.ok)) return;
+      window.clearInterval(id);
+      setCellResult(true);
+      setLastChecks(res.items);
+      recordPassRef.current(handStep);
+    }, 400);
+    return () => window.clearInterval(id);
+  }, [handStep]);
   /** A cell run is over: the last part comes to rest, then the step's checks decide. */
   const finishCellRun = async (ok: boolean) => {
     const c = cellRef.current;
@@ -3965,7 +3987,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     onClick: () => toggleRail(id),
   });
   // 제어: moving the arm by hand. 작업: programs that run (a process of points, blocks, Python, ROS 2). 보기: windows.
-  // 입문 트랙's café and calligraphy booth: the program is 작업 순서 카드, not code (RecipeCards · DrawCards).
+  // 입문 트랙's café and calligraphy booth: the program is 작업 순서 카드, not code (CafeMaker · DrawCards · BoardCards).
   const recipeOn = !!track && (cellAt?.cell === 'cafe' || cellAt?.cell === 'draw' || cellAt?.cell === 'board');
   const controlGroup = { name: '제어', items: [work('jog', '제어', 'move', '제어: 관절 · 좌표로 움직이기 (조그)', true), { ...work('parts', '도구', 'tool', '도구 · 액세서리', true), hintFor: '끼우기, 도구' }, { ...work('pose', '자세', 'home', '자세 저장 · 불러오기', true), hintFor: '기본 자세, 일자로 펴기, 카메라 자세, 이 자세로, 자세' }] };
   const objectsItem = theme === 'kit' ? [] : [viewItem('objects', '물건', 'box', '책상에 물건 놓기', desk.objects.length ? String(desk.objects.length) : undefined)];
@@ -4871,14 +4893,16 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
               {loaded && view === 'sim' && track && cellAt?.cell === 'board' && <BoardStrip world={world} />}
               {loaded && view === 'sim' && moment && (
                 <MomentAsk
-                  mission={moment}
+                  key={moment.key}
+                  ask={moment.ask}
+                  ox={moment.ox ? '장면 멈춤 · O X' : undefined}
                   onAnswer={(k) => {
-                    savePrediction(moment, k);
-                    setPreds((p) => ({ ...p, [moment]: k }));
+                    savePrediction(moment.key, k);
+                    setPreds((p) => ({ ...p, [moment.key]: k }));
                     letGo();
                   }}
                   onSkip={() => {
-                    setSkipped((x) => ({ ...x, [moment]: true }));
+                    setSkipped((x) => ({ ...x, [moment.key]: true }));
                     letGo();
                   }}
                 />
@@ -5378,7 +5402,13 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                         ) : cellAt!.cell === 'board' ? (
                           <BoardCards key={cellAt!.mission ?? 'free'} mission={cellAt!.mission} busy={busy} runningLine={runningLine} onCode={onRecipeCode} glow={questGlow} glowAdd={questGlowAdd} flow={questOn && !!lifeStep} />
                         ) : (
-                          <RecipeCards key={cellAt!.mission ?? 'free'} mission={cellAt!.mission} busy={busy} runningLine={runningLine} onCode={onRecipeCode} glow={questGlow} glowAdd={questGlowAdd} flow={questOn && !!lifeStep} />
+                          (() => {
+                            // 입문 로봇 카페: 미리보기 · 해 보기 · 나만의 카페 (menus and their motion).
+                            const mode = cellAt!.mission ? missionById(cellAt!.mission)?.mode : undefined;
+                            if (mode === 'watch') return <WatchPane key={cellAt!.mission} mission={cellAt!.mission!} answered={(k) => preds[k] !== undefined || !!skipped[k]} onCode={onRecipeCode} />;
+                            if (mode === 'hand') return <HandPane key={cellAt!.mission} mission={cellAt!.mission!} world={world} busy={busy} jog={controlPanel} onCode={onRecipeCode} />;
+                            return <CafeMaker key={cellAt!.mission ?? 'free'} mission={cellAt!.mission} busy={busy} runningLine={runningLine} onCode={onRecipeCode} world={world} focus={cellAt!.mission === 'F5' ? 'door' : cellAt!.mission === 'F7' ? 'menu2' : null} />;
+                          })()
                         )}
                       </div>
                     ) : cellAt && cellTermOn ? (

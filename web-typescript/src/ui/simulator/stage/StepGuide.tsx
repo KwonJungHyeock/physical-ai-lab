@@ -8,9 +8,9 @@
  * card — passed or not, the checks, the prediction against what happened, and the idea of the step.
  */
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
-import { guideOf } from '@/engine/simulator/cell/guides';
+import { guideOf, type Ask } from '@/engine/simulator/cell/guides';
 import { missionById, missionsOf } from '@/engine/simulator/cell/missions';
 import type { CellId } from '@/engine/simulator/cell/cells';
 
@@ -43,7 +43,8 @@ export function PredictCard({ mission, onAnswer, onSkip }: { mission: string; on
     window.addEventListener('keydown', esc);
     return () => window.removeEventListener('keydown', esc);
   }, [onSkip]);
-  if (!g) return null;
+  const pr = g?.predict;
+  if (!pr) return null;
   return (
     <div className={css.predict} role="dialog" aria-label="예측">
       <header>
@@ -53,9 +54,9 @@ export function PredictCard({ mission, onAnswer, onSkip }: { mission: string; on
           건너뛰기
         </button>
       </header>
-      <p>{g.predict.q}</p>
+      <p>{pr.q}</p>
       <div className={css.opts}>
-        {g.predict.options.map((o, k) => (
+        {pr.options.map((o, k) => (
           <button key={o} type="button" onClick={() => onAnswer(k)}>
             <i>{MARK[k]}</i>
             {o}
@@ -72,28 +73,43 @@ export function PredictCard({ mission, onAnswer, onSkip }: { mission: string; on
  * and two or three big keys over the scene. A tap answers it and the run goes on from there, so the
  * answer is seen at once (예측 → 관찰). Not graded.
  */
-export function MomentAsk({ mission, onAnswer, onSkip }: { mission: string; onAnswer(k: number): void; onSkip(): void }) {
-  const g = guideOf(mission);
-  if (!g) return null;
+export function MomentAsk({ ask, ox, onAnswer, onSkip }: { ask: Ask; ox?: string; onAnswer(k: number): void; onSkip(): void }) {
+  // O · X (미리보기): the answer and why first, then on; a 예측 goes on at once (it is compared after the run).
+  const [chosen, setChosen] = useState<number | null>(null);
+  if (ox && chosen !== null)
+    return (
+      <div className={css.moment} role="dialog" aria-label="예측" data-ok={chosen === ask.answer || undefined}>
+        <header>
+          <span className={css.pause} aria-hidden="true" />
+          <em>{chosen === ask.answer ? '맞았어요' : '다시 볼까요'}</em>
+        </header>
+        <p>
+          정답 {ask.options[ask.answer]} · {ask.why}
+        </p>
+        <button type="button" className={css.goOn} onClick={() => onAnswer(chosen)}>
+          이어서 보기 ▶
+        </button>
+      </div>
+    );
   return (
     <div className={css.moment} role="dialog" aria-label="예측">
       <header>
         <span className={css.pause} aria-hidden="true" />
-        <em>장면 멈춤 · 예측</em>
+        <em>{ox ?? '장면 멈춤 · 예측'}</em>
       </header>
-      <p>{g.predict.q}</p>
-      <div className={css.big} data-n={g.predict.options.length}>
-        {g.predict.options.map((o, k) => (
-          <button key={o} type="button" onClick={() => onAnswer(k)}>
+      <p>{ask.q}</p>
+      <div className={css.big} data-n={ask.options.length} data-ox={ask.options.join('') === 'OX' || undefined}>
+        {ask.options.map((o, k) => (
+          <button key={o} type="button" onClick={() => (ox ? setChosen(k) : onAnswer(k))}>
             <i>{MARK[k]}</i>
             {o}
           </button>
         ))}
       </div>
       <small>
-        고르면 바로 이어서 실행돼요 · 채점하지 않아요
+        {ox ? '고르면 정답을 보고 이어서 봐요 · 채점하지 않아요' : '고르면 바로 이어서 실행돼요 · 채점하지 않아요'}
         <button type="button" onClick={onSkip}>
-          예측 없이 계속
+          {ox ? '답하지 않고 계속' : '예측 없이 계속'}
         </button>
       </small>
     </div>
@@ -147,12 +163,12 @@ export function StepResult(p: ResultProps) {
           ))}
         </ul>
       )}
-      {g && p.chosen !== undefined && (
+      {g?.predict && p.chosen !== undefined && (
         <p className={css.compare} data-ok={p.chosen === g.predict.answer || undefined}>
           <em>PREDICT</em>내 예측 {MARK[p.chosen]} → 실제 {MARK[g.predict.answer]} {g.predict.options[g.predict.answer]}
         </p>
       )}
-      {g && (
+      {g?.concept && (
         <div className={css.concept}>
           <em>CONCEPT</em>
           <b>{g.concept.term}</b>

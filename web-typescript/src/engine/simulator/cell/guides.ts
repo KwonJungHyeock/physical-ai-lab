@@ -30,36 +30,50 @@ export interface Observation {
   when(run: CellRun, w: WorldState): boolean;
 }
 
+/** A question asked over the scene at its moment (the scene holds still until it is answered). */
+export interface Ask {
+  q: string;
+  options: string[];
+  answer: number;
+  why: string;
+  at?(run: CellRun, w: WorldState): boolean;
+}
+
 export interface StepGuide {
   /**
    * 예측: asked over the scene at the moment the result splits (`at`; the scene holds still until
    * it is answered), once per step; without `at`, at the step's first moment to observe.
    */
-  predict: { q: string; options: string[]; answer: number; why: string; at?(run: CellRun, w: WorldState): boolean };
+  predict?: Ask;
+  /** 미리보기: several O · X questions, each at its own moment, in order (in place of a 예측). */
+  asks?: Ask[];
   observe: Observation[];
-  concept: { term: string; def: string; real: string };
+  /** The idea, after the run (none where the explanation is the worksheet's). */
+  concept?: { term: string; def: string; real: string };
+}
+
+/** The step's questions in order (a 예측 is one), and the key each answer is kept under. */
+export function asksOf(id: string): { ask: Ask; key: string; at: (run: CellRun, w: WorldState) => boolean }[] {
+  const g = guideOf(id);
+  if (!g) return [];
+  if (g.asks) return g.asks.map((ask, k) => ({ ask, key: `${id}#${k + 1}`, at: ask.at ?? (() => false) }));
+  if (!g.predict) return [];
+  const at = g.predict.at ?? (g.observe.length ? g.observe[0].when : null);
+  return at ? [{ ask: g.predict, key: id, at }] : [];
 }
 
 const on = (name: string) => (run: CellRun) => !!run.line.in[name];
 const out = (name: string) => (run: CellRun) => !!run.line.out[name];
-const served = (n: number) => (run: CellRun) => (run.cafe?.served.filter((d) => d.ok).length ?? 0) >= n;
 const cardsDone = (n: number) => (run: CellRun) => (run.draw?.done.length ?? 0) >= n;
 /** The pen tip on the paper (the trail grows). */
 const inking = (_run: CellRun, w: WorldState) => w.penDown;
 /** The pen up between two strokes (off the paper, at travel height), after some ink. */
 const lifted = (run: CellRun, w: WorldState) => !w.penDown && w.trail.some((s) => s.length > 2) && !!run.line.in['카드 있음'];
 
-/** A cup standing on the pickup shelf (let go of: not in the gripper). */
-const onShelf = (run: CellRun, w: WorldState) => {
-  const p = run.layout.places['픽업 1'];
-  return w.objects.some((o) => o.kind === 'cup' && o.id !== w.carry?.id && Math.hypot(o.x - p.x, o.y - p.y) < 8 && Math.abs(o.z - p.z) < 6);
-};
 
 const A = CAFE_AT;
 const CUP: [number, number, number] = [A.cup.x, A.cup.y, 120];
-const ICE: [number, number, number] = [A.ice.x, A.ice.y, 110];
 const COFFEE: [number, number, number] = [A.coffee.x, A.coffee.y, 110];
-const WATER: [number, number, number] = [A.water.x, A.water.y, 100];
 const PICKUP: [number, number, number] = [98, -190, 100];
 const CARD: [number, number, number] = [CARD_HOME.x + CARD_MM.w / 2, CARD_HOME.y + CARD_MM.h / 2, 60];
 const LAMP: [number, number, number] = [312, -140, 90];
@@ -71,70 +85,18 @@ const placed = (n: number) => (run: CellRun) => (run.board ? robotStones(run.boa
 const held = (_run: CellRun, w: WorldState) => !!w.carry;
 
 export const STEP_GUIDES: Record<string, StepGuide> = {
-  /* --- F: 로봇 카페 --- */
+  /* --- F: 로봇 카페 (미리보기 only: the rest is done, its explanation is the worksheet's) --- */
   F1: {
-    predict: {
-      q: '로봇이 커피 머신 앞에서 멈췄어요. 왜 기다릴까요?',
-      options: ['손님 주문을 기다려서', '샷 추출(28초)이 끝나길 기다려서'],
-      answer: 1,
-      why: '커피 머신이 [추출 끝] 신호를 보낼 때까지 로봇은 다음 동작을 하지 않아요.',
-      at: on('추출 중'),
-    },
+    asks: [
+      { q: '로봇은 [컵 준비됨] 신호를 받고 나서 컵을 집는다.', options: ['O', 'X'], answer: 0, why: '컵이 나왔다는 신호를 보고 집어요.', at: on('컵 준비됨') },
+      { q: '샷이 다 나오기 전에 컵을 빼도 괜찮다.', options: ['O', 'X'], answer: 1, why: '남은 커피가 받침대로 쏟아져요. [추출 끝]을 기다려요.', at: on('추출 중') },
+      { q: '손님이 음료를 가져가는 동안 로봇 팔은 픽업대 안에 있다.', options: ['O', 'X'], answer: 1, why: '문이 열린 동안 팔은 밖에서 기다려요.', at: on('문 열림') },
+    ],
     observe: [
       { id: 'cup', text: '[컵 준비됨] 켜짐: 컵이 내려왔어요', at: CUP, when: on('컵 준비됨') },
       { id: 'shot', text: '[추출 중] 28초: 로봇은 기다려요', at: COFFEE, when: on('추출 중') },
       { id: 'hand', text: '[손 감지]: 손님 손이 있는 동안 팔은 밖에', at: PICKUP, when: on('손 감지') },
     ],
-    concept: { term: '공정 (작업 순서)', def: '어느 장비를 어떤 순서로 돌고, 장비마다 어떤 신호를 기다릴지 정한 것이에요.', real: '실제 로봇 카페도 주문이 들어오면 정해진 공정대로 컵 → 얼음 → 샷 → 물 → 픽업 순서로 돌아요.' },
-  },
-  F2: {
-    predict: {
-      q: '[추출 끝]을 기다리지 않고 지금 컵을 빼면?',
-      options: ['커피가 더 빨리 완성된다', '남은 커피가 받침대로 쏟아진다'],
-      answer: 1,
-      why: '추출은 28초 동안 계속돼요. 컵이 빠지면 남은 커피는 받침대로 떨어져요.',
-      at: on('추출 중'),
-    },
-    observe: [
-      { id: 'cup', text: '[컵 준비됨] 켜짐: 이제 집어도 돼요', at: CUP, when: on('컵 준비됨') },
-      { id: 'shot', text: '[추출 중]: 28초 동안 커피가 나와요', at: COFFEE, when: on('추출 중') },
-      { id: 'done', text: '[추출 끝] 켜짐: 이제 컵을 빼도 돼요', at: COFFEE, when: on('추출 끝') },
-    ],
-    concept: { term: '인터록 (신호 기다리기)', def: '앞 장비가 "끝났어요" 신호를 보내야 다음 동작을 하도록 묶어 두는 것이에요.', real: '공장 로봇도 기계의 완료 신호를 받고 나서 문을 열고 부품을 꺼내요.' },
-  },
-  F3: {
-    predict: {
-      q: '주문은 샷 3개(90 ml)예요. 얼음 145 ml를 그대로 두고 물 150 ml까지 넣으면 355 ml 컵은?',
-      options: ['넘친다', '딱 맞는다'],
-      answer: 0,
-      why: '145 + 90 + 150 = 385 ml로 컵보다 30 ml 많아요. 그래서 샷을 늘리면 얼음을 줄여요.',
-      at: on('추출 중'),
-    },
-    observe: [
-      { id: 'ice', text: '[얼음 나오는 중]: 카드에 적은 양만큼', at: ICE, when: on('얼음 나오는 중') },
-      { id: 'shot', text: '[추출 중]: 샷 1개에 30 ml', at: COFFEE, when: on('추출 중') },
-      { id: 'water', text: '[물 나오는 중]: 마지막에 농도 맞추기', at: WATER, when: on('물 나오는 중') },
-    ],
-    concept: { term: '레시피 = 순서 + 양', def: '무엇을, 어떤 순서로, 얼마나 넣을지 정해 두면 누가 만들어도 같은 맛이 나요.', real: '로봇 카페는 주문 화면이 얼음 · 샷 · 물의 양을 장비에 보내요. 톨 컵 355 ml를 넘기면 넘쳐요.' },
-  },
-  F4: {
-    predict: {
-      q: '음료를 픽업대에 놓았어요. 손님이 가져가는 동안 로봇 팔은 어디에 있어야 할까요?',
-      options: ['픽업대 안에서 컵을 잡고', '픽업대 밖 (기본 자세)'],
-      answer: 1,
-      why: '문이 열린 동안 사람과 로봇이 같은 곳에 있으면 안 돼요. 팔은 빼고 기다려요.',
-      at: onShelf,
-    },
-    observe: [
-      { id: 'open', text: '[문 열림]: 손님 쪽 문이 열렸어요', at: PICKUP, when: on('문 열림') },
-      { id: 'hand', text: '[손 감지]: 손님이 가져가는 중', at: PICKUP, when: on('손 감지') },
-      { id: 'closed', text: '[문 닫힘] 뒤에 다시 움직여요', at: PICKUP, when: (r) => served(1)(r) && on('문 닫힘')(r) },
-    ],
-    concept: {
-      term: '안전문 (협동 작업 영역 나누기)',
-      def: '사람과 로봇이 같은 곳에 동시에 있지 않도록 문과 센서로 나누는 것이에요.',
-      real: '협동로봇 안전 규칙도 같아요. 사람이 가까이 오면 로봇은 멈추거나 느려져요. 로봇 카페의 픽업 문도 같은 원리예요.',
-    },
   },
 
   /* --- G: 로봇 캘리그라피 --- */
@@ -245,13 +207,21 @@ export const STEP_GUIDES: Record<string, StepGuide> = {
 
 export const guideOf = (mission: string | null) => (mission ? (STEP_GUIDES[mission] ?? null) : null);
 
-/** Is it the moment to ask the step's 예측 (the scene holds still until it is answered)? */
-export function predictNow(run: CellRun, w: WorldState): boolean {
-  const g = guideOf(run.mission);
-  if (!g) return false;
-  const at = g.predict.at ?? g.observe[0]?.when;
-  return !!at && at(run, w);
+/**
+ * The question to ask now, if its moment has come (the scene holds still until it is answered): the
+ * first one not answered yet (`answered`, by key), and only when its moment is on.
+ */
+export function askNow(run: CellRun, w: WorldState, answered: (key: string) => boolean): { ask: Ask; key: string } | null {
+  if (!run.mission) return null;
+  const next = asksOf(run.mission).find((a) => !answered(a.key));
+  return next && next.at(run, w) ? { ask: next.ask, key: next.key } : null;
 }
+
+/** Is it the moment to ask the step's (first) question? (The checks: each step's moment must come.) */
+export const predictNow = (run: CellRun, w: WorldState): boolean => {
+  const first = run.mission ? asksOf(run.mission)[0] : undefined;
+  return !!first && first.at(run, w);
+};
 
 /** Note the step's moments as they happen (the cell time each was first seen). */
 export function observe(run: CellRun, w: WorldState): void {

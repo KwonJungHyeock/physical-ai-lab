@@ -31,6 +31,8 @@ export interface Drink {
   water: number;
   /** Poured but spilled over the rim, ml. */
   spilled: number;
+  /** Hot water went in (the water dispenser's 온수). */
+  warm?: boolean;
 }
 
 /** A 12 oz (355 ml) cold cup: Ø90 × 120 mm at shop size, drawn at 1/5. */
@@ -53,6 +55,8 @@ export interface CafeOrder {
   ice: number;
   shots: number;
   water: number;
+  /** The water is hot (온수): a hot drink, no ice. */
+  hot?: boolean;
 }
 export const ICED_AMERICANO: CafeOrder = { name: '아이스 아메리카노', ice: RECIPE.ice, shots: RECIPE.shot / SHOT_ML, water: RECIPE.water };
 /** The order's drink in ml. */
@@ -71,12 +75,14 @@ export interface StationDef {
   busy: string;
   done: string;
   timeS: number;
-  pours: keyof Omit<Drink, 'spilled'>;
+  pours: 'ice' | 'shot' | 'water';
   ml: number;
   /** The amount the program sets (cell.amount): ml, or shots (SHOT_ML each); timeS is for `ml`. */
   unit: 'ml' | 'shot';
   /** What cell.amount may set, in the unit. */
   range: [number, number];
+  /** It pours hot water (the water dispenser's 온수). */
+  hot?: boolean;
 }
 
 export interface CafeDef {
@@ -97,8 +103,32 @@ export interface StationState {
   was: boolean;
 }
 
+/** One customer's order in the queue (주문 대기열): which menu (1 …), when it came, and whether its cup is under way. */
+export interface QueuedOrder {
+  id: number;
+  menu: number;
+  at: number;
+  started: boolean;
+}
+
+/**
+ * 운영 모드: customers keep coming (a seeded random stream, so a class gets the same customers):
+ * how many, the gap between two (s, a range), which menus they ask for (weights, menu 1 …), and
+ * how long one waits for the robot to start their drink before leaving (s).
+ */
+export interface CafeSpawn {
+  seed: number;
+  customers: number;
+  gap: [number, number];
+  mix?: number[];
+  patience: number;
+}
+
 export interface Served {
   t: number;
+  /** The menu ordered (1 …) and how long the customer waited from ordering, s. */
+  menu: number;
+  waited: number;
   drink: Drink;
   /** ok: the recipe, nothing spilled. */
   ok: boolean;
@@ -127,13 +157,68 @@ export interface CafeState {
   order: CafeOrder;
   /** Each station's amount as the program set it (cell.amount), in its unit, by station name. */
   amount: Record<string, number>;
+  /** The café's menus as the program registered them (cell.menu, 1 …): a drink is judged against its order's menu. */
+  menus: (CafeOrder | undefined)[];
+  /** Orders not handed over yet, oldest first. */
+  queue: QueuedOrder[];
+  nextId: number;
+  /** 운영 모드: the stream of customers, the next arrival, how many have come and how many gave up waiting. */
+  spawn: CafeSpawn | null;
+  rng: number;
+  nextAt: number;
+  came: number;
+  left: number;
 }
 
-export function newCafe(def: CafeDef, orders: number, order: CafeOrder = ICED_AMERICANO): CafeState {
+/** A small seeded random generator (mulberry32): the same seed, the same customers. */
+function rand(c: CafeState): number {
+  c.rng = (c.rng + 0x6d2b79f5) | 0;
+  let t = c.rng;
+  t = Math.imul(t ^ (t >>> 15), t | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+
+/** The menu an order is judged against: the program's (cell.menu), else the step's order. */
+export const menuOf = (c: CafeState, menu: number): CafeOrder => c.menus[menu - 1] ?? (menu === 1 ? c.order : c.order);
+
+/**
+ * A café at the start of a step: `orders` customers already waiting (each for menu `queue[k]`, default
+ * menu 1), or — 운영 모드 — a stream of customers (`spawn`).
+ */
+export function newCafe(def: CafeDef, orders: number, order: CafeOrder = ICED_AMERICANO, opts: { queue?: number[]; spawn?: CafeSpawn } = {}): CafeState {
   const stations = Object.fromEntries(def.stations.map((s) => [s.output, { t: null, cup: null, was: false, ml: s.ml, timeS: s.timeS }]));
   const amount = Object.fromEntries(def.stations.map((s) => [s.name, s.unit === 'shot' ? s.ml / SHOT_ML : s.ml]));
-  return { stations, stock: def.dispenser.stock, dropped: 0, dropWas: false, trayPours: [], served: [], orders, handUntil: null, doorBreaches: 0, breaching: false, order, amount };
+  const menus = opts.spawn ? [] : (opts.queue ?? Array<number>(orders).fill(1));
+  const queue = menus.map((menu, k) => ({ id: k + 1, menu, at: 0, started: false }));
+  const spawn = opts.spawn ?? null;
+  return {
+    stations,
+    stock: def.dispenser.stock,
+    dropped: 0,
+    dropWas: false,
+    trayPours: [],
+    served: [],
+    orders: spawn ? spawn.customers : queue.length,
+    handUntil: null,
+    doorBreaches: 0,
+    breaching: false,
+    order,
+    amount,
+    menus: [],
+    queue,
+    nextId: queue.length + 1,
+    spawn,
+    rng: spawn?.seed ?? 1,
+    nextAt: 2,
+    came: queue.length,
+    left: 0,
+  };
 }
+
+/** The café's order inputs (the order screen, as the robot's controller reads it). */
+export const ORDER_INPUTS = { next: '주문 확인', closed: '영업 끝', menu: (k: number) => `주문 ${k}` } as const;
+export const MENU_SLOTS = 3;
 
 /** What a station pours now: the amount set (ml), and the time it takes at the station's own rate. */
 export function stationPour(st: StationDef, c: CafeState): { ml: number; timeS: number } {
@@ -157,7 +242,12 @@ export function drinkVerdict(d: Drink | undefined, o: CafeOrder = ICED_AMERICANO
     if (got > want[k] + 1) return `${name}이 많아요 (${got} / ${want[k]} ml)`;
     return null;
   };
-  const why = off('shot', '샷', '커피가 없어요', '샷이 덜 들어갔어요') ?? off('ice', '얼음', '얼음이 없어요 (뜨거운 커피가 됐어요)', '얼음이 덜 들어갔어요') ?? off('water', '물', '물이 없어요 (너무 진해요)', '물이 덜 들어갔어요 (진해요)');
+  const temp = o.hot && d.water > 0 && !d.warm ? '찬물이 들어갔어요 (따뜻한 메뉴예요)' : !o.hot && d.warm ? '뜨거운 물이 들어갔어요 (차가운 메뉴예요)' : null;
+  const why =
+    off('shot', '샷', '커피가 없어요', '샷이 덜 들어갔어요') ??
+    off('ice', '얼음', o.hot ? '얼음이 없어요' : '얼음이 없어요 (뜨거운 커피가 됐어요)', '얼음이 덜 들어갔어요') ??
+    off('water', '물', '물이 없어요 (너무 진해요)', '물이 덜 들어갔어요 (진해요)') ??
+    temp;
   return why ? { ok: false, why } : { ok: true, why: `${o.name} 완성` };
 }
 
@@ -177,6 +267,40 @@ export interface CafeStep {
 export function stepCafe(l: CellLayout, def: CafeDef, s: LineState, c: CafeState, parts: readonly DeskObject[], dt: number, carried: string | null, tip: { x: number; y: number; z: number }): CafeStep {
   const out: CafeStep = { spawned: [], taken: [], alerts: [] };
   const t = s.t;
+
+  // 운영 모드: the next customer comes; one who has waited too long for their drink to start goes.
+  const sp = c.spawn;
+  if (sp && c.came < sp.customers && t >= c.nextAt) {
+    const n = Math.max(1, c.menus.filter(Boolean).length);
+    const w = (sp.mix ?? []).slice(0, n);
+    const weights = w.length === n ? w : Array<number>(n).fill(1);
+    let r = rand(c) * weights.reduce((a, b) => a + b, 0);
+    let menu = 1;
+    for (let k = 0; k < n; k += 1) {
+      r -= weights[k];
+      if (r <= 0) {
+        menu = k + 1;
+        break;
+      }
+    }
+    c.queue.push({ id: c.nextId, menu, at: t, started: false });
+    c.nextId += 1;
+    c.came += 1;
+    c.nextAt = t + sp.gap[0] + rand(c) * (sp.gap[1] - sp.gap[0]);
+  }
+  if (sp)
+    for (const o of c.queue.filter((q) => !q.started && t - q.at > sp.patience)) {
+      c.queue.splice(c.queue.indexOf(o), 1);
+      c.left += 1;
+      c.orders = Math.max(0, c.orders - 1);
+      out.alerts.push({ t, level: 'info', kind: 'order', title: '손님이 기다리다 갔어요', msg: `${menuOf(c, o.menu).name} 주문이 ${Math.round(sp.patience)}초 넘게 시작되지 않았어요.` });
+    }
+  // The order screen: an order to make (or the day is over), and which menu it is.
+  const pending = c.queue.find((q) => !q.started);
+  const closed = !pending && (!sp || c.came >= sp.customers);
+  setIn(s, ORDER_INPUTS.next, !!pending || closed);
+  setIn(s, ORDER_INPUTS.closed, closed);
+  for (let k = 1; k <= MENU_SLOTS; k += 1) setIn(s, ORDER_INPUTS.menu(k), pending?.menu === k);
   const free = parts.filter((p) => p.id !== carried);
   const at = (place: string) => free.find((p) => near(p, l.places[place]));
 
@@ -192,6 +316,9 @@ export function stepCafe(l: CellLayout, def: CafeDef, s: LineState, c: CafeState
       out.spawned.push(makeObject('cup', { x: p.x, y: p.y, z: p.z + 0.3 }, { size: [...CUP_SIZE], color: '#f3efe6', massG: 12, drink: emptyDrink() }));
       c.stock -= 1;
       c.dropped += 1;
+      // The cup is for the first order not started yet.
+      const next = c.queue.find((q) => !q.started);
+      if (next) next.started = true;
     }
   }
   c.dropWas = dOn;
@@ -222,6 +349,7 @@ export function stepCafe(l: CellLayout, def: CafeDef, s: LineState, c: CafeState
       // The cup is still under the spout: it fills (an overflow spills); taken away, the rest spills.
       if (target && near(target, l.places[st.place]) && target.id !== carried) {
         const d = (target.drink ??= emptyDrink());
+        if (st.hot && share > 0) d.warm = true;
         const room = Math.max(0, CUP_ML - drinkMl(d));
         d[st.pours] += Math.min(room, share);
         // (Rounding: a cup filled exactly to the brim is not an overflow.)
@@ -257,8 +385,14 @@ export function stepCafe(l: CellLayout, def: CafeDef, s: LineState, c: CafeState
     for (const name of pk.places) {
       const p = at(name);
       if (!p) continue;
-      const v = drinkVerdict(p.drink, c.order);
-      c.served.push({ t, drink: { ...(p.drink ?? emptyDrink()) }, ok: v.ok, why: v.why });
+      // The drink is for the oldest order under way (or, with none marked, the oldest one).
+      const k = Math.max(
+        0,
+        c.queue.findIndex((q) => q.started),
+      );
+      const o = c.queue.splice(k, 1)[0] ?? { id: 0, menu: 1, at: 0, started: true };
+      const v = drinkVerdict(p.drink, menuOf(c, o.menu));
+      c.served.push({ t, menu: o.menu, waited: t - o.at, drink: { ...(p.drink ?? emptyDrink()) }, ok: v.ok, why: v.why });
       c.orders = Math.max(0, c.orders - 1);
       out.taken.push(p.id);
     }

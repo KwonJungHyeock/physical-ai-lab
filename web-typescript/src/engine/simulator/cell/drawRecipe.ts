@@ -1,6 +1,6 @@
 /**
  * 로봇 캘리그라피 (입문 트랙): the program as 공정 카드 — no code on screen, the booth's process in
- * four cards (보고 #44 §2-2; as on the café's, cafeRecipe.ts): ① 카드 받기 → ② 보정 (where the card
+ * four cards (보고 #44 §2-2): ① 카드 받기 → ② 보정 (where the card
  * lies — its corner, robot mm — and how low the pen goes) → ③ 쓰기 (the phrase; straight or joint
  * moves, the pen lifted between strokes or not: the two switches) → ④ 건네기 (the arm out, the
  * 완성 lamp, the customer takes the card). Each card opens into its rows. The cards become the cell

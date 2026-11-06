@@ -74,7 +74,7 @@ export function newCellRun(id: CellId, missionId: string | null): { run: CellRun
   line.queue = setup.queue?.(layout) ?? [];
   setup.line?.(line);
   const run: CellRun = { id, layout, mission: m?.id ?? null, line, health: newHealth(), alerts: [], fresh: [], halt: null, events: [], next: {}, startT: null, endT: null, lastTip: null, vision: newVision(), observed: {} };
-  if (layout.line.cafe) run.cafe = newCafe(layout.line.cafe, setup.orders ?? 1, setup.order);
+  if (layout.line.cafe) run.cafe = newCafe(layout.line.cafe, setup.orders ?? 1, setup.order, { queue: setup.menuQueue, spawn: setup.spawn });
   if (layout.line.draw) run.draw = newDraw(setup.orders ?? 1, setup.card);
   if (layout.line.board) run.board = newBoard();
   return { run, parts: setup.parts(layout) };
@@ -224,6 +224,6 @@ export function cellChecks(w: WorldState): { mission: CellMission; items: Return
   if (!run || !m) return null;
   const end = run.endT ?? run.line.t;
   // A part still in the tool is not placed anywhere.
-  const items = judge(m, { parts: w.objects.filter((o) => o.id !== w.carry?.id), l: run.layout, line: run.line, alerts: run.alerts, events: run.events, elapsed: run.startT === null ? 0 : end - run.startT, vision: run.vision, cafe: run.cafe, draw: run.draw, board: run.board, trail: w.trail });
+  const items = judge(m, { parts: w.objects.filter((o) => o.id !== w.carry?.id), l: run.layout, line: run.line, alerts: run.alerts, events: run.events, elapsed: run.startT === null ? 0 : end - run.startT, vision: run.vision, cafe: run.cafe, draw: run.draw, board: run.board, trail: w.trail, tip: run.lastTip });
   return { mission: m, items };
 }

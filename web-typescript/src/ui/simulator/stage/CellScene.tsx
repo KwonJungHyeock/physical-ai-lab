@@ -15,6 +15,7 @@ import { useRef, useState, type ReactNode, type RefObject } from 'react';
 
 import { cellLayout, type CellId } from '@/engine/simulator/cell/cells';
 import { guideOf } from '@/engine/simulator/cell/guides';
+import { missionById } from '@/engine/simulator/cell/missions';
 import type { WorldState } from '@/engine/simulator/sim';
 
 import { Feeder } from './cell/cellA';
@@ -208,6 +209,30 @@ function Callouts({ world }: { world: RefObject<WorldState | null> }) {
   );
 }
 
+/** A 해 보기 step's target for the tool tip (missions.ts `target`): a glowing ring and a tag. */
+function TargetRing({ world }: { world: RefObject<WorldState | null> }) {
+  const [at, setAt] = useState<[number, number, number] | null>(null);
+  const key = useRef('');
+  useFrame(() => {
+    const id = world.current?.cell?.mission ?? '';
+    if (id === key.current) return;
+    key.current = id;
+    setAt((id && missionById(id)?.target) || null);
+  });
+  if (!at) return null;
+  return (
+    <group position={[m(at[0]), m(at[1]), m(at[2])]}>
+      <mesh rotation={[0, 0, 0]}>
+        <torusGeometry args={[m(15), m(1.6), 12, 48]} />
+        <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.9} transparent opacity={0.9} />
+      </mesh>
+      <Html center zIndexRange={[21, 0]} style={{ pointerEvents: 'none' }}>
+        <div style={{ transform: 'translateY(-34px)', background: '#fff', color: '#15181c', borderRadius: 8, padding: '4px 9px', font: '800 12.5px Pretendard, sans-serif', whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>여기로 · 고리 안</div>
+      </Html>
+    </group>
+  );
+}
+
 export default function CellScene({ world, cell, tags = [], callouts = false }: { world: RefObject<WorldState | null>; cell: CellId; tags?: readonly string[]; callouts?: boolean }) {
   const [hover, setHover] = useState<string | null>(null);
   const T = TAGS[cell];
@@ -231,6 +256,7 @@ export default function CellScene({ world, cell, tags = [], callouts = false }: 
         </>
       )}
       {callouts && <Callouts world={world} />}
+      {callouts && <TargetRing world={world} />}
       {shown.map((n) => (
         <Html key={n} position={[m(T[n].at[0]), m(T[n].at[1]), m(T[n].at[2])]} center zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
           <div data-celltag style={{ background: 'rgba(24,32,29,0.92)', color: '#fff', borderRadius: 7, padding: '4px 9px', font: '700 12.5px Pretendard, sans-serif', whiteSpace: 'nowrap', boxShadow: '0 2px 8px rgba(0,0,0,0.25)' }}>

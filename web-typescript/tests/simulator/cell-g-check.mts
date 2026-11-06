@@ -96,7 +96,7 @@ for (const m of missionsOf('draw')) {
   assert.ok(!err && allOk(w), `${m.id} ${m.title}: ${err ? (err as Error).message : ''} | ${summary(w)} | ${alertsOf(w)} | ${log.slice(-6).join(' / ')}`);
   // 단계 안내: the step's guide is there, its answer is one of its options, and the reference run shows every moment it points to.
   const g = guideOf(m.id);
-  assert.ok(g && g.predict.answer < g.predict.options.length && g.observe.length >= 2, `${m.id}: a step guide (예측 · 관찰 2개 이상 · 개념)`);
+  assert.ok(g && g.predict && g.predict.answer < g.predict.options.length && g.observe.length >= 2, `${m.id}: a step guide (예측 · 관찰 2개 이상 · 개념)`);
   const unseen = g.observe.filter((o) => w.cell!.observed[o.id] === undefined).map((o) => o.id);
   assert.deepEqual(unseen, [], `${m.id}: moments to observe that the reference run never showed`);
   const el = w.cell!.startT === null ? 0 : w.cell!.endT! - w.cell!.startT;

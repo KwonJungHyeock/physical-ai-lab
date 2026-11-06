@@ -10,12 +10,12 @@
 
 import { makeObject, type DeskObject } from '../desk';
 import { COLOR_HEX, type ColorName } from '../board';
-import { CELLS, C_AT, PART_HEIGHT, STONE_TRAY, fromShop, gridPlace, magazineParts, makePart, type CellId, type CellLayout } from './cells';
+import { CAFE_AT, CELLS, C_AT, PART_HEIGHT, STONE_TRAY, fromShop, gridPlace, magazineParts, makePart, type CellId, type CellLayout } from './cells';
 import { REJECT, outlineOf, type Outline, type VisionState } from './vision';
 import type { CellAlert } from './faults';
 import type { LineState } from './line';
-import { ICED_AMERICANO, drinkVerdict, orderName, type CafeOrder, type CafeState } from './cafe';
-import { LESS_ICE_EXTRA_SHOT, RECIPE_ANSWER, recipeCode } from './cafeRecipe';
+import { ICED_AMERICANO, drinkVerdict, menuOf, type CafeOrder, type CafeSpawn, type CafeState } from './cafe';
+import { cafeProgram, newRecipe, type MenuRecipe } from './cafeMenu';
 import { G3_CARD, LIFT_MM, cardsOf, inkVerdict, readInk, type DrawState, type Phrase, type Strokes } from './draw';
 import { G_ANSWER, drawCode, type DrawRecipe } from './drawRecipe';
 import { ON_POINT_MM, robotStones, stoneAt, type BoardState, type Pt } from './board';
@@ -38,6 +38,10 @@ export interface MissionSetup {
   orders?: number;
   /** F: what each drink is (the order screen's recipe; default a tall iced americano). */
   order?: CafeOrder;
+  /** F: the orders waiting at the start, by menu (1 …; default `orders` × menu 1). */
+  menuQueue?: number[];
+  /** F 운영 모드: customers keep coming. */
+  spawn?: CafeSpawn;
   /** G: where the customers put their cards down (the corner; default CARD_HOME). */
   card?: { x: number; y: number };
 }
@@ -60,6 +64,8 @@ export interface Judge {
   trail?: Strokes;
   /** H: the board, its stones and the game. */
   board?: BoardState;
+  /** The tool tip now, robot mm (a 해 보기 step that moves the arm by hand). */
+  tip?: { x: number; y: number; z: number } | null;
 }
 
 export type CellEvent =
@@ -101,6 +107,15 @@ export interface CellMission {
   solution?: string;
   /** Seconds the run may take (the 도전 steps), or none. */
   timeS?: number;
+  /**
+   * 입문 카페의 단계 묶음 (보기 · 해 보기 · 만들기 · 미션 · 운영), and how the step is done:
+   * 'watch' — the ready program is played; 'hand' — by hand (the equipment's buttons, the jog), its
+   * checks read as it goes; 'make' — the student's own menus and motion (나만의 카페).
+   */
+  stage?: string;
+  mode?: 'watch' | 'hand' | 'make';
+  /** A 'hand' step that moves the arm: where the tool tip should go (a ring in the scene), robot mm. */
+  target?: [number, number, number];
 }
 
 /* --- checks ---------------------------------------------------------------- */
@@ -1074,14 +1089,14 @@ const cupAt = (j: Judge, place: string) => {
   return partAt(j, p.x, p.y, p.z);
 };
 
-/** A cup standing at `place` with the order in it (and nothing spilled). */
+/** A cup standing at `place` with menu 1 in it (the step's order, or the student's own menu), nothing spilled. */
 function drinkOn(place: string, label: string): Check {
   return {
     label,
     judge: (j) => {
       const o = cupAt(j, place);
       if (!o) return { ok: false, detail: `${place}에 컵이 없어요` };
-      const v = drinkVerdict(o.drink, j.cafe?.order);
+      const v = drinkVerdict(o.drink, j.cafe ? menuOf(j.cafe, 1) : undefined);
       return { ok: v.ok, detail: v.why };
     },
   };
@@ -1095,8 +1110,8 @@ const noTrayPour: Check = {
   },
 };
 
-const served = (n: number, o: CafeOrder = ICED_AMERICANO): Check => ({
-  label: `손님에게 ${o.name} ${n}잔`,
+const served = (n: number): Check => ({
+  label: `손님에게 주문한 음료 ${n}잔`,
   judge: (j) => {
     const s = j.cafe?.served ?? [];
     const good = s.filter((d) => d.ok).length;
@@ -1110,57 +1125,165 @@ const doorSafe: Check = {
   judge: (j) => (j.cafe?.doorBreaches ? { ok: false, detail: `${j.cafe.doorBreaches}번` } : { ok: true }),
 };
 
-/** The step's reference program: its answer cards (cafeRecipe.ts), so the cards and the checks stay one. */
-const cafeSolution = (id: string) => recipeCode(RECIPE_ANSWER[id]).code;
+/** 미션 3: two menus registered (나만의 카페's cards). */
+const twoMenus: Check = {
+  label: '메뉴 2개를 등록했어요',
+  judge: (j) => {
+    const n = j.cafe?.menus.filter(Boolean).length ?? 0;
+    return { ok: n >= 2, detail: `${n}개` };
+  },
+};
+
+/** 운영: of all the customers, how many got a good drink. */
+const rate = (p: number, customers: number): Check => ({
+  label: `손님 ${customers}명 중 ${Math.ceil(p * customers)}명 이상 성공`,
+  judge: (j) => {
+    const c = j.cafe;
+    const good = c?.served.filter((d) => d.ok).length ?? 0;
+    return { ok: good >= Math.ceil(p * customers), detail: `${good} / ${customers}명 · 돌아간 손님 ${c?.left ?? 0}명` };
+  },
+});
+
+/** 해 보기 ①: a double shot in the cup under the coffee machine, started by hand. */
+const shotByHand: Check = {
+  label: '커피 머신의 컵에 샷 2개 (60 ml)',
+  judge: (j) => {
+    const o = cupAt(j, '커피 머신');
+    const shot = Math.round(o?.drink?.shot ?? 0);
+    return { ok: shot >= 59 && !(o?.drink?.spilled ?? 0), detail: `${shot} / 60 ml` };
+  },
+};
+
+/** 해 보기 ②: the tool tip brought by hand to the ring over the cup dispenser's shelf. */
+const CUP_RING: [number, number, number] = [CAFE_AT.cup.x, CAFE_AT.cup.y, 60];
+const tipAt: Check = {
+  label: '손끝이 고리 안에 (15 mm 안)',
+  judge: (j) => {
+    if (!j.tip) return { ok: false, detail: '아직 움직이지 않았어요' };
+    const d = Math.hypot(j.tip.x - CUP_RING[0], j.tip.y - CUP_RING[1], j.tip.z - CUP_RING[2]);
+    return { ok: d <= 15, detail: `고리까지 ${Math.round(d)} mm` };
+  },
+};
+
+/** The steps' reference programs: the café program with one iced-americano card (cafeMenu.ts). */
+const ICED = (door: boolean) => newRecipe(ICED_AMERICANO, door);
+const cafeAnswer = (recipes: MenuRecipe[], orders: number) => cafeProgram(recipes, orders).code;
+/** 운영: customers keep coming (a seeded stream: a class gets the same ones). */
+export const CAFE_DAY: CafeSpawn = { seed: 7, customers: 10, gap: [45, 85], patience: 200 };
 
 const F: CellMission[] = [
   {
     id: 'F1',
     cell: 'cafe',
     n: 1,
-    title: '둘러보기: 아이스 아메리카노 한 잔',
-    adds: '공정 5개로 한 잔이 만들어지는 걸 보기',
-    goal: '주문 1잔: 공정 카드 5장(컵 → 얼음 → 샷 → 물 → 건네기)대로 만들어 손님에게 건네요. 로봇이 장비마다 무엇을 기다리는지 보세요.',
-    hint: '실제 로봇 카페도 주문이 들어오면 컵 → 얼음 → 샷 → 물 → 픽업 순서로 돌아요. 카드를 펼치면 로봇이 그 공정에서 하는 동작이 보여요.',
+    stage: '보기',
+    mode: 'watch',
+    title: '미리보기: 실제 카페 로봇',
+    adds: '로봇 카페가 한 잔을 만드는 걸 처음부터 끝까지 보기',
+    goal: '실제 로봇 카페처럼 주문 한 잔이 만들어지는 걸 봐요. 장면이 멈추면 O · X로 답해요.',
+    hint: '컵 → 얼음 → 샷 → 물 → 건네기. 로봇은 장비가 보내는 신호를 보고 다음 동작을 해요.',
     setup: { parts: () => [], auto: false, orders: 1, order: ICED_AMERICANO },
     checks: [served(1), noTrayPour, safe],
-    solution: cafeSolution('F1'),
+    solution: cafeAnswer([ICED(true)], 1),
   },
   {
     id: 'F2',
     cell: 'cafe',
     n: 2,
-    title: '신호 기다리기',
-    adds: '샷 추출이 끝날 때까지 기다렸다가 컵 꺼내기',
-    goal: '아이스 아메리카노 한 잔을 픽업 1에 놓아요. 커피 머신의 [추출 끝] 신호를 받고 나서 컵을 꺼내야 해요.',
-    hint: "추출은 28초 걸려요. ③ 샷 카드를 펼치면 '[추출 끝]까지 기다리기'가 꺼져 있어요. 기다리지 않고 컵을 빼면 나머지 커피가 받침대로 쏟아져요.",
-    setup: { parts: () => [], auto: false, orders: 1, order: ICED_AMERICANO },
-    checks: [drinkOn('픽업 1', '픽업 1에 아이스 아메리카노'), noTrayPour, safe],
-    solution: cafeSolution('F2'),
+    stage: '해 보기',
+    mode: 'hand',
+    title: '해 보기: 신호로 추출하기',
+    adds: '장비 버튼을 직접 눌러 신호가 어떻게 바뀌는지 보기',
+    goal: '커피 머신 아래 컵이 있어요. [추출] 버튼을 눌러 샷 2개를 받고, [추출 끝]이 켜질 때까지 기다려요.',
+    hint: '버튼을 누르면 [추출 중]이 켜지고 28초 뒤 [추출 끝]이 켜져요. 로봇도 이 신호를 보고 움직여요.',
+    setup: { parts: (l) => [makeObject('cup', { x: l.places['커피 머신'].x, y: l.places['커피 머신'].y, z: 0.3 }, { size: [18, 18, 24], color: '#f3efe6', massG: 12, drink: { ice: 0, shot: 0, water: 0, spilled: 0 } })], auto: false, orders: 0 },
+    checks: [shotByHand, noTrayPour],
+    solution: 'from edu import robot, cell\n\ncell.set("추출 시작", True)\ncell.wait("추출 끝")\ncell.set("추출 시작", False)\n',
   },
   {
     id: 'F3',
     cell: 'cafe',
     n: 3,
-    title: '주문이 바뀌었다: 얼음 적게 · 샷 추가',
-    adds: '주문대로 양을 맞추고 빠진 공정 넣기',
-    goal: `주문 '${orderName(LESS_ICE_EXTRA_SHOT)}': 얼음 100 ml · 샷 3개(90 ml) · 물 150 ml를 픽업 1에 놓아요.`,
-    hint: '컵은 355 ml예요. 샷만 늘리고 얼음을 그대로 두면 넘쳐요. 빠진 ④ 물 카드는 [+ 카드]로 넣고 ▲로 ⑤ 건네기 앞에 옮겨요.',
-    setup: { parts: () => [], auto: false, orders: 1, order: LESS_ICE_EXTRA_SHOT },
-    checks: [drinkOn('픽업 1', `픽업 1에 ${orderName(LESS_ICE_EXTRA_SHOT)}`), noTrayPour, safe],
-    solution: cafeSolution('F3'),
+    stage: '해 보기',
+    mode: 'hand',
+    target: CUP_RING,
+    title: '해 보기: 조그로 위치 잡기',
+    adds: '조그로 손끝을 원하는 곳에 옮겨 보기 (일반 제어)',
+    goal: '조그로 로봇 손끝을 컵 나오는 곳 위 고리까지 옮겨요.',
+    hint: '좌표 조그로 X · Y를 먼저 맞추고 Z로 높이를 맞춰요. 로봇이 컵을 집는 자리는 이렇게 가르쳐 둔 거예요.',
+    setup: { parts: () => [], auto: false, orders: 0 },
+    checks: [tipAt],
+    solution: `from edu import robot\n\nrobot.move_to(${CUP_RING.join(', ')})\n`,
   },
   {
     id: 'F4',
     cell: 'cafe',
     n: 4,
-    title: '안전하게 건네기 · 주문 2잔',
-    adds: '픽업 문으로 건네고, 문이 열린 동안 팔은 밖에 · 2잔 반복',
-    goal: '주문 2잔을 만들어 픽업 문으로 손님에게 건네요. 손님이 가져가면 문을 닫아요.',
-    hint: "⑤ 건네기 카드를 펼쳐 '픽업 문 열기 → 손님이 가져갈 때까지 → 문 닫기'를 켜요. 놓기 → 팔 빼기 → 문 열기 순서라 문이 열린 동안 팔은 밖에 있어요. 실제 로봇 카페는 한 잔에 40초~1분이 걸려요.",
-    setup: { parts: () => [], auto: false, orders: 2, order: ICED_AMERICANO },
+    stage: '만들기',
+    mode: 'make',
+    title: '나만의 카페: 내 메뉴 한 잔',
+    adds: '내 메뉴를 만들고, 그 메뉴를 만드는 로봇 동작 만들기',
+    goal: '메뉴를 하나 만들고(이름 · 샷 · 얼음 · 물), 로봇이 그 메뉴 한 잔을 픽업대에 놓게 해요.',
+    hint: '장비마다 기다림을 정해요. [끝 신호까지]면 안전하고, 초로 정하면 장비가 붓는 시간보다 짧을 때 쏟아져요.',
+    setup: { parts: () => [], auto: false, orders: 1 },
+    checks: [drinkOn('픽업 1', '픽업 1에 내 메뉴 한 잔'), noTrayPour, safe],
+    solution: cafeAnswer([ICED(false)], 1),
+  },
+  {
+    id: 'F5',
+    cell: 'cafe',
+    n: 5,
+    stage: '미션',
+    mode: 'make',
+    title: '미션 1: 손님에게 안전하게',
+    adds: '픽업 문으로 건네고, 문이 열린 동안 팔은 밖에',
+    goal: '내 메뉴 한 잔을 픽업 문으로 손님에게 건네요. 손님이 가져가면 문을 닫아요.',
+    hint: '놓기 → 팔 빼기 → 문 열기 → 손님이 가져갈 때까지 → 문 닫기. 문이 열린 픽업대에 팔이 들어가면 멈춰요.',
+    setup: { parts: () => [], auto: false, orders: 1 },
+    checks: [served(1), doorSafe, noTrayPour, safe],
+    solution: cafeAnswer([ICED(true)], 1),
+  },
+  {
+    id: 'F6',
+    cell: 'cafe',
+    n: 6,
+    stage: '미션',
+    mode: 'make',
+    title: '미션 2: 두 잔 연속',
+    adds: '주문 2잔을 이어서 만들기',
+    goal: '손님 2명이 내 메뉴를 주문했어요. 두 잔을 이어서 만들어 건네요.',
+    hint: '같은 동작을 주문마다 되풀이해요. 한 잔이 픽업대에 있으면 다음 잔을 놓을 수 없어요.',
+    setup: { parts: () => [], auto: false, orders: 2 },
     checks: [served(2), doorSafe, noTrayPour, safe],
-    solution: cafeSolution('F4'),
+    solution: cafeAnswer([ICED(true)], 2),
+  },
+  {
+    id: 'F7',
+    cell: 'cafe',
+    n: 7,
+    stage: '미션',
+    mode: 'make',
+    title: '미션 3: 다른 메뉴 주문',
+    adds: '메뉴를 하나 더 만들어 주문에 맞게 만들기',
+    goal: '첫 손님은 메뉴 1, 둘째 손님은 메뉴 2를 주문했어요. 메뉴 2를 만들고 두 잔을 건네요.',
+    hint: '로봇은 주문 화면의 메뉴 번호를 보고 그 메뉴 카드의 동작을 해요.',
+    setup: { parts: () => [], auto: false, orders: 2, menuQueue: [1, 2] },
+    checks: [twoMenus, served(2), doorSafe, noTrayPour, safe],
+    solution: cafeAnswer([ICED(true), newRecipe({ name: '따뜻한 아메리카노', ice: 0, shots: 2, water: 200, hot: true }, true)], 2),
+  },
+  {
+    id: 'F8',
+    cell: 'cafe',
+    n: 8,
+    stage: '운영',
+    mode: 'make',
+    title: '운영: 카페 열기',
+    adds: '손님이 계속 오는 카페를 내 메뉴들로 운영하기',
+    goal: `손님 ${CAFE_DAY.customers}명이 차례로 와서 내 메뉴를 주문해요. 8명 이상에게 제대로 된 음료를 건네요.`,
+    hint: '오래 기다린 손님은 돌아가요. 기다림을 끝 신호에 맞추면 한 잔이 빨라져요.',
+    setup: { parts: () => [], auto: false, orders: CAFE_DAY.customers, spawn: CAFE_DAY },
+    checks: [rate(0.8, CAFE_DAY.customers), doorSafe, safe],
+    solution: cafeAnswer([ICED(true), newRecipe({ name: '따뜻한 아메리카노', ice: 0, shots: 2, water: 200, hot: true }, true)], CAFE_DAY.customers),
   },
 ];
 

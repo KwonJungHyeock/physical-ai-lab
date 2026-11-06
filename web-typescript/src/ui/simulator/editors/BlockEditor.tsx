@@ -133,6 +133,7 @@ const COLOR_CLASS: Record<Step['type'], string> = {
   cellWait: css.c_flow,
   cellSet: css.c_flow,
   cellAmount: css.c_flow,
+  cellMenu: css.c_flow,
   cellLook: css.c_eye,
   cellLearn: css.c_eye,
   cellRule: css.c_eye,
@@ -306,6 +307,8 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
         return { type: 'cellWait', signal: lay?.inputs[0] ?? '끝 센서', on: true, line };
       case 'cellSet':
         return { type: 'cellSet', signal: lay?.outputs[0] ?? '컨베이어', on: true, line };
+      case 'cellMenu':
+        return { type: 'cellMenu', slot: 1, name: '아이스 아메리카노', ice: 145, shots: 2, water: 150, hot: false, line };
       case 'cellAmount':
         return { type: 'cellAmount', station: lay?.line.cafe?.stations[0].name ?? '제빙기', value: 145, line };
       case 'cellLook':
@@ -658,6 +661,12 @@ export default function BlockEditor({ code, onCode, effector, cameraFlange, them
             {preview ? <span>{s.signal} ▾</span> : sel({ label: '장비', value: s.signal, options: opts(lay?.outputs ?? [], s.signal), onChange: (v) => ((s.signal = v), commit()) })}
             {preview ? <span>켜기 ▾</span> : sel({ label: '켜기 · 끄기', value: s.on ? 'on' : 'off', options: [['켜기', 'on'], ['끄기', 'off']], onChange: (v) => ((s.on = v === 'on'), commit()) })}
           </>
+        );
+      case 'cellMenu':
+        return (
+          <span>
+            메뉴 {s.slot} · {s.name} (얼음 {s.ice} · 샷 {s.shots} · {s.hot ? '온수' : '물'} {s.water} ml)
+          </span>
         );
       case 'cellAmount':
         return (
