@@ -76,9 +76,9 @@ export default function TutorialStrip(p: Props) {
   const over = p.step >= t.steps.length;
   const m = cur?.meter && now ? cur.meter(now, p.start) : null;
   return (
-    <section className={css.strip} aria-label={`튜토리얼 ${p.n}: ${t.title}`} data-done={over || undefined}>
+    <section className={css.strip} aria-label={`${p.n ? `튜토리얼 ${p.n}` : '맛보기'}: ${t.title}`} data-done={over || undefined}>
       <header>
-        <em>TUTORIAL {p.n}</em>
+        <em>{p.n ? `TUTORIAL ${p.n}` : 'TASTE'}</em>
         <b>{t.title}</b>
         <button type="button" className={css.close} onClick={p.onClose} aria-label="튜토리얼 그만하기" title="그만하기">
           ×
@@ -113,7 +113,7 @@ export default function TutorialStrip(p: Props) {
           </p>
           {p.n < p.of && (
             <button type="button" className={css.next} onClick={p.onNext}>
-              다음 튜토리얼 ›
+              {p.n ? '다음 튜토리얼 ›' : '1단계 튜토리얼 ›'}
             </button>
           )}
         </div>

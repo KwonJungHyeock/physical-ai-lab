@@ -127,6 +127,7 @@ import { HandPane, WatchPane } from './editors/CafeSteps';
 import DrawCards from './editors/DrawCards';
 import BoardCards from './editors/BoardCards';
 import ThemePanel from './tasks/ThemePanel';
+import TutorialList from './tasks/TutorialList';
 import TutorialStrip from './tasks/TutorialStrip';
 import { MomentAsk, PredictCard, StepResult, loadPredictions, savePrediction } from './stage/StepGuide';
 import { QUESTS, questNow, type QuestPhase } from '@/engine/simulator/cell/quests';
@@ -4430,11 +4431,11 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                 },
                 onStart: () => {
                   setEntered(true);
-                  // 입문: SIMULATOR is the arm alone (기초 조작, the tutorials' list); 테마학습 is the café.
+                  // 입문: SIMULATOR is the arm alone in 제어 (its 맛보기 and tutorials on top); 테마학습 is the café.
                   if (!track) return;
                   toured.current = true;
                   toPlainDesk();
-                  openSection('theme');
+                  openSection('jog');
                   openTab('direct');
                 },
                 ...(track
@@ -4845,10 +4846,10 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
               setRoadmapOpen(false);
               setEntered(true);
               if (pk.kind === 'tutorial') {
-                // 기초 조작: the plain desk with the arm only (out of the place the track opens in), then the tutorials' list.
+                // 기초 조작: the plain desk with the arm only (out of the place the track opens in), in 제어 with its 맛보기 and tutorials.
                 toured.current = true;
                 toPlainDesk();
-                openSection('theme');
+                openSection('jog');
                 openTab('direct');
                 return;
               }
@@ -4898,6 +4899,11 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   simRate={runRate}
                   cellClock={cellClock}
                   cellCallouts={!!track}
+                  goalRing={(() => {
+                    // 입문 맛보기: the ring the tool tip goes into now.
+                    const at = lifeTut && !cellAt ? lifeTutorialById(lifeTut.id)?.steps[lifeTut.step]?.ring : undefined;
+                    return at ? { at, label: `고리 ${lifeTut!.step + 1}` } : null;
+                  })()}
                   cellTags={cellTags.length ? cellTags : cellAt?.mission && !busy ? cellStepTags(cellAt.cell, missionById(cellAt.mission)?.n ?? 1) : []}
                   display={stageDisplay}
                   frameInsets={frameInsets}
@@ -5019,6 +5025,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                     step={lifeTut.step}
                     read={() => tutCtxRef.current()}
                     start={lifeTut.start}
+                    // 맛보기 is 0 (before the three): its next is the first tutorial.
                     n={LIFE_TUTORIALS.findIndex((x) => x.id === lifeTut.id) + 1}
                     of={LIFE_TUTORIALS.length}
                     onNext={() => {
@@ -5285,10 +5292,10 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                       <div className={css.screen}>{zeroPanel}</div>
                     ) : workScreen === 'theme' ? (
                       <div className={css.screen}>
-                        <ThemePanel cell={cellAt?.cell ?? null} passed={cellPassed} tutorial={lifeTut?.id ?? null} tutorialsDone={tutDone} busy={busy} onSite={(id) => {
+                        <ThemePanel cell={cellAt?.cell ?? null} passed={cellPassed} busy={busy} onSite={(id) => {
                             enterCell(id);
                             showPlace(id);
-                          }} onTutorial={startTutorial} />
+                          }} />
                       </div>
                     ) : workScreen === 'parts' ? (
                       <div className={css.screen}>
@@ -5315,6 +5322,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                       </div>
                     ) : (
                       <div className={css.screen}>
+                        {/* 입문: where the controls are learnt (맛보기, then the three tutorials). */}
+                        {track && !cellAt && <TutorialList running={lifeTut?.id ?? null} done={tutDone} busy={busy} onStart={startTutorial} />}
                         {controlPanel}
                         {toolRow}
                       </div>

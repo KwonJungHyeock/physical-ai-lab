@@ -4,16 +4,13 @@
  * 테마학습 (입문 트랙 ① 생활 로봇): what to learn with, in the side panel, in the 학습 로드맵's
  * dress (Roadmap.tsx). 실생활 협동로봇 — the places where cobots work in everyday life — each a
  * row: a small picture (the roadmap shows them large), the tag and the five field ticks, its name,
- * the fields by name and its four steps as ticks; and three 튜토리얼 on the controls every step
- * uses, cut into one plate.
- * Picking a place opens it in the 3D view with its 작업 순서 cards; picking a tutorial leaves the
- * place for the desk and starts the quest card over the 3D view.
+ * the fields by name and its four steps as ticks. (The 튜토리얼 on the controls are in 제어:
+ * TutorialList.tsx.) Picking a place opens it in the 3D view with its 작업 순서 cards.
  */
 
 import type { CellId } from '@/engine/simulator/cell/cells';
 import { missionsOf } from '@/engine/simulator/cell/missions';
 import { fieldsLine, LIFE_STOPS } from '@/engine/simulator/lifeFields';
-import { LIFE_TUTORIALS } from '@/engine/simulator/lifeTutorials';
 
 import FieldTicks from './FieldTicks';
 import css from './theme.module.css';
@@ -26,12 +23,8 @@ interface Props {
   cell: CellId | null;
   /** Steps passed, by id. */
   passed: Readonly<Record<string, boolean>>;
-  /** The tutorial running, and the ones finished. */
-  tutorial: string | null;
-  tutorialsDone: Readonly<Record<string, boolean>>;
   busy: boolean;
   onSite(id: CellId): void;
-  onTutorial(id: string): void;
 }
 
 export default function ThemePanel(p: Props) {
@@ -91,27 +84,6 @@ export default function ThemePanel(p: Props) {
             );
           })}
         </div>
-      </section>
-      <section>
-        <h4>
-          <em>TUTORIAL</em>
-          <b>튜토리얼</b>
-          <small>조작 익히기</small>
-        </h4>
-        <ol className={css.tuts}>
-          {LIFE_TUTORIALS.map((t, k) => (
-            <li key={t.id}>
-              <button type="button" aria-pressed={p.tutorial === t.id} disabled={p.busy} onClick={() => p.onTutorial(t.id)}>
-                <i data-done={p.tutorialsDone[t.id] || undefined}>{p.tutorialsDone[t.id] ? '✓' : String(k + 1).padStart(2, '0')}</i>
-                <span>
-                  <b>{t.title}</b>
-                  <small>{t.note}</small>
-                </span>
-                <em>{t.steps.length}단계</em>
-              </button>
-            </li>
-          ))}
-        </ol>
       </section>
     </div>
   );

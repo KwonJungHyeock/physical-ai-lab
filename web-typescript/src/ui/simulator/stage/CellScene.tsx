@@ -27,6 +27,7 @@ import { AssemblyCell } from './cell/cellE';
 import { CafeCell } from './cell/cellF';
 import { DrawCell } from './cell/cellG';
 import { BoardCell } from './cell/cellH';
+import GoalRing from './GoalRing';
 import { Backdrop, Cabinet, Conveyor, Fence, Floor, MarkedPlate, Pedestal, StackGlow, Tagged, m } from './cell/kit';
 
 type Tags = Record<string, { at: [number, number, number]; note: string }>;
@@ -251,17 +252,7 @@ function TargetRing({ world }: { world: RefObject<WorldState | null> }) {
     setAt((id && missionById(id)?.target) || null);
   });
   if (!at) return null;
-  return (
-    <group position={[m(at[0]), m(at[1]), m(at[2])]}>
-      <mesh rotation={[0, 0, 0]}>
-        <torusGeometry args={[m(15), m(1.6), 12, 48]} />
-        <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.9} transparent opacity={0.9} />
-      </mesh>
-      <Html center zIndexRange={[21, 0]} style={{ pointerEvents: 'none' }}>
-        <div style={{ transform: 'translateY(-34px)', background: '#fff', color: '#15181c', borderRadius: 8, padding: '4px 9px', font: '800 12.5px Pretendard, sans-serif', whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>여기로 · 고리 안</div>
-      </Html>
-    </group>
-  );
+  return <GoalRing at={at} label="여기로 · 고리 안" />;
 }
 
 export default function CellScene({ world, cell, tags = [], callouts = false }: { world: RefObject<WorldState | null>; cell: CellId; tags?: readonly string[]; callouts?: boolean }) {

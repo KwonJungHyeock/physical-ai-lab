@@ -136,3 +136,20 @@ console.log('  ok   "도형 그리기" draws 네모 · 원 · 삼각형 · 별 a
   assert.ok(G.parse('robot.draw_shape("하트", 5)').errors[0]?.msg.includes('하트'));
   console.log('  ok   a wrong tool, size or shape is refused with a fix');
 }
+
+{
+  // 입문 맛보기: each ring is where the tool tip can go (the arm reaches its centre), and 'done' says so there.
+  const { LIFE_TASTE, RING_MM } = await import('../../src/engine/simulator/lifeTutorials');
+  const { tcpPositionMm } = await import('../../src/engine/robot/motion');
+  const { tcpFor } = await import('../../src/engine/simulator/effectors');
+  for (const [k, st] of LIFE_TASTE.steps.entries()) {
+    const [x, y, z] = st.ring!;
+    const w = await run(`from edu import robot\n\nrobot.home()\nrobot.move_to(${x}, ${y}, ${z})\n`, 'adaptive');
+    const tip = tcpPositionMm(chain, w.angles, tcpFor('adaptive', false));
+    const d = Math.hypot(tip.x - x, tip.y - y, tip.z - z);
+    assert.ok(d <= RING_MM, `맛보기 ring ${k + 1} ${st.ring}: the tip comes ${d.toFixed(1)} mm from it`);
+    const ctx = { angles: w.angles, home: w.angles, tip, poses: {}, flowStep: 1, runs: 0 };
+    assert.ok(st.done(ctx, ctx, {}), `맛보기 ring ${k + 1}: done at the ring`);
+  }
+  console.log(`  ok   입문 맛보기: ${LIFE_TASTE.steps.length} rings in reach, each done when the tip is in it`);
+}

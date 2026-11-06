@@ -40,6 +40,8 @@ export interface TutStep {
   meter?(now: TutCtx, start: TutCtx): { v: number; of: number; unit: string };
   /** Done now? `start`: the context when the step began. */
   done(now: TutCtx, start: TutCtx, mem: TutMem): boolean;
+  /** A glowing ring in the 3D view to bring the tool tip into (robot mm; 맛보기). */
+  ring?: readonly [number, number, number];
 }
 
 export interface LifeTutorial {
@@ -124,4 +126,35 @@ export const LIFE_TUTORIALS: LifeTutorial[] = [
   },
 ];
 
-export const lifeTutorialById = (id: string) => LIFE_TUTORIALS.find((t) => t.id === id) ?? null;
+/** How close the tool tip has to come to a ring's centre, mm. */
+export const RING_MM = 15;
+const dist = (tip: TutCtx['tip'], r: readonly [number, number, number]) => Math.hypot(tip.x - r[0], tip.y - r[1], tip.z - r[2]);
+/** A 맛보기 step: bring the tip into the ring (the meter: how much of the way is done). */
+function ringStep(n: number, r: readonly [number, number, number], target: TutTarget[] = []): TutStep {
+  return {
+    short: `손끝을 고리 ${n} 안으로 넣어요`,
+    panel: 'jog',
+    target,
+    ring: r,
+    meter: (now, start) => {
+      const of = Math.max(1, Math.round(dist(start.tip, r) - RING_MM));
+      return { v: Math.max(0, Math.round(dist(start.tip, r) - dist(now.tip, r))), of, unit: 'mm' };
+    },
+    done: (now) => dist(now.tip, r) <= RING_MM,
+  };
+}
+
+/**
+ * 맛보기 (before the three): a quest to feel the controls — three glowing rings in turn, the tool tip
+ * into each with the 제어 keys (joints or the tip's x · y · z). All three are in easy reach of the
+ * 기본 자세's tip, in front, left and right.
+ */
+export const LIFE_TASTE: LifeTutorial = {
+  id: 'taste',
+  title: '맛보기 · 고리 3개 통과',
+  note: '제어 키로 손끝을 빛나는 고리 안에',
+  steps: [ringStep(1, [170, 0, 150], [{ sel: '[title^="좌표: 손끝"]' }]), ringStep(2, [130, 120, 110]), ringStep(3, [130, -130, 190])],
+  concept: { term: '손끝 (TCP)', def: '로봇이 일하는 곳은 손끝이에요. 관절을 돌리면 손끝이 움직여요.' },
+};
+
+export const lifeTutorialById = (id: string) => (id === LIFE_TASTE.id ? LIFE_TASTE : (LIFE_TUTORIALS.find((t) => t.id === id) ?? null));

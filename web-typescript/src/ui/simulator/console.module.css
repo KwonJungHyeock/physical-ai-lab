@@ -9236,7 +9236,8 @@ div.zeroFlow {
   position: absolute;
   z-index: 6;
   top: calc(var(--top, 0px) + 12px);
-  left: 12px;
+  /* Right of the menu bar down the left edge (it stays while a quest runs). */
+  left: var(--inset-l, 12px);
   width: 300px;
 }
 .questSlot > section {
