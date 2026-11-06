@@ -918,3 +918,9 @@
   background: #f0a23b;
   box-shadow: 0 0 8px #f0a23b;
 }
+
+/* 보기: one machine only (the one the narrated signal is at). */
+.board[data-one] {
+  width: auto;
+  min-width: 200px;
+}

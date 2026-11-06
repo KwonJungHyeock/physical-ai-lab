@@ -143,7 +143,10 @@ export const CELL_VIEW: Record<CellId, { min: readonly [number, number, number];
   inspect: { min: [-60, -450, -30], max: [340, 190, 90], home: [1, 0.95, -0.55] },
   tend: { min: [-80, -370, -30], max: [240, 180, 210], home: [1, 0.95, -0.55] },
   assembly: { min: [-60, -320, -30], max: [280, 340, 90], home: [1, 0.95, -0.55] },
-  cafe: { min: [-80, -330, -20], max: [400, 260, 200], home: [0.3, 1.3, 0.95] },
+  // 로봇 카페: from behind the arm, high (the barista's view over its shoulder): up the picture is the
+  // arm's front (X+), left its left (Y+), so the 제어 keys go the way the picture does, and the machines
+  // read left to right in the drink's order (컵 → 얼음 → 커피 → 물 → 픽업).
+  cafe: { min: [-60, -230, -20], max: [320, 250, 160], home: [-0.48, 1, 0] },
   draw: { min: [-60, -150, -10], max: [330, 170, 230], home: [0.35, 1.25, 1] },
   board: { min: [-60, -150, -10], max: [320, 180, 230], home: [0.35, 1.25, 1] },
 };

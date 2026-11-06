@@ -45,7 +45,8 @@ function near(name: string, x: number, y: number, z = 40, off: V3 = [175, -510, 
 }
 
 const A = CAFE_AT;
-const CAFE_OFF: V3 = [50, -270, 650];
+/** 로봇 카페: from behind the arm and high, as its home view (CellScene CELL_VIEW): the 제어 keys keep their way on screen. */
+const CAFE_OFF: V3 = [-250, 0, 640];
 const CARD_MID: [number, number] = [CARD_HOME.x + CARD_MM.w / 2, CARD_HOME.y + CARD_MM.h / 2];
 const BOARD_MID: [number, number] = [BOARD.x0 + ((BOARD.n - 1) * BOARD.pitch) / 2, BOARD.y0 + ((BOARD.n - 1) * BOARD.pitch) / 2];
 const TRAY_MID: [number, number] = [STONE_TRAY.x + STONE_TRAY.pitch, STONE_TRAY.y + 2 * STONE_TRAY.pitch];

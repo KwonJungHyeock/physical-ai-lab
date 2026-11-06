@@ -725,7 +725,10 @@ function ShopFloor() {
   );
 }
 
-/** Tables, stools, a plant and the menu board out in the shop; a customer at the pickup window, one at the kiosk. */
+/**
+ * Tables, stools, a plant and the menu board out in the shop; a customer at the pickup window, one at the kiosk.
+ * Nothing between the arm's back and the camera (the 입문 view is over its shoulder, CellScene CELL_VIEW).
+ */
 function Shop() {
   const fz = F;
   return (
@@ -735,8 +738,8 @@ function Shop() {
       <Model group="cafe" name="stool" at={[-320, -460]} z={fz} h={130} />
       <Model group="cafe" name="table" at={[520, -420]} z={fz} h={150} />
       <Model group="cafe" name="chair" at={[580, -380]} z={fz} h={180} yaw={-Math.PI / 2} />
-      <Model group="cafe" name="plant" at={[-190, 280]} z={fz} h={260} />
-      <Model group="cafe" name="chalkboard" at={[-200, -300]} z={fz} h={230} yaw={0.5} />
+      <Model group="cafe" name="plant" at={[470, 330]} z={fz} h={260} />
+      <Model group="cafe" name="chalkboard" at={[600, -170]} z={fz} h={230} yaw={-1.2} />
       <Model group="people" name="customer" at={[98, -330]} z={fz} h={340} yaw={Math.PI} pose="Idle" poseAt={0.1} smooth live />
       <Model group="people" name="customer" at={[402, -300]} z={fz} h={330} yaw={Math.PI * 0.95} pose="Idle" poseAt={0.6} smooth live />
     </Suspense>

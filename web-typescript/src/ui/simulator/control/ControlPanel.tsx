@@ -44,6 +44,8 @@ export interface ToolNow {
 interface Props {
   /** Live joint angles (read here: the jog panel redraws, not the whole console). */
   live: Live;
+  /** The frame it opens in (입문 카페's jog step: 'base' = 좌표); 관절 otherwise. */
+  startFrame?: Frame;
   /** Tool tip position for given angles, mm. */
   tipOf(angles: readonly number[]): ToolNow | null;
   busy: boolean;
@@ -254,7 +256,7 @@ export default function ControlPanel(p: Props) {
   const angles = useLive(p.live, (v) => v.angles);
   const { tipOf } = p;
   const tip = useMemo(() => tipOf(angles), [tipOf, angles]);
-  const [frame, setFrame] = useState<Frame>(FIRST_FRAME);
+  const [frame, setFrame] = useState<Frame>(p.startFrame ?? FIRST_FRAME);
   const [jStep, setJStep] = useState(5);
   const [tStep, setTStep] = useState(10);
   const [drag, setDrag] = useState<{ i: number; deg: number } | null>(null);

@@ -247,6 +247,8 @@ const CAM_ROLES_KEY = 'robot-console-cam-roles';
 /** What the side panel shows: direct control, or the editor of one language. */
 type PanelTab = 'direct' | 'process' | Level;
 /** A picture of each arm family (rendered from its 3D model, tools/build/part-thumbs.mjs). */
+/** 입문 · 로봇 카페: the left menu inside the café (테마학습 · 제어 · 순서). */
+const CAFE_MENU = ['theme', 'jog', 'code'];
 const FIRST_LOG: Record<Level, string> = {
   basic: '블록을 쌓고 [시뮬레이션]을 눌러 보세요.',
   python: '파이썬 코드를 고치고 [시뮬레이션]을 눌러 보세요. 통과한 코드는 로봇에서 그대로 돌아가요.',
@@ -1914,6 +1916,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   // 입문 퀘스트 모드: a place's step (or a 기초 조작 tutorial) is a quest — 브리핑 → 해 보기 → 실행 · 관찰 → 결과.
   // The quest card (top left) says what to do now; the side panel follows the phase; the left menu folds away.
   const questOn = !!track && (!!lifeStep || !!lifeTut);
+  /** 입문 · 로봇 카페: how the step is done (보기 · 해 보기 · 만들기): what the screen shows follows it. */
+  const cafeMode = track && cellAt?.cell === 'cafe' && cellAt.mission ? missionById(cellAt.mission)?.mode : undefined;
   const questQ = lifeStep ? QUESTS[lifeStep.id] : undefined;
   const questPhase: QuestPhase | null =
     lifeStep && cellAt ? (busy ? 'run' : cellResult !== null && lastChecks ? 'result' : 'do') : null;
@@ -1941,6 +1945,12 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     heldRef.current = false;
     setMoment(null);
   };
+  // Another step (or none): a question still open from the last one goes with it.
+  const askMission = cellAt?.mission ?? null;
+  useEffect(() => {
+    heldRef.current = false;
+    setMoment(null);
+  }, [askMission]);
   const passedRun = (text: string, actions: RobotAction[], start?: number[]) => {
     if (tab === 'process') markStart('process');
     else if (tab === 'basic') markStart('code');
@@ -3960,6 +3970,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
 
   const controlPanel = (
     <ControlPanel
+      startFrame={track && cellAt?.mission && missionById(cellAt.mission)?.target ? 'base' : undefined}
       live={live}
       speed={jogSpeed}
       onSpeed={setJogSpeed}
@@ -4091,7 +4102,9 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   ];
   const barGroups = track?.menu.includes('theme') ? lifeGroups : fullGroups;
   // A 트랙 opens only its menus.
-  const shownGroups = track ? barGroups.map((g) => ({ ...g, items: g.items.filter((i) => track.menu.includes(i.id)) })).filter((g) => g.items.length) : barGroups;
+  // 입문 · 로봇 카페: inside the café only 테마학습 · 제어 · 순서 (what its quests use).
+  const inCafe = !!track && cellAt?.cell === 'cafe';
+  const shownGroups = track ? barGroups.map((g) => ({ ...g, items: g.items.filter((i) => track.menu.includes(i.id) && (!inCafe || CAFE_MENU.includes(i.id))) })).filter((g) => g.items.length) : barGroups;
   // The mini arm (angles, load, tip position) stays on every screen, 제어 too.
   const miniWanted = display.mini;
   const miniOn = miniWanted && !railOpen && !cellAt;
@@ -4967,7 +4980,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   }}
                 />}
               {/* 입문 현장의 공정 띠: the order (or the game) and what the step is about, over the scene. */}
-              {loaded && view === 'sim' && track && cellAt?.cell === 'cafe' && <CafeStrip world={world} />}
+              {loaded && view === 'sim' && track && cellAt?.cell === 'cafe' && (cafeMode ? cafeMode === 'make' && busy : true) && <CafeStrip world={world} />}
               {loaded && view === 'sim' && track && cellAt?.cell === 'draw' && <DrawStrip world={world} />}
               {loaded && view === 'sim' && track && cellAt?.cell === 'board' && <BoardStrip world={world} />}
               {/* 퀘스트 모드: the result over the scene (the side panel keeps to 제어 · 실습). */}
@@ -5098,7 +5111,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
               )}
               {loaded && view === 'sim' && !railOpen && !cellAt && <HudGauges speed={jogSpeed} monitor={monitor} dock={dockShown ? 'open' : 'closed'} />}
               {loaded && view === 'sim' && (
-                <LeftRail groups={shownGroups} foot={barFoot} sheetOpen={railOpen !== null} onCloseSheet={() => setRailOpen(null)}>
+                <LeftRail groups={shownGroups} foot={inCafe ? undefined : barFoot} sheetOpen={railOpen !== null} onCloseSheet={() => setRailOpen(null)}>
                   {(railOpen === 'env' || railOpen === 'objects') && (
                     <DeskPanel
                       key={railOpen}
@@ -5147,7 +5160,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                 </LeftRail>
               )}
               <Notices
-                entries={log}
+                entries={questOn && cellAt ? log.filter((e) => e.msg !== FIRST_LOG.basic) : log}
                 guide={questOn ? null : (guide ?? lifeGuide)}
                 quiet={!!(lifeStep && cellAt && cellResult !== null && lastChecks && !busy && view === 'sim')}
                 above={
@@ -5600,7 +5613,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                         }}
                       />
                     )}
-                    {!cellTermOn && !armTermOn && runBar}
+                    {!cellTermOn && !armTermOn && cafeMode !== 'hand' && runBar}
                   </div>
                 )}
               </>
