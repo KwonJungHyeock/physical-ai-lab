@@ -46,6 +46,8 @@ interface Props {
   live: Live;
   /** The frame it opens in (입문 카페's jog step: 'base' = 좌표); 관절 otherwise. */
   startFrame?: Frame;
+  /** Only the tip's moves (입문 카페's jog step): no 손 방향 cards, no tip line. */
+  moveOnly?: boolean;
   /** Tool tip position for given angles, mm. */
   tipOf(angles: readonly number[]): ToolNow | null;
   busy: boolean;
@@ -632,6 +634,8 @@ export default function ControlPanel(p: Props) {
               </span>
             </div>
           </div>
+          {!p.moveOnly && (
+          <>
           <p className={`${css.cap} ${css.turnCap}`}>
             손 방향 <small>{turnStep}°</small>
             {p.onToolDown && (
@@ -666,6 +670,8 @@ export default function ControlPanel(p: Props) {
               <b>크게 옮길 땐 [관절]</b>, 블록 위에 맞출 땐 [좌표].
             </span>
           </div>
+          </>
+          )}
         </>
       )}
     </div>

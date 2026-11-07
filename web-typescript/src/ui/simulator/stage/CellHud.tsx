@@ -121,6 +121,8 @@ export interface QuestInfo {
   checks: { label: string; ok: boolean; detail?: string }[] | null;
   now: string;
   onList(): void;
+  /** 예측 (O · X) open over the scene now. */
+  asking?: boolean;
 }
 
 interface QuestCardProps {
@@ -148,6 +150,7 @@ export function QuestCard(p: QuestCardProps) {
   const stop = LIFE_STOPS.find((s) => s.opens === p.cell);
   const built = CELL_BY_ID[p.cell].built;
   const open = (i: number) => built && (p.allOpen || i === 0 || !!p.passed[steps[i - 1].id]);
+  if (p.inPanel) return <PanelQuest {...p} />;
   return (
         <nav className={css.stepper} data-panel={p.inPanel || undefined} aria-label="퀘스트">
           <header>
@@ -229,6 +232,83 @@ export function QuestCard(p: QuestCardProps) {
 }
 
 
+
+/** The four moves of every quest, as the lesson plan names them (manuals/course/life-track-teacher.md). */
+const PHASES = ['할 일', '예측', '관찰', '개념'] as const;
+
+/**
+ * 입문 퀘스트 모드, the top of the side panel: one line for where the place is (its quests as dots,
+ * n / N, the list), the quest's name, the four moves with the one now lit, and the one sentence to do
+ * now with its hint. What the quest changes stands right under it (the café: CafeMaker FOCUS).
+ */
+function PanelQuest(p: QuestCardProps) {
+  const [hint, setHint] = useState(false);
+  const steps = missionsOf(p.cell);
+  const m = p.mission ? missionById(p.mission) : null;
+  const built = CELL_BY_ID[p.cell].built;
+  const open = (i: number) => built && (p.allOpen || i === 0 || !!p.passed[steps[i - 1].id]);
+  const q = p.quest;
+  const now = !q ? -1 : q.asking ? 1 : q.phase === 'do' ? 0 : q.phase === 'run' ? 2 : 3;
+  return (
+    <nav className={css.qPanel} aria-label="퀘스트">
+      <div className={css.qBar}>
+        <ol>
+          {steps.map((s, i) => (
+            <li key={s.id} data-cur={s.id === p.mission || undefined} data-done={p.passed[s.id] || undefined}>
+              <button type="button" disabled={p.busy || !open(i)} onClick={() => p.onMission(s.id)} title={open(i) ? `퀘스트 ${s.n} ${s.title}` : '앞 퀘스트를 통과하면 열려요'} aria-pressed={s.id === p.mission} aria-label={`퀘스트 ${s.n} ${s.title}`}>
+                {p.passed[s.id] ? '✓' : s.n}
+              </button>
+            </li>
+          ))}
+        </ol>
+        <span>
+          {steps.filter((s) => p.passed[s.id]).length} / {steps.length}
+        </span>
+        {q && (
+          <button type="button" onClick={q.onList} disabled={p.busy}>
+            목록
+          </button>
+        )}
+      </div>
+      {m ? (
+        <>
+          <h3 className={css.qBig}>
+            <small>
+              퀘스트 {m.n}
+              {m.stage ? ` · ${m.stage}` : ''}
+            </small>
+            {m.title.replace(/^[^:]+:\s*/, '')}
+          </h3>
+          {q && (
+            <ol className={css.qPhases} aria-label="단계">
+              {PHASES.map((ph, k) => (
+                <li key={ph} data-on={k === now || undefined} data-done={k < now || undefined}>
+                  {ph}
+                </li>
+              ))}
+            </ol>
+          )}
+          {q && (
+            <div className={css.qDo} data-phase={q.phase}>
+              <p>{q.now}</p>
+              {q.phase === 'do' && (
+                <button type="button" aria-expanded={hint} onClick={() => setHint((h) => !h)}>
+                  {hint ? '힌트 접기' : '힌트'}
+                </button>
+              )}
+              {hint && q.phase === 'do' && <small>{m.hint}</small>}
+            </div>
+          )}
+        </>
+      ) : (
+        <h3 className={css.qBig}>
+          <small>자유 연습</small>
+          채점 없이 메뉴를 모두 써 봐요
+        </h3>
+      )}
+    </nav>
+  );
+}
 
 export default function CellHud(p: CellHudProps) {
   const [snap, setSnap] = useState<Snap | null>(() => snapOf(p.world.current));

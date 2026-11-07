@@ -168,161 +168,205 @@ export default function CafeMaker({ mission, busy, runningLine, onCode, world, f
   const xs: number[] = [];
   for (let k = 0; k < steps.length; k += 1) xs.push(k ? xs[k - 1] + steps[k - 1].armS + (steps[k - 1].waitS ?? 0) : 0);
 
-  return (
-    <div className={css.maker}>
-      <div className={css.order}>
-        <em>{setup?.spawn ? 'DAY' : 'ORDER'}</em>
-        <b>{setup?.spawn ? `손님 ${orders}명 · 내 메뉴 중 무작위` : `주문 ${orders}잔 · ${setup?.menuQueue ? setup.menuQueue.map((q) => `메뉴 ${q}`).join(' → ') : '메뉴 1'}`}</b>
-      </div>
-
-      {/* 메뉴 카드: one per drink. */}
-      <div className={css.tabs} role="tablist">
-        {shown.map((r, k) => (
-          <button key={k} type="button" role="tab" aria-selected={k === ci} className={css.tab} data-on={k === ci || undefined} disabled={busy} onClick={() => setSel(k)}>
-            <i>메뉴 {k + 1}</i>
-            {r.menu.name}
+  const order = (
+    <div className={css.order} key="order">
+      <em>{setup?.spawn ? 'DAY' : 'ORDER'}</em>
+      <b>{setup?.spawn ? `손님 ${orders}명 · 내 메뉴 중 무작위` : `주문 ${orders}잔 · ${setup?.menuQueue ? setup.menuQueue.map((q) => `메뉴 ${q}`).join(' → ') : '메뉴 1'}`}</b>
+    </div>
+  );
+  // 메뉴 카드: one per drink.
+  const tabs = (
+    <div className={css.tabs} role="tablist" key="tabs">
+      {shown.map((r, k) => (
+        <button key={k} type="button" role="tab" aria-selected={k === ci} className={css.tab} data-on={k === ci || undefined} disabled={busy} onClick={() => setSel(k)}>
+          <i>메뉴 {k + 1}</i>
+          {r.menu.name}
+        </button>
+      ))}
+      {mission !== 'F4' && recipes.length < MAX_MENUS && (
+        <button
+          type="button"
+          className={css.add}
+          data-glow={(focus === 'menu2' && recipes.length < 2) || undefined}
+          disabled={busy}
+          onClick={() => {
+            setRecipes((all) => [...all, newRecipe(MENU_PRESETS[all.length % MENU_PRESETS.length], all[0]?.door ?? true)]);
+            setSel(recipes.length);
+          }}
+        >
+          + 메뉴
+        </button>
+      )}
+    </div>
+  );
+  const menuPlate = (
+    <section className={css.plate} key="menu">
+      <header>
+        <em>MENU</em>
+        <b>메뉴 만들기</b>
+        <CupGauge m={cur.menu} />
+      </header>
+      <div className={css.presets}>
+        {MENU_PRESETS.map((p) => (
+          <button key={p.name} type="button" disabled={busy} data-on={p.name === cur.menu.name || undefined} onClick={() => setMenu({ ...p })}>
+            {p.name}
           </button>
         ))}
-        {mission !== 'F4' && recipes.length < MAX_MENUS && (
-          <button
-            type="button"
-            className={css.add}
-            data-glow={(focus === 'menu2' && recipes.length < 2) || undefined}
-            disabled={busy}
-            onClick={() => {
-              setRecipes((all) => [...all, newRecipe(MENU_PRESETS[all.length % MENU_PRESETS.length], all[0]?.door ?? true)]);
-              setSel(recipes.length);
-            }}
-          >
-            + 메뉴
-          </button>
-        )}
       </div>
-
-      <section className={css.plate}>
-        <header>
-          <em>MENU</em>
-          <b>메뉴 만들기</b>
-          <CupGauge m={cur.menu} />
-        </header>
-        <div className={css.presets}>
-          {MENU_PRESETS.map((p) => (
-            <button key={p.name} type="button" disabled={busy} data-on={p.name === cur.menu.name || undefined} onClick={() => setMenu({ ...p })}>
-              {p.name}
-            </button>
-          ))}
-        </div>
-        <div className={css.fields}>
-          <label className={css.name}>
-            이름
-            <input value={cur.menu.name} maxLength={14} disabled={busy} onChange={(e) => setMenu({ name: e.target.value.replace(/"/g, '') || '내 메뉴' })} />
-          </label>
-          <span className={css.seg} role="group" aria-label="따뜻하게 · 차갑게">
-            <button type="button" disabled={busy} data-on={!cur.menu.hot || undefined} onClick={() => setMenu({ hot: false })}>
-              아이스
-            </button>
-            <button type="button" disabled={busy} data-on={cur.menu.hot || undefined} onClick={() => setMenu({ hot: true, ice: 0 })}>
-              핫
-            </button>
-          </span>
-          <span className={css.step}>
-            샷
-            <button type="button" disabled={busy || cur.menu.shots <= 0} onClick={() => setMenu({ shots: cur.menu.shots - 1 })} aria-label="샷 빼기">
-              −
-            </button>
-            <b>{cur.menu.shots}</b>
-            <button type="button" disabled={busy || cur.menu.shots >= 4} onClick={() => setMenu({ shots: cur.menu.shots + 1 })} aria-label="샷 더하기">
-              +
-            </button>
-          </span>
-          <label className={css.range}>
-            얼음 <b>{cur.menu.ice} ml</b>
-            <input type="range" min={0} max={200} step={5} value={cur.menu.ice} disabled={busy || cur.menu.hot} onChange={(e) => setMenu({ ice: Number(e.target.value) })} />
-          </label>
-          <label className={css.range}>
-            {cur.menu.hot ? '온수' : '물'} <b>{cur.menu.water} ml</b>
-            <input type="range" min={0} max={250} step={5} value={cur.menu.water} disabled={busy} onChange={(e) => setMenu({ water: Number(e.target.value) })} />
-          </label>
-        </div>
-      </section>
-
-      <section className={css.plate}>
-        <header>
-          <em>MOTION</em>
-          <b>로봇 동작 만들기</b>
-          <span className={css.cycle}>
-            한 잔 약 <b>{Math.round(total)}초</b>
-          </span>
-        </header>
-        <div className={css.axis}>
-          {Array.from({ length: span / 10 + 1 }, (_, k) => (
-            <i key={k} style={{ left: `${k * 10 * scale}%` }}>
-              {k * 10}s
-            </i>
-          ))}
-        </div>
-        <ol className={css.rows}>
-          {steps.map((s, i) => {
-            const v = waitVerdict(s);
-            const on = !!running && running.k === ci && running.i === i;
-            return (
-              <li key={s.key} data-on={on || undefined}>
-                <span className={css.label}>
-                  <b>{s.label}</b>
-                  {s.wait && (
-                    <small data-v={v}>
-                      {s.wait.k === 'signal' ? '🧲 끝 신호까지' : `${s.waitS?.toFixed(1)}초 기다림`}
-                      {v === 'short' ? ' · 쏟아져요' : v === 'long' ? ' · 길어요' : ''}
-                    </small>
-                  )}
-                  {s.key === 'serve' && (
-                    <label className={css.door} data-glow={(focus === 'door' && !cur.door) || undefined}>
-                      <input type="checkbox" disabled={busy} checked={cur.door} onChange={(e) => setRecipes((all) => all.map((r) => ({ ...r, door: e.target.checked })))} />
-                      픽업 문으로
-                    </label>
-                  )}
-                </span>
-                <StepBar s={s} x0={xs[i]} scale={scale} busy={busy} on={on} onWait={(w) => edit({ ...cur, waits: { ...cur.waits, [s.key as StationKey]: w } })} />
-              </li>
-            );
-          })}
-        </ol>
-        <p className={css.tip}>주황 막대 끝을 끌어 기다림을 정해요. 회색(장비가 붓는 시간) 끝에 가까우면 🧲 끝 신호에 붙어요.</p>
-      </section>
-
-      {setup?.spawn && <DayBoard world={world} customers={setup.spawn.customers} />}
-
-      <div className={css.foot}>
+      <div className={css.fields}>
+        <label className={css.name}>
+          이름
+          <input value={cur.menu.name} maxLength={14} disabled={busy} onChange={(e) => setMenu({ name: e.target.value.replace(/"/g, '') || '내 메뉴' })} />
+        </label>
+        <span className={css.seg} role="group" aria-label="따뜻하게 · 차갑게">
+          <button type="button" disabled={busy} data-on={!cur.menu.hot || undefined} onClick={() => setMenu({ hot: false })}>
+            아이스
+          </button>
+          <button type="button" disabled={busy} data-on={cur.menu.hot || undefined} onClick={() => setMenu({ hot: true, ice: 0 })}>
+            핫
+          </button>
+        </span>
+        <span className={css.step}>
+          샷
+          <button type="button" disabled={busy || cur.menu.shots <= 0} onClick={() => setMenu({ shots: cur.menu.shots - 1 })} aria-label="샷 빼기">
+            −
+          </button>
+          <b>{cur.menu.shots}</b>
+          <button type="button" disabled={busy || cur.menu.shots >= 4} onClick={() => setMenu({ shots: cur.menu.shots + 1 })} aria-label="샷 더하기">
+            +
+          </button>
+        </span>
+        <label className={css.range}>
+          얼음 <b>{cur.menu.ice} ml</b>
+          <input type="range" min={0} max={200} step={5} value={cur.menu.ice} disabled={busy || cur.menu.hot} onChange={(e) => setMenu({ ice: Number(e.target.value) })} />
+        </label>
+        <label className={css.range}>
+          {cur.menu.hot ? '온수' : '물'} <b>{cur.menu.water} ml</b>
+          <input type="range" min={0} max={250} step={5} value={cur.menu.water} disabled={busy} onChange={(e) => setMenu({ water: Number(e.target.value) })} />
+        </label>
+      </div>
+    </section>
+  );
+  const motion = (
+    <section className={css.plate} key="motion">
+      <header>
+        <em>MOTION</em>
+        <b>로봇 동작 만들기</b>
+        <span className={css.cycle}>
+          한 잔 약 <b>{Math.round(total)}초</b>
+        </span>
+      </header>
+      <div className={css.axis}>
+        {Array.from({ length: span / 10 + 1 }, (_, k) => (
+          <i key={k} style={{ left: `${k * 10 * scale}%` }}>
+            {k * 10}s
+          </i>
+        ))}
+      </div>
+      <ol className={css.rows}>
+        {steps.map((s, i) => {
+          const v = waitVerdict(s);
+          const on = !!running && running.k === ci && running.i === i;
+          return (
+            <li key={s.key} data-on={on || undefined}>
+              <span className={css.label}>
+                <b>{s.label}</b>
+                {s.wait && (
+                  <small data-v={v}>
+                    {s.wait.k === 'signal' ? '🧲 끝 신호까지' : `${s.waitS?.toFixed(1)}초 기다림`}
+                    {v === 'short' ? ' · 쏟아져요' : v === 'long' ? ' · 길어요' : ''}
+                  </small>
+                )}
+                {s.key === 'serve' && (
+                  <label className={css.door} data-glow={(focus === 'door' && !cur.door) || undefined}>
+                    <input type="checkbox" disabled={busy} checked={cur.door} onChange={(e) => setRecipes((all) => all.map((r) => ({ ...r, door: e.target.checked })))} />
+                    픽업 문으로
+                  </label>
+                )}
+              </span>
+              <StepBar s={s} x0={xs[i]} scale={scale} busy={busy} on={on} onWait={(w) => edit({ ...cur, waits: { ...cur.waits, [s.key as StationKey]: w } })} />
+            </li>
+          );
+        })}
+      </ol>
+      <p className={css.tip}>주황 막대 끝을 끌어 기다림을 정해요. 회색(장비가 붓는 시간) 끝에 가까우면 🧲 끝 신호에 붙어요.</p>
+    </section>
+  );
+  const day = setup?.spawn ? <DayBoard key="day" world={world} customers={setup.spawn.customers} /> : null;
+  // 5단계: the one switch, on its own (the same as the 픽업대에 놓기 row's).
+  const door = (
+    <section className={css.plate} key="door">
+      <header>
+        <em>SERVE</em>
+        <b>건네기</b>
+      </header>
+      <label className={css.doorBig} data-glow={!cur.door || undefined}>
+        <input type="checkbox" disabled={busy} checked={cur.door} onChange={(e) => setRecipes((all) => all.map((r) => ({ ...r, door: e.target.checked })))} />
+        <span>
+          <b>픽업 문으로 건네기</b>
+          <small>{cur.door ? '문을 열고 손님이 가져갈 때까지 기다린 뒤 닫아요' : '지금은 픽업대에 놓기만 해요'}</small>
+        </span>
+      </label>
+    </section>
+  );
+  const foot = (
+    <div className={css.foot} key="foot">
+      <button
+        type="button"
+        className={css.ghost}
+        disabled={busy}
+        onClick={() => {
+          if (window.confirm('메뉴 카드를 처음(아이스 아메리카노 하나)으로 돌릴까요?')) {
+            setRecipes([newRecipe(undefined, recipes[0]?.door ?? false)]);
+            setSel(0);
+          }
+        }}
+      >
+        처음으로
+      </button>
+      {recipes.length > 1 && mission !== 'F4' && (
         <button
           type="button"
           className={css.ghost}
           disabled={busy}
           onClick={() => {
-            if (window.confirm('메뉴 카드를 처음(아이스 아메리카노 하나)으로 돌릴까요?')) {
-              setRecipes([newRecipe(undefined, recipes[0]?.door ?? false)]);
-              setSel(0);
-            }
+            setRecipes((all) => all.filter((_, i) => i !== ci));
+            setSel(0);
           }}
         >
-          처음으로
+          이 메뉴 빼기
         </button>
-        {recipes.length > 1 && mission !== 'F4' && (
-          <button
-            type="button"
-            className={css.ghost}
-            disabled={busy}
-            onClick={() => {
-              setRecipes((all) => all.filter((_, i) => i !== ci));
-              setSel(0);
-            }}
-          >
-            이 메뉴 빼기
-          </button>
-        )}
-      </div>
+      )}
+    </div>
+  );
+  const parts = { order, tabs, menu: menuPlate, door, motion, day, foot };
+  const want = mission ? FOCUS[mission] : undefined;
+  // 자유 연습 (and a step without a focus): everything, as before.
+  if (!want) return <div className={css.maker}>{[order, tabs, menuPlate, motion, day, foot]}</div>;
+  // 입문 퀘스트: the one thing this quest changes; the rest folded under 자세히.
+  const rest = (['order', 'tabs', 'menu', 'motion', 'day', 'foot'] as const).filter((k) => !want.includes(k)).map((k) => parts[k]);
+  return (
+    <div className={css.maker}>
+      {want.map((k) => parts[k])}
+      <details className={css.more}>
+        <summary>자세히 ▾</summary>
+        {rest}
+      </details>
     </div>
   );
 }
+
+/**
+ * 입문 퀘스트: what each café step shows (the one thing it is about); the rest is under 자세히.
+ * 4 내 메뉴 · 5 픽업 문 · 6 주문 2잔 (nothing to change) · 7 메뉴 2 · 8 운영.
+ */
+const FOCUS: Record<string, readonly ('order' | 'tabs' | 'menu' | 'door' | 'motion' | 'day' | 'foot')[]> = {
+  F4: ['menu'],
+  F5: ['door'],
+  F6: ['order'],
+  F7: ['tabs', 'menu'],
+  F8: ['order', 'day'],
+};
 
 /** 운영: the day as it goes (customers, queue, served, failed, gone), then its report. */
 function DayBoard({ world, customers }: { world: RefObject<WorldState | null>; customers: number }) {

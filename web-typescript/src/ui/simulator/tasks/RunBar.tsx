@@ -8,6 +8,8 @@
  * Esc.
  */
 
+import { useState } from 'react';
+
 import Icon from '../Icon';
 import css from '../console.module.css';
 
@@ -31,6 +33,11 @@ interface Props {
   onSimRate(rate: number): void;
   onReal(): void;
   onStop(): void;
+  /**
+   * 입문 퀘스트: only ▶ and ■ in sight; the speed key, the robot's button and these go under ⋯
+   * (자유 연습 …).
+   */
+  more?: { label: string; onClick(): void; disabled?: boolean }[];
 }
 
 const RATE_NAME: Record<number, string> = { 1: '보통', 2: '2배', 4: '4배' };
@@ -67,6 +74,7 @@ function RobotPlay() {
 }
 
 export default function RunBar(p: Props) {
+  const [open, setOpen] = useState(false);
   const realTitle = p.realBlocked
     ? p.realBlocked === '로봇 연결 필요'
       ? '로봇과 연결되면 열려요'
@@ -89,6 +97,12 @@ export default function RunBar(p: Props) {
         <span>시뮬레이션</span>
         {p.passed && <i className={css.runOk} aria-label="통과">✓</i>}
       </button>
+      {p.more && (
+        <button type="button" className={css.runMore} aria-expanded={open} aria-label="더 보기" title="빠르기 · 코드 받기 · 자유 연습" onClick={() => setOpen((o) => !o)}>
+          <Icon name="dots" size={20} />
+        </button>
+      )}
+      <span className={p.more ? css.runMenu : css.runInline} data-open={open || undefined} onClick={() => p.more && setOpen(false)}>
       <button
         type="button"
         className={css.runRate}
@@ -109,6 +123,12 @@ export default function RunBar(p: Props) {
         {p.realProgress && <kbd>{p.realProgress}</kbd>}
         {p.robotDone && !p.realBlocked && <i className={css.runOk} aria-label="했어요">✓</i>}
       </button>
+      {p.more?.map((m) => (
+        <button key={m.label} type="button" className={css.runMenuItem} disabled={m.disabled} onClick={m.onClick}>
+          {m.label}
+        </button>
+      ))}
+      </span>
       <button type="button" className={css.runStop} onClick={p.onStop} aria-label="정지" title="정지 (Esc · 스페이스)">
         <Icon name="stop" size={16} />
         <span>정지</span>

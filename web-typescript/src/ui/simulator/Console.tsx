@@ -129,6 +129,7 @@ import BoardCards from './editors/BoardCards';
 import ThemePanel from './tasks/ThemePanel';
 import TutorialList from './tasks/TutorialList';
 import TutorialStrip from './tasks/TutorialStrip';
+import { LeadSpot, type SpotStep } from './tasks/Spotlight';
 import { MomentAsk, PredictCard, StepResult, loadPredictions, savePrediction } from './stage/StepGuide';
 import { QUESTS, questNow, type QuestPhase } from '@/engine/simulator/cell/quests';
 import { askNow, asksOf, guideOf, type Ask } from '@/engine/simulator/cell/guides';
@@ -136,7 +137,7 @@ import { NARRATE_HOLD_MS, NARRATED, narrationLines } from '@/engine/simulator/ce
 import { narrateShot, stationAt } from '@/engine/simulator/cell/shots';
 import SiteTour from './stage/SiteTour';
 import Roadmap from './connect/Roadmap';
-import { LIFE_TUTORIALS, lifeTutorialById, type TutCtx, type TutMem } from '@/engine/simulator/lifeTutorials';
+import { LIFE_TUTORIALS, RING_MM, lifeTutorialById, ringLead, type TutCtx, type TutMem } from '@/engine/simulator/lifeTutorials';
 import { StartGuide, type StartStep } from './stage/StartGuide';
 import HandPanel, { type HandState } from './control/HandPanel';
 import { HandMapper, demoProcess, simplifyDemo, type DemoPoint, type DemoSample, type HandPose } from '@/engine/vision/hand';
@@ -1918,6 +1919,14 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const questOn = !!track && (!!lifeStep || !!lifeTut);
   /** 입문 · 로봇 카페: how the step is done (보기 · 해 보기 · 만들기): what the screen shows follows it. */
   const cafeMode = track && cellAt?.cell === 'cafe' && cellAt.mission ? missionById(cellAt.mission)?.mode : undefined;
+  // 입문 카페 해 보기 (조그): the key that brings the tip to the ring, spotlit as in 맛보기 (none once in it).
+  const ringAt = cafeMode === 'hand' && cellAt?.mission ? missionById(cellAt.mission)?.target : undefined;
+  const ringKey = ringAt?.join(',') ?? '';
+  const ringSpot = useMemo<SpotStep | null>(() => {
+    if (!ringKey) return null;
+    const r = ringKey.split(',').map(Number) as [number, number, number];
+    return { target: [], lead: (n) => (Math.hypot(n.tip.x - r[0], n.tip.y - r[1], n.tip.z - r[2]) <= RING_MM ? [] : ringLead(n.tip, r)) };
+  }, [ringKey]);
   const questQ = lifeStep ? QUESTS[lifeStep.id] : undefined;
   const questPhase: QuestPhase | null =
     lifeStep && cellAt ? (busy ? 'run' : cellResult !== null && lastChecks ? 'result' : 'do') : null;
@@ -1933,7 +1942,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     if (!askId) return;
     const id = window.setInterval(() => {
       const run = world.current.cell;
-      if (heldRef.current || !run || run.mission !== askId) return;
+      // A run being stopped (정지 · Esc) asks nothing more: the stop comes before the re-render that ends this.
+      if (heldRef.current || !run || run.mission !== askId || !token.current || token.current.aborted) return;
       const due = askNow(run, world.current, (k) => answeredRef.current(k));
       if (!due) return;
       heldRef.current = true;
@@ -3965,12 +3975,14 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       onSimRate={chooseSimRate}
       onReal={robotMode ? runReal : openExport}
       onStop={stop}
+      more={questOn && cellAt && lifeStep ? [{ label: '자유 연습 (채점 없이)', onClick: () => openCell(cellAt.cell, null), disabled: busy }] : undefined}
     />
   );
 
   const controlPanel = (
     <ControlPanel
       startFrame={track && cellAt?.mission && missionById(cellAt.mission)?.target ? 'base' : undefined}
+      moveOnly={!!(track && cellAt?.mission && missionById(cellAt.mission)?.target)}
       live={live}
       speed={jogSpeed}
       onSpeed={setJogSpeed}
@@ -4999,6 +5011,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   onClose={() => setLastChecks(null)}
                 />
               )}
+              {loaded && view === 'sim' && ringSpot && !busy && <LeadSpot step={ringSpot} read={() => tutCtxRef.current()} />}
               {loaded && view === 'sim' && moment && (
                 <MomentAsk
                   key={moment.key}
@@ -5275,7 +5288,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                 <div className={css.sideHeader}>
                   <button type="button" className={css.sideModel} onClick={() => setPicking(true)} disabled={busy || !choice} title={choice ? '로봇 모델 바꾸기' : undefined}>
                     <span>
-                      <b>{SCREEN_TITLE[workScreen] ?? ''}</b>
+                      <b>{questOn && cellAt && workScreen === 'basic' ? CELL_BY_ID[cellAt.cell].name : (SCREEN_TITLE[workScreen] ?? '')}</b>
                     </span>
                     {choice && <em>바꾸기</em>}
                   </button>
@@ -5490,7 +5503,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                             allOpen={false}
                             busy={busy}
                             onMission={(id) => openCell(cellAt.cell, id)}
-                            quest={{ phase: questPhase, checks: questPhase === 'result' ? lastChecks : null, now: questNow(questPhase, lifeStep.id, cellResult), onList: () => setRoadmapOpen(true) }}
+                            quest={{ phase: questPhase, checks: questPhase === 'result' ? lastChecks : null, now: questNow(questPhase, lifeStep.id, cellResult), onList: () => setRoadmapOpen(true), asking: !!moment }}
                           />
                         )}
                         {cellAt!.cell === 'draw' ? (
