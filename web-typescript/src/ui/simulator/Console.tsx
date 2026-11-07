@@ -4114,8 +4114,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   ];
   const barGroups = track?.menu.includes('theme') ? lifeGroups : fullGroups;
   // A 트랙 opens only its menus.
-  // 입문 · 로봇 카페: inside the café only 테마학습 · 제어 · 순서 (what its quests use).
-  const inCafe = !!track && cellAt?.cell === 'cafe';
+  // 입문 현장 (카페 · 캘리그라피 · 보드게임): inside only 테마학습 · 제어 · 순서 (what their quests use).
+  const inCafe = !!track && !!cellAt;
   const shownGroups = track ? barGroups.map((g) => ({ ...g, items: g.items.filter((i) => track.menu.includes(i.id) && (!inCafe || CAFE_MENU.includes(i.id))) })).filter((g) => g.items.length) : barGroups;
   // The mini arm (angles, load, tip position) stays on every screen, 제어 too.
   const miniWanted = display.mini;
@@ -4993,8 +4993,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                 />}
               {/* 입문 현장의 공정 띠: the order (or the game) and what the step is about, over the scene. */}
               {loaded && view === 'sim' && track && cellAt?.cell === 'cafe' && (cafeMode ? cafeMode === 'make' && busy : true) && <CafeStrip world={world} />}
-              {loaded && view === 'sim' && track && cellAt?.cell === 'draw' && <DrawStrip world={world} />}
-              {loaded && view === 'sim' && track && cellAt?.cell === 'board' && <BoardStrip world={world} />}
+              {loaded && view === 'sim' && track && cellAt?.cell === 'draw' && (!questOn || busy) && <DrawStrip world={world} />}
+              {loaded && view === 'sim' && track && cellAt?.cell === 'board' && (!questOn || busy) && <BoardStrip world={world} />}
               {/* 퀘스트 모드: the result over the scene (the side panel keeps to 제어 · 실습). */}
               {loaded && view === 'sim' && questOn && questPhase === 'result' && lifeStep && cellAt && lastChecks && cellResult !== null && (
                 <StepResult

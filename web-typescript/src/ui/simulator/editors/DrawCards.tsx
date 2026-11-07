@@ -14,6 +14,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { DRAW_PALETTE, G_ANSWER, G_START, PEN_Z, PHRASES, drawCardText, drawCode, drawRows, type DrawCard, type DrawRecipe } from '@/engine/simulator/cell/drawRecipe';
 import { MAT, type Phrase } from '@/engine/simulator/cell/draw';
 import { missionById } from '@/engine/simulator/cell/missions';
+import { QUESTS } from '@/engine/simulator/cell/quests';
 
 import css from './recipe.module.css';
 
@@ -127,98 +128,107 @@ export default function DrawCards({ mission, busy, runningLine, onCode, glow, gl
     }
   };
 
-  return (
-    <div className={css.recipe} data-flow={flow || undefined}>
-      <div className={css.head}>
-        <span className={css.order} aria-label="주문">
-          <em>ORDER</em>
-          <b>
-            손님 {customers}명 · &apos;{phrase?.k === 'write' ? phrase.phrase : '자유'}&apos;
-          </b>
-          <small>카드 한 장에 한 번씩 써서 건네요</small>
-        </span>
-        <span className={css.times}>
-          손님
-          <button type="button" disabled={busy || recipe.times <= 1} onClick={() => set(recipe.cards, recipe.times - 1)} aria-label="한 명 줄이기">
-            −
-          </button>
-          <em>{recipe.times}명</em>
-          <button type="button" disabled={busy || recipe.times >= 3} onClick={() => set(recipe.cards, recipe.times + 1)} aria-label="한 명 늘리기">
-            +
-          </button>
-        </span>
-      </div>
-      <ol className={css.list}>
-        {recipe.cards.map((c, k) => {
-          const rows = drawRows(c);
-          const isOpen = shown.has(k);
-          const now = k === running && runningRow >= 0 ? rows[runningRow]?.text : null;
-          const off = rows.find((r) => r.toggle && !r.on);
-          return (
-            <li key={k} className={css.card} data-step data-on={k === running || undefined} data-glow={(running < 0 && glow?.includes(k + 1)) || undefined} style={{ borderLeftColor: KIND_COLOR[c.k] }}>
-              <span className={css.n}>{CIRCLED[k] ?? k + 1}</span>
-              <div className={css.body}>
-                <span className={css.title}>
-                  <b>{drawCardText(c).title}</b>
-                  {boxes(c, k)}
-                </span>
-                {!isOpen && <small className={css.sum}>{now ? `지금 · ${now}` : off ? `꺼짐 · ${off.text}` : `동작 ${rows.length}개`}</small>}
-                {isOpen && (
-                  <ol className={css.rows}>
-                    {rows.map((r, i) => (
-                      <li key={i} data-on={(k === running && i === runningRow) || undefined} data-off={(r.toggle && !r.on) || undefined}>
-                        {r.toggle ? (
-                          <label>
-                            <input type="checkbox" disabled={busy} checked={!!r.on} onChange={(e) => flip(k, c, r.toggle!, e.target.checked)} />
-                            {r.text}
-                          </label>
-                        ) : (
-                          <span>{r.text}</span>
-                        )}
-                      </li>
-                    ))}
-                  </ol>
-                )}
-              </div>
-              <span className={css.tools}>
-                <button type="button" className={css.more} onClick={() => toggleShown(k)} aria-expanded={isOpen} aria-label={isOpen ? '동작 접기' : '동작 펼치기'}>
-                  {isOpen ? '▴' : '▾'}
-                </button>
-                <button type="button" disabled={busy || k === 0} onClick={() => move(k, -1)} aria-label="위로">
-                  ▲
-                </button>
-                <button type="button" disabled={busy || k === recipe.cards.length - 1} onClick={() => move(k, 1)} aria-label="아래로">
-                  ▼
-                </button>
-                <button type="button" disabled={busy} onClick={() => remove(k)} aria-label="빼기">
-                  ✕
-                </button>
-              </span>
-            </li>
-          );
-        })}
-        {!recipe.cards.length && <li className={css.empty}>아래 [+ 카드]로 공정을 차례로 넣어요.</li>}
-      </ol>
-      <div className={css.foot}>
-        <button type="button" className={css.add} disabled={busy} aria-expanded={open} data-glow={(glowAdd && !open) || undefined} onClick={() => setOpen((o) => !o)}>
-          + 카드
+  const head = (
+    <div className={css.head}>
+      <span className={css.order} aria-label="주문">
+        <em>ORDER</em>
+        <b>
+          손님 {customers}명 · &apos;{phrase?.k === 'write' ? phrase.phrase : '자유'}&apos;
+        </b>
+        <small>카드 한 장에 한 번씩 써서 건네요</small>
+      </span>
+      <span className={css.times}>
+        손님
+        <button type="button" disabled={busy || recipe.times <= 1} onClick={() => set(recipe.cards, recipe.times - 1)} aria-label="한 명 줄이기">
+          −
         </button>
-        {answer && (
-          <button
-            type="button"
-            className={css.ghost}
-            disabled={busy}
-            onClick={() => {
-              if (window.confirm('지금 카드 대신 이 단계의 모범 공정을 불러올까요?')) setRecipe(copy(answer));
-            }}
-          >
-            모범 공정 불러오기
-          </button>
+        <em>{recipe.times}명</em>
+        <button type="button" disabled={busy || recipe.times >= 3} onClick={() => set(recipe.cards, recipe.times + 1)} aria-label="한 명 늘리기">
+          +
+        </button>
+      </span>
+    </div>
+  );
+  const item = (c: (typeof recipe.cards)[number], k: number, solo = false) => {
+    const rows = drawRows(c);
+    const isOpen = solo || shown.has(k);
+    const now = k === running && runningRow >= 0 ? rows[runningRow]?.text : null;
+    const off = rows.find((r) => r.toggle && !r.on);
+    return (
+      <li key={k} className={css.card} data-step data-on={k === running || undefined} data-glow={(running < 0 && glow?.includes(k + 1)) || undefined} style={{ borderLeftColor: KIND_COLOR[c.k] }}>
+        <span className={css.n}>{CIRCLED[k] ?? k + 1}</span>
+        <div className={css.body}>
+          <span className={css.title}>
+            <b>{drawCardText(c).title}</b>
+            {boxes(c, k)}
+          </span>
+          {!isOpen && <small className={css.sum}>{now ? `지금 · ${now}` : off ? `꺼짐 · ${off.text}` : `동작 ${rows.length}개`}</small>}
+          {isOpen && (
+            <ol className={css.rows}>
+              {rows.map((r, i) => (
+                <li key={i} data-on={(k === running && i === runningRow) || undefined} data-off={(r.toggle && !r.on) || undefined}>
+                  {r.toggle ? (
+                    <label>
+                      <input type="checkbox" disabled={busy} checked={!!r.on} onChange={(e) => flip(k, c, r.toggle!, e.target.checked)} />
+                      {r.text}
+                    </label>
+                  ) : (
+                    <span>{r.text}</span>
+                  )}
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
+        {!solo && (
+          <span className={css.tools}>
+            <button type="button" className={css.more} onClick={() => toggleShown(k)} aria-expanded={isOpen} aria-label={isOpen ? '동작 접기' : '동작 펼치기'}>
+              {isOpen ? '▴' : '▾'}
+            </button>
+            <button type="button" disabled={busy || k === 0} onClick={() => move(k, -1)} aria-label="위로">
+              ▲
+            </button>
+            <button type="button" disabled={busy || k === recipe.cards.length - 1} onClick={() => move(k, 1)} aria-label="아래로">
+              ▼
+            </button>
+            <button type="button" disabled={busy} onClick={() => remove(k)} aria-label="빼기">
+              ✕
+            </button>
+          </span>
         )}
-        <button type="button" className={css.ghost} disabled={busy} onClick={() => setRecipe(start(mission))}>
-          처음으로
+      </li>
+    );
+  };
+  const list = (
+    <ol className={css.list}>
+      {recipe.cards.map((c, k) => item(c, k))}
+      {!recipe.cards.length && <li className={css.empty}>아래 [+ 카드]로 공정을 차례로 넣어요.</li>}
+    </ol>
+  );
+  const foot = (
+    <div className={css.foot}>
+      <button type="button" className={css.add} disabled={busy} aria-expanded={open} data-glow={(glowAdd && !open) || undefined} onClick={() => setOpen((o) => !o)}>
+        + 카드
+      </button>
+      {answer && (
+        <button
+          type="button"
+          className={css.ghost}
+          disabled={busy}
+          onClick={() => {
+            if (window.confirm('지금 카드 대신 이 단계의 모범 공정을 불러올까요?')) setRecipe(copy(answer));
+          }}
+        >
+          모범 공정 불러오기
         </button>
-      </div>
+      )}
+      <button type="button" className={css.ghost} disabled={busy} onClick={() => setRecipe(start(mission))}>
+        처음으로
+      </button>
+    </div>
+  );
+  const palette = (
+    <>
       {open && (
         <div className={css.palette} role="menu">
           {DRAW_PALETTE.map((c, k) => (
@@ -239,6 +249,29 @@ export default function DrawCards({ mission, busy, runningLine, onCode, glow, gl
           ))}
         </div>
       )}
+    </>
+  );
+  // 입문 퀘스트: the cards this quest changes, open; the whole recipe (order, every card, + 카드) under 자세히.
+  const focus = flow && mission ? (QUESTS[mission]?.cards ?? []).map((n) => n - 1).filter((k) => k < recipe.cards.length) : null;
+  if (!focus)
+    return (
+      <div className={css.recipe} data-flow={flow || undefined}>
+        {head}
+        {list}
+        {foot}
+        {palette}
+      </div>
+    );
+  return (
+    <div className={css.recipe} data-flow>
+      {focus.length > 0 && <ol className={css.list}>{focus.map((k) => item(recipe.cards[k], k, true))}</ol>}
+      <details className={css.moreAll}>
+        <summary>자세히 ▾ · 카드 전체 {recipe.cards.length}장</summary>
+        {head}
+        {list}
+        {foot}
+        {palette}
+      </details>
     </div>
   );
 }

@@ -421,3 +421,27 @@
   flex-wrap: wrap;
   row-gap: 4px;
 }
+
+/* 입문 퀘스트 (DrawCards · BoardCards): the whole recipe folded under the quest's own cards. */
+.moreAll {
+  margin-top: 6px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.moreAll > summary {
+  cursor: pointer;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--hud-dim, #9aa4ae);
+  list-style: none;
+}
+
+.moreAll > summary::-webkit-details-marker {
+  display: none;
+}
+
+.moreAll[open] > summary {
+  color: var(--hud-tx, #e9edf1);
+}
