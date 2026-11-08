@@ -15,28 +15,42 @@ export interface Quest {
   cards?: number[];
   /** A card is missing: [+ 카드] is lit too. */
   add?: boolean;
+  /** The goal in a few words (the side panel's objective line; `todo` and the hint behind its ?). */
+  short: string;
 }
 
 export const QUESTS: Record<string, Quest> = {
-  F1: { todo: '▶ 시뮬레이션: 주문 한 잔이 만들어지는 과정을 말풍선으로 따라가요. 멈추면 O · X' },
-  F2: { todo: '아래 [추출] 버튼을 눌러 컵에 샷을 받고, [추출 끝]이 켜질 때까지 지켜봐요' },
-  F3: { todo: '아래 조그로 로봇 손끝을 장면의 고리까지 옮겨요' },
-  F4: { todo: '내 메뉴를 만들고 ▶ 시뮬레이션으로 한 잔을 픽업대에 놓아요' },
-  F5: { todo: "건네기를 '픽업 문으로'로 바꾸고 손님에게 건네요" },
-  F6: { todo: '주문 2잔: 그대로 ▶ 시뮬레이션을 눌러 두 잔을 이어서 만들어요' },
-  F7: { todo: '[+ 메뉴]로 메뉴 2를 만들고, 두 손님의 주문을 만들어요' },
-  F8: { todo: '카페를 열어요(▶). 손님 10명 중 8명 이상에게 건네면 성공' },
-  G1: { todo: '카드는 그대로 두고 ▶ 시뮬레이션을 눌러, 펜이 언제 닿고 언제 들리는지 봐요' },
-  G2: { todo: '② 보정 카드에서 펜 높이를 0으로, 카드 위치를 매트 눈금으로 읽어 바꿔요', cards: [2] },
-  G3: { todo: "③ 쓰기 카드를 펼쳐 '직선 이동으로 쓰기'를 켜요", cards: [3] },
-  G4: { todo: "③ 쓰기 카드를 펼쳐 '획 사이 펜 들기'를 켜요", cards: [3] },
-  H1: { todo: '카드는 그대로 두고 ▶ 시뮬레이션을 눌러, 로봇이 언제 움직이기 시작하는지 봐요' },
-  H2: { todo: '① 판 카드의 칸 간격을 판 가장자리 눈금으로 재서 바꿔요', cards: [1] },
-  H3: { todo: "② · ③ 한 수 카드를 펼쳐 '[로봇 차례]까지 기다리기'를 켜요", cards: [2, 3] },
-  H4: { todo: '② 한 수 카드의 규칙을 바꿔 가며 돌려 보고, 한 판을 이기는 규칙을 찾아요', cards: [2] },
+  F1: { todo: '▶ 시뮬레이션: 주문 한 잔이 만들어지는 과정을 말풍선으로 따라가요. 멈추면 O · X', short: '주문 한 잔을 끝까지 지켜보기' },
+  F2: { todo: '아래 [추출] 버튼을 눌러 컵에 샷을 받고, [추출 끝]이 켜질 때까지 지켜봐요', short: '[추출] 누르고 끝 신호 기다리기' },
+  F3: { todo: '아래 조그로 로봇 손끝을 장면의 고리까지 옮겨요', short: '손끝을 고리 안으로' },
+  F4: { todo: '내 메뉴를 만들고 ▶ 시뮬레이션으로 한 잔을 픽업대에 놓아요', short: '내 메뉴 만들고 ▶' },
+  F5: { todo: "건네기를 '픽업 문으로'로 바꾸고 손님에게 건네요", short: "'픽업 문으로' 켜고 ▶" },
+  F6: { todo: '주문 2잔: 그대로 ▶ 시뮬레이션을 눌러 두 잔을 이어서 만들어요', short: '그대로 ▶ · 두 잔 연속' },
+  F7: { todo: '[+ 메뉴]로 메뉴 2를 만들고, 두 손님의 주문을 만들어요', short: '메뉴 2 만들고 ▶' },
+  F8: { todo: '카페를 열어요(▶). 손님 10명 중 8명 이상에게 건네면 성공', short: '▶ 카페 열기 · 10명 중 8명' },
+  G1: { todo: '카드는 그대로 두고 ▶ 시뮬레이션을 눌러, 펜이 언제 닿고 언제 들리는지 봐요', short: '그대로 ▶ · 펜이 언제 닿나' },
+  G2: { todo: '② 보정 카드에서 펜 높이를 0으로, 카드 위치를 매트 눈금으로 읽어 바꿔요', cards: [2], short: '② 펜 높이 · 카드 위치 맞추기' },
+  G3: { todo: "③ 쓰기 카드를 펼쳐 '직선 이동으로 쓰기'를 켜요", cards: [3], short: "③ '직선 이동' 켜기" },
+  G4: { todo: "③ 쓰기 카드를 펼쳐 '획 사이 펜 들기'를 켜요", cards: [3], short: "③ '획 사이 펜 들기' 켜기" },
+  H1: { todo: '카드는 그대로 두고 ▶ 시뮬레이션을 눌러, 로봇이 언제 움직이기 시작하는지 봐요', short: '그대로 ▶ · 로봇은 언제 움직이나' },
+  H2: { todo: '① 판 카드의 칸 간격을 판 가장자리 눈금으로 재서 바꿔요', cards: [1], short: '① 칸 간격 재서 고치기' },
+  H3: { todo: "② · ③ 한 수 카드를 펼쳐 '[로봇 차례]까지 기다리기'를 켜요", cards: [2, 3], short: "②·③ '로봇 차례까지 기다리기' 켜기" },
+  H4: { todo: '② 한 수 카드의 규칙을 바꿔 가며 돌려 보고, 한 판을 이기는 규칙을 찾아요', cards: [2], short: '② 이기는 규칙 찾기' },
 };
 
 export type QuestPhase = 'do' | 'run' | 'result';
+
+/** The side panel's objective line, by phase: the few words (the quest's `short`, the run, the result). */
+export function questShort(phase: QuestPhase, id: string, passed: boolean | null): string {
+  switch (phase) {
+    case 'do':
+      return QUESTS[id]?.short ?? '카드 고치고 ▶';
+    case 'run':
+      return '말풍선 따라 보기 · 멈추면 예측';
+    case 'result':
+      return passed ? '통과! 개념 읽고 다음 퀘스트로' : '✗ 항목 보고 고쳐서 다시 ▶';
+  }
+}
 
 /** What the quest card says now, by phase (해 보기: the quest's own sentence). */
 export function questNow(phase: QuestPhase, id: string, passed: boolean | null): string {

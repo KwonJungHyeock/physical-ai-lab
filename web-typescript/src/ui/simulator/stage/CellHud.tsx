@@ -17,10 +17,11 @@ import { setOut } from '@/engine/simulator/cell/line';
 import { missionById, missionsOf } from '@/engine/simulator/cell/missions';
 import { CAFE_BOARD, type NarratePlace } from '@/engine/simulator/cell/narrate';
 import { LIFE_STOPS } from '@/engine/simulator/lifeFields';
-import type { QuestPhase } from '@/engine/simulator/cell/quests';
+import { questShort, type QuestPhase } from '@/engine/simulator/cell/quests';
 import { cellChecks } from '@/engine/simulator/cell/run';
 import type { WorldState } from '@/engine/simulator/sim';
 
+import Icon from '../Icon';
 import FieldTicks from '../tasks/FieldTicks';
 import css from './cellHud.module.css';
 
@@ -237,9 +238,10 @@ export function QuestCard(p: QuestCardProps) {
 const PHASES = ['할 일', '예측', '관찰', '개념'] as const;
 
 /**
- * 입문 퀘스트 모드, the top of the side panel: one line for where the place is (its quests as dots,
- * n / N, the list), the quest's name, the four moves with the one now lit, and the one sentence to do
- * now with its hint. What the quest changes stands right under it (the café: CafeMaker FOCUS).
+ * 입문 퀘스트 모드, the top of the side panel, as a game's quest tracker in the console's metal
+ * language (a plate, tracked tags, grooves, white for what is lit): the quest's number and name, the
+ * place's quests as nodes on a track, the four moves as a segment gauge, and the goal in a few words
+ * in a groove (the full sentence and the hint behind ?). What the quest changes stands right under it.
  */
 function PanelQuest(p: QuestCardProps) {
   const [hint, setHint] = useState(false);
@@ -249,62 +251,60 @@ function PanelQuest(p: QuestCardProps) {
   const open = (i: number) => built && (p.allOpen || i === 0 || !!p.passed[steps[i - 1].id]);
   const q = p.quest;
   const now = !q ? -1 : q.asking ? 1 : q.phase === 'do' ? 0 : q.phase === 'run' ? 2 : 3;
+  const two = (n: number) => String(n).padStart(2, '0');
   return (
     <nav className={css.qPanel} aria-label="퀘스트">
-      <div className={css.qBar}>
-        <ol>
-          {steps.map((s, i) => (
-            <li key={s.id} data-cur={s.id === p.mission || undefined} data-done={p.passed[s.id] || undefined}>
-              <button type="button" disabled={p.busy || !open(i)} onClick={() => p.onMission(s.id)} title={open(i) ? `퀘스트 ${s.n} ${s.title}` : '앞 퀘스트를 통과하면 열려요'} aria-pressed={s.id === p.mission} aria-label={`퀘스트 ${s.n} ${s.title}`}>
-                {p.passed[s.id] ? '✓' : s.n}
-              </button>
-            </li>
-          ))}
-        </ol>
-        <span>
-          {steps.filter((s) => p.passed[s.id]).length} / {steps.length}
-        </span>
+      <header className={css.qHead}>
+        <em>QUEST</em>
+        <b className={css.qNum}>
+          {m ? two(m.n) : '--'}
+          <small>/{two(steps.length)}</small>
+        </b>
+        <span className={css.qName}>{m ? m.title.replace(/^[^:]+:\s*/, '') : '자유 연습'}</span>
         {q && (
-          <button type="button" onClick={q.onList} disabled={p.busy}>
-            목록
+          <button type="button" className={css.qListKey} onClick={q.onList} disabled={p.busy} aria-label="현장 · 퀘스트 목록" title="현장 · 퀘스트 목록">
+            <Icon name="grid" size={14} />
           </button>
         )}
-      </div>
-      {m ? (
+      </header>
+      <ol className={css.qTrack}>
+        {steps.map((s, i) => (
+          <li key={s.id} data-cur={s.id === p.mission || undefined} data-done={p.passed[s.id] || undefined} data-lock={!open(i) || undefined}>
+            <button type="button" disabled={p.busy || !open(i)} onClick={() => p.onMission(s.id)} title={open(i) ? `퀘스트 ${s.n} ${s.title}` : '앞 퀘스트를 통과하면 열려요'} aria-pressed={s.id === p.mission} aria-label={`퀘스트 ${s.n} ${s.title}`}>
+              {p.passed[s.id] && s.id !== p.mission ? '✓' : s.n}
+            </button>
+          </li>
+        ))}
+      </ol>
+      {m && q && (
         <>
-          <h3 className={css.qBig}>
-            <small>
-              퀘스트 {m.n}
-              {m.stage ? ` · ${m.stage}` : ''}
-            </small>
-            {m.title.replace(/^[^:]+:\s*/, '')}
-          </h3>
-          {q && (
-            <ol className={css.qPhases} aria-label="단계">
-              {PHASES.map((ph, k) => (
-                <li key={ph} data-on={k === now || undefined} data-done={k < now || undefined}>
-                  {ph}
-                </li>
-              ))}
-            </ol>
-          )}
-          {q && (
-            <div className={css.qDo} data-phase={q.phase}>
-              <p>{q.now}</p>
-              {q.phase === 'do' && (
-                <button type="button" aria-expanded={hint} onClick={() => setHint((h) => !h)}>
-                  {hint ? '힌트 접기' : '힌트'}
-                </button>
-              )}
-              {hint && q.phase === 'do' && <small>{m.hint}</small>}
-            </div>
-          )}
+          <ol className={css.qGauge} aria-label="단계">
+            {PHASES.map((ph, k) => (
+              <li key={ph} data-on={k === now || undefined} data-done={k < now || undefined}>
+                <i />
+                {ph}
+              </li>
+            ))}
+          </ol>
+          <div className={css.qGoal} data-phase={q.phase}>
+            <i aria-hidden="true" />
+            <p>{questShort(q.phase, m.id, q.phase === 'result' ? !!q.checks?.every((c) => c.ok) : null)}</p>
+            <button type="button" aria-expanded={hint} aria-label={hint ? '자세한 설명 접기' : '자세한 설명 · 힌트'} onClick={() => setHint((h) => !h)}>
+              ?
+            </button>
+            {hint && (
+              <small>
+                {q.now}
+                {q.phase === 'do' && (
+                  <>
+                    <br />
+                    <b>힌트</b> {m.hint}
+                  </>
+                )}
+              </small>
+            )}
+          </div>
         </>
-      ) : (
-        <h3 className={css.qBig}>
-          <small>자유 연습</small>
-          채점 없이 메뉴를 모두 써 봐요
-        </h3>
       )}
     </nav>
   );

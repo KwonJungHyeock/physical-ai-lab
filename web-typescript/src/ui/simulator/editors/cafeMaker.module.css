@@ -513,3 +513,50 @@
 .doorBig[data-glow] {
   box-shadow: 0 0 0 2px #ffd257;
 }
+
+/* 보기 (WatchPane): the O · X as badge sockets, filled as they are answered. */
+.sockets {
+  display: flex;
+  justify-content: space-around;
+  margin: 10px 0 0;
+  padding: 10px 6px 8px;
+  border-radius: 10px;
+  background: var(--hud-groove);
+  box-shadow: var(--hud-groove-shadow);
+  list-style: none;
+}
+
+.sockets li {
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--hud-dim);
+}
+
+.sockets i {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #2b2f34;
+  box-shadow: inset 0 0 0 1.5px rgba(213, 218, 225, 0.22);
+  font:
+    800 13px ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  font-style: normal;
+}
+
+.sockets li[data-ok] {
+  color: var(--hud-tx);
+}
+
+.sockets li[data-ok] i {
+  background: var(--hud-silver);
+  box-shadow: var(--hud-silver-shadow);
+  color: var(--hud-ink);
+}

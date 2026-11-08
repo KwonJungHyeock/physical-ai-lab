@@ -925,163 +925,267 @@
   min-width: 200px;
 }
 
-/* 입문 퀘스트, the top of the side panel (CellHud PanelQuest): a line of dots, the quest's name, the
-   four moves (해 보기 · 예측 · 관찰 · 개념), the one sentence to do now. */
+/* 입문 퀘스트, the top of the side panel (CellHud PanelQuest): a game's quest tracker in the console's
+   metal language — a plate, tracked tags, grooves; white is what is lit, green what is passed. */
 .qPanel {
   margin: 0 12px 10px;
-  padding: 10px 12px 12px;
+  padding: 11px 12px 12px;
   border-radius: 14px;
-  background: var(--hud-plate, rgba(36, 39, 43, 0.95));
-  box-shadow: var(--hud-plate-shadow, 0 0 0 1px rgba(0, 0, 0, 0.5));
-  color: var(--hud-tx, #e9edf1);
+  background: var(--hud-plate);
+  box-shadow: var(--hud-plate-shadow);
+  color: var(--hud-tx);
 }
 
-.qBar {
+.qHead {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.qBar ol {
+.qHead em {
+  font-style: normal;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: var(--hud-dim);
+}
+
+.qNum {
+  font:
+    800 20px ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  letter-spacing: 0.02em;
+  color: var(--hud-light);
+  text-shadow: 0 0 12px rgba(236, 241, 248, 0.35);
+}
+
+.qNum small {
+  font-size: 12px;
+  color: var(--hud-dim);
+  text-shadow: none;
+}
+
+.qName {
+  flex: 1;
+  min-width: 0;
+  font-size: 15.5px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.qListKey {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: var(--hud-key);
+  box-shadow: var(--hud-key-shadow);
+  color: var(--hud-sub);
+  cursor: pointer;
+}
+
+/* The place's quests: nodes on a track in a groove; the line lights as far as they are passed. */
+.qTrack {
+  position: relative;
   display: flex;
-  gap: 4px;
-  margin: 0;
-  padding: 0;
+  justify-content: space-between;
+  margin: 10px 0 0;
+  padding: 7px 9px;
+  border-radius: 999px;
+  background: var(--hud-groove);
+  box-shadow: var(--hud-groove-shadow);
   list-style: none;
 }
 
-.qBar ol button {
-  width: 22px;
-  height: 22px;
+.qTrack li {
+  position: relative;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+/* The link to the next node. */
+.qTrack li:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: calc(50% + 10px);
+  right: calc(-50% + 10px);
+  height: 2px;
+  margin-top: -1px;
+  background: rgba(213, 218, 225, 0.16);
+}
+
+.qTrack li[data-done]:not(:last-child)::after {
+  background: var(--hud-green);
+  opacity: 0.7;
+}
+
+.qTrack button {
+  position: relative;
+  z-index: 1;
+  width: 20px;
+  height: 20px;
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: #3a3f46;
-  color: #c9d1da;
-  font-size: 11px;
-  font-weight: 800;
+  background: #2b2f34;
+  box-shadow: inset 0 0 0 1px rgba(213, 218, 225, 0.22);
+  color: var(--hud-dim);
+  font:
+    800 10.5px ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
   cursor: pointer;
 }
 
-.qBar ol button:disabled {
-  opacity: 0.45;
+.qTrack li[data-lock] button {
+  opacity: 0.4;
   cursor: default;
 }
 
-.qBar li[data-done] button {
-  background: #1f8a55;
-  color: #fff;
+.qTrack li[data-done] button {
+  background: var(--hud-green);
+  box-shadow: none;
+  color: #0e2316;
 }
 
-.qBar li[data-cur] button {
-  background: #f4f6f8;
-  color: #15181c;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25);
-}
-
-.qBar > span {
-  margin-left: auto;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--hud-dim, #9aa4ae);
-  white-space: nowrap;
-}
-
-.qBar > button {
+.qTrack li[data-cur] button {
+  width: 24px;
   height: 24px;
-  padding: 0 9px;
-  border: 0;
-  border-radius: 7px;
-  background: #3a3f46;
-  color: #e9edf1;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
+  margin: -2px 0;
+  background: var(--hud-silver);
+  box-shadow: var(--hud-silver-shadow);
+  color: var(--hud-ink);
+  animation: qPulse 1.8s ease-in-out infinite;
 }
 
-.qBig {
+@keyframes qPulse {
+  50% {
+    box-shadow:
+      var(--hud-silver-shadow),
+      0 0 0 5px rgba(244, 246, 249, 0.12);
+  }
+}
+
+/* The four moves: a segment gauge, its words small under it. */
+.qGauge {
   display: grid;
-  gap: 2px;
-  margin: 12px 0 8px;
-  font-size: 19px;
-  font-weight: 800;
-  line-height: 1.25;
-}
-
-.qBig small {
-  font-size: 11.5px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: var(--hud-dim, #9aa4ae);
-}
-
-.qPhases {
-  display: flex;
+  grid-template-columns: repeat(4, 1fr);
   gap: 4px;
-  margin: 0 0 10px;
+  margin: 11px 0 0;
   padding: 0;
   list-style: none;
 }
 
-.qPhases li {
-  flex: 1;
-  padding: 4px 0;
-  border-radius: 999px;
-  background: #30343a;
-  color: #8e98a3;
-  font-size: 12px;
+.qGauge li {
+  display: grid;
+  gap: 4px;
+  font-size: 10.5px;
   font-weight: 700;
+  letter-spacing: 0.06em;
   text-align: center;
+  color: var(--hud-dim);
 }
 
-.qPhases li[data-done] {
-  color: #9fd9b8;
+.qGauge li i {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(213, 218, 225, 0.18);
 }
 
-.qPhases li[data-on] {
-  background: #1f8a55;
-  color: #fff;
+.qGauge li[data-done] i {
+  background: var(--hud-green);
 }
 
-.qDo {
+.qGauge li[data-on] {
+  color: var(--hud-light);
+}
+
+.qGauge li[data-on] i {
+  background: var(--hud-light);
+  box-shadow: 0 0 8px rgba(236, 241, 248, 0.6);
+}
+
+/* The goal in a few words, in a groove: a lit diamond, the line, ? for the whole sentence and the hint. */
+.qGoal {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
+  align-items: center;
   gap: 6px 10px;
-  padding: 10px 12px;
+  margin-top: 10px;
+  padding: 10px 10px 10px 12px;
   border-radius: 10px;
-  background: rgba(47, 191, 113, 0.12);
-  box-shadow: inset 3px 0 0 #2fbf71;
+  background: var(--hud-groove);
+  box-shadow: var(--hud-groove-shadow);
 }
 
-.qDo p {
-  flex: 1 1 200px;
+.qGoal > i {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  transform: rotate(45deg);
+  background: var(--hud-light);
+  box-shadow: 0 0 8px rgba(236, 241, 248, 0.7);
+}
+
+.qGoal[data-phase='run'] > i {
+  background: var(--hud-amber);
+  box-shadow: 0 0 8px rgba(240, 162, 59, 0.7);
+}
+
+.qGoal p {
+  flex: 1;
+  min-width: 0;
   margin: 0;
   font-size: 14.5px;
-  font-weight: 700;
-  line-height: 1.45;
+  font-weight: 800;
+  line-height: 1.35;
 }
 
-.qDo button {
+.qGoal button {
+  flex: none;
+  width: 24px;
   height: 24px;
-  padding: 0 9px;
   border: 0;
-  border-radius: 7px;
-  background: rgba(255, 255, 255, 0.1);
-  color: #e9edf1;
-  font-size: 12px;
-  font-weight: 700;
+  border-radius: 50%;
+  background: var(--hud-key);
+  box-shadow: var(--hud-key-shadow);
+  color: var(--hud-sub);
+  font-size: 12.5px;
+  font-weight: 800;
   cursor: pointer;
 }
 
-.qDo small {
-  flex-basis: 100%;
-  font-size: 12.5px;
-  line-height: 1.5;
-  color: #cfd8e2;
+.qGoal button[aria-expanded='true'] {
+  background: var(--hud-silver);
+  box-shadow: var(--hud-silver-shadow);
+  color: var(--hud-ink);
 }
 
-.qDo[data-phase='result'] {
-  background: rgba(255, 255, 255, 0.06);
-  box-shadow: inset 3px 0 0 #9aa4ae;
+.qGoal small {
+  flex-basis: 100%;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--hud-sub);
+}
+
+.qGoal small b {
+  color: var(--hud-tx);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qTrack li[data-cur] button {
+    animation: none;
+  }
 }

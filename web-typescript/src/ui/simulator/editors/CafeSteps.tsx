@@ -26,14 +26,24 @@ export function WatchPane({ mission, answered, onCode }: { mission: string; answ
   // Only how far the O · X have gone: what happens is said over the scene (말풍선), the questions come as a modal.
   return (
     <div className={css.maker}>
-      <div className={css.stats} style={{ gridTemplateColumns: `repeat(${asks.length}, 1fr)` }} aria-label="O X 퀴즈">
-        {asks.map((a, k) => (
-          <span key={a.key} data-ok={answered(a.key) || undefined}>
-            <b>{answered(a.key) ? '✓' : 'O X'}</b>
-            {['컵', '샷', '건네기'][k] ?? `질문 ${k + 1}`}
+      <section className={css.plate} aria-label="O X 퀴즈">
+        <header>
+          <em>QUIZ</em>
+          <b>O · X</b>
+          <span className={css.cycle}>
+            <b>{asks.filter((a) => answered(a.key)).length}</b> / {asks.length}
           </span>
-        ))}
-      </div>
+        </header>
+        {/* One socket a question, filled as it is answered (a game's badge slots). */}
+        <ol className={css.sockets}>
+          {asks.map((a, k) => (
+            <li key={a.key} data-ok={answered(a.key) || undefined}>
+              <i>{answered(a.key) ? '✓' : k + 1}</i>
+              {['컵', '샷', '건네기'][k] ?? `질문 ${k + 1}`}
+            </li>
+          ))}
+        </ol>
+      </section>
     </div>
   );
 }
@@ -79,7 +89,6 @@ function MachineKeys({ world, busy }: { world: RefObject<WorldState | null>; bus
           {s.out ? '추출 버튼 놓기' : '추출 버튼 누르기'}
         </button>
       </div>
-      <p className={css.tip}>버튼을 누르면 [추출 중]이 켜지고, 다 나오면 [추출 끝]이 켜져요. 다시 추출하려면 버튼을 놓았다가 눌러요.</p>
     </section>
   );
 }
