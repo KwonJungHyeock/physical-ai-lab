@@ -9289,3 +9289,9 @@ div.zeroFlow {
 .runMenuItem {
   font-weight: 700;
 }
+/* 입문 퀘스트: the bar stands in the panel right under the quest's controls, not at its foot. */
+.runDock[data-quest] {
+  padding: 2px 12px 14px;
+  border-top: 0;
+  background: transparent;
+}

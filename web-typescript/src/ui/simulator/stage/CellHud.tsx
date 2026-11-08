@@ -124,6 +124,8 @@ export interface QuestInfo {
   onList(): void;
   /** 예측 (O · X) open over the scene now. */
   asking?: boolean;
+  /** 해 보기 by hand: what goes on now (the machine pouring) — the gauge on 관찰, these words the goal. */
+  watching?: string;
 }
 
 interface QuestCardProps {
@@ -250,7 +252,7 @@ function PanelQuest(p: QuestCardProps) {
   const built = CELL_BY_ID[p.cell].built;
   const open = (i: number) => built && (p.allOpen || i === 0 || !!p.passed[steps[i - 1].id]);
   const q = p.quest;
-  const now = !q ? -1 : q.asking ? 1 : q.phase === 'do' ? 0 : q.phase === 'run' ? 2 : 3;
+  const now = !q ? -1 : q.asking ? 1 : q.watching ? 2 : q.phase === 'do' ? 0 : q.phase === 'run' ? 2 : 3;
   const two = (n: number) => String(n).padStart(2, '0');
   return (
     <nav className={css.qPanel} aria-label="퀘스트">
@@ -286,9 +288,9 @@ function PanelQuest(p: QuestCardProps) {
               </li>
             ))}
           </ol>
-          <div className={css.qGoal} data-phase={q.phase}>
+          <div className={css.qGoal} data-phase={q.watching ? 'run' : q.phase}>
             <i aria-hidden="true" />
-            <p>{questShort(q.phase, m.id, q.phase === 'result' ? !!q.checks?.every((c) => c.ok) : null)}</p>
+            <p>{q.watching ?? questShort(q.phase, m.id, q.phase === 'result' ? !!q.checks?.every((c) => c.ok) : null)}</p>
             <button type="button" aria-expanded={hint} aria-label={hint ? '자세한 설명 접기' : '자세한 설명 · 힌트'} onClick={() => setHint((h) => !h)}>
               ?
             </button>

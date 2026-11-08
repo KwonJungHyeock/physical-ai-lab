@@ -15,10 +15,12 @@ import type { TutCtx, TutTarget } from '@/engine/simulator/lifeTutorials';
 
 import css from './tutorial.module.css';
 
-/** What to spotlight: fixed targets, or `lead` read from the arm now. */
+/** What to spotlight: fixed targets, `lead` read from the arm now, or `seq` one after another. */
 export interface SpotStep {
   target: readonly TutTarget[];
   lead?(now: TutCtx): TutTarget[];
+  /** 입문 퀘스트: the controls in turn (e.g. the menu, then ▶); a press on the one lit moves on to the next. */
+  seq?: readonly TutTarget[];
 }
 
 const squash = (s: string | null | undefined) => (s ?? '').replace(/[\s▶▷·+＋›]+/g, '');
@@ -48,7 +50,7 @@ const rectOf = (els: HTMLElement[], pad: number) => {
  * the arm (the first of its targets on screen); the others ring all their targets. Panels open and
  * close under it, and the arm moves: look again a few times a second.
  */
-export function useSpotlight(step: SpotStep | null, read: () => TutCtx, strip: RefObject<HTMLElement | null>) {
+export function useSpotlight(step: SpotStep | null, read: () => TutCtx, strip: RefObject<HTMLElement | null>, once = false) {
   const [spot, setSpot] = useState<Spot | null>(null);
   const [dim, setDim] = useState(false);
   const readRef = useRef(read);
@@ -59,6 +61,10 @@ export function useSpotlight(step: SpotStep | null, read: () => TutCtx, strip: R
     if (!step) return;
     let marked: HTMLElement[] = [];
     let last = '';
+    // `seq`: the one lit now (the first of those from `at` on screen) and where to go on a press.
+    let at = 0;
+    let lit = -1;
+    let dimmed = false;
     const shown = (el: HTMLElement) => el.getBoundingClientRect().width > 0;
     const find = (t: TutTarget) => {
       if ('sel' in t) return [...document.querySelectorAll<HTMLElement>(t.sel)].filter(shown).slice(0, 3);
@@ -69,7 +75,18 @@ export function useSpotlight(step: SpotStep | null, read: () => TutCtx, strip: R
       let els: HTMLElement[] = [];
       let said = '';
       let key = '';
-      if (step.lead) {
+      if (step.seq) {
+        lit = -1;
+        for (let k = at; k < step.seq.length; k += 1) {
+          const f = find(step.seq[k]);
+          if (!f.length) continue;
+          els = f;
+          said = step.seq[k].say ?? '';
+          key = JSON.stringify(step.seq[k]);
+          lit = k;
+          break;
+        }
+      } else if (step.lead) {
         for (const t of step.lead(readRef.current())) {
           const f = find(t);
           if (!f.length) continue;
@@ -94,13 +111,20 @@ export function useSpotlight(step: SpotStep | null, read: () => TutCtx, strip: R
       setSpot({ hole: rectOf(els, els[0].dataset.kind === 'wedge' ? 12 : 6), strip: s ? rectOf([s], 2) : null, say: said, key });
       if (key !== last) {
         last = key;
-        setDim(true);
+        // A control lit below a scrolled panel's fold comes into sight.
+        els[0].scrollIntoView({ block: 'nearest' });
+        // `once` (입문 퀘스트): the screen dims for the quest's first control only; the next ones are ringed.
+        if (!once || !dimmed) setDim(true);
+        dimmed = true;
       }
     };
     look();
     const t = window.setInterval(look, 300);
     // Any press (the control, or anywhere else) lifts the dimming; the ring and the line stay.
-    const lift = () => setDim(false);
+    const lift = (e: Event) => {
+      setDim(false);
+      if (lit >= 0 && marked.some((el) => el.contains(e.target as Node))) at = lit + 1;
+    };
     window.addEventListener('pointerdown', lift, true);
     window.addEventListener('keydown', lift, true);
     return () => {
@@ -109,7 +133,7 @@ export function useSpotlight(step: SpotStep | null, read: () => TutCtx, strip: R
       window.removeEventListener('keydown', lift, true);
       for (const el of marked) el.removeAttribute('data-hint');
     };
-  }, [step, strip]);
+  }, [step, strip, once]);
   return { spot: step ? spot : null, dim };
 }
 
@@ -144,9 +168,9 @@ export function Spotlight({ spot, dim }: { spot: Spot; dim: boolean }) {
   );
 }
 
-/** A spotlight on its own (no strip beside it): the café's jog quest leads to its ring with it. */
-export function LeadSpot({ step, read }: { step: SpotStep; read(): TutCtx }) {
+/** A spotlight on its own (no strip beside it): 입문 퀘스트 lead to their controls with it. */
+export function LeadSpot({ step, read, once }: { step: SpotStep; read(): TutCtx; once?: boolean }) {
   const none = useRef<HTMLElement>(null);
-  const { spot, dim } = useSpotlight(step, read, none);
+  const { spot, dim } = useSpotlight(step, read, none, once);
   return spot ? <Spotlight spot={spot} dim={dim} /> : null;
 }

@@ -41,8 +41,8 @@
 /* Two classes each: the console's `.app button { color: inherit }` outranks one. */
 .recipe .times button,
 .recipe .tools button {
-  width: 26px;
-  height: 26px;
+  width: 32px;
+  height: 32px;
   border-radius: 7px;
   border: 0;
   background: var(--hud-key);
@@ -108,7 +108,7 @@
 }
 
 .title {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -136,7 +136,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--hud-sub);
 }
 
@@ -229,7 +229,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--hud-tx);
 }
@@ -279,7 +279,7 @@
 .order em {
   grid-row: span 2;
   font:
-    800 10px ui-monospace,
+    800 11px ui-monospace,
     SFMono-Regular,
     Menlo,
     monospace;
@@ -322,12 +322,13 @@
   align-items: center;
   gap: 5px;
   margin-left: 6px;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--hud-sub);
 }
 .amt input {
   width: 58px;
+  height: 32px;
   background: var(--hud-groove);
   box-shadow: var(--hud-groove-shadow);
   color: #fff;
@@ -365,7 +366,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--hud-tx);
   padding: 3px 6px;
   border-radius: 6px;
@@ -373,7 +374,7 @@
 .rows li::before {
   content: counter(row);
   font:
-    700 10.5px ui-monospace,
+    700 11px ui-monospace,
     SFMono-Regular,
     Menlo,
     monospace;
@@ -396,7 +397,7 @@
 
 .recipe .palette button small {
   display: block;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--hud-sub);
 }
@@ -432,7 +433,7 @@
 .moreAll > summary {
   cursor: pointer;
   padding: 8px 12px;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--hud-dim, #9aa4ae);
   list-style: none;

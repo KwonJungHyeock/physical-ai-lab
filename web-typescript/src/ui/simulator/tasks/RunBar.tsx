@@ -35,7 +35,8 @@ interface Props {
   onStop(): void;
   /**
    * 입문 퀘스트: only ▶ and ■ in sight; the speed key, the robot's button and these go under ⋯
-   * (자유 연습 …).
+   * (자유 연습 …). The bar then sits in the panel right under the quest's controls (not at the
+   * foot) and ■ shows only while something runs.
    */
   more?: { label: string; onClick(): void; disabled?: boolean }[];
 }
@@ -83,7 +84,7 @@ export default function RunBar(p: Props) {
       ? '실제 로봇이 움직여요'
       : '로봇에서 실행할 파이썬 코드를 받아요';
   return (
-    <div className={css.runDock} role="group" aria-label="실행" data-panel="run">
+    <div className={css.runDock} role="group" aria-label="실행" data-panel="run" data-quest={p.more ? '' : undefined}>
       <button
         type="button"
         className={css.runSim}
@@ -129,10 +130,13 @@ export default function RunBar(p: Props) {
         </button>
       ))}
       </span>
-      <button type="button" className={css.runStop} onClick={p.onStop} aria-label="정지" title="정지 (Esc · 스페이스)">
-        <Icon name="stop" size={16} />
-        <span>정지</span>
-      </button>
+      {/* 입문 퀘스트: ■ only while something runs (Esc still stops at any time). */}
+      {(!p.more || p.busy) && (
+        <button type="button" className={css.runStop} onClick={p.onStop} aria-label="정지" title="정지 (Esc · 스페이스)">
+          <Icon name="stop" size={16} />
+          <span>정지</span>
+        </button>
+      )}
     </div>
   );
 }

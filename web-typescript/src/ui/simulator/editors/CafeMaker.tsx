@@ -170,13 +170,13 @@ export default function CafeMaker({ mission, busy, runningLine, onCode, world, f
 
   const order = (
     <div className={css.order} key="order">
-      <em>{setup?.spawn ? 'DAY' : 'ORDER'}</em>
+      <em>ORDER</em>
       <b>{setup?.spawn ? `손님 ${orders}명 · 내 메뉴 중 무작위` : `주문 ${orders}잔 · ${setup?.menuQueue ? setup.menuQueue.map((q) => `메뉴 ${q}`).join(' → ') : '메뉴 1'}`}</b>
     </div>
   );
   // 메뉴 카드: one per drink.
   const tabs = (
-    <div className={css.tabs} role="tablist" key="tabs">
+    <div className={css.tabs} role="tablist">
       {shown.map((r, k) => (
         <button key={k} type="button" role="tab" aria-selected={k === ci} className={css.tab} data-on={k === ci || undefined} disabled={busy} onClick={() => setSel(k)}>
           <i>메뉴 {k + 1}</i>
@@ -187,6 +187,7 @@ export default function CafeMaker({ mission, busy, runningLine, onCode, world, f
         <button
           type="button"
           className={css.add}
+          data-lead="add"
           data-glow={(focus === 'menu2' && recipes.length < 2) || undefined}
           disabled={busy}
           onClick={() => {
@@ -200,12 +201,13 @@ export default function CafeMaker({ mission, busy, runningLine, onCode, world, f
     </div>
   );
   const menuPlate = (
-    <section className={css.plate} key="menu">
+    <section className={css.plate} key="menu" data-lead="menu">
       <header>
         <em>MENU</em>
         <b>메뉴 만들기</b>
         <CupGauge m={cur.menu} />
       </header>
+      {(mission !== 'F4' || recipes.length > 1) && tabs}
       <div className={css.presets}>
         {MENU_PRESETS.map((p) => (
           <button key={p.name} type="button" disabled={busy} data-on={p.name === cur.menu.name || undefined} onClick={() => setMenu({ ...p })}>
@@ -237,11 +239,15 @@ export default function CafeMaker({ mission, busy, runningLine, onCode, world, f
           </button>
         </span>
         <label className={css.range}>
-          얼음 <b>{cur.menu.ice} ml</b>
+          <span>
+            얼음 <b>{cur.menu.ice} ml</b>
+          </span>
           <input type="range" min={0} max={200} step={5} value={cur.menu.ice} disabled={busy || cur.menu.hot} onChange={(e) => setMenu({ ice: Number(e.target.value) })} />
         </label>
         <label className={css.range}>
-          {cur.menu.hot ? '온수' : '물'} <b>{cur.menu.water} ml</b>
+          <span>
+            {cur.menu.hot ? '온수' : '물'} <b>{cur.menu.water} ml</b>
+          </span>
           <input type="range" min={0} max={250} step={5} value={cur.menu.water} disabled={busy} onChange={(e) => setMenu({ water: Number(e.target.value) })} />
         </label>
       </div>
@@ -300,7 +306,7 @@ export default function CafeMaker({ mission, busy, runningLine, onCode, world, f
         <em>SERVE</em>
         <b>건네기</b>
       </header>
-      <label className={css.doorBig} data-glow={!cur.door || undefined}>
+      <label className={css.doorBig} data-glow={!cur.door || undefined} data-lead="door">
         <input type="checkbox" disabled={busy} checked={cur.door} onChange={(e) => setRecipes((all) => all.map((r) => ({ ...r, door: e.target.checked })))} />
         <span>
           <b>픽업 문으로 건네기</b>
@@ -339,12 +345,12 @@ export default function CafeMaker({ mission, busy, runningLine, onCode, world, f
       )}
     </div>
   );
-  const parts = { order, tabs, menu: menuPlate, door, motion, day, foot };
+  const parts = { order, menu: menuPlate, door, motion, day, foot };
   const want = mission ? FOCUS[mission] : undefined;
   // 자유 연습 (and a step without a focus): everything, as before.
-  if (!want) return <div className={css.maker}>{[order, tabs, menuPlate, motion, day, foot]}</div>;
+  if (!want) return <div className={css.maker}>{[order, menuPlate, motion, day, foot]}</div>;
   // 입문 퀘스트: the one thing this quest changes; the rest folded under 자세히.
-  const rest = (['order', 'tabs', 'menu', 'motion', 'day', 'foot'] as const).filter((k) => !want.includes(k)).map((k) => parts[k]);
+  const rest = (['order', 'menu', 'motion', 'day', 'foot'] as const).filter((k) => !want.includes(k)).map((k) => parts[k]);
   return (
     <div className={css.maker}>
       {want.map((k) => parts[k])}
@@ -360,11 +366,11 @@ export default function CafeMaker({ mission, busy, runningLine, onCode, world, f
  * 입문 퀘스트: what each café step shows (the one thing it is about); the rest is under 자세히.
  * 4 내 메뉴 · 5 픽업 문 · 6 주문 2잔 (nothing to change) · 7 메뉴 2 · 8 운영.
  */
-const FOCUS: Record<string, readonly ('order' | 'tabs' | 'menu' | 'door' | 'motion' | 'day' | 'foot')[]> = {
+const FOCUS: Record<string, readonly ('order' | 'menu' | 'door' | 'motion' | 'day' | 'foot')[]> = {
   F4: ['menu'],
   F5: ['door'],
   F6: ['order'],
-  F7: ['tabs', 'menu'],
+  F7: ['menu'],
   F8: ['order', 'day'],
 };
 

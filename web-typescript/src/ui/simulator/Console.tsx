@@ -131,7 +131,7 @@ import TutorialList from './tasks/TutorialList';
 import TutorialStrip from './tasks/TutorialStrip';
 import { LeadSpot, type SpotStep } from './tasks/Spotlight';
 import { MomentAsk, PredictCard, StepResult, loadPredictions, savePrediction } from './stage/StepGuide';
-import { QUESTS, questNow, type QuestPhase } from '@/engine/simulator/cell/quests';
+import { QUEST_LEAD, QUESTS, questNow, type QuestPhase } from '@/engine/simulator/cell/quests';
 import { askNow, asksOf, guideOf, type Ask } from '@/engine/simulator/cell/guides';
 import { NARRATE_HOLD_MS, NARRATED, narrationLines } from '@/engine/simulator/cell/narrate';
 import { narrateShot, stationAt } from '@/engine/simulator/cell/shots';
@@ -568,6 +568,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
    * cell's both read the rate through `runRate`, which is 0 while held.
    */
   const heldRef = useRef(false);
+  /** 입문 해 보기 ①: ▶▶ while the machine pours by hand (the cell 4 ×, this wait only). */
+  const fastRef = useRef(1);
   /**
    * 입문 트랙: a move is also sampled between the screen's frames, every 1/60 s of its time, so what
    * it leaves (the pen's line, the path the checks read) does not depend on how fast the computer
@@ -579,7 +581,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const runRate = useMemo(
     () => ({
       get current() {
-        return heldRef.current ? 0 : simRateRef.current;
+        return heldRef.current ? 0 : simRateRef.current * fastRef.current;
       },
     }),
     [],
@@ -1928,6 +1930,39 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     return { target: [], lead: (n) => (Math.hypot(n.tip.x - r[0], n.tip.y - r[1], n.tip.z - r[2]) <= RING_MM ? [] : ringLead(n.tip, r)) };
   }, [ringKey]);
   const questQ = lifeStep ? QUESTS[lifeStep.id] : undefined;
+  // 해 보기 ① by hand: the machine pouring (the quest on 관찰, the view on the machine) and ▶▶.
+  const [handGoing, setHandGoing] = useState(false);
+  const [handFast, setHandFast] = useState(false);
+  const setFast = useCallback((on: boolean) => {
+    fastRef.current = on ? 4 : 1;
+    setHandFast(on);
+  }, []);
+  const handWas = useRef(false);
+  const onHandGoing = useCallback(
+    (on: boolean) => {
+      if (on === handWas.current) return;
+      handWas.current = on;
+      setHandGoing(on);
+      if (!on) setFast(false);
+      const api = stageApi.current;
+      if (!api || api.userMoved()) return;
+      if (on) {
+        const sh = narrateShot('커피 머신');
+        api.lookAt(sh.eye, sh.target);
+      } else window.setTimeout(() => api.view('home'), 1500);
+    },
+    [setFast],
+  );
+  useEffect(() => {
+    // A quest left mid-pour: back to real time.
+    return () => {
+      handWas.current = false;
+      setHandGoing(false);
+      setFast(false);
+    };
+  }, [cellAt?.mission, setFast]);
+  // The quest's controls in turn (quests.ts QUEST_LEAD), lit while there is something to do.
+  const questLead = useMemo<SpotStep | null>(() => (lifeStep && QUEST_LEAD[lifeStep.id] ? { target: [], seq: QUEST_LEAD[lifeStep.id] } : null), [lifeStep]);
   const questPhase: QuestPhase | null =
     lifeStep && cellAt ? (busy ? 'run' : cellResult !== null && lastChecks ? 'result' : 'do') : null;
   // The card to change lights while there is something to do (not over a passed result).
@@ -4077,6 +4112,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   // 제어: moving the arm by hand. 작업: programs that run (a process of points, blocks, Python, ROS 2). 보기: windows.
   // 입문 트랙's café and calligraphy booth: the program is 작업 순서 카드, not code (CafeMaker · DrawCards · BoardCards).
   const recipeOn = !!track && (cellAt?.cell === 'cafe' || cellAt?.cell === 'draw' || cellAt?.cell === 'board');
+  /** 입문 퀘스트 in a site: the run bar sits in the panel under the quest's controls (RunBar `more`). */
+  const questInline = recipeOn && questOn && !!lifeStep && cafeMode !== 'hand';
   const controlGroup = { name: '제어', items: [work('jog', '제어', 'move', '제어: 관절 · 좌표로 움직이기 (조그)', true), { ...work('parts', '도구', 'tool', '도구 · 액세서리', true), hintFor: '끼우기, 도구' }, { ...work('pose', '자세', 'home', '자세 저장 · 불러오기', true), hintFor: '기본 자세, 일자로 펴기, 카메라 자세, 이 자세로, 자세' }] };
   const objectsItem = theme === 'kit' ? [] : [viewItem('objects', '물건', 'box', '책상에 물건 놓기', desk.objects.length ? String(desk.objects.length) : undefined)];
   const monitorItem = viewItem('monitor', '모니터', 'chart', '관절 · 손끝 · 그래프 · 부하');
@@ -5011,7 +5048,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   onClose={() => setLastChecks(null)}
                 />
               )}
-              {loaded && view === 'sim' && ringSpot && !busy && <LeadSpot step={ringSpot} read={() => tutCtxRef.current()} />}
+              {loaded && view === 'sim' && ringSpot && !busy && <LeadSpot step={ringSpot} read={() => tutCtxRef.current()} once />}
+              {loaded && view === 'sim' && questLead && questOn && questPhase === 'do' && !moment && !roadmapOpen && !touring && <LeadSpot key={lifeStep?.id} step={questLead} read={() => tutCtxRef.current()} once />}
               {loaded && view === 'sim' && moment && (
                 <MomentAsk
                   key={moment.key}
@@ -5503,7 +5541,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                             allOpen={false}
                             busy={busy}
                             onMission={(id) => openCell(cellAt.cell, id)}
-                            quest={{ phase: questPhase, checks: questPhase === 'result' ? lastChecks : null, now: questNow(questPhase, lifeStep.id, cellResult), onList: () => setRoadmapOpen(true), asking: !!moment }}
+                            quest={{ phase: questPhase, checks: questPhase === 'result' ? lastChecks : null, now: questNow(questPhase, lifeStep.id, cellResult), onList: () => setRoadmapOpen(true), asking: !!moment, watching: handGoing && questPhase === 'do' ? '[추출 끝] 켜질 때까지 지켜보기' : undefined }}
                           />
                         )}
                         {cellAt!.cell === 'draw' ? (
@@ -5515,10 +5553,12 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                             // 입문 로봇 카페: 미리보기 · 해 보기 · 나만의 카페 (menus and their motion).
                             const mode = cellAt!.mission ? missionById(cellAt!.mission)?.mode : undefined;
                             if (mode === 'watch') return <WatchPane key={cellAt!.mission} mission={cellAt!.mission!} answered={(k) => preds[k] !== undefined || !!skipped[k]} onCode={onRecipeCode} />;
-                            if (mode === 'hand') return <HandPane key={cellAt!.mission} mission={cellAt!.mission!} world={world} busy={busy} jog={controlPanel} onCode={onRecipeCode} />;
+                            if (mode === 'hand') return <HandPane key={cellAt!.mission} mission={cellAt!.mission!} world={world} busy={busy} jog={controlPanel} onCode={onRecipeCode} fast={handFast} onFast={setFast} onGoing={onHandGoing} />;
                             return <CafeMaker key={cellAt!.mission ?? 'free'} mission={cellAt!.mission} busy={busy} runningLine={runningLine} onCode={onRecipeCode} world={world} focus={cellAt!.mission === 'F5' ? 'door' : cellAt!.mission === 'F7' ? 'menu2' : null} />;
                           })()
                         )}
+                        {/* 입문 퀘스트: ▶ right under what the quest changes (to do → press → ▶ in one look). */}
+                        {questInline && runBar}
                       </div>
                     ) : cellAt && cellTermOn ? (
                       <div className={css.pane}>
@@ -5626,7 +5666,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                         }}
                       />
                     )}
-                    {!cellTermOn && !armTermOn && cafeMode !== 'hand' && runBar}
+                    {!cellTermOn && !armTermOn && cafeMode !== 'hand' && !questInline && runBar}
                   </div>
                 )}
               </>

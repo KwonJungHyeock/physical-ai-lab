@@ -49,7 +49,7 @@ export function WatchPane({ mission, answered, onCode }: { mission: string; answ
 }
 
 /** 해 보기 ①: the coffee machine's start button and the signals it answers with. */
-function MachineKeys({ world, busy }: { world: RefObject<WorldState | null>; busy: boolean }) {
+function MachineKeys({ world, busy, fast, onFast, onGoing }: { world: RefObject<WorldState | null>; busy: boolean } & Speedy) {
   const [s, setS] = useState({ out: false, cup: false, busy: false, done: false, shot: 0 });
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -60,6 +60,10 @@ function MachineKeys({ world, busy }: { world: RefObject<WorldState | null>; bus
     }, 150);
     return () => window.clearInterval(id);
   }, [world]);
+  // The machine pouring: the quest's 관찰 (the view goes to it; ▶▶ shortens the wait).
+  useEffect(() => {
+    onGoing?.(s.busy);
+  }, [s.busy, onGoing]);
   const press = (on: boolean) => {
     const run = world.current?.cell;
     if (run) setOut(run.line, '추출 시작', on);
@@ -85,20 +89,57 @@ function MachineKeys({ world, busy }: { world: RefObject<WorldState | null>; bus
         </span>
       </div>
       <div className={css.foot} style={{ marginTop: 10 }}>
-        <button type="button" className={css.ghost} style={{ background: 'var(--hud-silver)', color: 'var(--hud-ink)' }} disabled={busy || s.busy} onClick={() => press(!s.out)}>
-          {s.out ? '추출 버튼 놓기' : '추출 버튼 누르기'}
+        <button
+          type="button"
+          className={css.ghost}
+          style={{ minHeight: 40, padding: '0 22px', fontSize: 15, background: 'var(--hud-silver)', color: 'var(--hud-ink)' }}
+          data-lead={s.out ? undefined : 'press'}
+          disabled={busy || s.busy}
+          onClick={() => press(!s.out)}
+        >
+          {s.out ? '추출 떼기' : '추출'}
         </button>
+        {onFast && (
+          <button
+            type="button"
+            className={css.ghost}
+            style={{ minHeight: 40, padding: '0 16px', fontSize: 15 }}
+            data-on={fast || undefined}
+            aria-pressed={!!fast}
+            disabled={!s.busy}
+            onClick={() => onFast(!fast)}
+            title="기다리는 동안 4배 빠르게"
+          >
+            ▶▶ {fast ? '×4' : '빨리'}
+          </button>
+        )}
       </div>
     </section>
   );
 }
 
+/** 해 보기 ①: the wait made short — ▶▶ runs the cell 4 × while the machine pours (`onGoing`: it pours now). */
+interface Speedy {
+  fast?: boolean;
+  onFast?(on: boolean): void;
+  onGoing?(on: boolean): void;
+}
+
 /** 해 보기: by hand — the machine's keys (①) or the jog (②, the console's control panel passed in). */
-export function HandPane({ mission, world, busy, jog, onCode }: { mission: string; world: RefObject<WorldState | null>; busy: boolean; jog: ReactNode; onCode(code: string, cardOf: (line: number) => string): void }) {
+export function HandPane({
+  mission,
+  world,
+  busy,
+  jog,
+  onCode,
+  fast,
+  onFast,
+  onGoing,
+}: { mission: string; world: RefObject<WorldState | null>; busy: boolean; jog: ReactNode; onCode(code: string, cardOf: (line: number) => string): void } & Speedy) {
   const m = missionById(mission);
   useEffect(() => {
     // Nothing to run: the step is done by hand (▶ runs an empty program).
     onCode('from edu import robot, cell\n', () => '');
   }, [onCode]);
-  return <div className={css.maker}>{m?.target ? <section className={css.plate}>{jog}</section> : <MachineKeys world={world} busy={busy} />}</div>;
+  return <div className={css.maker}>{m?.target ? <section className={css.plate}>{jog}</section> : <MachineKeys world={world} busy={busy} fast={fast} onFast={onFast} onGoing={onGoing} />}</div>;
 }
