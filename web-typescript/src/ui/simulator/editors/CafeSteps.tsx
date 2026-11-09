@@ -135,11 +135,65 @@ export function HandPane({
   fast,
   onFast,
   onGoing,
-}: { mission: string; world: RefObject<WorldState | null>; busy: boolean; jog: ReactNode; onCode(code: string, cardOf: (line: number) => string): void } & Speedy) {
+  aim,
+}: {
+  mission: string;
+  world: RefObject<WorldState | null>;
+  busy: boolean;
+  jog: ReactNode;
+  onCode(code: string, cardOf: (line: number) => string): void;
+  /** 해 보기 ② (조그): where the tool tip is now (robot mm), for the distance to the ring. */
+  aim?: () => { x: number; y: number; z: number } | null;
+} & Speedy) {
   const m = missionById(mission);
   useEffect(() => {
     // Nothing to run: the step is done by hand (▶ runs an empty program).
     onCode('from edu import robot, cell\n', () => '');
   }, [onCode]);
-  return <div className={css.maker}>{m?.target ? <section className={css.plate}>{jog}</section> : <MachineKeys world={world} busy={busy} fast={fast} onFast={onFast} onGoing={onGoing} />}</div>;
+  return (
+    <div className={css.maker}>
+      {m?.target ? (
+        <section className={css.plate}>
+          {aim && <AimBoard target={m.target} aim={aim} />}
+          {jog}
+        </section>
+      ) : (
+        <MachineKeys world={world} busy={busy} fast={fast} onFast={onFast} onGoing={onGoing} />
+      )}
+    </div>
+  );
+}
+
+/** Within this on an axis it is lit (the ring takes 15 mm in all). */
+const AXIS_OK_MM = 8;
+
+/**
+ * 해 보기 ② (조그): the ring minus the tip, axis by axis — 앞뒤 (X) · 좌우 (Y) · 높이 (Z) — so the jog is
+ * read as coordinates: press the key whose sign the number has until it is near 0.
+ */
+function AimBoard({ target, aim }: { target: readonly [number, number, number]; aim: () => { x: number; y: number; z: number } | null }) {
+  const [d, setD] = useState<[number, number, number] | null>(null);
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      const t = aim();
+      setD(t ? [target[0] - t.x, target[1] - t.y, target[2] - t.z] : null);
+    }, 150);
+    return () => window.clearInterval(id);
+  }, [aim, target]);
+  const all = d ? Math.hypot(...d) : null;
+  const axis = (name: string, key: string, v: number | undefined) => (
+    <span data-ok={(v !== undefined && Math.abs(v) <= AXIS_OK_MM) || undefined}>
+      <b>{v === undefined ? '–' : `${v > 0 ? '+' : ''}${Math.round(v)}`}</b>
+      {name} ({key})
+    </span>
+  );
+  return (
+    <div className={css.aim} aria-label="고리까지 거리">
+      <em>고리까지 (mm) · 목표 높이 {target[2]} mm</em>
+      {axis('앞뒤', 'X', d?.[0])}
+      {axis('좌우', 'Y', d?.[1])}
+      {axis('높이', 'Z', d?.[2])}
+      <small>{all === null ? '' : all <= 15 ? '고리 안!' : `${Math.round(all)} mm 남음`}</small>
+    </div>
+  );
 }

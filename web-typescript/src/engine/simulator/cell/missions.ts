@@ -1154,6 +1154,18 @@ const shotByHand: Check = {
   },
 };
 
+/** 나만의 카페: the menu made is the student's own (one thing at least changed from the iced americano). */
+const myMenu: Check = {
+  label: '기본 메뉴에서 하나 이상 바꾼 내 메뉴',
+  judge: (j) => {
+    if (!j.cafe) return { ok: false, detail: '메뉴가 없어요' };
+    const m = menuOf(j.cafe, 1);
+    const b = ICED_AMERICANO;
+    const same = m.name === b.name && m.shots === b.shots && m.ice === b.ice && m.water === b.water && !!m.hot === !!b.hot;
+    return same ? { ok: false, detail: '아이스 아메리카노 그대로예요 · 샷 · 얼음 · 물 · 이름 중 하나를 바꿔요' } : { ok: true, detail: m.name };
+  },
+};
+
 /** 해 보기 ②: the tool tip brought by hand to the ring over the cup dispenser's shelf. */
 const CUP_RING: [number, number, number] = [CAFE_AT.cup.x, CAFE_AT.cup.y, 60];
 const tipAt: Check = {
@@ -1168,6 +1180,8 @@ const tipAt: Check = {
 /** The steps' reference programs: the café program with one iced-americano card (cafeMenu.ts). */
 const ICED = (door: boolean) => newRecipe(ICED_AMERICANO, door);
 const cafeAnswer = (recipes: MenuRecipe[], orders: number) => cafeProgram(recipes, orders).code;
+/** 나만의 카페's example: a stronger iced americano (one more shot, less water; the cup still 355 ml). */
+const MY_MENU = { name: '진한 아이스 아메리카노', ice: 145, shots: 3, water: 120 };
 /** 운영: customers keep coming (a seeded stream: a class gets the same ones). */
 export const CAFE_DAY: CafeSpawn = { seed: 7, customers: 10, gap: [45, 85], patience: 200 };
 
@@ -1226,8 +1240,8 @@ const F: CellMission[] = [
     goal: '메뉴를 하나 만들고(이름 · 샷 · 얼음 · 물), 로봇이 그 메뉴 한 잔을 픽업대에 놓게 해요.',
     hint: '장비마다 기다림을 정해요. [끝 신호까지]면 안전하고, 초로 정하면 장비가 붓는 시간보다 짧을 때 쏟아져요.',
     setup: { parts: () => [], auto: false, orders: 1 },
-    checks: [drinkOn('픽업 1', '픽업 1에 내 메뉴 한 잔'), noTrayPour, safe],
-    solution: cafeAnswer([ICED(false)], 1),
+    checks: [myMenu, drinkOn('픽업 1', '픽업 1에 내 메뉴 한 잔'), noTrayPour, safe],
+    solution: cafeAnswer([newRecipe(MY_MENU, false)], 1),
   },
   {
     id: 'F5',

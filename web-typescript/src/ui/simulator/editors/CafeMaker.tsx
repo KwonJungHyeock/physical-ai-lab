@@ -119,6 +119,8 @@ export default function CafeMaker({ mission, busy, runningLine, onCode, world, f
   const [recipes, setRecipes] = useState<MenuRecipe[]>(() => [newRecipe()]);
   const [sel, setSel] = useState(0);
   const [loaded, setLoaded] = useState(false);
+  // 미션 2 (두 잔 연속): how many times the program repeats one drink — the student sets it to the orders.
+  const [repeat, setRepeat] = useState(1);
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- read after hydration
     setRecipes(load());
@@ -135,8 +137,9 @@ export default function CafeMaker({ mission, busy, runningLine, onCode, world, f
   const shown = useMemo(() => (mission === 'F4' ? recipes.slice(0, 1) : recipes), [mission, recipes]);
   const made = useMemo(() => {
     const st = mission ? missionById(mission)?.setup : undefined;
-    return cafeProgram(mission === 'F4' ? recipes.slice(0, 1) : recipes, st?.spawn?.customers ?? st?.orders ?? 1);
-  }, [mission, recipes]);
+    const times = mission === 'F6' ? repeat : (st?.spawn?.customers ?? st?.orders ?? 1);
+    return cafeProgram(mission === 'F4' ? recipes.slice(0, 1) : recipes, times);
+  }, [mission, recipes, repeat]);
   useEffect(
     () =>
       onCode(made.code, (line) => {
@@ -345,7 +348,32 @@ export default function CafeMaker({ mission, busy, runningLine, onCode, world, f
       )}
     </div>
   );
-  const parts = { order, menu: menuPlate, door, motion, day, foot };
+  // 미션 2: the loop, as a number to set (반복). Fewer than the orders: a customer goes without.
+  const loop = (
+    <section className={css.plate} key="repeat">
+      <header>
+        <em>REPEAT</em>
+        <b>반복</b>
+      </header>
+      <div className={css.repeat} data-lead="repeat" data-glow={repeat !== orders || undefined}>
+        <span>
+          <b>한 잔 만들기를</b>
+          <small>{repeat < orders ? `주문은 ${orders}잔인데 ${repeat}번만 만들어요` : repeat > orders ? `주문보다 많아요: 남는 번은 다음 주문을 기다려요` : '주문 수만큼 되풀이해요'}</small>
+        </span>
+        <span className={css.step}>
+          <button type="button" disabled={busy || repeat <= 1} onClick={() => setRepeat(repeat - 1)} aria-label="반복 줄이기">
+            −
+          </button>
+          <b>{repeat}</b>
+          <button type="button" disabled={busy || repeat >= 5} onClick={() => setRepeat(repeat + 1)} aria-label="반복 늘리기">
+            +
+          </button>
+          번
+        </span>
+      </div>
+    </section>
+  );
+  const parts = { order, menu: menuPlate, door, motion, day, foot, repeat: loop };
   const want = mission ? FOCUS[mission] : undefined;
   // 자유 연습 (and a step without a focus): everything, as before.
   if (!want) return <div className={css.maker}>{[order, menuPlate, motion, day, foot]}</div>;
@@ -364,12 +392,12 @@ export default function CafeMaker({ mission, busy, runningLine, onCode, world, f
 
 /**
  * 입문 퀘스트: what each café step shows (the one thing it is about); the rest is under 자세히.
- * 4 내 메뉴 · 5 픽업 문 · 6 주문 2잔 (nothing to change) · 7 메뉴 2 · 8 운영.
+ * 4 내 메뉴 · 5 픽업 문 · 6 주문 2잔 (반복 횟수) · 7 메뉴 2 · 8 운영.
  */
-const FOCUS: Record<string, readonly ('order' | 'menu' | 'door' | 'motion' | 'day' | 'foot')[]> = {
+const FOCUS: Record<string, readonly ('order' | 'menu' | 'door' | 'motion' | 'day' | 'foot' | 'repeat')[]> = {
   F4: ['menu'],
   F5: ['door'],
-  F6: ['order'],
+  F6: ['order', 'repeat'],
   F7: ['menu'],
   F8: ['order', 'day'],
 };

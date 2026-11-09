@@ -1975,6 +1975,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     const r = ringKey.split(',').map(Number) as [number, number, number];
     return { target: [], lead: (n) => (Math.hypot(n.tip.x - r[0], n.tip.y - r[1], n.tip.z - r[2]) <= RING_MM ? [] : ringLead(n.tip, r)) };
   }, [ringKey]);
+  // 해 보기 ② (조그): the tip now, for the panel's distance to the ring.
+  const aimTip = useCallback(() => tutCtxRef.current().tip, []);
   const questQ = lifeStep ? QUESTS[lifeStep.id] : undefined;
   // 해 보기 ① by hand: the machine pouring (the quest on 관찰, the view on the machine) and ▶▶.
   const [handGoing, setHandGoing] = useState(false);
@@ -5672,7 +5674,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                             // 입문 로봇 카페: 미리보기 · 해 보기 · 나만의 카페 (menus and their motion).
                             const mode = cellAt!.mission ? missionById(cellAt!.mission)?.mode : undefined;
                             if (mode === 'watch') return <WatchPane key={cellAt!.mission} mission={cellAt!.mission!} answered={(k) => preds[k] !== undefined || !!skipped[k]} onCode={onRecipeCode} />;
-                            if (mode === 'hand') return <HandPane key={cellAt!.mission} mission={cellAt!.mission!} world={world} busy={busy} jog={controlPanel} onCode={onRecipeCode} fast={handFast} onFast={setFast} onGoing={onHandGoing} />;
+                            if (mode === 'hand') return <HandPane key={cellAt!.mission} mission={cellAt!.mission!} world={world} busy={busy} jog={controlPanel} onCode={onRecipeCode} fast={handFast} onFast={setFast} onGoing={onHandGoing} aim={aimTip} />;
                             return <CafeMaker key={cellAt!.mission ?? 'free'} mission={cellAt!.mission} busy={busy} runningLine={runningLine} onCode={onRecipeCode} world={world} focus={cellAt!.mission === 'F5' ? 'door' : cellAt!.mission === 'F7' ? 'menu2' : null} />;
                           })()
                         )}

@@ -110,18 +110,22 @@ async function fails(id: string, recipes: Recipe[], orders: number, why: string,
   console.log(`  ok   ${id} ${why}: ${err ? (err as Error).message : summary(w)}`);
   return w;
 }
-const shortShot = (door: boolean, s: number): Recipe => ({ ...newRecipe(ICED_AMERICANO, door), waits: { ice: { k: 'signal' }, shot: { k: 'sec', s }, water: { k: 'signal' } } });
+const shortShot = (door: boolean, s: number, menu = ICED_AMERICANO): Recipe => ({ ...newRecipe(menu, door), waits: { ice: { k: 'signal' }, shot: { k: 'sec', s }, water: { k: 'signal' } } });
+/** 나만의 카페: a menu of the student's own (one thing changed from the iced americano). */
+const MINE = { ...ICED_AMERICANO, name: '내 아이스 아메리카노' };
 const HOT = MENU_PRESETS[2];
 
 await fails('F4', [shortShot(false, 10)], 1, 'shot waited 10 s (28 s pour)', '컵이 빠졌어요');
 {
   // Waiting long enough by the clock is fine (slower than the signal).
   const { w, run } = await cell('F4');
-  const err = await run(cafeProgram([shortShot(false, 30)], 1).code);
+  const err = await run(cafeProgram([shortShot(false, 30, MINE)], 1).code);
   assert.ok(!err && allOk(w), `F4 shot waited 30 s should pass | ${summary(w)}`);
   console.log(`  ok   F4 shot waited 30 s passes: ${summary(w)}`);
 }
+await fails('F4', [newRecipe(ICED_AMERICANO, false)], 1, 'the iced americano as it is: not a menu of my own');
 await fails('F5', [newRecipe(ICED_AMERICANO, false)], 1, 'no door: nobody takes it');
+await fails('F6', [newRecipe(ICED_AMERICANO, true)], 1, 'repeat once for two orders: one customer goes without');
 await fails('F6', [newRecipe(ICED_AMERICANO, false)], 2, 'two cups, no door');
 await fails('F7', [newRecipe(ICED_AMERICANO, true)], 2, 'menu 2 never made');
 await fails('F8', [shortShot(true, 60)], 10, 'a day too slow (60 s at the shot)', '손님이 기다리다 갔어요');

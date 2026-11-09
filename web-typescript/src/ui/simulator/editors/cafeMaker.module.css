@@ -613,3 +613,78 @@
 .maker > * {
   min-width: 0;
 }
+
+/* 미션 2: the repeat count, large (as the door switch). */
+.repeat {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+}
+.repeat > span:first-child {
+  display: grid;
+  gap: 2px;
+}
+.repeat > span:first-child b {
+  font-size: 15px;
+}
+.repeat > span:first-child small {
+  font-size: 12px;
+  color: var(--hud-sub);
+}
+.repeat .step b {
+  font-size: 20px;
+  color: #fff;
+}
+.repeat[data-glow] {
+  box-shadow: 0 0 0 2px #ffd257;
+}
+
+/* 해 보기 ② (조그): how far the tip is from the ring, axis by axis. */
+.aim {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr) auto;
+  gap: 6px;
+  margin: 0 0 10px;
+  padding: 8px;
+  border-radius: 10px;
+  background: var(--hud-groove);
+  box-shadow: var(--hud-groove-shadow);
+}
+.aim > em {
+  grid-column: 1 / -1;
+  font:
+    800 11px ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  letter-spacing: 0.14em;
+  color: var(--hud-dim);
+  font-style: normal;
+}
+.aim span {
+  display: grid;
+  justify-items: center;
+  padding: 4px;
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--hud-sub);
+}
+.aim span b {
+  font-size: 18px;
+  color: #fff;
+}
+.aim span[data-ok] {
+  background: rgba(91, 209, 122, 0.16);
+}
+.aim span[data-ok] b {
+  color: var(--hud-green, #5bd17a);
+}
+.aim > small {
+  align-self: center;
+  font-size: 12px;
+  color: var(--hud-sub);
+}
