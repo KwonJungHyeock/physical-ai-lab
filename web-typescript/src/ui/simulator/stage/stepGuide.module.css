@@ -247,10 +247,11 @@
   position: absolute;
   z-index: 16;
   left: calc((var(--inset-l, 0px) + 100% - var(--inset-r, 0px)) / 2);
-  top: 56%;
-  transform: translate(-50%, -50%);
+  /* At the top, small: the held moment (the arm, the cup, the pen, the stone) stays in sight. */
+  top: calc(var(--top, 0px) + 12px);
+  transform: translateX(-50%);
   width: min(
-    560px,
+    500px,
     calc(100% - var(--inset-l, 0px) - var(--inset-r, 0px) - 32px)
   );
   padding: 18px 20px 14px;
@@ -391,10 +392,10 @@
 .resultModal {
   position: absolute;
   z-index: 16;
-  left: calc((var(--inset-l, 0px) + 100% - var(--inset-r, 0px)) / 2);
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: min(480px, calc(100% - var(--inset-l, 0px) - var(--inset-r, 0px) - 32px));
+  /* The scene's top left, the scene not dimmed: what the run left (the drink, the card, the stones) stays in sight. */
+  left: calc(var(--inset-l, 0px) + 12px);
+  top: calc(var(--top, 0px) + 12px);
+  width: min(400px, calc(100% - var(--inset-l, 0px) - var(--inset-r, 0px) - 32px));
 }
 .resultModal .result {
   width: 100%;

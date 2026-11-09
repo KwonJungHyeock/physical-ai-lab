@@ -4,9 +4,10 @@
 .strip {
   position: absolute;
   z-index: 5;
-  /* The scene's top left (the quest card is in the side panel), under the run record's button. */
-  top: calc(var(--top, 0px) + 50px);
-  left: calc(var(--inset-l, 0px) + 12px);
+  /* The scene's bottom left, beside SIGNAL: the top of the picture is where the arm works (the
+     machines behind it, the card, the board), so nothing sits there while it runs. */
+  bottom: 72px;
+  left: calc(var(--inset-l, 0px) + 190px);
   display: flex;
   align-items: stretch;
   gap: 12px;
@@ -18,7 +19,7 @@
   pointer-events: none;
   white-space: nowrap;
   word-break: keep-all;
-  max-width: calc(100% - var(--inset-l, 12px) - var(--inset-r, 12px) - 24px);
+  max-width: calc(100% - var(--inset-l, 12px) - var(--inset-r, 12px) - 202px);
 }
 
 .order {

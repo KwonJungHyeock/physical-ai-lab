@@ -196,8 +196,7 @@ export function StepResult(p: ResultProps) {
   if (!p.modal) return card;
   return (
     <>
-      <div className={css.scrim} aria-hidden="true" />
-      <div className={css.resultModal} role="dialog" aria-modal="true" aria-label="퀘스트 결과">
+      <div className={css.resultModal} role="dialog" aria-label="퀘스트 결과">
         {card}
       </div>
     </>

@@ -70,9 +70,12 @@ export const TOUR: Partial<Record<CellId, TourShot[]>> = {
 export const STATIONS: Partial<Record<CellId, Station[]>> = {
   // The café from above and in front, steeply: over the booth's lit header, not through it.
   cafe: [near('컵 디스펜서', A.cup.x, A.cup.y, 40, CAFE_OFF), near('제빙기', A.ice.x, A.ice.y, 40, CAFE_OFF), near('커피 머신', A.coffee.x, A.coffee.y, 40, CAFE_OFF), near('정수기', A.water.x, A.water.y, 40, CAFE_OFF), near('픽업대', 98, -176, 30, CAFE_OFF)],
-  draw: [{ name: '카드', at: CARD_MID, r: 110, eye: [CARD_MID[0] - 260, CARD_MID[1], 380], target: [CARD_MID[0], CARD_MID[1], 0] }],
+  // From the customer's side (−y) and above: the arm comes in from the left, the pen tip and the
+  // text in sight and the right way up (from behind the arm, its links hid the card).
+  draw: [{ name: '카드', at: CARD_MID, r: 110, eye: [CARD_MID[0] + 20, CARD_MID[1] - 300, 360], target: [CARD_MID[0], CARD_MID[1], 0] }],
   board: [
-    { name: '오목판', at: BOARD_MID, r: 95, eye: [BOARD_MID[0] - 260, BOARD_MID[1], 400], target: [BOARD_MID[0], BOARD_MID[1], 0] },
+    // From the person's side (−y), above: the whole board, the arm coming in from the far side.
+    { name: '오목판', at: BOARD_MID, r: 95, eye: [BOARD_MID[0] + 20, BOARD_MID[1] - 320, 420], target: [BOARD_MID[0], BOARD_MID[1], 0] },
     { name: '흰 돌 상자', at: TRAY_MID, r: 60, eye: [TRAY_MID[0] - 240, TRAY_MID[1], 330], target: [TRAY_MID[0], TRAY_MID[1], 0] },
   ],
 };

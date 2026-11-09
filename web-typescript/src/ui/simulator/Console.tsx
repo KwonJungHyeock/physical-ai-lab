@@ -1995,13 +1995,27 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       if (!on) setFast(false);
       const api = stageApi.current;
       if (!api || api.userMoved()) return;
+      // The machine stays in view after the pour too (the quest opens on it: below).
       if (on) {
         const sh = narrateShot('커피 머신');
         api.lookAt(sh.eye, sh.target);
-      } else window.setTimeout(() => api.view('home'), 1500);
+      }
     },
     [setFast],
   );
+  // 입문 해 보기: the quest opens on what is done by hand — 2 the coffee machine, 3 the ring and the
+  // arm's tip (from behind the arm, as home: the jog keys keep their way on screen).
+  const handShot = track && loaded ? lifeStep?.id : undefined;
+  useEffect(() => {
+    if (handShot !== 'F2' && handShot !== 'F3') return;
+    const t = window.setTimeout(() => {
+      const api = stageApi.current;
+      if (!api) return;
+      const sh = handShot === 'F2' ? narrateShot('커피 머신') : { eye: [-200, 120, 600] as const, target: [100, 120, 40] as const };
+      api.lookAt(sh.eye, sh.target);
+    }, 900);
+    return () => window.clearTimeout(t);
+  }, [handShot]);
   useEffect(() => {
     // A quest left mid-pour: back to real time.
     return () => {
