@@ -12,7 +12,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
-import { BOARD, RULES, RULE_TEXT, type Rule } from '@/engine/simulator/cell/board';
+import { BOARD, RULES, RULE_STEPS, RULE_TEXT, type Rule, type RuleStep } from '@/engine/simulator/cell/board';
 import { BOARD_PALETTE, H_ANSWER, H_START, PITCH_MM, boardCardText, boardCode, boardRows, type BoardCard, type BoardRecipe } from '@/engine/simulator/cell/boardRecipe';
 import { QUESTS } from '@/engine/simulator/cell/quests';
 
@@ -26,7 +26,7 @@ const KIND_COLOR: Record<BoardCard['k'], string> = {
 };
 const CIRCLED = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩'];
 
-const copy = (r: BoardRecipe): BoardRecipe => ({ cards: r.cards.map((c) => ({ ...c })), times: r.times });
+const copy = (r: BoardRecipe): BoardRecipe => ({ cards: r.cards.map((c) => (c.k === 'move' && c.order ? { ...c, order: [...c.order] } : { ...c })), times: r.times });
 
 interface Props {
   /** The step (H1 … H4) or null (자유 실습). */
@@ -43,6 +43,12 @@ interface Props {
   flow?: boolean;
 }
 
+const swap = <T,>(a: readonly T[], i: number, j: number): T[] => {
+  const b = a.slice();
+  [b[i], b[j]] = [b[j], b[i]];
+  return b;
+};
+
 /** A number box that only takes what it may (whole mm), written as it is typed. */
 function Num({ value, min, max, busy, label, onChange }: { value: number; min: number; max: number; busy: boolean; label: string; onChange(v: number): void }) {
   return (
@@ -54,6 +60,13 @@ function Num({ value, min, max, busy, label, onChange }: { value: number; min: n
 }
 
 const POINT = '칸 지정';
+const ORDER = '규칙 순서';
+/** H4's rule blocks: what each looks for on the board. */
+const STEP_INFO: Record<RuleStep, { icon: string; what: string }> = {
+  이기기: { icon: '🏆', what: '내가 5개를 만드는 칸' },
+  막기: { icon: '🛡️', what: '사람이 4 · 5개를 만들 칸' },
+  잇기: { icon: '🔗', what: '내 돌을 가장 길게 잇는 칸' },
+};
 
 export default function BoardCards({ mission, busy, runningLine, onCode, glow, glowAdd, flow }: Props) {
   const start = (m: string | null) => copy(H_START[m ?? ''] ?? { cards: [], times: 1 });
@@ -108,8 +121,17 @@ export default function BoardCards({ mission, busy, runningLine, onCode, glow, g
     return (
       <>
         <label className={css.amt}>
-          <select disabled={busy} value={c.rule ?? POINT} aria-label="둘 곳" onChange={(e) => edit(k, { ...c, rule: e.target.value === POINT ? null : (e.target.value as Rule) })}>
+          <select
+            disabled={busy}
+            value={c.order ? ORDER : (c.rule ?? POINT)}
+            aria-label="둘 곳"
+            onChange={(e) => {
+              const v = e.target.value;
+              edit(k, { ...c, rule: v === POINT || v === ORDER ? null : (v as Rule), order: v === ORDER ? [...RULE_STEPS] : null });
+            }}
+          >
             <option value={POINT}>칸 지정</option>
+            <option value={ORDER}>규칙 블록 순서</option>
             {RULES.map((r) => (
               <option key={r} value={r}>
                 규칙 · {RULE_TEXT[r]}
@@ -117,7 +139,7 @@ export default function BoardCards({ mission, busy, runningLine, onCode, glow, g
             ))}
           </select>
         </label>
-        {!c.rule && (
+        {!c.rule && !c.order && (
           <>
             <Num label="가로" value={c.c} min={1} max={BOARD.n} busy={busy} onChange={(v) => edit(k, { ...c, c: v })} />
             <Num label="세로" value={c.r} min={1} max={BOARD.n} busy={busy} onChange={(v) => edit(k, { ...c, r: v })} />
@@ -159,6 +181,25 @@ export default function BoardCards({ mission, busy, runningLine, onCode, glow, g
             <b>{boardCardText(c).title}</b>
             {boxes(c, k)}
           </span>
+          {c.k === 'move' && c.order && (
+            <ol className={css.blocks} aria-label="규칙 블록: 위에서부터 차례로 따져요">
+              {c.order.map((st, i) => (
+                <li key={st} data-lead={i === 0 ? 'rule-top' : undefined}>
+                  <span className={css.blockN}>{i + 1}</span>
+                  <span aria-hidden>{STEP_INFO[st].icon}</span>
+                  <b>{st}</b>
+                  <small>{STEP_INFO[st].what}</small>
+                  <button type="button" disabled={busy || i === 0} onClick={() => edit(k, { ...c, order: swap(c.order!, i, i - 1) })} aria-label={`${st} 위로`}>
+                    ▲
+                  </button>
+                  <button type="button" disabled={busy || i === c.order!.length - 1} onClick={() => edit(k, { ...c, order: swap(c.order!, i, i + 1) })} aria-label={`${st} 아래로`}>
+                    ▼
+                  </button>
+                </li>
+              ))}
+              <li className={css.blockNote}>위 블록부터 따져서, 칸을 찾은 블록이 그 칸에 둬요</li>
+            </ol>
+          )}
           {!isOpen && <small className={css.sum}>{now ? `지금 · ${now}` : off ? `꺼짐 · ${off.text}` : `동작 ${rows.length}개`}</small>}
           {isOpen && (
             <ol className={css.rows}>

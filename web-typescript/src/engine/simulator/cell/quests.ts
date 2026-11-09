@@ -35,7 +35,7 @@ export const QUESTS: Record<string, Quest> = {
   H1: { todo: '카드는 그대로 두고 ▶ 시뮬레이션을 눌러, 로봇이 언제 움직이기 시작하는지 봐요', short: '그대로 ▶ · 로봇은 언제 움직이나' },
   H2: { todo: '① 판 카드의 칸 간격을 판 가장자리 눈금으로 재서 바꿔요', cards: [1], short: '① 칸 간격 재서 고치고 ▶' },
   H3: { todo: "② · ③ 한 수 카드를 펼쳐 '[로봇 차례]까지 기다리기'를 켜요", cards: [2, 3], short: "②·③ '로봇 차례까지 기다리기' 켜고 ▶" },
-  H4: { todo: '② 한 수 카드의 규칙을 바꿔 가며 돌려 보고, 한 판을 이기는 규칙을 찾아요', cards: [2], short: '② 규칙 바꿔 ▶ · 이기는 규칙 찾기' },
+  H4: { todo: '② 한 수 카드의 규칙 블록(이기기 · 막기 · 잇기) 순서를 바꿔 가며 돌려 보고, 9수 안에 이기는 순서를 찾아요', cards: [2], short: '② 블록 순서 바꿔 ▶ · 9수 안에 이기기' },
 };
 
 /**
@@ -61,7 +61,7 @@ export const QUEST_LEAD: Record<string, readonly { sel: string; say: string }[]>
   H1: [{ ...RUN, say: '그대로 ▶ 눌러요' }],
   H2: [CARD('① 칸 간격을 고쳐요'), RUN],
   H3: [CARD("'로봇 차례까지 기다리기'를 켜요"), RUN],
-  H4: [CARD('② 규칙을 바꿔요'), RUN],
+  H4: [CARD('② 블록 순서를 바꿔요'), RUN],
 };
 
 export type QuestPhase = 'do' | 'run' | 'result';

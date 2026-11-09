@@ -10,9 +10,10 @@
  * No React: BoardCards.tsx shows them, tests/simulator/cell-h-check.mts runs the starters.
  */
 
-import { BOARD, RULE_TEXT, STONE, type Pt, type Rule } from './board';
+import { BOARD, RULE_TEXT, STONE, ruleOrderName, type Pt, type Rule, type RuleStep } from './board';
 
-export type BoardCard = { k: 'board'; x: number; y: number; pitch: number } | { k: 'move'; wait: boolean; c: number; r: number; rule: Rule | null };
+/** A move card: on a point (가로 · 세로), by a rule, or (H4) by the three rule blocks in the order set. */
+export type BoardCard = { k: 'board'; x: number; y: number; pitch: number } | { k: 'move'; wait: boolean; c: number; r: number; rule: Rule | null; order?: RuleStep[] | null };
 
 export interface BoardRecipe {
   cards: BoardCard[];
@@ -37,7 +38,7 @@ export function boardCardText(c: BoardCard): { title: string; note: string } {
     case 'board':
       return { title: '판', note: `가로 1 · 세로 1: x ${c.x} · y ${c.y} mm, 줄 사이 ${c.pitch} mm` };
     case 'move':
-      return { title: '한 수', note: c.rule ? `규칙 '${RULE_TEXT[c.rule]}'로 두기` : `가로 ${c.c} · 세로 ${c.r}에 두기` };
+      return { title: '한 수', note: c.order ? `규칙 순서 '${ruleOrderName(c.order)}'로 두기` : c.rule ? `규칙 '${RULE_TEXT[c.rule]}'로 두기` : `가로 ${c.c} · 세로 ${c.r}에 두기` };
   }
 }
 
@@ -69,9 +70,11 @@ function rowsWith(c: BoardCard, s: Settings, loop: boolean): BoardRow[] {
         // In a game (the cards repeated), the end is checked once it is the robot's turn.
         { text: '[로봇 차례]까지 기다리기', code: c.wait ? `cell.wait("로봇 차례")\n${loop ? 'if cell.is_on("게임 끝"):\n    break\n' : ''}` : '', toggle: 'wait', on: c.wait },
         { text: '흰 돌 집기 (돌 상자)', code: 'robot.pick("돌 상자 다음 칸")\n' },
-        c.rule
-          ? { text: `판 센서로 읽고 '${RULE_TEXT[c.rule]}'로 두기`, code: `robot.place("${c.rule}")\n` }
-          : { text: `가로 ${c.c} · 세로 ${c.r}에 두기 (x ${r1(x)} · y ${r1(y)})`, code: to(x, y, TRAVEL_Z) + to(x, y, DROP_Z) + 'robot.pump.off()\n' + to(x, y, TRAVEL_Z) },
+        c.order
+          ? { text: `판 센서로 읽고 규칙 순서대로 두기 (${ruleOrderName(c.order)})`, code: `robot.place("${ruleOrderName(c.order)}")\n` }
+          : c.rule
+            ? { text: `판 센서로 읽고 '${RULE_TEXT[c.rule]}'로 두기`, code: `robot.place("${c.rule}")\n` }
+            : { text: `가로 ${c.c} · 세로 ${c.r}에 두기 (x ${r1(x)} · y ${r1(y)})`, code: to(x, y, TRAVEL_Z) + to(x, y, DROP_Z) + 'robot.pump.off()\n' + to(x, y, TRAVEL_Z) },
         { text: '팔 빼기 (기본 자세)', code: 'robot.home()\n' },
       ];
     }
@@ -116,26 +119,26 @@ export function boardCode(r: BoardRecipe): { code: string; lines: [number, numbe
 
 const BOARD_CARD: BoardCard = { k: 'board', x: BOARD.x0, y: BOARD.y0, pitch: BOARD.pitch };
 const move = (p: Pt, wait = true): BoardCard => ({ k: 'move', wait, c: p.c, r: p.r, rule: null });
-const byRule = (rule: Rule): BoardCard => ({ k: 'move', wait: true, c: 5, r: 5, rule });
+const byOrder = (order: RuleStep[]): BoardCard => ({ k: 'move', wait: true, c: 5, r: 5, rule: null, order });
 
 /** Each step's answer (its reference solution in missions.ts is this program). */
 export const H_ANSWER: Record<string, BoardRecipe> = {
   H1: { cards: [BOARD_CARD, move({ c: 5, r: 4 })], times: 1 },
   H2: { cards: [BOARD_CARD, move({ c: 7, r: 6 })], times: 1 },
   H3: { cards: [BOARD_CARD, move({ c: 5, r: 4 }), move({ c: 6, r: 4 })], times: 1 },
-  H4: { cards: [BOARD_CARD, byRule('판단 칸')], times: 9 },
+  H4: { cards: [BOARD_CARD, byOrder(['이기기', '막기', '잇기'])], times: 9 },
 };
 
 /**
  * What each step starts with: H1 the whole thing to watch; then the step's gap (H2: 15 mm between
- * the lines, the board's are 16; H3: no waiting for the turn; H4: the first free point, 9 moves set).
+ * the lines, the board's are 16; H3: no waiting for the turn; H4: the rule blocks in a losing order, 잇기 first, 9 moves set).
  */
 export const H_START: Record<string, BoardRecipe> = {
   H1: H_ANSWER.H1,
   H2: { cards: [{ ...BOARD_CARD, pitch: 15 }, move({ c: 7, r: 6 })], times: 1 },
   H3: { cards: [BOARD_CARD, move({ c: 5, r: 4 }, false), move({ c: 6, r: 4 }, false)], times: 1 },
-  H4: { cards: [BOARD_CARD, byRule('빈 칸')], times: 9 },
+  H4: { cards: [BOARD_CARD, byOrder(['잇기', '막기', '이기기'])], times: 9 },
 };
 
 /** The cards to add from the palette. */
-export const BOARD_PALETTE: BoardCard[] = [BOARD_CARD, move({ c: 5, r: 4 }), byRule('판단 칸')];
+export const BOARD_PALETTE: BoardCard[] = [BOARD_CARD, move({ c: 5, r: 4 }), byOrder(['이기기', '막기', '잇기'])];

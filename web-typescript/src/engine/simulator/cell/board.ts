@@ -167,6 +167,40 @@ export function ruleMove(g: Grid, rule: Rule): Pt | null {
   return at ? { c: at[0] + 1, r: at[1] + 1 } : null;
 }
 
+/**
+ * The rule as three blocks in an order the student sets (H4): 이기기 (five of mine), 막기 (the
+ * person's five), 잇기 (my longest line): the first that finds a point plays it.
+ * Written as the place name the program goes to: "이기기 → 막기 → 잇기".
+ */
+export const RULE_STEPS = ['이기기', '막기', '잇기'] as const;
+export type RuleStep = (typeof RULE_STEPS)[number];
+export const ruleOrderName = (order: readonly RuleStep[]) => order.join(' → ');
+/** The order a place name says, or null (not an order of the three blocks, each once). */
+export function parseRuleOrder(name: string): RuleStep[] | null {
+  const parts = name.split('→').map((x) => x.trim());
+  if (parts.length !== RULE_STEPS.length || new Set(parts).size !== parts.length) return null;
+  return parts.every((x) => (RULE_STEPS as readonly string[]).includes(x)) ? (parts as RuleStep[]) : null;
+}
+/**
+ * 막기 plays where the person would make a four (one move from five); 잇기 weighs the person's lines a
+ * little, but never a four or a five (that is 막기's). Run in node (all six orders against the person
+ * here): 이기기 → 막기 → 잇기 wins with its 7th white stone; 막기 first wins only at the 14th (it blocks
+ * where it could have won); 잇기 before 막기 loses at the person's 5th stone.
+ */
+const BLOCK_AT = 1000;
+const LINK_CAP = 999;
+function threat(g: Grid): [number, number] | null {
+  const at = best(g, (c, r) => worth(g, c, r, 1));
+  return at && worth(g, at[0], at[1], 1) >= BLOCK_AT ? at : null;
+}
+export function orderMove(g: Grid, order: readonly RuleStep[]): Pt | null {
+  for (const st of order) {
+    const at = st === '이기기' ? winning(g, 2) : st === '막기' ? (winning(g, 1) ?? threat(g)) : best(g, (c, r) => worth(g, c, r, 2) + 0.3 * Math.min(worth(g, c, r, 1), LINK_CAP));
+    if (at) return { c: at[0] + 1, r: at[1] + 1 };
+  }
+  return null;
+}
+
 /** The person: opens in the middle, then always lengthens their own lines (they never block). */
 export function personMove(g: Grid): Pt | null {
   if (free(g).length === N * N) return { c: 5, r: 5 };

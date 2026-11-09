@@ -114,13 +114,16 @@ for (const id of ['H1', 'H2', 'H3', 'H4']) {
   console.log(`  ok   ${id} start cards fail: ${err ? (err as Error).message : summary(w)}  [${moves(w)}]`);
 }
 
-// '잇기만' (no blocking) loses too: the order of the rules is the lesson.
-{
+// H4's blocks in other orders: 잇기 above 막기 loses; 막기 above 이기기 has not won in 9 moves. The order is the lesson.
+for (const order of [
+  ['이기기', '잇기', '막기'],
+  ['막기', '이기기', '잇기'],
+] as const) {
   const { w, run } = await cell('H4');
-  const code = boardCode({ ...H_ANSWER.H4, cards: H_ANSWER.H4.cards.map((c) => (c.k === 'move' ? { ...c, rule: '잇는 칸' as const } : c)) }).code;
+  const code = boardCode({ ...H_ANSWER.H4, cards: H_ANSWER.H4.cards.map((c) => (c.k === 'move' ? { ...c, order: [...order] } : c)) }).code;
   const err = await run(code);
-  assert.ok(w.cell!.board!.winner === 1 && !allOk(w), `H4 잇기만 should lose | ${err ? (err as Error).message : ''} | ${moves(w)}`);
-  console.log(`  ok   H4 잇기만 loses: ${moves(w)}`);
+  assert.ok(!allOk(w), `H4 ${order.join(' → ')} should not pass | ${err ? (err as Error).message : ''} | ${moves(w)}`);
+  console.log(`  ok   H4 ${order.join(' → ')}: ${w.cell!.board!.winner === 1 ? '사람 승' : '9수 안에 못 이김'}  [${moves(w)}]`);
 }
 
 {

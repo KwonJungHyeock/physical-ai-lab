@@ -446,3 +446,54 @@
 .moreAll[open] > summary {
   color: var(--hud-tx, #e9edf1);
 }
+
+/* 보드게임 H4: the rule blocks, checked from the top (▲▼ change the order). */
+.blocks {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+.blocks li {
+  display: grid;
+  grid-template-columns: 20px 20px auto 1fr 28px 28px;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 8px;
+  background: var(--hud-groove);
+  box-shadow: var(--hud-groove-shadow);
+  font-size: 14px;
+}
+.blocks li small {
+  color: var(--hud-sub);
+  font-size: 12px;
+  min-width: 0;
+}
+.blocks li button {
+  height: 28px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--hud-key);
+  box-shadow: var(--hud-key-shadow);
+  color: var(--hud-tx);
+  cursor: pointer;
+}
+.blocks li button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.blockN {
+  color: var(--hud-amber);
+  font-weight: 800;
+  text-align: center;
+}
+.blocks li.blockNote {
+  display: block;
+  background: none;
+  box-shadow: none;
+  padding: 0 2px;
+  color: var(--hud-sub);
+  font-size: 12px;
+}
