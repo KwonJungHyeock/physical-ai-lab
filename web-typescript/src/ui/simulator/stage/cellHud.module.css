@@ -1185,3 +1185,15 @@
     animation: none;
   }
 }
+
+/* 교실 수업형: the quest's pages in the 교안, a blue tag (the 교안's colour) by its name. */
+.qPage {
+  flex: none;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: #1d4ed8;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}

@@ -126,6 +126,10 @@ export interface QuestInfo {
   asking?: boolean;
   /** 해 보기 by hand: what goes on now (the machine pouring) — the gauge on 관찰, these words the goal. */
   watching?: string;
+  /** 교실 수업형: the quest's pages in the 교안 ('교안 6–7쪽'), by its name. */
+  page?: string;
+  /** 교실 수업형: open by the teacher's 차시 (lessonRecord.ts questOpen); null = in turn (a pass opens the next). */
+  isOpen?: (id: string) => boolean | null;
 }
 
 interface QuestCardProps {
@@ -250,8 +254,9 @@ function PanelQuest(p: QuestCardProps) {
   const steps = missionsOf(p.cell);
   const m = p.mission ? missionById(p.mission) : null;
   const built = CELL_BY_ID[p.cell].built;
-  const open = (i: number) => built && (p.allOpen || i === 0 || !!p.passed[steps[i - 1].id]);
   const q = p.quest;
+  const open = (i: number) => built && (q?.isOpen?.(steps[i].id) ?? (p.allOpen || i === 0 || !!p.passed[steps[i - 1].id]));
+  const lockWhy = q?.isOpen ? '선생님이 이 차시를 열면 열려요' : '앞 퀘스트를 통과하면 열려요';
   const now = !q ? -1 : q.asking ? 1 : q.watching ? 2 : q.phase === 'do' ? 0 : q.phase === 'run' ? 2 : 3;
   const two = (n: number) => String(n).padStart(2, '0');
   return (
@@ -263,6 +268,7 @@ function PanelQuest(p: QuestCardProps) {
           <small>/{two(steps.length)}</small>
         </b>
         <span className={css.qName}>{m ? m.title.replace(/^[^:]+:\s*/, '') : '자유 연습'}</span>
+        {q?.page && <span className={css.qPage}>{q.page}</span>}
         {q && (
           <button type="button" className={css.qListKey} onClick={q.onList} disabled={p.busy} aria-label="현장 · 퀘스트 목록" title="현장 · 퀘스트 목록">
             <Icon name="grid" size={14} />
@@ -272,7 +278,7 @@ function PanelQuest(p: QuestCardProps) {
       <ol className={css.qTrack}>
         {steps.map((s, i) => (
           <li key={s.id} data-cur={s.id === p.mission || undefined} data-done={p.passed[s.id] || undefined} data-lock={!open(i) || undefined}>
-            <button type="button" disabled={p.busy || !open(i)} onClick={() => p.onMission(s.id)} title={open(i) ? `퀘스트 ${s.n} ${s.title}` : '앞 퀘스트를 통과하면 열려요'} aria-pressed={s.id === p.mission} aria-label={`퀘스트 ${s.n} ${s.title}`}>
+            <button type="button" disabled={p.busy || !open(i)} onClick={() => p.onMission(s.id)} title={open(i) ? `퀘스트 ${s.n} ${s.title}` : lockWhy} aria-pressed={s.id === p.mission} aria-label={`퀘스트 ${s.n} ${s.title}`}>
               {p.passed[s.id] && s.id !== p.mission ? '✓' : s.n}
             </button>
           </li>

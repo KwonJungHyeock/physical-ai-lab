@@ -11,6 +11,7 @@
 import { useEffect, useState } from 'react';
 
 import { guideOf, type Ask } from '@/engine/simulator/cell/guides';
+import { LESSON_QUEST } from '@/engine/simulator/cell/lessons';
 import { missionById, missionsOf } from '@/engine/simulator/cell/missions';
 import type { CellId } from '@/engine/simulator/cell/cells';
 
@@ -144,6 +145,9 @@ interface ResultProps {
 export function StepResult(p: ResultProps) {
   const m = missionById(p.mission);
   const g = guideOf(p.mission);
+  // 교실 수업형 (로봇 카페): the idea from the 수업 설계 (lessons.ts) where the step's guide has none.
+  const concept = g?.concept ?? LESSON_QUEST[p.mission]?.concept;
+  const page = LESSON_QUEST[p.mission]?.pages;
   if (!m) return null;
   const steps = missionsOf(p.cell);
   const next = p.passed ? steps[m.n] : undefined;
@@ -178,12 +182,15 @@ export function StepResult(p: ResultProps) {
           <em>PREDICT</em>내 예측 {MARK[p.chosen]} → 실제 {MARK[g.predict.answer]} {g.predict.options[g.predict.answer]}
         </p>
       )}
-      {g?.concept && (
+      {concept && (
         <div className={css.concept}>
           <em>CONCEPT</em>
-          <b>{g.concept.term}</b>
-          <p>{g.concept.def}</p>
-          <small>실제 현장 · {g.concept.real}</small>
+          <b>{concept.term}</b>
+          <p>{concept.def}</p>
+          <small>
+            실제 현장 · {concept.real}
+            {page ? ` · 교안 ${page[0]}–${page[1]}쪽` : ''}
+          </small>
         </div>
       )}
       {next && p.onNext && (

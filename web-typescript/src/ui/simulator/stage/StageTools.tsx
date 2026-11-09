@@ -158,6 +158,7 @@ export function ViewTools({
   onDisplay,
   camera,
   onSnapshot,
+  lite,
 }: {
   /** The 3D view's controls (null until it is ready). */
   api(): StageApi | null;
@@ -167,6 +168,8 @@ export function ViewTools({
   camera?: { open: boolean; toggle(): void };
   /** The picture was saved (or could not be). */
   onSnapshot(ok: boolean): void;
+  /** 입문 현장 (교실 수업형): only 처음 시점 — no cube, no other tools (the wheel still zooms). */
+  lite?: boolean;
 }) {
   const [pan, setPan] = useState(false);
   const [flat, setFlat] = useState(false);
@@ -182,6 +185,16 @@ export function ViewTools({
     a.click();
     onSnapshot(true);
   };
+  if (lite)
+    return (
+      <div className={css.viewTools} data-panel="viewtools">
+        <div className={css.viewRail} role="toolbar" aria-label="3D 보기 도구" aria-orientation="vertical">
+          <button type="button" title="처음 시점" aria-label="처음 시점" onClick={() => api()?.view('home')}>
+            <ToolGlyph d={GLYPH.home} />
+          </button>
+        </div>
+      </div>
+    );
   return (
     <div className={css.viewTools} data-panel="viewtools">
       <ViewCube orient={orient} onView={(v) => api()?.view(v)} />

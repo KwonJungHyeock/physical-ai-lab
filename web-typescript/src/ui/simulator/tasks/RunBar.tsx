@@ -83,6 +83,19 @@ export default function RunBar(p: Props) {
     : p.robotMode
       ? '실제 로봇이 움직여요'
       : '로봇에서 실행할 파이썬 코드를 받아요';
+  const rate = (
+    <button
+      type="button"
+      className={css.runRate}
+      data-rate={p.simRate}
+      onClick={() => p.onSimRate(p.simRate === 1 ? 2 : p.simRate === 2 ? 4 : 1)}
+      aria-label={`시뮬레이션 빠르기: ${RATE_NAME[p.simRate] ?? '보통'} (누르면 바뀜)`}
+      title="시뮬레이션 빠르기. 한 번: 2배 (세모 하나), 두 번: 4배 (세모 둘), 세 번: 보통. 실제 로봇은 늘 제 속도"
+    >
+      <Speed rate={p.simRate} />
+      <b className={css.runRateX}>×{p.simRate}</b>
+    </button>
+  );
   return (
     <div className={css.runDock} role="group" aria-label="실행" data-panel="run" data-quest={p.more ? '' : undefined}>
       <button
@@ -98,23 +111,27 @@ export default function RunBar(p: Props) {
         <span>시뮬레이션</span>
         {p.passed && <i className={css.runOk} aria-label="통과">✓</i>}
       </button>
+      {/* 입문 퀘스트: the speed beside ▶ (×1 · ×4), to be said aloud in class ("빠르게 눌러요"). */}
       {p.more && (
-        <button type="button" className={css.runMore} aria-expanded={open} aria-label="더 보기" title="빠르기 · 코드 받기 · 자유 연습" onClick={() => setOpen((o) => !o)}>
+        <button
+          type="button"
+          className={css.runFast}
+          aria-pressed={p.simRate > 1}
+          onClick={() => p.onSimRate(p.simRate > 1 ? 1 : 4)}
+          aria-label={p.simRate > 1 ? `빠르게 ×${p.simRate} (누르면 보통)` : '보통 빠르기 (누르면 ×4)'}
+          title="시뮬레이션 빠르기: 보통 ×1 · 빠르게 ×4 (실제 로봇은 늘 제 속도)"
+        >
+          <Speed rate={p.simRate > 1 ? 4 : 1} />
+          <b>×{p.simRate}</b>
+        </button>
+      )}
+      {p.more && (
+        <button type="button" className={css.runMore} aria-expanded={open} aria-label="더 보기" title="코드 받기 · 자유 연습" onClick={() => setOpen((o) => !o)}>
           <Icon name="dots" size={20} />
         </button>
       )}
       <span className={p.more ? css.runMenu : css.runInline} data-open={open || undefined} onClick={() => p.more && setOpen(false)}>
-      <button
-        type="button"
-        className={css.runRate}
-        data-rate={p.simRate}
-        onClick={() => p.onSimRate(p.simRate === 1 ? 2 : p.simRate === 2 ? 4 : 1)}
-        aria-label={`시뮬레이션 빠르기: ${RATE_NAME[p.simRate] ?? '보통'} (누르면 바뀜)`}
-        title="시뮬레이션 빠르기. 한 번: 2배 (세모 하나), 두 번: 4배 (세모 둘), 세 번: 보통. 실제 로봇은 늘 제 속도"
-      >
-        <Speed rate={p.simRate} />
-        <b className={css.runRateX}>×{p.simRate}</b>
-      </button>
+      {!p.more && rate}
       <button type="button" className={css.runReal} data-done={p.robotDone || undefined} disabled={p.realDisabled} onClick={p.onReal} aria-label={p.robotMode ? '로봇에서 실행' : '로봇용 코드 받기'} title={realTitle}>
         {p.realBlocked ? <Icon name="lock" size={16} /> : p.robotMode ? <RobotPlay /> : <Icon name="code" size={18} />}
         <span className={css.runRealText}>

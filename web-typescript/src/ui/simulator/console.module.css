@@ -9295,3 +9295,39 @@ div.zeroFlow {
   border-top: 0;
   background: transparent;
 }
+
+/* 입문 현장 (교실 수업형): one place for notices, at the side panel's top edge beside the view tools,
+   not over the middle of the scene. */
+.notices[data-side] {
+  left: auto;
+  right: calc(var(--inset-r, 12px) + 60px);
+  transform: none;
+  width: min(420px, calc(100% - var(--inset-l, 12px) - var(--left-col, 0px) - var(--inset-r, 12px) - 100px));
+  align-items: flex-end;
+}
+
+/* 입문 퀘스트: ×1 · ×4 beside ▶ (two classes: the dock's own button rules outrank one). */
+.runDock .runFast {
+  flex: 0 0 64px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--hud-key, #3a3f45);
+  box-shadow: var(--hud-key-shadow, none);
+  color: var(--hud-tx, #e9edf1);
+  font-size: 12px;
+  cursor: pointer;
+}
+.runDock .runFast[aria-pressed='true'] {
+  background: var(--hud-silver, #e9edf1);
+  box-shadow: var(--hud-silver-shadow, none);
+  color: var(--hud-ink, #1b1f24);
+}
+.runDock .runFast b {
+  font-size: 13px;
+  font-weight: 800;
+}

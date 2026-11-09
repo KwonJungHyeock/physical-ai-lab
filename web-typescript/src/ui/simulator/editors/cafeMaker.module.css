@@ -171,7 +171,7 @@
 
 .fields {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px 10px;
   margin-top: 10px;
   align-items: center;
@@ -205,7 +205,7 @@
 }
 .maker .seg button {
   height: 32px;
-  padding: 0 12px;
+  padding: 0 10px;
   border: 0;
   background: var(--hud-groove);
   color: var(--hud-sub);
@@ -609,4 +609,7 @@
   background: var(--hud-silver);
   box-shadow: var(--hud-silver-shadow);
   color: var(--hud-ink);
+}
+.maker > * {
+  min-width: 0;
 }
