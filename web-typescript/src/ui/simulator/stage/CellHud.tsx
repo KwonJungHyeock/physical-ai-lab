@@ -196,7 +196,7 @@ export function QuestCard(p: QuestCardProps) {
                 <i>
                   QUEST {m.n}
                   {m.stage ? ` · ${m.stage}` : ''}
-                  {p.inPanel && <span className={css.sheet}>학습지 p.{m.n}</span>}
+                  {p.inPanel && <span className={css.sheet}>{p.cell === 'cafe' ? `학생 교안 p.${m.n + 1}` : `학습지 p.${m.n}`}</span>}
                 </i>
                 {m.title}
               </p>

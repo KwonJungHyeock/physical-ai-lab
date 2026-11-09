@@ -10,8 +10,9 @@
 | [`기초 사용 매뉴얼 (학생용).pdf`](basic/기초%20사용%20매뉴얼%20(학생용).pdf) (13쪽) | 학생 — 안전 약속, 로봇 켜기, 프로그램 켜기 · 끄기, 연결하기, 화면 둘러보기, 버튼으로 움직이기(따라 하기 다섯 가지), 이럴 땐 선생님께. 교사용과 장 번호가 같음 | [`basic/student.md`](basic/student.md) |
 | [`시뮬레이터 사용 가이드.pdf`](simulator/시뮬레이터%20사용%20가이드.pdf) (25쪽) | 학생 · 선생님 공통 — 로봇 없이 시뮬레이터만. 1부 사용법(시작하기 · 처음 시작 안내, 화면, 제어, 도구 · 자세, 공정, 코딩, 손 따라하기, 결과 · 저장, 이럴 땐), 2부 기초 실습 다섯 개(움직임 제어 · 블록 코딩 · 파이썬 튜토리얼 · 공정 첫걸음 · 손 따라하기 첫걸음) | [`simulator/guide.md`](simulator/guide.md) |
 | [`교사용 교육 가이드라인.pdf`](course/교사용%20교육%20가이드라인.pdf) (30쪽) | 선생님 — 과정 한눈에, 수업 준비 · 안전, 한 차시 50분 운영, 28차시 계획표, 학문별 지도 포인트, 평가, 자료실, 로봇 실습 7 선생님과 함께 수업(일곱 수업 단계표) | [`course/teacher-guide.md`](course/teacher-guide.md) |
-| [`로봇 카페 교안 (교사용).pdf`](course/로봇%20카페%20교안%20(교사용).pdf) (22쪽) | 선생님 — 입문 ① 생활 로봇 · 로봇 카페, 4 · 6 · 8차시로 골라 쓰는 교실 수업안. 수업 안내 · 앱 화면과 교사 열쇠 · 퀘스트 8개마다 설명 쪽과 수행 쪽(앱의 '교안 n쪽'과 같은 쪽) · 확인 문제 정답 · 평가 기준 · 반 결과 정리 | `web-typescript/src/engine/simulator/cell/lessons.ts` (`tools/build/cafe-lesson.mts`) |
-| [`로봇 카페 학습지 (학생용).pdf`](course/로봇%20카페%20학습지%20(학생용).pdf) (10쪽) | 학생 — 퀘스트마다 한 쪽: 오늘 배울 것 · 할 일 · 관찰 기록 · 확인 문제 · 개념 한 문장 · 자기 점검 | 같음 |
+| [`로봇 카페 강의 계획서 · 지도안.pdf`](course/로봇%20카페%20강의%20계획서%20·%20지도안.pdf) (7쪽) | 선생님 — 고등학교 50분 · 4차시: 강의 계획서(개요 · 목표 · 차시별 계획) · 평가 계획 · 6 · 8차시 배치 · 차시별 교수 · 학습 지도안(도입 · 전개 · 정리, 교사 · 학생 활동 · 시간 · 자료) | `web-typescript/src/engine/simulator/cell/lessons.ts` (`tools/build/cafe-lesson.mts`) |
+| [`로봇 카페 교안 (교사용).pdf`](course/로봇%20카페%20교안%20(교사용).pdf) (22쪽) | 선생님 — 수업 안내 · 앱 화면과 교사 열쇠 · 퀘스트 8개마다 설명 쪽(개념 · 앱 화면에서 볼 것 · 발문)과 수행 쪽(할 일 · 통과 조건 · 시간 · 막힐 때 · 확인 문제, 앱의 '교안 n쪽'과 같은 쪽) · 정답 · 평가 기준 · 반 결과 정리. 앱은 글이 적고 설명은 여기에 | 같음 |
+| [`로봇 카페 교안 (학생용).pdf`](course/로봇%20카페%20교안%20(학생용).pdf) (10쪽) | 학생 — 퀘스트마다 한 쪽: 오늘 배울 것 · 개념 · 할 일 · 관찰 기록 · 확인 문제 · 개념 한 문장 · 자기 점검 | 같음 |
 
 원고(md)를 고친 뒤 PDF 를 다시 만들기 (개발 서버를 켠 상태, `web-typescript/` 에서):
 ```bash
@@ -24,7 +25,7 @@ BASE=http://localhost:3001 HAND_Y4M=<손 사진 .y4m> node tools/build/guide-sho
 node tools/build/guide-shots/diagrams.mjs    # 설명 그림 (d-*.png)
 node tools/build/guides.mjs                  # md → PDF, 인쇄 쪽 검사 (자료실 사본 · 표지 미리보기도)
 BASE=http://localhost:3000 node tools/build/guide-shots/cafe-lesson.mjs   # 로봇 카페 교안 그림 → course/img/cafe (개발 서버)
-npx tsx tools/build/cafe-lesson.mts         # 로봇 카페 교안 · 학습지 PDF (수업 설계 데이터에서, 쪽 고정 · 넘침 검사, 앱 링크 사본 public/guides/cafe-*.pdf)
+npx tsx tools/build/cafe-lesson.mts         # 로봇 카페 강의 계획서 · 지도안 · 교안(교사용 · 학생용) PDF (수업 설계 데이터에서, 쪽 고정 · 넘침 검사, 앱 링크 사본 public/guides/cafe-*.pdf)
 ```
 `guides.mjs` 는 인쇄한 쪽마다 제목이 쪽 맨 아래에 홀로 남았는지, 쪽이 많이 비었는지, 글꼴에 없는 글자가 있는지 검사합니다.
 원고 형식: `# ` 장 · `## ` 절, `![캡션](img/x.png){w=70}` 번호 붙는 그림, `::: step 제목` … `:::` 따라 하기 카드,

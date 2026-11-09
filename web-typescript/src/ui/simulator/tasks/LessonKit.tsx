@@ -366,7 +366,7 @@ export function RecordPanel({ rec, site: start, onWho, onClose }: { rec: LessonR
         <small className={css.foot}>
           기록은 이 브라우저에 남아요. 수업이 끝나면 제출 파일을 선생님께 내요(USB · 학급 게시판 · 메일).{' '}
           <a href="/guides/cafe-student.pdf" target="_blank" rel="noreferrer">
-            학습지 PDF
+            교안 (학생용) PDF
           </a>
         </small>
       </div>
@@ -453,12 +453,15 @@ export function TeacherKey({ teacher, onTeacher, onClear, onProjector, onClose }
         </div>
         <small className={css.foot}>학생이 이 링크로 열면 같은 차시 구성 · 현장 · 차시가 열려요. 앞 현장은 모두 열리고, 뒤 현장은 닫혀요. 이 PC의 설정은 이 PC에만 적용돼요.</small>
         <div className={css.set}>
-          <span>교안 · 학습지</span>
+          <span>수업 자료 (로봇 카페)</span>
+          <a className={css.ghostLink} href="/guides/cafe-plan.pdf" target="_blank" rel="noreferrer">
+            강의 계획서 · 지도안 PDF
+          </a>
           <a className={css.ghostLink} href="/guides/cafe-teacher.pdf" target="_blank" rel="noreferrer">
-            로봇 카페 교안 PDF
+            교안 (교사용) PDF
           </a>
           <a className={css.ghostLink} href="/guides/cafe-student.pdf" target="_blank" rel="noreferrer">
-            로봇 카페 학습지 PDF
+            교안 (학생용) PDF
           </a>
         </div>
         <div className={css.row}>
