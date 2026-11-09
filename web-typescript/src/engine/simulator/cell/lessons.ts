@@ -265,12 +265,9 @@ export const LESSON_QUEST: Record<string, LessonQuest> = {
 
 /** The café's quests grouped into 차시 (PLANS_OF: every place's). */
 export const PLANS: Record<PlanSize, readonly (readonly string[])[]> = {
-  4: [
-    ['F1', 'F2'],
-    ['F3', 'F4'],
-    ['F5', 'F6'],
-    ['F7', 'F8'],
-  ],
+  // Even 차시 (practice ~15 min each, 교안 and 확인 문제 the rest): 보기 · 버튼 · 조그 are short, the
+  // 운영 day (F8) takes a 차시 of its own.
+  4: [['F1', 'F2', 'F3'], ['F4', 'F5'], ['F6', 'F7'], ['F8']],
   6: [['F1'], ['F2', 'F3'], ['F4'], ['F5', 'F6'], ['F7'], ['F8']],
   8: [['F1'], ['F2'], ['F3'], ['F4'], ['F5'], ['F6'], ['F7'], ['F8']],
 };
@@ -289,7 +286,8 @@ const fourIn = (q: readonly string[]): Record<PlanSize, readonly (readonly strin
 export const PLANS_OF: Record<SiteId, Record<PlanSize, readonly (readonly string[])[]>> = {
   cafe: PLANS,
   draw: fourIn(SITE_QUESTS.draw),
-  board: fourIn(SITE_QUESTS.board),
+  // 보드게임: 보기 · 칸 간격 · 차례 are short runs; finding the rule order (H4) takes a 차시 of its own.
+  board: { ...fourIn(SITE_QUESTS.board), 4: [['H1', 'H2', 'H3'], ['H4']] },
 };
 
 export interface Lesson {
