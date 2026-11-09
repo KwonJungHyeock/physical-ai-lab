@@ -131,14 +131,14 @@ export const H_ANSWER: Record<string, BoardRecipe> = {
 
 /**
  * What each step starts with: H1 the whole thing to watch; then the step's gap (H2: 15 mm between
- * the lines, the board's are 16; H3: no waiting for the turn; H4: the rule blocks in a losing order, 잇기 first, 9 moves set).
+ * the lines, the board's are 16; H3: one move (the second to add, and a new card does not wait); H4: the rule blocks in a losing order, 잇기 first, 9 moves set).
  */
 export const H_START: Record<string, BoardRecipe> = {
   H1: H_ANSWER.H1,
   H2: { cards: [{ ...BOARD_CARD, pitch: 15 }, move({ c: 7, r: 6 })], times: 1 },
-  H3: { cards: [BOARD_CARD, move({ c: 5, r: 4 }, false), move({ c: 6, r: 4 }, false)], times: 1 },
+  H3: { cards: [BOARD_CARD, move({ c: 5, r: 4 })], times: 1 },
   H4: { cards: [BOARD_CARD, byOrder(['잇기', '막기', '이기기'])], times: 9 },
 };
 
-/** The cards to add from the palette. */
-export const BOARD_PALETTE: BoardCard[] = [BOARD_CARD, move({ c: 5, r: 4 }), byOrder(['이기기', '막기', '잇기'])];
+/** The cards to add from the palette (a new 한 수 does not wait for the turn until it is switched on: H3). */
+export const BOARD_PALETTE: BoardCard[] = [BOARD_CARD, move({ c: 5, r: 4 }, false), byOrder(['이기기', '막기', '잇기'])];

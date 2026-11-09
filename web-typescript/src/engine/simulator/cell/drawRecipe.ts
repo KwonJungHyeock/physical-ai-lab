@@ -146,13 +146,13 @@ export const G_ANSWER: Record<string, DrawRecipe> = {
 
 /**
  * What each step starts with: G1 the whole thing to watch; then the step's gap (G2: the pen 3 mm
- * up and the usual corner; G3: joint moves; G4: the pen down between strokes, 2명 already set).
+ * up and the usual corner; G3: joint moves; G4: the pen down between strokes, and one customer: the student sets two).
  */
 export const G_START: Record<string, DrawRecipe> = {
   G1: G_ANSWER.G1,
   G2: { cards: flow(W('HELLO'), CARD_HOME, 3), times: 1 },
   G3: { cards: flow(W('네모', true, false)), times: 1 },
-  G4: { cards: flow(W('사랑해', false)), times: 2 },
+  G4: { cards: flow(W('사랑해', false)), times: 1 },
 };
 
 /** The cards to add from the palette. */

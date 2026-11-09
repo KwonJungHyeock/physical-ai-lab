@@ -238,9 +238,14 @@ export interface BoardState {
   breaching: boolean;
   /** Robot stones let go of off the board, or on a point already taken. */
   bad: { t: number; why: string }[];
+  /** The robot did not wait for its turn: white stones it let go of on the board (ids), and times the arm came low over the board, in the person's turn. */
+  early: string[];
+  earlyOver: number;
+  /** The arm was low over the board last frame. */
+  overEarly: boolean;
 }
 
-const THINK_S = 3;
+const THINK_S = 8;
 const HAND_S = 3;
 /** The stone goes down this long after the hand starts in (then the hand goes back out), s. */
 const DROP_S = 1.7;
@@ -249,7 +254,7 @@ const dtGuard = 0.25;
 
 export function newBoard(t0 = 0): BoardState {
   const grid = Array.from({ length: N }, () => Array<number>(N).fill(0));
-  const b: BoardState = { grid, stones: [], turn: 'person', person: null, winner: null, breaches: 0, breaching: false, bad: [] };
+  const b: BoardState = { grid, stones: [], turn: 'person', person: null, winner: null, breaches: 0, breaching: false, bad: [], early: [], earlyOver: 0, overEarly: false };
   startPerson(b, t0);
   return b;
 }
@@ -276,6 +281,14 @@ export interface BoardStep {
 export function stepBoard(def: BoardDef, s: LineState, b: BoardState, objects: readonly DeskObject[], carry: string | null, tip: { x: number; y: number; z: number }): BoardStep {
   const out: BoardStep = { alerts: [], spawned: [] };
   const t = s.t;
+  // A white stone let go of on the board in the person's turn: the robot did not wait for its turn.
+  if (b.turn === 'person' && !b.winner)
+    for (const o of objects) {
+      if (o.id === carry || !isWhite(o) || b.early.includes(o.id) || b.stones.some((k) => k.id === o.id)) continue;
+      if (!onBoard(o.x, o.y) || o.z > BOARD.top + 1.5) continue;
+      b.early.push(o.id);
+      out.alerts.push({ t, level: 'warn', kind: 'order', title: '차례가 아닐 때 둔 돌', msg: '사람 차례인데 흰 돌을 뒀어요. [로봇 차례]가 켜질 때까지 기다려야 해요.' });
+    }
   // The robot's move: a white stone let go of, resting on the board, not counted yet.
   if (b.turn === 'robot' && !b.winner) {
     for (const o of objects) {
@@ -336,6 +349,13 @@ export function stepBoard(def: BoardDef, s: LineState, b: BoardState, objects: r
     });
   }
   if (!over || !hand) b.breaching = false;
+  // Coming over the board in the person's turn (hand there or not): it did not wait for [로봇 차례].
+  // (Still over it as the turn passes, just after its own stone, is not that.)
+  if (over && !b.overEarly && b.turn === 'person' && !b.winner) {
+    b.earlyOver += 1;
+    if (!hand) out.alerts.push({ t, level: 'warn', kind: 'order', title: '차례가 아닐 때 판 위로', msg: '사람 차례인데 팔이 판 위로 왔어요. [로봇 차례]가 켜질 때까지 기다려야 해요.' });
+  }
+  b.overEarly = over;
   return out;
 }
 

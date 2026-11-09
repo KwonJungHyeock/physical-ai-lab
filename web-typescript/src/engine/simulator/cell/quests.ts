@@ -13,8 +13,10 @@ export interface Quest {
   todo: string;
   /** The start cards to light (1-based). */
   cards?: number[];
-  /** A card is missing: [+ 카드] is lit too. */
+  /** A card is missing: [+ 카드] is lit too (and shown with the cards it adds). */
   add?: boolean;
+  /** The repeat (손님 수 · 반복) is set here: shown above the cards. */
+  times?: boolean;
   /** The goal in a few words (the side panel's objective line; `todo` and the hint behind its ?). */
   short: string;
 }
@@ -31,10 +33,10 @@ export const QUESTS: Record<string, Quest> = {
   G1: { todo: '카드는 그대로 두고 ▶ 시뮬레이션을 눌러, 펜이 언제 닿고 언제 들리는지 봐요', short: '그대로 ▶ · 펜이 언제 닿나' },
   G2: { todo: '② 보정 카드에서 펜 높이를 0으로, 카드 위치를 매트 눈금으로 읽어 바꿔요', cards: [2], short: '② 펜 높이 · 카드 위치 맞추고 ▶' },
   G3: { todo: "③ 쓰기 카드를 펼쳐 '직선 이동으로 쓰기'를 켜요", cards: [3], short: "③ '직선 이동' 켜고 ▶" },
-  G4: { todo: "③ 쓰기 카드를 펼쳐 '획 사이 펜 들기'를 켜요", cards: [3], short: "③ '획 사이 펜 들기' 켜고 ▶" },
+  G4: { todo: "손님이 2명이에요. 손님 수(반복)를 주문에 맞추고, ③ 쓰기 카드의 '획 사이 펜 들기'를 켜요", cards: [3], times: true, short: "손님 수 맞추고 · ③ '펜 들기' 켜고 ▶" },
   H1: { todo: '카드는 그대로 두고 ▶ 시뮬레이션을 눌러, 로봇이 언제 움직이기 시작하는지 봐요', short: '그대로 ▶ · 로봇은 언제 움직이나' },
   H2: { todo: '① 판 카드의 칸 간격을 판 가장자리 눈금으로 재서 바꿔요', cards: [1], short: '① 칸 간격 재서 고치고 ▶' },
-  H3: { todo: "② · ③ 한 수 카드를 펼쳐 '[로봇 차례]까지 기다리기'를 켜요", cards: [2, 3], short: "②·③ '로봇 차례까지 기다리기' 켜고 ▶" },
+  H3: { todo: "[+ 카드]로 한 수 카드를 하나 더 넣어 가로 6 · 세로 4로 정해요. 새 카드는 '[로봇 차례]까지 기다리기'가 꺼져 있어요", cards: [2], add: true, short: "+ 한 수 (가로 6 · 세로 4) · 차례 기다리기 ▶" },
   H4: { todo: '② 한 수 카드의 규칙 블록(이기기 · 막기 · 잇기) 순서를 바꿔 가며 돌려 보고, 9수 안에 이기는 순서를 찾아요', cards: [2], short: '② 블록 순서 바꿔 ▶ · 9수 안에 이기기' },
 };
 
@@ -57,10 +59,10 @@ export const QUEST_LEAD: Record<string, readonly { sel: string; say: string }[]>
   G1: [{ ...RUN, say: '그대로 ▶ 눌러요' }],
   G2: [CARD('② 보정 카드를 고쳐요'), RUN],
   G3: [CARD("③ '직선 이동'을 켜요"), RUN],
-  G4: [CARD("③ '획 사이 펜 들기'를 켜요"), RUN],
+  G4: [{ sel: '[data-lead="times"]', say: '손님 수를 주문(2명)에 맞춰요' }, CARD("③ '획 사이 펜 들기'를 켜요"), RUN],
   H1: [{ ...RUN, say: '그대로 ▶ 눌러요' }],
   H2: [CARD('① 칸 간격을 고쳐요'), RUN],
-  H3: [CARD("'로봇 차례까지 기다리기'를 켜요"), RUN],
+  H3: [{ sel: '[data-lead="add-card"]', say: '[+ 카드]로 한 수를 하나 더 넣어요' }, RUN],
   H4: [CARD('② 블록 순서를 바꿔요'), RUN],
 };
 

@@ -137,7 +137,7 @@ export default function DrawCards({ mission, busy, runningLine, onCode, glow, gl
         </b>
         <small>카드 한 장에 한 번씩 써서 건네요</small>
       </span>
-      <span className={css.times}>
+      <span className={css.times} data-lead="times">
         손님
         <button type="button" disabled={busy || recipe.times <= 1} onClick={() => set(recipe.cards, recipe.times - 1)} aria-label="한 명 줄이기">
           −
@@ -207,7 +207,7 @@ export default function DrawCards({ mission, busy, runningLine, onCode, glow, gl
   );
   const foot = (
     <div className={css.foot}>
-      <button type="button" className={css.add} disabled={busy} aria-expanded={open} data-glow={(glowAdd && !open) || undefined} onClick={() => setOpen((o) => !o)}>
+      <button type="button" className={css.add} disabled={busy} aria-expanded={open} data-lead="add-card" data-glow={(glowAdd && !open) || undefined} onClick={() => setOpen((o) => !o)}>
         + 카드
       </button>
       {answer && (
@@ -262,15 +262,26 @@ export default function DrawCards({ mission, busy, runningLine, onCode, glow, gl
         {palette}
       </div>
     );
+  // The quest's own controls: the repeat when it sets it; when it adds a card, [+ 카드] and the cards added.
+  const q = mission ? QUESTS[mission] : undefined;
+  const startN = start(mission).cards.length;
+  const shownCards = [...focus, ...(q?.add ? recipe.cards.map((_, k) => k).filter((k) => k >= startN) : [])];
   return (
     <div className={css.recipe} data-flow>
-      {focus.length > 0 && <ol className={css.list}>{focus.map((k) => item(recipe.cards[k], k, true))}</ol>}
+      {q?.times && head}
+      {shownCards.length > 0 && <ol className={css.list}>{shownCards.map((k) => item(recipe.cards[k], k, true))}</ol>}
+      {q?.add && (
+        <>
+          {foot}
+          {palette}
+        </>
+      )}
       <details className={css.moreAll}>
         <summary>자세히 ▾ · 카드 전체 {recipe.cards.length}장</summary>
-        {head}
+        {!q?.times && head}
         {list}
-        {foot}
-        {palette}
+        {!q?.add && foot}
+        {!q?.add && palette}
       </details>
     </div>
   );

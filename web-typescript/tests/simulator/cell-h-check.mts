@@ -25,7 +25,8 @@ const { CELL_ENV, cellChecks, cellSolids, stepCell } = await import('../../src/e
 const { missionsOf, missionById } = await import('../../src/engine/simulator/cell/missions');
 const { guideOf, predictNow } = await import('../../src/engine/simulator/cell/guides');
 const { CELL_BY_ID } = await import('../../src/engine/simulator/cell/cells');
-const { H_ANSWER, H_START, boardCode } = await import('../../src/engine/simulator/cell/boardRecipe');
+const { BOARD_PALETTE, H_ANSWER, H_START, boardCode } = await import('../../src/engine/simulator/cell/boardRecipe');
+type BoardCard = import('../../src/engine/simulator/cell/boardRecipe').BoardCard;
 
 const chain = buildChain(parseUrdf(readFileSync(new URL('../../public/robot/rdkx5/mycobot_280_rdkx5.urdf', import.meta.url), 'utf8')));
 const EFF = CELL_BY_ID.board.effector!;
@@ -114,6 +115,16 @@ for (const id of ['H1', 'H2', 'H3', 'H4']) {
   console.log(`  ok   ${id} start cards fail: ${err ? (err as Error).message : summary(w)}  [${moves(w)}]`);
 }
 
+// H3: the second 한 수 added from the palette (it does not wait until switched on): the arm comes over the person's hand.
+{
+  const added = BOARD_PALETTE.find((c) => c.k === 'move' && !c.order)!;
+  const { w, run } = await cell('H3');
+  const err = await run(boardCode({ ...H_START.H3, cards: [...H_START.H3.cards, { ...added, c: 6, r: 4 } as BoardCard] }).code);
+  assert.ok(added.k === 'move' && !added.wait, 'a new 한 수 card starts without waiting');
+  assert.ok(err || !allOk(w), `H3 with the added card not waiting should not pass | ${summary(w)}`);
+  console.log(`  ok   H3 + 한 수 (기다리기 꺼짐): ${err ? (err as Error).message : summary(w)}  [${moves(w)}]`);
+}
+
 // H4's blocks in other orders: 잇기 above 막기 loses; 막기 above 이기기 has not won in 9 moves. The order is the lesson.
 for (const order of [
   ['이기기', '잇기', '막기'],
@@ -130,8 +141,9 @@ for (const order of [
   const { lines, rows } = boardCode(H_ANSWER.H1);
   assert.deepEqual(lines[0], [0, -1], 'a setting card makes no line');
   assert.deepEqual(rows[1][0], [4, 4], `the wait row's line: ${JSON.stringify(rows)}`);
-  // The wait switched off makes no line (H3's start).
-  assert.deepEqual(boardCode(H_START.H3).rows[1][0], [0, -1], 'the wait off spans nothing');
+  // The wait switched off makes no line (a new 한 수 card, H3).
+  const bare = BOARD_PALETTE.find((c) => c.k === 'move' && !c.order)!;
+  assert.deepEqual(boardCode({ cards: [H_ANSWER.H1.cards[0], bare], times: 1 }).rows[1][0], [0, -1], 'the wait off spans nothing');
 }
 
 console.log('cell H: ok');

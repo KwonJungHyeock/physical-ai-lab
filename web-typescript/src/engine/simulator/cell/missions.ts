@@ -1441,6 +1441,7 @@ const afterTurns = (n: number): Check => ({
   judge: (j) => {
     const mine = j.board ? robotStones(j.board).length : 0;
     if (j.board?.breaches) return { ok: false, detail: '사람이 두는 중에 팔이 판 위로 갔어요' };
+    if (j.board?.early.length || j.board?.earlyOver) return { ok: false, detail: '사람 차례에 팔이 판 위로 갔어요 (차례를 기다리지 않았어요)' };
     return mine >= n ? { ok: true } : { ok: false, detail: `${mine} / ${n}개` };
   },
 });
