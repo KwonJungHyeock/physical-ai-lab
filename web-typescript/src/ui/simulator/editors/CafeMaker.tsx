@@ -16,10 +16,10 @@
  * kept in this browser across the steps (one café, made once, changed by each mission).
  */
 
-import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
+import { useEffect, useMemo, useState, type RefObject } from 'react';
 
 import { CUP_ML, SHOT_ML, type CafeOrder } from '@/engine/simulator/cell/cafe';
-import { MENU_PRESETS, cafeProgram, cycleS, motionSteps, newRecipe, waitVerdict, type MenuRecipe, type MotionStep, type StationKey, type WaitMode } from '@/engine/simulator/cell/cafeMenu';
+import { MENU_PRESETS, cafeProgram, cycleS, motionSteps, newRecipe, orderOf, waitVerdict, type MenuRecipe, type MotionKey, type MotionStep } from '@/engine/simulator/cell/cafeMenu';
 import { missionById } from '@/engine/simulator/cell/missions';
 import type { WorldState } from '@/engine/simulator/sim';
 
@@ -27,6 +27,8 @@ import css from './cafeMaker.module.css';
 
 const KEY = 'robot-console-life-cafe-menus';
 const MAX_MENUS = 3;
+/** A motion block's picture. */
+const BLOCK_ICON: Record<MotionKey | 'hot', string> = { cup: '🥤', ice: '🧊', shot: '☕', water: '💧', hot: '♨️', serve: '🛎️' };
 
 function load(): MenuRecipe[] {
   try {
@@ -75,52 +77,13 @@ function CupGauge({ m }: { m: CafeOrder }) {
   );
 }
 
-/** One motion step as a time bar: the arm's time, then (a station) its pour and the arm's wait, draggable. */
-function StepBar({ s, x0, scale, busy, on, onWait }: { s: MotionStep; x0: number; scale: number; busy: boolean; on: boolean; onWait(w: WaitMode): void }) {
-  const track = useRef<HTMLDivElement>(null);
-  const px = (sec: number) => `${Math.max(0, sec * scale)}%`;
-  const v = waitVerdict(s);
-  const start = x0 + s.armS / 2;
-  const drag = (e: ReactPointerEvent) => {
-    if (busy || s.pourS === undefined) return;
-    const el = track.current;
-    if (!el) return;
-    e.currentTarget.setPointerCapture(e.pointerId);
-    const move = (ev: PointerEvent) => {
-      const r = el.getBoundingClientRect();
-      const sec = ((ev.clientX - r.left) / r.width) * (100 / scale) - start;
-      // Near the pour's end: on its 끝 signal (the magnet); else a number of seconds.
-      if (Math.abs(sec - s.pourS!) < 1.5) onWait({ k: 'signal' });
-      else onWait({ k: 'sec', s: Math.round(Math.max(0.2, Math.min(60, sec)) * 2) / 2 });
-    };
-    const up = () => {
-      window.removeEventListener('pointermove', move);
-      window.removeEventListener('pointerup', up);
-    };
-    window.addEventListener('pointermove', move);
-    window.addEventListener('pointerup', up);
-  };
-  return (
-    <div className={css.track} ref={track}>
-      <i className={css.arm} style={{ left: px(x0), width: px(s.armS) }} data-on={on || undefined} />
-      {s.pourS !== undefined && (
-        <>
-          <i className={css.pour} style={{ left: px(start), width: px(s.pourS) }} />
-          <i className={css.wait} data-v={v} data-signal={s.wait?.k === 'signal' || undefined} style={{ left: px(start), width: px(s.waitS ?? 0) }}>
-            <b className={css.handle} onPointerDown={drag} role="slider" aria-label={`${s.label} 기다림`} aria-valuenow={s.waitS} tabIndex={0} />
-          </i>
-        </>
-      )}
-    </div>
-  );
-}
-
 export default function CafeMaker({ mission, busy, runningLine, onCode, world, focus }: Props) {
   const [recipes, setRecipes] = useState<MenuRecipe[]>(() => [newRecipe()]);
   const [sel, setSel] = useState(0);
   const [loaded, setLoaded] = useState(false);
   // 미션 2 (두 잔 연속): how many times the program repeats one drink — the student sets it to the orders.
   const [repeat, setRepeat] = useState(1);
+  const [dragKey, setDragKey] = useState<MotionKey | null>(null);
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- read after hydration
     setRecipes(load());
@@ -165,11 +128,6 @@ export default function CafeMaker({ mission, busy, runningLine, onCode, world, f
   const setMenu = (p: Partial<CafeOrder>) => edit({ ...cur, menu: { ...cur.menu, ...p } });
   const steps = motionSteps(cur);
   const total = cycleS(cur);
-  // The bars' scale: the drink's time, at least a minute (so a long wait can be dragged out).
-  const span = Math.max(60, Math.ceil((total + 10) / 10) * 10);
-  const scale = 100 / span;
-  const xs: number[] = [];
-  for (let k = 0; k < steps.length; k += 1) xs.push(k ? xs[k - 1] + steps[k - 1].armS + (steps[k - 1].waitS ?? 0) : 0);
 
   const order = (
     <div className={css.order} key="order">
@@ -256,49 +214,166 @@ export default function CafeMaker({ mission, busy, runningLine, onCode, world, f
       </div>
     </section>
   );
+  // 로봇 동작 블록: the menu's motion as blocks in order (drag or ▲▼ to move), a station's wait on its block
+  // (🧲 끝 신호 or seconds), the hand-over a module. Around them, as the quests go on: 🔁 반복 (6), ❓ 메뉴 조건 (7), ⚡ 주문 이벤트 (8).
+  const seq = orderOf(cur);
+  const move = (key: MotionKey, to: number) => {
+    const o = seq.filter((k) => k !== key);
+    o.splice(Math.max(0, Math.min(o.length, to)), 0, key);
+    edit({ ...cur, order: o });
+  };
+  const loops = !mission || mission === 'F6' || mission === 'F7' || mission === 'F8';
+  const branches = (!mission || mission === 'F7' || mission === 'F8') && shown.length > 1;
+  const event = !mission || mission === 'F8';
+  const block = (s: MotionStep, i: number) => {
+    const v = waitVerdict(s);
+    const on = !!running && running.k === ci && running.i === i;
+    const k = s.key as MotionKey;
+    const title =
+      k === 'cup' ? '컵 받기' : k === 'ice' ? `얼음 ${cur.menu.ice} ml` : k === 'shot' ? `샷 ${cur.menu.shots}개` : k === 'water' ? `${cur.menu.hot ? '온수' : '물'} ${cur.menu.water} ml` : '건네기';
+    const station = k === 'ice' || k === 'shot' || k === 'water';
+    return (
+      <li
+        key={k}
+        className={css.block}
+        data-kind={k}
+        data-on={on || undefined}
+        data-drag={dragKey === k || undefined}
+        draggable={!busy}
+        onDragStart={(e) => {
+          setDragKey(k);
+          e.dataTransfer.effectAllowed = 'move';
+        }}
+        onDragEnd={() => setDragKey(null)}
+        onDragOver={(e) => {
+          if (dragKey && dragKey !== k) e.preventDefault();
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          if (dragKey && dragKey !== k) move(dragKey, seq.filter((x) => x !== dragKey).indexOf(k));
+          setDragKey(null);
+        }}
+      >
+        <i className={css.grip} aria-hidden="true">
+          ⠿
+        </i>
+        <span className={css.icon} aria-hidden="true">
+          {BLOCK_ICON[k === 'water' && cur.menu.hot ? 'hot' : k]}
+        </span>
+        <b className={css.btitle}>{title}</b>
+        {station && s.wait && (
+          <span className={css.waitChip} data-v={v}>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => edit({ ...cur, waits: { ...cur.waits, [k]: s.wait!.k === 'signal' ? { k: 'sec', s: Math.round(s.pourS ?? 3) } : { k: 'signal' } } })}
+              title="🧲 끝 신호까지 기다리기 ↔ 초로 기다리기"
+            >
+              {s.wait.k === 'signal' ? '🧲 끝 신호까지' : `⏳ ${s.waitS?.toFixed(0)}초`}
+            </button>
+            {s.wait.k === 'sec' && (
+              <>
+                <button type="button" disabled={busy} aria-label="1초 줄이기" onClick={() => edit({ ...cur, waits: { ...cur.waits, [k]: { k: 'sec', s: Math.max(1, (s.waitS ?? 1) - 1) } } })}>
+                  −
+                </button>
+                <button type="button" disabled={busy} aria-label="1초 늘리기" onClick={() => edit({ ...cur, waits: { ...cur.waits, [k]: { k: 'sec', s: Math.min(60, (s.waitS ?? 1) + 1) } } })}>
+                  +
+                </button>
+              </>
+            )}
+            {v === 'short' && <em>쏟아져요</em>}
+            {v === 'long' && <em>길어요</em>}
+          </span>
+        )}
+        {k === 'serve' && (
+          <span className={css.serve} data-lead="door" data-glow={(focus === 'door' && !cur.door) || undefined}>
+            <select disabled={busy} value={cur.door ? 'door' : 'place'} onChange={(e) => setRecipes((all) => all.map((r) => ({ ...r, door: e.target.value === 'door' })))} aria-label="건네는 방법">
+              <option value="place">픽업대에 놓기</option>
+              <option value="door">문으로 건네기 (모듈)</option>
+            </select>
+          </span>
+        )}
+        <span className={css.moveKeys}>
+          <button type="button" disabled={busy || i === 0} onClick={() => move(k, i - 1)} aria-label={`${title} 위로`}>
+            ▲
+          </button>
+          <button type="button" disabled={busy || i === steps.length - 1} onClick={() => move(k, i + 1)} aria-label={`${title} 아래로`}>
+            ▼
+          </button>
+        </span>
+        {k === 'serve' && cur.door && (
+          <ol className={css.module} aria-label="문으로 건네기 안의 순서">
+            <li>🚪 문 열기 · [문 열림] 기다리기</li>
+            <li>✋ 손님이 가져갈 때까지 ([손 감지] 켜졌다 꺼짐)</li>
+            <li>🚪 문 닫기 · [문 닫힘] 기다리기</li>
+          </ol>
+        )}
+      </li>
+    );
+  };
+  const blocks = <ol className={css.blocks}>{steps.map(block)}</ol>;
+  const others = shown
+    .map((r, k) => ({ r, k }))
+    .filter(({ k }) => k !== ci)
+    .map(({ r, k }) => (
+      <button key={k} type="button" className={css.branchOff} disabled={busy} onClick={() => setSel(k)}>
+        ❓ 주문이 메뉴 {k + 1}이면 · {r.menu.name} · 블록 {motionSteps(r).length}개 ▸
+      </button>
+    ));
+  const inner = branches ? (
+    <>
+      <div className={css.wrap} data-kind="if">
+        <span className={css.wrapHead}>❓ 주문이 메뉴 {ci + 1}이면 · {cur.menu.name}</span>
+        {blocks}
+      </div>
+      {others}
+    </>
+  ) : (
+    blocks
+  );
+  const looped = loops ? (
+    <div className={css.wrap} data-kind="loop">
+      <span className={css.wrapHead} data-lead={mission === 'F6' ? 'repeat' : undefined} data-glow={(mission === 'F6' && repeat !== orders) || undefined}>
+        🔁 주문마다 반복
+        {mission === 'F6' ? (
+          <span className={css.step}>
+            <button type="button" disabled={busy || repeat <= 1} onClick={() => setRepeat(repeat - 1)} aria-label="반복 줄이기">
+              −
+            </button>
+            <b>{repeat}</b>
+            <button type="button" disabled={busy || repeat >= 5} onClick={() => setRepeat(repeat + 1)} aria-label="반복 늘리기">
+              +
+            </button>
+            번
+          </span>
+        ) : (
+          <b> {orders}번</b>
+        )}
+        {mission === 'F6' && <small>{repeat < orders ? `주문은 ${orders}잔인데 ${repeat}번만 만들어요` : repeat > orders ? '주문보다 많아요: 남는 번은 다음 주문을 기다려요' : '주문 수만큼 되풀이해요'}</small>}
+      </span>
+      {inner}
+    </div>
+  ) : (
+    inner
+  );
   const motion = (
-    <section className={css.plate} key="motion">
+    <section className={css.plate} key="motion" data-lead="motion">
       <header>
-        <em>MOTION</em>
-        <b>로봇 동작 만들기</b>
+        <em>PROGRAM</em>
+        <b>로봇 동작 블록</b>
         <span className={css.cycle}>
           한 잔 약 <b>{Math.round(total)}초</b>
         </span>
       </header>
-      <div className={css.axis}>
-        {Array.from({ length: span / 10 + 1 }, (_, k) => (
-          <i key={k} style={{ left: `${k * 10 * scale}%` }}>
-            {k * 10}s
-          </i>
-        ))}
-      </div>
-      <ol className={css.rows}>
-        {steps.map((s, i) => {
-          const v = waitVerdict(s);
-          const on = !!running && running.k === ci && running.i === i;
-          return (
-            <li key={s.key} data-on={on || undefined}>
-              <span className={css.label}>
-                <b>{s.label}</b>
-                {s.wait && (
-                  <small data-v={v}>
-                    {s.wait.k === 'signal' ? '🧲 끝 신호까지' : `${s.waitS?.toFixed(1)}초 기다림`}
-                    {v === 'short' ? ' · 쏟아져요' : v === 'long' ? ' · 길어요' : ''}
-                  </small>
-                )}
-                {s.key === 'serve' && (
-                  <label className={css.door} data-glow={(focus === 'door' && !cur.door) || undefined}>
-                    <input type="checkbox" disabled={busy} checked={cur.door} onChange={(e) => setRecipes((all) => all.map((r) => ({ ...r, door: e.target.checked })))} />
-                    픽업 문으로
-                  </label>
-                )}
-              </span>
-              <StepBar s={s} x0={xs[i]} scale={scale} busy={busy} on={on} onWait={(w) => edit({ ...cur, waits: { ...cur.waits, [s.key as StationKey]: w } })} />
-            </li>
-          );
-        })}
-      </ol>
-      <p className={css.tip}>주황 막대 끝을 끌어 기다림을 정해요. 회색(장비가 붓는 시간) 끝에 가까우면 🧲 끝 신호에 붙어요.</p>
+      {event ? (
+        <div className={css.wrap} data-kind="event">
+          <span className={css.wrapHead}>⚡ 주문이 들어오면</span>
+          {looped}
+        </div>
+      ) : (
+        looped
+      )}
+      <p className={css.tip}>블록을 끌거나 ▲▼로 순서를 바꿔요. 🧲는 장비의 끝 신호까지 기다리고, 초로 정하면 붓는 시간보다 짧을 때 쏟아져요.</p>
     </section>
   );
   const day = setup?.spawn ? <DayBoard key="day" world={world} customers={setup.spawn.customers} /> : null;
@@ -348,32 +423,7 @@ export default function CafeMaker({ mission, busy, runningLine, onCode, world, f
       )}
     </div>
   );
-  // 미션 2: the loop, as a number to set (반복). Fewer than the orders: a customer goes without.
-  const loop = (
-    <section className={css.plate} key="repeat">
-      <header>
-        <em>REPEAT</em>
-        <b>반복</b>
-      </header>
-      <div className={css.repeat} data-lead="repeat" data-glow={repeat !== orders || undefined}>
-        <span>
-          <b>한 잔 만들기를</b>
-          <small>{repeat < orders ? `주문은 ${orders}잔인데 ${repeat}번만 만들어요` : repeat > orders ? `주문보다 많아요: 남는 번은 다음 주문을 기다려요` : '주문 수만큼 되풀이해요'}</small>
-        </span>
-        <span className={css.step}>
-          <button type="button" disabled={busy || repeat <= 1} onClick={() => setRepeat(repeat - 1)} aria-label="반복 줄이기">
-            −
-          </button>
-          <b>{repeat}</b>
-          <button type="button" disabled={busy || repeat >= 5} onClick={() => setRepeat(repeat + 1)} aria-label="반복 늘리기">
-            +
-          </button>
-          번
-        </span>
-      </div>
-    </section>
-  );
-  const parts = { order, menu: menuPlate, door, motion, day, foot, repeat: loop };
+  const parts = { order, menu: menuPlate, door, motion, day, foot };
   const want = mission ? FOCUS[mission] : undefined;
   // 자유 연습 (and a step without a focus): everything, as before.
   if (!want) return <div className={css.maker}>{[order, menuPlate, motion, day, foot]}</div>;
@@ -392,13 +442,13 @@ export default function CafeMaker({ mission, busy, runningLine, onCode, world, f
 
 /**
  * 입문 퀘스트: what each café step shows (the one thing it is about); the rest is under 자세히.
- * 4 내 메뉴 · 5 픽업 문 · 6 주문 2잔 (반복 횟수) · 7 메뉴 2 · 8 운영.
+ * 4 내 메뉴 + 블록(순서 · 기다림) · 5 건네기 모듈 · 6 반복 블록 · 7 메뉴 2 + 조건 블록 · 8 운영.
  */
-const FOCUS: Record<string, readonly ('order' | 'menu' | 'door' | 'motion' | 'day' | 'foot' | 'repeat')[]> = {
-  F4: ['menu'],
-  F5: ['door'],
-  F6: ['order', 'repeat'],
-  F7: ['menu'],
+const FOCUS: Record<string, readonly ('order' | 'menu' | 'door' | 'motion' | 'day' | 'foot')[]> = {
+  F4: ['menu', 'motion'],
+  F5: ['motion'],
+  F6: ['order', 'motion'],
+  F7: ['menu', 'motion'],
   F8: ['order', 'day'],
 };
 

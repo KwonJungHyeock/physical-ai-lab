@@ -29,9 +29,20 @@ export interface MenuRecipe {
   waits: { ice: WaitMode; shot: WaitMode; water: WaitMode };
   /** Hand the drink over through the pickup door (open, the customer takes it, close). */
   door: boolean;
+  /** The motion blocks in the student's order (블록 · 순서); none: cup · ice · shot · water · serve. */
+  order?: MotionKey[];
 }
 
 export type StationKey = 'ice' | 'shot' | 'water';
+/** A motion block: the cup, a station, the hand-over. */
+export type MotionKey = 'cup' | StationKey | 'serve';
+export const MOTION_ORDER: readonly MotionKey[] = ['cup', 'ice', 'shot', 'water', 'serve'];
+/** A recipe's block order: the student's, each key once (missing ones in the usual place). */
+export function orderOf(r: MenuRecipe): MotionKey[] {
+  const o = (r.order ?? []).filter((k, i, a) => MOTION_ORDER.includes(k) && a.indexOf(k) === i);
+  for (const k of MOTION_ORDER) if (!o.includes(k)) o.splice(Math.min(o.length, MOTION_ORDER.indexOf(k)), 0, k);
+  return o;
+}
 
 /** The stations as the café has them (cells.ts cafeLayout). */
 export const STATIONS: Record<StationKey | 'hot', { name: string; out: string; done: string; label: string; pourS: (ml: number) => number }> = {
@@ -74,7 +85,8 @@ function waitCode(w: WaitMode, done: string, out: string): string {
 
 /** The menu's motion: its steps in order, with their program lines and times (estimates). */
 export function motionSteps(r: MenuRecipe): MotionStep[] {
-  const steps: MotionStep[] = [{ key: 'cup', label: '컵 받기', armS: 4, code: 'cell.set("컵 내리기", True)\ncell.wait("컵 준비됨")\ncell.set("컵 내리기", False)\nrobot.pick("컵 나오는 곳")\n' }];
+  const by = new Map<MotionKey, MotionStep>();
+  by.set('cup', { key: 'cup', label: '컵 받기', armS: 4, code: 'cell.set("컵 내리기", True)\ncell.wait("컵 준비됨")\ncell.set("컵 내리기", False)\nrobot.pick("컵 나오는 곳")\n' });
   for (const k of used(r)) {
     const st = k === 'water' && r.menu.hot ? STATIONS.hot : STATIONS[k];
     const amount = k === 'shot' ? r.menu.shots : ml(r, k);
@@ -83,7 +95,7 @@ export function motionSteps(r: MenuRecipe): MotionStep[] {
     // Cold and hot water come from the same tap (the place is the water dispenser's).
     const place = k === 'water' ? '정수기' : st.name;
     const waitS = w.k === 'signal' ? pourS : Math.max(0.2, w.s);
-    steps.push({
+    by.set(k, {
       key: k,
       label: st.label,
       armS: 3.5,
@@ -93,8 +105,9 @@ export function motionSteps(r: MenuRecipe): MotionStep[] {
       code: `robot.place("${place}")\ncell.amount("${st.name}", ${amount})\ncell.set("${st.out}", True)\n${waitCode(w, st.done, st.out)}robot.pick("${place}")\n`,
     });
   }
-  steps.push({ key: 'serve', label: r.door ? '건네기 (문)' : '픽업대에 놓기', armS: r.door ? 9 : 4, code: `robot.place("픽업 1")\nrobot.home()\n${r.door ? HAND_OVER : ''}` });
-  return steps;
+  by.set('serve', { key: 'serve', label: r.door ? '건네기 (문)' : '픽업대에 놓기', armS: r.door ? 9 : 4, code: `robot.place("픽업 1")\nrobot.home()\n${r.door ? HAND_OVER : ''}` });
+  // In the student's block order (a station the menu does not use has no block).
+  return orderOf(r).flatMap((k) => by.get(k) ?? []);
 }
 
 /** One drink's time, s (estimate): the arm's steps and its waits. */

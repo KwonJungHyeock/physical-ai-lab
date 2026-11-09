@@ -124,6 +124,15 @@ await fails('F4', [shortShot(false, 10)], 1, 'shot waited 10 s (28 s pour)', '旎
   console.log(`  ok   F4 shot waited 30 s passes: ${summary(w)}`);
 }
 await fails('F4', [newRecipe(ICED_AMERICANO, false)], 1, 'the iced americano as it is: not a menu of my own');
+// 敫旊 靾滌劀: the cup after a pour (nothing to pour into) or the hand-over before the coffee fail; the pours among themselves may go in any order.
+await fails('F4', [{ ...newRecipe(MINE, false), order: ['ice', 'cup', 'shot', 'water', 'serve'] }], 1, 'block order: ice before the cup');
+await fails('F4', [{ ...newRecipe(MINE, false), order: ['cup', 'ice', 'serve', 'shot', 'water'] }], 1, 'block order: served before the coffee');
+{
+  const { w, run } = await cell('F4');
+  const err = await run(cafeProgram([{ ...newRecipe(MINE, false), order: ['cup', 'water', 'shot', 'ice', 'serve'] }], 1).code);
+  assert.ok(!err && allOk(w), `F4 water 路 shot 路 ice still makes the drink | ${summary(w)}`);
+  console.log('  ok   F4 block order: water 路 shot 路 ice (cup first, serve last) passes');
+}
 await fails('F5', [newRecipe(ICED_AMERICANO, false)], 1, 'no door: nobody takes it');
 await fails('F6', [newRecipe(ICED_AMERICANO, true)], 1, 'repeat once for two orders: one customer goes without');
 await fails('F6', [newRecipe(ICED_AMERICANO, false)], 2, 'two cups, no door');
