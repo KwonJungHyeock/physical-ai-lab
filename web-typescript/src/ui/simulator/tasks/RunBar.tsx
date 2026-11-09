@@ -39,6 +39,8 @@ interface Props {
    * foot) and ■ shows only while something runs.
    */
   more?: { label: string; onClick(): void; disabled?: boolean }[];
+  /** 입문 퀘스트: ⚡ 결과 바로 — the run computed without drawing (cell/quick.ts); `progress` while it runs. */
+  quick?: { onClick(): void; progress: string | null; disabled?: boolean };
 }
 
 const RATE_NAME: Record<number, string> = { 1: '보통', 2: '2배', 4: '4배' };
@@ -111,6 +113,20 @@ export default function RunBar(p: Props) {
         <span>시뮬레이션</span>
         {p.passed && <i className={css.runOk} aria-label="통과">✓</i>}
       </button>
+      {p.quick && (
+        <button
+          type="button"
+          className={css.runQuick}
+          data-going={p.quick.progress !== null || undefined}
+          disabled={p.quick.disabled || p.quick.progress !== null}
+          onClick={p.quick.onClick}
+          aria-label={p.quick.progress ?? '결과 바로'}
+          title="장면을 그리지 않고 바로 계산해 결과를 봐요 (운영 하루도 몇 초). 왜 그런지는 ▶로 장면을 보며 확인해요."
+        >
+          <b>⚡</b>
+          <span>{p.quick.progress ?? '결과 바로'}</span>
+        </button>
+      )}
       {/* 입문 퀘스트: the speed beside ▶ (×1 · ×4), to be said aloud in class ("빠르게 눌러요"). */}
       {p.more && (
         <button

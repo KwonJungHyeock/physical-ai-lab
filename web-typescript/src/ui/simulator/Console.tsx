@@ -144,6 +144,7 @@ import { HandMapper, demoProcess, simplifyDemo, type DemoPoint, type DemoSample,
 import ProcessFlow, { activePlan, initialFlow, REF_MARK, type FlowState } from './editors/ProcessFlow';
 import PyPanel from './editors/PyPanel';
 import RunBar from './tasks/RunBar';
+import { quickRun } from '@/engine/simulator/cell/quick';
 import { LessonCheck, LessonPlate, Projector, RecordPanel, RecordPill, TeacherKey, questPages } from './tasks/LessonKit';
 import { lessonOfQuest, lessonsOf, siteOf } from '@/engine/simulator/cell/lessons';
 import { RECORD_KEY, TEACHER_KEY, answered as recAnswered, emptyRecord, loadRecord, loadTeacher, opened as recOpened, passed as recPassed, questOpen, teacherFromQuery, tried as recTried, type LessonRecord, type TeacherSet } from '@/engine/simulator/cell/lessonRecord';
@@ -4068,6 +4069,36 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     return () => window.clearTimeout(id);
   }, [film, loaded, busy]);
   /** 입문: the step's 예측 first (once per step, unless skipped), then the run. */
+  // ⚡ 결과 바로 (입문 퀘스트): the step's program computed without drawing; its checks come as a run's would.
+  const [quickProg, setQuickProg] = useState<string | null>(null);
+  const quickStop = useRef<AbortController | null>(null);
+  useEffect(() => () => quickStop.current?.abort(), [cellAt?.mission]);
+  const quickOn = !!track && !!cellAt && !!lifeStep && !!siteOf(lifeStep.id) && (cellAt.cell !== 'cafe' || cafeMode === 'make');
+  const runQuick = async () => {
+    const c = cellRef.current;
+    if (!loaded || !c?.mission || busy || quickProg !== null) return;
+    const ms = c.mission;
+    const ctl = new AbortController();
+    quickStop.current = ctl;
+    changeRec((r) => recTried(r, ms, Date.now()));
+    setCellResult(null);
+    setLastChecks(null);
+    setQuickProg('계산 중');
+    try {
+      const res = await quickRun({ chain: loaded.chain, cell: c.cell, mission: ms, code, effector, signal: ctl.signal, onProgress: (t) => setQuickProg(`계산 중 · ${Math.round(t)}초`) });
+      if (!res || cellRef.current !== c) return;
+      setCellResult(res.passed);
+      setLastChecks(res.error ? [...res.checks, { label: '프로그램이 멈추지 않고 끝까지', ok: false, detail: res.error }] : res.checks);
+      const at = res.moments.length ? ` · 볼 곳: ${res.moments.map((m) => `${m.t}초 ${m.text}`).join(', ')}` : '';
+      addLog(res.passed ? 'ok' : 'warn', `⚡ 결과 바로: ${res.passed ? '통과' : '아직이에요'} (셀 ${res.cellS}초)${at}. 장면은 ▶로 봐요.`);
+      if (res.passed) recordPass(ms);
+    } catch (e) {
+      addLog('err', `결과 바로 계산을 하지 못했어요: ${(e as Error).message}`);
+    } finally {
+      if (quickStop.current === ctl) quickStop.current = null;
+      setQuickProg(null);
+    }
+  };
   const simulateLife = () => {
     const ms = cellAt?.mission;
     if (ms && !busy && siteOf(ms)) changeRec((r) => recTried(r, ms, Date.now()));
@@ -4080,7 +4111,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       robotDone={!!progress[markKey(here)]?.robot}
       robotMode={robotMode}
       busy={busy}
-      ready={!!loaded}
+      ready={!!loaded && quickProg === null}
       realProgress={realRun && robot && robot.step >= 0 ? `${robot.step + 1}/${robot.total}` : null}
       realDisabled={!gateOpen || (robotMode && !robot?.connected)}
       realBlocked={robotMode && !robot?.connected ? '로봇 연결 필요' : !gateOpen ? '시뮬레이션 통과 후' : null}
@@ -4090,6 +4121,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       onReal={robotMode ? runReal : openExport}
       onStop={stop}
       more={questOn && cellAt && lifeStep ? [{ label: '자유 연습 (채점 없이)', onClick: () => openCell(cellAt.cell, null), disabled: busy }] : undefined}
+      quick={quickOn ? { onClick: () => void runQuick(), progress: quickProg, disabled: busy || !loaded } : undefined}
     />
   );
 
