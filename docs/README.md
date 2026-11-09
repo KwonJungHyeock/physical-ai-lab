@@ -78,6 +78,7 @@
 | [`43-track-life-robot-cafe.md`](reports/education/43-track-life-robot-cafe.md) | 보고 #43 — 입문 트랙 ① 생활 로봇 · 로봇 카페 시뮬레이터 설계와 근거: 실제 로봇 카페 조사(비트 · 레인보우 · HD현대 · 라운지랩 · Artly), 1/5 축척 · 장비 상태와 신호, 4단계와 단계별 근거 · 참고 자료 |
 | [`44-track-life-robot-calligraphy.md`](reports/education/44-track-life-robot-calligraphy.md) | 보고 #44 — 입문 트랙 ① 생활 로봇 · 로봇 캘리그라피 부스 시뮬레이터 설계와 근거: 행사 부스 · 서예 · 케이크 레터링 · 접착제 도포 조사, 실제 크기 · 카드와 손님 신호, 4단계(둘러보기 · 보정 · 직선 이동 · 펜 들기)와 근거 · 참고 자료 |
 | [`45-track-life-board-game-robot.md`](reports/education/45-track-life-board-game-robot.md) | 보고 #45 — 입문 트랙 ① 생활 로봇 · 보드게임 로봇(오목) 시뮬레이터 설계와 근거: 체스 로봇 사고 · 연구 사례 조사, 9 × 9 판 · 차례 신호 · 손 인터록, 4단계(한 수 · 격자 좌표 · 차례 기다리기 · 판단 규칙)와 규칙별 대국 결과 · 참고 자료 |
+| [`46-track-life-classroom.md`](reports/education/46-track-life-classroom.md) | 보고 #46 — 입문 로봇 카페를 교실 수업형으로: 한 원본(수업 설계) · 차시 구성 4 · 6 · 8 · 교안 쪽 표시 · 확인 문제 · 학습 기록(LMS, 파일 방식) · 교사 열쇠 · 교안 · 학습지 PDF |
 
 ### [`system/`](reports/system/) — 시스템 구성
 | 문서 | 내용 |

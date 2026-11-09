@@ -331,7 +331,12 @@ export function RecordPanel({ rec, onWho, onClose }: { rec: LessonRecord; onWho(
             제출 파일 받기
           </button>
         </div>
-        <small className={css.foot}>기록은 이 브라우저에 남아요. 수업이 끝나면 제출 파일을 선생님께 내요(USB · 학급 게시판 · 메일).</small>
+        <small className={css.foot}>
+          기록은 이 브라우저에 남아요. 수업이 끝나면 제출 파일을 선생님께 내요(USB · 학급 게시판 · 메일).{' '}
+          <a href="/guides/cafe-student.pdf" target="_blank" rel="noreferrer">
+            학습지 PDF
+          </a>
+        </small>
       </div>
     </>
   );
@@ -408,6 +413,15 @@ export function TeacherKey({ teacher, onTeacher, onClear, onProjector, onClose }
           </button>
         </div>
         <small className={css.foot}>학생이 이 링크로 열면 같은 차시 구성 · 차시가 열려요. 이 PC의 설정은 이 PC에만 적용돼요.</small>
+        <div className={css.set}>
+          <span>교안 · 학습지</span>
+          <a className={css.ghostLink} href="/guides/cafe-teacher.pdf" target="_blank" rel="noreferrer">
+            교안 PDF (교사용 22쪽)
+          </a>
+          <a className={css.ghostLink} href="/guides/cafe-student.pdf" target="_blank" rel="noreferrer">
+            학습지 PDF (학생용 10쪽)
+          </a>
+        </div>
         <div className={css.row}>
           <button type="button" className={css.key} onClick={onProjector}>
             수업 화면 띄우기 (프로젝터)

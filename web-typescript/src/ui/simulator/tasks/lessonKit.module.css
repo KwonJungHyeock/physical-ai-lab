@@ -719,3 +719,19 @@
   font-size: 12.5px;
   line-height: 1.4;
 }
+.ghostLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 9px;
+  background: var(--hud-key);
+  box-shadow: var(--hud-key-shadow);
+  color: var(--hud-tx, #e9edf1);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.foot a {
+  color: #93b4ff;
+}
