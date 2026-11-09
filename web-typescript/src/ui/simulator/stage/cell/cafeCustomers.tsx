@@ -4,7 +4,8 @@
  * 로봇 카페의 손님 (타이쿤처럼): the customers the café's state has, walking — in at the door, ordering
  * at the kiosk, waiting in line to the pickup window with their number and how patient they still
  * are, then out (a wave for a right drink, a frown for a wrong one or for giving up). Above the pickup,
- * the order board: the numbers being made and the numbers ready.
+ * the order board: the numbers being made and the numbers ready. Each cup carries its order's number
+ * (cell/cafe.ts gives it when the cup comes down): a customer takes only the cup with theirs.
  *
  * Read from the world every frame (cell/cafe.ts: queue · exits · spawn); positions eased here, poses
  * changed a few times a second. At most six people on screen (a school laptop): the rest are only
@@ -83,7 +84,8 @@ const FACE: Record<Who['mood'], string> = { ok: '😊', meh: '😐', cross: '�
 export function CafeCustomers({ world }: { world: RefObject<WorldState | null> }) {
   const groups = useRef(new Map<number, Group>());
   const pos = useRef(new Map<number, { x: number; y: number; yaw: number }>());
-  const [shown, setShown] = useState<{ list: Who[]; making: number[]; ready: number[] }>({ list: [], making: [], ready: [] });
+  const [shown, setShown] = useState<{ list: Who[]; making: number[]; ready: number[]; cups: { id: string; order: number }[] }>({ list: [], making: [], ready: [], cups: [] });
+  const cupGroups = useRef(new Map<string, Group>());
   const last = useRef('');
   const tick = useRef(0);
   useFrame((_, dt) => {
@@ -114,6 +116,12 @@ export function CafeCustomers({ world }: { world: RefObject<WorldState | null> }
         g.rotation.z = p.yaw;
       }
     }
+    // The cups' numbers follow the cups (on the shelf, in the hand, on the pickup).
+    const objs = world.current?.objects ?? [];
+    for (const [id, g] of cupGroups.current) {
+      const o = objs.find((x) => x.id === id);
+      if (o) g.position.set(m(o.x), m(o.y), m(o.z + 34));
+    }
     // The poses and tags a few times a second (a pose change rebuilds the model).
     tick.current += dt;
     if (tick.current < 0.25) return;
@@ -123,10 +131,11 @@ export function CafeCustomers({ world }: { world: RefObject<WorldState | null> }
       const moving = p ? Math.hypot(w.to[0] - p.x, w.to[1] - p.y) > 6 : false;
       return { id: w.id, pose: moving && w.pose !== 'Wave' ? 'Walk' : w.pose === 'Walk' ? 'Idle' : w.pose, tag: w.tag, mood: w.mood, patience: w.patience === null ? null : Math.round(w.patience * 10) / 10 } as Who;
     });
-    const key = JSON.stringify([list, a.making, a.ready]);
+    const cups = objs.filter((o) => o.drink?.order !== undefined).map((o) => ({ id: o.id, order: o.drink!.order! }));
+    const key = JSON.stringify([list, a.making, a.ready, cups]);
     if (key !== last.current) {
       last.current = key;
-      setShown({ list, making: a.making, ready: a.ready });
+      setShown({ list, making: a.making, ready: a.ready, cups });
       // Forget those gone from the scene.
       for (const id of [...pos.current.keys()]) if (!list.some((w) => w.id === id)) pos.current.delete(id);
     }
@@ -152,6 +161,19 @@ export function CafeCustomers({ world }: { world: RefObject<WorldState | null> }
                 </i>
               )}
             </div>
+          </Html>
+        </group>
+      ))}
+      {shown.cups.map((c) => (
+        <group
+          key={`cup${c.id}`}
+          ref={(g) => {
+            if (g) cupGroups.current.set(c.id, g);
+            else cupGroups.current.delete(c.id);
+          }}
+        >
+          <Html center zIndexRange={[21, 0]} style={{ pointerEvents: 'none' }}>
+            <div style={CUP}>#{c.order}</div>
           </Html>
         </group>
       ))}
@@ -196,4 +218,5 @@ const BOARD: CSSProperties = {
   whiteSpace: 'nowrap',
   boxShadow: '0 3px 10px rgba(0,0,0,0.4)',
 };
+const CUP: CSSProperties = { padding: '1px 6px', borderRadius: 6, background: '#f0a23b', color: '#15181c', font: '800 11px Pretendard, system-ui, sans-serif', whiteSpace: 'nowrap', boxShadow: '0 2px 5px rgba(0,0,0,0.35)' };
 const EM: CSSProperties = { fontStyle: 'normal', fontWeight: 800, color: '#f0a23b', marginRight: 4 };

@@ -459,10 +459,14 @@ function World({
   // Tracking tags (TrackTags.tsx) on the joints that need a look: set again only when what they say changes.
   const [tags, setTags] = useState<TrackTag[]>([]);
   const tagKey = useRef('');
-  useFrame(({ clock }) => {
+  // The joints' speeds are judged in the arm's own time: 입문 runs a program at ×4 (or held still),
+  // and screen seconds would read four times the speed (sixteen times the acceleration) as a load.
+  const armT = useRef(0);
+  useFrame(({ clock }, delta) => {
     const w = world.current;
     if (!w) return;
-    const alerts = tracker.update(clock.elapsedTime, w.angles, w.held ? 0.015 : 0);
+    armT.current += cellClock?.current?.on ? delta * (simRate?.current ?? 1) : delta;
+    const alerts = tracker.update(cellClock ? armT.current : clock.elapsedTime, w.angles, w.held ? 0.015 : 0);
     monitor?.current?.setAlerts(alerts);
     const pulse = 0.55 + 0.35 * Math.sin(clock.elapsedTime * 7);
     // Where the arm touches the desk, the kit or an object: those joints red (blinking) while it lasts.

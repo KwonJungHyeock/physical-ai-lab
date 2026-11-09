@@ -81,7 +81,7 @@ export interface DeskObject {
   /** 실습 셀 E: a pin with a burr: it catches the first time it is pushed in. */
   rough?: boolean;
   /** 실습 셀 F (로봇 카페): what is in a cup, ml at shop size (cell/cafe.ts). */
-  drink?: { ice: number; shot: number; water: number; spilled: number; warm?: boolean };
+  drink?: { ice: number; shot: number; water: number; spilled: number; warm?: boolean; /** The order number the cup was let down for (its customer takes only it). */ order?: number };
 }
 
 /** A fixed part of a scene the arm must keep off, mm. */

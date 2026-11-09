@@ -317,12 +317,12 @@ export function stepCafe(l: CellLayout, def: CafeDef, s: LineState, c: CafeState
     else if (shelf) out.alerts.push({ t, level: 'info', kind: 'order', title: '컵이 이미 있어요', msg: '컵 나오는 곳에 컵이 있어 새 컵을 내리지 않았어요.' });
     else {
       const p = l.places[dp.place];
-      out.spawned.push(makeObject('cup', { x: p.x, y: p.y, z: p.z + 0.3 }, { size: [...CUP_SIZE], color: '#f3efe6', massG: 12, drink: emptyDrink() }));
-      c.stock -= 1;
-      c.dropped += 1;
-      // The cup is for the first order not started yet.
+      // The cup is for the first order not started yet: it carries that number (the 번호표).
       const next = c.queue.find((q) => !q.started);
       if (next) next.started = true;
+      out.spawned.push(makeObject('cup', { x: p.x, y: p.y, z: p.z + 0.3 }, { size: [...CUP_SIZE], color: '#f3efe6', massG: 12, drink: { ...emptyDrink(), ...(next && sp ? { order: next.id } : {}) } }));
+      c.stock -= 1;
+      c.dropped += 1;
     }
   }
   c.dropWas = dOn;
@@ -389,11 +389,16 @@ export function stepCafe(l: CellLayout, def: CafeDef, s: LineState, c: CafeState
     for (const name of pk.places) {
       const p = at(name);
       if (!p) continue;
-      // The drink is for the oldest order under way (or, with none marked, the oldest one).
-      const k = Math.max(
-        0,
-        c.queue.findIndex((q) => q.started),
-      );
+      // Each customer takes the cup with their number (a cup without one: the oldest order under way,
+      // or, with none marked, the oldest one).
+      const mine = p.drink?.order === undefined ? -1 : c.queue.findIndex((q) => q.id === p.drink!.order);
+      const k =
+        mine >= 0
+          ? mine
+          : Math.max(
+              0,
+              c.queue.findIndex((q) => q.started),
+            );
       const o = c.queue.splice(k, 1)[0] ?? { id: 0, menu: 1, at: 0, started: true };
       const v = drinkVerdict(p.drink, menuOf(c, o.menu));
       c.served.push({ t, menu: o.menu, waited: t - o.at, drink: { ...(p.drink ?? emptyDrink()) }, ok: v.ok, why: v.why });
