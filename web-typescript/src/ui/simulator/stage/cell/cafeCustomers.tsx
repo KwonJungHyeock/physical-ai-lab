@@ -28,11 +28,11 @@ const KIOSK: P = [402, -300];
 const EXIT: P = [-340, -640];
 /** The line: the pickup window first, then back along the shop floor. */
 const SLOTS: P[] = [
-  [98, -330],
-  [165, -395],
-  [235, -440],
-  [305, -480],
-  [30, -415],
+  [98, -290],
+  [160, -330],
+  [225, -365],
+  [290, -400],
+  [30, -335],
 ];
 const MAX_SHOWN = 6;
 /** Walking speed, mm per (real) second. */
