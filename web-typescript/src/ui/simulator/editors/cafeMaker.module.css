@@ -408,12 +408,6 @@
   cursor: ew-resize;
   touch-action: none;
 }
-.tip {
-  margin: 8px 0 0;
-  font-size: 12px;
-  line-height: 1.45;
-  color: var(--hud-dim);
-}
 
 .stats {
   display: grid;

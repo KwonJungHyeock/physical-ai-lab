@@ -457,7 +457,7 @@
 }
 .blocks li {
   display: grid;
-  grid-template-columns: 20px 20px auto 1fr 28px 28px;
+  grid-template-columns: 20px 20px 1fr 28px 28px;
   align-items: center;
   gap: 6px;
   padding: 4px 6px;
@@ -465,11 +465,6 @@
   background: var(--hud-groove);
   box-shadow: var(--hud-groove-shadow);
   font-size: 14px;
-}
-.blocks li small {
-  color: var(--hud-sub);
-  font-size: 12px;
-  min-width: 0;
 }
 .blocks li button {
   height: 28px;
@@ -488,12 +483,4 @@
   color: var(--hud-amber);
   font-weight: 800;
   text-align: center;
-}
-.blocks li.blockNote {
-  display: block;
-  background: none;
-  box-shadow: none;
-  padding: 0 2px;
-  color: var(--hud-sub);
-  font-size: 12px;
 }

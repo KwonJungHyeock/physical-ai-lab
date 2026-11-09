@@ -64,7 +64,6 @@ export function PredictCard({ mission, onAnswer, onSkip }: { mission: string; on
           </button>
         ))}
       </div>
-      <small>고르면 바로 시뮬레이션이 시작돼요 · 채점하지 않아요</small>
     </div>
   );
 }
@@ -88,9 +87,7 @@ export function MomentAsk({ ask, ox, onAnswer, onSkip }: { ask: Ask; ox?: string
           <span className={css.pause} aria-hidden="true" />
           <em>{chosen === ask.answer ? '맞았어요' : '다시 볼까요'}</em>
         </header>
-        <p>
-          정답 {ask.options[ask.answer]} · {ask.why}
-        </p>
+        <p>정답 {ask.options[ask.answer]}</p>
         <button type="button" className={css.goOn} onClick={() => onAnswer(chosen)}>
           이어서 보기 ▶
         </button>
@@ -115,7 +112,6 @@ export function MomentAsk({ ask, ox, onAnswer, onSkip }: { ask: Ask; ox?: string
         ))}
       </div>
       <small>
-        {ox ? '고르면 정답을 보고 이어서 봐요 · 채점하지 않아요' : '고르면 바로 이어서 실행돼요 · 채점하지 않아요'}
         <button type="button" onClick={onSkip}>
           {ox ? '답하지 않고 계속' : '예측 없이 계속'}
         </button>
@@ -186,11 +182,8 @@ export function StepResult(p: ResultProps) {
         <div className={css.concept}>
           <em>CONCEPT</em>
           <b>{concept.term}</b>
-          <p>{concept.def}</p>
-          <small>
-            실제 현장 · {concept.real}
-            {page ? ` · 교안 ${page[0]}–${page[1]}쪽` : ''}
-          </small>
+          {/* 입문: what it means and where it is used are the 교안's (the app is for doing it). */}
+          {page && <small>교안 {page[0]}–{page[1]}쪽</small>}
         </div>
       )}
       {next && p.onNext && (

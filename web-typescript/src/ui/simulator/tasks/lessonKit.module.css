@@ -50,12 +50,6 @@
   font-weight: 800;
   white-space: nowrap;
 }
-.lead {
-  margin: 0;
-  font-size: 13px;
-  font-weight: 800;
-  color: var(--hud-sub, #b4bbc2);
-}
 .goals {
   list-style: none;
   margin: 0;
@@ -88,6 +82,23 @@
 .goals li[data-done] i {
   background: var(--hud-green, #5bd17a);
   color: #0d1a10;
+}
+/* The 차시's quests as numbered dots (what they teach is in the 교안). */
+.goals[data-dots] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+}
+.goals[data-dots] li {
+  display: block;
+}
+.goals[data-dots] li i {
+  width: 26px;
+  height: 26px;
+  font-size: 13px;
 }
 .row {
   display: flex;

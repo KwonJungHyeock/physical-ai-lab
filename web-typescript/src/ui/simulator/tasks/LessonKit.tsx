@@ -65,12 +65,11 @@ export function LessonPlate({ lesson, total, rec, onCheck, onRecord }: { lesson:
         </b>
         <span className={css.page}>{pages(lesson.pages[0], lesson.pages[1])}</span>
       </header>
-      <p className={css.lead}>오늘 배울 것</p>
-      <ol className={css.goals}>
-        {lesson.quests.map((q, i) => (
-          <li key={q} data-done={rec.quests[q]?.passed || undefined}>
-            <i aria-hidden="true">{rec.quests[q]?.passed ? '✓' : i + 1}</i>
-            <span>{LESSON_QUEST[q].learn}</span>
+      {/* What the 차시 teaches is the 교안's (its pages above): here, only the quests to pass. */}
+      <ol className={css.goals} data-dots aria-label={`퀘스트 ${done}/${lesson.quests.length} 통과`}>
+        {lesson.quests.map((q) => (
+          <li key={q} data-done={rec.quests[q]?.passed || undefined} title={LESSON_QUEST[q].learn}>
+            <i aria-hidden="true">{rec.quests[q]?.passed ? '✓' : Number(q.slice(1))}</i>
           </li>
         ))}
       </ol>
@@ -89,9 +88,6 @@ export function LessonPlate({ lesson, total, rec, onCheck, onRecord }: { lesson:
           학습 기록
         </button>
       </div>
-      <small className={css.foot}>
-        퀘스트 {done}/{lesson.quests.length} 통과{ready ? '' : ' · 다 통과하면 확인 문제가 열려요'}
-      </small>
     </section>
   );
 }

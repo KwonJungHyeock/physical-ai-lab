@@ -349,7 +349,7 @@ export default function CafeMaker({ mission, busy, runningLine, onCode, world, f
         ) : (
           <b> {orders}번</b>
         )}
-        {mission === 'F6' && <small>{repeat < orders ? `주문은 ${orders}잔인데 ${repeat}번만 만들어요` : repeat > orders ? '주문보다 많아요: 남는 번은 다음 주문을 기다려요' : '주문 수만큼 되풀이해요'}</small>}
+        {mission === 'F6' && <small>{repeat === orders ? `✓ 주문 ${orders}잔` : `주문 ${orders}잔 · ${repeat}번`}</small>}
       </span>
       {inner}
     </div>
@@ -373,7 +373,6 @@ export default function CafeMaker({ mission, busy, runningLine, onCode, world, f
       ) : (
         looped
       )}
-      <p className={css.tip}>블록을 끌거나 ▲▼로 순서를 바꿔요. 🧲는 장비의 끝 신호까지 기다리고, 초로 정하면 붓는 시간보다 짧을 때 쏟아져요.</p>
     </section>
   );
   const day = setup?.spawn ? <DayBoard key="day" world={world} customers={setup.spawn.customers} /> : null;
@@ -388,7 +387,7 @@ export default function CafeMaker({ mission, busy, runningLine, onCode, world, f
         <input type="checkbox" disabled={busy} checked={cur.door} onChange={(e) => setRecipes((all) => all.map((r) => ({ ...r, door: e.target.checked })))} />
         <span>
           <b>픽업 문으로 건네기</b>
-          <small>{cur.door ? '문을 열고 손님이 가져갈 때까지 기다린 뒤 닫아요' : '지금은 픽업대에 놓기만 해요'}</small>
+          <small>{cur.door ? '문 열기 → 가져감 → 닫기' : '픽업대에 놓기'}</small>
         </span>
       </label>
     </section>

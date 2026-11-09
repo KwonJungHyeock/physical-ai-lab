@@ -184,11 +184,10 @@ export default function BoardCards({ mission, busy, runningLine, onCode, glow, g
           {c.k === 'move' && c.order && (
             <ol className={css.blocks} aria-label="규칙 블록: 위에서부터 차례로 따져요">
               {c.order.map((st, i) => (
-                <li key={st} data-lead={i === 0 ? 'rule-top' : undefined}>
+                <li key={st} data-lead={i === 0 ? 'rule-top' : undefined} title={STEP_INFO[st].what}>
                   <span className={css.blockN}>{i + 1}</span>
                   <span aria-hidden>{STEP_INFO[st].icon}</span>
                   <b>{st}</b>
-                  <small>{STEP_INFO[st].what}</small>
                   <button type="button" disabled={busy || i === 0} onClick={() => edit(k, { ...c, order: swap(c.order!, i, i - 1) })} aria-label={`${st} 위로`}>
                     ▲
                   </button>
@@ -197,7 +196,6 @@ export default function BoardCards({ mission, busy, runningLine, onCode, glow, g
                   </button>
                 </li>
               ))}
-              <li className={css.blockNote}>위 블록부터 따져서, 칸을 찾은 블록이 그 칸에 둬요</li>
             </ol>
           )}
           {!isOpen && <small className={css.sum}>{now ? `지금 · ${now}` : off ? `꺼짐 · ${off.text}` : `동작 ${rows.length}개`}</small>}
