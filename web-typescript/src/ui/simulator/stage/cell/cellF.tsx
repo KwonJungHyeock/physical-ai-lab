@@ -16,7 +16,7 @@
  */
 
 import { useFrame } from '@react-three/fiber';
-import { Suspense, useRef, type RefObject } from 'react';
+import { Suspense, useRef, useState, type RefObject } from 'react';
 import type { Group, Mesh, MeshPhysicalMaterial, MeshStandardMaterial } from 'three';
 
 import { CUP_ML, CUP_SIZE, RECIPE, drinkMl } from '@/engine/simulator/cell/cafe';
@@ -24,6 +24,8 @@ import { CAFE_AT, cellLayout } from '@/engine/simulator/cell/cells';
 import type { WorldState } from '@/engine/simulator/sim';
 
 import Model from '@/ui/education/lab/ambient/Model';
+
+import { CafeCustomers } from './cafeCustomers';
 
 import { RBox, Turned, brushed, wood } from '../sceneKit';
 import { F, Paint, Skin, Steel, Tagged, m, travel, useSheet } from './kit';
@@ -636,7 +638,17 @@ function Booth() {
 
 /** The order kiosk on the booth's right: a pedestal with a touch screen showing the menu and the queue. */
 function Kiosk({ world }: { world: RefObject<WorldState | null> }) {
-  const screen = useSheet('cafe-kiosk', 60, 90, (ctx, w, h) => {
+  // The menus the program registered (cell.menu): the kiosk sells the student's own.
+  const [names, setNames] = useState<string[]>([]);
+  const tick = useRef(0);
+  useFrame((_, dt) => {
+    tick.current += dt;
+    if (tick.current < 0.5) return;
+    tick.current = 0;
+    const now = (world.current?.cell?.cafe?.menus ?? []).flatMap((x) => (x ? [x.name] : []));
+    if (now.join('|') !== names.join('|')) setNames(now);
+  });
+  const screen = useSheet(`cafe-kiosk|${names.join('|')}`, 60, 90, (ctx, w, h) => {
     ctx.fillStyle = '#f6f3ee';
     ctx.fillRect(0, 0, w, h);
     ctx.fillStyle = '#18201d';
@@ -644,7 +656,7 @@ function Kiosk({ world }: { world: RefObject<WorldState | null> }) {
     ctx.fillStyle = '#fff';
     ctx.font = `800 ${h * 0.06}px Pretendard, sans-serif`;
     ctx.fillText('주문하기', w * 0.08, h * 0.085);
-    const items = ['아이스 아메리카노', '아메리카노', '카페라떼', '아이스티'];
+    const items = names.length ? names.slice(0, 4) : ['아이스 아메리카노', '아메리카노', '카페라떼', '아이스티'];
     items.forEach((s, k) => {
       const y = h * (0.18 + k * 0.17);
       ctx.fillStyle = k === 0 ? '#0f6b4c' : '#e4ddd2';
@@ -658,7 +670,6 @@ function Kiosk({ world }: { world: RefObject<WorldState | null> }) {
     ctx.fillStyle = '#fff';
     ctx.fillText('결제하기', w * 0.36, h * 0.925);
   });
-  void world;
   const x = 372;
   const y = -232;
   return (
@@ -726,7 +737,7 @@ function ShopFloor() {
 }
 
 /**
- * Tables, stools, a plant and the menu board out in the shop; a customer at the pickup window, one at the kiosk.
+ * Tables, stools, a plant and the menu board out in the shop (the customers walk: cafeCustomers.tsx).
  * Nothing between the arm's back and the camera (the 입문 view is over its shoulder, CellScene CELL_VIEW).
  */
 function Shop() {
@@ -740,8 +751,6 @@ function Shop() {
       <Model group="cafe" name="chair" at={[580, -380]} z={fz} h={180} yaw={-Math.PI / 2} />
       <Model group="cafe" name="plant" at={[470, 330]} z={fz} h={260} />
       <Model group="cafe" name="chalkboard" at={[600, -170]} z={fz} h={230} yaw={-1.2} />
-      <Model group="people" name="customer" at={[98, -330]} z={fz} h={340} yaw={Math.PI} pose="Idle" poseAt={0.1} smooth live />
-      <Model group="people" name="customer" at={[402, -300]} z={fz} h={330} yaw={Math.PI * 0.95} pose="Idle" poseAt={0.6} smooth live />
     </Suspense>
   );
 }
@@ -850,8 +859,6 @@ export function CafeCell({ world, onHover }: { world: RefObject<WorldState | nul
       <Contact at={[248, 116]} w={53} d={52} />
       <Contact at={[279, 16]} w={66} d={77} />
       <Contact at={[244, -85]} w={44} d={54} />
-      <Contact at={[98, -330]} w={46} d={36} z={F + 0.8} k={0.5} />
-      <Contact at={[402, -300]} w={46} d={36} z={F + 0.8} k={0.5} />
       <Contact at={[372, -232]} w={36} d={26} z={F + 0.8} k={0.45} />
       <Tagged name="컵 디스펜서" onHover={onHover}>
         <CupDispenser />
@@ -869,6 +876,7 @@ export function CafeCell({ world, onHover }: { world: RefObject<WorldState | nul
         <Pickup world={world} />
       </Tagged>
       <Drinks world={world} />
+      <CafeCustomers world={world} />
       <Spills world={world} refs={{ 제빙기: iceSpill, '커피 머신': coffeeSpill, 정수기: waterSpill }} />
     </>
   );

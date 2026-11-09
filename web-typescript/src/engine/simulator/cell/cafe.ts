@@ -168,6 +168,8 @@ export interface CafeState {
   nextAt: number;
   came: number;
   left: number;
+  /** Customers who went (the scene walks them out): served (happy if the drink was right) or gave up. */
+  exits: { id: number; menu: number; t: number; happy: boolean }[];
 }
 
 /** A small seeded random generator (mulberry32): the same seed, the same customers. */
@@ -213,6 +215,7 @@ export function newCafe(def: CafeDef, orders: number, order: CafeOrder = ICED_AM
     nextAt: 2,
     came: queue.length,
     left: 0,
+    exits: [],
   };
 }
 
@@ -292,6 +295,7 @@ export function stepCafe(l: CellLayout, def: CafeDef, s: LineState, c: CafeState
     for (const o of c.queue.filter((q) => !q.started && t - q.at > sp.patience)) {
       c.queue.splice(c.queue.indexOf(o), 1);
       c.left += 1;
+      c.exits.push({ id: o.id, menu: o.menu, t, happy: false });
       c.orders = Math.max(0, c.orders - 1);
       out.alerts.push({ t, level: 'info', kind: 'order', title: '손님이 기다리다 갔어요', msg: `${menuOf(c, o.menu).name} 주문이 ${Math.round(sp.patience)}초 넘게 시작되지 않았어요.` });
     }
@@ -393,6 +397,7 @@ export function stepCafe(l: CellLayout, def: CafeDef, s: LineState, c: CafeState
       const o = c.queue.splice(k, 1)[0] ?? { id: 0, menu: 1, at: 0, started: true };
       const v = drinkVerdict(p.drink, menuOf(c, o.menu));
       c.served.push({ t, menu: o.menu, waited: t - o.at, drink: { ...(p.drink ?? emptyDrink()) }, ok: v.ok, why: v.why });
+      c.exits.push({ id: o.id, menu: o.menu, t, happy: v.ok });
       c.orders = Math.max(0, c.orders - 1);
       out.taken.push(p.id);
     }

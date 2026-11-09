@@ -3988,11 +3988,23 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     let last: string | null = null;
     let seen: string | null = null;
     let followed = false;
+    let shopTick = 0;
     const id = window.setInterval(() => {
       const api = stageApi.current;
       if (!api || api.userMoved()) return;
       // 주문 한 잔 따라가기: the view goes where the signal is (the kiosk, a machine, the pickup door).
       const run = world.current.cell;
+      // 운영 (손님이 계속 오는 카페): the whole shop from the customers' side — the line, the kiosk, the booth — held.
+      if (run?.cafe?.spawn) {
+        // Held: set again now and then (the run's own start may move the view after the first look).
+        shopTick += 1;
+        if (last === 'shop' && shopTick % 6 !== 0) return;
+        last = 'shop';
+        followed = true;
+        const sh = narrateShot('키오스크');
+        api.lookAt(sh.eye, sh.target);
+        return;
+      }
       if (run?.mission === NARRATED) {
         const n = run.said;
         if (!n || n.place === last) return;
