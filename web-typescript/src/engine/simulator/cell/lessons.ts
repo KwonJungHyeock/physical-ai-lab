@@ -1,7 +1,9 @@
 /**
- * 수업 설계 (입문 트랙 ① 생활 로봇 · 로봇 카페, 교실 수업형): one source for the app and the 교안.
+ * 수업 설계 (입문 트랙 ① 생활 로봇 · 로봇 카페 · 캘리그라피 · 보드게임, 교실 수업형): one source for
+ * the app and the 교안s (one a place).
  *
- *  - PLANS: the café's 8 quests grouped into 4, 6 or 8 차시 (the teacher picks; ⚙ 교사 열쇠).
+ *  - PLANS_OF: each place's quests grouped into 차시 by the plan the teacher picks (⚙ 교사 열쇠): the
+ *    café's 8 into 4, 6 or 8 차시, the four of 캘리그라피 · 보드게임 into 2, 3 or 4.
  *  - LESSON_QUEST: per quest, what is learned (one sentence, 학습 목표), the idea it names (개념 ·
  *    실제 현장, on the pass card), its pages in the 교안 (fixed, whatever the plan) and three 확인
  *    문제 (객관식, auto-graded: the 수행평가 element, kept in the 학습 기록).
@@ -12,8 +14,21 @@
  * ('교안 6쪽'), so the two media keep to one order. No React.
  */
 
+import { STEP_GUIDES } from './guides';
+
 export type PlanSize = 4 | 6 | 8;
 export const PLAN_SIZES: readonly PlanSize[] = [4, 6, 8];
+
+/** The three 생활 로봇 places, in course order (로봇 카페 → 캘리그라피 → 보드게임); each has its own 교안. */
+export type SiteId = 'cafe' | 'draw' | 'board';
+export const SITES: readonly SiteId[] = ['cafe', 'draw', 'board'];
+export const SITE_NAME: Record<SiteId, string> = { cafe: '로봇 카페', draw: '로봇 캘리그라피', board: '보드게임 로봇' };
+export const SITE_QUESTS: Record<SiteId, readonly string[]> = {
+  cafe: ['F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8'],
+  draw: ['G1', 'G2', 'G3', 'G4'],
+  board: ['H1', 'H2', 'H3', 'H4'],
+};
+export const siteOf = (quest: string): SiteId | null => SITES.find((s) => SITE_QUESTS[s].includes(quest)) ?? null;
 
 export interface Choice {
   q: string;
@@ -34,8 +49,17 @@ export interface LessonQuest {
   checks: readonly [Choice, Choice, Choice];
 }
 
-/** The 교안's fixed pages besides the quests'. */
+/** The 로봇 카페 교안's fixed pages besides the quests'. */
 export const GUIDE_PAGES = { cover: 1, plan: 2, screen: 3, answers: 20, rubric: 21, results: 22 } as const;
+
+/** A place's 교안: cover · 수업 안내 · 화면, two pages a quest, then 정답 · 평가 기준 · 반 결과. */
+export function guidePagesOf(site: SiteId) {
+  const end = 3 + SITE_QUESTS[site].length * 2;
+  return { cover: 1, plan: 2, screen: 3, answers: end + 1, rubric: end + 2, results: end + 3 };
+}
+
+/** The concept of a 캘리그라피 · 보드게임 step, as its scene guide names it (guides.ts). */
+const conceptOf = (id: string) => STEP_GUIDES[id].concept!;
 
 const P = (n: number): readonly [number, number] => [4 + (n - 1) * 2, 5 + (n - 1) * 2];
 
@@ -152,9 +176,89 @@ export const LESSON_QUEST: Record<string, LessonQuest> = {
       { q: "운영 현황의 '시간당 잔'이 뜻하는 것은?", options: ['한 시간에 건넬 수 있는 잔 수', '손님이 기다린 시간'], answer: 0, why: '처리 속도를 한 시간 기준으로 나타낸 값이에요.' },
     ],
   },
+  G1: {
+    learn: '캘리그라피 로봇이 카드 받기 → 쓰기 → 완성 알리기를 한 사이클로, 손님마다 반복한다는 것을 알아요.',
+    concept: conceptOf('G1'),
+    pages: P(1),
+    checks: [
+      { q: '한 획을 다 썼어요. 다음 획으로 옮길 때 펜은?', options: ['종이에 닿은 채로 간다', '조금 들어 올려서 간다'], answer: 1, why: '펜을 들어야 옮기는 길이 선으로 남지 않아요.' },
+      { q: '로봇이 쓰기를 시작하는 때는?', options: ['[카드 있음] 신호가 켜진 뒤', '전원을 켜자마자'], answer: 0, why: '손님이 카드를 매트에 놓았다는 신호를 받고 시작해요.' },
+      { q: '다 쓰면 로봇은 손님에게 어떻게 알리나요?', options: ['완성 램프를 켠다', '카드를 손님에게 던진다'], answer: 0, why: '[완성 램프]가 켜지면 손님이 카드를 가져가요.' },
+    ],
+  },
+  G2: {
+    learn: '펜이 닿는 높이와 카드의 기준점을 로봇 좌표로 알려 주는 보정을 알아요.',
+    concept: conceptOf('G2'),
+    pages: P(2),
+    checks: [
+      { q: '펜 끝이 종이에 닿아 선이 나오려면 펜 높이는?', options: ['0 mm', '3 mm'], answer: 0, why: '종이 높이가 0 mm예요. 3 mm면 펜이 떠서 선이 안 나와요.' },
+      { q: '카드 위치는 카드의 어디를 기준으로 알려 주나요?', options: ['왼쪽 아래 모서리', '가운데'], answer: 0, why: '기준점(원점)은 카드 왼쪽 아래 모서리예요. 매트 눈금으로 읽어요.' },
+      { q: '카드를 다른 자리에 놓고 로봇에게 알려 주지 않으면?', options: ['로봇이 알아서 카드를 찾는다', '글씨가 그만큼 비켜서 써진다'], answer: 1, why: '로봇은 카드를 보지 못해요. 알려 준 자리에 그대로 써요.' },
+    ],
+  },
+  G3: {
+    learn: '직선 이동은 펜 끝이 곧게 가고, 관절 이동은 관절이 한꺼번에 돌아 휘어 간다는 것을 알아요.',
+    concept: conceptOf('G3'),
+    pages: P(3),
+    checks: [
+      { q: '네모를 관절 이동으로 그리면 네 변은?', options: ['곧게 그려진다', '휘어진다'], answer: 1, why: '관절이 한꺼번에 돌아서 펜 끝이 곡선으로 가요.' },
+      { q: '이 퀘스트에서 변이 곧다고 보는 기준은?', options: ['선에서 1 mm 안', '선에서 10 mm 안'], answer: 0, why: "통과 조건이 '선에서 1 mm 안'이에요." },
+      { q: '직선 이동을 쓰는 공장 일은?', options: ['접착제 · 실링 바르기', '상자를 아무 데나 쌓기'], answer: 0, why: '곧고 고른 선이 필요한 일에 직선 이동을 써요.' },
+    ],
+  },
+  G4: {
+    learn: '일하는 구간(그리기 이동)과 옮기는 구간(빈 이동)을 나눠 움직인다는 것을 알아요.',
+    concept: conceptOf('G4'),
+    pages: P(4),
+    checks: [
+      { q: '펜을 내린 채 다음 획의 시작점으로 가면?', options: ['글자 사이에 줄이 생긴다', '아무 일도 없다'], answer: 0, why: '펜이 닿은 채 움직인 길은 모두 선이 돼요.' },
+      { q: "'빈 이동'은 무엇일까요?", options: ['펜을 들고 옮기는 것', '펜을 대고 그리는 것'], answer: 0, why: '일하지 않는 구간이라 펜(공구)을 들어요.' },
+      { q: '손님 2명에게 카드를 쓰려면?', options: ['같은 사이클을 두 번 반복', '카드 한 장에 두 번 쓰기'], answer: 0, why: '손님마다 카드 받기 → 쓰기 → 완성 알리기를 반복해요.' },
+    ],
+  },
+  H1: {
+    learn: '보드게임 로봇이 한 수마다 차례 기다리기 → 돌 집기 → 칸에 놓기 → 기본 자세를 반복한다는 것을 알아요.',
+    concept: conceptOf('H1'),
+    pages: P(1),
+    checks: [
+      { q: '로봇이 움직이기 시작하는 때는?', options: ['사람이 돌을 두는 중', '사람이 손을 뺀 뒤 [로봇 차례]가 켜지면'], answer: 1, why: '[로봇 차례] 신호가 켜져야 움직여요.' },
+      { q: '로봇은 흰 돌을 무엇으로 집나요?', options: ['흡착 펌프', '집게 손가락'], answer: 0, why: '흡착 펌프로 돌을 빨아들여 하나씩 집어요.' },
+      { q: '한 수가 끝나면 로봇 팔은?', options: ['기본 자세로 돌아간다', '판 위에 그대로 머문다'], answer: 0, why: '사람이 둘 자리를 비켜 주려고 기본 자세로 돌아가요.' },
+    ],
+  },
+  H2: {
+    learn: '칸 번호(가로 · 세로)를 칸 간격으로 계산해 로봇 좌표(mm)로 바꾼다는 것을 알아요.',
+    concept: conceptOf('H2'),
+    pages: P(2),
+    checks: [
+      { q: '이 오목판의 줄 사이 간격은?', options: ['15 mm', '16 mm'], answer: 1, why: '판 가장자리 눈금에서 가로 1 줄(x 136)과 가로 2 줄(x 152)의 차이예요.' },
+      { q: '가로 1 줄이 x 136 mm예요. 가로 3 줄의 x는?', options: ['152 mm', '168 mm', '184 mm'], answer: 1, why: 'x = 136 + (3 − 1) × 16 = 168 mm.' },
+      { q: '칸 간격을 1 mm 작게 알려 주면 돌은?', options: ['먼 칸일수록 더 많이 벗어난다', '모든 돌이 똑같이 1 mm 벗어난다'], answer: 0, why: '칸마다 1 mm씩 모자라서 멀수록 쌓여요.' },
+    ],
+  },
+  H3: {
+    learn: '사람과 로봇이 차례 신호로 번갈아 움직이고, 손이 있으면 멈춘다는 것을 알아요.',
+    concept: conceptOf('H3'),
+    pages: P(3),
+    checks: [
+      { q: '사람 손이 판 위에 있을 때 로봇 팔이 오면?', options: ['안전 정지한다', '그대로 돌을 놓는다'], answer: 0, why: '손과 겹치면 다칠 수 있어서 멈춰요.' },
+      { q: '로봇이 돌을 집기 전에 기다려야 할 신호는?', options: ['[로봇 차례]', '[완성 램프]'], answer: 0, why: '사람이 두고 손을 빼면 [로봇 차례]가 켜져요.' },
+      { q: '차례 기다리기는 언제 해야 할까요?', options: ['돌을 집기 전 매번', '게임이 끝난 뒤 한 번'], answer: 0, why: '한 수마다 사람 차례가 있어서 매번 기다려요.' },
+    ],
+  },
+  H4: {
+    learn: '판 센서로 돌을 읽고 규칙(이기기 → 막기 → 잇기)으로 둘 곳을 정한다는 것을 알아요.',
+    concept: conceptOf('H4'),
+    pages: P(4),
+    checks: [
+      { q: '로봇이 이길 수는 없고, 사람 돌이 4개 이어졌어요. 먼저 할 일은?', options: ['사람 줄을 막는다', '빈 칸 아무 데나 둔다'], answer: 0, why: '막지 않으면 사람이 다음 수에 5개를 이어요.' },
+      { q: '한 판을 이기는 규칙의 순서는?', options: ['이기기 → 막기 → 잇기', '잇기 → 막기 → 이기기'], answer: 0, why: '이길 수 있으면 이기고, 아니면 막고, 그다음 내 줄을 이어요.' },
+      { q: "'잇기만' 하는 규칙이 지는 까닭은?", options: ['사람의 줄을 막지 않아서', '돌이 모자라서'], answer: 0, why: '막기가 잇기보다 먼저여야 해요.' },
+    ],
+  },
 };
 
-/** The café's quests grouped into 차시. */
+/** The café's quests grouped into 차시 (PLANS_OF: every place's). */
 export const PLANS: Record<PlanSize, readonly (readonly string[])[]> = {
   4: [
     ['F1', 'F2'],
@@ -166,8 +270,26 @@ export const PLANS: Record<PlanSize, readonly (readonly string[])[]> = {
   8: [['F1'], ['F2'], ['F3'], ['F4'], ['F5'], ['F6'], ['F7'], ['F8']],
 };
 
+/** A place of four quests at the class's pace: 4 → 2차시, 6 → 3차시, 8 → 4차시. */
+const fourIn = (q: readonly string[]): Record<PlanSize, readonly (readonly string[])[]> => ({
+  4: [
+    [q[0], q[1]],
+    [q[2], q[3]],
+  ],
+  6: [[q[0]], [q[1], q[2]], [q[3]]],
+  8: [[q[0]], [q[1]], [q[2]], [q[3]]],
+});
+
+/** Every place's 차시, by the plan the teacher picked (named for the café's: 4 · 6 · 8차시). */
+export const PLANS_OF: Record<SiteId, Record<PlanSize, readonly (readonly string[])[]>> = {
+  cafe: PLANS,
+  draw: fourIn(SITE_QUESTS.draw),
+  board: fourIn(SITE_QUESTS.board),
+};
+
 export interface Lesson {
-  /** 1-based 차시. */
+  site: SiteId;
+  /** 1-based 차시 (in its place). */
   n: number;
   quests: readonly string[];
   /** 오늘 배울 것 (its quests' 학습 목표). */
@@ -176,8 +298,9 @@ export interface Lesson {
   pages: readonly [number, number];
 }
 
-export function lessonsOf(size: PlanSize): Lesson[] {
-  return PLANS[size].map((qs, i) => ({
+export function lessonsOf(size: PlanSize, site: SiteId = 'cafe'): Lesson[] {
+  return PLANS_OF[site][size].map((qs, i) => ({
+    site,
     n: i + 1,
     quests: qs,
     goals: qs.map((q) => LESSON_QUEST[q].learn),
@@ -187,8 +310,9 @@ export function lessonsOf(size: PlanSize): Lesson[] {
 
 /** The 차시 a quest is in (1-based), or 0. */
 export function lessonOfQuest(size: PlanSize, quest: string): number {
-  const i = PLANS[size].findIndex((qs) => qs.includes(quest));
-  return i + 1;
+  const site = siteOf(quest);
+  if (!site) return 0;
+  return PLANS_OF[site][size].findIndex((qs) => qs.includes(quest)) + 1;
 }
 
 /** One 확인 문제 as asked: its key (quest · index) and the question. */
@@ -197,8 +321,8 @@ export interface AskedCheck extends Choice {
 }
 
 /** A 차시's three 확인 문제: its quests' questions in turn (q1 of each, then q2 of each, …), three. */
-export function checksOf(size: PlanSize, n: number): AskedCheck[] {
-  const qs = PLANS[size][n - 1] ?? [];
+export function checksOf(size: PlanSize, n: number, site: SiteId = 'cafe'): AskedCheck[] {
+  const qs = PLANS_OF[site][size][n - 1] ?? [];
   const out: AskedCheck[] = [];
   for (let k = 0; k < 3 && out.length < 3; k += 1)
     for (const q of qs) {

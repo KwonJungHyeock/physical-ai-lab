@@ -145,7 +145,7 @@ import ProcessFlow, { activePlan, initialFlow, REF_MARK, type FlowState } from '
 import PyPanel from './editors/PyPanel';
 import RunBar from './tasks/RunBar';
 import { LessonCheck, LessonPlate, Projector, RecordPanel, RecordPill, TeacherKey, questPages } from './tasks/LessonKit';
-import { lessonOfQuest, lessonsOf } from '@/engine/simulator/cell/lessons';
+import { lessonOfQuest, lessonsOf, siteOf } from '@/engine/simulator/cell/lessons';
 import { RECORD_KEY, TEACHER_KEY, answered as recAnswered, emptyRecord, loadRecord, loadTeacher, opened as recOpened, passed as recPassed, questOpen, teacherFromQuery, tried as recTried, type LessonRecord, type TeacherSet } from '@/engine/simulator/cell/lessonRecord';
 import { usePcApp } from './connect/usePcApp';
 import { createLive } from './liveStore';
@@ -623,7 +623,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const [cellPassed, setCellPassed] = useState<Record<string, boolean>>({});
   // 교실 수업형 (입문 · 로봇 카페): the 학습 기록 and the teacher's settings on this computer (lessonRecord.ts).
   const [lessonRec, setLessonRec] = useState<LessonRecord>(() => emptyRecord());
-  const [teacherSet, setTeacherSet] = useState<TeacherSet>({ plan: 4, lesson: 0, allOpen: false });
+  const [teacherSet, setTeacherSet] = useState<TeacherSet>({ plan: 4, site: 'cafe', lesson: 0, allOpen: false });
   const [lessonUi, setLessonUi] = useState<null | 'record' | 'teacher' | 'projector' | 'check'>(null);
   const lessonRecRef = useRef(lessonRec);
   const changeRec = useCallback((f: (r: LessonRecord) => LessonRecord) => {
@@ -651,7 +651,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     if (!track) return;
     try {
       const rec = loadRecord((k) => localStorage.getItem(k));
-      const base = localStorage.getItem(TEACHER_KEY) ? loadTeacher((k) => localStorage.getItem(k)) : { plan: rec.plan, lesson: 0, allOpen: false };
+      const base = localStorage.getItem(TEACHER_KEY) ? loadTeacher((k) => localStorage.getItem(k)) : { plan: rec.plan, site: 'cafe' as const, lesson: 0, allOpen: false };
       const t = teacherFromQuery(window.location.search, base);
       // A class link sets the 차시; without one, a computer never set keeps to 순서대로 (lesson 0).
       const fromLink = /[?&]lesson=/.test(window.location.search);
@@ -2025,13 +2025,14 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       setSimRate(r);
     };
   }, [fastQuest]);
-  // 교실 수업형: a café quest opened is noted (its minutes count from here) and its 차시 is the one shown.
-  const cafeQuest = track && cellAt?.cell === 'cafe' && lifeStep ? lifeStep.id : null;
+  // 교실 수업형: a quest of a 생활 로봇 place opened is noted (its minutes count from here) and its 차시 is the one shown.
+  const lifeQuest = track && lifeStep && siteOf(lifeStep.id) ? lifeStep.id : null;
+  const lifeSite = (lifeQuest ? siteOf(lifeQuest) : null) ?? teacherSet.site;
   useEffect(() => {
-    if (cafeQuest) changeRec((r) => recOpened(r, cafeQuest, Date.now()));
-  }, [cafeQuest, changeRec]);
-  const lessons = useMemo(() => lessonsOf(teacherSet.plan), [teacherSet.plan]);
-  const lessonNow = cafeQuest ? lessons[lessonOfQuest(teacherSet.plan, cafeQuest) - 1] : undefined;
+    if (lifeQuest) changeRec((r) => recOpened(r, lifeQuest, Date.now()));
+  }, [lifeQuest, changeRec]);
+  const lessons = useMemo(() => lessonsOf(teacherSet.plan, lifeSite), [teacherSet.plan, lifeSite]);
+  const lessonNow = lifeQuest ? lessons[lessonOfQuest(teacherSet.plan, lifeQuest) - 1] : undefined;
   const questIsOpen = useCallback((id: string) => (teacherSet.lesson === 0 && !teacherSet.allOpen ? null : questOpen(teacherSet, lessonRecRef.current, id)), [teacherSet]);
   // The quest's controls in turn (quests.ts QUEST_LEAD), lit while there is something to do.
   const questLead = useMemo<SpotStep | null>(() => (lifeStep && QUEST_LEAD[lifeStep.id] ? { target: [], seq: QUEST_LEAD[lifeStep.id] } : null), [lifeStep]);
@@ -2522,7 +2523,10 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const enterCell = (id: CellId) => {
     setLifeTut(null);
     const steps = missionsOf(id);
-    const first = steps.find((m) => !cellPassed[m.id]) ?? steps[0];
+    // 교실 수업형: only a quest the teacher's 차시 has opened (none: the place to look round, 자유 연습).
+    const may = (m: { id: string }) => !track || questIsOpen(m.id) !== false;
+    const first = steps.find((m) => !cellPassed[m.id] && may(m)) ?? steps.find(may);
+    if (track && steps.length && !first) addLog('info', '선생님이 아직 이 현장을 열지 않았어요. 자유 연습으로 둘러봐요.');
     openCell(id, CELL_BY_ID[id].built ? (first?.id ?? null) : null);
   };
   const openCell = (cell: CellId, mission: string | null) => {
@@ -4066,7 +4070,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   /** 입문: the step's 예측 first (once per step, unless skipped), then the run. */
   const simulateLife = () => {
     const ms = cellAt?.mission;
-    if (ms && !busy && cellAt?.cell === 'cafe') changeRec((r) => recTried(r, ms, Date.now()));
+    if (ms && !busy && siteOf(ms)) changeRec((r) => recTried(r, ms, Date.now()));
     if (!questOn && track && ms && guideOf(ms) && loadPredictions()[ms] === undefined && !skipped[ms] && !busy) return setAsking(true);
     void simulate();
   };
@@ -4586,10 +4590,10 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       />
       {/* 교실 수업형 (입문 · 로봇 카페): 확인 문제 · 학습 기록 · 교사 열쇠 · 수업 화면. */}
       {track && lessonUi === 'check' && lessonNow && (
-        <LessonCheck rec={lessonRec} n={lessonNow.n} onAnswer={(k, c) => changeRec((r) => (r.checks[k] ? r : recAnswered(r, k, c, Date.now())))} onClose={() => setLessonUi(null)} />
+        <LessonCheck rec={lessonRec} site={lessonNow.site} n={lessonNow.n} onAnswer={(k, c) => changeRec((r) => (r.checks[k] ? r : recAnswered(r, k, c, Date.now())))} onClose={() => setLessonUi(null)} />
       )}
       {track && lessonUi === 'record' && (
-        <RecordPanel rec={lessonRec} onWho={(name, no) => changeRec((r) => (r.name === name && r.no === no ? r : { ...r, name, no, at: Date.now() }))} onClose={() => setLessonUi(null)} />
+        <RecordPanel rec={lessonRec} site={lifeSite} onWho={(name, no) => changeRec((r) => (r.name === name && r.no === no ? r : { ...r, name, no, at: Date.now() }))} onClose={() => setLessonUi(null)} />
       )}
       {track && lessonUi === 'teacher' && (
         <TeacherKey
@@ -4600,7 +4604,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
           onClear={() => {
             changeRec(() => ({ ...emptyRecord(teacherSet.plan), at: Date.now() }));
             setCellPassed((prev) => {
-              const next = Object.fromEntries(Object.entries(prev).filter(([id]) => !/^F\d$/.test(id)));
+              const next = Object.fromEntries(Object.entries(prev).filter(([id]) => !/^[FGH]\d$/.test(id)));
               try {
                 localStorage.setItem(CELL_PASSED_KEY, JSON.stringify(next));
               } catch {
@@ -4907,7 +4911,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
           )}
           status={
             <>
-            {track && <RecordPill rec={lessonRec} lesson={lessonNow?.n ?? teacherSet.lesson} total={lessons.length} onOpen={() => setLessonUi('record')} />}
+            {track && <RecordPill rec={lessonRec} site={lifeSite} lesson={lessonNow?.n ?? (lifeSite === teacherSet.site ? teacherSet.lesson : 0)} total={lessons.length} onOpen={() => setLessonUi('record')} />}
             {/* On the simulator the link sits in the 3D view's top-left corner (StageTitle), unless a cell or a window holds that corner. */}
             {!stageTitle && (
             <button
@@ -5226,6 +5230,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   mission={cellAt.mission}
                   passed={cellPassed}
                   allOpen={false}
+                  gate={track ? questIsOpen : undefined}
                   busy={busy}
                   result={cellResult}
                   onMission={(id) => openCell(cellAt.cell, id)}
@@ -5660,9 +5665,10 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                             mission={cellAt.mission}
                             passed={cellPassed}
                             allOpen={false}
+                  gate={track ? questIsOpen : undefined}
                             busy={busy}
                             onMission={(id) => openCell(cellAt.cell, id)}
-                            quest={{ phase: questPhase, checks: questPhase === 'result' ? lastChecks : null, now: questNow(questPhase, lifeStep.id, cellResult), onList: () => setRoadmapOpen(true), asking: !!moment, watching: handGoing && questPhase === 'do' ? '[추출 끝] 켜질 때까지 지켜보기' : undefined, page: cafeQuest ? questPages(cafeQuest) : undefined, isOpen: cafeQuest ? questIsOpen : undefined }}
+                            quest={{ phase: questPhase, checks: questPhase === 'result' ? lastChecks : null, now: questNow(questPhase, lifeStep.id, cellResult), onList: () => setRoadmapOpen(true), asking: !!moment, watching: handGoing && questPhase === 'do' ? '[추출 끝] 켜질 때까지 지켜보기' : undefined, page: lifeQuest ? questPages(lifeQuest) : undefined, isOpen: lifeQuest ? questIsOpen : undefined }}
                           />
                         )}
                         {cellAt!.cell === 'draw' ? (

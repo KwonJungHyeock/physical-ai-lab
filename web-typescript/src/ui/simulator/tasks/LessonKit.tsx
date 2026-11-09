@@ -17,8 +17,8 @@
 import { useMemo, useState } from 'react';
 
 import { missionById } from '@/engine/simulator/cell/missions';
-import { GUIDE_PAGES, LESSON_QUEST, PLAN_SIZES, RUBRIC, checksOf, lessonsOf, type Lesson } from '@/engine/simulator/cell/lessons';
-import { classCsv, classLink, mergeRecords, minutesOf, parseRecord, recordFile, summaryOf, type LessonRecord, type TeacherSet } from '@/engine/simulator/cell/lessonRecord';
+import { LESSON_QUEST, PLAN_SIZES, RUBRIC, SITES, SITE_NAME, checksOf, guidePagesOf, lessonsOf, type Lesson, type SiteId } from '@/engine/simulator/cell/lessons';
+import { classCsv, classLink, lessonCount, mergeRecords, minutesOf, parseRecord, recordFile, summaryOf, type LessonRecord, type TeacherSet } from '@/engine/simulator/cell/lessonRecord';
 
 import css from './lessonKit.module.css';
 
@@ -28,6 +28,8 @@ export const questPages = (id: string) => {
   const q = LESSON_QUEST[id];
   return q ? pages(q.pages[0], q.pages[1]) : undefined;
 };
+/** A place's name, short (카페 · 캘리그라피 · 보드게임). */
+const short = (site: SiteId) => SITE_NAME[site].replace(/^로봇 | 로봇$/g, '');
 const questName = (id: string) => {
   const m = missionById(id);
   return m ? `퀘스트 ${m.n} ${m.title.replace(/^[^:]+:\s*/, '')}` : id;
@@ -46,7 +48,7 @@ function download(name: string, text: string, type: string) {
 
 export function LessonPlate({ lesson, total, rec, onCheck, onRecord }: { lesson: Lesson; total: number; rec: LessonRecord; onCheck(): void; onRecord(): void }) {
   const done = lesson.quests.filter((q) => rec.quests[q]?.passed).length;
-  const asks = checksOf(rec.plan, lesson.n);
+  const asks = checksOf(rec.plan, lesson.n, lesson.site);
   const got = asks.filter((a) => rec.checks[a.key]);
   const right = got.filter((a) => rec.checks[a.key].ok).length;
   const ready = done === lesson.quests.length;
@@ -55,7 +57,11 @@ export function LessonPlate({ lesson, total, rec, onCheck, onRecord }: { lesson:
       <header>
         <em>LESSON</em>
         <b>
-          {lesson.n}차시<small> / {total}</small>
+          {lesson.n}차시
+          <small>
+            {' '}
+            / {total} · {short(lesson.site)}
+          </small>
         </b>
         <span className={css.page}>{pages(lesson.pages[0], lesson.pages[1])}</span>
       </header>
@@ -92,8 +98,8 @@ export function LessonPlate({ lesson, total, rec, onCheck, onRecord }: { lesson:
 
 /* --- 확인 문제 ---------------------------------------------------------------------------- */
 
-export function LessonCheck({ rec, n, onAnswer, onClose }: { rec: LessonRecord; n: number; onAnswer(key: string, chosen: number): void; onClose(): void }) {
-  const asks = useMemo(() => checksOf(rec.plan, n), [rec.plan, n]);
+export function LessonCheck({ rec, site, n, onAnswer, onClose }: { rec: LessonRecord; site: SiteId; n: number; onAnswer(key: string, chosen: number): void; onClose(): void }) {
+  const asks = useMemo(() => checksOf(rec.plan, n, site), [rec.plan, n, site]);
   const first = asks.findIndex((a) => !rec.checks[a.key]);
   const [at, setAt] = useState(first < 0 ? asks.length : first);
   const a = asks[at];
@@ -105,7 +111,9 @@ export function LessonCheck({ rec, n, onAnswer, onClose }: { rec: LessonRecord; 
       <div className={css.modal} role="dialog" aria-modal="true" aria-label={`${n}차시 확인 문제`}>
         <header className={css.mHead}>
           <em>CHECK</em>
-          <b>{n}차시 확인 문제</b>
+          <b>
+            {short(site)} {n}차시 확인 문제
+          </b>
           <span className={css.dots}>
             {asks.map((x, i) => (
               <i key={x.key} data-cur={i === at || undefined} data-ok={rec.checks[x.key]?.ok || undefined} data-no={(rec.checks[x.key] && !rec.checks[x.key].ok) || undefined} />
@@ -177,35 +185,44 @@ export function LessonCheck({ rec, n, onAnswer, onClose }: { rec: LessonRecord; 
 /* --- 학습 기록 (LMS) ----------------------------------------------------------------------- */
 
 function sheetHtml(rec: LessonRecord): string {
-  const s = summaryOf(rec);
   const esc = (t: string) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] ?? c);
-  const rows = s.lessons
-    .map((l) => {
-      const qs = l.quests
-        .map((q) => {
-          const r = rec.quests[q];
-          const min = minutesOf(r);
-          return `<div>${r?.passed ? '✓' : '·'} ${esc(questName(q))} <span>${r ? `시도 ${r.tries}${min ? ` · ${min}분` : ''}` : '안 함'}</span></div>`;
+  // Each place the student has begun (or the café, when nothing yet): its 차시, its totals.
+  const begun = SITES.filter((site) => summaryOf(rec, rec.plan, site).lessons.some((l) => l.started));
+  const sites = begun.length ? begun : (['cafe'] as SiteId[]);
+  const parts = sites
+    .map((site) => {
+      const s = summaryOf(rec, rec.plan, site);
+      const rows = s.lessons
+        .map((l) => {
+          const qs = l.quests
+            .map((q) => {
+              const r = rec.quests[q];
+              const min = minutesOf(r);
+              return `<div>${r?.passed ? '✓' : '·'} ${esc(questName(q))} <span>${r ? `시도 ${r.tries}${min ? ` · ${min}분` : ''}` : '안 함'}</span></div>`;
+            })
+            .join('');
+          return `<tr><td>${l.n}차시</td><td>${qs}</td><td>${l.right} / ${l.asked}${l.checked ? '' : ' (덜 풂)'}</td><td>${l.level ?? (l.started ? '진행 중' : '-')}</td></tr>`;
         })
         .join('');
-      return `<tr><td>${l.n}차시</td><td>${qs}</td><td>${l.right} / ${l.asked}${l.checked ? '' : ' (덜 풂)'}</td><td>${l.level ?? (l.started ? '진행 중' : '-')}</td></tr>`;
+      const goals = s.lessons.map((l) => `<li><b>${l.n}차시</b> ${l.quests.map((q) => esc(LESSON_QUEST[q].learn)).join(' / ')}</li>`).join('');
+      return `<h2>${SITE_NAME[site]}</h2>
+<table><tr><th style="width:60px">차시</th><th>퀘스트 (통과 ✓ · 시도 · 걸린 시간)</th><th style="width:90px">확인 문제</th><th style="width:60px">기준</th></tr>${rows}</table>
+<p class="tot">퀘스트 ${s.passed} / ${s.total} 통과 · 확인 문제 ${s.right} / ${s.asked} 맞힘 · 기준 ${s.level ?? '아직 없음'}</p>
+<p class="goal">학습 목표</p><ul>${goals}</ul>`;
     })
     .join('');
-  const goals = s.lessons.map((l) => `<li><b>${l.n}차시</b> ${l.quests.map((q) => esc(LESSON_QUEST[q].learn)).join(' / ')}</li>`).join('');
   const rub = RUBRIC.map((r) => `<li><b>${r.level}</b> ${esc(r.text)}</li>`).join('');
   const day = new Date().toLocaleDateString('ko-KR');
-  return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>로봇 카페 학습 기록지</title><style>
+  return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>생활 로봇 학습 기록지</title><style>
 @page{size:A4;margin:14mm}body{font-family:'Noto Sans KR','Malgun Gothic',sans-serif;color:#111;font-size:12.5px;word-break:keep-all}
 h1{font-size:20px;margin:0 0 4px}.who{display:flex;gap:18px;border-bottom:2px solid #111;padding-bottom:6px;margin-bottom:10px}
 table{width:100%;border-collapse:collapse;margin:8px 0}th,td{border:1px solid #999;padding:6px;vertical-align:top;text-align:left}th{background:#eee}
-td div{margin:2px 0}td span{color:#555;font-size:11px}h2{font-size:14px;margin:14px 0 4px}ul{margin:0;padding-left:18px}li{margin:2px 0}
-.tot{font-size:14px;font-weight:700}.sign{margin-top:18px;display:flex;gap:40px}.sign span{border-bottom:1px solid #111;min-width:160px;display:inline-block}
+td div{margin:2px 0}td span{color:#555;font-size:11px}h2{font-size:15px;margin:16px 0 4px}ul{margin:0;padding-left:18px}li{margin:2px 0}
+.tot{font-size:13px;font-weight:700;margin:4px 0}.goal{font-weight:700;margin:6px 0 2px}.sign{margin-top:18px;display:flex;gap:40px}.sign span{border-bottom:1px solid #111;min-width:160px;display:inline-block}
 .note{margin-top:10px;color:#555;font-size:11px}</style></head><body>
-<h1>입문 ① 생활 로봇 · 로봇 카페 학습 기록지</h1>
-<div class="who"><span>번호 <b>${esc(rec.no) || '____'}</b></span><span>이름 <b>${esc(rec.name) || '__________'}</b></span><span>차시 구성 ${rec.plan}차시</span><span>${day}</span></div>
-<table><tr><th style="width:60px">차시</th><th>퀘스트 (통과 ✓ · 시도 · 걸린 시간)</th><th style="width:90px">확인 문제</th><th style="width:60px">기준</th></tr>${rows}</table>
-<p class="tot">퀘스트 ${s.passed} / 8 통과 · 확인 문제 ${s.right} / ${s.asked} 맞힘 · 전체 기준 ${s.level ?? '아직 없음'}</p>
-<h2>차시별 학습 목표</h2><ul>${goals}</ul>
+<h1>입문 ① 생활 로봇 학습 기록지</h1>
+<div class="who"><span>번호 <b>${esc(rec.no) || '____'}</b></span><span>이름 <b>${esc(rec.name) || '__________'}</b></span><span>차시 구성 ${rec.plan}차시 (카페 기준)</span><span>${day}</span></div>
+${parts}
 <h2>평가 기준 (3단계)</h2><ul>${rub}</ul>
 <h2>개념 한 문장 (직접 쓰기)</h2><p style="border-bottom:1px solid #999;height:26px"></p><p style="border-bottom:1px solid #999;height:26px"></p>
 <div class="sign"><div>학생 확인 <span></span></div><div>교사 확인 <span></span></div></div>
@@ -213,8 +230,22 @@ td div{margin:2px 0}td span{color:#555;font-size:11px}h2{font-size:14px;margin:1
 <script>window.onload=()=>setTimeout(()=>window.print(),300)</script></body></html>`;
 }
 
-export function RecordPanel({ rec, onWho, onClose }: { rec: LessonRecord; onWho(name: string, no: string): void; onClose(): void }) {
-  const s = summaryOf(rec);
+/** The three places as tabs (학습 기록 · 반 결과). */
+function SiteTabs({ site, onSite }: { site: SiteId; onSite(s: SiteId): void }) {
+  return (
+    <div className={css.seg} role="tablist">
+      {SITES.map((x) => (
+        <button key={x} type="button" role="tab" aria-selected={x === site} data-on={x === site || undefined} onClick={() => onSite(x)}>
+          {SITE_NAME[x]}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export function RecordPanel({ rec, site: start, onWho, onClose }: { rec: LessonRecord; site: SiteId; onWho(name: string, no: string): void; onClose(): void }) {
+  const [site, setSite] = useState<SiteId>(start);
+  const s = summaryOf(rec, rec.plan, site);
   const [name, setName] = useState(rec.name);
   const [no, setNo] = useState(rec.no);
   const who = name.trim() && no.trim();
@@ -242,6 +273,7 @@ export function RecordPanel({ rec, onWho, onClose }: { rec: LessonRecord; onWho(
           </label>
           {!who && <small>번호와 이름을 쓰면 기록지와 제출 파일에 들어가요</small>}
         </div>
+        <SiteTabs site={site} onSite={setSite} />
         <div className={css.tableWrap}>
           <table className={css.table}>
             <thead>
@@ -284,11 +316,15 @@ export function RecordPanel({ rec, onWho, onClose }: { rec: LessonRecord; onWho(
           </table>
         </div>
         <p className={css.total}>
-          퀘스트 <b>{s.passed} / 8</b> 통과 · 확인 문제{' '}
+          퀘스트{' '}
+          <b>
+            {s.passed} / {s.total}
+          </b>{' '}
+          통과 · 확인 문제{' '}
           <b>
             {s.right} / {s.asked}
           </b>{' '}
-          맞힘 · 전체 기준{' '}
+          맞힘 · 기준{' '}
           <span className={css.level} data-level={s.level ?? undefined}>
             {s.level ?? '확인 문제를 다 풀면 나와요'}
           </span>
@@ -376,11 +412,18 @@ export function TeacherKey({ teacher, onTeacher, onClear, onProjector, onClose }
           <span>차시 구성</span>
           <div className={css.seg}>
             {PLAN_SIZES.map((n) => (
-              <button key={n} type="button" data-on={teacher.plan === n || undefined} onClick={() => onTeacher({ ...teacher, plan: n, lesson: Math.min(teacher.lesson, n) })}>
+              <button key={n} type="button" data-on={teacher.plan === n || undefined} onClick={() => onTeacher({ ...teacher, plan: n, lesson: Math.min(teacher.lesson, lessonCount(teacher.site, n)) })}>
                 {n}차시
               </button>
             ))}
           </div>
+          <small className={css.foot}>
+            카페 {lessonCount('cafe', teacher.plan)}차시 · 캘리그라피 {lessonCount('draw', teacher.plan)}차시 · 보드게임 {lessonCount('board', teacher.plan)}차시
+          </small>
+        </div>
+        <div className={css.set}>
+          <span>지금 현장</span>
+          <SiteTabs site={teacher.site} onSite={(x) => onTeacher({ ...teacher, site: x, lesson: Math.min(teacher.lesson, lessonCount(x, teacher.plan)) })} />
         </div>
         <div className={css.set}>
           <span>지금 열 차시</span>
@@ -388,7 +431,7 @@ export function TeacherKey({ teacher, onTeacher, onClear, onProjector, onClose }
             <button type="button" data-on={teacher.lesson === 0 || undefined} onClick={() => onTeacher({ ...teacher, lesson: 0 })} title="통과하면 다음 퀘스트가 열려요 (혼자 하기)">
               순서대로
             </button>
-            {Array.from({ length: teacher.plan }, (_, i) => i + 1).map((n) => (
+            {Array.from({ length: lessonCount(teacher.site, teacher.plan) }, (_, i) => i + 1).map((n) => (
               <button key={n} type="button" data-on={teacher.lesson === n || undefined} onClick={() => onTeacher({ ...teacher, lesson: n })}>
                 {n}
               </button>
@@ -412,14 +455,14 @@ export function TeacherKey({ teacher, onTeacher, onClear, onProjector, onClose }
             {copied ? '복사했어요' : '복사'}
           </button>
         </div>
-        <small className={css.foot}>학생이 이 링크로 열면 같은 차시 구성 · 차시가 열려요. 이 PC의 설정은 이 PC에만 적용돼요.</small>
+        <small className={css.foot}>학생이 이 링크로 열면 같은 차시 구성 · 현장 · 차시가 열려요. 앞 현장은 모두 열리고, 뒤 현장은 닫혀요. 이 PC의 설정은 이 PC에만 적용돼요.</small>
         <div className={css.set}>
           <span>교안 · 학습지</span>
           <a className={css.ghostLink} href="/guides/cafe-teacher.pdf" target="_blank" rel="noreferrer">
-            교안 PDF (교사용 22쪽)
+            로봇 카페 교안 PDF
           </a>
           <a className={css.ghostLink} href="/guides/cafe-student.pdf" target="_blank" rel="noreferrer">
-            학습지 PDF (학생용 10쪽)
+            로봇 카페 학습지 PDF
           </a>
         </div>
         <div className={css.row}>
@@ -442,7 +485,7 @@ export function TeacherKey({ teacher, onTeacher, onClear, onProjector, onClose }
             학생 제출 파일 넣기
             <input type="file" accept=".json,application/json" multiple onChange={(e) => void load(e.target.files)} />
           </label>
-          <button type="button" className={css.key} disabled={!files.length} onClick={() => download(`로봇카페-반결과-${teacher.plan}차시.csv`, classCsv(files, teacher.plan), 'text/csv')}>
+          <button type="button" className={css.key} disabled={!files.length} onClick={() => download(`생활로봇-반결과-${teacher.plan}차시.csv`, classCsv(files, teacher.plan), 'text/csv')}>
             엑셀(CSV) 받기
           </button>
           {bad > 0 && <small>읽지 못한 파일 {bad}개</small>}
@@ -454,15 +497,17 @@ export function TeacherKey({ teacher, onTeacher, onClear, onProjector, onClose }
                 <tr>
                   <th>번호</th>
                   <th>이름</th>
-                  {lessonsOf(teacher.plan).map((l) => (
-                    <th key={l.n}>{l.n}차시</th>
+                  {lessonsOf(teacher.plan, teacher.site).map((l) => (
+                    <th key={l.n}>
+                      {short(teacher.site)} {l.n}차시
+                    </th>
                   ))}
-                  <th>전체</th>
+                  <th>{short(teacher.site)} 기준</th>
                 </tr>
               </thead>
               <tbody>
                 {files.map((r) => {
-                  const s = summaryOf(r, teacher.plan);
+                  const s = summaryOf(r, teacher.plan, teacher.site);
                   return (
                     <tr key={`${r.no}|${r.name}`}>
                       <td>{r.no}</td>
@@ -485,7 +530,7 @@ export function TeacherKey({ teacher, onTeacher, onClear, onProjector, onClose }
                 })}
               </tbody>
             </table>
-            <small className={css.foot}>칸: 퀘스트 통과 · 확인 문제 맞힘 · 기준. 같은 학생의 파일이 둘이면 나중 것을 써요.</small>
+            <small className={css.foot}>지금 현장의 칸: 퀘스트 통과 · 확인 문제 맞힘 · 기준(위 [지금 현장]에서 바꿔 봐요). 엑셀에는 세 현장이 모두 들어가요. 같은 학생의 파일이 둘이면 나중 것을 써요.</small>
           </div>
         )}
       </div>
@@ -505,10 +550,11 @@ const FLOW: readonly (readonly [string, string, string])[] = [
 ];
 
 export function Projector({ teacher, onLesson, onClose }: { teacher: TeacherSet; onLesson(n: number): void; onClose(): void }) {
-  const ls = lessonsOf(teacher.plan);
+  const ls = lessonsOf(teacher.plan, teacher.site);
   const n = Math.max(1, Math.min(teacher.lesson || 1, ls.length));
   const l = ls[n - 1];
-  const asks = checksOf(teacher.plan, n);
+  const asks = checksOf(teacher.plan, n, teacher.site);
+  const gp = guidePagesOf(teacher.site);
   const [show, setShow] = useState(false);
   const link = typeof window !== 'undefined' ? classLink(window.location.origin, { ...teacher, lesson: n }) : '';
   return (
@@ -516,7 +562,7 @@ export function Projector({ teacher, onLesson, onClose }: { teacher: TeacherSet;
       <header>
         <em>LESSON</em>
         <b>
-          {n}차시 <small>/ {ls.length}</small>
+          {SITE_NAME[teacher.site]} {n}차시 <small>/ {ls.length}</small>
         </b>
         <span className={css.page}>{pages(l.pages[0], l.pages[1])}</span>
         <span className={css.grow} />
@@ -590,7 +636,7 @@ export function Projector({ teacher, onLesson, onClose }: { teacher: TeacherSet;
         </section>
       </div>
       <small className={css.foot}>
-        교안 {GUIDE_PAGES.answers}쪽: 확인 문제 정답 · {GUIDE_PAGES.rubric}쪽: 평가 기준 · {GUIDE_PAGES.results}쪽: 반 결과 정리
+        {SITE_NAME[teacher.site]} 교안 {gp.answers}쪽: 확인 문제 정답 · {gp.rubric}쪽: 평가 기준 · {gp.results}쪽: 반 결과 정리
       </small>
     </div>
   );
@@ -598,18 +644,18 @@ export function Projector({ teacher, onLesson, onClose }: { teacher: TeacherSet;
 
 /* --- 학습 기록 알약 (top bar) ------------------------------------------------------------------ */
 
-export function RecordPill({ rec, lesson, total, onOpen }: { rec: LessonRecord; lesson: number; total: number; onOpen(): void }) {
-  const s = summaryOf(rec);
+export function RecordPill({ rec, site, lesson, total, onOpen }: { rec: LessonRecord; site: SiteId; lesson: number; total: number; onOpen(): void }) {
+  const s = summaryOf(rec, rec.plan, site);
   return (
     <button type="button" className={css.recPill} onClick={onOpen} title="학습 기록 · 기록지 · 제출 파일">
       <span>
         <b>학습 기록{rec.name ? ` · ${rec.no ? `${rec.no}번 ` : ''}${rec.name}` : ''}</b>
         <small>
-          {lesson ? `${lesson}차시 / ${total}` : `${total}차시 구성`} · 퀘스트 {s.passed}/8 · 확인 {s.right}/{s.asked}
+          {short(site)} {lesson ? `${lesson}차시 / ${total}` : `${total}차시`} · 퀘스트 {s.passed}/{s.total} · 확인 {s.right}/{s.asked}
         </small>
       </span>
       <span className={css.recBar} aria-hidden="true">
-        <i style={{ width: `${(s.passed / 8) * 100}%` }} />
+        <i style={{ width: `${(s.passed / s.total) * 100}%` }} />
       </span>
     </button>
   );

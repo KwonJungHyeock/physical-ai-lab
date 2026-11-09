@@ -98,6 +98,8 @@ export interface CellHudProps {
   passed: Readonly<Record<string, boolean>>;
   /** Every step open (a teacher's account). */
   allOpen: boolean;
+  /** 교실 수업형: a step open by the teacher's 차시 (null: in turn, a pass opens the next). */
+  gate?: (id: string) => boolean | null;
   busy: boolean;
   /** The last finished run of this step: passed or not. */
   result: boolean | null;
@@ -137,6 +139,7 @@ interface QuestCardProps {
   mission: string | null;
   passed: Record<string, boolean>;
   allOpen: boolean;
+  gate?: (id: string) => boolean | null;
   busy: boolean;
   onMission(id: string | null): void;
   quest?: QuestInfo;
@@ -156,7 +159,7 @@ export function QuestCard(p: QuestCardProps) {
   const m = p.mission ? missionById(p.mission) : null;
   const stop = LIFE_STOPS.find((s) => s.opens === p.cell);
   const built = CELL_BY_ID[p.cell].built;
-  const open = (i: number) => built && (p.allOpen || i === 0 || !!p.passed[steps[i - 1].id]);
+  const open = (i: number) => built && (p.gate?.(steps[i].id) ?? (p.allOpen || i === 0 || !!p.passed[steps[i - 1].id]));
   if (p.inPanel) return <PanelQuest {...p} />;
   return (
         <nav className={css.stepper} data-panel={p.inPanel || undefined} aria-label="퀘스트">
@@ -176,7 +179,7 @@ export function QuestCard(p: QuestCardProps) {
           <ol>
             {steps.map((s, i) => (
               <li key={s.id} data-cur={s.id === p.mission || undefined} data-done={p.passed[s.id] || undefined} data-locked={!open(i) || undefined}>
-                <button type="button" disabled={p.busy || !open(i)} onClick={() => p.onMission(s.id)} title={open(i) ? `퀘스트 ${s.n} ${s.title}` : '앞 퀘스트를 통과하면 열려요'} aria-pressed={s.id === p.mission} aria-label={`퀘스트 ${s.n} ${s.title}`}>
+                <button type="button" disabled={p.busy || !open(i)} onClick={() => p.onMission(s.id)} title={open(i) ? `퀘스트 ${s.n} ${s.title}` : p.gate?.(s.id) === false ? '선생님이 이 차시를 열면 열려요' : '앞 퀘스트를 통과하면 열려요'} aria-pressed={s.id === p.mission} aria-label={`퀘스트 ${s.n} ${s.title}`}>
                   {p.passed[s.id] ? '✓' : s.n}
                 </button>
               </li>
@@ -255,7 +258,7 @@ function PanelQuest(p: QuestCardProps) {
   const m = p.mission ? missionById(p.mission) : null;
   const built = CELL_BY_ID[p.cell].built;
   const q = p.quest;
-  const open = (i: number) => built && (q?.isOpen?.(steps[i].id) ?? (p.allOpen || i === 0 || !!p.passed[steps[i - 1].id]));
+  const open = (i: number) => built && ((q?.isOpen ?? p.gate)?.(steps[i].id) ?? (p.allOpen || i === 0 || !!p.passed[steps[i - 1].id]));
   const lockWhy = q?.isOpen ? '선생님이 이 차시를 열면 열려요' : '앞 퀘스트를 통과하면 열려요';
   const now = !q ? -1 : q.asking ? 1 : q.watching ? 2 : q.phase === 'do' ? 0 : q.phase === 'run' ? 2 : 3;
   const two = (n: number) => String(n).padStart(2, '0');
@@ -341,7 +344,7 @@ export default function CellHud(p: CellHudProps) {
   const built = CELL_BY_ID[p.cell].built;
   const layout = cellLayout(p.cell);
   const keys = (name: string): [string, string] => layout.keys?.[name] ?? (name.includes('실린더') ? ['전진', '후진'] : ['운전', '정지']);
-  const open = (i: number) => built && (p.allOpen || i === 0 || !!p.passed[steps[i - 1].id]);
+  const open = (i: number) => built && (p.gate?.(steps[i].id) ?? (p.allOpen || i === 0 || !!p.passed[steps[i - 1].id]));
   const run = () => p.world.current?.cell ?? null;
   const out = (name: string, on: boolean) => {
     const r = run();
@@ -355,7 +358,7 @@ export default function CellHud(p: CellHudProps) {
   return (
     <div className={css.hud} data-strip={p.questOut || undefined} aria-label="실습 셀">
       {/* 입문: the quest card (자유 연습 here; a quest's own card stands at the top of the side panel). */}
-      {compact && !p.questOut && <QuestCard cell={p.cell} mission={p.mission} passed={p.passed} allOpen={p.allOpen} busy={p.busy} onMission={p.onMission} quest={p.quest} />}
+      {compact && !p.questOut && <QuestCard cell={p.cell} mission={p.mission} passed={p.passed} allOpen={p.allOpen} gate={p.gate} busy={p.busy} onMission={p.onMission} quest={p.quest} />}
       {/* Step ladder. */}
       {!compact && <nav className={css.ladder} aria-label="단계">
         <b className={css.cellName}>
