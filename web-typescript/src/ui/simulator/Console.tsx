@@ -2011,9 +2011,10 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     const t = window.setTimeout(() => {
       const api = stageApi.current;
       if (!api) return;
-      const sh = handShot === 'F2' ? narrateShot('커피 머신') : { eye: [-200, 120, 600] as const, target: [100, 120, 40] as const };
+      const sh = handShot === 'F2' ? narrateShot('커피 머신') : { eye: [-330, 40, 760] as const, target: [130, 40, 40] as const };
       api.lookAt(sh.eye, sh.target);
-    }, 900);
+      // After the view going home when a run before ended (1.2 s).
+    }, 1700);
     return () => window.clearTimeout(t);
   }, [handShot]);
   useEffect(() => {
