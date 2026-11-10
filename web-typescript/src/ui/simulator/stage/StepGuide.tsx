@@ -69,54 +69,88 @@ export function PredictCard({ mission, onAnswer, onSkip }: { mission: string; on
 }
 
 /**
- * 예측 at the moment (입문 퀘스트 모드): the scene has stopped where the result splits; the question
- * and two or three big keys over the scene. A tap answers it and the run goes on from there, so the
- * answer is seen at once (예측 → 관찰). Not graded.
+ * 예측 · O · X at the moment (입문 퀘스트 모드), as an interactive video does it (EdPuzzle, H5P): the
+ * scene stops where the result splits and a quiz comes up big in the middle of it — "잠깐! 퀴즈", how
+ * many of the run's questions this is, the question, two or three big keys (O blue circle · X red
+ * cross: colour and shape). A key answers it: the O · X shows right or not with why in a band at the
+ * card's foot (as Duolingo's), a 예측 that it is noted (it is compared after the run); then 이어서 보기.
+ * Keys: O · X or 1 – 3 answer, Enter goes on, Esc skips.
  */
-export function MomentAsk({ ask, ox, onAnswer, onSkip }: { ask: Ask; ox?: string; onAnswer(k: number): void; onSkip(): void }) {
-  // O · X (미리보기): the answer and why first, then on; a 예측 goes on at once (it is compared after the run).
+export function MomentAsk({ ask, ox, n, onAnswer, onSkip }: { ask: Ask; ox?: string; n?: { at: number; of: number }; onAnswer(k: number): void; onSkip(): void }) {
   const [chosen, setChosen] = useState<number | null>(null);
-  // O · X is a modal: the held scene dims behind it.
-  const scrim = ox ? <div className={css.scrim} aria-hidden="true" /> : null;
-  if (ox && chosen !== null)
-    return (
-      <>
-      {scrim}
-      <div className={css.moment} role="dialog" aria-label="예측" data-ok={chosen === ask.answer || undefined}>
-        <header>
-          <span className={css.pause} aria-hidden="true" />
-          <em>{chosen === ask.answer ? '맞았어요' : '다시 볼까요'}</em>
-        </header>
-        <p>정답 {ask.options[ask.answer]}</p>
-        <button type="button" className={css.goOn} onClick={() => onAnswer(chosen)}>
-          이어서 보기 ▶
-        </button>
-      </div>
-      </>
-    );
+  const isOx = ask.options.join('') === 'OX';
+  const pick = (k: number) => {
+    if (chosen === null) setChosen(k);
+  };
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onSkip();
+      else if (chosen !== null && e.key === 'Enter') onAnswer(chosen);
+      else if (chosen === null) {
+        const k = isOx ? ['o', 'x'].indexOf(e.key.toLowerCase()) : Number(e.key) - 1;
+        if (k >= 0 && k < ask.options.length) setChosen(k);
+      }
+    };
+    window.addEventListener('keydown', key);
+    return () => window.removeEventListener('keydown', key);
+  }, [chosen, isOx, ask.options.length, onAnswer, onSkip]);
+  const ok = chosen !== null && chosen === ask.answer;
+  const state = chosen === null ? 'ask' : !ox ? 'noted' : ok ? 'ok' : 'no';
   return (
     <>
-    {scrim}
-    <div className={css.moment} role="dialog" aria-modal={!!ox || undefined} aria-label={ox ? 'O X 퀴즈' : '예측'}>
-      <header>
-        <span className={css.pause} aria-hidden="true" />
-        <em>{ox ?? '장면 멈춤 · 예측'}</em>
-      </header>
-      <p>{ask.q}</p>
-      <div className={css.big} data-n={ask.options.length} data-ox={ask.options.join('') === 'OX' || undefined}>
-        {ask.options.map((o, k) => (
-          <button key={o} type="button" onClick={() => (ox ? setChosen(k) : onAnswer(k))}>
-            <i>{MARK[k]}</i>
-            {o}
-          </button>
-        ))}
+      <div className={css.qScrim} aria-hidden="true" />
+      <div className={css.quiz} role="dialog" aria-modal="true" aria-label={ox ? 'O X 퀴즈' : '예측'}>
+        <div className={css.qCard} data-state={state}>
+          <header className={css.qTop}>
+            <span className={css.qBadge}>
+              <i aria-hidden="true" />
+              잠깐! {ox ? '퀴즈' : '예측'}
+            </span>
+            {n && n.of > 1 && (
+              <span className={css.qCount} aria-label={`${n.of}문제 중 ${n.at}번째`}>
+                {Array.from({ length: n.of }, (_, k) => (
+                  <i key={k} data-on={k < n.at || undefined} />
+                ))}
+                <b>
+                  {n.at} / {n.of}
+                </b>
+              </span>
+            )}
+          </header>
+          <p className={css.qSub}>장면을 멈췄어요 · 답하면 이어서 봐요</p>
+          <h2 className={css.qQ}>{ask.q}</h2>
+          <div className={css.qOpts} data-n={ask.options.length} data-ox={isOx || undefined}>
+            {ask.options.map((o, k) => (
+              <button
+                key={o}
+                type="button"
+                disabled={chosen !== null}
+                data-pick={chosen === k || undefined}
+                data-right={(ox && chosen !== null && k === ask.answer) || undefined}
+                onClick={() => pick(k)}
+              >
+                {isOx ? <span className={k === 0 ? css.oMark : css.xMark} aria-hidden="true" /> : <i>{MARK[k]}</i>}
+                <span className={isOx ? css.srOnly : undefined}>{o}</span>
+              </button>
+            ))}
+          </div>
+          {chosen === null ? (
+            <button type="button" className={css.qSkip} onClick={onSkip}>
+              {ox ? '답하지 않고 계속' : '예측 없이 계속'}
+            </button>
+          ) : (
+            <footer className={css.qFeed}>
+              <span>
+                <b>{!ox ? '예측했어요!' : ok ? '정답이에요!' : `아쉬워요 · 정답은 ${ask.options[ask.answer]}`}</b>
+                <small>{!ox ? '맞았는지는 장면을 보며 확인해요.' : ask.why}</small>
+              </span>
+              <button type="button" autoFocus onClick={() => onAnswer(chosen)}>
+                이어서 보기 ▶
+              </button>
+            </footer>
+          )}
+        </div>
       </div>
-      <small>
-        <button type="button" onClick={onSkip}>
-          {ox ? '답하지 않고 계속' : '예측 없이 계속'}
-        </button>
-      </small>
-    </div>
     </>
   );
 }

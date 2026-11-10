@@ -5273,6 +5273,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   key={moment.key}
                   ask={moment.ask}
                   ox={moment.ox ? 'O · X 퀴즈' : undefined}
+                  n={lifeStep ? { at: asksOf(lifeStep.id).findIndex((a) => a.key === moment.key) + 1, of: asksOf(lifeStep.id).length } : undefined}
                   onAnswer={(k) => {
                     savePrediction(moment.key, k);
                     setPreds((p) => ({ ...p, [moment.key]: k }));

@@ -241,149 +241,284 @@
   width: auto;
   margin: 0 12px 10px;
 }
-/* 예측 at the moment (MomentAsk): over the stopped scene's centre, big keys — read at a glance,
-   pressed without aiming. White is the accent; the amber dot says the scene is held. */
-.moment {
+/* 잠깐! 퀴즈 (MomentAsk): the scene stops and the quiz comes up big in the middle of the free part of
+   the scene, the scene dimmed and soft behind it — an interactive video's question. */
+.qScrim {
+  position: absolute;
+  z-index: 15;
+  inset: 0 var(--inset-r, 0px) 0 var(--inset-l, 0px);
+  background: rgba(8, 10, 12, 0.55);
+  backdrop-filter: blur(3px);
+  animation: qFade 0.2s ease-out;
+}
+.quiz {
   position: absolute;
   z-index: 16;
   left: calc((var(--inset-l, 0px) + 100% - var(--inset-r, 0px)) / 2);
-  /* At the top, small: the held moment (the arm, the cup, the pen, the stone) stays in sight. */
-  top: calc(var(--top, 0px) + 12px);
-  transform: translateX(-50%);
-  width: min(
-    500px,
-    calc(100% - var(--inset-l, 0px) - var(--inset-r, 0px) - 32px)
-  );
-  padding: 18px 20px 14px;
-  border-radius: 16px;
+  top: calc(var(--top, 0px) + (100% - var(--top, 0px)) / 2);
+  transform: translate(-50%, -50%);
+  width: min(640px, calc(100% - var(--inset-l, 0px) - var(--inset-r, 0px) - 40px));
+  word-break: keep-all;
+}
+.qCard {
+  padding: 26px 30px 24px;
+  border-radius: 22px;
   color: var(--hud-tx);
   background: var(--hud-plate);
   box-shadow:
     var(--hud-plate-shadow),
-    0 0 0 1px rgba(255, 255, 255, 0.3),
-    0 18px 60px rgba(0, 0, 0, 0.55);
-  word-break: keep-all;
-  /* No fade in: on a slow computer the held scene may draw a frame a second, and the question must be there at once. */
+    0 0 0 1px rgba(255, 255, 255, 0.22),
+    0 28px 80px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  animation: qIn 0.34s cubic-bezier(0.2, 0.9, 0.3, 1.15);
 }
-.scrim {
-  position: absolute;
-  z-index: 15;
-  inset: 0 var(--inset-r, 0px) 0 var(--inset-l, 0px);
-  background: rgba(8, 10, 12, 0.5);
-}
-.moment header {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-}
-.moment header em {
-  font:
-    700 12px ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    monospace;
-  font-style: normal;
-  letter-spacing: 0.16em;
-  color: var(--hud-amber);
-}
-.pause {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--hud-amber);
-  box-shadow: 0 0 10px var(--hud-amber);
-  animation: held 1.2s ease-in-out infinite;
-}
-@keyframes held {
-  50% {
-    opacity: 0.35;
+@keyframes qFade {
+  from {
+    opacity: 0;
   }
 }
-.moment p {
-  margin: 10px 0 14px;
-  font-size: 20px;
-  font-weight: 800;
-  line-height: 1.4;
-  color: #fff;
+/* Movement only, no fade: on a slow computer the held scene may draw a frame a second, and the question must be there at once. */
+@keyframes qIn {
+  from {
+    transform: translateY(18px) scale(0.95);
+  }
 }
-.big {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-.big[data-n='3'] {
-  grid-template-columns: 1fr;
-}
-.moment .big button {
+.qTop {
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-height: 64px;
-  padding: 12px 14px;
+  justify-content: space-between;
+  gap: 12px;
+}
+.qBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  height: 36px;
+  padding: 0 16px 0 12px;
+  border-radius: 999px;
+  background: #f0a23b;
+  color: #15181c;
+  font-size: 16px;
+  font-weight: 900;
+  animation: qPop 0.5s 0.1s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+/* The pause sign: two bars. */
+.qBadge i {
+  width: 12px;
+  height: 14px;
+  border-left: 4px solid currentColor;
+  border-right: 4px solid currentColor;
+}
+@keyframes qPop {
+  from {
+    transform: scale(0.6);
+  }
+}
+.qCount {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.qCount i {
+  width: 22px;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.16);
+}
+.qCount i[data-on] {
+  background: #f0a23b;
+}
+.qCount b {
+  margin-left: 6px;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  color: var(--hud-sub);
+}
+.qSub {
+  margin: 16px 0 6px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--hud-sub);
+}
+.qQ {
+  margin: 0 0 22px;
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.45;
+  color: #fff;
+}
+.qOpts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.qOpts[data-n='3'] {
+  grid-template-columns: 1fr;
+}
+.qOpts button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 72px;
+  padding: 14px 18px;
   border: 0;
-  border-radius: 12px;
+  border-radius: 16px;
   background: var(--hud-key);
   box-shadow: var(--hud-key-shadow);
   color: #fff;
   font: inherit;
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 700;
-  line-height: 1.35;
+  line-height: 1.4;
   text-align: left;
   cursor: pointer;
+  transition:
+    transform 0.12s,
+    filter 0.12s,
+    opacity 0.2s,
+    box-shadow 0.2s;
 }
-.moment .big button:hover,
-.moment .big button:focus-visible {
+.qOpts button:not(:disabled):hover,
+.qOpts button:focus-visible {
   box-shadow: var(--hud-key-shadow), var(--hud-key-on);
-  filter: brightness(1.12);
+  filter: brightness(1.15);
+  transform: translateY(-2px);
 }
-.moment .big i {
+.qOpts button:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+.qOpts button[data-pick],
+.qOpts button[data-right] {
+  opacity: 1;
+}
+.qOpts button[data-pick] {
+  box-shadow:
+    var(--hud-key-shadow),
+    inset 0 0 0 3px #fff;
+}
+.qOpts i {
   font-style: normal;
-  font-size: 20px;
+  font-size: 22px;
   color: var(--hud-light);
 }
-.moment small {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 11px;
-  font-size: 12.5px;
-  color: var(--hud-dim);
+/* O · X: two tall keys, a blue ring and a red cross (colour and shape, for every eye). */
+.qOpts[data-ox] button {
+  justify-content: center;
+  min-height: 150px;
 }
-.moment small button {
+.oMark,
+.xMark {
+  position: relative;
+  width: 76px;
+  height: 76px;
+}
+.oMark {
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 13px #3b82f6;
+}
+.xMark::before,
+.xMark::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 92px;
+  height: 14px;
+  border-radius: 7px;
+  background: #ef4444;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.xMark::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+.qCard[data-state='ok'] .qOpts button[data-right] {
+  box-shadow:
+    var(--hud-key-shadow),
+    inset 0 0 0 4px #34d399,
+    0 0 24px rgba(52, 211, 153, 0.45);
+}
+.qCard[data-state='no'] .qOpts button[data-pick] {
+  box-shadow:
+    var(--hud-key-shadow),
+    inset 0 0 0 4px #f0a23b;
+}
+.qCard[data-state='no'] .qOpts button[data-right] {
+  box-shadow:
+    var(--hud-key-shadow),
+    inset 0 0 0 4px #34d399;
+}
+.qSkip {
+  display: block;
+  margin: 18px auto 0;
   border: 0;
   background: none;
   color: var(--hud-sub);
   font: inherit;
-  font-size: 12.5px;
+  font-size: 14px;
   text-decoration: underline;
   cursor: pointer;
 }
-
-/* 미리보기 O · X: two big round keys, and the answer with why before going on. */
-.big[data-ox] button {
-  justify-content: center;
-  font-size: 30px;
+/* The answer: a band across the card's foot, green right, amber not yet, blue a 예측 noted. */
+.qFeed {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin: 22px -30px -24px;
+  padding: 18px 30px 20px;
+  background: rgba(59, 130, 246, 0.16);
+  box-shadow: inset 0 3px 0 #3b82f6;
+  animation: qUp 0.28s ease-out;
+  --tone: #93c5fd;
+}
+.qCard[data-state='ok'] .qFeed {
+  background: rgba(52, 211, 153, 0.14);
+  box-shadow: inset 0 3px 0 #34d399;
+  --tone: #34d399;
+}
+.qCard[data-state='no'] .qFeed {
+  background: rgba(240, 162, 59, 0.14);
+  box-shadow: inset 0 3px 0 #f0a23b;
+  --tone: #f0a23b;
+}
+@keyframes qUp {
+  from {
+    transform: translateY(12px);
+  }
+}
+.qFeed span {
+  display: grid;
+  gap: 6px;
+  flex: 1;
+}
+.qFeed b {
+  font-size: 21px;
   font-weight: 900;
+  color: var(--tone);
 }
-.big[data-ox] i {
-  display: none;
+.qFeed small {
+  font-size: 16px;
+  line-height: 1.55;
+  color: #fff;
 }
-.moment[data-ok] header em {
-  color: var(--hud-green);
-}
-.moment .goOn {
-  margin-top: 4px;
-  height: 40px;
-  padding: 0 18px;
+.qFeed button {
+  flex: none;
+  height: 52px;
+  padding: 0 24px;
   border: 0;
-  border-radius: 10px;
+  border-radius: 14px;
   background: var(--hud-silver);
   box-shadow: var(--hud-silver-shadow);
   color: var(--hud-ink);
   font: inherit;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 800;
   cursor: pointer;
 }

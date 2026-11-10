@@ -629,6 +629,52 @@ export default function CellHud(p: CellHudProps) {
   );
 }
 
+/** The scene's number chips (cellF STATION_NUMS): the same number on the card as over the machine. */
+const STATION_NO: Partial<Record<NarratePlace, string>> = { '컵 디스펜서': '1', 제빙기: '2', '커피 머신': '3', 정수기: '4', 픽업대: '5' };
+
+/**
+ * 지금 신호 (주문 한 잔 따라가기): the one machine the signal is at — its picture, number and name, then
+ * two columns read at a glance: what the robot sends it (출력, amber) and what it answers (입력, green),
+ * each signal a pill that fills when it is on.
+ */
+function SignalNow({ st, ins, outs }: { st: (typeof CAFE_BOARD)[number]; ins: Map<string, boolean>; outs: Map<string, boolean> }) {
+  const no = STATION_NO[st.place];
+  const col = (title: string, names: string[], on: Map<string, boolean>, out: boolean) => (
+    <div className={css.nowCol} data-out={out || undefined}>
+      <small>{title}</small>
+      {names.length ? (
+        names.map((n) => (
+          <span key={n} className={css.pill} data-on={on.get(n) || undefined}>
+            <i aria-hidden="true" />
+            {n}
+          </span>
+        ))
+      ) : (
+        <em>없음</em>
+      )}
+    </div>
+  );
+  return (
+    <section className={css.now} aria-label="지금 신호">
+      <header>
+        {/* eslint-disable-next-line @next/next/no-img-element -- a small picture of the 3D equipment, also in the static export */}
+        <img src={st.img} alt="" width={48} height={48} />
+        <span>
+          <small>지금 신호</small>
+          <b>
+            {no && <i className={css.no}>{no}</i>}
+            {st.place}
+          </b>
+        </span>
+      </header>
+      <div className={css.nowCols}>
+        {col('로봇 → 장비', st.outs, outs, true)}
+        {col('장비 → 로봇', st.ins, ins, false)}
+      </div>
+    </section>
+  );
+}
+
 /**
  * 신호 관제판 (로봇 카페): one card per piece of equipment, in the order a drink goes — its picture,
  * what the robot sends it (출력, amber) and what it answers (입력, green); the one a signal was just
@@ -639,6 +685,7 @@ function CafeBoard({ snap, only }: { snap: Snap; only?: string }) {
   const outs = new Map(snap.outputs);
   // 보기 (주문 한 잔 따라가기): only the equipment the signal is going to or coming from now.
   const shown = only ? CAFE_BOARD.filter((st) => st.place === only) : CAFE_BOARD;
+  if (only && shown[0]) return <SignalNow st={shown[0]} ins={ins} outs={outs} />;
   return (
     <section className={css.board} aria-label="신호 관제판" data-one={only ? '' : undefined}>
       <header>

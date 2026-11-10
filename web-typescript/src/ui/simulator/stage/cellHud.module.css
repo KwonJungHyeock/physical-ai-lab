@@ -1197,3 +1197,121 @@
   font-weight: 800;
   white-space: nowrap;
 }
+
+/* 지금 신호 (주문 한 잔 따라가기): one machine, two columns of signal pills — read across the room. */
+.now {
+  align-self: flex-start;
+  width: 320px;
+  padding: 14px 16px 16px;
+  border-radius: 16px;
+  background: var(--hud-plate, rgba(36, 39, 43, 0.95));
+  box-shadow:
+    var(--hud-plate-shadow, 0 0 0 1px rgba(0, 0, 0, 0.5)),
+    0 12px 32px rgba(0, 0, 0, 0.35);
+  color: var(--hud-tx, #e9edf1);
+  word-break: keep-all;
+}
+.now header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.now header img {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  object-fit: cover;
+  flex: none;
+}
+.now header span {
+  display: grid;
+  gap: 3px;
+}
+.now header small {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--hud-sub, #aab1b9);
+}
+.now header b {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 19px;
+  line-height: 1.2;
+  color: #fff;
+}
+.no {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #0f6b4c;
+  color: #fff;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 800;
+}
+.nowCols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.nowCol {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.25);
+  --tone: #34d399;
+}
+.nowCol[data-out] {
+  --tone: #f0a23b;
+}
+.nowCol small {
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--tone);
+}
+.nowCol em {
+  font-size: 14px;
+  font-style: normal;
+  color: var(--hud-dim, #7d858e);
+}
+.pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.12);
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--hud-sub, #aab1b9);
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+.pill i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+  box-shadow: inset 0 0 0 2px var(--tone);
+}
+.pill[data-on] {
+  background: var(--tone);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--tone) 55%, transparent);
+  color: #15181c;
+  font-weight: 800;
+}
+.pill[data-on] i {
+  background: #15181c;
+  box-shadow: none;
+}

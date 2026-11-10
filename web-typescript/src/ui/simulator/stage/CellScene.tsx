@@ -203,7 +203,7 @@ function Callouts({ world }: { world: RefObject<WorldState | null> }) {
       {g.observe
         .filter((o) => shown.includes(o.id))
         .map((o) => (
-          <Html key={o.id} position={[m(o.at[0]), m(o.at[1]), m(o.at[2])]} center zIndexRange={[22, 0]} style={{ pointerEvents: 'none' }}>
+          <Html key={o.id} position={[m(o.at[0]), m(o.at[1]), m(o.at[2])]} center zIndexRange={[14, 0]} style={{ pointerEvents: 'none' }}>
             <div data-callout style={{ position: 'relative', background: '#c2410c', color: '#fff', borderRadius: 9, padding: '6px 11px 6px 9px', font: '700 12.5px Pretendard, sans-serif', whiteSpace: 'nowrap', boxShadow: '0 6px 16px rgba(0,0,0,0.3)', transform: 'translateY(-24px)' }}>
               <span style={{ fontSize: 10.5, fontWeight: 800, opacity: 0.85, marginRight: 6 }}>관찰</span>
               {o.text}
@@ -231,7 +231,7 @@ function Narrate({ world }: { world: RefObject<WorldState | null> }) {
   const at = NARRATE_AT[n.place];
   const tell = n.dir === 'in';
   return (
-    <Html key={n.key} position={[m(at[0]), m(at[1]), m(at[2])]} center zIndexRange={[23, 0]} style={{ pointerEvents: 'none' }}>
+    <Html key={n.key} position={[m(at[0]), m(at[1]), m(at[2])]} center zIndexRange={[14, 0]} style={{ pointerEvents: 'none' }}>
       <div data-narrate style={{ position: 'relative', transform: 'translateY(-50%)', background: 'rgba(22,24,27,0.94)', color: '#f1f4f7', borderRadius: 12, padding: '9px 13px 10px', font: '600 14px Pretendard, sans-serif', whiteSpace: 'nowrap', boxShadow: '0 0 0 1px rgba(255,255,255,0.16), 0 8px 22px rgba(0,0,0,0.45)' }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 7, font: '600 12px Pretendard, sans-serif', color: '#aab1b9', marginBottom: 4 }}>
           <i style={{ width: 8, height: 8, borderRadius: 4, background: tell ? '#34d399' : '#f1f4f7', boxShadow: `0 0 8px ${tell ? '#34d399' : '#ffffff'}` }} />
