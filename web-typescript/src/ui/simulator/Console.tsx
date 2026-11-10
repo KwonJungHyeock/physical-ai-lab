@@ -697,7 +697,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
    * starts with ▶, not by itself as a student opens it).
    */
   const showPlace = (c: CellId) => {
-    if (c !== 'cafe') setTouring(c);
+    // Every place the same (교실 수업): no tour by itself either — each place's quest 1 (둘러보기) shows it with ▶.
+    void c;
   };
   /** 입문: the 학습 로드맵 over the intro (the quest card's 목록). */
   const [roadmapOpen, setRoadmapOpen] = useState(false);
@@ -5260,7 +5261,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                 />
               )}
               {loaded && view === 'sim' && ringSpot && !busy && !lessonUi && <LeadSpot step={ringSpot} read={() => tutCtxRef.current()} once />}
-              {loaded && view === 'sim' && questLead && questOn && questPhase === 'do' && !moment && !roadmapOpen && !touring && !lessonUi && <LeadSpot key={lifeStep?.id} step={questLead} read={() => tutCtxRef.current()} once />}
+              {loaded && pastIntro && splashDone && view === 'sim' && questLead && questOn && questPhase === 'do' && !moment && !roadmapOpen && !touring && !lessonUi && <LeadSpot key={lifeStep?.id} step={questLead} read={() => tutCtxRef.current()} once />}
               {loaded && view === 'sim' && moment && (
                 <MomentAsk
                   key={moment.key}
@@ -5545,6 +5546,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                     </span>
                     {choice && <em>바꾸기</em>}
                   </button>
+                  {/* 입문 퀘스트: no robot status (simulation only; the 교안 does not use it). */}
+                  {!questOn && (
                   <StatusLights lights={lights}>
                     <RobotStatus
                       robotMode={robotMode}
@@ -5561,6 +5564,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                       }}
                     />
                   </StatusLights>
+                  )}
                   <button type="button" className={css.sideFold} onClick={toggleDock} title="패널 접기 (3D 화면을 넓게)" aria-label="작업 패널 접기">
                     <Icon name="chevron" size={16} />
                   </button>

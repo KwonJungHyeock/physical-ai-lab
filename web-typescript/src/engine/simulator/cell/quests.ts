@@ -46,7 +46,8 @@ export const QUESTS: Record<string, Quest> = {
  * run bar's. 퀘스트 3 (the jog) leads from the arm instead (lifeTutorials ringLead).
  */
 const RUN = { sel: '[data-panel="run"] [aria-label="시뮬레이션"]', say: '▶ 눌러 확인해요' };
-const CARD = (say: string) => ({ sel: 'aside li[data-glow]', say });
+// The card shown for the quest (not its copy in the folded 자세히 list, which would stretch the ring).
+const CARD = (say: string) => ({ sel: 'aside li[data-glow]:not(details li)', say });
 
 export const QUEST_LEAD: Record<string, readonly { sel: string; say: string }[]> = {
   F1: [{ ...RUN, say: '▶ 눌러 시작해요' }],

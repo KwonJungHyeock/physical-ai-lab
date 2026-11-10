@@ -156,11 +156,13 @@ export default function Notices({ entries, guide, above, quiet, side }: { entrie
     </button>
   );
   const idle = quiet || (!open && !guide);
+  // 입문 현장 (side): no 기록 button — a notice shows as it comes and closes; its history is not used in class.
+  const log = side ? null : logButton;
   return (
     <div className={css.notices} ref={box} data-panel="log" data-idle={(idle && !above) || undefined} data-side={side || undefined}>
       {above}
       {idle ? (
-        logButton
+        log
       ) : (
         <div className={css.board} data-kind={open ? last.kind : 'guide'}>
           {open && last && (
@@ -171,7 +173,7 @@ export default function Notices({ entries, guide, above, quiet, side }: { entrie
                 {last.fix && <small>{last.fix}</small>}
               </p>
               <span className={css.noticeEnd}>
-                {!guide && logButton}
+                {!guide && log}
                 <button type="button" className={css.noticeClose} aria-label="알림 닫기" title="닫기" onClick={() => setShown(null)}>
                   ×
                 </button>
@@ -186,7 +188,7 @@ export default function Notices({ entries, guide, above, quiet, side }: { entrie
                 {guide.text}
               </p>
               <span className={css.noticeEnd}>
-                {logButton}
+                {log}
                 {guide.onNext && (
                   <button type="button" className={css.guideNext} onClick={guide.onNext}>
                     다음 ▶
