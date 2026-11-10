@@ -1315,3 +1315,47 @@
   background: #15181c;
   box-shadow: none;
 }
+
+/* The 지금 신호 card's tracking line to the machine (TrackLine): over the scene, under the quiz (15–16). */
+.track {
+  position: fixed;
+  inset: 0;
+  z-index: 13;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  overflow: visible;
+}
+.track path {
+  fill: none;
+  stroke: #34d399;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-dasharray: 7 7;
+  filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.6));
+  /* 입력: the dashes run from the machine into the card. */
+  animation: trackIn 0.8s linear infinite;
+}
+.track path[data-out='1'] {
+  stroke: #f0a23b;
+  animation-name: trackOut;
+}
+@keyframes trackIn {
+  to {
+    stroke-dashoffset: 14;
+  }
+}
+@keyframes trackOut {
+  to {
+    stroke-dashoffset: -14;
+  }
+}
+.track circle {
+  fill: rgba(52, 211, 153, 0.25);
+  stroke: #34d399;
+  stroke-width: 2.5;
+}
+.track circle[data-out='1'] {
+  fill: rgba(240, 162, 59, 0.25);
+  stroke: #f0a23b;
+}

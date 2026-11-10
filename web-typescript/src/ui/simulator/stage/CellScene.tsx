@@ -10,8 +10,9 @@
  */
 
 import { Html } from '@react-three/drei';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import { useRef, useState, type ReactNode, type RefObject } from 'react';
+import { Vector3, type Group } from 'three';
 
 import { cellLayout, type CellId } from '@/engine/simulator/cell/cells';
 import { guideOf } from '@/engine/simulator/cell/guides';
@@ -28,6 +29,7 @@ import { CafeCell } from './cell/cellF';
 import { DrawCell } from './cell/cellG';
 import { BoardCell } from './cell/cellH';
 import GoalRing from './GoalRing';
+import { signalPoint } from './signalPoint';
 import { Backdrop, Cabinet, Conveyor, Fence, Floor, MarkedPlate, Pedestal, StackGlow, Tagged, m } from './cell/kit';
 
 type Tags = Record<string, { at: [number, number, number]; note: string }>;
@@ -219,18 +221,37 @@ function Callouts({ world }: { world: RefObject<WorldState | null> }) {
 function Narrate({ world }: { world: RefObject<WorldState | null> }) {
   const [n, setN] = useState<Narration | null>(null);
   const key = useRef('');
+  const { camera, gl } = useThree();
+  const v = useRef(new Vector3());
+  /** Where this component's place in the scene is (the cell's frame: the narrated places are in its mm). */
+  const origin = useRef<Group>(null);
   useFrame(() => {
     const run = world.current?.cell;
     const now = run && run.mission === NARRATED ? (run.said ?? null) : null;
+    // The 지금 신호 card's tracking line ends at the bubble's foot (its pointer, over the machine).
+    if (now) {
+      const a = NARRATE_AT[now.place];
+      // (Below the bubble: on the machine itself, so the line meets it and not the bubble.)
+      const p = v.current.set(m(a[0]), m(a[1]), m(a[2] - 70));
+      if (origin.current) p.applyMatrix4(origin.current.matrixWorld);
+      p.project(camera);
+      const r = gl.domElement.getBoundingClientRect();
+      signalPoint.on = p.z < 1;
+      signalPoint.x = r.left + ((p.x + 1) / 2) * r.width;
+      signalPoint.y = r.top + ((1 - p.y) / 2) * r.height;
+      signalPoint.out = now.dir !== 'in';
+    } else signalPoint.on = false;
     const k = now?.key ?? '';
     if (k === key.current) return;
     key.current = k;
     setN(now);
   });
-  if (!n) return null;
+  if (!n) return <group ref={origin} />;
   const at = NARRATE_AT[n.place];
   const tell = n.dir === 'in';
   return (
+    <>
+    <group ref={origin} />
     <Html key={n.key} position={[m(at[0]), m(at[1]), m(at[2])]} center zIndexRange={[14, 0]} style={{ pointerEvents: 'none' }}>
       <div data-narrate style={{ position: 'relative', transform: 'translateY(-50%)', background: 'rgba(22,24,27,0.94)', color: '#f1f4f7', borderRadius: 12, padding: '9px 13px 10px', font: '600 14px Pretendard, sans-serif', whiteSpace: 'nowrap', boxShadow: '0 0 0 1px rgba(255,255,255,0.16), 0 8px 22px rgba(0,0,0,0.45)' }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 7, font: '600 12px Pretendard, sans-serif', color: '#aab1b9', marginBottom: 4 }}>
@@ -242,6 +263,7 @@ function Narrate({ world }: { world: RefObject<WorldState | null> }) {
         <i style={{ position: 'absolute', left: '50%', bottom: -7, marginLeft: -7, width: 0, height: 0, borderLeft: '7px solid transparent', borderRight: '7px solid transparent', borderTop: '7px solid rgba(22,24,27,0.94)' }} />
       </div>
     </Html>
+    </>
   );
 }
 

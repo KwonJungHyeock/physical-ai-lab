@@ -131,6 +131,7 @@ import TutorialList from './tasks/TutorialList';
 import TutorialStrip from './tasks/TutorialStrip';
 import { LeadSpot, type SpotStep } from './tasks/Spotlight';
 import { MomentAsk, PredictCard, StepResult, loadPredictions, savePrediction } from './stage/StepGuide';
+import WaitSkip from './stage/WaitSkip';
 import { QUEST_LEAD, QUESTS, questNow, type QuestPhase } from '@/engine/simulator/cell/quests';
 import { askNow, asksOf, guideOf, type Ask } from '@/engine/simulator/cell/guides';
 import { NARRATE_HOLD_MS, NARRATED, narrationLines } from '@/engine/simulator/cell/narrate';
@@ -192,6 +193,7 @@ const barW = () => (typeof document === 'undefined' ? 96 : (document.querySelect
 /** The mini arm's corner, px: from the left menu bar's left edge, and its size. Left of the arm's joints
  *  sit their angle chips (about 80 px): room for them right of the bar. */
 const MINI = { bottom: 64, width: 250, height: 300 };
+const WAIT_REAL_KEY = 'robot-console-life-wait-real';
 // Room on the left for a chip with its reason ("−142.4° 한계까지 8°") clear of the menu bar.
 const miniLeft = () => barW() + 84;
 const QUALITY_KEY = 'robot-console-quality';
@@ -574,6 +576,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const heldRef = useRef(false);
   /** 입문 해 보기 ①: ▶▶ while the machine pours by hand (the cell 4 ×, this wait only). */
   const fastRef = useRef(1);
+  /** 입문 카페: a long pour waited for fast (WaitSkip; set below while a program runs). */
+  const waitRef = useRef(1);
   /**
    * 입문 트랙: a move is also sampled between the screen's frames, every 1/60 s of its time, so what
    * it leaves (the pen's line, the path the checks read) does not depend on how fast the computer
@@ -585,7 +589,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const runRate = useMemo(
     () => ({
       get current() {
-        return heldRef.current ? 0 : simRateRef.current * fastRef.current;
+        return heldRef.current ? 0 : simRateRef.current * fastRef.current * waitRef.current;
       },
     }),
     [],
@@ -2046,6 +2050,44 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       setFast(false);
     };
   }, [cellAt?.mission, setFast]);
+  // 입문 카페: a machine pouring for long (8 s or more: the coffee, 28 s a shot) is waited for at about ×8
+  // in all, said on screen with its real time; [실제 시간으로] keeps real time (this browser).
+  // Read at once: the chip shows only during a run, never in the server's first page.
+  const [waitOff, setWaitOff] = useState(() => {
+    try {
+      return typeof window !== 'undefined' && localStorage.getItem(WAIT_REAL_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
+  const [waiting, setWaiting] = useState<{ what: string; s: number } | null>(null);
+  const waitOn = !!track && busy && cellAt?.cell === 'cafe' && cafeMode !== 'hand';
+  useEffect(() => {
+    const stop = () => {
+      waitRef.current = 1;
+      setWaiting(null);
+    };
+    if (!waitOn) return stop;
+    const id = window.setInterval(() => {
+      const run = world.current.cell;
+      const st = run?.layout.line.cafe?.stations.find((x) => x.timeS >= 8 && run.line.in[x.busy]);
+      waitRef.current = st && !waitOff ? Math.max(1, 8 / Math.max(1, simRateRef.current * fastRef.current)) : 1;
+      setWaiting((w) => (st ? (w?.what === st.name ? w : { what: st.name === '커피 머신' ? '커피 추출' : st.name, s: st.timeS }) : null));
+    }, 100);
+    return () => {
+      window.clearInterval(id);
+      stop();
+    };
+  }, [waitOn, waitOff]);
+  const toggleWait = () =>
+    setWaitOff((v) => {
+      try {
+        localStorage.setItem(WAIT_REAL_KEY, v ? '0' : '1');
+      } catch {
+        /* this session only */
+      }
+      return !v;
+    });
   // 입문 운영 퀘스트 (F8, 손님 10명 · 약 14분 at ×1): it opens at ×4 (about 3.5 min); leaving it, the speed before.
   const rateBefore = useRef<number | null>(null);
   const fastQuest = !!track && lifeStep?.id === 'F8';
@@ -5247,6 +5289,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   }}
                 />}
               {/* 입문 현장의 공정 띠: the order (or the game) and what the step is about, over the scene. */}
+              {loaded && view === 'sim' && waiting && !moment && <WaitSkip what={waiting.what} seconds={waiting.s} off={waitOff} onToggle={toggleWait} />}
               {loaded && view === 'sim' && track && cellAt?.cell === 'cafe' && (cafeMode ? cafeMode === 'make' && busy : true) && <CafeStrip world={world} />}
               {loaded && view === 'sim' && track && cellAt?.cell === 'draw' && (!questOn || busy) && <DrawStrip world={world} />}
               {loaded && view === 'sim' && track && cellAt?.cell === 'board' && (!questOn || busy) && <BoardStrip world={world} />}

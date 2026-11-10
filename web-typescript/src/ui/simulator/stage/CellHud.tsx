@@ -9,7 +9,8 @@
  * notices as they happen.
  */
 
-import { useEffect, useState, type RefObject } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
+import { createPortal } from 'react-dom';
 
 import { CELL_BY_ID, cellLayout, gridPlace, type CellId } from '@/engine/simulator/cell/cells';
 import type { CellAlert } from '@/engine/simulator/cell/faults';
@@ -24,6 +25,7 @@ import type { WorldState } from '@/engine/simulator/sim';
 
 import Icon from '../Icon';
 import FieldTicks from '../tasks/FieldTicks';
+import { signalPoint } from './signalPoint';
 import css from './cellHud.module.css';
 
 /** The ladder's bands: robot only, the line on 자동 운전, the signals by hand. */
@@ -633,6 +635,50 @@ export default function CellHud(p: CellHudProps) {
 const STATION_NO: Partial<Record<NarratePlace, string>> = { '컵 디스펜서': '1', 제빙기: '2', '커피 머신': '3', 정수기: '4', 픽업대: '5' };
 
 /**
+ * The 지금 신호 card's tracking line: from the card's right edge to the machine the signal is at (the
+ * bubble's foot over it, signalPoint), a curve whose dashes run the way the signal goes — out of the
+ * card for the robot's 출력 (amber), into it for the machine's 입력 (green) — and a ring where it lands.
+ * Drawn over the page (a portal), moved every frame without React.
+ */
+function TrackLine({ from }: { from: RefObject<HTMLElement | null> }) {
+  const path = useRef<SVGPathElement>(null);
+  const dot = useRef<SVGCircleElement>(null);
+  const svg = useRef<SVGSVGElement>(null);
+  useEffect(() => {
+    let id = 0;
+    const draw = () => {
+      id = requestAnimationFrame(draw);
+      const c = from.current?.getBoundingClientRect();
+      const s = svg.current;
+      if (!s || !path.current || !dot.current) return;
+      const on = !!c && c.width > 0 && signalPoint.on;
+      s.style.display = on ? '' : 'none';
+      if (!on || !c) return;
+      const x0 = c.right;
+      const y0 = c.top + 46;
+      const { x, y } = signalPoint;
+      const bend = Math.max(40, Math.abs(x - x0) * 0.45);
+      path.current.setAttribute('d', `M ${x0} ${y0} C ${x0 + bend} ${y0}, ${x - bend * 0.4} ${y}, ${x} ${y}`);
+      path.current.dataset.out = signalPoint.out ? '1' : '';
+      dot.current.setAttribute('cx', String(x));
+      dot.current.setAttribute('cy', String(y));
+      dot.current.dataset.out = signalPoint.out ? '1' : '';
+    };
+    draw();
+    return () => cancelAnimationFrame(id);
+  }, [from]);
+  // Shown only during a run (never in the server's page): the page's body is there.
+  if (typeof document === 'undefined') return null;
+  return createPortal(
+    <svg ref={svg} className={css.track} aria-hidden="true">
+      <path ref={path} />
+      <circle ref={dot} r={7} />
+    </svg>,
+    document.body,
+  );
+}
+
+/**
  * 지금 신호 (주문 한 잔 따라가기): the one machine the signal is at — its picture, number and name, then
  * two columns read at a glance: what the robot sends it (출력, amber) and what it answers (입력, green),
  * each signal a pill that fills when it is on.
@@ -654,8 +700,10 @@ function SignalNow({ st, ins, outs }: { st: (typeof CAFE_BOARD)[number]; ins: Ma
       )}
     </div>
   );
+  const card = useRef<HTMLElement>(null);
   return (
-    <section className={css.now} aria-label="지금 신호">
+    <section ref={card} className={css.now} aria-label="지금 신호">
+      <TrackLine from={card} />
       <header>
         {/* eslint-disable-next-line @next/next/no-img-element -- a small picture of the 3D equipment, also in the static export */}
         <img src={st.img} alt="" width={48} height={48} />
