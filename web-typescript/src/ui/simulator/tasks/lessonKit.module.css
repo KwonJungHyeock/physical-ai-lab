@@ -729,3 +729,16 @@
 .foot a {
   color: #93b4ff;
 }
+
+/* 입문 트랙 (bare): the question is in the PDF; three big number keys in a row. */
+.opts[data-bare] {
+  grid-template-columns: repeat(3, 1fr);
+}
+.modal .opts[data-bare] button {
+  justify-content: center;
+  min-height: 84px;
+}
+.modal .opts[data-bare] button i {
+  font-size: 34px;
+  color: var(--hud-tx, #e9edf1);
+}

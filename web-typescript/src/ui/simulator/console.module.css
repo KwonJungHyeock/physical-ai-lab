@@ -9340,6 +9340,33 @@ div.zeroFlow {
   font-weight: 800;
 }
 
+/* 입문 트랙: [다음 단계 →] — quiet until the step is passed, then the one accent (지시서 v1 파트 4). */
+.runDock .runNext {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--hud-key, #3a3f45);
+  box-shadow: var(--hud-key-shadow, none);
+  color: var(--hud-tx, #e9edf1);
+  font-size: 15px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.runDock .runNext[data-lit] {
+  background: #f0a23b;
+  box-shadow: none;
+  color: #15181c;
+}
+.runDock .runNext:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 /* 입문 퀘스트: ⚡ 결과 바로 beside ▶ (two classes: the dock's own button rules outrank one). */
 .runDock .runQuick {
   flex: 0 0 76px;
@@ -9367,4 +9394,26 @@ div.zeroFlow {
 }
 .runDock .runQuick:disabled {
   cursor: default;
+}
+
+/* 자세히 보기 (지시서 v1 파트 2): one quiet row under the run bar; what it opens is folded by default. */
+.moreKey {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  width: calc(100% - 24px);
+  margin: 4px 12px 10px;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--hud-sub, #aab1b9);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+.moreKey b {
+  color: #e9edf1;
+  font-weight: 700;
 }

@@ -67,6 +67,22 @@ export const QUEST_LEAD: Record<string, readonly { sel: string; say: string }[]>
   H4: [CARD('② 블록 순서를 바꿔요'), RUN],
 };
 
+/**
+ * 지금 할 일 (지시서 v1 파트 3): what to press, in turn, numbered 1 · 2 · 3 — the same order as QUEST_LEAD
+ * (whose controls carry the same numbers on screen) and as the PDF's screen picture. The cards' own
+ * numbers (② 보정 카드) are left out: the numbers are the order to press.
+ */
+export function questSteps(id: string): string[] {
+  const seq = QUEST_LEAD[id];
+  if (!seq) return [QUESTS[id]?.short ?? '카드 고치고 ▶'];
+  return seq.map((t) =>
+    t.say
+      .replace(/^[①-⑨]\s*/, '')
+      .replace(/^그대로 ▶ 눌러요$/, '그대로 ▶ 시뮬레이션')
+      .replace(/^▶ 눌러 확인해요$/, '▶ 시뮬레이션'),
+  );
+}
+
 export type QuestPhase = 'do' | 'run' | 'result';
 
 /** The side panel's objective line, by phase: the few words (the quest's `short`, the run, the result). */

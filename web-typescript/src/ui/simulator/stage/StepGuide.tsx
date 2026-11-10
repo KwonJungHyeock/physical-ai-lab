@@ -11,7 +11,6 @@
 import { useEffect, useState } from 'react';
 
 import { guideOf, type Ask } from '@/engine/simulator/cell/guides';
-import { LESSON_QUEST } from '@/engine/simulator/cell/lessons';
 import { missionById, missionsOf } from '@/engine/simulator/cell/missions';
 import type { CellId } from '@/engine/simulator/cell/cells';
 
@@ -171,13 +170,9 @@ interface ResultProps {
   modal?: boolean;
 }
 
-/** After the run: passed or not, the checks, the prediction against what happened, the idea. */
+/** After the run: passed or not, the checks, and [다음 단계 →] (the 예측 비교 and the idea are the PDF's). */
 export function StepResult(p: ResultProps) {
   const m = missionById(p.mission);
-  const g = guideOf(p.mission);
-  // 교실 수업형 (로봇 카페): the idea from the 수업 설계 (lessons.ts) where the step's guide has none.
-  const concept = g?.concept ?? LESSON_QUEST[p.mission]?.concept;
-  const page = LESSON_QUEST[p.mission]?.pages;
   if (!m) return null;
   const steps = missionsOf(p.cell);
   const next = p.passed ? steps[m.n] : undefined;
@@ -207,22 +202,10 @@ export function StepResult(p: ResultProps) {
           ))}
         </ul>
       )}
-      {g?.predict && p.chosen !== undefined && (
-        <p className={css.compare} data-ok={p.chosen === g.predict.answer || undefined}>
-          <em>PREDICT</em>내 예측 {MARK[p.chosen]} → 실제 {MARK[g.predict.answer]} {g.predict.options[g.predict.answer]}
-        </p>
-      )}
-      {concept && (
-        <div className={css.concept}>
-          <em>CONCEPT</em>
-          <b>{concept.term}</b>
-          {/* 입문: what it means and where it is used are the 교안's (the app is for doing it). */}
-          {page && <small>교안 {page[0]}–{page[1]}쪽</small>}
-        </div>
-      )}
+      {/* 예측 비교 · 개념: in the PDF 수업자료 now (지시서 v1 파트 3); their data stay in guides.ts · lessons.ts. */}
       {next && p.onNext && (
         <button type="button" className={css.next} onClick={p.onNext}>
-          다음 퀘스트 ({next.n}) →
+          다음 단계 →
         </button>
       )}
     </div>

@@ -31,7 +31,10 @@ export interface BarItem {
 /** Each item's English tag over its Korean name (Metal Mission HUD). */
 const EN: Record<string, string> = { theme: 'THEME', jog: 'CONTROL', parts: 'TOOL', pose: 'POSE', process: 'TASK', hand: 'HAND', code: 'CODE', ai: 'AI', env: 'SCENE', objects: 'ITEM', camera: 'CAMERA', monitor: 'DATA', zero: 'ZERO' };
 
-export default function LeftRail({ groups, foot, sheetOpen, onCloseSheet, children }: { groups: { name: string; items: BarItem[] }[]; foot?: BarItem[]; sheetOpen: boolean; onCloseSheet(): void; children?: ReactNode }) {
+/** 입문 트랙 (학생 화면): Korean names only, no English tags. */
+const KO: Record<string, string> = { jog: '조작', parts: '도구', pose: '자세', theme: '현장', objects: '물건', monitor: '기록' };
+
+export default function LeftRail({ groups, foot, sheetOpen, onCloseSheet, children, ko }: { groups: { name: string; items: BarItem[] }[]; foot?: BarItem[]; sheetOpen: boolean; onCloseSheet(): void; children?: ReactNode; ko?: boolean }) {
   useEffect(() => {
     if (!sheetOpen) return;
     const key = (e: KeyboardEvent) => {
@@ -43,8 +46,8 @@ export default function LeftRail({ groups, foot, sheetOpen, onCloseSheet, childr
   const button = (e: BarItem) => (
     <button key={e.id} type="button" aria-pressed={!!e.on} disabled={e.disabled} title={e.title} data-hint-for={e.hintFor} onClick={e.onClick}>
       <Icon name={e.icon} size={18} />
-      {EN[e.id] && <em aria-hidden="true">{EN[e.id]}</em>}
-      <span>{e.label}</span>
+      {!ko && EN[e.id] && <em aria-hidden="true">{EN[e.id]}</em>}
+      <span>{(ko && KO[e.id]) || e.label}</span>
       {e.badge && <i>{e.badge}</i>}
     </button>
   );

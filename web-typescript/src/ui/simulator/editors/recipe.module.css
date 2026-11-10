@@ -309,6 +309,10 @@
   grid-template-columns: 24px 1fr auto;
   align-items: start;
 }
+/* 퀘스트 모드: no card number, so no number column. */
+.card[data-step][data-flow] {
+  grid-template-columns: 1fr auto;
+}
 .card[data-step] .n {
   font-size: 16px;
   line-height: 26px;

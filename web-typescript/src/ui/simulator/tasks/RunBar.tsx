@@ -41,6 +41,8 @@ interface Props {
   more?: { label: string; onClick(): void; disabled?: boolean }[];
   /** 입문 퀘스트: ⚡ 결과 바로 — the run computed without drawing (cell/quick.ts); `progress` while it runs. */
   quick?: { onClick(): void; progress: string | null; disabled?: boolean };
+  /** 입문 트랙 (지시서 v1): [다음 단계 →] — never automatic; lit (the one accent) once this step is passed. */
+  next?: { onClick(): void; lit: boolean; disabled?: boolean };
 }
 
 const RATE_NAME: Record<number, string> = { 1: '보통', 2: '2배', 4: '4배' };
@@ -139,6 +141,12 @@ export default function RunBar(p: Props) {
         >
           <Speed rate={p.simRate > 1 ? 4 : 1} />
           <b>×{p.simRate}</b>
+        </button>
+      )}
+      {p.next && (
+        <button type="button" className={css.runNext} data-lit={p.next.lit || undefined} disabled={p.next.disabled || p.busy} onClick={p.next.onClick} aria-label="다음 단계" title="다음 단계로 가요 (선생님 진도에 맞춰 눌러요)">
+          <span>다음 단계</span>
+          <b aria-hidden="true">→</b>
         </button>
       )}
       {p.more && (

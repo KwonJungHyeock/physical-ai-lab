@@ -1,0 +1,119 @@
+/* 위치 줄: big and fixed in the top bar; the one accent (amber) marks the step you are on. */
+.loc {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.bar {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  max-width: 100%;
+  padding: 6px 14px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.bar:hover,
+.bar[aria-expanded='true'] {
+  background: rgba(255, 255, 255, 0.08);
+}
+.bar b {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.bar span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 20px;
+  font-weight: 600;
+  color: #dfe4ea;
+}
+.bar i {
+  font-style: normal;
+  font-size: 15px;
+  color: #a9b1ba;
+}
+
+.drop {
+  position: absolute;
+  z-index: 60;
+  left: 0;
+  top: calc(100% + 8px);
+  width: min(470px, 46vw);
+  max-height: min(70vh, 640px);
+  overflow-y: auto;
+  padding: 8px;
+  border-radius: 16px;
+  background: rgba(24, 28, 35, 0.98);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 20px 50px rgba(0, 0, 0, 0.5);
+}
+.drop h4 {
+  margin: 12px 12px 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #a9b1ba;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 50px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #eef1f4;
+  font: inherit;
+  font-size: 17px;
+  text-align: left;
+  cursor: pointer;
+}
+.row:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+}
+.row:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.row em {
+  flex: none;
+  width: 64px;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 700;
+  color: #a9b1ba;
+}
+.row span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.row small {
+  flex: none;
+  font-size: 14px;
+  color: #a9b1ba;
+}
+.row[data-state='done'] em {
+  color: #4ade80;
+}
+.row[data-state='now'] {
+  background: rgba(240, 162, 59, 0.14);
+  box-shadow: inset 0 0 0 2px #f0a23b;
+}
+.row[data-state='now'] em {
+  color: #f0a23b;
+}

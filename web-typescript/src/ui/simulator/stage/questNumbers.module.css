@@ -1,0 +1,17 @@
+/* 누를 곳 번호: the accent circles of 지금 할 일, on the controls (over panels, under modals). */
+.n {
+  position: fixed;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #f0a23b;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  color: #15181c;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 800;
+  pointer-events: none;
+}

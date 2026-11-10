@@ -68,9 +68,9 @@ export default function DrawCards({ mission, busy, runningLine, onCode, glow, gl
         const k = made.lines.findIndex(([a, b]) => line >= a && line <= b);
         if (k < 0) return '';
         const r = made.rows[k].findIndex(([a, b]) => line >= a && line <= b);
-        return `${CIRCLED[k] ?? k + 1} ${drawCardText(recipe.cards[k]).title}${r < 0 ? '' : ` · ${drawRows(recipe.cards[k])[r].text}`}`;
+        return `${flow ? '' : `${CIRCLED[k] ?? k + 1} `}${drawCardText(recipe.cards[k]).title}${r < 0 ? '' : ` · ${drawRows(recipe.cards[k])[r].text}`}`;
       }),
-    [made, onCode, recipe.cards],
+    [made, onCode, recipe.cards, flow],
   );
   // The order: the customer's phrase (the step's answer writes it) and how many cards.
   const answer = mission ? G_ANSWER[mission] : undefined;
@@ -155,8 +155,9 @@ export default function DrawCards({ mission, busy, runningLine, onCode, glow, gl
     const now = k === running && runningRow >= 0 ? rows[runningRow]?.text : null;
     const off = rows.find((r) => r.toggle && !r.on);
     return (
-      <li key={k} className={css.card} data-step data-on={k === running || undefined} data-glow={(running < 0 && glow?.includes(k + 1)) || undefined} style={{ borderLeftColor: KIND_COLOR[c.k] }}>
-        <span className={css.n}>{CIRCLED[k] ?? k + 1}</span>
+      <li key={k} className={css.card} data-step data-flow={flow || undefined} data-on={k === running || undefined} data-glow={(running < 0 && glow?.includes(k + 1)) || undefined} style={{ borderLeftColor: KIND_COLOR[c.k] }}>
+        {/* 퀘스트 모드: no card number (the numbers on screen are the order to press, 지시서 v1). */}
+        {!flow && <span className={css.n}>{CIRCLED[k] ?? k + 1}</span>}
         <div className={css.body}>
           <span className={css.title}>
             <b>{drawCardText(c).title}</b>

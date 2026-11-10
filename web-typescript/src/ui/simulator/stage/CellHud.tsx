@@ -16,14 +16,12 @@ import { CELL_BY_ID, cellLayout, gridPlace, type CellId } from '@/engine/simulat
 import type { CellAlert } from '@/engine/simulator/cell/faults';
 import { setOut } from '@/engine/simulator/cell/line';
 import { missionById, missionsOf } from '@/engine/simulator/cell/missions';
-import { STEP_GUIDES } from '@/engine/simulator/cell/guides';
 import { CAFE_BOARD, type NarratePlace } from '@/engine/simulator/cell/narrate';
 import { LIFE_STOPS } from '@/engine/simulator/lifeFields';
-import { questShort, type QuestPhase } from '@/engine/simulator/cell/quests';
+import { questShort, questSteps, type QuestPhase } from '@/engine/simulator/cell/quests';
 import { cellChecks } from '@/engine/simulator/cell/run';
 import type { WorldState } from '@/engine/simulator/sim';
 
-import Icon from '../Icon';
 import FieldTicks from '../tasks/FieldTicks';
 import { signalPoint } from './signalPoint';
 import css from './cellHud.module.css';
@@ -119,6 +117,8 @@ export interface CellHudProps {
   quest?: QuestInfo;
   /** 퀘스트 모드: the quest card stands in the side panel, not here. */
   questOut?: boolean;
+  /** 지시서 v1: the SIGNAL toggle and lamps folded into 자세히 보기 (a quest's default view). */
+  noLamps?: boolean;
 }
 
 /** 입문 퀘스트 모드: the quest card's phase, the checklist as the last run ended (null: not run yet), what to do now, the places' list. */
@@ -246,82 +246,51 @@ export function QuestCard(p: QuestCardProps) {
 
 
 
-/** The four moves of every quest, as the lesson plan names them (manuals/course/life-track-teacher.md). */
-const PHASES = ['할 일', '예측', '관찰', '개념'] as const;
-
 /**
  * 입문 퀘스트 모드, the top of the side panel, as a game's quest tracker in the console's metal
  * language (a plate, tracked tags, grooves, white for what is lit): the quest's number and name, the
  * place's quests as nodes on a track, the four moves as a segment gauge, and the goal in a few words
  * in a groove (the full sentence and the hint behind ?). What the quest changes stands right under it.
  */
+/**
+ * 지금 할 일 (입문 퀘스트, 지시서 v1 파트 3): one line — what to press, numbered in the order to press it
+ * (the same numbers sit on those controls, QuestNumbers) — and, after a run, 결과 확인. Where you are
+ * (차시 · 단계 · 교안 쪽) is the top bar's 위치 줄; the 예측 and 개념 are the PDF's (their data kept).
+ */
 function PanelQuest(p: QuestCardProps) {
-  const [hint, setHint] = useState(false);
-  const steps = missionsOf(p.cell);
   const m = p.mission ? missionById(p.mission) : null;
-  const built = CELL_BY_ID[p.cell].built;
   const q = p.quest;
-  const open = (i: number) => built && ((q?.isOpen ?? p.gate)?.(steps[i].id) ?? (p.allOpen || i === 0 || !!p.passed[steps[i - 1].id]));
-  const lockWhy = q?.isOpen ? '선생님이 이 차시를 열면 열려요' : '앞 퀘스트를 통과하면 열려요';
-  const now = !q ? -1 : q.asking ? 1 : q.watching ? 2 : q.phase === 'do' ? 0 : q.phase === 'run' ? 2 : 3;
-  const two = (n: number) => String(n).padStart(2, '0');
+  if (!m || !q) return null;
+  const steps = questSteps(m.id);
   return (
-    <nav className={css.qPanel} aria-label="퀘스트">
-      <header className={css.qHead}>
-        <em>QUEST</em>
-        <b className={css.qNum}>
-          {m ? two(m.n) : '--'}
-          <small>/{two(steps.length)}</small>
-        </b>
-        <span className={css.qName}>{m ? m.title.replace(/^[^:]+:\s*/, '') : '자유 연습'}</span>
-        {q?.page && <span className={css.qPage}>{q.page}</span>}
-        {q && (
-          <button type="button" className={css.qListKey} onClick={q.onList} disabled={p.busy} aria-label="현장 · 퀘스트 목록" title="현장 · 퀘스트 목록">
-            <Icon name="grid" size={14} />
-          </button>
-        )}
-      </header>
-      <ol className={css.qTrack}>
-        {steps.map((s, i) => (
-          <li key={s.id} data-cur={s.id === p.mission || undefined} data-done={p.passed[s.id] || undefined} data-lock={!open(i) || undefined}>
-            <button type="button" disabled={p.busy || !open(i)} onClick={() => p.onMission(s.id)} title={open(i) ? `퀘스트 ${s.n} ${s.title}` : lockWhy} aria-pressed={s.id === p.mission} aria-label={`퀘스트 ${s.n} ${s.title}`}>
-              {p.passed[s.id] && s.id !== p.mission ? '✓' : s.n}
-            </button>
-          </li>
-        ))}
-      </ol>
-      {m && q && (
-        <>
-          {/* The four moves only where the quest has them (a 예측 or things to observe): not the café's 2–8. */}
-          {(STEP_GUIDES[m.id]?.predict || (STEP_GUIDES[m.id]?.observe.length ?? 0) > 0) && (
-          <ol className={css.qGauge} aria-label="단계">
-            {PHASES.map((ph, k) => (
-              <li key={ph} data-on={k === now || undefined} data-done={k < now || undefined}>
-                <i />
-                {ph}
+    <nav className={css.qPanel} aria-label="지금 할 일" data-v1="">
+      <b className={css.qLab}>지금 할 일</b>
+      {q.watching ? (
+        <p className={css.qTodo}>{q.watching}</p>
+      ) : q.phase === 'run' ? (
+        <p className={css.qTodo}>{questShort('run', m.id, null)}</p>
+      ) : (
+        <p className={css.qTodo} data-dim={q.phase === 'result' || undefined}>
+          {steps.map((t, k) => (
+            <span key={t} className={css.qStep}>
+              <i>{k + 1}</i>
+              {t}
+            </span>
+          ))}
+        </p>
+      )}
+      {q.phase === 'result' && q.checks && (
+        <div className={css.qSeen}>
+          <b className={css.qLab}>결과 확인</b>
+          <ul>
+            {q.checks.map((c) => (
+              <li key={c.label} data-ok={c.ok || undefined}>
+                <i aria-hidden="true">{c.ok ? '✓' : '✗'}</i>
+                {c.label}
               </li>
             ))}
-          </ol>
-          )}
-          <div className={css.qGoal} data-phase={q.watching ? 'run' : q.phase}>
-            <i aria-hidden="true" />
-            <p>{q.watching ?? questShort(q.phase, m.id, q.phase === 'result' ? !!q.checks?.every((c) => c.ok) : null)}</p>
-            <button type="button" aria-expanded={hint} aria-label={hint ? '자세한 설명 접기' : '자세한 설명 · 힌트'} onClick={() => setHint((h) => !h)}>
-              ?
-            </button>
-            {hint && (
-              <small>
-                {q.now}
-                {q.phase === 'do' && (
-                  <>
-                    <br />
-                    <b>힌트</b> {m.hint}
-                  </>
-                )}
-              </small>
-            )}
-          </div>
-        </>
+          </ul>
+        </div>
       )}
     </nav>
   );
@@ -543,7 +512,7 @@ export default function CellHud(p: CellHudProps) {
         </section>
       )}
 
-      {compact && snap && !(p.cell === 'cafe' && m?.mode && m.mode !== 'make') && (
+      {compact && snap && !p.noLamps && !(p.cell === 'cafe' && m?.mode && m.mode !== 'make') && (
         <button type="button" className={css.lampsToggle} aria-expanded={lampsOpen} onClick={() => setLampsOpen((o) => !o)}>
           <em>SIGNAL</em> 신호 {lampsOpen ? '접기' : '보기'}
           <span aria-hidden="true">

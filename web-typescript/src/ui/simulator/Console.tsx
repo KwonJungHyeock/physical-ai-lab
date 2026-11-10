@@ -147,7 +147,9 @@ import PyPanel from './editors/PyPanel';
 import RunBar from './tasks/RunBar';
 import { quickRun } from '@/engine/simulator/cell/quick';
 import { LessonCheck, LessonPlate, Projector, RecordPanel, RecordPill, TeacherKey, questPages } from './tasks/LessonKit';
-import { lessonOfQuest, lessonsOf, siteOf } from '@/engine/simulator/cell/lessons';
+import { LESSON_QUEST, checksOf, lessonOfQuest, lessonsOf, siteOf } from '@/engine/simulator/cell/lessons';
+import LocationBar, { type LocLesson } from './stage/LocationBar';
+import QuestNumbers from './stage/QuestNumbers';
 import { RECORD_KEY, TEACHER_KEY, answered as recAnswered, emptyRecord, loadRecord, loadTeacher, opened as recOpened, passed as recPassed, questOpen, teacherFromQuery, tried as recTried, type LessonRecord, type TeacherSet } from '@/engine/simulator/cell/lessonRecord';
 import { usePcApp } from './connect/usePcApp';
 import { createLive } from './liveStore';
@@ -630,6 +632,10 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const [lessonRec, setLessonRec] = useState<LessonRecord>(() => emptyRecord());
   const [teacherSet, setTeacherSet] = useState<TeacherSet>({ plan: 4, site: 'cafe', lesson: 0, allOpen: false });
   const [lessonUi, setLessonUi] = useState<null | 'record' | 'teacher' | 'projector' | 'check'>(null);
+  /** The 차시 whose 확인 문제 are open (위치 줄's list can open another 차시's); null: the one now. */
+  const [checkN, setCheckN] = useState<number | null>(null);
+  /** 자세히 보기 (지시서 v1 파트 2): the signals, the progress strip and the 차시 card, folded by default in a quest. */
+  const [detail, setDetail] = useState(false);
   const lessonRecRef = useRef(lessonRec);
   const changeRec = useCallback((f: (r: LessonRecord) => LessonRecord) => {
     const next = f(lessonRecRef.current);
@@ -2114,7 +2120,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const lessonNow = lifeQuest ? lessons[lessonOfQuest(teacherSet.plan, lifeQuest) - 1] : undefined;
   const questIsOpen = useCallback((id: string) => (teacherSet.lesson === 0 && !teacherSet.allOpen ? null : questOpen(teacherSet, lessonRecRef.current, id)), [teacherSet]);
   // The quest's controls in turn (quests.ts QUEST_LEAD), lit while there is something to do.
-  const questLead = useMemo<SpotStep | null>(() => (lifeStep && QUEST_LEAD[lifeStep.id] ? { target: [], seq: QUEST_LEAD[lifeStep.id] } : null), [lifeStep]);
+  const leadSels = useMemo(() => (lifeStep ? (QUEST_LEAD[lifeStep.id] ?? []).map((t) => t.sel) : []), [lifeStep]);
+  const questLead = useMemo<SpotStep | null>(() => (lifeStep && QUEST_LEAD[lifeStep.id] ? { target: [], seq: QUEST_LEAD[lifeStep.id].map((t) => ({ ...t, say: t.say.replace(/^[①-⑨]\s*/, '') })) } : null), [lifeStep]);
   const questPhase: QuestPhase | null =
     lifeStep && cellAt ? (busy ? 'run' : cellResult !== null && lastChecks ? 'result' : 'do') : null;
   // The card to change lights while there is something to do (not over a passed result).
@@ -4195,6 +4202,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     if (!questOn && track && ms && guideOf(ms) && loadPredictions()[ms] === undefined && !skipped[ms] && !busy) return setAsking(true);
     void simulate();
   };
+  // [다음 단계 →] (입문 트랙): the next step of this place in order; the student presses it (no automatic move).
+  const nextStep = track && cellAt && lifeStep && lifeQuest ? (() => { const nx = missionsOf(cellAt.cell)[lifeStep.n]; return nx ? { cell: cellAt.cell, id: nx.id } : null; })() : null;
   const runBar = (
     <RunBar
       passed={gateOpen}
@@ -4212,11 +4221,46 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       onStop={stop}
       more={questOn && cellAt && lifeStep ? [{ label: '자유 연습 (채점 없이)', onClick: () => openCell(cellAt.cell, null), disabled: busy }] : undefined}
       quick={quickOn ? { onClick: () => void runQuick(), progress: quickProg, disabled: busy || !loaded } : undefined}
+      next={nextStep ? { onClick: () => openCell(nextStep.cell, nextStep.id), lit: !!(lifeQuest && lessonRec.quests[lifeQuest]?.passed), disabled: questIsOpen(nextStep.id) === false } : undefined}
     />
   );
 
+  // 위치 줄 (입문 트랙): 차시 · 단계 · 교안 쪽 of the step open now, and the list to go to another (지시서 v1 파트 1 · 4).
+  const locLessons: LocLesson[] = lifeQuest
+    ? lessons.map((l) => ({
+        n: l.n,
+        steps: l.quests.map((q) => ({
+          id: q,
+          n: missionById(q)?.n ?? 0,
+          title: missionById(q)?.title ?? q,
+          pages: LESSON_QUEST[q].pages,
+          state: q === lifeQuest ? ('now' as const) : lessonRec.quests[q]?.passed ? ('done' as const) : ('todo' as const),
+          locked: questIsOpen(q) === false,
+        })),
+        checks: (() => {
+          const asks = checksOf(teacherSet.plan, l.n, l.site);
+          return { got: asks.filter((a) => lessonRec.checks[a.key]).length, of: asks.length };
+        })(),
+      }))
+    : [];
+  const locNow = locLessons.flatMap((l) => l.steps).find((x) => x.state === 'now');
+  const locBar =
+    track && cellAt && lifeQuest && lessonNow && locNow ? (
+      <LocationBar
+        lesson={lessonNow.n}
+        step={locNow}
+        lessons={locLessons}
+        onGo={(id) => openCell(cellAt.cell, id)}
+        onChecks={(n) => {
+          setCheckN(n);
+          setLessonUi('check');
+        }}
+      />
+    ) : null;
+
   const controlPanel = (
     <ControlPanel
+      ko={!!track}
       startFrame={track && cellAt?.mission && missionById(cellAt.mission)?.target ? 'base' : undefined}
       moveOnly={!!(track && cellAt?.mission && missionById(cellAt.mission)?.target)}
       live={live}
@@ -4727,7 +4771,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       />
       {/* 교실 수업형 (입문 · 로봇 카페): 확인 문제 · 학습 기록 · 교사 열쇠 · 수업 화면. */}
       {track && lessonUi === 'check' && lessonNow && (
-        <LessonCheck rec={lessonRec} site={lessonNow.site} n={lessonNow.n} onAnswer={(k, c) => changeRec((r) => (r.checks[k] ? r : recAnswered(r, k, c, Date.now())))} onClose={() => setLessonUi(null)} />
+        <LessonCheck bare rec={lessonRec} site={lessonNow.site} n={checkN ?? lessonNow.n} onAnswer={(k, c) => changeRec((r) => (r.checks[k] ? r : recAnswered(r, k, c, Date.now())))} onClose={() => { setLessonUi(null); setCheckN(null); }} />
       )}
       {track && lessonUi === 'record' && (
         <RecordPanel rec={lessonRec} site={lifeSite} onWho={(name, no) => changeRec((r) => (r.name === name && r.no === no ? r : { ...r, name, no, at: Date.now() }))} onClose={() => setLessonUi(null)} />
@@ -4927,7 +4971,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                     : undefined
                 }
               />
-            ) : null
+            ) : locBar
           }
           settings={(close) => (
             <>
@@ -5289,10 +5333,11 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   }}
                 />}
               {/* 입문 현장의 공정 띠: the order (or the game) and what the step is about, over the scene. */}
+              {loaded && view === 'sim' && track && questOn && lifeStep && questPhase === 'do' && !moment && !lessonUi && QUEST_LEAD[lifeStep.id] && <QuestNumbers targets={leadSels} />}
               {loaded && view === 'sim' && waiting && !moment && <WaitSkip what={waiting.what} seconds={waiting.s} off={waitOff} onToggle={toggleWait} />}
-              {loaded && view === 'sim' && track && cellAt?.cell === 'cafe' && (cafeMode ? cafeMode === 'make' && busy : true) && <CafeStrip world={world} />}
-              {loaded && view === 'sim' && track && cellAt?.cell === 'draw' && (!questOn || busy) && <DrawStrip world={world} />}
-              {loaded && view === 'sim' && track && cellAt?.cell === 'board' && (!questOn || busy) && <BoardStrip world={world} />}
+              {loaded && view === 'sim' && track && cellAt?.cell === 'cafe' && (!questOn || detail) && (cafeMode ? cafeMode === 'make' && busy : true) && <CafeStrip world={world} />}
+              {loaded && view === 'sim' && track && cellAt?.cell === 'draw' && (!questOn || (busy && detail)) && <DrawStrip world={world} />}
+              {loaded && view === 'sim' && track && cellAt?.cell === 'board' && (!questOn || (busy && detail)) && <BoardStrip world={world} />}
               {/* 퀘스트 모드: the result over the scene (the side panel keeps to 제어 · 실습). */}
               {loaded && view === 'sim' && questOn && questPhase === 'result' && lifeStep && cellAt && lastChecks && cellResult !== null && (
                 <StepResult
@@ -5386,6 +5431,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   }}
                   guides={!!track}
                   questOut={questOn && !!lifeStep}
+                  noLamps={questOn && !!lifeStep && !detail}
                   quest={
                     track && lifeStep && questPhase
                       ? { phase: questPhase, checks: questPhase === 'result' ? lastChecks : null, now: questNow(questPhase, lifeStep.id, cellResult), onList: () => setRoadmapOpen(true) }
@@ -5426,7 +5472,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
               {loaded && view === 'sim' && !railOpen && !cellAt && <HudGauges speed={jogSpeed} monitor={monitor} dock={dockShown ? 'open' : 'closed'} />}
               {/* 입문 퀘스트: no left menu (the quest card's ⊞ goes to the places and quests); free practice has it. */}
               {loaded && view === 'sim' && !(questOn && railOpen === null) && (
-                <LeftRail groups={shownGroups} foot={inCafe ? undefined : barFoot} sheetOpen={railOpen !== null} onCloseSheet={() => setRailOpen(null)}>
+                <LeftRail ko={!!track} groups={shownGroups} foot={inCafe ? undefined : barFoot} sheetOpen={railOpen !== null} onCloseSheet={() => setRailOpen(null)}>
                   {(railOpen === 'env' || railOpen === 'objects') && (
                     <DeskPanel
                       key={railOpen}
@@ -5829,8 +5875,15 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                         )}
                         {/* 입문 퀘스트: ▶ right under what the quest changes (to do → press → ▶ in one look). */}
                         {questInline && runBar}
+                        {/* 자세히 보기: folded by default (지시서 v1 파트 2) — the signals, the progress strip, the 차시 card. */}
+                        {questOn && lifeStep && (
+                          <button type="button" className={css.moreKey} aria-expanded={detail} onClick={() => setDetail((d) => !d)}>
+                            <b>자세히 보기 {detail ? '▾' : '▸'}</b>
+                            <span>신호 · 진행 표시 · 차시 정보</span>
+                          </button>
+                        )}
                         {/* 교실 수업형: the 차시 open now — 오늘 배울 것, its 교안 pages, 확인 문제, 학습 기록. */}
-                        {lessonNow && <LessonPlate lesson={lessonNow} total={lessons.length} rec={lessonRec} onCheck={() => setLessonUi('check')} onRecord={() => setLessonUi('record')} />}
+                        {lessonNow && (!questOn || !lifeStep || detail) && <LessonPlate lesson={lessonNow} total={lessons.length} rec={lessonRec} onCheck={() => setLessonUi('check')} onRecord={() => setLessonUi('record')} />}
                       </div>
                     ) : cellAt && cellTermOn ? (
                       <div className={css.pane}>

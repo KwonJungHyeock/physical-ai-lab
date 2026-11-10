@@ -90,7 +90,8 @@ export function LessonPlate({ lesson, total, rec, onCheck, onRecord }: { lesson:
 
 /* --- 확인 문제 ---------------------------------------------------------------------------- */
 
-export function LessonCheck({ rec, site, n, onAnswer, onClose }: { rec: LessonRecord; site: SiteId; n: number; onAnswer(key: string, chosen: number): void; onClose(): void }) {
+/** `bare` (입문 트랙, 지시서 v1): the question is read in the PDF 수업자료; here only its number and ① ② ③ to answer. */
+export function LessonCheck({ rec, site, n, onAnswer, onClose, bare }: { rec: LessonRecord; site: SiteId; n: number; onAnswer(key: string, chosen: number): void; onClose(): void; bare?: boolean }) {
   const asks = useMemo(() => checksOf(rec.plan, n, site), [rec.plan, n, site]);
   const first = asks.findIndex((a) => !rec.checks[a.key]);
   const [at, setAt] = useState(first < 0 ? asks.length : first);
@@ -118,19 +119,28 @@ export function LessonCheck({ rec, site, n, onAnswer, onClose }: { rec: LessonRe
         {a ? (
           <div className={css.ask}>
             <p className={css.q}>
-              <span>{at + 1}.</span> {a.q}
+              <span>{at + 1}.</span> {bare ? `교안의 ${at + 1}번 문제를 읽고 답을 골라요` : a.q}
             </p>
-            <div className={css.opts}>
+            <div className={css.opts} data-bare={bare || undefined}>
               {a.options.map((o, k) => (
-                <button key={o} type="button" disabled={!!mine} data-pick={mine?.chosen === k || undefined} data-right={mine && k === a.answer ? '' : undefined} onClick={() => onAnswer(a.key, k)}>
+                <button
+                  key={o}
+                  type="button"
+                  disabled={!!mine}
+                  data-pick={mine?.chosen === k || undefined}
+                  data-right={mine && k === a.answer ? '' : undefined}
+                  onClick={() => onAnswer(a.key, k)}
+                  aria-label={bare ? `${k + 1}번` : undefined}
+                >
                   <i>{MARK[k]}</i>
-                  {o}
+                  {!bare && o}
                 </button>
               ))}
             </div>
             {mine && (
               <p className={css.why} data-ok={mine.ok || undefined}>
-                <b>{mine.ok ? '맞았어요' : '아니에요'}</b> 정답 {MARK[a.answer]} · {a.why}
+                <b>{mine.ok ? '맞았어요' : '아니에요'}</b> 정답 {MARK[a.answer]}
+                {!bare && ` · ${a.why}`}
               </p>
             )}
             <div className={css.row}>
@@ -152,9 +162,9 @@ export function LessonCheck({ rec, site, n, onAnswer, onClose }: { rec: LessonRe
               {asks.map((x, i) => (
                 <li key={x.key} data-ok={rec.checks[x.key]?.ok || undefined}>
                   <i>{rec.checks[x.key]?.ok ? '✓' : '✗'}</i>
-                  {i + 1}. {x.q}{' '}
+                  {i + 1}. {bare ? `${i + 1}번 문제` : x.q}{' '}
                   <small>
-                    정답 {MARK[x.answer]} {x.options[x.answer]}
+                    정답 {MARK[x.answer]} {!bare && x.options[x.answer]}
                   </small>
                 </li>
               ))}

@@ -48,6 +48,8 @@ interface Props {
   startFrame?: Frame;
   /** Only the tip's moves (입문 카페's jog step): no 손 방향 cards, no tip line. */
   moveOnly?: boolean;
+  /** 입문 트랙: Korean only (no English tags over the mode buttons). */
+  ko?: boolean;
   /** Tool tip position for given angles, mm. */
   tipOf(angles: readonly number[]): ToolNow | null;
   busy: boolean;
@@ -441,7 +443,7 @@ export default function ControlPanel(p: Props) {
     >
       <div className={css.modes} role="group" aria-label="움직이는 방법">
         <button type="button" aria-pressed={frame === 'joint'} onClick={() => chooseFrame('joint')} title="관절: 모터(J1 ~ J6)를 하나씩 돌려요">
-          <em aria-hidden="true">JOINT</em>
+          {!p.ko && <em aria-hidden="true">JOINT</em>}
           <b>관절</b>
           <small>모터 하나씩 돌리기</small>
         </button>
@@ -454,7 +456,7 @@ export default function ControlPanel(p: Props) {
           }}
           title="좌표: 손끝을 앞뒤 · 좌우 · 위아래로 곧게 옮겨요"
         >
-          <em aria-hidden="true">COORD</em>
+          {!p.ko && <em aria-hidden="true">COORD</em>}
           <b>좌표</b>
           <small>손끝을 곧게 옮기기</small>
         </button>

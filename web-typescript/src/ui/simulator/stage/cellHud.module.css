@@ -1359,3 +1359,78 @@
   fill: rgba(240, 162, 59, 0.25);
   stroke: #f0a23b;
 }
+
+/* 지금 할 일 (지시서 v1 파트 3): one line of numbered steps, then 결과 확인; space and a light face, no inner boxes. */
+.qPanel[data-v1] {
+  padding: 16px 18px 18px;
+}
+.qLab {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--hud-sub, #aab1b9);
+}
+.qTodo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.45;
+  color: #fff;
+  word-break: keep-all;
+}
+.qTodo[data-dim] {
+  color: var(--hud-sub, #aab1b9);
+}
+.qStep {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+.qStep i {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #f0a23b;
+  color: #15181c;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 800;
+}
+.qTodo[data-dim] .qStep i {
+  background: #3a414b;
+  color: #dfe4ea;
+}
+.qSeen {
+  margin-top: 14px;
+}
+.qSeen ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.qSeen li {
+  display: flex;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: #eef1f4;
+}
+.qSeen li i {
+  flex: none;
+  font-style: normal;
+  font-weight: 800;
+  color: #f87171;
+}
+.qSeen li[data-ok] i {
+  color: #4ade80;
+}
