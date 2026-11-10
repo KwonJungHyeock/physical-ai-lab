@@ -80,7 +80,7 @@
 | [`45-track-life-board-game-robot.md`](reports/education/45-track-life-board-game-robot.md) | 보고 #45 — 입문 트랙 ① 생활 로봇 · 보드게임 로봇(오목) 시뮬레이터 설계와 근거: 체스 로봇 사고 · 연구 사례 조사, 9 × 9 판 · 차례 신호 · 손 인터록, 4단계(한 수 · 격자 좌표 · 차례 기다리기 · 판단 규칙)와 규칙별 대국 결과 · 참고 자료 |
 | [`46-track-life-classroom.md`](reports/education/46-track-life-classroom.md) | 보고 #46 — 입문 로봇 카페를 교실 수업형으로: 한 원본(수업 설계) · 차시 구성 4 · 6 · 8 · 교안 쪽 표시 · 확인 문제 · 학습 기록(LMS, 파일 방식) · 교사 열쇠 · 교안 · 학습지 PDF |
 | [`47-track-life-basic-curriculum.md`](reports/education/47-track-life-basic-curriculum.md) | 보고 #47 — 입문 기초편 커리큘럼 확정: 6챕터 · 서브챕터 18개(번호 = 교안 장 · 절), 세 현장 같은 무게, 로봇 조작 기초, 챕터마다 수행평가(상 · 중 · 하), 10차시 · 개발 순서 |
-| [`48-track-life-basic-calligraphy.md`](reports/education/48-track-life-basic-calligraphy.md) | 보고 #48 — 가오픈 커리큘럼 확정(#47 대체): myCobot 기초조작 + 캘리그라피 12차시 · 6챕터(이론 · 준비 · 관절 제어 · 좌표와 궤적선 · 캘리그라피 시뮬레이션 → 실물 · 학습 기록과 후기 PDF), 챕터마다 O·X + 미션 수행평가 |
+| [`48-track-life-basic-calligraphy.md`](reports/education/48-track-life-basic-calligraphy.md) | 보고 #48 — 가오픈 커리큘럼 확정(#47 대체): myCobot 280 협동로봇 1단계 — 기초 조작과 로봇 글씨 쓰기, 12차시 · 6챕터(이론 · 준비 · 관절 제어 · 좌표와 궤적선 · 로봇 글씨 쓰기 시뮬레이션 → 실물 · 학습 기록과 후기 PDF), 챕터마다 O·X + 미션 수행평가 |
 
 ### [`system/`](reports/system/) — 시스템 구성
 | 문서 | 내용 |
