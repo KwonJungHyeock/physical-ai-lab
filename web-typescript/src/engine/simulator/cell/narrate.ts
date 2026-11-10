@@ -11,7 +11,7 @@
  * CellHud.tsx lights the machine on the 신호 관제판, tests/simulator/cell-f-check.mts reads the lines.
  */
 
-import { CAFE_AT } from './cells';
+import { CAFE_AT, CAFE_GROW } from './cells';
 import type { CellRun } from './run';
 
 /** The step narrated: the café's 미리보기. */
@@ -31,13 +31,15 @@ export interface Narration {
 }
 
 const A = CAFE_AT;
+const G = CAFE_GROW;
 /** Each place's bubble point (robot frame, mm), over the equipment. */
 export const NARRATE_AT: Record<NarratePlace, [number, number, number]> = {
   키오스크: [372, -236, 150],
-  '컵 디스펜서': [A.cup.x, A.cup.y + 40, 130],
-  제빙기: [A.ice.x + 60, A.ice.y, 120],
-  '커피 머신': [A.coffee.x + 60, A.coffee.y, 115],
-  정수기: [A.water.x + 55, A.water.y, 110],
+  // The machines are grown CAFE_GROW × about their cup's spot (cells.ts): so are these points.
+  '컵 디스펜서': [A.cup.x, A.cup.y + 40 * G, 130 * G],
+  제빙기: [A.ice.x + 60 * G, A.ice.y, 120 * G],
+  '커피 머신': [A.coffee.x + 60 * G, A.coffee.y, 115 * G],
+  정수기: [A.water.x + 55 * G, A.water.y, 110 * G],
   픽업대: [98, -196, 90],
 };
 

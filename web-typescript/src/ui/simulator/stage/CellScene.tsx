@@ -149,7 +149,7 @@ export const CELL_VIEW: Record<CellId, { min: readonly [number, number, number];
   // arm's front (X+), left its left (Y+), so the 제어 keys go the way the picture does, and the machines
   // read left to right in the drink's order (컵 → 얼음 → 커피 → 물 → 픽업).
   // 교육용 구도: steep and tight on the counter — stations ① – ⑤, the arm, and the order tickets' row just in front (y −250).
-  cafe: { min: [-60, -275, -20], max: [320, 250, 160], home: [-0.4, 1, 0] },
+  cafe: { min: [-60, -275, -20], max: [350, 275, 200], home: [-0.4, 1, 0] },
   draw: { min: [-60, -150, -10], max: [330, 170, 230], home: [-0.28, 1, 0] },
   board: { min: [-60, -150, -10], max: [320, 180, 230], home: [-0.28, 1, 0] },
 };

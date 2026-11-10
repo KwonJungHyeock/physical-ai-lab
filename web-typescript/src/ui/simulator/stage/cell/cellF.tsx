@@ -17,11 +17,11 @@
 
 import { Html } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import { useRef, useState, type RefObject } from 'react';
+import { useRef, useState, type ReactNode, type RefObject } from 'react';
 import type { Group, Mesh, MeshPhysicalMaterial, MeshStandardMaterial } from 'three';
 
 import { CUP_ML, CUP_SIZE, RECIPE, drinkMl } from '@/engine/simulator/cell/cafe';
-import { CAFE_AT, cellLayout } from '@/engine/simulator/cell/cells';
+import { CAFE_AT, CAFE_GROW as GROW, cellLayout } from '@/engine/simulator/cell/cells';
 import type { WorldState } from '@/engine/simulator/sim';
 
 
@@ -39,6 +39,15 @@ const Inox = ({ rep = [1, 1] as [number, number], tone = '#dfe3e7' }) => <meshSt
 const Chrome = () => <meshStandardMaterial color="#eef1f4" metalness={1} roughness={0.12} />;
 const Gloss = ({ color }: { color: string }) => <meshPhysicalMaterial color={color} roughness={0.32} clearcoat={0.7} clearcoatRoughness={0.25} />;
 const Smoked = ({ opacity = 0.55 }) => <meshPhysicalMaterial color="#1b1f25" transparent opacity={opacity} roughness={0.05} metalness={0.2} />;
+
+/** A machine GROW × about the spot its cup stands on (x, y on the counter top): that spot stays where the arm goes. */
+function Grow({ at, children }: { at: { x: number; y: number }; children: ReactNode }) {
+  return (
+    <group position={[m(at.x), m(at.y), 0]} scale={GROW}>
+      <group position={[-m(at.x), -m(at.y), 0]}>{children}</group>
+    </group>
+  );
+}
 
 /** Eased motion: `cur` follows `to` with a time constant `tau` (s), frame-rate independent. */
 const damp = (cur: number, to: number, dt: number, tau: number) => cur + (to - cur) * (1 - Math.exp(-Math.min(dt, 0.1) / tau));
@@ -75,47 +84,27 @@ function useGrille(key: string, slots = 9) {
 /** The counter: a wood-grain top with a stainless front band, a dark body with a kick plate, mats under the stations. */
 function Counter() {
   const grainTex = wood([2, 1]);
+  // Deeper to the back (+x) and the left (+y) than at first: it holds the machines grown 1.3 × (Grow).
   return (
     <group>
-      <RBox at={[110, 5, -6]} size={[440, 500, 12]} radius={3}>
+      <RBox at={[130, 20, -6]} size={[480, 530, 12]} radius={3}>
         <meshPhysicalMaterial color={WOOD} map={grainTex} roughness={0.5} clearcoat={0.35} clearcoatRoughness={0.4} />
       </RBox>
-      {/* Stainless edge band along the front (the customer's side) and the right. */}
-      <RBox at={[110, -245.5, -6]} size={[442, 3, 13]} radius={1}>
+      {/* Stainless edge band along the front (the customer's side). */}
+      <RBox at={[130, -245.5, -6]} size={[482, 3, 13]} radius={1}>
         <Inox rep={[4, 1]} />
       </RBox>
-      <RBox at={[110, 5, (F - 12) / 2]} size={[428, 488, -F - 12]} radius={2}>
+      <RBox at={[130, 20, (F - 12) / 2]} size={[468, 518, -F - 12]} radius={2}>
         <Skin color={BODY} />
       </RBox>
       {/* Vertical slats on the front of the body (as café counters are clad). */}
-      {Array.from({ length: 21 }, (_, k) => (
+      {Array.from({ length: 23 }, (_, k) => (
         <RBox key={k} at={[-96 + k * 20.5, -239.5, (F - 12) / 2 + 6]} size={[9, 3, -F - 32]} radius={1.2}>
           <meshStandardMaterial color="#3a3f47" roughness={0.6} />
         </RBox>
       ))}
-      <RBox at={[110, -239, F + 6]} size={[428, 4, 12]} radius={1}>
+      <RBox at={[130, -239, F + 6]} size={[468, 4, 12]} radius={1}>
         <Inox rep={[6, 1]} tone="#c9ced3" />
-      </RBox>
-      {/* Syrup bottles with pumps in the back corner, out of the arm's reach (decoration: 입문 drinks have no syrup). */}
-      {['#c47a2c', '#7a3b1f', '#e8d8b0'].map((c, k) => (
-        <group key={c}>
-          <Turned at={[300, 175 + k * 22, 0]} profile={[[0, 0], [8, 0], [8, 34], [5, 40], [0, 40]]}>
-            <meshPhysicalMaterial color={c} transparent opacity={0.85} roughness={0.08} clearcoat={1} />
-          </Turned>
-          <Turned at={[300, 175 + k * 22, 40]} profile={[[0, 0], [3, 0], [3, 10], [0, 10]]}>
-            <meshStandardMaterial color="#1f2329" />
-          </Turned>
-          <RBox at={[296, 175 + k * 22, 51]} size={[10, 2.4, 2.4]} radius={1}>
-            <meshStandardMaterial color="#1f2329" />
-          </RBox>
-        </group>
-      ))}
-      {/* A small knock box and a towel by the machine (a café's bench). */}
-      <RBox at={[300, 95, 6]} size={[18, 18, 12]} radius={3}>
-        <Gloss color="#202429" />
-      </RBox>
-      <RBox at={[300, -150, 1.5]} size={[34, 22, 3]} radius={1.5}>
-        <meshStandardMaterial color="#e9e4da" roughness={0.95} />
       </RBox>
     </group>
   );
@@ -592,10 +581,10 @@ function ShopFloor() {
  * picture and the map and the 교안 say the same thing.
  */
 const STATION_NUMS: { n: string; name: string; at: [number, number, number] }[] = [
-  { n: '①', name: '컵', at: [CAFE_AT.cup.x, CAFE_AT.cup.y, 150] },
-  { n: '②', name: '얼음', at: [CAFE_AT.ice.x, CAFE_AT.ice.y, 165] },
-  { n: '③', name: '커피', at: [CAFE_AT.coffee.x, CAFE_AT.coffee.y, 175] },
-  { n: '④', name: '물', at: [CAFE_AT.water.x, CAFE_AT.water.y, 150] },
+  { n: '①', name: '컵', at: [CAFE_AT.cup.x, CAFE_AT.cup.y, 150 * GROW] },
+  { n: '②', name: '얼음', at: [CAFE_AT.ice.x, CAFE_AT.ice.y, 165 * GROW] },
+  { n: '③', name: '커피', at: [CAFE_AT.coffee.x, CAFE_AT.coffee.y, 175 * GROW] },
+  { n: '④', name: '물', at: [CAFE_AT.water.x, CAFE_AT.water.y, 150 * GROW] },
   { n: '⑤', name: '픽업', at: [98, -176, 120] },
 ];
 function StationNums() {
@@ -711,22 +700,31 @@ export function CafeCell({ world, onHover }: { world: RefObject<WorldState | nul
       <Counter />
       <StationNums />
       {/* Soft contact shadows: the equipment on the counter, the people and the kiosk on the floor. */}
-      <Contact at={[95, 222]} w={52} d={46} />
-      <Contact at={[248, 116]} w={53} d={52} />
-      <Contact at={[279, 16]} w={66} d={77} />
-      <Contact at={[244, -85]} w={44} d={54} />
-      <Tagged name="컵 디스펜서" onHover={onHover}>
-        <CupDispenser />
-      </Tagged>
-      <Tagged name="제빙기" onHover={onHover}>
-        <IceMaker world={world} spill={iceSpill} />
-      </Tagged>
-      <Tagged name="커피 머신" onHover={onHover}>
-        <CoffeeMachine world={world} spill={coffeeSpill} />
-      </Tagged>
-      <Tagged name="정수기" onHover={onHover}>
-        <WaterDispenser world={world} spill={waterSpill} />
-      </Tagged>
+      {/* The machines 1.3 × (GROW) about where the cup stands at each: the arm's places stay, the machines grow back and up. */}
+      <Grow at={CAFE_AT.cup}>
+        <Contact at={[95, 222]} w={52} d={46} />
+        <Tagged name="컵 디스펜서" onHover={onHover}>
+          <CupDispenser />
+        </Tagged>
+      </Grow>
+      <Grow at={CAFE_AT.ice}>
+        <Contact at={[248, 116]} w={53} d={52} />
+        <Tagged name="제빙기" onHover={onHover}>
+          <IceMaker world={world} spill={iceSpill} />
+        </Tagged>
+      </Grow>
+      <Grow at={CAFE_AT.coffee}>
+        <Contact at={[279, 16]} w={66} d={77} />
+        <Tagged name="커피 머신" onHover={onHover}>
+          <CoffeeMachine world={world} spill={coffeeSpill} />
+        </Tagged>
+      </Grow>
+      <Grow at={CAFE_AT.water}>
+        <Contact at={[244, -85]} w={44} d={54} />
+        <Tagged name="정수기" onHover={onHover}>
+          <WaterDispenser world={world} spill={waterSpill} />
+        </Tagged>
+      </Grow>
       <Tagged name="픽업대" onHover={onHover}>
         <Pickup world={world} />
       </Tagged>

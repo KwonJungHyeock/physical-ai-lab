@@ -918,6 +918,21 @@ function assemblyLayout(): CellLayout {
  * the coffee machine, the water dispenser, and the pickup shelf behind its door on the customer's side.
  * Each spout stands 35 mm off its body's face, so the gripper reaches the cup from above.
  */
+/**
+ * 입문 카페: the machines are drawn and solid this many times their first size, about the spot each
+ * cup stands on (that spot, where the arm goes, stays): next to the real arm's size they read as a
+ * café's machines, not toys. The counter reaches back to hold them.
+ */
+export const CAFE_GROW = 1.3;
+/** A machine's box grown CAFE_GROW × about its cup's spot (x, y) and the counter top (z 0). */
+const grown = (at: { x: number; y: number }, min: [number, number, number], max: [number, number, number]): [[number, number, number], [number, number, number]] => {
+  const g = (v: number, o: number) => o + (v - o) * CAFE_GROW;
+  return [
+    [g(min[0], at.x), g(min[1], at.y), min[2] * CAFE_GROW],
+    [g(max[0], at.x), g(max[1], at.y), max[2] * CAFE_GROW],
+  ];
+};
+
 export const CAFE_AT = {
   cup: { x: 95, y: 165 },
   ice: { x: 185, y: 115 },
@@ -935,13 +950,13 @@ function cafeLayout(): CellLayout {
   const A = CAFE_AT;
   const D = A.door;
   const fixed: FixedBox[] = [
-    box('컵 디스펜서', [70, 200, 0], [120, 245, 150], 4),
-    box('제빙기', [222, 90, 0], [275, 142, 130], 4),
-    box('커피 머신', [245, -22, 0], [312, 55, 125], 4),
-    box('정수기', [222, -112, 0], [266, -58, 115], 4),
+    box('컵 디스펜서', ...grown(A.cup, [70, 200, 0], [120, 245, 150]), 4),
+    box('제빙기', ...grown(A.ice, [222, 90, 0], [275, 142, 130]), 4),
+    box('커피 머신', ...grown(A.coffee, [245, -22, 0], [312, 55, 125]), 4),
+    box('정수기', ...grown(A.water, [222, -112, 0], [266, -58, 115]), 4),
     box('픽업대', [D.x0, D.y1 + 6, 0], [D.x1, -150, A.shelfTop], 2),
   ];
-  const solids: Box[] = [PED, under('카페 카운터', [-110, -250], [330, 260], 0)];
+  const solids: Box[] = [PED, under('카페 카운터', [-110, -250], [370, 285], 0)];
   const places: Record<string, CellPlace> = {
     '컵 나오는 곳': { ...A.cup, z: 0 },
     제빙기: { ...A.ice, z: 0 },
