@@ -11,7 +11,7 @@
 import { Html } from '@react-three/drei';
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
-import { GreaterDepth, Quaternion, Vector3, type Group, type MeshStandardMaterial } from 'three';
+import { Quaternion, Vector3, type Group, type MeshStandardMaterial } from 'three';
 
 import { EFFECTOR_BY_ID, type EffectorId } from '@/engine/simulator/effectors';
 import { OBJECT_KINDS, type DeskObject } from '@/engine/simulator/desk';
@@ -82,18 +82,12 @@ function Shape({ o, selected }: { o: DeskObject; selected: boolean }) {
       );
     case 'cup':
       // 로봇 카페 (o.drink): a clear PET cold cup, so the ice and the coffee show through.
+      // (No x-ray through the arm: it read as the cup passing through the gripper; the cup's number chip says where it is.)
       if (o.drink)
         return (
-          <>
-            <Turned at={foot} profile={vessel(sx * 0.38, sx / 2, sz, 0.8, 1.2)}>
-              <meshPhysicalMaterial color="#e6f1f8" transparent opacity={0.45} roughness={0.05} metalness={0.05} clearcoat={1} clearcoatRoughness={0.04} depthWrite={false} {...hi} />
-            </Turned>
-            {/* X-ray: where the arm (or a machine) is in front of the cup, its shape shows through in
-                orange — drawn only where something nearer hides it (depth test 'greater'). */}
-            <Turned at={foot} profile={vessel(sx * 0.38, sx / 2, sz, 0.8, 1.2)} shadow={false}>
-              <meshBasicMaterial color="#ff8a3d" transparent opacity={0.55} depthWrite={false} depthFunc={GreaterDepth} />
-            </Turned>
-          </>
+          <Turned at={foot} profile={vessel(sx * 0.38, sx / 2, sz, 0.8, 1.2)}>
+            <meshPhysicalMaterial color="#e6f1f8" transparent opacity={0.45} roughness={0.05} metalness={0.05} clearcoat={1} clearcoatRoughness={0.04} depthWrite={false} {...hi} />
+          </Turned>
         );
       return (
         <Turned at={foot} profile={vessel(sx * 0.38, sx / 2, sz)}>
