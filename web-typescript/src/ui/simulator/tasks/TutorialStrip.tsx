@@ -27,6 +27,8 @@ interface Props {
   of: number;
   onNext(): void;
   onClose(): void;
+  /** 입문 12차시: the 서브챕터 number ('3-4') in place of TUTORIAL n, and whether there is a next one to open. */
+  course?: { tag: string; hasNext: boolean };
 }
 
 export default function TutorialStrip(p: Props) {
@@ -51,7 +53,7 @@ export default function TutorialStrip(p: Props) {
   return (
     <section ref={stripRef} className={css.strip} aria-label={`${p.n ? `튜토리얼 ${p.n}` : '맛보기'}: ${t.title}`} data-done={over || undefined}>
       <header>
-        <em>{p.n ? `TUTORIAL ${p.n}` : 'TASTE'}</em>
+        <em>{p.course ? p.course.tag : p.n ? `TUTORIAL ${p.n}` : 'TASTE'}</em>
         <b>{t.title}</b>
         <button type="button" className={css.close} onClick={p.onClose} aria-label="튜토리얼 그만하기" title="그만하기">
           ×
@@ -84,9 +86,9 @@ export default function TutorialStrip(p: Props) {
           <p>
             <span className={css.ok}>✓ 완료</span> <b>{t.concept.term}</b> {t.concept.def}
           </p>
-          {p.n < p.of && (
+          {(p.course ? p.course.hasNext : p.n < p.of) && (
             <button type="button" className={css.next} onClick={p.onNext}>
-              {p.n ? '다음 튜토리얼 ›' : '1단계 튜토리얼 ›'}
+              {p.course ? '다음 단계 →' : p.n ? '다음 튜토리얼 ›' : '1단계 튜토리얼 ›'}
             </button>
           )}
         </div>

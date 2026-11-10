@@ -649,18 +649,19 @@ export function Projector({ teacher, onLesson, onClose }: { teacher: TeacherSet;
 
 /* --- 학습 기록 알약 (top bar) ------------------------------------------------------------------ */
 
-export function RecordPill({ rec, site, lesson, total, onOpen }: { rec: LessonRecord; site: SiteId; lesson: number; total: number; onOpen(): void }) {
+export function RecordPill({ rec, site, lesson, total, onOpen, course }: { rec: LessonRecord; site: SiteId; lesson: number; total: number; onOpen(): void; course?: { lesson: number; done: number; of: number } }) {
   const s = summaryOf(rec, rec.plan, site);
+  // 입문 12차시 (course.ts): the 차시 now and the 서브챕터 done.
+  const sum = course ? `${course.lesson ? `${course.lesson}차시 / 12` : '12차시'} · 완료 ${course.done}/${course.of}` : null;
+  const bar = course ? course.done / course.of : s.passed / s.total;
   return (
     <button type="button" className={css.recPill} onClick={onOpen} title="학습 기록 · 기록지 · 제출 파일">
       <span>
         <b>학습 기록{rec.name ? ` · ${rec.no ? `${rec.no}번 ` : ''}${rec.name}` : ''}</b>
-        <small>
-          {short(site)} {lesson ? `${lesson}차시 / ${total}` : `${total}차시`} · 퀘스트 {s.passed}/{s.total} · 확인 {s.right}/{s.asked}
-        </small>
+        <small>{sum ?? `${short(site)} ${lesson ? `${lesson}차시 / ${total}` : `${total}차시`} · 퀘스트 ${s.passed}/${s.total} · 확인 ${s.right}/${s.asked}`}</small>
       </span>
       <span className={css.recBar} aria-hidden="true">
-        <i style={{ width: `${(s.passed / s.total) * 100}%` }} />
+        <i style={{ width: `${bar * 100}%` }} />
       </span>
     </button>
   );

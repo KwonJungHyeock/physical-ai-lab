@@ -137,6 +137,7 @@ import { askNow, asksOf, guideOf, type Ask } from '@/engine/simulator/cell/guide
 import { NARRATE_HOLD_MS, NARRATED, narrationLines } from '@/engine/simulator/cell/narrate';
 import { narrateShot, stationAt } from '@/engine/simulator/cell/shots';
 import SiteTour from './stage/SiteTour';
+import CourseMap from './connect/CourseMap';
 import Roadmap from './connect/Roadmap';
 import { LIFE_TUTORIALS, RING_MM, lifeTutorialById, ringLead, type TutCtx, type TutMem } from '@/engine/simulator/lifeTutorials';
 import { StartGuide, type StartStep } from './stage/StartGuide';
@@ -147,7 +148,8 @@ import PyPanel from './editors/PyPanel';
 import RunBar from './tasks/RunBar';
 import { quickRun } from '@/engine/simulator/cell/quick';
 import { LessonCheck, LessonPlate, Projector, RecordPanel, RecordPill, TeacherKey, questPages } from './tasks/LessonKit';
-import { LESSON_QUEST, checksOf, lessonOfQuest, lessonsOf, siteOf } from '@/engine/simulator/cell/lessons';
+import { lessonOfQuest, lessonsOf, siteOf } from '@/engine/simulator/cell/lessons';
+import { COURSE_SUBS, courseLessons, nextRunnable, subById, subOfRun, type CourseSub } from '@/engine/simulator/cell/course';
 import LocationBar, { type LocLesson } from './stage/LocationBar';
 import QuestNumbers from './stage/QuestNumbers';
 import { RECORD_KEY, TEACHER_KEY, answered as recAnswered, emptyRecord, loadRecord, loadTeacher, opened as recOpened, passed as recPassed, questOpen, teacherFromQuery, tried as recTried, type LessonRecord, type TeacherSet } from '@/engine/simulator/cell/lessonRecord';
@@ -325,6 +327,8 @@ type Loaded = { robot: UrdfRobot; chain: ChainSegment[]; rawChain: ChainSegment[
 export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   /** The 트랙 this page sells (engine/simulator/tracks.ts); none = the full package. */
   const track = trackId ? TRACKS[trackId] : null;
+  // 입문 트랙: the 12차시 course (course.ts) — its list, 위치 줄 and next instead of the places' 4 · 6 · 8차시.
+  const course = trackId === 'life';
   const pcApp = usePcApp();
   const [loadedArm, setLoaded] = useState<Omit<Loaded, 'rawChain'> | null>(null);
   /** The 교육 tab always teaches on myCobot 280 RDK X5, whichever arm the simulator has open. */
@@ -2118,7 +2122,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   }, [lifeQuest, changeRec]);
   const lessons = useMemo(() => lessonsOf(teacherSet.plan, lifeSite), [teacherSet.plan, lifeSite]);
   const lessonNow = lifeQuest ? lessons[lessonOfQuest(teacherSet.plan, lifeQuest) - 1] : undefined;
-  const questIsOpen = useCallback((id: string) => (teacherSet.lesson === 0 && !teacherSet.allOpen ? null : questOpen(teacherSet, lessonRecRef.current, id)), [teacherSet]);
+  const questIsOpen = useCallback((id: string) => (course || (teacherSet.lesson === 0 && !teacherSet.allOpen) ? null : questOpen(teacherSet, lessonRecRef.current, id)), [teacherSet, course]);
   // The quest's controls in turn (quests.ts QUEST_LEAD), lit while there is something to do.
   const leadSels = useMemo(() => (lifeStep ? (QUEST_LEAD[lifeStep.id] ?? []).map((t) => t.sel) : []), [lifeStep]);
   const questLead = useMemo<SpotStep | null>(() => (lifeStep && QUEST_LEAD[lifeStep.id] ? { target: [], seq: QUEST_LEAD[lifeStep.id].map((t) => ({ ...t, say: t.say.replace(/^[①-⑨]\s*/, '') })) } : null), [lifeStep]);
@@ -4203,7 +4207,19 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     void simulate();
   };
   // [다음 단계 →] (입문 트랙): the next step of this place in order; the student presses it (no automatic move).
-  const nextStep = track && cellAt && lifeStep && lifeQuest ? (() => { const nx = missionsOf(cellAt.cell)[lifeStep.n]; return nx ? { cell: cellAt.cell, id: nx.id } : null; })() : null;
+  // 입문 12차시: the 서브챕터 open now (a quest or a tutorial), done or not, and opening one.
+  const subNow = course ? (lifeQuest ? subOfRun('quest', lifeQuest) : lifeTut ? subOfRun('tutorial', lifeTut.id) : undefined) : undefined;
+  const subDone = (s: CourseSub) => (s.run?.kind === 'quest' ? !!cellPassed[s.run.id] : s.run?.kind === 'tutorial' ? !!tutDone[s.run.id] : false);
+  const openSub = (s: CourseSub) => {
+    if (busy || !s.run) return;
+    setEntered(true);
+    toured.current = true;
+    if (s.run.kind === 'tutorial') return startTutorial(s.run.id);
+    setLifeTut(null);
+    openCell('draw', s.run.id);
+  };
+  const subNext = subNow ? nextRunnable(subNow.id) : undefined;
+  const nextStep = course ? null : track && cellAt && lifeStep && lifeQuest ? (() => { const nx = missionsOf(cellAt.cell)[lifeStep.n]; return nx ? { cell: cellAt.cell, id: nx.id } : null; })() : null;
   const runBar = (
     <RunBar
       passed={gateOpen}
@@ -4221,39 +4237,34 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       onStop={stop}
       more={questOn && cellAt && lifeStep ? [{ label: '자유 연습 (채점 없이)', onClick: () => openCell(cellAt.cell, null), disabled: busy }] : undefined}
       quick={quickOn ? { onClick: () => void runQuick(), progress: quickProg, disabled: busy || !loaded } : undefined}
-      next={nextStep ? { onClick: () => openCell(nextStep.cell, nextStep.id), lit: !!(lifeQuest && lessonRec.quests[lifeQuest]?.passed), disabled: questIsOpen(nextStep.id) === false } : undefined}
+      next={subNext && lifeQuest ? { onClick: () => openSub(subNext), lit: !!lessonRec.quests[lifeQuest]?.passed } : nextStep ? { onClick: () => openCell(nextStep.cell, nextStep.id), lit: !!(lifeQuest && lessonRec.quests[lifeQuest]?.passed), disabled: questIsOpen(nextStep.id) === false } : undefined}
     />
   );
 
   // 위치 줄 (입문 트랙): 차시 · 단계 · 교안 쪽 of the step open now, and the list to go to another (지시서 v1 파트 1 · 4).
-  const locLessons: LocLesson[] = lifeQuest
-    ? lessons.map((l) => ({
+  const locLessons: LocLesson[] = subNow
+    ? courseLessons().map((l) => ({
         n: l.n,
-        steps: l.quests.map((q) => ({
-          id: q,
-          n: missionById(q)?.n ?? 0,
-          title: missionById(q)?.title ?? q,
-          pages: LESSON_QUEST[q].pages,
-          state: q === lifeQuest ? ('now' as const) : lessonRec.quests[q]?.passed ? ('done' as const) : ('todo' as const),
-          locked: questIsOpen(q) === false,
+        steps: l.subs.map((x) => ({
+          id: x.id,
+          label: x.id,
+          title: x.test ? '수행평가' : x.title,
+          pages: x.pages,
+          state: x.id === subNow.id ? ('now' as const) : subDone(x) ? ('done' as const) : ('todo' as const),
+          soon: !x.run,
         })),
-        checks: (() => {
-          const asks = checksOf(teacherSet.plan, l.n, l.site);
-          return { got: asks.filter((a) => lessonRec.checks[a.key]).length, of: asks.length };
-        })(),
       }))
     : [];
   const locNow = locLessons.flatMap((l) => l.steps).find((x) => x.state === 'now');
   const locBar =
-    track && cellAt && lifeQuest && lessonNow && locNow ? (
+    track && subNow && locNow ? (
       <LocationBar
-        lesson={lessonNow.n}
+        lesson={subNow.lesson}
         step={locNow}
         lessons={locLessons}
-        onGo={(id) => openCell(cellAt.cell, id)}
-        onChecks={(n) => {
-          setCheckN(n);
-          setLessonUi('check');
+        onGo={(id) => {
+          const x = subById(id);
+          if (x) openSub(x);
         }}
       />
     ) : null;
@@ -4303,6 +4314,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const wideOn = blockWide && dockShown && shownTab !== 'direct' && shownTab !== 'process' && (cellAt ? !cellTerm : level === 'basic');
   const workScreen = zeroMode ? 'zero' : shownTab === 'direct' ? section || 'jog' : shownTab;
   const openWork = (id: string) => {
+    if (id === 'theme' && course) return setRoadmapOpen(true);
     if (dockShown && workScreen === id) return toggleDock();
     if (id === 'zero') {
       setZeroMode(true);
@@ -4368,7 +4380,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     {
       name: '학습',
       items: [
-        work('theme', '테마학습', 'flag', '테마학습: 실생활 협동로봇 · 튜토리얼'),
+        course ? work('theme', '커리큘럼', 'flag', '커리큘럼: 장 · 서브챕터 · 차시') : work('theme', '테마학습', 'flag', '테마학습: 실생활 협동로봇 · 튜토리얼'),
         ...(recipeOn ? [{ ...work('code', '순서', 'code', '작업 순서: 카드로 로봇이 할 일을 차례로'), on: dockShown && (workScreen === 'basic' || workScreen === 'python' || workScreen === 'ros') }] : []),
       ],
     },
@@ -4763,14 +4775,17 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                 ...(track
                   ? {
                       // 테마학습: straight into the first place (the track's start, the café's 1단계).
-                      onRoadmap: () => setEntered(true),
+                      onRoadmap: () => {
+                        setEntered(true);
+                        if (course) setRoadmapOpen(true);
+                      },
                     }
                   : {}),
               }
         }
       />
       {/* 교실 수업형 (입문 · 로봇 카페): 확인 문제 · 학습 기록 · 교사 열쇠 · 수업 화면. */}
-      {track && lessonUi === 'check' && lessonNow && (
+      {track && !course && lessonUi === 'check' && lessonNow && (
         <LessonCheck bare rec={lessonRec} site={lessonNow.site} n={checkN ?? lessonNow.n} onAnswer={(k, c) => changeRec((r) => (r.checks[k] ? r : recAnswered(r, k, c, Date.now())))} onClose={() => { setLessonUi(null); setCheckN(null); }} />
       )}
       {track && lessonUi === 'record' && (
@@ -5092,7 +5107,16 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
           )}
           status={
             <>
-            {track && <RecordPill rec={lessonRec} site={lifeSite} lesson={lessonNow?.n ?? (lifeSite === teacherSet.site ? teacherSet.lesson : 0)} total={lessons.length} onOpen={() => setLessonUi('record')} />}
+            {track && (
+              <RecordPill
+                rec={lessonRec}
+                site={lifeSite}
+                lesson={lessonNow?.n ?? (lifeSite === teacherSet.site ? teacherSet.lesson : 0)}
+                total={lessons.length}
+                course={course ? { lesson: subNow?.lesson ?? 0, done: COURSE_SUBS.filter(subDone).length, of: COURSE_SUBS.filter((x) => x.run).length } : undefined}
+                onOpen={() => setLessonUi('record')}
+              />
+            )}
             {/* On the simulator the link sits in the 3D view's top-left corner (StageTitle), unless a cell or a window holds that corner. 입문 퀘스트: not shown (simulation only). */}
             {!stageTitle && !questOn && (
             <button
@@ -5203,7 +5227,18 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
             checks={mode !== 'check' ? [] : [{ icon: 'doc', title: '검수 결과표', note: '검수 1~7 의 시각 · 실측값 한 장 (열어서 인쇄 → PDF)', action: '저장', run: saveReport, file: '검수결과표.html' }]}
           />
         )}
-        {roadmapOpen && (
+        {roadmapOpen && course && (
+          <CourseMap
+            now={subNow?.id}
+            done={subDone}
+            onClose={() => setRoadmapOpen(false)}
+            onPick={(x) => {
+              setRoadmapOpen(false);
+              openSub(x);
+            }}
+          />
+        )}
+        {roadmapOpen && !course && (
           <Roadmap
             passed={cellPassed}
             tutorialsDone={tutDone}
@@ -5399,7 +5434,10 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                     // 맛보기 is 0 (before the three): its next is the first tutorial.
                     n={LIFE_TUTORIALS.findIndex((x) => x.id === lifeTut.id) + 1}
                     of={LIFE_TUTORIALS.length}
+                    course={course && subNow ? { tag: subNow.id, hasNext: !!subNext } : undefined}
                     onNext={() => {
+                      // 입문 12차시: the course's next 서브챕터 (a tutorial or a quest).
+                      if (course) return void (subNext && openSub(subNext));
                       const k = LIFE_TUTORIALS.findIndex((x) => x.id === lifeTut.id);
                       if (LIFE_TUTORIALS[k + 1]) startTutorial(LIFE_TUTORIALS[k + 1].id);
                     }}
@@ -5702,7 +5740,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                     ) : (
                       <div className={css.screen}>
                         {/* 입문: where the controls are learnt (맛보기, then the three tutorials). */}
-                        {track && !cellAt && <TutorialList running={lifeTut?.id ?? null} done={tutDone} busy={busy} onStart={startTutorial} />}
+                        {track && !course && !cellAt && <TutorialList running={lifeTut?.id ?? null} done={tutDone} busy={busy} onStart={startTutorial} />}
                         {controlPanel}
                         {toolRow}
                       </div>
@@ -5883,7 +5921,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                           </button>
                         )}
                         {/* 교실 수업형: the 차시 open now — 오늘 배울 것, its 교안 pages, 확인 문제, 학습 기록. */}
-                        {lessonNow && (!questOn || !lifeStep || detail) && <LessonPlate lesson={lessonNow} total={lessons.length} rec={lessonRec} onCheck={() => setLessonUi('check')} onRecord={() => setLessonUi('record')} />}
+                        {!course && lessonNow && (!questOn || !lifeStep || detail) && <LessonPlate lesson={lessonNow} total={lessons.length} rec={lessonRec} onCheck={() => setLessonUi('check')} onRecord={() => setLessonUi('record')} />}
                       </div>
                     ) : cellAt && cellTermOn ? (
                       <div className={css.pane}>

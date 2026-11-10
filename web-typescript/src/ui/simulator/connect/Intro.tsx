@@ -218,7 +218,7 @@ export default function Intro({ progress, ready, note, gate, brand }: Props) {
             <button
               type="button"
               className={css.connect}
-              aria-label={gate.onRoadmap ? '테마학습' : '연결하기'}
+              aria-label={gate.onRoadmap ? '커리큘럼' : '연결하기'}
               autoFocus
               disabled={entered}
               onClick={(e) => {
@@ -239,7 +239,7 @@ export default function Intro({ progress, ready, note, gate, brand }: Props) {
               )}
               <span>
                 <b>{gate.onRoadmap ? 'THEME' : 'CONNECT'}</b>
-                <small>{gate.onRoadmap ? '테마학습 · 로봇 카페부터' : '로봇 연결하기'}</small>
+                <small>{gate.onRoadmap ? '커리큘럼 · 12차시에서 고르기' : '로봇 연결하기'}</small>
               </span>
               <svg className={css.chev} viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M9 6l6 6-6 6" />

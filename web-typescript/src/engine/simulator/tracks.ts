@@ -51,13 +51,14 @@ export const TRACKS: Record<TrackId, Track> = {
     // 테마학습 (실생활 협동로봇 · 튜토리얼) instead of 공정 · 환경 · 손 (Console's lifeGroups).
     menu: ['jog', 'parts', 'pose', 'theme', 'code', 'objects', 'monitor'],
     screens: ['sim'],
-    start: { cell: 'cafe', mission: 'F1' },
-    cells: ['cafe', 'draw', 'board'],
+    // 1단계 12차시 (course.ts, 보고 #49): 로봇 글씨 쓰기 현장만. 카페 · 보드게임은 입문에서 숨김(코드는 그대로).
+    start: { cell: 'draw', mission: 'G1' },
+    cells: ['draw'],
     // Pictures: made with Figma AI (image generation) for this cover — no real brand or person in them.
     intro: {
       title: ['Life Cobot', 'Simulator'],
-      ko: '생활 협동로봇 시뮬레이터',
-      lead: ['카페 · 행사장 · 보드게임 카페처럼 우리 곁에서 일하는 협동로봇을', '직접 움직이고 순서를 짜 보며 배워요.'],
+      ko: 'myCobot 280 협동로봇 1단계',
+      lead: ['관절 · 좌표 조작부터 로봇 글씨 쓰기까지,', '12차시 동안 시뮬레이션으로 익히고 실물로 써 봐요.'],
       // One picture of every place the track teaches (the three booths side by side).
       scenes: [{ img: '/brand/life/sites.webp', tag: 'LIFE COBOT SITES', line: '로봇 카페 · 캘리그라피 부스 · 보드게임 카페' }],
     },
