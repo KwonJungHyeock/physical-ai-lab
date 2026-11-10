@@ -801,6 +801,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
    * frames the robot in the part that stays visible. Null in the stacked (narrow) layout.
    */
   const miniShown = useRef(true);
+  /** 입문 현장: no mini arm there, and the left menu hidden during a quest — the scene takes that room. */
+  const leanFrame = useRef(false);
   const frameInsets = useCallback(() => {
     const sh = shellRef.current;
     const vp = sh?.querySelector<HTMLElement>('[data-viewport]');
@@ -809,9 +811,10 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     const v = vp.getBoundingClientRect();
     const p = panel.getBoundingClientRect();
     const onRight = p.left > v.left + v.width / 2;
-    let l = onRight ? barW() + 12 : Math.max(barW() + 12, p.right - v.left + 12);
+    const bw = leanFrame.current ? (sh.ownerDocument.querySelector<HTMLElement>('nav[aria-label="메뉴"]')?.offsetWidth ?? 0) : barW();
+    let l = onRight ? bw + 12 : Math.max(bw + 12, p.right - v.left + 12);
     // The left menu bar and the mini arm beside it: the robot is framed to their right.
-    if (miniShown.current) l = Math.max(l, (onRight ? 12 : l) + miniLeft() + MINI.width + 8);
+    if (miniShown.current && !leanFrame.current) l = Math.max(l, (onRight ? 12 : l) + miniLeft() + MINI.width + 8);
     const r = onRight ? Math.max(0, v.right - p.left + 12) : 0;
     // The camera window opens in the free part's lower left: the robot is framed beside it.
     const camEl = sh.querySelector<HTMLElement>('[data-panel="camera"]');
@@ -4316,6 +4319,9 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   useEffect(() => {
     miniShown.current = miniWanted;
   }, [miniWanted]);
+  useEffect(() => {
+    leanFrame.current = inCafe;
+  }, [inCafe]);
   const barFoot: BarItem[] = [{ ...work('zero', '영점', 'zero', robotMode ? '영점 맞추기' : '로봇을 연결하면 영점을 맞춰요'), disabled: !robotMode || (busy && !zeroMode) }];
   /** The 3D view's top-left corner: the arm's name and ROBOT LINK, when no cell or window is there. */
   const stageTitle = !!loaded && view === 'sim' && !cellAt && !railOpen && !lifeTut;

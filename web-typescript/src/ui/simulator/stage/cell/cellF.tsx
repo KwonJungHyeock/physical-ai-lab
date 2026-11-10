@@ -15,20 +15,20 @@
  * is in each cup (ice, coffee, water: the level and the colour), the spills on the drip trays.
  */
 
+import { Html } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import { Suspense, useRef, useState, type RefObject } from 'react';
+import { useRef, useState, type RefObject } from 'react';
 import type { Group, Mesh, MeshPhysicalMaterial, MeshStandardMaterial } from 'three';
 
 import { CUP_ML, CUP_SIZE, RECIPE, drinkMl } from '@/engine/simulator/cell/cafe';
 import { CAFE_AT, cellLayout } from '@/engine/simulator/cell/cells';
 import type { WorldState } from '@/engine/simulator/sim';
 
-import Model from '@/ui/education/lab/ambient/Model';
 
 import { CafeCustomers } from './cafeCustomers';
 
 import { RBox, Turned, brushed, wood } from '../sceneKit';
-import { F, Paint, Skin, Steel, Tagged, m, travel, useSheet } from './kit';
+import { F, Skin, Steel, Tagged, m, travel, useSheet } from './kit';
 
 const WOOD = '#b98a5a';
 const BODY = '#2b2f36';
@@ -525,117 +525,6 @@ function Pickup({ world }: { world: RefObject<WorldState | null> }) {
 
 /* --- the shop round the booth (보고 #43 §2-3) ----------------------------------------------- */
 
-/** Booth walls: glass on the front and sides, a back panel; header with the sign and a warm light strip. Simulator mm (shop ÷ 5). */
-const BOOTH = { x0: -110, x1: 330, y0: -250, y1: 262, top: 390 } as const;
-
-function Glass({ at, size }: { at: [number, number, number]; size: [number, number, number] }) {
-  return (
-    <RBox at={at} size={size} radius={0.5} shadow={false}>
-      <meshPhysicalMaterial color="#e3f0f7" transparent opacity={0.14} roughness={0.02} metalness={0.08} clearcoat={1} clearcoatRoughness={0.02} envMapIntensity={1.6} depthWrite={false} />
-    </RBox>
-  );
-}
-
-function Booth() {
-  const B = BOOTH;
-  const D = CAFE_AT.door;
-  const h = B.top - F;
-  const zc = (F + B.top) / 2;
-  const sign = useSheet('cafe-sign', 220, 18, (ctx, w, hh) => {
-    ctx.fillStyle = '#18201d';
-    ctx.fillRect(0, 0, w, hh);
-    ctx.fillStyle = '#f4ede1';
-    ctx.font = `800 ${hh * 0.52}px Pretendard, sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('ROBOT CAFE  ·  로봇 바리스타', w / 2, hh / 2);
-  });
-  const nums = useSheet('cafe-pickup-nums', 100, 12, (ctx, w, hh) => {
-    ctx.fillStyle = '#0d1014';
-    ctx.fillRect(0, 0, w, hh);
-    ctx.fillStyle = '#7CFC9A';
-    ctx.font = `700 ${hh * 0.6}px Pretendard, sans-serif`;
-    ctx.textBaseline = 'middle';
-    ctx.textAlign = 'center';
-    ctx.fillText('픽업 1', w * 0.3, hh / 2);
-    ctx.fillText('픽업 2', w * 0.72, hh / 2);
-  });
-  const backWood = wood([3, 2]);
-  const post = (x: number, y: number) => (
-    <RBox key={`${x},${y}`} at={[x, y, zc]} size={[6, 6, h]} radius={1}>
-      <Steel color="#2a2f36" />
-    </RBox>
-  );
-  return (
-    <group>
-      {[post(B.x0, B.y0), post(B.x1, B.y0), post(B.x0, B.y1), post(B.x1, B.y1)]}
-      {/* Front glass, left and right of the pickup window; above it. */}
-      <Glass at={[(B.x0 + D.x0 - 8) / 2, B.y0, zc]} size={[D.x0 - 8 - B.x0, 3, h]} />
-      <Glass at={[(D.x1 + 8 + B.x1) / 2, B.y0, zc]} size={[B.x1 - D.x1 - 8, 3, h]} />
-      <Glass at={[(D.x0 + D.x1) / 2, B.y0, (D.h * 2 + 6 + B.top) / 2]} size={[D.x1 - D.x0 + 16, 3, B.top - D.h * 2 - 6]} />
-      <Glass at={[B.x0, (B.y0 + B.y1) / 2, zc]} size={[3, B.y1 - B.y0, h]} />
-      <Glass at={[B.x1, (B.y0 + B.y1) / 2, zc]} size={[3, B.y1 - B.y0, h]} />
-      {/* Back panel (the service door side), wood-faced, with a shelf of retail bean bags. */}
-      <RBox at={[(B.x0 + B.x1) / 2, B.y1, zc]} size={[B.x1 - B.x0, 5, h]} radius={1}>
-        <meshStandardMaterial color="#d8c2a2" map={backWood} roughness={0.65} />
-      </RBox>
-      {[230, 300].map((z) => (
-        <group key={z}>
-          <RBox at={[(B.x0 + B.x1) / 2 + 40, B.y1 - 10, z]} size={[260, 16, 3]} radius={1}>
-            <Paint color="#2a2f36" rough={0.5} />
-          </RBox>
-          {Array.from({ length: 9 }, (_, k) => (
-            <RBox key={k} at={[(B.x0 + B.x1) / 2 - 75 + k * 28, B.y1 - 11, z + 13]} size={[16, 9, 23]} radius={2}>
-              <meshStandardMaterial color={['#1f2329', '#8a5a2b', '#e9e4da'][k % 3]} roughness={0.75} />
-            </RBox>
-          ))}
-        </group>
-      ))}
-      {/* Header: the sign over the front, a light strip under the roof edge. */}
-      <RBox at={[(B.x0 + B.x1) / 2, B.y0 - 2, B.top + 12]} size={[B.x1 - B.x0 + 8, 8, 26]} radius={2}>
-        <meshStandardMaterial map={sign} roughness={0.5} />
-      </RBox>
-      {/* Roof frame only (open, so the arm is seen from above). */}
-      {[B.y0, B.y1].map((y) => (
-        <RBox key={`ry${y}`} at={[(B.x0 + B.x1) / 2, y, B.top]} size={[B.x1 - B.x0 + 6, 6, 6]} radius={1}>
-          <Steel color="#2a2f36" />
-        </RBox>
-      ))}
-      {[B.x0, B.x1].map((x) => (
-        <RBox key={`rx${x}`} at={[x, (B.y0 + B.y1) / 2, B.top]} size={[6, B.y1 - B.y0 + 6, 6]} radius={1}>
-          <Steel color="#2a2f36" />
-        </RBox>
-      ))}
-      <mesh position={[m((B.x0 + B.x1) / 2), m(B.y0 + 12), m(B.top - 3)]}>
-        <boxGeometry args={[m(B.x1 - B.x0 - 20), m(4), m(2)]} />
-        <meshStandardMaterial color="#ffe7c2" emissive="#ffd9a0" emissiveIntensity={1.4} />
-      </mesh>
-      {/* Two warm pendant lamps over the bench and their light (no shadow: the key light casts them). */}
-      {[60, 220].map((x) => (
-        <group key={x}>
-          <mesh position={[m(x), m(10), m(B.top - 40)]}>
-            <cylinderGeometry args={[m(0.6), m(0.6), m(80), 6]} />
-            <meshStandardMaterial color="#1f2329" />
-          </mesh>
-          <Turned at={[x, 10, B.top - 98]} profile={[[2, 11], [8, 0], [7.4, 0], [1.4, 10.4], [0, 11], [0, 12], [2, 12]]}>
-            <meshStandardMaterial color="#1f2329" metalness={0.6} roughness={0.35} side={2} />
-          </Turned>
-          <mesh position={[m(x), m(10), m(B.top - 97)]}>
-            <sphereGeometry args={[m(3), 16, 12]} />
-            <meshStandardMaterial color="#fff3dc" emissive="#ffd59a" emissiveIntensity={2.2} />
-          </mesh>
-          <pointLight position={[m(x), m(10), m(B.top - 110)]} color="#ffd6a0" intensity={0.35} distance={m(520)} decay={1.6} />
-        </group>
-      ))}
-      {/* Pickup numbers over the window. */}
-      <mesh position={[m((D.x0 + D.x1) / 2), m(B.y0 - 2.2), m(D.h * 2 + 16)]} rotation={[Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[m(D.x1 - D.x0), m(12)]} />
-        <meshStandardMaterial map={nums} emissive="#ffffff" emissiveMap={nums} emissiveIntensity={0.6} />
-      </mesh>
-    </group>
-  );
-}
-
 /** The order kiosk on the booth's right: a pedestal with a touch screen showing the menu and the queue. */
 function Kiosk({ world }: { world: RefObject<WorldState | null> }) {
   // The menus the program registered (cell.menu): the kiosk sells the student's own.
@@ -688,70 +577,39 @@ function Kiosk({ world }: { world: RefObject<WorldState | null> }) {
   );
 }
 
-/** The self bar beside the kiosk: lids, straws and napkins on a small counter. */
-function SelfBar() {
-  const x = 372;
-  const y = -150;
-  return (
-    <group>
-      <RBox at={[x, y, (F + 40) / 2]} size={[40, 70, 40 - F]} radius={3}>
-        <Paint color="#b98a5a" rough={0.6} />
-      </RBox>
-      {[-22, 0, 22].map((dy, k) => (
-        <Turned key={k} at={[x, y + dy, 40]} profile={[[0, 0], [7, 0], [7, 16], [0, 16]]}>
-          <meshStandardMaterial color={['#f3efe6', '#e5484d', '#ffffff'][k]} roughness={0.5} />
-        </Turned>
-      ))}
-    </group>
-  );
-}
-
-/** The shop floor round the booth: large warm-grey tiles. */
+/** The floor round the counter: plain and light (a teaching view: nothing on it draws the eye). */
 function ShopFloor() {
-  const tex = useSheet('cafe-floor', 300, 300, (ctx, w, h) => {
-    let s = 11;
-    const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
-    const n = 7;
-    const t = w / n;
-    ctx.fillStyle = '#9d958a';
-    ctx.fillRect(0, 0, w, h);
-    for (let i = 0; i < n; i += 1)
-      for (let j = 0; j < n; j += 1) {
-        const v = 196 + r() * 16;
-        ctx.fillStyle = `rgb(${v}, ${v - 6}, ${v - 15})`;
-        ctx.fillRect(i * t + 1.2, j * t + 1.2, t - 2.4, t - 2.4);
-        // Speckles of a terrazzo-like porcelain tile.
-        for (let k = 0; k < 26; k += 1) {
-          const q = 140 + r() * 80;
-          ctx.fillStyle = `rgba(${q}, ${q - 8}, ${q - 18}, 0.35)`;
-          ctx.fillRect(i * t + 2 + r() * (t - 4), j * t + 2 + r() * (t - 4), 0.8 + r(), 0.8 + r());
-        }
-      }
-  });
   return (
-    <mesh position={[m(100), m(-80), m(F + 0.5)]} receiveShadow>
-      <planeGeometry args={[m(1400), m(1100)]} />
-      <meshPhysicalMaterial map={tex} roughness={0.55} clearcoat={0.25} clearcoatRoughness={0.5} />
+    <mesh position={[m(100), m(-40), m(F + 0.5)]} receiveShadow>
+      <planeGeometry args={[m(4000), m(4000)]} />
+      <meshStandardMaterial color="#e6e9ec" roughness={0.9} />
     </mesh>
   );
 }
 
 /**
- * Tables, stools, a plant and the menu board out in the shop (the customers walk: cafeCustomers.tsx).
- * Nothing between the arm's back and the camera (the 입문 view is over its shoulder, CellScene CELL_VIEW).
+ * 교육용 장면: the stations numbered in the drink's order (the cycle map's ① – ⑤), always shown, so the
+ * picture and the map and the 교안 say the same thing.
  */
-function Shop() {
-  const fz = F;
+const STATION_NUMS: { n: string; name: string; at: [number, number, number] }[] = [
+  { n: '①', name: '컵', at: [CAFE_AT.cup.x, CAFE_AT.cup.y, 150] },
+  { n: '②', name: '얼음', at: [CAFE_AT.ice.x, CAFE_AT.ice.y, 165] },
+  { n: '③', name: '커피', at: [CAFE_AT.coffee.x, CAFE_AT.coffee.y, 175] },
+  { n: '④', name: '물', at: [CAFE_AT.water.x, CAFE_AT.water.y, 150] },
+  { n: '⑤', name: '픽업', at: [98, -176, 120] },
+];
+function StationNums() {
   return (
-    <Suspense fallback={null}>
-      <Model group="cafe" name="table" at={[-260, -420]} z={fz} h={150} />
-      <Model group="cafe" name="stool" at={[-200, -380]} z={fz} h={130} />
-      <Model group="cafe" name="stool" at={[-320, -460]} z={fz} h={130} />
-      <Model group="cafe" name="table" at={[520, -420]} z={fz} h={150} />
-      <Model group="cafe" name="chair" at={[580, -380]} z={fz} h={180} yaw={-Math.PI / 2} />
-      <Model group="cafe" name="plant" at={[470, 330]} z={fz} h={260} />
-      <Model group="cafe" name="chalkboard" at={[600, -170]} z={fz} h={230} yaw={-1.2} />
-    </Suspense>
+    <>
+      {STATION_NUMS.map((s) => (
+        <Html key={s.n} position={[m(s.at[0]), m(s.at[1]), m(s.at[2])]} center zIndexRange={[12, 0]} style={{ pointerEvents: 'none' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 9px 3px 4px', borderRadius: 999, background: 'rgba(255,255,255,0.94)', color: '#18201d', font: '700 13px Pretendard, system-ui, sans-serif', whiteSpace: 'nowrap', boxShadow: '0 1px 4px rgba(0,0,0,0.35)' }}>
+            <b style={{ display: 'inline-grid', placeItems: 'center', width: 20, height: 20, borderRadius: '50%', background: '#0f6b4c', color: '#fff', fontSize: 12 }}>{s.n.charCodeAt(0) - 0x245f}</b>
+            {s.name}
+          </span>
+        </Html>
+      ))}
+    </>
   );
 }
 
@@ -844,22 +702,19 @@ export function CafeCell({ world, onHover }: { world: RefObject<WorldState | nul
   const waterSpill = useRef<Mesh>(null);
   return (
     <>
+      {/* 교육용 장면: the counter, its five stations, the pickup and the kiosk; no shop round it, no glass booth,
+          no people (the customers are their order numbers). */}
       <ShopFloor />
-      <Shop />
-      <Booth />
       <Tagged name="키오스크" onHover={onHover}>
         <Kiosk world={world} />
       </Tagged>
-      <Tagged name="셀프바" onHover={onHover}>
-        <SelfBar />
-      </Tagged>
       <Counter />
+      <StationNums />
       {/* Soft contact shadows: the equipment on the counter, the people and the kiosk on the floor. */}
       <Contact at={[95, 222]} w={52} d={46} />
       <Contact at={[248, 116]} w={53} d={52} />
       <Contact at={[279, 16]} w={66} d={77} />
       <Contact at={[244, -85]} w={44} d={54} />
-      <Contact at={[372, -232]} w={36} d={26} z={F + 0.8} k={0.45} />
       <Tagged name="컵 디스펜서" onHover={onHover}>
         <CupDispenser />
       </Tagged>
