@@ -81,6 +81,7 @@
 | [`46-track-life-classroom.md`](reports/education/46-track-life-classroom.md) | 보고 #46 — 입문 로봇 카페를 교실 수업형으로: 한 원본(수업 설계) · 차시 구성 4 · 6 · 8 · 교안 쪽 표시 · 확인 문제 · 학습 기록(LMS, 파일 방식) · 교사 열쇠 · 교안 · 학습지 PDF |
 | [`47-track-life-basic-curriculum.md`](reports/education/47-track-life-basic-curriculum.md) | 보고 #47 — 입문 기초편 커리큘럼 확정: 6챕터 · 서브챕터 18개(번호 = 교안 장 · 절), 세 현장 같은 무게, 로봇 조작 기초, 챕터마다 수행평가(상 · 중 · 하), 10차시 · 개발 순서 |
 | [`48-track-life-basic-calligraphy.md`](reports/education/48-track-life-basic-calligraphy.md) | 보고 #48 — 가오픈 커리큘럼 확정(#47 대체): myCobot 280 협동로봇 1단계 — 기초 조작과 로봇 글씨 쓰기, 12차시 · 6챕터(이론 · 준비 · 관절 제어 · 좌표와 궤적선 · 로봇 글씨 쓰기 시뮬레이션 → 실물 · 학습 기록과 후기 PDF), 챕터마다 O·X + 미션 수행평가 |
+| [`49-track-life-scene-scope.md`](reports/education/49-track-life-scene-scope.md) | 보고 #49 — 1단계 12차시 서브챕터별 장면 범위 · 전개 5칸 · 교안 80쪽 매칭, 입문 트랙을 12차시로 교체(카페 · 보드게임 · 4/6/8차시 숨김), 1장 체험 장면, 4장 꼭짓점 좌표 표 |
 
 ### [`system/`](reports/system/) — 시스템 구성
 | 문서 | 내용 |
