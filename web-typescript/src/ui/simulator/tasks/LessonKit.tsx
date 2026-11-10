@@ -65,22 +65,18 @@ export function LessonPlate({ lesson, total, rec, onCheck, onRecord }: { lesson:
         </b>
         <span className={css.page}>{pages(lesson.pages[0], lesson.pages[1])}</span>
       </header>
-      {/* What the 차시 teaches is the 교안's (its pages above): here, only the quests to pass. */}
-      <ol className={css.goals} data-dots aria-label={`퀘스트 ${done}/${lesson.quests.length} 통과`}>
-        {lesson.quests.map((q) => (
-          <li key={q} data-done={rec.quests[q]?.passed || undefined} title={LESSON_QUEST[q].learn}>
-            <i aria-hidden="true">{rec.quests[q]?.passed ? '✓' : Number(q.slice(1))}</i>
-          </li>
-        ))}
-      </ol>
+      {/* What the 차시 teaches is the 교안's (its pages above); the quests' progress is the quest track's, above. */}
       <div className={css.row}>
         <button
           type="button"
           className={css.key}
           data-on={ready && got.length < asks.length ? '' : undefined}
-          disabled={!ready && !got.length}
-          onClick={onCheck}
-          title={ready ? '차시 확인 문제 3개 (수행평가)' : '이 차시의 퀘스트를 모두 통과하면 열려요'}
+          // Open at any time (the teacher says when, in the 정리): before every quest is passed, asked once.
+          onClick={() => {
+            if (!ready && !got.length && !window.confirm(`이 차시 퀘스트를 ${done}/${lesson.quests.length}개 통과했어요. 그래도 확인 문제를 풀까요?`)) return;
+            onCheck();
+          }}
+          title="차시 확인 문제 3개 (수행평가)"
         >
           {got.length === asks.length ? `확인 문제 ${right}/${asks.length} 맞힘` : got.length ? `확인 문제 이어 풀기 (${got.length}/${asks.length})` : '확인 문제 풀기 (3문제)'}
         </button>

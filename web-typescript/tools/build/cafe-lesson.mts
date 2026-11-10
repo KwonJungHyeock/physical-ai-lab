@@ -50,6 +50,14 @@ const RUN_S: Record<string, string> = {
   F8: '영업 하루 약 14분 (×4로 열려서 약 3분 30초, ⚡ 결과 바로는 몇 초)',
 };
 
+/** 진도 운영 (as VEX STEM Labs' pacing notes): a 차시 of the 4차시 구성 — what to show instead of having it done, and what a fast and a slow group do. */
+const PACE: Record<number, { demo: string; fast: string; slow: string }> = {
+  1: { demo: '퀘스트 1은 프로젝터로 함께 보고, O · X는 손을 들어 답하게 해도 돼요.', fast: '⋯ › 자유 연습에서 조그로 손끝을 제빙기 · 커피 머신 위에 맞춰 보기.', slow: '퀘스트 3은 STEP 10 → 5 → 1 mm 순서로. 짝과 둘이 한 화면으로 해도 돼요.' },
+  2: { demo: "퀘스트 5의 '문으로 건네기'를 한 번 시범으로 돌려 보여 주세요.", fast: '내 메뉴를 하나 더 만들어 보기(따뜻한 메뉴 · 연한 메뉴).', slow: '실행은 ×4로, 결과만 볼 때는 ⚡ 결과 바로.' },
+  3: { demo: '퀘스트 6을 ×4로 한 번 시범: 둘째 잔이 기다리는 순간을 함께 보기.', fast: '메뉴 3까지 만들어 조건 블록이 고르는 것 보기.', slow: '⚡ 결과 바로로 ✗ 항목부터 확인하고 고치기.' },
+  4: { demo: '시작할 때 ⚡ 결과 바로로 하루 결과(몇 명 성공)를 먼저 보여 주고 목표를 정해요.', fast: '10명 모두 성공 · 한 잔 시간 줄이기에 도전.', slow: '⚡ 결과 바로로 여러 번 고쳐 보고, 마지막에 ×4로 한 번 보기.' },
+};
+
 /** Minutes of a 50-minute 차시 (4차시 구성) for each quest: 설명 (교안) and 수행 (앱). An estimate, not yet timed in class. */
 const MIN: Record<string, [number, number]> = { F1: [4, 6], F2: [3, 5], F3: [4, 13], F4: [5, 13], F5: [5, 12], F6: [5, 12], F7: [5, 13], F8: [8, 27] };
 
@@ -195,7 +203,7 @@ function guideHtml(): string {
 <img class="shot" src="${img('screen.jpg')}" alt="앱 화면">
 <ol class="legend" style="list-style:none;padding:0;columns:2;column-gap:6mm">
 <li><b>1</b>교안 쪽 표시: 지금 퀘스트가 교안 몇 쪽인지</li><li><b>2</b>퀘스트 점: 교사가 연 차시까지만 눌러져요</li>
-<li><b>3</b>▶ 시뮬레이션 · ⚡ 결과 바로 · 빠르기 ×1/×4 · ⋯(자유 연습)</li><li><b>4</b>차시 판: 퀘스트 번호 · 확인 문제 · 학습 기록</li>
+<li><b>3</b>▶ 시뮬레이션 · ⚡ 결과 바로 · 빠르기 ×1/×4 · ⋯(자유 연습)</li><li><b>4</b>차시 판: 교안 쪽 · 확인 문제 · 학습 기록</li>
 <li><b>5</b>학습 기록: 늘 위에 보여요 (LMS)</li><li><b>6</b>⚙ 설정 › 교사 열쇠 · 수업 운영</li></ol>
 <div class="two"><div><img class="shot" src="${img('teacher.jpg')}" alt="교사 열쇠"></div>
 <div class="box"><h3>수업 전 (교사 PC, 1분)</h3><ol><li>⚙ › <b>교사 열쇠</b>에서 차시 구성(4 · 6 · 8)을 골라요.</li><li><b>지금 열 차시</b>를 오늘 차시로 골라요.</li><li><b>수업 링크</b>를 복사해 학급 게시판 · 칠판에 올려요. 학생이 이 링크로 열면 같은 차시가 열려요.</li><li><b>수업 화면 띄우기</b>로 프로젝터에 오늘 목표 · 퀘스트 · 확인 문제를 띄워요.</li></ol>
@@ -393,7 +401,7 @@ function planHtml(): string {
 <h2>3단계 기준 (차시 · 전체)</h2><table>${RUBRIC.map((r) => `<tr><th style="width:14%">${r.level}</th><td>${esc(r.text)}</td></tr>`).join('')}</table>
 <h2>6 · 8차시로 늘릴 때 <small>⚙ 교사 열쇠에서 골라요</small></h2>
 <table style="font-size:9pt"><tr><th style="width:12%"></th>${PLAN_SIZES.map((n) => `<th>${n}차시 구성</th>`).join('')}</tr>${planRows}</table>
-<div class="box"><h3>매 차시 운영</h3><ol><li>수업 전: ⚙ › 교사 열쇠에서 차시 구성 · <b>지금 열 차시</b>를 고르고 <b>수업 링크</b>를 게시해요.</li><li>수업 중: <b>수업 화면 띄우기</b>로 프로젝터에 오늘 목표 · 퀘스트 · 확인 문제를 띄워요.</li><li>수업 끝: 학생이 학습 기록 › <b>제출 파일 받기</b> → 교사가 <b>학생 제출 파일 넣기</b> → <b>엑셀(CSV) 받기</b>.</li></ol></div>`,
+<div class="box"><h3>매 차시 운영</h3><ol><li>수업 전: ⚙ › 교사 열쇠에서 차시 구성 · <b>지금 열 차시</b>를 고르고 <b>수업 링크</b>를 게시해요. 학생이 링크로 열면 인트로 없이 그 차시 첫 퀘스트가 열려요(저절로 시작하지 않고 ▶를 기다려요).</li><li>수업 중: <b>수업 화면 띄우기</b>로 프로젝터에 오늘 목표 · 퀘스트 · 확인 문제를 띄워요.</li><li>수업 끝: 학생이 학습 기록 › <b>제출 파일 받기</b> → 교사가 <b>학생 제출 파일 넣기</b> → <b>엑셀(CSV) 받기</b>.</li></ol></div>`,
       3,
     ),
   );
@@ -406,7 +414,7 @@ function planHtml(): string {
         const m = missionById(q)!;
         const L = LESSON_QUEST[q];
         const [ex, dn] = MIN[q];
-        return `<tr><td rowspan="2">전개<br><small>퀘스트 ${m.n}</small></td><td>${ex}분</td><td><b>설명</b> (교안 ${L.pages[0]}쪽): 개념 '${esc(L.concept.term)}' — ${esc(L.concept.def)} 앱 화면에서 볼 것을 프로젝터로 짚기.</td><td>개념을 듣고 학생용 교안 ${m.n + 1}쪽의 개념 칸을 읽는다.</td><td>교안 ${L.pages[0]}쪽 · 프로젝터</td></tr>
+        return `<tr><td rowspan="2">전개<br><small>퀘스트 ${m.n}</small></td><td>${ex}분</td><td><b>설명</b> (교안 ${L.pages[0]}쪽): 개념 '${esc(L.concept.term)}'과 앱 화면에서 볼 것을 프로젝터로 짚기.</td><td>개념을 듣고 학생용 교안 ${m.n + 1}쪽의 개념 칸을 읽는다.</td><td>교안 ${L.pages[0]}쪽 · 프로젝터</td></tr>
 <tr><td>${dn}분</td><td><b>수행 안내</b> (교안 ${L.pages[1]}쪽): "${esc(QUESTS[q].short)}". 순회하며 막힌 학생에게 '막힐 때' 문장으로 돕기.</td><td>앱에서 퀘스트 ${m.n}을 열고 ${esc(QUESTS[q].todo)} 관찰을 교안에 적는다.</td><td>앱 · 걸리는 시간 ${esc(RUN_S[q].replace(/ \(.*$/, ''))}</td></tr>`;
       })
       .join('');
@@ -421,7 +429,8 @@ function planHtml(): string {
 ${dev}
 <tr><td rowspan="2">정리</td><td>5분</td><td>앱의 차시 판 › 확인 문제 3개 안내 (${asks.map((a) => a.key.replace('F', '').replace('.', '-')).join(' · ')}). 정답 · 까닭은 교사용 교안 ${GUIDE_PAGES.answers}쪽.</td><td>확인 문제를 풀고(자동 채점), 개념 한 문장을 쓴다.</td><td>앱 차시 판</td></tr>
 <tr><td>5분</td><td>개념을 한 문장으로 정리. 학습 기록 제출 안내. ${l.n < 4 ? `다음 차시(퀘스트 ${four[l.n].quests.map((q) => q.slice(1)).join(' · ')}) 예고.` : '하루 운영 결과(몇 명 성공)를 반 전체와 비교.'}</td><td>학습 기록 › 제출 파일 받기 → 제출.</td><td>교사 열쇠 › 반 결과 모으기</td></tr></table>
-<div class="box o"><h3>평가 · 유의점</h3><ul><li>평가: 퀘스트 ${qs.map((q) => q.slice(1)).join(' · ')} 통과 · 확인 문제 3문항 · 개념 한 문장 (3단계 기준, 교사용 교안 ${GUIDE_PAGES.rubric}쪽).</li><li>${esc(STUCK[qs[qs.length - 1]][0])}</li><li>먼저 끝낸 학생: ⋯ › 자유 연습에서 메뉴 · 순서를 바꿔 보게 해요.</li></ul></div>`,
+<div class="box i"><h3>진도 운영</h3><ul><li><b>시범으로 바꿔도 돼요</b> · ${esc(PACE[l.n].demo)}</li><li><b>빨리 끝낸 학생</b> · ${esc(PACE[l.n].fast)}</li><li><b>느린 학생</b> · ${esc(PACE[l.n].slow)}</li></ul></div>
+<div class="box o"><h3>평가 · 유의점</h3><ul><li>평가: 퀘스트 ${qs.map((q) => q.slice(1)).join(' · ')} 통과 · 확인 문제 3문항 · 개념 한 문장 (3단계 기준, 교사용 교안 ${GUIDE_PAGES.rubric}쪽).</li><li>${esc(STUCK[qs[qs.length - 1]][0])}</li><li>확인 문제는 퀘스트를 다 못 했어도 열려요(앱이 한 번 물어요). 정리 시간에 다 함께 풀게 하세요.</li></ul></div>`,
         3 + l.n,
       ),
     );

@@ -660,11 +660,17 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       lessonRecRef.current = { ...rec, plan: set.plan };
       setLessonRec(lessonRecRef.current);
       setTeacherSet(set);
-      if (fromLink) localStorage.setItem(TEACHER_KEY, JSON.stringify(set));
+      if (fromLink) {
+        localStorage.setItem(TEACHER_KEY, JSON.stringify(set));
+        // A class link: past the intro, into the 차시's first quest (below, once the scene is loaded).
+        setLinkStart(set);
+      }
     } catch {
       /* defaults */
     }
   }, [track]);
+  /** 수업 링크로 열었을 때: the 차시 to open once loaded (the intro skipped). */
+  const [linkStart, setLinkStart] = useState<TeacherSet | null>(null);
   /** 입문 튜토리얼 (lifeTutorials.ts): the one running, its step and what the arm was when the step began. */
   const [lifeTut, setLifeTut] = useState<{ id: string; step: number; start: TutCtx; mem: TutMem } | null>(null);
   const [tutDone, setTutDone] = useState<Record<string, boolean>>({});
@@ -686,8 +692,13 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const [touring, setTouring] = useState<CellId | null>(null);
   /** 입문 · 로봇 카페: 주문 한 잔 따라가기 — the 1단계's ready program played once on coming in (instead of a tour). */
   const [film, setFilm] = useState(false);
-  /** Opening a place: the café plays its order through (its 1단계); the others are toured. */
-  const showPlace = (c: CellId) => (c === 'cafe' ? setFilm(true) : setTouring(c));
+  /**
+   * Opening a place: the others are toured; the café waits (교실 수업: the teacher's 도입 first, quest 1
+   * starts with ▶, not by itself as a student opens it).
+   */
+  const showPlace = (c: CellId) => {
+    if (c !== 'cafe') setTouring(c);
+  };
   /** 입문: the 학습 로드맵 over the intro (the quest card's 목록). */
   const [roadmapOpen, setRoadmapOpen] = useState(false);
   const toured = useRef(false);
@@ -1959,8 +1970,9 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       : null;
   /** 입문 트랙: the step's goal on the notice board (what to do now), its first check in one line. */
   const lifeStep = track && cellAt?.mission ? missionById(cellAt.mission) : null;
-  // 입문: no base axes while a place runs or is toured (the close-up cameras put them over the cup or the pen).
-  const axesQuiet = !!track && !!cellAt && (busy || !!touring);
+  // 입문: no base axes while a place runs or is toured (the close-up cameras put them over the cup or the pen),
+  // nor in a quest but the jog (퀘스트 3: the X · Y · Z it moves along); free practice keeps them.
+  const axesQuiet = !!track && !!cellAt && (busy || !!touring || (!!cellAt.mission && cellAt.mission !== 'F3'));
   const stageDisplay = useMemo(() => (axesQuiet ? { ...display, baseAxes: false } : display), [axesQuiet, display]);
   const lifeGuide: Guide | null = lifeStep && view === 'sim' ? { head: `${lifeStep.n}단계 · ${lifeStep.title}`, text: `목표 ${lifeStep.checks?.[0]?.label ?? lifeStep.goal}` } : null;
   // 입문 퀘스트 모드: a place's step (or a 기초 조작 tutorial) is a quest — 브리핑 → 해 보기 → 실행 · 관찰 → 결과.
@@ -2015,7 +2027,12 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       api.lookAt(sh.eye, sh.target);
       // After the view going home when a run before ended (1.2 s).
     }, 1700);
-    return () => window.clearTimeout(t);
+    return () => {
+      window.clearTimeout(t);
+      // Leaving the quest: its close view does not stay for the next one.
+      const api = stageApi.current;
+      if (api && !api.userMoved()) api.view('home');
+    };
   }, [handShot]);
   useEffect(() => {
     // A quest left mid-pour: back to real time.
@@ -4383,6 +4400,18 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     const id = window.setTimeout(() => showPlace(cellAt.cell), 1400);
     return () => window.clearTimeout(id);
   }, [track, entered, loaded, cellAt]);
+  // 수업 링크: the class starts where the teacher set it — no intro, no 테마학습 click, the 차시's first quest.
+  useEffect(() => {
+    if (!track || !linkStart || !loaded) return;
+    // (순서대로, lesson 0: the place's first quest.)
+    const qs = lessonsOf(linkStart.plan, linkStart.site)[Math.max(0, linkStart.lesson - 1)]?.quests;
+    toured.current = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- once, as the page opens from a class link
+    setEntered(true);
+    setLinkStart(null);
+    openCell(linkStart.site, qs?.[0] ?? null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- openCell is the render's; it runs once
+  }, [track, linkStart, loaded]);
   const pastIntro = entered || robotMode || picking;
   const showPicker = splashDone && pastIntro && !connectOpen && (picking || !modelNow);
 
@@ -4971,8 +5000,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
           status={
             <>
             {track && <RecordPill rec={lessonRec} site={lifeSite} lesson={lessonNow?.n ?? (lifeSite === teacherSet.site ? teacherSet.lesson : 0)} total={lessons.length} onOpen={() => setLessonUi('record')} />}
-            {/* On the simulator the link sits in the 3D view's top-left corner (StageTitle), unless a cell or a window holds that corner. */}
-            {!stageTitle && (
+            {/* On the simulator the link sits in the 3D view's top-left corner (StageTitle), unless a cell or a window holds that corner. 입문 퀘스트: not shown (simulation only). */}
+            {!stageTitle && !questOn && (
             <button
               type="button"
               className={css.connPill}
@@ -5344,7 +5373,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                 </StageTitle>
               )}
               {loaded && view === 'sim' && !railOpen && !cellAt && <HudGauges speed={jogSpeed} monitor={monitor} dock={dockShown ? 'open' : 'closed'} />}
-              {loaded && view === 'sim' && (
+              {/* 입문 퀘스트: no left menu (the quest card's ⊞ goes to the places and quests); free practice has it. */}
+              {loaded && view === 'sim' && !(questOn && railOpen === null) && (
                 <LeftRail groups={shownGroups} foot={inCafe ? undefined : barFoot} sheetOpen={railOpen !== null} onCloseSheet={() => setRailOpen(null)}>
                   {(railOpen === 'env' || railOpen === 'objects') && (
                     <DeskPanel

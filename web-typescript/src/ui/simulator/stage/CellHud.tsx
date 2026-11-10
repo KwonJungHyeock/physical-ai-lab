@@ -15,6 +15,7 @@ import { CELL_BY_ID, cellLayout, gridPlace, type CellId } from '@/engine/simulat
 import type { CellAlert } from '@/engine/simulator/cell/faults';
 import { setOut } from '@/engine/simulator/cell/line';
 import { missionById, missionsOf } from '@/engine/simulator/cell/missions';
+import { STEP_GUIDES } from '@/engine/simulator/cell/guides';
 import { CAFE_BOARD, type NarratePlace } from '@/engine/simulator/cell/narrate';
 import { LIFE_STOPS } from '@/engine/simulator/lifeFields';
 import { questShort, type QuestPhase } from '@/engine/simulator/cell/quests';
@@ -289,6 +290,8 @@ function PanelQuest(p: QuestCardProps) {
       </ol>
       {m && q && (
         <>
+          {/* The four moves only where the quest has them (a 예측 or things to observe): not the café's 2–8. */}
+          {(STEP_GUIDES[m.id]?.predict || (STEP_GUIDES[m.id]?.observe.length ?? 0) > 0) && (
           <ol className={css.qGauge} aria-label="단계">
             {PHASES.map((ph, k) => (
               <li key={ph} data-on={k === now || undefined} data-done={k < now || undefined}>
@@ -297,6 +300,7 @@ function PanelQuest(p: QuestCardProps) {
               </li>
             ))}
           </ol>
+          )}
           <div className={css.qGoal} data-phase={q.watching ? 'run' : q.phase}>
             <i aria-hidden="true" />
             <p>{q.watching ?? questShort(q.phase, m.id, q.phase === 'result' ? !!q.checks?.every((c) => c.ok) : null)}</p>

@@ -9295,6 +9295,14 @@ div.zeroFlow {
   border-top: 0;
   background: transparent;
 }
+/* 입문 퀘스트: ▶ always in sight at the panel's bottom while the cards above scroll (no scrolling to run). */
+.pane[data-scroll] > .runDock[data-quest] {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  padding-top: 12px;
+  background: linear-gradient(180deg, rgba(38, 41, 45, 0) 0, #26292d 12px);
+}
 
 /* 입문 현장 (교실 수업형): one place for notices, at the side panel's top edge beside the view tools,
    not over the middle of the scene. */
