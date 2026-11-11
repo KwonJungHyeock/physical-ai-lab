@@ -80,4 +80,42 @@ const P = await import('../../src/engine/simulator/cell/platform');
 const own = P.planFromPlatform({ lessons: [['1-1', '9-9'], ['3-3'], ['5-1', '5-2']] });
 assert.deepEqual(own.lessons, [['1-1'], ['5-1', '5-2']]);
 
+// 수행평가 준비 중: shown in the 차시 of its chapter's last 절, skipped, never counted.
+const ls = K.lessonStepsIn(full);
+assert.deepEqual(
+  ls.flatMap((l) => l.steps.filter((x) => x.kind === 'test').map((x) => `${l.n}:${x.sub.id}`)),
+  ['1:1-4', '2:2-5', '4:3-6', '6:4-5', '8:5-6'],
+);
+for (const t of tests) assert.equal(K.testReady(t.sub), false, `${t.sub.id} 준비 중`);
+assert.ok(!K.countedIn(full).some((s) => s.test));
+
+// 상 · 중 · 하 (임시, browser): by the #48 rule, only for a 수행평가 taken.
+assert.equal(P.levelOf({ chapter: 3, right: 5, of: 5, mission: true }).level, '상');
+assert.equal(P.levelOf({ chapter: 3, right: 4, of: 5, mission: true }).level, '중');
+assert.equal(P.levelOf({ chapter: 3, right: 5, of: 5, mission: false }).level, '중');
+assert.equal(P.levelOf({ chapter: 3, right: 4, of: 5, mission: false }).level, '하');
+assert.equal(P.levelOf({ chapter: 3, right: 5, of: 5, mission: true }).temporary, true);
+
+// 저작권 안내: once a day.
+const store = new Map<string, string>();
+const day1 = new Date(2026, 10, 11, 9).getTime();
+assert.equal(
+  P.noticeDue((k) => store.get(k) ?? null, day1),
+  true,
+);
+P.noticeRead((k, v) => store.set(k, v), day1);
+assert.equal(
+  P.noticeDue((k) => store.get(k) ?? null, day1 + 5 * 3600_000),
+  false,
+  '같은 날은 안내 없음',
+);
+assert.equal(
+  P.noticeDue((k) => store.get(k) ?? null, new Date(2026, 10, 12, 8).getTime()),
+  true,
+  '다음 날은 다시',
+);
+
+// 접근: today every course may be opened.
+assert.equal(await P.mayOpen({ course: 'full8', sub: '5-2', mode: 'scene' }), true);
+
 console.log(`입문 과정: 표 ${C.COURSE_SUBS.length}절 · 8차시 ${full.lessons.flat().length}절 · 4차시 ${focus.lessons.flat().length}절 · 수행평가 ${tests.length} — 통과`);

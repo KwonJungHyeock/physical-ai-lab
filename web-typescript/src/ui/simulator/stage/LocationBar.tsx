@@ -23,6 +23,8 @@ export interface LocStep {
   state: 'done' | 'now' | 'todo';
   /** Not in the app yet (만드는 중): listed, not opened. */
   soon?: boolean;
+  /** Its word in place of the state (a 수행평가: '준비 중'). */
+  tag?: string;
 }
 
 export interface LocLesson {
@@ -124,7 +126,7 @@ export default function LocationBar({
                     if (s.state !== 'now') onGo(s.id);
                   }}
                 >
-                  <em>{s.soon ? '' : s.state === 'done' ? '✓ 완료' : s.state === 'now' ? '지금' : '미완료'}</em>
+                  <em>{s.tag ?? (s.soon ? '' : s.state === 'done' ? '✓ 완료' : s.state === 'now' ? '지금' : '미완료')}</em>
                   <span>
                     {s.label} {s.title}
                   </span>

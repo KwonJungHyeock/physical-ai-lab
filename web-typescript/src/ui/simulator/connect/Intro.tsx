@@ -76,11 +76,13 @@ interface Props {
   /** A 트랙's own cover (tracks.ts): its title and lines, its pictures taking turns instead of the film. */
   brand?: TrackIntro;
   /**
-   * 입문 과정: the 저작권 안내 in place of the two ways in ([확인하고 시작], each time it opens); pressing
-   * it enters (the 절 the address names, or the list). The course comes from the platform, not picked here.
+   * 입문 과정: the 저작권 안내 in place of the two ways in ([확인하고 시작]; once a day, `ask` — platform.ts);
+   * pressing it enters (the 절 the address names, or the list). Read already today: straight in, no wait.
+   * The course comes from the platform, not picked here. The cover's words are Korean.
    */
   courses?: {
     notice: { kicker: string; title: string; lines: readonly string[]; owner: string; ok: string };
+    ask: boolean;
     onEnter(): void;
   };
 }
@@ -150,6 +152,18 @@ export default function Intro({ progress, ready, note, gate, brand, courses }: P
     setEntered(true);
     go();
   };
+  // 입문, the 안내 read already today: no sequence, straight in once the 3D is ready.
+  const straight = !!courses && !courses.ask;
+  useEffect(() => {
+    if (!straight) return;
+    const t = window.setTimeout(() => setPlayed(true), 0);
+    return () => window.clearTimeout(t);
+  }, [straight]);
+  useEffect(() => {
+    if (!straight || !final || entered || !courses) return;
+    const t = window.setTimeout(() => enter(courses.onEnter), 0);
+    return () => window.clearTimeout(t);
+  });
   // After a reload of its own with the choice still open (back from a robot): straight into the simulator.
   useEffect(() => {
     if (!quiet || !final || !gate || entered || courses) return;
@@ -189,7 +203,7 @@ export default function Intro({ progress, ready, note, gate, brand, courses }: P
           <img src="/brand/robodyne-name-white.png" alt="ROBODYNE SYSTEMS" width={615} height={174} />
         </span>
         <span className={css.version}>
-          <small>VERSION</small>
+          <small>{courses ? '버전' : 'VERSION'}</small>
           <b>v1.{RELEASE}</b>
         </span>
       </header>
@@ -197,7 +211,7 @@ export default function Intro({ progress, ready, note, gate, brand, courses }: P
       <figure key={scene} className={css.caption} aria-hidden="true">
         {scenes.length > 1 && (
           <small>
-            SCENE {String(scene + 1).padStart(2, '0')} / {String(scenes.length).padStart(2, '0')}
+            {courses ? '장면' : 'SCENE'} {String(scene + 1).padStart(2, '0')} / {String(scenes.length).padStart(2, '0')}
           </small>
         )}
         <b>{now.tag}</b>
@@ -283,7 +297,7 @@ export default function Intro({ progress, ready, note, gate, brand, courses }: P
         )}
       </div>
 
-      {choose && courses && !noticed && (
+      {choose && courses && courses.ask && !noticed && (
         <div className={css.notice} role="alertdialog" aria-modal="true" aria-labelledby="copyright-title" onClick={(e) => e.stopPropagation()}>
           <div>
             <small>{courses.notice.kicker}</small>
@@ -314,8 +328,8 @@ export default function Intro({ progress, ready, note, gate, brand, courses }: P
           <small className={css.note}>{choose && courses ? '' : choose ? (gate.onRoadmap ? '배우려면 THEME (로봇 카페부터), 팔만 움직여 보려면 SIMULATOR' : '로봇과 같은 Wi-Fi 라면 CONNECT, 로봇 없이 연습하려면 SIMULATOR') : note}</small>
           <span className={css.status} data-ready={ready || undefined}>
             <i />
-            {ready ? 'SYSTEM READY' : 'LOADING'}
-            <small>{ready ? '시스템 준비됨' : '불러오는 중'}</small>
+            {courses ? (ready ? '준비됨' : '불러오는 중') : ready ? 'SYSTEM READY' : 'LOADING'}
+            {!courses && <small>{ready ? '시스템 준비됨' : '불러오는 중'}</small>}
           </span>
         </span>
       </footer>

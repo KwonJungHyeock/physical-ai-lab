@@ -191,7 +191,9 @@ export interface CourseRecord {
   title: string;
   short: string;
   /** optional: a 선택 절 (the real robot) — never counted against 완료. */
-  lessons: { n: number; subs: { id: string; title: string; done: boolean; soon: boolean; optional?: boolean }[] }[];
+  lessons: { n: number; subs: { id: string; title: string; done: boolean; soon: boolean; optional?: boolean; pending?: boolean }[] }[];
+  /** 상 · 중 · 하 of the 수행평가 taken (임시: the browser's, until the platform's). None taken: none — never a 하. */
+  levels: { chapter: number; level: string }[];
   /** 4차시: the mission of each 차시's last 절 is what is recorded. */
   missions?: { id: string; passed: boolean; soon: boolean }[];
   copyright: string;
@@ -202,6 +204,8 @@ const courseTotals = (c: CourseRecord) => {
   const all = c.lessons.flatMap((l) => l.subs.filter((x) => !x.soon && !x.optional));
   return { got: all.filter((x) => x.done).length, of: all.length };
 };
+/** '상 · 중 · 하 (임시) 3장 상 · …', or why there is none yet. */
+const levelsText = (c: CourseRecord) => (c.levels.length ? `상 · 중 · 하 (임시): ${c.levels.map((x) => `${x.chapter}장 ${x.level}`).join(' · ')}` : '상 · 중 · 하 (임시): 아직 없어요 — 수행평가 준비 중');
 /** 4차시 missions: ' · 차시 미션 1-3 통과 · 3-4 아직 …' (one not built yet left out). */
 const missionsText = (c: CourseRecord) => {
   const m = (c.missions ?? []).filter((x) => !x.soon);
@@ -212,7 +216,10 @@ function courseSheetHtml(rec: LessonRecord, c: CourseRecord): string {
   const esc = (t: string) => t.replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch] ?? ch);
   const tot = courseTotals(c);
   const rows = c.lessons
-    .map((l) => `<tr><td>${l.n}차시</td><td>${l.subs.map((x) => `<div${x.soon ? ' style="color:#999"' : ''}>${x.done ? '✓' : '·'} ${x.id} ${esc(x.title)}${x.optional ? ' (선택)' : ''}</div>`).join('')}</td></tr>`)
+    .map(
+      (l) =>
+        `<tr><td>${l.n}차시</td><td>${l.subs.map((x) => `<div${x.soon ? ' style="color:#999"' : ''}>${x.done ? '✓' : '·'} ${x.id} ${esc(x.title)}${x.optional ? ' (선택)' : ''}${x.pending ? ' — 준비 중 (건너뜀)' : ''}</div>`).join('')}</td></tr>`,
+    )
     .join('');
   const day = new Date().toLocaleDateString('ko-KR');
   return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>학습 기록지</title><style>
@@ -226,6 +233,7 @@ td div{margin:2px 0}td span{color:#555;font-size:11px}.tot{font-size:13px;font-w
 <div class="who"><span>번호 <b>${esc(rec.no) || '____'}</b></span><span>이름 <b>${esc(rec.name) || '__________'}</b></span><span>${esc(c.short)}</span><span>${day}</span></div>
 <table><tr><th style="width:60px">차시</th><th>번호 · 내용 (완료 ✓)</th></tr>${rows}</table>
 <p class="tot">완료 ${tot.got} / ${tot.of}${missionsText(c)}</p>
+${c.levels.length || c.lessons.some((l) => l.subs.some((x) => x.pending)) ? `<p class="tot">${esc(levelsText(c))}</p>` : ''}
 <div class="sign"><div>학생 확인 <span></span></div><div>교사 확인 <span></span></div></div>
 <p class="note">이 기록은 시뮬레이션 결과예요.</p>
 <p class="copy">${esc(c.copyright)}</p>
@@ -340,6 +348,7 @@ export function RecordPanel({ rec, site: start, onWho, onClose, course }: { rec:
                           <i>{x.done ? '✓' : '·'}</i>
                           {x.id} {x.title}
                           {x.optional ? ' (선택)' : ''}
+                          {x.pending ? ' — 준비 중' : ''}
                         </div>
                       ))}
                     </td>
@@ -402,6 +411,7 @@ export function RecordPanel({ rec, site: start, onWho, onClose, course }: { rec:
             {missionsText(course)}
           </p>
         )}
+        {course && (course.levels.length > 0 || course.lessons.some((l) => l.subs.some((x) => x.pending))) && <p className={css.total}>{levelsText(course)}</p>}
         {!course && (
           <p className={css.total}>
             퀘스트{' '}
@@ -512,7 +522,7 @@ export function TeacherKey({
       <div className={css.scrim} aria-hidden="true" onClick={onClose} />
       <div className={css.modal} data-wide role="dialog" aria-modal="true" aria-label="교사 열쇠">
         <header className={css.mHead}>
-          <em>TEACHER</em>
+          <em>{courseLink ? '교사' : 'TEACHER'}</em>
           <b>교사 열쇠 · 수업 운영</b>
           <button type="button" className={css.x} onClick={onClose} aria-label="닫기">
             ×
@@ -602,59 +612,64 @@ export function TeacherKey({
             이 PC 기록 지우기
           </button>
         </div>
-        <h3 className={css.h3}>반 결과 모으기 (수행평가)</h3>
-        <div className={css.row}>
-          <label className={css.file}>
-            학생 제출 파일 넣기
-            <input type="file" accept=".json,application/json" multiple onChange={(e) => void load(e.target.files)} />
-          </label>
-          <button type="button" className={css.key} disabled={!files.length} onClick={() => download(`생활로봇-반결과-${teacher.plan}차시.csv`, classCsv(files, teacher.plan), 'text/csv')}>
-            엑셀(CSV) 받기
-          </button>
-          {bad > 0 && <small>읽지 못한 파일 {bad}개</small>}
-        </div>
-        {files.length > 0 && (
-          <div className={css.tableWrap}>
-            <table className={css.table}>
-              <thead>
-                <tr>
-                  <th>번호</th>
-                  <th>이름</th>
-                  {lessonsOf(teacher.plan, teacher.site).map((l) => (
-                    <th key={l.n}>
-                      {short(teacher.site)} {l.n}차시
-                    </th>
-                  ))}
-                  <th>{short(teacher.site)} 기준</th>
-                </tr>
-              </thead>
-              <tbody>
-                {files.map((r) => {
-                  const s = summaryOf(r, teacher.plan, teacher.site);
-                  return (
-                    <tr key={`${r.no}|${r.name}`}>
-                      <td>{r.no}</td>
-                      <td>{r.name}</td>
-                      {s.lessons.map((l) => (
-                        <td key={l.n}>
-                          {l.passed}/{l.quests.length} · {l.right}/{l.asked}{' '}
-                          <span className={css.level} data-level={l.level ?? undefined}>
-                            {l.level ?? '-'}
-                          </span>
-                        </td>
+        {/* 입문 과정: not here — this table reads the places' 차시 (카페 · …), not the course; the course's record goes to the platform. */}
+        {!courseLink && (
+          <>
+            <h3 className={css.h3}>반 결과 모으기 (수행평가)</h3>
+            <div className={css.row}>
+              <label className={css.file}>
+                학생 제출 파일 넣기
+                <input type="file" accept=".json,application/json" multiple onChange={(e) => void load(e.target.files)} />
+              </label>
+              <button type="button" className={css.key} disabled={!files.length} onClick={() => download(`생활로봇-반결과-${teacher.plan}차시.csv`, classCsv(files, teacher.plan), 'text/csv')}>
+                엑셀(CSV) 받기
+              </button>
+              {bad > 0 && <small>읽지 못한 파일 {bad}개</small>}
+            </div>
+            {files.length > 0 && (
+              <div className={css.tableWrap}>
+                <table className={css.table}>
+                  <thead>
+                    <tr>
+                      <th>번호</th>
+                      <th>이름</th>
+                      {lessonsOf(teacher.plan, teacher.site).map((l) => (
+                        <th key={l.n}>
+                          {short(teacher.site)} {l.n}차시
+                        </th>
                       ))}
-                      <td>
-                        <span className={css.level} data-level={s.level ?? undefined}>
-                          {s.level ?? '-'}
-                        </span>
-                      </td>
+                      <th>{short(teacher.site)} 기준</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            <small className={css.foot}>지금 현장의 칸: 퀘스트 통과 · 확인 문제 맞힘 · 기준(위 [지금 현장]에서 바꿔 봐요). 엑셀에는 세 현장이 모두 들어가요. 같은 학생의 파일이 둘이면 나중 것을 써요.</small>
-          </div>
+                  </thead>
+                  <tbody>
+                    {files.map((r) => {
+                      const s = summaryOf(r, teacher.plan, teacher.site);
+                      return (
+                        <tr key={`${r.no}|${r.name}`}>
+                          <td>{r.no}</td>
+                          <td>{r.name}</td>
+                          {s.lessons.map((l) => (
+                            <td key={l.n}>
+                              {l.passed}/{l.quests.length} · {l.right}/{l.asked}{' '}
+                              <span className={css.level} data-level={l.level ?? undefined}>
+                                {l.level ?? '-'}
+                              </span>
+                            </td>
+                          ))}
+                          <td>
+                            <span className={css.level} data-level={s.level ?? undefined}>
+                              {s.level ?? '-'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                <small className={css.foot}>지금 현장의 칸: 퀘스트 통과 · 확인 문제 맞힘 · 기준(위 [지금 현장]에서 바꿔 봐요). 엑셀에는 세 현장이 모두 들어가요. 같은 학생의 파일이 둘이면 나중 것을 써요.</small>
+              </div>
+            )}
+          </>
         )}
       </div>
     </>

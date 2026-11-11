@@ -11,7 +11,7 @@
 import { useEffect } from 'react';
 
 import { kindsOf, pagesText, subById, topicMark, MODE_NAME, type CourseSub, type SubMode } from '@/engine/simulator/cell/course';
-import { chaptersIn, countedIn, lessonIn, type CoursePlan } from '@/engine/simulator/cell/courses';
+import { chaptersIn, countedIn, lessonIn, testReady, type CoursePlan } from '@/engine/simulator/cell/courses';
 
 import css from './courseMap.module.css';
 
@@ -84,6 +84,24 @@ export default function CourseMap({ plan, now, done, onPick, onClose }: Props) {
                     </div>
                   );
                 })}
+                {/* 8차시: the chapter's 수행평가 after its last 절 — 준비 중 (skipped) until its questions come. */}
+                {plan.tests &&
+                  c.test &&
+                  (() => {
+                    const t = subById(c.test);
+                    if (!t) return null;
+                    return (
+                      <div className={css.row} data-soon={!testReady(t) || undefined} data-test>
+                        <i />
+                        <span>
+                          <b>{c.n}장 수행평가</b>
+                          <small>{Math.max(...c.subs.map((x) => lessonIn(plan, x.id)))}차시 · O · X 5 + 미션</small>
+                        </span>
+                        <span />
+                        <em>{testReady(t) ? '' : '준비 중'}</em>
+                      </div>
+                    );
+                  })()}
               </section>
             );
           })}
@@ -105,6 +123,18 @@ export function CourseMissing({ id, onList }: { id: string; onList(): void }) {
         <button type="button" autoFocus onClick={onList}>
           목록 열기
         </button>
+      </div>
+    </div>
+  );
+}
+
+/** This user may not open the course (platform.ts mayOpen): no scene, only this. */
+export function CourseDenied() {
+  return (
+    <div className={css.scrim} role="alertdialog" aria-modal="true" aria-label="열 수 없는 과정">
+      <div className={`${css.map} ${css.missing}`}>
+        <h2>이 과정을 열 수 없어요.</h2>
+        <p>로그인과 이용권을 확인해 주세요.</p>
       </div>
     </div>
   );

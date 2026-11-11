@@ -69,6 +69,20 @@ export function stepsIn(c: CoursePlan): CourseStep[] {
   });
 }
 
+/** A chapter's 수행평가 is in the app (its questions came): until then it shows as 준비 중 and is skipped. */
+export const testReady = (t: CourseSub) => !!t.run;
+
+/** The 차시 of a course and their steps (a 수행평가 in the 차시 of the chapter's last 절). */
+export function lessonStepsIn(c: CoursePlan): { n: number; steps: CourseStep[] }[] {
+  const out = c.lessons.map((_, i) => ({ n: i + 1, steps: [] as CourseStep[] }));
+  let at = 0;
+  for (const x of stepsIn(c)) {
+    if (x.kind === 'sub') at = lessonIn(c, x.sub.id) - 1;
+    out[at]?.steps.push(x);
+  }
+  return out;
+}
+
 /**
  * After a 절, in a course: the next step that opens in the app (a chapter's 수행평가 once it is built,
  * else the next 절 that opens), or else the 학습 기록 ('record': nothing after it opens yet).
