@@ -1,0 +1,66 @@
+/* 입문 과정 절: press spots on the arm (1-2) and asset slots in the scene. */
+.spot {
+  position: relative;
+  display: block;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+.spot:hover {
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.55);
+}
+.spot[data-found] {
+  box-shadow: inset 0 0 0 3px #22c55e;
+}
+.spot b {
+  position: absolute;
+  left: 40px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: #f6f7f9;
+  color: #14171c;
+  font-size: 15px;
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+.spot b[data-wrong] {
+  background: rgba(24, 28, 35, 0.95);
+  color: #fff;
+}
+
+.slot {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 12px;
+}
+.slot img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.slot[data-missing] {
+  border: 2px dashed rgba(255, 255, 255, 0.55);
+  background: rgba(20, 24, 30, 0.55);
+  color: #fff;
+  text-align: center;
+}
+.slot span {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.slot small {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: #c9ced5;
+}

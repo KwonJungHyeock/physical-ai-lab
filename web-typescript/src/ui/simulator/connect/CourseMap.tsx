@@ -91,14 +91,20 @@ export default function CourseMap({ plan, now, done, onPick, onClose }: Props) {
                     const t = subById(c.test);
                     if (!t) return null;
                     return (
-                      <div className={css.row} data-soon={!testReady(t) || undefined} data-test>
+                      <div className={css.row} data-soon={!testReady(t) || undefined} data-state={t.id === now ? 'now' : done(t) ? 'done' : 'todo'} data-test>
                         <i />
                         <span>
                           <b>{c.n}장 수행평가</b>
                           <small>{Math.max(...c.subs.map((x) => lessonIn(plan, x.id)))}차시 · O · X 5 + 미션</small>
                         </span>
-                        <span />
-                        <em>{testReady(t) ? '' : '준비 중'}</em>
+                        <span className={css.kinds}>
+                          {testReady(t) && (
+                            <button type="button" onClick={() => onPick(t, 'practice')}>
+                              평가 하기
+                            </button>
+                          )}
+                        </span>
+                        <em>{!testReady(t) ? '준비 중' : done(t) ? '✓ 완료' : t.id === now ? '지금' : '미완료'}</em>
                       </div>
                     );
                   })()}

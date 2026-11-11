@@ -85,6 +85,8 @@ export interface CourseEvent {
   /** opened: entered · passed / failed: a 실습's run was graded · done: a tutorial finished. */
   what: 'opened' | 'passed' | 'failed' | 'done';
   at: number;
+  /** 1-2: wrong presses (recorded only; they never count against it). */
+  misses?: number;
 }
 
 /** Send one event (today: nothing more to do; the browser's record is kept by lessonRecord.ts). */

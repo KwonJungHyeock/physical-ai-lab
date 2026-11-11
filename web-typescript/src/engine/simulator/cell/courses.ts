@@ -89,7 +89,7 @@ export function lessonStepsIn(c: CoursePlan): { n: number; steps: CourseStep[] }
  */
 export function nextIn(c: CoursePlan, id: string): CourseSub | 'record' | undefined {
   const all = stepsIn(c);
-  const k = all.findIndex((x) => x.kind === 'sub' && x.sub.id === id);
+  const k = all.findIndex((x) => x.sub.id === id);
   if (k < 0) return undefined;
   return all.slice(k + 1).find((x) => !!x.sub.run)?.sub ?? 'record';
 }

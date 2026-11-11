@@ -149,12 +149,16 @@ import RunBar from './tasks/RunBar';
 import { quickRun } from '@/engine/simulator/cell/quick';
 import { LessonCheck, LessonPlate, Projector, RecordPanel, RecordPill, TeacherKey, questPages } from './tasks/LessonKit';
 import { lessonOfQuest, lessonsOf, siteOf } from '@/engine/simulator/cell/lessons';
-import { kindsOf, modeFor, subById, subOfRun, topicMark, MODE_NAME, type CourseSub, type SubMode } from '@/engine/simulator/cell/course';
+import { COURSE, kindsOf, modeFor, subById, subOfRun, topicMark, MODE_NAME, type CourseSub, type SubMode } from '@/engine/simulator/cell/course';
 import { DEFAULT_PLAN, countedIn, lessonIn, lessonStepsIn, missionSubsIn, nextIn, testReady, type CoursePlan } from '@/engine/simulator/cell/courses';
 import { mayOpen, noticeDue, noticeRead, readPlan, report } from '@/engine/simulator/cell/platform';
+import { ARM_PARTS, COURSE_STEPS, FOUND_SWING_DEG, HAND_SCENE, HAND_SLOW_S, RANGE_MM, STEPS_KEY, SWING, isCourseStep, type CourseStepId } from '@/engine/simulator/cell/courseSteps';
+import { CHAPTER_TESTS, TESTS_KEY, loadTests, type OX, type TestResult } from '@/engine/simulator/cell/courseTests';
 import { COPYRIGHT_NOTICE, COPYRIGHT_RECORD_LINE } from '@/engine/simulator/copyright';
 import LocationBar, { type LocLesson } from './stage/LocationBar';
-import { QuestNow, TutNow } from './stage/NowBar';
+import NowBar, { NowMark, QuestNow, TutNow } from './stage/NowBar';
+import CourseStepPanel, { SceneSlot } from './tasks/CourseStepPanel';
+import CourseTestPanel from './tasks/CourseTestPanel';
 import QuestNumbers from './stage/QuestNumbers';
 import { RECORD_KEY, TEACHER_KEY, answered as recAnswered, emptyRecord, loadRecord, loadTeacher, opened as recOpened, passed as recPassed, questOpen, teacherFromQuery, tried as recTried, type LessonRecord, type TeacherSet } from '@/engine/simulator/cell/lessonRecord';
 import { usePcApp } from './connect/usePcApp';
@@ -617,6 +621,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
    * cell's both read the rate through `runRate`, which is 0 while held.
    */
   const heldRef = useRef(false);
+  /** 입문 과정 1-1: the hand slows the run (1 free … 0 stopped); every move's clock and the cell's read it. */
+  const slowRef = useRef(1);
   /** 입문 해 보기 ①: ▶▶ while the machine pours by hand (the cell 4 ×, this wait only). */
   const fastRef = useRef(1);
   /** 입문 카페: a long pour waited for fast (WaitSkip; set below while a program runs). */
@@ -632,7 +638,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const runRate = useMemo(
     () => ({
       get current() {
-        return heldRef.current ? 0 : simRateRef.current * fastRef.current * waitRef.current;
+        return heldRef.current ? 0 : simRateRef.current * fastRef.current * waitRef.current * slowRef.current;
       },
     }),
     [],
@@ -725,6 +731,28 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   /** 입문 튜토리얼 (lifeTutorials.ts): the one running, its step and what the arm was when the step began. */
   const [lifeTut, setLifeTut] = useState<{ id: string; step: number; start: TutCtx; mem: TutMem } | null>(null);
   const [tutDone, setTutDone] = useState<Record<string, boolean>>({});
+  // 입문 과정 절 built for the course (courseSteps.ts): which, its step, and what it has seen so far.
+  const [courseStep, setCourseStep] = useState<{ id: CourseStepId; step: number; found: number[]; flash: number | null; misses: number; range: boolean; handNear: boolean; stopped: boolean; note: string | null } | null>(null);
+  const courseStepRef = useRef(courseStep);
+  useEffect(() => {
+    courseStepRef.current = courseStep;
+  });
+  const [stepsDone, setStepsDone] = useState<Record<string, boolean>>({});
+  /** A chapter's 수행평가 open (its chapter number). */
+  const [courseTest, setCourseTest] = useState<number | null>(null);
+  const [testResults, setTestResults] = useState<Record<string, TestResult>>({});
+  /** 1-3: 정지 was pressed while the arm moved (read when the run ends). */
+  const stepStopped = useRef(false);
+  useEffect(() => {
+    if (!course) return;
+    try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- read after hydration (this browser's record of the course's own 절 and 수행평가)
+      setStepsDone(JSON.parse(localStorage.getItem(STEPS_KEY) ?? '{}') as Record<string, boolean>);
+      setTestResults(loadTests((k) => localStorage.getItem(k)));
+    } catch {
+      /* storage blocked: none yet */
+    }
+  }, [course]);
   /** Process runs that finished well (튜토리얼 '위치 가르쳐 옮기기'). */
   const [procRuns, setProcRuns] = useState(0);
   /** 입문 단계 안내: the 예측 card open (▶ pressed before predicting), steps skipped, the last run's checks for the result card. */
@@ -793,7 +821,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const runFold = display.autoFold && programRun && !cellTermOn && !armTermOn;
   // 장면 보기 (입문): the 절's scene and its motion only — no panel, nothing to press, nothing graded.
   const sceneView = course && subMode === 'scene' && !!cellAt?.mission;
-  const dockShown = dockOpen && !runFold && !sceneView;
+  // (입문 과정 절: the panel stays while the run goes — 1-1's hand keys are pressed during it.)
+  const dockShown = dockOpen && (!runFold || !!courseStep) && !sceneView && courseStep?.id !== '1-2';
   useEffect(() => {
     try {
       const v = JSON.parse(localStorage.getItem(CELL_PASSED_KEY) ?? '{}') as Record<string, boolean>;
@@ -1763,7 +1792,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       let coast: { s: number; left: number } | null = null;
       const step = (now: number) => {
         // (Nothing moves while the scene is held for a 예측.)
-        let dt = (Math.min(now - last, 250) / 1000) * (heldRef.current ? 0 : rate);
+        let dt = (Math.min(now - last, 250) / 1000) * (heldRef.current ? 0 : rate) * slowRef.current;
         if (tk?.aborted && !coast) {
           const at = world.current.angles.slice();
           const ahead = Math.min(durationS, t + 0.02);
@@ -2155,7 +2184,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     };
   }, [fastQuest]);
   // 교실 수업형: a quest of a 생활 로봇 place opened is noted (its minutes count from here) and its 차시 is the one shown.
-  const lifeQuest = track && lifeStep && siteOf(lifeStep.id) ? lifeStep.id : null;
+  const lifeQuest = track && lifeStep && !courseStep && siteOf(lifeStep.id) ? lifeStep.id : null;
   const lifeSite = (lifeQuest ? siteOf(lifeQuest) : null) ?? teacherSet.site;
   useEffect(() => {
     if (lifeQuest && !sceneView) changeRec((r) => recOpened(r, lifeQuest, Date.now()));
@@ -2175,7 +2204,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   // question's moment comes (guides.ts askNow) until the student answers over it; each once (this browser).
   const answeredRef = useRef<(key: string) => boolean>(() => false);
   answeredRef.current = (key) => preds[key] !== undefined || !!skipped[key];
-  const askId = busy && questOn && !sceneView && lifeStep && asksOf(lifeStep.id).some((a) => preds[a.key] === undefined && !skipped[a.key]) ? lifeStep.id : null;
+  const askId = busy && questOn && !sceneView && !courseStep && lifeStep && asksOf(lifeStep.id).some((a) => preds[a.key] === undefined && !skipped[a.key]) ? lifeStep.id : null;
   useEffect(() => {
     if (!askId) return;
     const id = window.setInterval(() => {
@@ -2569,6 +2598,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     if (cellRef.current !== c || world.current.cell !== run) return;
     const res = cellChecks(world.current);
     if (!res) return;
+    // 입문 과정 1-1: the same card check as 5-1, judged by the 절 (5-1 is not marked by it).
+    if (courseStepRef.current?.id === '1-1') return stepRunEnd(ok && res.items.every((i) => i.ok));
     const all = ok && res.items.every((i) => i.ok);
     setCellResult(all);
     setLastChecks(res.items);
@@ -2593,7 +2624,29 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       world.current = createCellWorld(c.cell, c.mission, effector);
       setAnglesView(world.current.angles.slice());
       setCellResult(null);
+      slowRef.current = 1;
       void simulateBlocks(sol);
+      // 1-1 장면 보기: once the pen is writing, the hand comes in (the arm slows, stops), then goes (it writes on).
+      if (courseStepRef.current?.id === '1-1') {
+        clearSceneTimers();
+        const watch = window.setInterval(() => {
+          const ink = world.current.trail.reduce((n, st) => n + st.length, 0);
+          if (ink < 30) return;
+          window.clearInterval(watch);
+          patchStep({ handNear: true });
+          slowTo(0.05, HAND_SLOW_S, () => {
+            heldRef.current = true;
+            slowRef.current = 1;
+            sceneTimers.current.push(
+              window.setTimeout(() => {
+                patchStep({ handNear: false });
+                heldRef.current = false;
+              }, HAND_SCENE.hold * 1000),
+            );
+          });
+        }, 200);
+        sceneTimers.current.push(watch);
+      }
     };
   });
   useEffect(() => {
@@ -2738,6 +2791,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
 
   const stop = useCallback(() => {
     const running = !!token.current || !!tracker.current?.alive || !!realRunRef.current || !!jog.current || !!follower.current?.alive;
+    // 입문 과정 1-3: a stop while the arm moves is what the step asks for.
+    if (running && courseStepRef.current) stepStopped.current = true;
     if (follower.current) follower.current.alive = false;
     // A held jog key (or a dragged slider) stops too, before the key is let go.
     if (jog.current) endJogRef.current?.();
@@ -4270,9 +4325,200 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     void simulate();
   };
   // [다음 단계 →] (입문 트랙): the next step of this place in order; the student presses it (no automatic move).
-  // 입문 12차시: the 서브챕터 open now (a quest or a tutorial), done or not, and opening one.
-  const subNow = course ? (lifeQuest ? subOfRun('quest', lifeQuest) : lifeTut ? subOfRun('tutorial', lifeTut.id) : undefined) : undefined;
-  const subDone = (s: CourseSub) => (s.run?.kind === 'quest' ? !!cellPassed[s.run.id] : s.run?.kind === 'tutorial' ? !!tutDone[s.run.id] : false);
+  // 입문 과정: the 절 open now (a quest, a tutorial, a 절 built for the course, a chapter's 수행평가), done or not, and opening one.
+  const testSub = courseTest !== null ? subById(COURSE.find((c) => c.n === courseTest)?.test ?? '') : undefined;
+  const subNow = course ? (testSub ?? (courseStep ? subById(courseStep.id) : lifeQuest ? subOfRun('quest', lifeQuest) : lifeTut ? subOfRun('tutorial', lifeTut.id) : undefined)) : undefined;
+  const subDone = (s: CourseSub) =>
+    s.run?.kind === 'quest' ? !!cellPassed[s.run.id] : s.run?.kind === 'tutorial' ? !!tutDone[s.run.id] : s.run?.kind === 'step' ? !!stepsDone[s.run.id] : s.run?.kind === 'test' ? testResults[s.run.id]?.right != null : false;
+
+  /* --- 입문 과정 절 built for the course (courseSteps.ts) ------------------------------- */
+  const patchStep = (p: Partial<NonNullable<typeof courseStep>>) => setCourseStep((c) => (c ? { ...c, ...p } : c));
+  const markStepDone = (id: CourseStepId, extra?: { misses?: number }) => {
+    setStepsDone((d) => {
+      const n = { ...d, [id]: true };
+      try {
+        localStorage.setItem(STEPS_KEY, JSON.stringify(n));
+      } catch {
+        /* this session only */
+      }
+      return n;
+    });
+    report({ sub: id, mode: 'practice', what: 'done', at: Date.now(), ...extra });
+  };
+  /** 1-1: the hand's slowing, eased to `to` over `seconds`; `then` once there. */
+  const slowRamp = useRef(0);
+  const slowTo = (to: number, seconds: number, then?: () => void) => {
+    cancelAnimationFrame(slowRamp.current);
+    const from = slowRef.current;
+    const t0 = performance.now();
+    const tick = (now: number) => {
+      const f = Math.min(1, (now - t0) / (seconds * 1000));
+      slowRef.current = from + (to - from) * f;
+      if (f < 1) slowRamp.current = requestAnimationFrame(tick);
+      else then?.();
+    };
+    slowRamp.current = requestAnimationFrame(tick);
+  };
+  const sceneTimers = useRef<number[]>([]);
+  const clearSceneTimers = () => {
+    sceneTimers.current.forEach((t) => window.clearTimeout(t));
+    sceneTimers.current = [];
+  };
+  /** A 절 built for the course, from its start state (장별 가이드라인 v1 공통 규칙). */
+  const startCourseStep = (id: string, mode: SubMode) => {
+    if (!isCourseStep(id) || busy) return;
+    setLifeTut(null);
+    setCourseTest(null);
+    clearSceneTimers();
+    cancelAnimationFrame(slowRamp.current);
+    slowRef.current = 1;
+    stepStopped.current = false;
+    setCourseStep({ id, step: 0, found: [], flash: null, misses: 0, range: false, handNear: false, stopped: false, note: null });
+    if (id === '1-1') {
+      // 5-1's booth as it starts (보정 x 150 · y −40 · 펜 0, '사랑해', 손님 1명); its cards hidden.
+      openCell('draw', 'G1');
+      if (mode === 'scene') setSceneRun((n) => n + 1);
+      return;
+    }
+    // 1-2 · 1-3: the plain desk, the arm at 기본 자세 (1-2 with the pen, so the tool shows apart from the tip).
+    toPlainDesk();
+    if (id === '1-2' && effector !== 'pen') changeTool('pen', false);
+    world.current.angles = arm.home.slice();
+    setAnglesView(world.current.angles.slice());
+    if (id === '1-3') {
+      setJogSpeed(50);
+      openSection('jog');
+      openTab('direct');
+    }
+    // 1-2: the arm close up from the front side, all six joints in sight (robot mm).
+    window.setTimeout(() => (id === '1-2' ? stageApi.current?.lookAt([560, -470, 380], [0, 0, 190]) : stageApi.current?.view('home')), 60);
+  };
+  /** 1-1 ①: the card written (5-1's program), the hand free to come in. */
+  const runHandStep = () => {
+    const c = cellRef.current;
+    const sol = missionById('G1')?.solution;
+    if (!c || !sol || busy) return;
+    world.current = createCellWorld(c.cell, c.mission, effector);
+    setAnglesView(world.current.angles.slice());
+    setCellResult(null);
+    slowRef.current = 1;
+    patchStep({ step: 1, stopped: false, handNear: false, note: null });
+    void simulateBlocks(sol);
+  };
+  const handIn = () => {
+    const st = courseStepRef.current;
+    if (!st || st.id !== '1-1' || st.handNear) return;
+    // Only a hand that comes while the arm moves counts.
+    const moving = busyRef.current && slowRef.current > 0.5;
+    patchStep({ handNear: true });
+    // Slowed over HAND_SLOW_S, then held still (the scene's own hold, as a 예측 holds it).
+    slowTo(0.05, HAND_SLOW_S, () => {
+      if (!courseStepRef.current?.handNear) return;
+      heldRef.current = true;
+      slowRef.current = 1;
+      if (moving && busyRef.current) patchStep({ stopped: true, step: Math.max(courseStepRef.current.step, 2) });
+    });
+  };
+  const handOut = () => {
+    const st = courseStepRef.current;
+    if (!st || st.id !== '1-1' || !st.handNear) return;
+    patchStep({ handNear: false, step: st.stopped ? 3 : st.step });
+    cancelAnimationFrame(slowRamp.current);
+    slowRef.current = 1;
+    heldRef.current = false;
+  };
+  /** 1-1: the run is over (the card judged as in 5-1). */
+  const stepRunEnd = (ok: boolean) => {
+    const st = courseStepRef.current;
+    cancelAnimationFrame(slowRamp.current);
+    slowRef.current = 1;
+    heldRef.current = false;
+    if (!st || st.id !== '1-1') return;
+    if (ok && st.stopped) {
+      patchStep({ step: 4, handNear: false, note: null });
+      markStepDone('1-1');
+      return;
+    }
+    patchStep({ step: 0, stopped: false, handNear: false, note: !st.stopped ? '로봇이 쓰는 동안 손 다가가기를 눌러야 해요' : '카드가 다 써지지 않았어요 · 다시 해요' });
+  };
+  /** 1-2: a part of the arm pressed. */
+  const swingRaf = useRef(0);
+  const swingJoint = (j: number) => {
+    cancelAnimationFrame(swingRaf.current);
+    const base = world.current.angles[j];
+    const t0 = performance.now();
+    const tick = (now: number) => {
+      const f = Math.min(1, (now - t0) / 1400);
+      world.current.angles[j] = base + FOUND_SWING_DEG * Math.sin(f * Math.PI * 2);
+      setAnglesView(world.current.angles.slice());
+      if (f < 1) swingRaf.current = requestAnimationFrame(tick);
+    };
+    swingRaf.current = requestAnimationFrame(tick);
+  };
+  const pickPart = (part: number) => {
+    const st = courseStepRef.current;
+    if (!st || st.id !== '1-2' || busy || st.step >= ARM_PARTS.length) return;
+    if (part !== st.step) {
+      patchStep({ flash: part, misses: st.misses + 1 });
+      window.setTimeout(() => setCourseStep((c) => (c && c.flash === part ? { ...c, flash: null } : c)), 1500);
+      return;
+    }
+    const found = [...st.found, part];
+    patchStep({ found, step: st.step + 1, flash: null });
+    if (part < 6) swingJoint(part);
+    if (found.length >= ARM_PARTS.length) markStepDone('1-2', { misses: st.misses });
+  };
+  /** 1-3 ②: 베이스 (J1) only, out to +90° and back, three times — to be stopped. */
+  const runSwing = async () => {
+    const st = courseStepRef.current;
+    if (!st || st.id !== '1-3' || busy || !loaded) return;
+    const home = arm.home;
+    const out = home.map((a, i) => (i === SWING.joint ? a + SWING.deg : a));
+    // The 조작판's speed (10 ~ 100 %) as the jog keys use it: speed 5 ~ 40.
+    const speed = Math.round(5 + ((jogSpeed - 10) / 90) * 35);
+    const move = (j: readonly number[]) => `robot.move_joints([${j.map((v) => Math.round(v * 100) / 100).join(', ')}], speed=${speed})`;
+    const text = `from edu import robot\n\n${Array.from({ length: SWING.times }, () => `${move(out)}\n${move(home)}\n`).join('')}`;
+    const { steps, errors } = problemsFor(text);
+    if (errors.length) return addLog('err', `${errors[0].line}번째 줄: ${errors[0].msg}`);
+    stepStopped.current = false;
+    patchStep({ step: Math.max(st.step, 2), note: null });
+    const { ok, stopped } = await runSteps(steps, { reset: false, quiet: true });
+    const now = courseStepRef.current;
+    if (!now || now.id !== '1-3') return;
+    if (!ok && (stopped || stepStopped.current)) {
+      patchStep({ stopped: true });
+      if (now.range) markStepDone('1-3');
+    } else if (ok) patchStep({ note: '움직이는 동안 정지 버튼을 눌러요 · 다시 ▶' });
+  };
+  // 1-3: the range turned on after the stop also finishes it.
+  const toggleRange = () => {
+    const st = courseStepRef.current;
+    if (!st || st.id !== '1-3') return;
+    const on = !st.range;
+    patchStep({ range: on, step: on ? Math.max(st.step, 1) : st.step });
+    if (on && st.stopped) markStepDone('1-3');
+  };
+  /** A chapter's 수행평가, opened after its last 절 (or from a list). */
+  const startCourseTest = (chapter: number) => {
+    if (!CHAPTER_TESTS[chapter] || busy) return;
+    setCourseStep(null);
+    setLifeTut(null);
+    clearSceneTimers();
+    setCourseTest(chapter);
+  };
+  const gradeTest = (chapter: number, chosen: OX[], right: number) => {
+    setTestResults((r) => {
+      const n = { ...r, [String(chapter)]: { chosen, right, mission: null, at: Date.now() } };
+      try {
+        localStorage.setItem(TESTS_KEY, JSON.stringify(n));
+      } catch {
+        /* this session only */
+      }
+      return n;
+    });
+    const t = COURSE.find((c) => c.n === chapter)?.test;
+    if (t) report({ sub: t, mode: 'practice', what: right === 5 ? 'passed' : 'done', at: Date.now() });
+  };
   /** Open a 절 in a kind (장면 보기 · 실습 하기; the one it has when not that). */
   const openSub = (s: CourseSub, want: SubMode = 'practice') => {
     const mode = modeFor(s, want);
@@ -4282,6 +4528,11 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     setSubMode(mode);
     setSubNote(null);
     report({ sub: s.id, mode, what: 'opened', at: Date.now() });
+    if (s.run.kind === 'step') return startCourseStep(s.run.id, mode);
+    if (s.run.kind === 'test') return startCourseTest(Number(s.run.id));
+    setCourseStep(null);
+    setCourseTest(null);
+    clearSceneTimers();
     if (s.run.kind === 'tutorial') return startTutorial(s.run.id);
     setLifeTut(null);
     openCell('draw', s.run.id);
@@ -4348,7 +4599,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
         steps: l.steps.map((st) => {
           const x = st.sub;
           // A chapter's 수행평가: 준비 중 (skipped) until its questions come.
-          if (st.kind === 'test') return { id: x.id, label: `${st.chapter.n}장`, title: '수행평가', pages: x.pages, state: 'todo' as const, soon: !testReady(x), tag: testReady(x) ? undefined : '준비 중' };
+          if (st.kind === 'test') return { id: x.id, label: `${st.chapter.n}장`, title: '수행평가', pages: x.pages, state: courseTest === st.chapter.n ? ('now' as const) : subDone(x) ? ('done' as const) : ('todo' as const), soon: !testReady(x), tag: testReady(x) ? undefined : '준비 중' };
           return { id: x.id, label: x.id, title: x.title, pages: x.pages, state: x.id === subNow.id ? ('now' as const) : subDone(x) ? ('done' as const) : ('todo' as const), soon: !x.run };
         }),
       }))
@@ -4357,7 +4608,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const locBar =
     track && subNow && locNow ? (
       <LocationBar
-        lesson={lessonIn(cPlan, subNow.id)}
+        lesson={testSub ? lessonStepsIn(cPlan).find((l) => l.steps.some((x) => x.kind === 'test' && x.sub.id === testSub.id))?.n ?? 0 : lessonIn(cPlan, subNow.id)}
         step={locNow}
         lessons={locLessons}
         kinds={{
@@ -4863,7 +5114,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
 
   return (
     // data-busy: a program or a move is running (read by the behaviour checks).
-    <div className={css.app} data-busy={busy || undefined} data-nowbar={(course && loaded && pastIntro && view === 'sim' && !roadmapOpen && !sceneView && !!(lifeTut || (cellAt && lifeStep && questPhase))) || undefined}>
+    <div className={css.app} data-busy={busy || undefined} data-nowbar={(course && loaded && pastIntro && view === 'sim' && !roadmapOpen && !sceneView && !!(courseStep || courseTest !== null || lifeTut || (cellAt && lifeStep && questPhase))) || undefined}>
       <Intro
         brand={track?.intro}
         courses={
@@ -4934,7 +5185,12 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                     n: l.n,
                     subs: l.steps.map((st) =>
                       st.kind === 'test'
-                        ? { id: `${st.chapter.n}장`, title: '수행평가', done: false, soon: true, pending: !testReady(st.sub) }
+                        ? (() => {
+                            const r = testResults[String(st.chapter.n)];
+                            const t = CHAPTER_TESTS[st.chapter.n];
+                            const what = r?.right != null ? ` · O · X ${r.right}/5${t && !t.mission.ready ? ' · 미션 준비 중' : ''}` : '';
+                            return { id: `${st.chapter.n}장`, title: `수행평가${what}`, done: subDone(st.sub), soon: !testReady(st.sub), pending: !testReady(st.sub) };
+                          })()
                         : { id: st.sub.id, title: st.sub.title, done: subDone(st.sub), soon: !st.sub.run, optional: !!st.sub.optional },
                     ),
                   })),
@@ -5394,6 +5650,15 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
             }}
           />
         )}
+        {course && courseTest !== null && CHAPTER_TESTS[courseTest] && !roadmapOpen && (
+          <CourseTestPanel
+            key={courseTest}
+            test={CHAPTER_TESTS[courseTest]}
+            result={testResults[String(courseTest)]}
+            onGraded={(chosen, right) => gradeTest(courseTest, chosen, right)}
+            onNext={subNext ? () => goNext(subNext) : undefined}
+          />
+        )}
         {roadmapOpen && course && (
           <CourseMap
             plan={cPlan}
@@ -5429,9 +5694,30 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
           />
         )}
         {/* 입문 과정: 지금 할 일, one line under the 위치 줄 in every scene (피드백 v2 파트 3). */}
-        {course && loaded && pastIntro && view === 'sim' && !roadmapOpen && !sceneView && (lifeTut || (cellAt && lifeStep && questPhase)) ? (
+        {course && loaded && pastIntro && view === 'sim' && !roadmapOpen && !sceneView && (courseStep || courseTest !== null || lifeTut || (cellAt && lifeStep && questPhase)) ? (
           <div className={css.nowSlot}>
-          {lifeTut && lifeTutorialById(lifeTut.id) ? (
+          {courseTest !== null ? (
+            // 수행평가: the one line only (no number badges, no steps).
+            <NowBar text={testResults[String(courseTest)]?.right != null ? `${courseTest}장 수행평가를 마쳤어요` : '교안의 O · X 5문항에 답하고 확인을 눌러요'} state={testResults[String(courseTest)]?.right != null ? 'ok' : 'do'} />
+          ) : courseStep ? (
+            (() => {
+              const lines = COURSE_STEPS[courseStep.id];
+              const done = !!stepsDone[courseStep.id] && (courseStep.step >= lines.length || (courseStep.id === '1-3' && courseStep.stopped && courseStep.range));
+              const nx = subNext ? { onClick: () => goNext(subNext), lit: done } : undefined;
+              if (done) return <NowBar state="ok" text="다 했어요" next={nx} />;
+              // 1-1: the card goes on after the hand left — watched, nothing to press.
+              if (courseStep.id === '1-1' && courseStep.step === 3) return <NowBar state="run" text="로봇이 이어서 써요 · 끝날 때까지 지켜봐요" next={nx} />;
+              const at = Math.min(courseStep.step, lines.length - 1);
+              const line = lines[at];
+              const sel = line.sel;
+              return (
+                <>
+                  <NowBar n={at + 1} text={courseStep.note ?? line.text} state={courseStep.note ? 'no' : 'do'} next={nx} meter={courseStep.id === '1-2' ? { v: courseStep.found.length, of: ARM_PARTS.length, unit: '곳' } : undefined} />
+                  {sel && <NowMark key={`${courseStep.id}:${at}`} find={() => [...document.querySelectorAll<HTMLElement>(sel)].find((e) => e.getBoundingClientRect().width > 0) ?? null} n={at + 1} />}
+                </>
+              );
+            })()
+          ) : lifeTut && lifeTutorialById(lifeTut.id) ? (
             <TutNow key={lifeTut.id} tut={lifeTutorialById(lifeTut.id)!} step={lifeTut.step} start={lifeTut.start} read={() => tutCtxRef.current()} next={subNext ? { onClick: () => goNext(subNext), lit: false } : undefined} />
           ) : lifeStep && questPhase ? (
             <QuestNow
@@ -5448,6 +5734,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
         <div ref={shellRef} className={track ? `${css.shell} life-shell` : css.shell} data-dock={dockShown ? 'open' : 'closed'} data-side={side} data-tab={shownTab === 'direct' ? 'direct' : 'code'} data-mini={miniOn ? 'on' : 'off'} data-life={(!!track && !!cellAt) || undefined} data-wide={wideOn || undefined} style={view !== 'sim' ? { display: 'none' } : undefined}>
           <section className={`${css.panel} ${css.stageCol}`} aria-label="시뮬레이션">
             <div className={css.viewport} data-viewport>
+              {/* 입문 과정 1-1: the hand coming in (an asset slot over the scene). */}
+              {courseStep?.id === '1-1' && courseStep.handNear && <SceneSlot slot={{ id: 'hand', label: '다가오는 손', at: [0, 0, 0], w: 260, h: 170 }} />}
               {loadError ? (
                 <div className={css.loading}>로봇 모델을 불러오지 못했어요 ({loadError})</div>
               ) : loaded ? (
@@ -5483,6 +5771,13 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   planMarks={planMarks}
                   cell={cellAt?.cell ?? null}
                   simRate={runRate}
+                  courseMarks={
+                    courseStep?.id === '1-2'
+                      ? { pick: { names: ARM_PARTS, found: courseStep.found, flash: courseStep.flash, onPick: pickPart } }
+                      : courseStep?.id === '1-3' && courseStep.range
+                          ? { slots: [{ id: 'range-280', label: `작업 범위 원 (반지름 ${RANGE_MM} mm)`, at: [0, 0, 0], w: 300, h: 180 }] }
+                          : null
+                  }
                   cellClock={cellClock}
                   cellCallouts={!!track}
                   goalRing={(() => {
@@ -5928,9 +6223,15 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                       <div className={css.screen}>
                         {/* 입문: where the controls are learnt (맛보기, then the three tutorials). */}
                         {track && !course && !cellAt && <TutorialList running={lifeTut?.id ?? null} done={tutDone} busy={busy} onStart={startTutorial} />}
-                        {controlPanel}
-                        {toolRow}
-                        {course && !cellAt && (
+                        {courseStep?.id === '1-3' ? (
+                          <CourseStepPanel id="1-3" busy={busy} onRun={() => void runSwing()} range={{ on: courseStep.range, onToggle: toggleRange }} />
+                        ) : (
+                          <>
+                            {controlPanel}
+                            {toolRow}
+                          </>
+                        )}
+                        {course && !cellAt && !courseStep && (
                           <button type="button" className={css.moreKey} aria-expanded={detail} onClick={() => setDetail((d) => !d)}>
                             <b>자세히 보기 {detail ? '▾' : '▸'}</b>
                             <span>좌표 · 속도 · 부하 · 보조 그림</span>
@@ -5947,7 +6248,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                         <button type="button" disabled={busy} onClick={() => goPose('zero')} title="모든 관절 0° (팔이 위로 곧게)">
                           <Icon name="zero" size={15} /> 일자로 펴기
                         </button>
-                        <button type="button" className={css.poseStop} onClick={() => void stop()} title="움직임을 바로 멈춰요 (Esc)">
+                        <button type="button" className={css.poseStop} data-step="stop" onClick={() => void stop()} title="움직임을 바로 멈춰요 (Esc)">
                           <Icon name="stop" size={14} /> 정지 <kbd>Esc</kbd>
                         </button>
                       </div>
@@ -6091,7 +6392,9 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                             quest={{ phase: questPhase, checks: questPhase === 'result' ? lastChecks : null, now: questNow(questPhase, lifeStep.id, cellResult), onList: () => setRoadmapOpen(true), asking: !!moment, watching: handGoing && questPhase === 'do' ? '[추출 끝] 켜질 때까지 지켜보기' : undefined, page: lifeQuest ? questPages(lifeQuest) : undefined, isOpen: lifeQuest ? questIsOpen : undefined }}
                           />
                         )}
-                        {cellAt!.cell === 'draw' ? (
+                        {courseStep?.id === '1-1' ? (
+                          <CourseStepPanel id="1-1" busy={busy} onRun={runHandStep} hand={{ near: courseStep.handNear, onIn: handIn, onOut: handOut }} />
+                        ) : cellAt!.cell === 'draw' ? (
                           <DrawCards key={cellAt!.mission ?? 'free'} mission={cellAt!.mission} busy={busy} runningLine={runningLine} onCode={onRecipeCode} glow={questGlow} glowAdd={questGlowAdd} flow={questOn && !!lifeStep} />
                         ) : cellAt!.cell === 'board' ? (
                           <BoardCards key={cellAt!.mission ?? 'free'} mission={cellAt!.mission} busy={busy} runningLine={runningLine} onCode={onRecipeCode} glow={questGlow} glowAdd={questGlowAdd} flow={questOn && !!lifeStep} />
@@ -6105,9 +6408,9 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                           })()
                         )}
                         {/* 입문 퀘스트: ▶ right under what the quest changes (to do → press → ▶ in one look). */}
-                        {questInline && runBar}
+                        {questInline && !courseStep && runBar}
                         {/* 자세히 보기: folded by default (지시서 v1 파트 2) — the signals, the progress strip, the 차시 card. */}
-                        {questOn && lifeStep && (
+                        {questOn && lifeStep && !courseStep && (
                           <button type="button" className={css.moreKey} aria-expanded={detail} onClick={() => setDetail((d) => !d)}>
                             <b>자세히 보기 {detail ? '▾' : '▸'}</b>
                             <span>신호 · 진행 표시 · 차시 정보</span>

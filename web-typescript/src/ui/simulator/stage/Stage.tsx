@@ -93,6 +93,7 @@ import { workspaceEnvelope } from '../../education/stage/learn3d';
 import type { ArmSpec } from '@/engine/robot/arms';
 import { CellObjects, CellPhysics, DeskObjects, DeskPhysics, type CellClock, type DeskEdit } from './DeskObjects';
 import CellScene, { CELL_VIEW } from './CellScene';
+import CourseMarks, { type CourseStageMarks } from './CourseMarks';
 import GoalRing from './GoalRing';
 import type { CellId } from '@/engine/simulator/cell/cells';
 import { ScenePreset } from './ScenePreset';
@@ -238,6 +239,8 @@ interface StageProps {
   cellCallouts?: boolean;
   /** 입문 맛보기: the ring the tool tip is to go into now, and its tag (lifeTutorials.ts). */
   goalRing?: { at: readonly [number, number, number]; label: string } | null;
+  /** 입문 과정 절: press spots on the arm, asset slots in the scene (CourseMarks.tsx); none: nothing. */
+  courseMarks?: CourseStageMarks | null;
 }
 
 /**
@@ -408,6 +411,7 @@ function World({
   cellTags,
   cellCallouts = false,
   goalRing = null,
+  courseMarks = null,
 }: StageProps & { lights: Lights }) {
   // Every node of the arm's model files, by name (a later file wins a shared name).
   const gltfs = useGLTF(spec.glbs as string[], DRACO_PATH) as unknown as { nodes: GlbNodes }[];
@@ -728,6 +732,7 @@ function World({
     <group ref={root} rotation={[-Math.PI / 2, 0, 0]}>
       {!cell && <Desk z={theme === 'kit' ? DESK_Z : 0} finish={spec.finish} />}
       {goalRing && <GoalRing at={goalRing.at} label={goalRing.label} />}
+      {courseMarks && <CourseMarks marks={courseMarks} joints={arm.joints} flange={arm.flange} tcpMm={tcpMm} />}
       {cell ? (
         <>
           <CellScene world={world} cell={cell} tags={cellTags} callouts={cellCallouts} />

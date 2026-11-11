@@ -16,7 +16,8 @@ import TABLE from '../../../../public/course/mycobot-280-1.json';
 /** The six kinds of scene, all on one stage (보고 #49): the camera and the props change. */
 export type SceneKind = 'A' | 'B' | 'C' | 'D' | 'E' | 'F';
 
-export type SubRun = { kind: 'quest'; id: string } | { kind: 'tutorial'; id: string };
+/** A 실습 셀 quest, a 기초 조작 tutorial, a 절 built for the course (courseSteps.ts), or a chapter's 수행평가 (courseTests.ts, its chapter). */
+export type SubRun = { kind: 'quest'; id: string } | { kind: 'tutorial'; id: string } | { kind: 'step'; id: string } | { kind: 'test'; id: string };
 
 /** A 절 in the course: 열림 (something opens), 만드는 중, 사용 안 함 (kept, never listed). */
 export type SubStatus = 'open' | 'soon' | 'unused';
@@ -55,13 +56,15 @@ export interface CourseChapter {
 
 const q = (id: string): SubRun => ({ kind: 'quest', id });
 const t = (id: string): SubRun => ({ kind: 'tutorial', id });
+const st = (id: string): SubRun => ({ kind: 'step', id });
+const test = (chapter: number): SubRun => ({ kind: 'test', id: String(chapter) });
 
 /** The simulator's own side of each 절: its scene and what it opens. */
 const SIM: Record<string, { scene: SceneKind; run?: SubRun }> = {
-  '1-1': { scene: 'A' },
-  '1-2': { scene: 'C' },
-  '1-3': { scene: 'A' },
-  '1-4': { scene: 'F' },
+  '1-1': { scene: 'A', run: st('1-1') },
+  '1-2': { scene: 'C', run: st('1-2') },
+  '1-3': { scene: 'A', run: st('1-3') },
+  '1-4': { scene: 'F', run: test(1) },
   '2-1': { scene: 'B' },
   '2-2': { scene: 'A' },
   '2-3': { scene: 'C' },
@@ -106,7 +109,8 @@ export const COURSE_SUBS: CourseSub[] = TABLE.sections.map((s) => {
     ...('test' in s && s.test ? { test: true } : {}),
     scene: sim.scene,
     // A 절 opens only with a kind that is there and something to open.
-    ...(sim.run && (kinds.scene === 'open' || kinds.practice === 'open') ? { run: sim.run } : {}),
+    // (A chapter's 수행평가 opens with its chapter, not as a 절 of its own.)
+    ...(sim.run && (kinds.scene === 'open' || kinds.practice === 'open' || ('test' in s && s.test)) ? { run: sim.run } : {}),
   };
 });
 
@@ -123,6 +127,8 @@ export const kindsOf = (s: CourseSub): SubMode[] => (['scene', 'practice'] as co
 /** The kind a 절 opens in when `want` was asked for: that one if it is there, else the other (none: it does not open). */
 export function modeFor(s: CourseSub, want: SubMode): SubMode | null {
   if (!s.run) return null;
+  // A chapter's 수행평가 opens as itself (no 장면 보기 · 실습 하기 of its own).
+  if (s.test) return 'practice';
   if (s.kinds[want] === 'open') return want;
   const other: SubMode = want === 'scene' ? 'practice' : 'scene';
   return s.kinds[other] === 'open' ? other : null;
