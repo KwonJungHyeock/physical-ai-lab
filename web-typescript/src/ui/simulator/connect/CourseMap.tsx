@@ -1,16 +1,17 @@
 'use client';
 
 /**
- * 목록 (입문 트랙, the course picked: courses.ts): the 장 and their 절 in that course, each with its
- * 차시 and 교안 pages — the same numbers as the PDF the teacher shows. Pressing one opens its scene;
- * one not in the app yet is dimmed and cannot be pressed. The one open now (or, none open, the next
- * to do) is the one accent; 완료 is green, the rest plain.
+ * 목록 (입문 트랙, the course handed over or the default: courses.ts): the 장 and their 절 in that
+ * course, each with its 차시 and 교안 pages — the same numbers as the 교안 the teacher shows — and its
+ * kinds: [장면 보기] · [실습 하기], those it has (만드는 중: dimmed, not pressed; 없음: no button). A 절
+ * not in the app yet is dimmed. The one open now (or, none open, the next to do) is the one accent;
+ * 완료 is green, the rest plain. A 선택 절 (the real robot) says so.
  */
 
 import { useEffect } from 'react';
 
-import { pagesText, type CourseSub } from '@/engine/simulator/cell/course';
-import { chaptersIn, lessonIn, pagesIn, subsIn, type CoursePlan } from '@/engine/simulator/cell/courses';
+import { kindsOf, pagesText, subById, topicMark, MODE_NAME, type CourseSub, type SubMode } from '@/engine/simulator/cell/course';
+import { chaptersIn, countedIn, lessonIn, type CoursePlan } from '@/engine/simulator/cell/courses';
 
 import css from './courseMap.module.css';
 
@@ -19,7 +20,7 @@ interface Props {
   /** The 절 open now. */
   now?: string;
   done(s: CourseSub): boolean;
-  onPick(s: CourseSub): void;
+  onPick(s: CourseSub, mode: SubMode): void;
   onClose(): void;
 }
 
@@ -29,10 +30,10 @@ export default function CourseMap({ plan, now, done, onPick, onClose }: Props) {
     window.addEventListener('keydown', esc);
     return () => window.removeEventListener('keydown', esc);
   }, [onClose]);
-  const runnable = subsIn(plan).filter((s) => s.run);
-  const got = runnable.filter(done).length;
+  const counted = countedIn(plan);
+  const got = counted.filter(done).length;
   // The accent: the one open now, or the first still to do.
-  const lit = now ?? runnable.find((s) => !done(s))?.id;
+  const lit = now ?? counted.find((s) => !done(s))?.id;
   return (
     <div className={css.scrim} role="dialog" aria-label="목록">
       <div className={css.map}>
@@ -40,7 +41,7 @@ export default function CourseMap({ plan, now, done, onPick, onClose }: Props) {
           <span>
             <h2>{plan.title}</h2>
             <small>
-              {plan.short} · 완료 {got} / {runnable.length}
+              {plan.short} · 완료 {got} / {counted.length}
             </small>
           </span>
           <button type="button" className={css.x} onClick={onClose} aria-label="닫기">
@@ -61,20 +62,49 @@ export default function CourseMap({ plan, now, done, onPick, onClose }: Props) {
                 {c.subs.map((s) => {
                   const state = s.id === now ? 'now' : done(s) ? 'done' : 'todo';
                   return (
-                    <button key={s.id} type="button" className={css.row} data-state={state} data-lit={s.id === lit || undefined} data-soon={!s.run || undefined} disabled={!s.run} onClick={() => onPick(s)}>
+                    <div key={s.id} className={css.row} data-state={state} data-lit={s.id === lit || undefined} data-soon={!s.run || undefined}>
                       <i>{s.id}</i>
-                      <span>{s.test ? `[수행평가] O · X + 미션` : s.title}</span>
-                      <small>
-                        {lessonIn(plan, s.id)}차시 · {pagesText(pagesIn(plan, s))}
-                      </small>
+                      <span>
+                        <b>
+                          {s.title}
+                          {s.optional && <u>선택</u>}
+                        </b>
+                        <small>
+                          {lessonIn(plan, s.id)}차시 · {pagesText(s.pages)}
+                        </small>
+                      </span>
+                      <span className={css.kinds}>
+                        {kindsOf(s).map((m) => (
+                          <button key={m} type="button" disabled={s.kinds[m] !== 'open' || !s.run} onClick={() => onPick(s, m)}>
+                            {MODE_NAME[m]}
+                          </button>
+                        ))}
+                      </span>
                       <em>{!s.run ? '' : state === 'now' ? '지금' : state === 'done' ? '✓ 완료' : '미완료'}</em>
-                    </button>
+                    </div>
                   );
                 })}
               </section>
             );
           })}
         </div>
+      </div>
+    </div>
+  );
+}
+
+/** An address named a 절 that does not open: what it is, and the way to the list. */
+export function CourseMissing({ id, onList }: { id: string; onList(): void }) {
+  const s = subById(id);
+  const say = !s ? `${id}라는 절은 없어요.` : s.status === 'unused' ? `${id}${topicMark(id)} 이번 과정에서 쓰지 않는 절이에요.` : `${id}${topicMark(id)} 아직 만드는 중이에요.`;
+  return (
+    <div className={css.scrim} role="alertdialog" aria-modal="true" aria-label="열 수 없는 절">
+      <div className={`${css.map} ${css.missing}`}>
+        <h2>{say}</h2>
+        <p>목록에서 지금 열 수 있는 절을 골라요.</p>
+        <button type="button" autoFocus onClick={onList}>
+          목록 열기
+        </button>
       </div>
     </div>
   );

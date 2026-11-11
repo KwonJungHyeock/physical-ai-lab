@@ -395,32 +395,6 @@
   }
 }
 
-/* 입문 과정: three courses to pick, one under the other (the lit one: a class link's, or 정규). */
-.actions.courses {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 10px;
-}
-.actions.courses button {
-  width: min(460px, 100%);
-  height: 64px;
-}
-.actions.courses b {
-  letter-spacing: 0;
-  font-size: 18px;
-}
-.actions.courses .free {
-  height: 44px;
-  background: transparent;
-  border-color: rgba(255, 255, 255, 0.18);
-  box-shadow: none;
-}
-.actions.courses .free b {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--hud-sub);
-}
-
 /* 저작권 안내: one card in the middle over the darkened cover; its one key is the accent. */
 .notice {
   position: absolute;

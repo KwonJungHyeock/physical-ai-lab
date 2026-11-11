@@ -9,6 +9,7 @@
 
 import type { Level } from './practices';
 import type { CellId } from './cell/cells';
+import { DEFAULT_PLAN } from './cell/courses';
 
 export type TrackId = 'life' | 'food' | 'factory';
 
@@ -58,9 +59,9 @@ export const TRACKS: Record<TrackId, Track> = {
     intro: {
       title: ['Life Cobot', 'Simulator'],
       ko: 'myCobot 280 협동로봇 1단계',
-      lead: ['관절 · 좌표 조작부터 로봇 글씨 쓰기까지,', '12차시 동안 시뮬레이션으로 익히고 실물로 써 봐요.'],
+      lead: ['관절 · 좌표 조작부터 로봇 글씨 쓰기까지,', `${DEFAULT_PLAN.lessons.length}차시 동안 시뮬레이션으로 익히고 실물로 써 봐요.`],
       // One picture of every place the track teaches (the three booths side by side).
-      scenes: [{ img: '/brand/life/sites.webp', tag: 'LIFE COBOT SITES', line: '로봇 카페 · 캘리그라피 부스 · 보드게임 카페' }],
+      scenes: [{ img: '/brand/life/sites.webp', tag: 'LIFE COBOT SITES', line: '로봇 카페 · 글씨 쓰기 부스 · 보드게임 카페' }],
     },
   },
   food: {

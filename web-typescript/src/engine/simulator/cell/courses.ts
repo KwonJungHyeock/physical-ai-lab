@@ -1,62 +1,43 @@
 /**
- * 과정 (입문 트랙): the same 장 · 절 (course.ts) grouped into 차시 three ways — 정규 12차시, 집중
- * 4차시, 체험 2차시 (피드백 v2 파트 2). The one place to change a course: its title, its 차시 and
- * the 절 in each, its own 교안 pages (none: the 정규 교안's). Screens read courses through the
- * helpers below, so a new course needs no screen code. A 절's number (3-4) is the same in every
- * course. 집중 · 체험 have no 수행평가 절: their record is the last 절's mission.
+ * 구성 (입문 트랙): the course's 절 grouped into 차시 (8차시 지시서). Two come with the 매칭 표
+ * (course.ts): 8차시 (전체, the default) and 4차시 (집중, some 절 of the 8). The platform picks one
+ * for a class — or its own list — and hands it over (platform.ts); with none handed over, 8차시.
+ * A 절's number is the same in every course; a 절 a course leaves out is just not in its list.
  *
- * The course is picked as the content starts (Console · Intro), each time it opens: nothing is stored.
+ * 수행평가: in a course with tests (8차시) each chapter's 수행평가 follows the chapter's last 절 in the
+ * course; in 4차시 there are none, and the mission of each 차시's last 절 is what is recorded.
+ * After the course's last 절: the 학습 기록.
  */
+
+import TABLE from '../../../../public/course/mycobot-280-1.json';
 
 import { COURSE, COURSE_SUBS, type CourseChapter, type CourseSub } from './course';
 
-export type CourseId = 'full12' | 'focus4' | 'taste2';
-
 export interface CoursePlan {
-  id: CourseId;
+  /** 'full8', 'focus4', or the platform's own ('class'). */
+  id: string;
   title: string;
-  /** For the choice: '정규 12차시'. */
+  /** '8차시 (전체)'. */
   short: string;
-  /** One line for the choice. */
-  note: string;
   /** The 절 of each 차시, in order. */
   lessons: readonly (readonly string[])[];
-  /** This course's own 교안 pages by 절 (missing: the 정규 교안's). */
-  pages?: Readonly<Record<string, readonly [number, number]>>;
+  /** Each chapter's 수행평가 follows its last 절 (8차시); none: each 차시's last 절's mission is recorded (4차시). */
+  tests: boolean;
 }
 
-/** 정규 12차시: every 절, in the 차시 of 보고 #48 · #49. */
-const FULL: readonly (readonly string[])[] = Array.from({ length: 12 }, (_, i) => COURSE_SUBS.filter((s) => s.lesson === i + 1).map((s) => s.id));
+/** A 절 the course may list: in the table, and not 사용 안 함. */
+const listable = (id: string) => COURSE_SUBS.some((s) => s.id === id && s.status !== 'unused');
 
-export const COURSES: readonly CoursePlan[] = [
-  { id: 'full12', title: 'myCobot 280 협동로봇 1단계: 기초 조작과 로봇 글씨 쓰기', short: '정규 12차시', note: '이론 · 준비 · 관절 · 좌표 · 글씨 쓰기 · 마무리', lessons: FULL },
-  {
-    id: 'focus4',
-    title: 'myCobot 280 협동로봇 집중 과정: 관절 · 좌표 조작과 로봇 글씨 쓰기',
-    short: '집중 4차시',
-    note: '관절 · 좌표 조작에서 로봇 글씨 쓰기까지',
-    lessons: [
-      ['1-1', '1-3'],
-      ['3-1', '3-2', '3-4'],
-      ['4-1', '4-3'],
-      ['5-1', '5-2', '5-3'],
-    ],
-  },
-  {
-    id: 'taste2',
-    title: 'myCobot 280 협동로봇 체험 과정: 로봇팔 움직이기와 로봇 글씨 쓰기',
-    short: '체험 2차시',
-    note: '로봇팔을 움직여 보고 글씨를 써 봐요',
-    lessons: [
-      ['1-1', '3-2', '3-4'],
-      ['5-1', '5-2'],
-    ],
-  },
-];
+/** A plan from lessons of 절 numbers (the table's or the platform's): unknown and 사용 안 함 절 dropped, empty 차시 too. */
+export function planOf(p: { id: string; title?: string; short?: string; lessons: readonly (readonly string[])[]; tests?: boolean }): CoursePlan {
+  const lessons = p.lessons.map((l) => l.filter(listable)).filter((l) => l.length);
+  return { id: p.id, title: p.title ?? TABLE.name, short: p.short ?? `${lessons.length}차시`, lessons, tests: p.tests ?? true };
+}
 
-export const DEFAULT_COURSE: CourseId = 'full12';
-export const isCourseId = (v: unknown): v is CourseId => COURSES.some((c) => c.id === v);
-export const courseById = (id: CourseId): CoursePlan => COURSES.find((c) => c.id === id) ?? COURSES[0];
+export const COURSES: readonly CoursePlan[] = TABLE.courses.map((c) => planOf(c));
+
+/** With no course handed over: the table's default (8차시). */
+export const DEFAULT_PLAN: CoursePlan = COURSES.find((c, i) => TABLE.courses[i].default) ?? COURSES[0];
 
 /** The 절 of a course, in order. */
 export const subsIn = (c: CoursePlan): CourseSub[] => c.lessons.flat().flatMap((id) => COURSE_SUBS.filter((s) => s.id === id));
@@ -64,21 +45,43 @@ export const subsIn = (c: CoursePlan): CourseSub[] => c.lessons.flat().flatMap((
 /** A 절's 차시 in a course (0: not in it). */
 export const lessonIn = (c: CoursePlan, id: string): number => c.lessons.findIndex((l) => l.includes(id)) + 1;
 
-/** A 절's 교안 pages in a course (its own, or the 정규 교안's). */
-export const pagesIn = (c: CoursePlan, s: CourseSub): readonly [number, number] => c.pages?.[s.id] ?? s.pages;
-
 /** The 차시 of a course and their 절. */
 export const lessonsIn = (c: CoursePlan): { n: number; subs: CourseSub[] }[] => c.lessons.map((ids, i) => ({ n: i + 1, subs: ids.flatMap((id) => COURSE_SUBS.filter((s) => s.id === id)) }));
 
 /** The chapters as a course has them (only its 절; a chapter with none left out). */
 export const chaptersIn = (c: CoursePlan): CourseChapter[] => COURSE.map((ch) => ({ ...ch, subs: ch.subs.filter((s) => lessonIn(c, s.id) > 0) })).filter((ch) => ch.subs.length);
 
-/** The next 절 in a course that opens in the app (none: the course's end, or none built yet). */
-export function nextIn(c: CoursePlan, id: string): CourseSub | undefined {
-  const all = subsIn(c);
-  const k = all.findIndex((s) => s.id === id);
-  return k < 0 ? undefined : all.slice(k + 1).find((s) => s.run);
+/** One step of a course in order: a 절, or a chapter's 수행평가 after its last 절 (courses with tests). */
+export type CourseStep = { kind: 'sub'; sub: CourseSub } | { kind: 'test'; chapter: CourseChapter; sub: CourseSub };
+
+export function stepsIn(c: CoursePlan): CourseStep[] {
+  const subs = subsIn(c);
+  return subs.flatMap((s, k): CourseStep[] => {
+    const ch = COURSE.find((x) => x.n === s.chapter);
+    const last = subs[k + 1]?.chapter !== s.chapter;
+    const test = c.tests && last && ch?.test ? COURSE_SUBS.find((x) => x.id === ch.test) : undefined;
+    return test && ch
+      ? [
+          { kind: 'sub', sub: s },
+          { kind: 'test', chapter: ch, sub: test },
+        ]
+      : [{ kind: 'sub', sub: s }];
+  });
 }
 
-/** The 절 whose mission is the course's 평가 (집중 · 체험: the last; 정규: its 수행평가 절). */
-export const finalSub = (c: CoursePlan): CourseSub | undefined => subsIn(c).at(-1);
+/**
+ * After a 절, in a course: the next step that opens in the app (a chapter's 수행평가 once it is built,
+ * else the next 절 that opens), or else the 학습 기록 ('record': nothing after it opens yet).
+ */
+export function nextIn(c: CoursePlan, id: string): CourseSub | 'record' | undefined {
+  const all = stepsIn(c);
+  const k = all.findIndex((x) => x.kind === 'sub' && x.sub.id === id);
+  if (k < 0) return undefined;
+  return all.slice(k + 1).find((x) => !!x.sub.run)?.sub ?? 'record';
+}
+
+/** What counts toward 완료: the course's 절 that open, but not a 선택 절 (skipping it never counts against). */
+export const countedIn = (c: CoursePlan): CourseSub[] => subsIn(c).filter((s) => s.run && !s.optional);
+
+/** 4차시 (no tests): the 절 whose mission is recorded — each 차시's last. */
+export const missionSubsIn = (c: CoursePlan): CourseSub[] => (c.tests ? [] : lessonsIn(c).flatMap((l) => l.subs.slice(-1)));

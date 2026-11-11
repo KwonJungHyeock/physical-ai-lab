@@ -3,13 +3,14 @@
 /**
  * 위치 줄 (입문 트랙, 학생 화면 맨 위): "N차시 · 3-4 · 교안 N쪽" and the 서브챕터's name, big enough to
  * read from the back of the classroom — the same numbers as the PDF 교안 the teacher shows (course.ts).
- * Pressed, it opens the 차시 · 서브챕터 list: a student who came late goes straight to the one the
- * teacher is on (one skipped stays 미완료; the record is kept as before).
+ * Pressed, it opens the 차시 · 절 list: a student who came late goes straight to the one the
+ * teacher is on (one skipped stays 미완료; the record is kept as before). Beside it: the kind open now
+ * (장면 보기 / 실습 하기) and the other kind of the same 절, when it has one (피드백 v3 파트 4).
  */
 
 import { useEffect, useRef, useState } from 'react';
 
-import { pagesText } from '@/engine/simulator/cell/course';
+import { MODE_NAME, pagesText, type SubMode } from '@/engine/simulator/cell/course';
 
 import css from './locationBar.module.css';
 
@@ -31,7 +32,33 @@ export interface LocLesson {
   checks?: { got: number; of: number };
 }
 
-export default function LocationBar({ lesson, step, lessons, onGo, onChecks }: { lesson: number; step: LocStep; lessons: LocLesson[]; onGo(id: string): void; onChecks?(n: number): void }) {
+/** The 절's kinds: the one open now, those it has a button for (만드는 중: shown, not pressed), switching. */
+export interface LocKinds {
+  now: SubMode;
+  has: { mode: SubMode; open: boolean }[];
+  onMode(m: SubMode): void;
+  /** 장면 보기: play it again. */
+  onReplay?: () => void;
+  busy?: boolean;
+}
+
+export default function LocationBar({
+  lesson,
+  step,
+  lessons,
+  onGo,
+  onChecks,
+  kinds,
+  note,
+}: {
+  lesson: number;
+  step: LocStep;
+  lessons: LocLesson[];
+  onGo(id: string): void;
+  onChecks?(n: number): void;
+  kinds?: LocKinds;
+  note?: string | null;
+}) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -64,6 +91,21 @@ export default function LocationBar({ lesson, step, lessons, onGo, onChecks }: {
         </small>
         <i aria-hidden="true">목록 {open ? '▴' : '▾'}</i>
       </button>
+      {kinds && kinds.has.length > 0 && (
+        <span className={css.kinds} role="group" aria-label="장면 보기 · 실습 하기">
+          {kinds.has.map((k) => (
+            <button key={k.mode} type="button" data-on={k.mode === kinds.now || undefined} disabled={!k.open || kinds.busy} onClick={() => k.mode !== kinds.now && kinds.onMode(k.mode)}>
+              {MODE_NAME[k.mode]}
+            </button>
+          ))}
+        </span>
+      )}
+      {kinds?.onReplay && (
+        <button type="button" className={css.replay} disabled={kinds.busy} onClick={kinds.onReplay}>
+          ▶ 다시 보기
+        </button>
+      )}
+      {note && <output className={css.note}>{note}</output>}
       {open && (
         <div className={css.drop} ref={drop} role="menu" aria-label="차시 · 단계 목록">
           {lessons.map((l) => (

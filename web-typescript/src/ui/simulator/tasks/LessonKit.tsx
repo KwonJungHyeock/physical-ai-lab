@@ -186,20 +186,34 @@ export function LessonCheck({ rec, site, n, onAnswer, onClose, bare }: { rec: Le
 
 /* --- 학습 기록 (LMS) ----------------------------------------------------------------------- */
 
-/** 입문 과정 (courses.ts): the course picked, its 차시 and 절 as done, and the line at the foot of the PDF. */
+/** 입문 과정 (courses.ts): its 차시 and 절 as done, and the line at the foot of the PDF. */
 export interface CourseRecord {
   title: string;
   short: string;
-  lessons: { n: number; subs: { id: string; title: string; done: boolean; soon: boolean }[] }[];
-  /** 집중 · 체험: the 평가 is this 절's mission. */
-  final?: { id: string; passed: boolean };
+  /** optional: a 선택 절 (the real robot) — never counted against 완료. */
+  lessons: { n: number; subs: { id: string; title: string; done: boolean; soon: boolean; optional?: boolean }[] }[];
+  /** 4차시: the mission of each 차시's last 절 is what is recorded. */
+  missions?: { id: string; passed: boolean; soon: boolean }[];
   copyright: string;
 }
 
+/** 완료: the 절 that open and are not 선택, done / all. */
+const courseTotals = (c: CourseRecord) => {
+  const all = c.lessons.flatMap((l) => l.subs.filter((x) => !x.soon && !x.optional));
+  return { got: all.filter((x) => x.done).length, of: all.length };
+};
+/** 4차시 missions: ' · 차시 미션 1-3 통과 · 3-4 아직 …' (one not built yet left out). */
+const missionsText = (c: CourseRecord) => {
+  const m = (c.missions ?? []).filter((x) => !x.soon);
+  return m.length ? ` · 차시 미션 ${m.map((x) => `${x.id} ${x.passed ? '통과' : '아직'}`).join(' · ')}` : '';
+};
+
 function courseSheetHtml(rec: LessonRecord, c: CourseRecord): string {
   const esc = (t: string) => t.replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch] ?? ch);
-  const all = c.lessons.flatMap((l) => l.subs.filter((x) => !x.soon));
-  const rows = c.lessons.map((l) => `<tr><td>${l.n}차시</td><td>${l.subs.map((x) => `<div${x.soon ? ' style="color:#999"' : ''}>${x.done ? '✓' : '·'} ${x.id} ${esc(x.title)}</div>`).join('')}</td></tr>`).join('');
+  const tot = courseTotals(c);
+  const rows = c.lessons
+    .map((l) => `<tr><td>${l.n}차시</td><td>${l.subs.map((x) => `<div${x.soon ? ' style="color:#999"' : ''}>${x.done ? '✓' : '·'} ${x.id} ${esc(x.title)}${x.optional ? ' (선택)' : ''}</div>`).join('')}</td></tr>`)
+    .join('');
   const day = new Date().toLocaleDateString('ko-KR');
   return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>학습 기록지</title><style>
 @page{size:A4;margin:14mm}body{font-family:'Noto Sans KR','Malgun Gothic',sans-serif;color:#111;font-size:12.5px;word-break:keep-all}
@@ -211,7 +225,7 @@ td div{margin:2px 0}td span{color:#555;font-size:11px}.tot{font-size:13px;font-w
 <h1>${esc(c.title)}</h1>
 <div class="who"><span>번호 <b>${esc(rec.no) || '____'}</b></span><span>이름 <b>${esc(rec.name) || '__________'}</b></span><span>${esc(c.short)}</span><span>${day}</span></div>
 <table><tr><th style="width:60px">차시</th><th>번호 · 내용 (완료 ✓)</th></tr>${rows}</table>
-<p class="tot">완료 ${all.filter((x) => x.done).length} / ${all.length}${c.final ? ` · 평가 미션(${c.final.id}) ${c.final.passed ? '통과' : '아직'}` : ''}</p>
+<p class="tot">완료 ${tot.got} / ${tot.of}${missionsText(c)}</p>
 <div class="sign"><div>학생 확인 <span></span></div><div>교사 확인 <span></span></div></div>
 <p class="note">이 기록은 시뮬레이션 결과예요.</p>
 <p class="copy">${esc(c.copyright)}</p>
@@ -325,6 +339,7 @@ export function RecordPanel({ rec, site: start, onWho, onClose, course }: { rec:
                         <div key={x.id} className={css.qrow} data-done={x.done || undefined} style={x.soon ? { opacity: 0.45 } : undefined}>
                           <i>{x.done ? '✓' : '·'}</i>
                           {x.id} {x.title}
+                          {x.optional ? ' (선택)' : ''}
                         </div>
                       ))}
                     </td>
@@ -382,9 +397,9 @@ export function RecordPanel({ rec, site: start, onWho, onClose, course }: { rec:
           <p className={css.total}>
             완료{' '}
             <b>
-              {course.lessons.flatMap((l) => l.subs).filter((x) => x.done).length} / {course.lessons.flatMap((l) => l.subs).filter((x) => !x.soon).length}
+              {courseTotals(course).got} / {courseTotals(course).of}
             </b>
-            {course.final && ` · 평가 미션(${course.final.id}) ${course.final.passed ? '통과' : '아직'}`}
+            {missionsText(course)}
           </p>
         )}
         {!course && (
@@ -465,22 +480,21 @@ export function TeacherKey({
   onClear,
   onProjector,
   onClose,
-  courses,
+  courseLink,
 }: {
   teacher: TeacherSet;
   onTeacher(t: TeacherSet): void;
   onClear(): void;
   onProjector(): void;
   onClose(): void;
-  /** 입문 과정: the course is picked as the content starts; here only the class link that lights one (the places' 차시 · 현장 settings hidden). */
-  courses?: readonly { id: string; short: string }[];
+  /** 입문 과정: the address of the 절 open now in its kind (the course comes from the platform; the places' 차시 · 현장 settings hidden). */
+  courseLink?: string;
 }) {
   const [files, setFiles] = useState<LessonRecord[]>([]);
   const [bad, setBad] = useState(0);
   const [copied, setCopied] = useState(false);
-  const [linkCourse, setLinkCourse] = useState(courses?.[0]?.id ?? '');
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  const link = !origin ? '' : courses ? `${origin}/track/life?course=${linkCourse}` : classLink(origin, { ...teacher, lesson: Math.max(1, teacher.lesson) });
+  const link = !origin ? '' : courseLink ? `${origin}${courseLink}` : classLink(origin, { ...teacher, lesson: Math.max(1, teacher.lesson) });
   const load = async (list: FileList | null) => {
     if (!list) return;
     const got: LessonRecord[] = [];
@@ -504,19 +518,7 @@ export function TeacherKey({
             ×
           </button>
         </header>
-        {courses && (
-          <div className={css.set}>
-            <span>링크로 열 과정</span>
-            <div className={css.seg}>
-              {courses.map((c) => (
-                <button key={c.id} type="button" data-on={linkCourse === c.id || undefined} onClick={() => setLinkCourse(c.id)}>
-                  {c.short}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        {!courses && (
+        {!courseLink && (
           <>
             <div className={css.set}>
               <span>차시 구성</span>
@@ -568,9 +570,11 @@ export function TeacherKey({
           </button>
         </div>
         <small className={css.foot}>
-          {courses ? '학생이 이 링크로 열면 과정 고르기에서 이 과정이 먼저 켜져 있어요.' : '학생이 이 링크로 열면 같은 차시 구성 · 현장 · 차시가 열려요. 앞 현장은 모두 열리고, 뒤 현장은 닫혀요. 이 PC의 설정은 이 PC에만 적용돼요.'}
+          {courseLink
+            ? '이 주소로 열면 지금 절이 지금 종류(장면 보기 · 실습 하기)로 바로 열려요. 구성은 플랫폼에서 받아요.'
+            : '학생이 이 링크로 열면 같은 차시 구성 · 현장 · 차시가 열려요. 앞 현장은 모두 열리고, 뒤 현장은 닫혀요. 이 PC의 설정은 이 PC에만 적용돼요.'}
         </small>
-        {!courses && (
+        {!courseLink && (
           <div className={css.set}>
             <span>수업 자료 (로봇 카페)</span>
             <a className={css.ghostLink} href="/guides/cafe-plan.pdf" target="_blank" rel="noreferrer">
@@ -765,14 +769,19 @@ export function Projector({ teacher, onLesson, onClose }: { teacher: TeacherSet;
 
 export function RecordPill({ rec, site, lesson, total, onOpen, course }: { rec: LessonRecord; site: SiteId; lesson: number; total: number; onOpen(): void; course?: { lesson: number; total: number; done: number; of: number } }) {
   const s = summaryOf(rec, rec.plan, site);
-  // 입문 12차시 (course.ts): the 차시 now and the 서브챕터 done.
-  const sum = course ? `${course.lesson ? `${course.lesson}차시 / ${course.total}` : `${course.total}차시`} · 완료 ${course.done}/${course.of}` : null;
-  const bar = course ? course.done / course.of : s.passed / s.total;
+  // 입문 과정: the key only (the 위치 줄 has the 차시; 완료 is in the panel) — the top bar keeps its room for the 위치 줄.
+  if (course)
+    return (
+      <button type="button" className={css.recPill} onClick={onOpen} title={`학습 기록 · ${course.lesson ? `${course.lesson}차시 / ${course.total}` : `${course.total}차시`} · 완료 ${course.done}/${course.of}`}>
+        <b>학습 기록</b>
+      </button>
+    );
+  const bar = s.passed / s.total;
   return (
     <button type="button" className={css.recPill} onClick={onOpen} title="학습 기록 · 기록지 · 제출 파일">
       <span>
         <b>학습 기록{rec.name ? ` · ${rec.no ? `${rec.no}번 ` : ''}${rec.name}` : ''}</b>
-        <small>{sum ?? `${short(site)} ${lesson ? `${lesson}차시 / ${total}` : `${total}차시`} · 퀘스트 ${s.passed}/${s.total} · 확인 ${s.right}/${s.asked}`}</small>
+        <small>{`${short(site)} ${lesson ? `${lesson}차시 / ${total}` : `${total}차시`} · 퀘스트 ${s.passed}/${s.total} · 확인 ${s.right}/${s.asked}`}</small>
       </span>
       <span className={css.recBar} aria-hidden="true">
         <i style={{ width: `${bar * 100}%` }} />
