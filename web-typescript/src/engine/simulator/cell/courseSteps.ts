@@ -50,10 +50,11 @@ export const HAND_SLOW_S = 1;
 export const HAND_SCENE = { hold: 3 } as const;
 /** 1-2: a joint found turns this far each way once, °. */
 export const FOUND_SWING_DEG = 10;
-/** 1-3: the 작업 범위 (the arm's reach), mm. */
-export const RANGE_MM = 280;
 /** 1-3: the motion to stop — 베이스 (J1) only, to this far and back, this many times (제안값). */
 export const SWING = { joint: 0, deg: 90, times: 3 } as const;
 
 /** The course's own 절 done (this browser): { '1-2': true }. */
 export const STEPS_KEY = 'life-course-steps';
+
+/** 1-2: the view of the arm standing straight up (robot mm): the whole arm about 70 % of the scene's height. */
+export const PICK_VIEW = { eye: [820, -820, 330] as const, target: [0, 0, 225] as const };

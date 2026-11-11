@@ -25,10 +25,12 @@ export const ITEMS: { key: keyof Lights; name: string; tone: string; title: stri
   { key: 'error', name: '오류', tone: 'err', title: '멈췄거나 연결을 확인해야 해요' },
 ];
 
-export default function StatusLights({ lights, children }: { lights: Lights; children: ReactNode }) {
+/** `stopped` (입문 과정): the student pressed 정지 — shown as 정지됨, apart from a real 오류. */
+export default function StatusLights({ lights, stopped: userStop, children }: { lights: Lights; stopped?: boolean; children: ReactNode }) {
   const [open, setOpen] = useState(false);
   // One light: the most pressing state (오류 › 실행 중 › 로봇 연결 › 시뮬레이션); the four are under it.
-  const now = ITEMS.find((it) => it.key === 'error' && lights.error) ?? ITEMS.find((it) => it.key === 'running' && lights.running) ?? ITEMS.find((it) => it.key === 'robot' && lights.robot) ?? ITEMS[0];
+  const stopped = { key: 'sim' as const, name: '정지됨', tone: 'sim', title: '정지 버튼으로 멈췄어요' };
+  const now = ITEMS.find((it) => it.key === 'error' && lights.error) ?? ITEMS.find((it) => it.key === 'running' && lights.running) ?? (userStop ? stopped : undefined) ?? ITEMS.find((it) => it.key === 'robot' && lights.robot) ?? ITEMS[0];
   const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!open) return;
@@ -50,7 +52,7 @@ export default function StatusLights({ lights, children }: { lights: Lights; chi
       <button type="button" className={css.lightsBtn} aria-expanded={open} data-hint-for="서보 고정, 서보 풀기, 연결 확인, 영점 맞추기" data-hint-skip="" onClick={() => setOpen((o) => !o)} title={`${now.title} · 누르면 로봇 상태 자세히`}>
         <span className={css.light} data-on data-tone={now.tone} aria-label={now.name}>
           <i />
-          {now.key !== 'sim' && now.name}
+          {(now.key !== 'sim' || now === stopped) && now.name}
         </span>
       </button>
       {open && (

@@ -26,6 +26,8 @@ export interface CourseSlot {
   at: readonly [number, number, number];
   w: number;
   h: number;
+  /** Comes in from off to the side (screen px it travels, x · y) when `in`, and goes back out after. */
+  enter?: { in: boolean; from: readonly [number, number] };
 }
 
 export interface CoursePick {
@@ -47,8 +49,10 @@ const J1_SPOT: [number, number, number] = [0, 0, -0.06];
 
 export function AssetSlot({ slot }: { slot: CourseSlot }) {
   const [missing, setMissing] = useState(false);
+  const away = slot.enter && !slot.enter.in;
+  const move = slot.enter ? { transform: away ? `translate(${slot.enter.from[0]}px, ${slot.enter.from[1]}px)` : 'translate(0, 0)', opacity: away ? 0 : 1 } : undefined;
   return (
-    <div className={css.slot} style={{ width: slot.w, height: slot.h }} data-missing={missing || undefined}>
+    <div className={css.slot} style={{ width: slot.w, height: slot.h, ...move }} data-moves={slot.enter ? true : undefined} data-missing={missing || undefined}>
       {!missing && (
         // eslint-disable-next-line @next/next/no-img-element -- an asset slot: the team's picture, also in the static export
         <img src={`/course/assets/${slot.id}.png`} alt={slot.label} onError={() => setMissing(true)} />
@@ -84,7 +88,8 @@ export default function CourseMarks({ marks, joints, flange, tcpMm }: { marks: C
               {createPortal(
                 <group position={i === 0 ? J1_SPOT : i < 6 ? [0, 0, 0] : [0, 0, tcpMm / 1000]}>
                   <Html center zIndexRange={[22, 0]}>
-                    <button type="button" className={css.spot} data-found={pick.found.includes(i) || undefined} aria-label={name} onClick={() => pick.onPick(i)}>
+                    {/* Name tags left and right in turn, a line to the joint (seven never on top of one another). */}
+                    <button type="button" className={css.spot} data-side={i % 2 ? 'left' : 'right'} data-found={pick.found.includes(i) || undefined} aria-label={name} onClick={() => pick.onPick(i)}>
                       {shown && <b data-wrong={(!pick.found.includes(i) && pick.flash === i) || undefined}>{name}</b>}
                     </button>
                   </Html>

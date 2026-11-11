@@ -213,12 +213,3 @@
   font-size: 16px;
   color: #dfe4ea;
 }
-
-/* An asset slot fixed over the scene (left, above the floor), not in the 3D. */
-.sceneSlot {
-  position: absolute;
-  z-index: 12;
-  left: 24px;
-  bottom: 24px;
-  pointer-events: none;
-}

@@ -18,7 +18,6 @@
 }
 .spot b {
   position: absolute;
-  left: 40px;
   top: 50%;
   transform: translateY(-50%);
   padding: 5px 10px;
@@ -30,6 +29,27 @@
   white-space: nowrap;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
   pointer-events: none;
+}
+/* Left and right in turn, 80 px out, a line back to the joint. */
+.spot[data-side='right'] b {
+  left: 114px;
+}
+.spot[data-side='left'] b {
+  right: 114px;
+}
+.spot b::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 80px;
+  height: 2px;
+  background: rgba(246, 247, 249, 0.85);
+}
+.spot[data-side='right'] b::before {
+  right: 100%;
+}
+.spot[data-side='left'] b::before {
+  left: 100%;
 }
 .spot b[data-wrong] {
   background: rgba(24, 28, 35, 0.95);
@@ -63,4 +83,11 @@
   font-size: 12px;
   font-weight: 500;
   color: #c9ced5;
+}
+
+/* A slot that comes in from the side (1-1's hand) and goes back out. */
+.slot[data-moves] {
+  transition:
+    transform 0.9s ease-in-out,
+    opacity 0.9s ease-in-out;
 }

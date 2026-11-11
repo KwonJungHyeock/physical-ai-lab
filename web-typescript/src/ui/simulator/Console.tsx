@@ -152,12 +152,12 @@ import { lessonOfQuest, lessonsOf, siteOf } from '@/engine/simulator/cell/lesson
 import { COURSE, kindsOf, modeFor, subById, subOfRun, topicMark, MODE_NAME, type CourseSub, type SubMode } from '@/engine/simulator/cell/course';
 import { DEFAULT_PLAN, countedIn, lessonIn, lessonStepsIn, missionSubsIn, nextIn, testReady, type CoursePlan } from '@/engine/simulator/cell/courses';
 import { mayOpen, noticeDue, noticeRead, readPlan, report } from '@/engine/simulator/cell/platform';
-import { ARM_PARTS, COURSE_STEPS, FOUND_SWING_DEG, HAND_SCENE, HAND_SLOW_S, RANGE_MM, STEPS_KEY, SWING, isCourseStep, type CourseStepId } from '@/engine/simulator/cell/courseSteps';
+import { ARM_PARTS, PICK_VIEW, COURSE_STEPS, FOUND_SWING_DEG, HAND_SCENE, HAND_SLOW_S, STEPS_KEY, SWING, isCourseStep, type CourseStepId } from '@/engine/simulator/cell/courseSteps';
 import { CHAPTER_TESTS, TESTS_KEY, loadTests, type OX, type TestResult } from '@/engine/simulator/cell/courseTests';
 import { COPYRIGHT_NOTICE, COPYRIGHT_RECORD_LINE } from '@/engine/simulator/copyright';
 import LocationBar, { type LocLesson } from './stage/LocationBar';
 import NowBar, { NowMark, QuestNow, TutNow } from './stage/NowBar';
-import CourseStepPanel, { SceneSlot } from './tasks/CourseStepPanel';
+import CourseStepPanel from './tasks/CourseStepPanel';
 import CourseTestPanel from './tasks/CourseTestPanel';
 import QuestNumbers from './stage/QuestNumbers';
 import { RECORD_KEY, TEACHER_KEY, answered as recAnswered, emptyRecord, loadRecord, loadTeacher, opened as recOpened, passed as recPassed, questOpen, teacherFromQuery, tried as recTried, type LessonRecord, type TeacherSet } from '@/engine/simulator/cell/lessonRecord';
@@ -2060,7 +2060,9 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   // 입문: no base axes while a place runs or is toured (the close-up cameras put them over the cup or the pen),
   // nor in a quest but the jog (퀘스트 3: the X · Y · Z it moves along); free practice keeps them.
   const axesQuiet = !!track && !!cellAt && (busy || !!touring || (!!cellAt.mission && cellAt.mission !== 'F3'));
-  const stageDisplay = useMemo(() => (axesQuiet ? { ...display, baseAxes: false } : display), [axesQuiet, display]);
+  const axesOff = axesQuiet || courseStep?.id === '1-2';
+  const reachOn = courseStep?.id === '1-3' && courseStep.range;
+  const stageDisplay = useMemo(() => (axesOff || reachOn ? { ...display, ...(axesOff ? { baseAxes: false } : {}), ...(reachOn ? { reach: true } : {}) } : display), [axesOff, reachOn, display]);
   const lifeGuide: Guide | null = lifeStep && view === 'sim' ? { head: `${lifeStep.n}단계 · ${lifeStep.title}`, text: `목표 ${lifeStep.checks?.[0]?.label ?? lifeStep.goal}` } : null;
   // 입문 퀘스트 모드: a place's step (or a 기초 조작 tutorial) is a quest — 브리핑 → 해 보기 → 실행 · 관찰 → 결과.
   // The quest card (top left) says what to do now; the side panel follows the phase; the left menu folds away.
@@ -4121,8 +4123,10 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     sim: !robotMode,
     robot: robotMode && !!robot?.connected && !serverLost,
     running: busy || realRun,
-    error: (robotMode && (serverLost || !robot?.connected)) || badge?.kind === 'stop',
+    // 입문 과정: a stop the student pressed (정지) is 정지됨, not 오류; a real error stays 오류.
+    error: (robotMode && (serverLost || !robot?.connected)) || (badge?.kind === 'stop' && !(course && badge.text === '정지')),
   };
+  const userStopped = course && badge?.kind === 'stop' && badge.text === '정지';
   const connectionLost = robotMode && (serverLost || !robot?.connected);
   /** Why the 오류 light is on (the status popover): the robot connection, or the problem the notices show now. */
   const lastLog = log[log.length - 1];
@@ -4182,6 +4186,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
           ? null
           : { spots: built.marks, path: built.path, legs: planLegs, ghost: jointTry?.key === planKey ? jointTry.trail : undefined }
       : null;
+  const wholeBooth = courseStep?.id === '1-1';
   // 입문: while a step runs, the view goes to the station the tool works at (from its side, the cup in
   // view), unless the user has moved the view; back to the whole place when the run is over.
   const lifeCell = track && (cellAt?.cell === 'cafe' || cellAt?.cell === 'draw' || cellAt?.cell === 'board') ? cellAt.cell : null;
@@ -4191,7 +4196,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     if (busy) setTouring(null);
   }, [busy]);
   useEffect(() => {
-    if (!lifeCell || !busy || touring) return;
+    // 입문 과정 1-1: the whole booth stays in view (the arm slowing and stopping is the point).
+    if (!lifeCell || !busy || touring || wholeBooth) return;
     let last: string | null = null;
     let seen: string | null = null;
     let followed = false;
@@ -4238,7 +4244,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       const api = stageApi.current;
       if (followed && api && !api.userMoved()) window.setTimeout(() => api.view('home'), 1200);
     };
-  }, [lifeCell, busy, touring, tipOf]);
+  }, [lifeCell, busy, touring, tipOf, wholeBooth]);
   // 주문 한 잔 따라가기: the lines (narrate.ts) one by one, the scene held a moment on each so it is read
   // (the bubble and the camera follow CellRun.said); an O · X holding the scene goes first.
   const narrating = !!track && busy && cellAt?.mission === NARRATED;
@@ -4383,7 +4389,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     // 1-2 · 1-3: the plain desk, the arm at 기본 자세 (1-2 with the pen, so the tool shows apart from the tip).
     toPlainDesk();
     if (id === '1-2' && effector !== 'pen') changeTool('pen', false);
-    world.current.angles = arm.home.slice();
+    // 1-2: the arm straight up (일자로 펴기, all 0°), the seven places one above another; 1-3: 기본 자세.
+    world.current.angles = (id === '1-2' ? arm.zero : arm.home).slice();
     setAnglesView(world.current.angles.slice());
     if (id === '1-3') {
       setJogSpeed(50);
@@ -4391,7 +4398,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       openTab('direct');
     }
     // 1-2: the arm close up from the front side, all six joints in sight (robot mm).
-    window.setTimeout(() => (id === '1-2' ? stageApi.current?.lookAt([560, -470, 380], [0, 0, 190]) : stageApi.current?.view('home')), 60);
+    // (After the panels fold or open: the view is framed again then, so the close view comes after it.)
+    window.setTimeout(() => (id === '1-2' ? stageApi.current?.lookAt(PICK_VIEW.eye, PICK_VIEW.target) : stageApi.current?.view('home')), 1200);
   };
   /** 1-1 ①: the card written (5-1's program), the hand free to come in. */
   const runHandStep = () => {
@@ -4787,7 +4795,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   }, [inCafe]);
   const barFoot: BarItem[] = [{ ...work('zero', '영점', 'zero', robotMode ? '영점 맞추기' : '로봇을 연결하면 영점을 맞춰요'), disabled: !robotMode || (busy && !zeroMode) }];
   /** The 3D view's top-left corner: the arm's name and ROBOT LINK, when no cell or window is there. */
-  const stageTitle = !!loaded && view === 'sim' && !cellAt && !railOpen && !lifeTut;
+  // (입문 과정: no MYCOBOT 280 · SIMULATION · ROBOT LINK over the scene; the link comes back in 5-5.)
+  const stageTitle = !!loaded && view === 'sim' && !cellAt && !railOpen && !lifeTut && !course;
   /** The open screen in the 3D view's corner: [English, Korean]. */
   const SCREEN_EN: Record<string, string> = { hand: 'HAND', jog: 'CONTROL', parts: 'TOOL', pose: 'POSE', zero: 'ZERO', process: 'TASK', basic: 'CODE', python: 'CODE', ros: 'CODE', ai: 'AI' };
   const SCREEN_TITLE: Record<string, string> = { theme: '테마학습', hand: '손 따라하기', jog: '제어', parts: '도구', pose: '자세', zero: '영점', process: '공정', basic: recipeOn ? '작업 순서' : '코딩', python: '코딩', ros: '코딩' };
@@ -5531,7 +5540,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
               />
             )}
             {/* On the simulator the link sits in the 3D view's top-left corner (StageTitle), unless a cell or a window holds that corner. 입문 퀘스트: not shown (simulation only). */}
-            {!stageTitle && !questOn && (
+            {!stageTitle && !questOn && !course && (
             <button
               type="button"
               className={css.connPill}
@@ -5734,8 +5743,6 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
         <div ref={shellRef} className={track ? `${css.shell} life-shell` : css.shell} data-dock={dockShown ? 'open' : 'closed'} data-side={side} data-tab={shownTab === 'direct' ? 'direct' : 'code'} data-mini={miniOn ? 'on' : 'off'} data-life={(!!track && !!cellAt) || undefined} data-wide={wideOn || undefined} style={view !== 'sim' ? { display: 'none' } : undefined}>
           <section className={`${css.panel} ${css.stageCol}`} aria-label="시뮬레이션">
             <div className={css.viewport} data-viewport>
-              {/* 입문 과정 1-1: the hand coming in (an asset slot over the scene). */}
-              {courseStep?.id === '1-1' && courseStep.handNear && <SceneSlot slot={{ id: 'hand', label: '다가오는 손', at: [0, 0, 0], w: 260, h: 170 }} />}
               {loadError ? (
                 <div className={css.loading}>로봇 모델을 불러오지 못했어요 ({loadError})</div>
               ) : loaded ? (
@@ -5774,9 +5781,9 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   courseMarks={
                     courseStep?.id === '1-2'
                       ? { pick: { names: ARM_PARTS, found: courseStep.found, flash: courseStep.flash, onPick: pickPart } }
-                      : courseStep?.id === '1-3' && courseStep.range
-                          ? { slots: [{ id: 'range-280', label: `작업 범위 원 (반지름 ${RANGE_MM} mm)`, at: [0, 0, 0], w: 300, h: 180 }] }
-                          : null
+                      : courseStep?.id === '1-1'
+                        ? { slots: [{ id: 'hand', label: '다가오는 손', at: [350, 0, 40], w: 210, h: 120, enter: { in: courseStep.handNear, from: [0, -300] } }] }
+                        : null
                   }
                   cellClock={cellClock}
                   cellCallouts={!!track}
@@ -6164,7 +6171,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   </button>
                   {/* 입문 퀘스트: no robot status (simulation only; the 교안 does not use it). */}
                   {!questOn && (
-                  <StatusLights lights={lights}>
+                  <StatusLights lights={lights} stopped={userStopped}>
                     <RobotStatus
                       robotMode={robotMode}
                       live={live}

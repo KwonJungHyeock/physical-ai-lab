@@ -8,8 +8,6 @@
 
 import type { CourseStepId } from '@/engine/simulator/cell/courseSteps';
 
-import { AssetSlot, type CourseSlot } from '../stage/CourseMarks';
-
 import css from './courseStep.module.css';
 
 interface Props {
@@ -45,15 +43,6 @@ export default function CourseStepPanel({ id, busy, onRun, hand, range }: Props)
           </button>
         </div>
       )}
-    </div>
-  );
-}
-
-/** An asset slot over the scene's corner (one that would be hidden by the camera close up, as 1-1's hand). */
-export function SceneSlot({ slot }: { slot: CourseSlot }) {
-  return (
-    <div className={css.sceneSlot}>
-      <AssetSlot slot={slot} />
     </div>
   );
 }
