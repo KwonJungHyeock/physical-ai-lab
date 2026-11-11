@@ -79,7 +79,7 @@ export default function LocationBar({ lesson, step, lessons, onGo, onChecks }: {
                     if (s.state !== 'now') onGo(s.id);
                   }}
                 >
-                  <em>{s.state === 'done' ? '✓ 완료' : s.state === 'now' ? '지금' : s.soon ? '만드는 중' : '미완료'}</em>
+                  <em>{s.soon ? '' : s.state === 'done' ? '✓ 완료' : s.state === 'now' ? '지금' : '미완료'}</em>
                   <span>
                     {s.label} {s.title}
                   </span>

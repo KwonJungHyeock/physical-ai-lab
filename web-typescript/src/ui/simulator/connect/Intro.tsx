@@ -75,13 +75,25 @@ interface Props {
   gate?: { onConnect(): void; onStart(): void; onRoadmap?: () => void };
   /** A 트랙's own cover (tracks.ts): its title and lines, its pictures taking turns instead of the film. */
   brand?: TrackIntro;
+  /**
+   * 입문 과정 (courses.ts): the 저작권 안내 first ([확인하고 시작], each time it opens), then the courses
+   * to pick in place of the two ways in; picking one enters. `pick`: the one lit (a class link's).
+   */
+  courses?: {
+    notice: { kicker: string; title: string; lines: readonly string[]; owner: string; ok: string };
+    list: readonly { id: string; short: string; title: string; note: string }[];
+    pick?: string;
+    onPick(id: string): void;
+  };
 }
 
 /** How long each of a cover's pictures stays, ms. */
 const PICTURE_MS = 4500;
 
-export default function Intro({ progress, ready, note, gate, brand }: Props) {
+export default function Intro({ progress, ready, note, gate, brand, courses }: Props) {
   const [played, setPlayed] = useState(false);
+  // 입문: the 저작권 안내 read ([확인하고 시작]) — each time the content opens, so not stored.
+  const [noticed, setNoticed] = useState(false);
   const [entered, setEntered] = useState(false);
   // Right after a reload of its own (to a robot or back): no sequence and no choice, the loading only.
   const [quiet, setQuiet] = useState(false);
@@ -109,7 +121,7 @@ export default function Intro({ progress, ready, note, gate, brand }: Props) {
   }, [pictures]);
   const scenes = brand?.scenes ?? SCENES;
   const final = ready && played;
-  const done = final && (!gate || entered || quiet);
+  const done = final && (!gate || entered || (quiet && !courses));
   // Paused once gone (it is still in the page, under the console).
   useEffect(() => {
     if (done) film.current?.pause();
@@ -142,12 +154,12 @@ export default function Intro({ progress, ready, note, gate, brand }: Props) {
   };
   // After a reload of its own with the choice still open (back from a robot): straight into the simulator.
   useEffect(() => {
-    if (!quiet || !final || !gate || entered) return;
+    if (!quiet || !final || !gate || entered || courses) return;
     const t = window.setTimeout(() => enter(gate.onStart), 0);
     return () => window.clearTimeout(t);
   });
   const now = scenes[scene] ?? scenes[0];
-  const choose = gate && final && !quiet;
+  const choose = gate && final && (!quiet || !!courses);
   return (
     <div
       className={css.splash}
@@ -213,7 +225,46 @@ export default function Intro({ progress, ready, note, gate, brand }: Props) {
           <br />
           {brand?.lead[1] ?? '같은 프로그램을 실제 로봇에서 돌려요.'}
         </p>
-        {choose ? (
+        {choose && courses ? (
+          noticed ? (
+            <div className={`${css.actions} ${css.courses}`} role="group" aria-label="과정 고르기">
+              {courses.list.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  className={c.id === (courses.pick ?? courses.list[0]?.id) ? css.connect : undefined}
+                  disabled={entered}
+                  title={c.title}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    enter(() => courses.onPick(c.id));
+                  }}
+                >
+                  <span>
+                    <b>{c.short}</b>
+                    <small>{c.note}</small>
+                  </span>
+                  <svg className={css.chev} viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M9 6l6 6-6 6" />
+                  </svg>
+                </button>
+              ))}
+              <button
+                type="button"
+                className={css.free}
+                disabled={entered}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  enter(gate.onStart);
+                }}
+              >
+                <span>
+                  <b>로봇 팔만 자유롭게</b>
+                </span>
+              </button>
+            </div>
+          ) : null
+        ) : choose ? (
           <div className={css.actions}>
             <button
               type="button"
@@ -273,12 +324,28 @@ export default function Intro({ progress, ready, note, gate, brand }: Props) {
         )}
       </div>
 
+      {choose && courses && !noticed && (
+        <div className={css.notice} role="alertdialog" aria-modal="true" aria-labelledby="copyright-title" onClick={(e) => e.stopPropagation()}>
+          <div>
+            <small>{courses.notice.kicker}</small>
+            <h2 id="copyright-title">{courses.notice.title}</h2>
+            {courses.notice.lines.map((l) => (
+              <p key={l}>{l}</p>
+            ))}
+            <em>{courses.notice.owner}</em>
+            <button type="button" autoFocus onClick={() => setNoticed(true)}>
+              {courses.notice.ok}
+            </button>
+          </div>
+        </div>
+      )}
+
       <footer className={css.foot}>
         <div className={css.load} role="progressbar" aria-label="불러오기" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(target * 100)}>
           <i ref={bar} />
         </div>
         <span className={css.row}>
-          <small className={css.note}>{choose ? (gate.onRoadmap ? '배우려면 THEME (로봇 카페부터), 팔만 움직여 보려면 SIMULATOR' : '로봇과 같은 Wi-Fi 라면 CONNECT, 로봇 없이 연습하려면 SIMULATOR') : note}</small>
+          <small className={css.note}>{choose && courses ? '과정을 고르면 그 과정의 목록으로 들어가요' : choose ? (gate.onRoadmap ? '배우려면 THEME (로봇 카페부터), 팔만 움직여 보려면 SIMULATOR' : '로봇과 같은 Wi-Fi 라면 CONNECT, 로봇 없이 연습하려면 SIMULATOR') : note}</small>
           <span className={css.status} data-ready={ready || undefined}>
             <i />
             {ready ? 'SYSTEM READY' : 'LOADING'}

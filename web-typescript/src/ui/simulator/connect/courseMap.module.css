@@ -104,15 +104,15 @@
 }
 .row:disabled {
   cursor: default;
-  color: #8b939c;
+}
+/* Not in the app yet: dimmed only, no word for it. */
+.row[data-soon] {
+  opacity: 0.38;
 }
 .row i {
   font-style: normal;
   font-weight: 800;
   color: #dfe4ea;
-}
-.row:disabled i {
-  color: #8b939c;
 }
 .row span {
   overflow: hidden;

@@ -149,7 +149,9 @@ import RunBar from './tasks/RunBar';
 import { quickRun } from '@/engine/simulator/cell/quick';
 import { LessonCheck, LessonPlate, Projector, RecordPanel, RecordPill, TeacherKey, questPages } from './tasks/LessonKit';
 import { lessonOfQuest, lessonsOf, siteOf } from '@/engine/simulator/cell/lessons';
-import { COURSE_SUBS, courseLessons, nextRunnable, subById, subOfRun, type CourseSub } from '@/engine/simulator/cell/course';
+import { subById, subOfRun, type CourseSub } from '@/engine/simulator/cell/course';
+import { COURSES, DEFAULT_COURSE, courseById, finalSub, isCourseId, lessonIn, lessonsIn, nextIn, pagesIn, subsIn, type CourseId } from '@/engine/simulator/cell/courses';
+import { COPYRIGHT_NOTICE, COPYRIGHT_RECORD_LINE } from '@/engine/simulator/copyright';
 import LocationBar, { type LocLesson } from './stage/LocationBar';
 import QuestNumbers from './stage/QuestNumbers';
 import { RECORD_KEY, TEACHER_KEY, answered as recAnswered, emptyRecord, loadRecord, loadTeacher, opened as recOpened, passed as recPassed, questOpen, teacherFromQuery, tried as recTried, type LessonRecord, type TeacherSet } from '@/engine/simulator/cell/lessonRecord';
@@ -329,6 +331,15 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const track = trackId ? TRACKS[trackId] : null;
   // 입문 트랙: the 12차시 course (course.ts) — its list, 위치 줄 and next instead of the places' 4 · 6 · 8차시.
   const course = trackId === 'life';
+  // 입문 과정 (courses.ts): picked as the content starts, each time (not stored); a class link's ?course= is the one lit.
+  const [courseId, setCourseId] = useState<CourseId>(DEFAULT_COURSE);
+  const [coursePick, setCoursePick] = useState<CourseId | undefined>(undefined);
+  useEffect(() => {
+    const c = new URLSearchParams(window.location.search).get('course');
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- read after hydration (the page's address)
+    if (isCourseId(c)) setCoursePick(c);
+  }, []);
+  const cPlan = courseById(courseId);
   const pcApp = usePcApp();
   const [loadedArm, setLoaded] = useState<Omit<Loaded, 'rawChain'> | null>(null);
   /** The 교육 tab always teaches on myCobot 280 RDK X5, whichever arm the simulator has open. */
@@ -4218,7 +4229,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     setLifeTut(null);
     openCell('draw', s.run.id);
   };
-  const subNext = subNow ? nextRunnable(subNow.id) : undefined;
+  const subNext = subNow ? nextIn(cPlan, subNow.id) : undefined;
   const nextStep = course ? null : track && cellAt && lifeStep && lifeQuest ? (() => { const nx = missionsOf(cellAt.cell)[lifeStep.n]; return nx ? { cell: cellAt.cell, id: nx.id } : null; })() : null;
   const runBar = (
     <RunBar
@@ -4243,13 +4254,13 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
 
   // 위치 줄 (입문 트랙): 차시 · 단계 · 교안 쪽 of the step open now, and the list to go to another (지시서 v1 파트 1 · 4).
   const locLessons: LocLesson[] = subNow
-    ? courseLessons().map((l) => ({
+    ? lessonsIn(cPlan).map((l) => ({
         n: l.n,
         steps: l.subs.map((x) => ({
           id: x.id,
           label: x.id,
           title: x.test ? '수행평가' : x.title,
-          pages: x.pages,
+          pages: pagesIn(cPlan, x),
           state: x.id === subNow.id ? ('now' as const) : subDone(x) ? ('done' as const) : ('todo' as const),
           soon: !x.run,
         })),
@@ -4259,7 +4270,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const locBar =
     track && subNow && locNow ? (
       <LocationBar
-        lesson={subNow.lesson}
+        lesson={lessonIn(cPlan, subNow.id)}
         step={locNow}
         lessons={locLessons}
         onGo={(id) => {
@@ -4752,6 +4763,21 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     <div className={css.app} data-busy={busy || undefined}>
       <Intro
         brand={track?.intro}
+        courses={
+          course
+            ? {
+                notice: COPYRIGHT_NOTICE,
+                list: COURSES,
+                pick: coursePick,
+                onPick: (id) => {
+                  if (!isCourseId(id)) return;
+                  setCourseId(id);
+                  setEntered(true);
+                  setRoadmapOpen(true);
+                },
+              }
+            : undefined
+        }
         ready={splashDone}
         progress={loadError || started ? 1 : loaded ? 0.72 : 0.3}
         note={loadError ? '로봇 모델을 불러오지 못했어요' : started ? '준비됐어요' : loaded ? '3D 화면을 준비하고 있어요' : '로봇 모델을 불러오고 있어요'}
@@ -4789,10 +4815,25 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
         <LessonCheck bare rec={lessonRec} site={lessonNow.site} n={checkN ?? lessonNow.n} onAnswer={(k, c) => changeRec((r) => (r.checks[k] ? r : recAnswered(r, k, c, Date.now())))} onClose={() => { setLessonUi(null); setCheckN(null); }} />
       )}
       {track && lessonUi === 'record' && (
-        <RecordPanel rec={lessonRec} site={lifeSite} onWho={(name, no) => changeRec((r) => (r.name === name && r.no === no ? r : { ...r, name, no, at: Date.now() }))} onClose={() => setLessonUi(null)} />
+        <RecordPanel
+          rec={lessonRec}
+          site={lifeSite}
+          course={
+            course
+              ? {
+                  title: cPlan.title,
+                  short: cPlan.short,
+                  lessons: lessonsIn(cPlan).map((l) => ({ n: l.n, subs: l.subs.map((x) => ({ id: x.id, title: x.test ? '수행평가' : x.title, done: subDone(x), soon: !x.run })) })),
+                  final: cPlan.id === 'full12' ? undefined : (() => { const f = finalSub(cPlan); return f ? { id: f.id, passed: subDone(f) } : undefined; })(),
+                  copyright: COPYRIGHT_RECORD_LINE,
+                }
+              : undefined
+          }
+          onWho={(name, no) => changeRec((r) => (r.name === name && r.no === no ? r : { ...r, name, no, at: Date.now() }))} onClose={() => setLessonUi(null)} />
       )}
       {track && lessonUi === 'teacher' && (
         <TeacherKey
+          courses={course ? COURSES : undefined}
           teacher={teacherSet}
           onTeacher={changeTeacher}
           onProjector={() => setLessonUi('projector')}
@@ -5113,7 +5154,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                 site={lifeSite}
                 lesson={lessonNow?.n ?? (lifeSite === teacherSet.site ? teacherSet.lesson : 0)}
                 total={lessons.length}
-                course={course ? { lesson: subNow?.lesson ?? 0, done: COURSE_SUBS.filter(subDone).length, of: COURSE_SUBS.filter((x) => x.run).length } : undefined}
+                course={course ? { lesson: subNow ? lessonIn(cPlan, subNow.id) : 0, total: cPlan.lessons.length, done: subsIn(cPlan).filter(subDone).length, of: subsIn(cPlan).filter((x) => x.run).length } : undefined}
                 onOpen={() => setLessonUi('record')}
               />
             )}
@@ -5229,6 +5270,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
         )}
         {roadmapOpen && course && (
           <CourseMap
+            plan={cPlan}
             now={subNow?.id}
             done={subDone}
             onClose={() => setRoadmapOpen(false)}
