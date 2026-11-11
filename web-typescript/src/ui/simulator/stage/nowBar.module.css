@@ -1,0 +1,133 @@
+/* 지금 할 일: one line under the 위치 줄; the accent (amber) is the number and the place to press only. */
+.now {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 64px;
+  padding: 8px 20px;
+  background: #161a21;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  color: #f6f7f9;
+  word-break: keep-all;
+}
+.now em {
+  flex: none;
+  font-size: 17px;
+  font-style: normal;
+  font-weight: 800;
+  color: #f0a23b;
+}
+.now p {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 23px;
+  font-weight: 700;
+  color: #fff;
+}
+.n,
+.ok {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 18px;
+  font-style: normal;
+  font-weight: 800;
+}
+.n {
+  background: #f0a23b;
+  color: #18120a;
+}
+.ok {
+  background: #22c55e;
+  color: #06210f;
+}
+.now[data-state='ok'] p {
+  color: #86efac;
+}
+.now[data-state='run'] p {
+  color: #e5e8ec;
+}
+
+.meter {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.meter > i {
+  display: block;
+  width: 220px;
+  height: 10px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+.meter > i > i {
+  display: block;
+  height: 100%;
+  border-radius: 5px;
+  background: #f0a23b;
+}
+.meter output {
+  min-width: 96px;
+  font-size: 19px;
+  font-weight: 700;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+.next {
+  flex: none;
+  height: 46px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #c9ced5;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.next:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+.next[data-lit] {
+  background: #f0a23b;
+  color: #18120a;
+}
+
+/* The place to press now (portal over the page). */
+.ring {
+  position: fixed;
+  z-index: 55;
+  border-radius: 10px;
+  box-shadow:
+    0 0 0 3px #f0a23b,
+    0 0 18px rgba(240, 162, 59, 0.55);
+  pointer-events: none;
+}
+.badge {
+  position: fixed;
+  z-index: 56;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #f0a23b;
+  color: #18120a;
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 800;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}

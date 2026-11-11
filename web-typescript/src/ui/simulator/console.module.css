@@ -9417,3 +9417,17 @@ div.zeroFlow {
   color: #e9edf1;
   font-weight: 700;
 }
+
+/* 입문 과정: 지금 할 일 (NowBar) right under the top bar; the panels start below it. */
+@media (min-width: 1000px) and (min-height: 600px) {
+  .app[data-nowbar] {
+    --top: 118px;
+  }
+  .app[data-nowbar] .nowSlot {
+    position: absolute;
+    top: 54px;
+    left: 0;
+    right: 0;
+    z-index: 29;
+  }
+}

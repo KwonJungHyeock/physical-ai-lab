@@ -464,7 +464,7 @@ export default function ControlPanel(p: Props) {
 
       <div className={css.opts}>
         <span className={css.optName} title="한 번 누를 때 움직이는 양">
-          STEP
+          {p.ko ? '이동 단위' : 'STEP'}
         </span>
         <span className={css.chips} role="group" aria-label="한 번 누를 때 움직이는 양">
           {steps.map((v) => (
@@ -475,7 +475,7 @@ export default function ControlPanel(p: Props) {
           <i className={css.chipUnit}>{unit}</i>
         </span>
         <span className={css.optName} title="움직이는 빠르기">
-          SPEED
+          {p.ko ? '속도' : 'SPEED'}
         </span>
         <label className={css.speed}>
           <input
@@ -541,6 +541,7 @@ export default function ControlPanel(p: Props) {
                 <div
                   key={i}
                   className={css.row}
+                  data-row
                   data-sel={sel || undefined}
                   data-focus={lessonJoint === i || undefined}
                   onPointerDown={() => {

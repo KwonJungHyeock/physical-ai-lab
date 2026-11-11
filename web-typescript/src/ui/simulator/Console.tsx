@@ -132,7 +132,7 @@ import TutorialStrip from './tasks/TutorialStrip';
 import { LeadSpot, type SpotStep } from './tasks/Spotlight';
 import { MomentAsk, PredictCard, StepResult, loadPredictions, savePrediction } from './stage/StepGuide';
 import WaitSkip from './stage/WaitSkip';
-import { QUEST_LEAD, QUESTS, questNow, type QuestPhase } from '@/engine/simulator/cell/quests';
+import { QUEST_LEAD, QUESTS, questNow, questSteps, type QuestPhase } from '@/engine/simulator/cell/quests';
 import { askNow, asksOf, guideOf, type Ask } from '@/engine/simulator/cell/guides';
 import { NARRATE_HOLD_MS, NARRATED, narrationLines } from '@/engine/simulator/cell/narrate';
 import { narrateShot, stationAt } from '@/engine/simulator/cell/shots';
@@ -153,6 +153,7 @@ import { subById, subOfRun, type CourseSub } from '@/engine/simulator/cell/cours
 import { COURSES, DEFAULT_COURSE, courseById, finalSub, isCourseId, lessonIn, lessonsIn, nextIn, pagesIn, subsIn, type CourseId } from '@/engine/simulator/cell/courses';
 import { COPYRIGHT_NOTICE, COPYRIGHT_RECORD_LINE } from '@/engine/simulator/copyright';
 import LocationBar, { type LocLesson } from './stage/LocationBar';
+import { QuestNow, TutNow } from './stage/NowBar';
 import QuestNumbers from './stage/QuestNumbers';
 import { RECORD_KEY, TEACHER_KEY, answered as recAnswered, emptyRecord, loadRecord, loadTeacher, opened as recOpened, passed as recPassed, questOpen, teacherFromQuery, tried as recTried, type LessonRecord, type TeacherSet } from '@/engine/simulator/cell/lessonRecord';
 import { usePcApp } from './connect/usePcApp';
@@ -3868,7 +3869,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       {/* One plate: TOOL, the tool's name, its keys (no tool: one key to fit one). */}
       <div className={`${css.poseRow} ${css.toolPlate}`}>
         <span className={css.toolTag}>
-          <em>TOOL</em>
+          <em>{track ? '도구' : 'TOOL'}</em>
           <b>{kind === 'none' ? '도구 없음' : EFFECTOR_BY_ID[effector].name}</b>
         </span>
         {kind === 'none' && (
@@ -4230,6 +4231,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     openCell('draw', s.run.id);
   };
   const subNext = subNow ? nextIn(cPlan, subNow.id) : undefined;
+  // 입문 과정: the booth is '로봇 글씨 쓰기' on screen (피드백 v2; the full console keeps its name).
+  const cellName = (c: CellId) => (course && c === 'draw' ? '로봇 글씨 쓰기' : CELL_BY_ID[c].name);
   const nextStep = course ? null : track && cellAt && lifeStep && lifeQuest ? (() => { const nx = missionsOf(cellAt.cell)[lifeStep.n]; return nx ? { cell: cellAt.cell, id: nx.id } : null; })() : null;
   const runBar = (
     <RunBar
@@ -4248,7 +4251,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       onStop={stop}
       more={questOn && cellAt && lifeStep ? [{ label: '자유 연습 (채점 없이)', onClick: () => openCell(cellAt.cell, null), disabled: busy }] : undefined}
       quick={quickOn ? { onClick: () => void runQuick(), progress: quickProg, disabled: busy || !loaded } : undefined}
-      next={subNext && lifeQuest ? { onClick: () => openSub(subNext), lit: !!lessonRec.quests[lifeQuest]?.passed } : nextStep ? { onClick: () => openCell(nextStep.cell, nextStep.id), lit: !!(lifeQuest && lessonRec.quests[lifeQuest]?.passed), disabled: questIsOpen(nextStep.id) === false } : undefined}
+      next={course ? undefined : nextStep ? { onClick: () => openCell(nextStep.cell, nextStep.id), lit: !!(lifeQuest && lessonRec.quests[lifeQuest]?.passed), disabled: questIsOpen(nextStep.id) === false } : undefined}
     />
   );
 
@@ -4386,6 +4389,13 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const objectsItem = theme === 'kit' ? [] : [viewItem('objects', '물건', 'box', '책상에 물건 놓기', desk.objects.length ? String(desk.objects.length) : undefined)];
   const monitorItem = viewItem('monitor', '모니터', 'chart', '관절 · 손끝 · 그래프 · 부하');
   // 입문 트랙: 제어 · 도구 · 자세 always; 테마학습 (실생활 협동로봇 · 튜토리얼) and, in a place, its 작업 순서; 물건 · 모니터.
+  // 입문 과정 (피드백 v2 예시): 목록 first, then 조작 · 도구 · 자세, the 현장's 순서, 기록.
+  const courseGroups = [
+    { name: '학습', items: [work('theme', '목록', 'flag', '목록: 장 · 절 · 차시')] },
+    controlGroup,
+    ...(recipeOn ? [{ name: '순서', items: [{ ...work('code', '순서', 'code', '작업 순서: 카드로 로봇이 할 일을 차례로'), on: dockShown && (workScreen === 'basic' || workScreen === 'python' || workScreen === 'ros') }] }] : []),
+    { name: '보기', items: [monitorItem] },
+  ];
   const lifeGroups = [
     controlGroup,
     {
@@ -4417,14 +4427,15 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       ],
     },
   ];
-  const barGroups = track?.menu.includes('theme') ? lifeGroups : fullGroups;
+  const barGroups = course ? courseGroups : track?.menu.includes('theme') ? lifeGroups : fullGroups;
   // A 트랙 opens only its menus.
   // 입문 현장 (카페 · 캘리그라피 · 보드게임): inside only 테마학습 · 제어 · 순서 (what their quests use).
   const inCafe = !!track && !!cellAt;
   const shownGroups = track ? barGroups.map((g) => ({ ...g, items: g.items.filter((i) => track.menu.includes(i.id) && (!inCafe || CAFE_MENU.includes(i.id))) })).filter((g) => g.items.length) : barGroups;
   // The mini arm (angles, load, tip position) stays on every screen, 제어 too.
   const miniWanted = display.mini;
-  const miniOn = miniWanted && !railOpen && !cellAt;
+  // 입문 과정: the helper arm, its joint tags and the tip's line are in 자세히 보기 (피드백 v2 파트 3).
+  const miniOn = miniWanted && !railOpen && !cellAt && (!course || detail);
   useEffect(() => {
     miniShown.current = miniWanted;
   }, [miniWanted]);
@@ -4760,7 +4771,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
 
   return (
     // data-busy: a program or a move is running (read by the behaviour checks).
-    <div className={css.app} data-busy={busy || undefined}>
+    <div className={css.app} data-busy={busy || undefined} data-nowbar={(course && loaded && pastIntro && view === 'sim' && !roadmapOpen && !!(lifeTut || (cellAt && lifeStep && questPhase))) || undefined}>
       <Intro
         brand={track?.intro}
         courses={
@@ -5302,6 +5313,23 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
             }}
           />
         )}
+        {/* 입문 과정: 지금 할 일, one line under the 위치 줄 in every scene (피드백 v2 파트 3). */}
+        {course && loaded && pastIntro && view === 'sim' && !roadmapOpen && (lifeTut || (cellAt && lifeStep && questPhase)) ? (
+          <div className={css.nowSlot}>
+          {lifeTut && lifeTutorialById(lifeTut.id) ? (
+            <TutNow key={lifeTut.id} tut={lifeTutorialById(lifeTut.id)!} step={lifeTut.step} start={lifeTut.start} read={() => tutCtxRef.current()} next={subNext ? { onClick: () => openSub(subNext), lit: false } : undefined} />
+          ) : lifeStep && questPhase ? (
+            <QuestNow
+              key={lifeStep.id}
+              steps={questSteps(lifeStep.id)}
+              sels={leadSels}
+              phase={moment || lessonUi ? 'run' : questPhase}
+              passed={cellResult}
+              next={subNext ? { onClick: () => openSub(subNext), lit: !!lifeQuest && !!lessonRec.quests[lifeQuest]?.passed } : undefined}
+            />
+          ) : null}
+          </div>
+        ) : null}
         <div ref={shellRef} className={track ? `${css.shell} life-shell` : css.shell} data-dock={dockShown ? 'open' : 'closed'} data-side={side} data-tab={shownTab === 'direct' ? 'direct' : 'code'} data-mini={miniOn ? 'on' : 'off'} data-life={(!!track && !!cellAt) || undefined} data-wide={wideOn || undefined} style={view !== 'sim' ? { display: 'none' } : undefined}>
           <section className={`${css.panel} ${css.stageCol}`} aria-label="시뮬레이션">
             <div className={css.viewport} data-viewport>
@@ -5410,7 +5438,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   }}
                 />}
               {/* 입문 현장의 공정 띠: the order (or the game) and what the step is about, over the scene. */}
-              {loaded && view === 'sim' && track && questOn && lifeStep && questPhase === 'do' && !moment && !lessonUi && QUEST_LEAD[lifeStep.id] && <QuestNumbers targets={leadSels} />}
+              {loaded && view === 'sim' && track && !course && questOn && lifeStep && questPhase === 'do' && !moment && !lessonUi && QUEST_LEAD[lifeStep.id] && <QuestNumbers targets={leadSels} />}
               {loaded && view === 'sim' && waiting && !moment && <WaitSkip what={waiting.what} seconds={waiting.s} off={waitOff} onToggle={toggleWait} />}
               {loaded && view === 'sim' && track && cellAt?.cell === 'cafe' && (!questOn || detail) && (cafeMode ? cafeMode === 'make' && busy : true) && <CafeStrip world={world} />}
               {loaded && view === 'sim' && track && cellAt?.cell === 'draw' && (!questOn || (busy && detail)) && <DrawStrip world={world} />}
@@ -5425,6 +5453,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   checks={lastChecks}
                   chosen={preds[lifeStep.id]}
                   onNext={() => {
+                    if (course) return void (subNext && openSub(subNext));
                     const next = missionsOf(cellAt.cell)[lifeStep.n];
                     if (next) openCell(cellAt.cell, next.id);
                   }}
@@ -5432,7 +5461,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                 />
               )}
               {loaded && view === 'sim' && ringSpot && !busy && !lessonUi && <LeadSpot step={ringSpot} read={() => tutCtxRef.current()} once />}
-              {loaded && pastIntro && splashDone && view === 'sim' && questLead && questOn && questPhase === 'do' && !moment && !roadmapOpen && !touring && !lessonUi && <LeadSpot key={lifeStep?.id} step={questLead} read={() => tutCtxRef.current()} once />}
+              {loaded && pastIntro && splashDone && view === 'sim' && !course && questLead && questOn && questPhase === 'do' && !moment && !roadmapOpen && !touring && !lessonUi && <LeadSpot key={lifeStep?.id} step={questLead} read={() => tutCtxRef.current()} once />}
               {loaded && view === 'sim' && moment && (
                 <MomentAsk
                   key={moment.key}
@@ -5466,7 +5495,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                 />
               )}
               {/* 입문 기초 조작: the tutorial is a quest too — its card at the top left, where a place's quest card stands. */}
-              {loaded && view === 'sim' && lifeTut && (
+              {loaded && view === 'sim' && lifeTut && !course && (
                 <div className={css.questSlot}>
                   <TutorialStrip
                     id={lifeTut.id}
@@ -5522,7 +5551,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                 />
               )}
               {loaded && view === 'sim' && cellAt && railOpen !== 'monitor' && cellLayout(cellAt.cell).line.camera && <CellCamera world={world} cell={cellAt.cell} />}
-              {loaded && view === 'sim' && miniOn && <MiniArmLabels monitor={monitor} live={live} tipOf={tipOf} side="right" />}
+              {loaded && view === 'sim' && miniOn && <MiniArmLabels monitor={monitor} live={live} tipOf={tipOf} side="right" ko={!!track} />}
               {stageTitle && (
                 <StageTitle
                   link={!robotMode ? 'sim' : robot?.connected ? 'real' : 'lost'}
@@ -5549,7 +5578,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   />}
                 </StageTitle>
               )}
-              {loaded && view === 'sim' && !railOpen && !cellAt && <HudGauges speed={jogSpeed} monitor={monitor} dock={dockShown ? 'open' : 'closed'} />}
+              {loaded && view === 'sim' && !railOpen && !cellAt && (!course || detail) && <HudGauges speed={jogSpeed} monitor={monitor} dock={dockShown ? 'open' : 'closed'} ko={!!track} />}
               {/* 입문 퀘스트: no left menu (the quest card's ⊞ goes to the places and quests); free practice has it. */}
               {loaded && view === 'sim' && !(questOn && railOpen === null) && (
                 <LeftRail ko={!!track} groups={shownGroups} foot={inCafe ? undefined : barFoot} sheetOpen={railOpen !== null} onCloseSheet={() => setRailOpen(null)}>
@@ -5600,7 +5629,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   )}
                 </LeftRail>
               )}
-              <Notices
+              {/* 입문 과정: the notice line over the scene only in 자세히 보기 (피드백 v2: nothing laid over the scene). */}
+              {(!course || detail) && <Notices
                 side={!!track && !!cellAt}
                 entries={questOn && cellAt ? log.filter((e) => e.msg !== FIRST_LOG.basic) : log}
                 guide={questOn ? null : (guide ?? lifeGuide)}
@@ -5639,7 +5669,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                     </>
                   ) : undefined
                 }
-              />
+              />}
               {loaded && view === 'sim' && replay && !busy ? (
                 <RunTimeline
                   key={replay.duration}
@@ -5718,7 +5748,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                 <div className={css.sideHeader}>
                   <button type="button" className={css.sideModel} onClick={() => setPicking(true)} disabled={busy || !choice} title={choice ? '로봇 모델 바꾸기' : undefined}>
                     <span>
-                      <b>{questOn && cellAt && workScreen === 'basic' ? CELL_BY_ID[cellAt.cell].name : (SCREEN_TITLE[workScreen] ?? '')}</b>
+                      <b>{questOn && cellAt && workScreen === 'basic' ? cellName(cellAt.cell) : (SCREEN_TITLE[workScreen] ?? '')}</b>
                     </span>
                     {choice && <em>바꾸기</em>}
                   </button>
@@ -5785,6 +5815,12 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                         {track && !course && !cellAt && <TutorialList running={lifeTut?.id ?? null} done={tutDone} busy={busy} onStart={startTutorial} />}
                         {controlPanel}
                         {toolRow}
+                        {course && !cellAt && (
+                          <button type="button" className={css.moreKey} aria-expanded={detail} onClick={() => setDetail((d) => !d)}>
+                            <b>자세히 보기 {detail ? '▾' : '▸'}</b>
+                            <span>좌표 · 속도 · 부하 · 보조 그림</span>
+                          </button>
+                        )}
                       </div>
                     )}
                     {!zeroMode && workScreen !== 'theme' && (
@@ -5878,7 +5914,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                       <div className={css.cellCodeHead} data-life={recipeOn || undefined}>
                         <b>
                           {recipeOn
-                            ? `${CELL_BY_ID[cellAt.cell].name} · ${cellAt.mission ? `${missionById(cellAt.mission)?.n ?? ''}단계 ${missionById(cellAt.mission)?.title ?? ''}` : '자유 실습'}`
+                            ? `${cellName(cellAt.cell)} · ${cellAt.mission ? `${missionById(cellAt.mission)?.n ?? ''}단계 ${missionById(cellAt.mission)?.title ?? ''}` : '자유 실습'}`
                             : `실습 셀 · ${cellAt.mission ? `${cellAt.mission} ${missionById(cellAt.mission)?.title ?? ''}` : '자유 실습'}`}
                         </b>
                         <small>
@@ -5927,7 +5963,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                     {recipeOn ? (
                       <div className={css.pane} data-scroll={(questOn && !!lifeStep) || undefined}>
                         {/* 퀘스트 모드: the quest card at the top of the side panel (미션 · 지금 할 일), over the cards it points at. */}
-                        {questOn && lifeStep && cellAt && questPhase && (
+                        {!course && questOn && lifeStep && cellAt && questPhase && (
                           <QuestCard
                             inPanel
                             cell={cellAt.cell}

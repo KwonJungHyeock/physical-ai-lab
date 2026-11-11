@@ -72,7 +72,16 @@ export const QUEST_LEAD: Record<string, readonly { sel: string; say: string }[]>
  * (whose controls carry the same numbers on screen) and as the PDF's screen picture. The cards' own
  * numbers (② 보정 카드) are left out: the numbers are the order to press.
  */
+/** 입문 12차시 (피드백 v2): the sentences name the button to press, in QUEST_LEAD's order. */
+const STEP_TEXT: Record<string, readonly string[]> = {
+  G1: ['▶ 시뮬레이션 버튼을 눌러 한 사이클을 봐요'],
+  G2: ['보정 카드의 x · y · 펜 칸을 고쳐요', '▶ 시뮬레이션 버튼을 눌러요'],
+  G3: ["쓰기 카드의 '직선 이동' 스위치를 켜요", '▶ 시뮬레이션 버튼을 눌러요'],
+  G4: ['손님 수를 주문(2명)에 맞춰요', "쓰기 카드의 '획 사이 펜 들기' 스위치를 켜요", '▶ 시뮬레이션 버튼을 눌러요'],
+};
+
 export function questSteps(id: string): string[] {
+  if (STEP_TEXT[id]) return [...STEP_TEXT[id]];
   const seq = QUEST_LEAD[id];
   if (!seq) return [QUESTS[id]?.short ?? '카드 고치고 ▶'];
   return seq.map((t) =>

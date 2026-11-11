@@ -130,7 +130,7 @@ function Gauge({
   );
 }
 
-export function HudGauges({ speed, monitor, dock }: { speed: number; monitor: RefObject<MonitorOut>; dock: 'open' | 'closed' }) {
+export function HudGauges({ speed, monitor, dock, ko }: { speed: number; monitor: RefObject<MonitorOut>; dock: 'open' | 'closed'; ko?: boolean }) {
   const loadRoot = useRef<HTMLDivElement>(null);
   const loadArc = useRef<SVGPathElement>(null);
   const loadValue = useRef<HTMLElement>(null);
@@ -165,16 +165,16 @@ export function HudGauges({ speed, monitor, dock }: { speed: number; monitor: Re
       loadArc.current?.setAttribute('d', arc(byRoom ? 1 - Math.min(1, value / 30) : value / 100));
       if (loadValue.current) loadValue.current.textContent = String(value);
       if (loadUnit.current) loadUnit.current.textContent = byRoom ? '°' : '%';
-      if (loadLabel.current) loadLabel.current.textContent = `${byRoom ? 'ROOM' : 'LOAD'} · J${at + 1}`;
+      if (loadLabel.current) loadLabel.current.textContent = `${byRoom ? (ko ? '여유' : 'ROOM') : ko ? '부하' : 'LOAD'} · J${at + 1}`;
       loadRoot.current?.setAttribute('data-level', String(a.level));
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [monitor]);
+  }, [monitor, ko]);
   return (
     <div className={css.gauges} data-dock={dock} aria-hidden="true">
-      <Gauge label="SPEED" frac={(speed - 10) / 90} value={String(speed)} unit="%" />
-      <Gauge label="LOAD" rootRef={loadRoot} arcRef={loadArc} valueRef={loadValue} unitRef={loadUnit} labelRef={loadLabel} />
+      <Gauge label={ko ? '속도' : 'SPEED'} frac={(speed - 10) / 90} value={String(speed)} unit="%" />
+      <Gauge label={ko ? '부하' : 'LOAD'} rootRef={loadRoot} arcRef={loadArc} valueRef={loadValue} unitRef={loadUnit} labelRef={loadLabel} />
     </div>
   );
 }

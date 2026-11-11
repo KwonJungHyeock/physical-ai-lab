@@ -55,11 +55,14 @@ export default function LocationBar({ lesson, step, lessons, onGo, onChecks }: {
   return (
     <div className={css.loc} ref={root}>
       <button type="button" className={css.bar} aria-expanded={open} aria-haspopup="true" onClick={() => setOpen((o) => !o)} title="차시 · 단계 목록: 눌러서 원하는 단계로 가요">
-        <b>
-          {lesson}차시 · {step.label} · {pagesText(step.pages)}
-        </b>
+        {/* The 장 · 절 number biggest and brightest; the 차시 and the 교안 pages beside it as one piece. */}
+        <b>{step.label}</b>
         <span>{step.title}</span>
-        <i aria-hidden="true">{open ? '▴' : '▾'}</i>
+        <small>
+          {lesson ? `${lesson}차시 · ` : ''}
+          {pagesText(step.pages)}
+        </small>
+        <i aria-hidden="true">목록 {open ? '▴' : '▾'}</i>
       </button>
       {open && (
         <div className={css.drop} ref={drop} role="menu" aria-label="차시 · 단계 목록">

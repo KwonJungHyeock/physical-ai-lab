@@ -49,7 +49,7 @@ function layout(points: readonly { x: number; y: number }[]): ({ x: number; y: n
   return out;
 }
 
-export default function MiniArmLabels({ monitor, live, tipOf, side }: { monitor: RefObject<MonitorOut>; live: Live; tipOf(a: readonly number[]): ToolNow | null; side: 'left' | 'right' }) {
+export default function MiniArmLabels({ monitor, live, tipOf, side, ko }: { monitor: RefObject<MonitorOut>; live: Live; tipOf(a: readonly number[]): ToolNow | null; side: 'left' | 'right'; ko?: boolean }) {
   const root = useRef<HTMLDivElement>(null);
   const dof = jointLabels().length;
   useEffect(() => {
@@ -136,7 +136,7 @@ export default function MiniArmLabels({ monitor, live, tipOf, side }: { monitor:
           </span>
         ))}
         <span className={css.flange} data-flange hidden title="위의 X · Y · Z 는 도구 끝(TCP)이에요. 로봇의 get_coords 는 도구를 다는 플랜지 위치를 알려 줘요">
-          <i>FLANGE</i>
+          <i>{ko ? '플랜지' : 'FLANGE'}</i>
           <b>—</b>
         </span>
       </div>

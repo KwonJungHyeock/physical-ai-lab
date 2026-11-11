@@ -8,10 +8,10 @@
 
 .bar {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 14px;
   max-width: 100%;
-  padding: 6px 14px;
+  padding: 4px 14px;
   border: 0;
   border-radius: 12px;
   background: transparent;
@@ -25,21 +25,32 @@
   background: rgba(255, 255, 255, 0.08);
 }
 .bar b {
-  font-size: 24px;
+  font-size: 34px;
   font-weight: 800;
   letter-spacing: -0.01em;
+  color: #fff;
 }
 .bar span {
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 20px;
-  font-weight: 600;
-  color: #dfe4ea;
+  font-size: 23px;
+  font-weight: 700;
+  color: #fff;
+}
+.bar small {
+  flex: none;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
 }
 .bar i {
+  flex: none;
   font-style: normal;
   font-size: 15px;
-  color: #a9b1ba;
+  color: #c9ced5;
 }
 
 .drop {

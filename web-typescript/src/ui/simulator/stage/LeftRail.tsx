@@ -32,7 +32,7 @@ export interface BarItem {
 const EN: Record<string, string> = { theme: 'THEME', jog: 'CONTROL', parts: 'TOOL', pose: 'POSE', process: 'TASK', hand: 'HAND', code: 'CODE', ai: 'AI', env: 'SCENE', objects: 'ITEM', camera: 'CAMERA', monitor: 'DATA', zero: 'ZERO' };
 
 /** 입문 트랙 (학생 화면): Korean names only, no English tags. */
-const KO: Record<string, string> = { jog: '조작', parts: '도구', pose: '자세', theme: '현장', objects: '물건', monitor: '기록' };
+const KO: Record<string, string> = { jog: '조작', parts: '도구', pose: '자세', theme: '목록', objects: '물건', monitor: '기록' };
 
 export default function LeftRail({ groups, foot, sheetOpen, onCloseSheet, children, ko }: { groups: { name: string; items: BarItem[] }[]; foot?: BarItem[]; sheetOpen: boolean; onCloseSheet(): void; children?: ReactNode; ko?: boolean }) {
   useEffect(() => {

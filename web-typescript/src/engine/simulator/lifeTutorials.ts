@@ -97,17 +97,20 @@ export const LIFE_TUTORIALS: LifeTutorial[] = [
     note: '자세를 기억시키고 다시 데려오기',
     steps: [
       {
-        short: '팔을 20° 움직여요',
+        // The sentence names the one key to press (피드백 v2: one place at a time).
+        short: '어깨 +5° 버튼을 눌러 팔을 20° 움직여요',
         panel: 'jog',
-        target: [...jointKeys('어깨', 2), ...jointKeys('팔꿈치', 3)],
+        target: [{ sel: '[aria-label^="어깨 (J2) +"]' }],
         meter: (n, s) => ({ v: maxDiff(n.angles, s.angles), of: 20, unit: '°' }),
         done: (n, s) => maxDiff(n.angles, s.angles) >= 20,
       },
-      { short: '지금 자세를 저장해요', panel: 'pose', target: [{ text: '지금 자세 저장하기' }], done: (n, s) => newPoses(n, s).length > 0 },
+      { short: "'지금 자세 저장하기' 버튼을 눌러 저장해요", panel: 'pose', target: [{ text: '지금 자세 저장하기' }], done: (n, s) => newPoses(n, s).length > 0 },
       {
-        short: '다른 곳에 갔다가 다시 불러와요',
+        short: "'기본 자세'를 눌렀다가, 저장한 자세 버튼을 눌러 불러와요",
         panel: 'pose',
         target: [HOME_KEY, { sel: '[data-pose]' }],
+        // Away first (기본 자세), then the saved pose: one key at a time.
+        lead: (n) => (Object.values(n.poses).some((p) => maxDiff(n.angles, p) < 15) ? [HOME_KEY] : [{ sel: '[data-pose]' }]),
         done: (n, s, mem) => {
           const saved = Object.values(s.poses);
           if (!saved.length) return false;
@@ -136,7 +139,7 @@ export const RING_MM = 15;
 const dist = (tip: TutCtx['tip'], r: readonly [number, number, number]) => Math.hypot(tip.x - r[0], tip.y - r[1], tip.z - r[2]);
 /** The 좌표 jog keys by axis and way (their labels end "(X+)", "(Y−)"), and what each is called on the pad. */
 const TIP_KEYS: Record<string, string> = { 'X+': '앞', 'X−': '뒤', 'Y+': '왼쪽', 'Y−': '오른쪽', 'Z+': '위', 'Z−': '아래' };
-const COORD_KEY: TutTarget = { sel: '[title^="좌표: 손끝"]', say: '좌표(COORD)를 눌러요' };
+const COORD_KEY: TutTarget = { sel: '[title^="좌표: 손끝"]', say: '좌표 버튼을 눌러요' };
 /**
  * The key that brings the tip nearest the ring now: the axis it is furthest off on. Where the 좌표
  * keys are not on screen (관절 mode), the 좌표 button first.
