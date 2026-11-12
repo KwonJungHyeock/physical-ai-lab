@@ -12,7 +12,8 @@
   word-break: keep-all;
 }
 .sheet {
-  width: min(860px, 100%);
+  /* At least 70% of the screen (6장 확정). */
+  width: min(100%, max(72vw, 860px));
   padding: 18px 22px;
   border-radius: 14px;
   background: var(--hud-plate);
@@ -31,7 +32,7 @@
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.06);
   color: var(--hud-dim, #8a9199);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
 }
 .steps span[data-done] {
@@ -57,17 +58,17 @@
 }
 .sheet h2 {
   margin: 0 0 4px;
-  font-size: 20px;
+  font-size: 22px;
 }
 .lead {
   margin: 0 0 10px;
   color: var(--hud-sub, #b4bbc2);
-  font-size: 15px;
+  font-size: 16px;
 }
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 15px;
+  font-size: 16px;
 }
 .table th {
   background: #22262a;
@@ -82,7 +83,7 @@
 }
 .total {
   margin: 10px 0 0;
-  font-size: 16px;
+  font-size: 17px;
 }
 .total b {
   font-size: 22px;
@@ -90,19 +91,19 @@
 }
 .total small {
   color: var(--hud-dim, #8a9199);
-  font-size: 13px;
+  font-size: 15px;
 }
 .field {
   display: grid;
   gap: 6px;
   margin-bottom: 12px;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
 }
 .field small {
   color: var(--hud-dim, #8a9199);
   font-weight: 600;
-  font-size: 13px;
+  font-size: 15px;
 }
 .field input,
 .field select,
@@ -127,7 +128,7 @@
   border-radius: 8px;
   background: #15181c;
   color: #4a4f56;
-  font-size: 24px;
+  font-size: 28px;
   line-height: 1;
   cursor: pointer;
 }
@@ -146,7 +147,7 @@
 .who label {
   display: grid;
   gap: 4px;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
 }
 .preview {
@@ -154,7 +155,7 @@
   border-radius: 10px;
   background: #fbfaf6;
   color: #15181c;
-  font-size: 14px;
+  font-size: 15px;
 }
 .preview .table th {
   background: #e8e8e4;
@@ -168,7 +169,7 @@
 }
 .cols {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 260px;
+  grid-template-columns: minmax(0, 1fr) 300px;
   gap: 14px;
   margin-top: 6px;
 }
@@ -177,7 +178,14 @@
 }
 .preview .table td,
 .preview .table th {
-  padding: 5px 8px;
+  padding: 6px 8px;
+}
+.steps small {
+  font-size: 15px;
+  font-weight: 600;
+}
+.preview > b {
+  font-size: 17px;
 }
 .card {
   margin: 0;
@@ -186,7 +194,7 @@
   margin: 12px 0 0;
   padding-top: 6px;
   border-top: 1px solid #c9c9c4;
-  font-size: 12px;
+  font-size: 15px;
   color: #333;
 }
 .foot {
@@ -199,7 +207,7 @@
 .foot span {
   flex: 1;
   color: var(--hud-sub, #b4bbc2);
-  font-size: 14px;
+  font-size: 15px;
 }
 .sheet .key,
 .sheet .ghost {
@@ -208,7 +216,7 @@
   border: 0;
   border-radius: 9px;
   font: inherit;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 800;
   cursor: pointer;
 }

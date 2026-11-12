@@ -204,6 +204,11 @@ interface StageProps {
    * show): the page switches to the plain picture and reports it.
    */
   onRenderError?(message: string): void;
+  /**
+   * The browser took the 3D drawing away (WebGL context lost: true) or gave it back (false). Only
+   * the page's state is kept; three asks the browser for it back (it may or may not come).
+   */
+  onContextLost?(lost: boolean): void;
   /** The full picture runs too slowly on this computer (under ~28 frames a second): use the lighter one. */
   onSlow?(): void;
   /** The arm and the table are loaded and on screen. */
@@ -331,6 +336,12 @@ export default function Stage(props: StageProps) {
         // With post-processing the composer applies the tone curve at the end instead.
         gl.toneMapping = high ? NoToneMapping : NeutralToneMapping;
         gl.toneMappingExposure = 1;
+        if (props.onContextLost) {
+          const lost = props.onContextLost;
+          gl.domElement.addEventListener('webglcontextlost', () => lost(true));
+          gl.domElement.addEventListener('webglcontextrestored', () => lost(false));
+          lost(false);
+        }
       }}
     >
       <color attach="background" args={[look.sky]} />

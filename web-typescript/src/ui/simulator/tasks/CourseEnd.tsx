@@ -72,7 +72,7 @@ function cardSvg(card: readonly (readonly Pt[])[], w = 240): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${80 * k}" viewBox="0 0 ${w} ${80 * k}"><rect x="0.5" y="0.5" width="${w - 1}" height="${80 * k - 1}" fill="#fbfaf6" stroke="#555"/>${lines}</svg>`;
 }
 
-/** The one sheet (HTML, printable as it is): the course, who, the results, the 후기, the card, the copyright line. */
+/** The one sheet (printed: one A4 page): the course, who, the results, the 후기, the card, the copyright line. */
 export function sheetHtml(p: Props, who: { name: string; cls: string; day: string }): string {
   const rows = p.chapters
     ? p.chapters.map((c) => `<tr><td>${c.chapter}장</td><td>${c.right == null ? '-' : `${c.right} / 5`}</td><td>${esc(c.mission)}</td><td>${c.level ?? '-'}</td></tr>`).join('')
@@ -81,9 +81,9 @@ export function sheetHtml(p: Props, who: { name: string; cls: string; day: strin
   const r = p.review;
   const line = (k: string, v: string) => (v.trim() ? `<p><b>${k}</b> ${esc(v.trim())}</p>` : '');
   return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>학습 기록 한 장</title><style>
-@page{size:A4;margin:14mm}body{font-family:'Noto Sans KR','Malgun Gothic',sans-serif;color:#111;font-size:13px;word-break:keep-all;max-width:760px;margin:24px auto}
+@page{size:A4;margin:14mm}body{font-family:'Noto Sans KR','Malgun Gothic',sans-serif;color:#111;font-size:13px;word-break:keep-all;margin:0}
 h1{font-size:19px;margin:0 0 6px}.who{display:flex;flex-wrap:wrap;gap:18px;border-bottom:2px solid #111;padding-bottom:6px;margin-bottom:12px}
-table{width:100%;border-collapse:collapse;margin:6px 0 10px}th,td{border:1px solid #999;padding:6px;text-align:left}th{background:#eee}
+table{width:calc(100% - 1px);border-collapse:collapse;margin:6px 0 10px}th,td{border:1px solid #999;padding:6px;text-align:left}th{background:#eee}
 h2{font-size:15px;margin:14px 0 4px}p{margin:3px 0}.tot{font-weight:700}.copy{margin-top:22px;padding-top:6px;border-top:1px solid #999;font-size:11px;color:#333}</style></head><body>
 <h1>${esc(p.title)}</h1>
 <div class="who"><span>구성 <b>${esc(p.plan)}</b></span><span>이름 <b>${esc(who.name) || '__________'}</b></span><span>반 <b>${esc(who.cls) || '______'}</b></span><span>날짜 <b>${esc(who.day)}</b></span></div>
@@ -162,14 +162,23 @@ export default function CourseEnd(p: Props) {
   const r = p.review;
   const set = (x: Partial<Review>) => p.onReview({ ...r, ...x });
   const reviewed = r.stars > 0 && !!r.best;
+  // The browser's print window over the one sheet (its own page in a hidden frame): print it, or 'PDF로 저장'.
   const save = () => {
-    const html = sheetHtml(p, { name: name.trim(), cls: cls.trim(), day: day.trim() });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
-    a.download = '학습기록.html';
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-    p.onSaved();
+    document.querySelectorAll('iframe[data-sheet]').forEach((f) => f.remove());
+    const f = document.createElement('iframe');
+    f.dataset.sheet = '';
+    f.setAttribute('aria-hidden', 'true');
+    f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0';
+    f.srcdoc = sheetHtml(p, { name: name.trim(), cls: cls.trim(), day: day.trim() });
+    f.onload = () => {
+      const w = f.contentWindow;
+      if (!w) return;
+      w.addEventListener('afterprint', () => window.setTimeout(() => f.remove(), 0));
+      w.focus();
+      w.print();
+      p.onSaved();
+    };
+    document.body.appendChild(f);
   };
   const text = (k: 'hard' | 'real' | 'more', label: string, need?: string) => (
     <label className={css.field}>
@@ -267,7 +276,7 @@ export default function CourseEnd(p: Props) {
                     <br />
                     가장 재미있던 활동 · {p.subs.find((s) => s.id === r.best)?.title ?? '-'}
                   </p>
-                  {p.card && <div className={css.card} dangerouslySetInnerHTML={{ __html: p.card.length ? cardSvg(p.card, 240) : '<p>5-4 글자 카드 아직 없음</p>' }} />}
+                  {p.card && <div className={css.card} dangerouslySetInnerHTML={{ __html: p.card.length ? cardSvg(p.card, 280) : '<p>5-4 글자 카드 아직 없음</p>' }} />}
                 </div>
               </div>
               <p className={css.copy}>{p.copyright}</p>
@@ -280,14 +289,14 @@ export default function CourseEnd(p: Props) {
               ← 앞으로
             </button>
           )}
-          <span>{page === 1 && !reviewed ? '① 별점과 ② 활동을 골라야 다음으로 가요' : page === 2 ? (p.saved ? '저장했어요' : '저장을 한 번 눌러요') : ''}</span>
+          <span>{page === 1 && !reviewed ? '① 별점과 ② 활동을 골라야 다음으로 가요' : page === 2 ? (p.saved ? '인쇄 창을 열었어요' : '인쇄 창에서 PDF로 저장을 고를 수 있어요') : ''}</span>
           {page < 2 ? (
             <button type="button" className={css.key} data-step="end-next" disabled={page === 1 && !reviewed} onClick={() => setPage(page + 1)}>
               다음 단계 →
             </button>
           ) : (
             <button type="button" className={css.key} data-step="end-save" onClick={save}>
-              기록 한 장 저장하기
+              인쇄 · PDF로 저장
             </button>
           )}
         </footer>

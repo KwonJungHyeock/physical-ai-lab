@@ -162,5 +162,21 @@ assert.equal(
   '5-4: a tap is no stroke',
 );
 assert.ok(/robot\.set_speed\(30\)/.test(D.cardCode(mine, { speed: 30 })), '5-5: the speed set first');
+// 5-4 a hand-drawn curve (an 'ㅇ', points 0.6 mm apart, a little wobble): sent with the points that change it by
+// 0.3 mm or less left out — far fewer moves, the sent line within 0.3 mm of the drawing, and the card still passes.
+const ring: [number, number][] = Array.from({ length: 80 }, (_, k) => {
+  const a = (k / 79) * 2 * Math.PI;
+  return [60 + 12 * Math.cos(a) + 0.2 * Math.sin(7 * a), 40 + 10 * Math.sin(a)];
+});
+const ringDrawn = D.thinStroke(ring)!;
+const ringSent = D.simplify(ringDrawn);
+const ringDev = Math.max(...ringDrawn.map((p) => Math.min(...ringSent.slice(1).map((q, i) => D.segDist(p, ringSent[i], q)))));
+assert.ok(ringSent.length < ringDrawn.length * 0.75 && ringDev <= D.SEND_TOL_MM + 1e-9, `5-4 점 줄이기: ${ringDrawn.length} → ${ringSent.length}, ${ringDev.toFixed(2)} mm`);
+const curve = [...mine, ringDrawn];
+const curveR = D.myCardReport(await draw(D.cardCode(curve)), curve);
+assert.ok(curveR.ok, `5-4 곡선 획: ${JSON.stringify(curveR.items)}`);
+const none = D.myCardReport([], mine);
+assert.ok(!none.ok && none.items[1].detail === '쓴 선이 없어요', `5-4 잉크 없이 끝남: ${JSON.stringify(none.items)}`);
 console.log(`  ok   5-4 내 글자: ${card.items.map((i) => i.detail ?? i.label).join(' · ')} · 카드 밖 획: ${offR.items[1].detail}`);
+console.log(`  ok   5-4 곡선 'ㅇ': 점 ${ringDrawn.length} → ${ringSent.length}개 보냄 · 그린 선과 ${ringDev.toFixed(2)} mm 이내 · ${curveR.items[1].detail}`);
 console.log('입문 4 · 5장 그리기: 통과');

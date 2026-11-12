@@ -977,6 +977,42 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     setScene3d('ready');
     setStarted(true);
   }, []);
+  // 입문 과정: the 3D drawing taken away by the browser (WebGL context lost). Everything on the page stays
+  // (strokes, the step, the run's record): only the 3D view is made again — once by itself, then by the button.
+  const [glState, setGlState] = useState<'ok' | 'lost' | 'ask'>('ok');
+  const [stageKey, setStageKey] = useState(0);
+  const glRef = useRef<{ state: 'ok' | 'lost' | 'ask'; auto: number; timer: number }>({ state: 'ok', auto: 0, timer: 0 });
+  const remakeStage = useCallback(() => {
+    glRef.current.state = 'lost';
+    setGlState('lost');
+    setStageKey((k) => k + 1);
+  }, []);
+  const onContextLost = useCallback(
+    (lost: boolean) => {
+      const g = glRef.current;
+      window.clearTimeout(g.timer);
+      if (!lost) {
+        g.state = 'ok';
+        setGlState('ok');
+        return;
+      }
+      g.state = 'lost';
+      setGlState('lost');
+      // The browser may give it back by itself (three asks for it); if not soon, make the view again — by
+      // itself once in a while, else the student presses [화면을 다시 불러와요].
+      g.timer = window.setTimeout(() => {
+        if (g.state !== 'lost') return;
+        if (Date.now() - g.auto > 30000) {
+          g.auto = Date.now();
+          remakeStage();
+        } else {
+          g.state = 'ask';
+          setGlState('ask');
+        }
+      }, 1500);
+    },
+    [remakeStage],
+  );
   const renderError = useRef<(msg: string) => void>(() => {});
   const onRenderError = useCallback((msg: string) => renderError.current(msg), []);
   const onSlow = useCallback(() => {
@@ -2099,7 +2135,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     };
   });
 
-  const ghostWanted = !!loaded && !cellAt && level === 'basic' && tab !== 'direct' && !busy && display.ghost;
+  // (입문 과정: none — the 블록 코딩 end pose is not a step of any 절; 3장 미션's target pose goes another way.)
+  const ghostWanted = !!loaded && !cellAt && !course && level === 'basic' && tab !== 'direct' && !busy && display.ghost;
   useEffect(() => {
     if (!ghostWanted || !loaded) return;
     const text = code;
@@ -6487,6 +6524,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                 <div className={css.loading}>로봇 모델을 불러오지 못했어요 ({loadError})</div>
               ) : loaded ? (
                 <Stage
+                  key={stageKey}
                   paused={view !== 'sim'}
                   theme={theme}
                   arm={arm}
@@ -6560,10 +6598,28 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   layoutKey={`${dockShown}:${side}:${camOpen}:${miniWanted}:${start.folded}:${wideOn}`}
                   onReady={onStageReady}
                   onRenderError={onRenderError}
+                  onContextLost={course ? onContextLost : undefined}
                   onSlow={onSlow}
                 />
               ) : (
                 <div className={css.loading}>로봇 모델을 불러오는 중…</div>
+              )}
+              {course && glState !== 'ok' && (
+                // 입문 과정: the 3D view went blank; the page (strokes, the step) is all still here.
+                <div role="status" style={{ position: 'absolute', inset: 0, zIndex: 30, display: 'grid', placeItems: 'center', background: 'rgba(16, 18, 21, 0.72)' }}>
+                  <div style={{ display: 'grid', gap: 12, justifyItems: 'center', padding: '18px 22px', borderRadius: 12, background: '#2b2e32', color: '#f2f4f6', fontSize: 16, textAlign: 'center', wordBreak: 'keep-all' }}>
+                    {glState === 'lost' ? (
+                      <span>3D 화면을 다시 불러오는 중이에요</span>
+                    ) : (
+                      <>
+                        <span>3D 화면이 멈췄어요. 그린 획과 진행은 그대로 있어요.</span>
+                        <button type="button" data-step="gl-reload" onClick={remakeStage} style={{ minHeight: 40, padding: '0 18px', border: 0, borderRadius: 9, background: 'var(--hud-silver)', boxShadow: 'var(--hud-silver-shadow)', color: '#15181c', fontSize: 15, fontWeight: 800, cursor: 'pointer' }}>
+                          화면을 다시 불러와요
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
               )}
               {loaded && scene3d !== 'ready' && (
                 <div className={css.sceneNote} role="status">

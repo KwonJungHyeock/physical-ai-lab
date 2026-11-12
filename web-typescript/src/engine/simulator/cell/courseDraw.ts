@@ -210,20 +210,45 @@ export function thinStroke(pts: readonly Pt[]): Pt[] | null {
   return len >= STROKE_MIN_MM && out.length >= 2 ? out : null;
 }
 
+/** How far the line sent may stray from the stroke drawn, mm: points that change the shape less are not sent (6장 확정: 0.3 mm). */
+export const SEND_TOL_MM = 0.3;
+
+/** A stroke with the points that change its shape by no more than `tol` mm left out (Ramer–Douglas–Peucker; both ends kept). */
+export function simplify(pts: readonly Pt[], tol = SEND_TOL_MM): Pt[] {
+  if (pts.length < 3) return pts.slice();
+  const keep = new Array<boolean>(pts.length).fill(false);
+  keep[0] = keep[pts.length - 1] = true;
+  const todo: [number, number][] = [[0, pts.length - 1]];
+  while (todo.length) {
+    const [a, b] = todo.pop()!;
+    let far = 0;
+    let at = -1;
+    for (let i = a + 1; i < b; i += 1) {
+      const d = segDist(pts[i], pts[a], pts[b]);
+      if (d > far) [far, at] = [d, i];
+    }
+    if (at > 0 && far > tol) {
+      keep[at] = true;
+      todo.push([a, at], [at, b]);
+    }
+  }
+  return pts.filter((_, i) => keep[i]);
+}
+
 /** Whether a card point lies in the drawing area (with `slack` mm). */
 export const inArea = ([u, v]: Pt, slack = 0) => u >= MY_AREA.x0 - slack && u <= MY_AREA.x1 + slack && v >= MY_AREA.y0 - slack && v <= MY_AREA.y1 + slack;
 
 /**
  * 5-4's program (and 5-5's, sent to the robot as it is): every stroke from above (the pen down onto its
  * start, along it, up again: 획 사이 펜 들기 on), straight moves, the pen at `z`, then back home. A
- * `speed` (5-5's 실물 속도, %) is set first when given.
+ * `speed` (5-5's 실물 속도, %) is set first when given. Each stroke is sent simplified (SEND_TOL_MM).
  */
 export function cardCode(strokes: readonly (readonly Pt[])[], o: { z?: number; speed?: number } = {}): string {
   const z = o.z ?? 0;
   let code = 'from edu import robot\n\n';
   if (o.speed != null) code += `robot.set_speed(${Math.round(o.speed)})\n`;
   for (const s of strokes) {
-    const pts = s.map(onCard);
+    const pts = simplify(s).map(onCard);
     const [x0, y0] = pts[0];
     code += to(x0, y0, z + LIFT_MM) + to(x0, y0, z);
     for (const [x, y] of pts.slice(1)) code += to(x, y, z);
@@ -243,8 +268,8 @@ export function myCardReport(ink: Ink, strokes: readonly (readonly Pt[])[]): Sha
   );
   const items = [
     { label: '획이 2개 이상', ok: strokes.length >= 2, detail: `획 ${strokes.length}개` },
-    { label: '글자 전체가 카드 안 (밖 2 mm 이하)', ok: r.length >= 3 && r.outside <= 2, detail: `카드 밖 ${Math.round(r.outside)} mm` },
-    { label: '획 사이에 필요 없는 줄 3 mm 이하', ok: r.length >= 3 && r.stray <= 3, detail: `필요 없는 줄 ${Math.round(r.stray)} mm` },
+    { label: '글자 전체가 카드 안 (밖 2 mm 이하)', ok: r.length >= 3 && r.outside <= 2, detail: r.length >= 3 ? `카드 밖 ${Math.round(r.outside)} mm` : '쓴 선이 없어요' },
+    { label: '획 사이에 필요 없는 줄 3 mm 이하', ok: r.length >= 3 && r.stray <= 3, detail: r.length >= 3 ? `필요 없는 줄 ${Math.round(r.stray)} mm` : '쓴 선이 없어요' },
   ];
   return { ok: items.every((i) => i.ok), items };
 }
