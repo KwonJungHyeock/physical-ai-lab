@@ -117,6 +117,9 @@ export const REAL_MAX_PCT = 30;
 /** 5-4's card program, kept for 5-5 and the 5장 미션 (this browser). */
 export const MY_CARD_KEY = 'life-course-my-card';
 
+/** 6장 마무리: the 후기 and whether the one sheet was saved (this browser only; never the name or the class). */
+export const REVIEW_KEY = 'life-course-review';
+
 export const isCourseStep = (id: string): id is CourseStepId => id in COURSE_STEPS;
 
 /** 1-1: the hand slows the arm to a stop over this long, s (제안값). */

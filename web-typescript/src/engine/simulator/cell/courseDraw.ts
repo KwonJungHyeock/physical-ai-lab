@@ -242,7 +242,7 @@ export function myCardReport(ink: Ink, strokes: readonly (readonly Pt[])[]): Sha
     MY_CARD.corner,
   );
   const items = [
-    { label: '획이 2개 넘게', ok: strokes.length >= 2, detail: `획 ${strokes.length}개` },
+    { label: '획이 2개 이상', ok: strokes.length >= 2, detail: `획 ${strokes.length}개` },
     { label: '글자 전체가 카드 안 (밖 2 mm 이하)', ok: r.length >= 3 && r.outside <= 2, detail: `카드 밖 ${Math.round(r.outside)} mm` },
     { label: '획 사이에 필요 없는 줄 3 mm 이하', ok: r.length >= 3 && r.stray <= 3, detail: `필요 없는 줄 ${Math.round(r.stray)} mm` },
   ];

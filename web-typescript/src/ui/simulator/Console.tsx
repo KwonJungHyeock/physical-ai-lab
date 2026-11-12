@@ -150,14 +150,14 @@ import { quickRun } from '@/engine/simulator/cell/quick';
 import { LessonCheck, LessonPlate, Projector, RecordPanel, RecordPill, TeacherKey, questPages } from './tasks/LessonKit';
 import { lessonOfQuest, lessonsOf, siteOf } from '@/engine/simulator/cell/lessons';
 import { COURSE, kindsOf, modeFor, subById, subOfRun, topicMark, MODE_NAME, type CourseSub, type SubMode } from '@/engine/simulator/cell/course';
-import { DEFAULT_PLAN, countedIn, lessonIn, lessonStepsIn, missionSubsIn, nextIn, testReady, type CoursePlan } from '@/engine/simulator/cell/courses';
+import { DEFAULT_PLAN, countedIn, lessonIn, lessonStepsIn, missionSubsIn, nextIn, subsIn, testReady, type CoursePlan } from '@/engine/simulator/cell/courses';
 import { levelOf as courseLevelOf, mayOpen, noticeDue, noticeRead, readPlan, report } from '@/engine/simulator/cell/platform';
 import { COURSE_LOOK, MAT_VIEW, courseViewOf } from '@/engine/simulator/cell/courseStage';
 import { CARD_HOME, G3_CARD } from '@/engine/simulator/cell/draw';
 import type { DrawRecipe } from '@/engine/simulator/cell/drawRecipe';
 import { CIRCLE_COUNTS, LINE_A, LINE_B, SQUARE, TOL, TRIANGLE, cardCode, circlePoints, circleReport, circleRight, isStarOrder, lineReport, myCardReport, onCard, pathCode, rowsToPoints, sameShape, shapeReport, type Pt } from '@/engine/simulator/cell/courseDraw';
 import { AIM, DESK_PLACES, DOT_ABOVE_MM, DOT_AT, DOT_NEAR_MM, FAST_PCT, KIT_PARTS, LIMIT_POSE, PEN_START_MM, POSE_TOL_DEG, PRACTICE_POSE, PREP_POSE, SLOW_PCT, TURN_DEG } from '@/engine/simulator/cell/courseSteps';
-import { G2_COURSE, MY_CARD_KEY, REAL_MAX_PCT } from '@/engine/simulator/cell/courseSteps';
+import { G2_COURSE, MY_CARD_KEY, REAL_MAX_PCT, REVIEW_KEY } from '@/engine/simulator/cell/courseSteps';
 import { ARM_PARTS, PICK_VIEW, COURSE_STEPS, FOUND_SWING_DEG, HAND_SCENE, HAND_SLOW_S, STEPS_KEY, SWING, isCourseStep, type CourseStepId } from '@/engine/simulator/cell/courseSteps';
 import { CHAPTER_TESTS, MISSION_TRIES, TESTS_KEY, inOrder, loadTests, missionWay, type MissionStep, type OX, type TestResult } from '@/engine/simulator/cell/courseTests';
 import { COPYRIGHT_NOTICE, COPYRIGHT_RECORD_LINE } from '@/engine/simulator/copyright';
@@ -165,6 +165,7 @@ import LocationBar, { type LocLesson } from './stage/LocationBar';
 import NowBar, { NowMark, QuestNow, TutNow } from './stage/NowBar';
 import CourseStepPanel, { type Measure } from './tasks/CourseStepPanel';
 import StrokeBoard from './tasks/StrokeBoard';
+import CourseEnd, { REVIEW_START, type Review } from './tasks/CourseEnd';
 import CourseTestPanel from './tasks/CourseTestPanel';
 import QuestNumbers from './stage/QuestNumbers';
 import { RECORD_KEY, TEACHER_KEY, answered as recAnswered, emptyRecord, loadRecord, loadTeacher, opened as recOpened, passed as recPassed, questOpen, teacherFromQuery, tried as recTried, type LessonRecord, type TeacherSet } from '@/engine/simulator/cell/lessonRecord';
@@ -720,7 +721,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   // 교실 수업형 (입문 · 로봇 카페): the 학습 기록 and the teacher's settings on this computer (lessonRecord.ts).
   const [lessonRec, setLessonRec] = useState<LessonRecord>(() => emptyRecord());
   const [teacherSet, setTeacherSet] = useState<TeacherSet>({ plan: 4, site: 'cafe', lesson: 0, allOpen: false });
-  const [lessonUi, setLessonUi] = useState<null | 'record' | 'teacher' | 'projector' | 'check'>(null);
+  const [lessonUi, setLessonUi] = useState<null | 'record' | 'teacher' | 'projector' | 'check' | 'end'>(null);
   /** The 차시 whose 확인 문제 are open (위치 줄's list can open another 차시's); null: the one now. */
   const [checkN, setCheckN] = useState<number | null>(null);
   /** 자세히 보기 (지시서 v1 파트 2): the signals, the progress strip and the 차시 card, folded by default in a quest. */
@@ -811,6 +812,25 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       /* none kept */
     }
   }, []);
+  // 입문 6장 마무리: the 후기 (this browser only) and whether the one sheet was saved; read when the 6장 page opens.
+  const [review, setReview] = useState<{ review: Review; saved: boolean }>({ review: REVIEW_START, saved: false });
+  const keepReview = (n: { review: Review; saved: boolean }) => {
+    setReview(n);
+    try {
+      localStorage.setItem(REVIEW_KEY, JSON.stringify(n));
+    } catch {
+      /* this session only */
+    }
+  };
+  const openEnd = () => {
+    try {
+      const o = JSON.parse(localStorage.getItem(REVIEW_KEY) ?? 'null') as { review?: Partial<Review>; saved?: boolean } | null;
+      if (o) setReview({ review: { ...REVIEW_START, ...o.review }, saved: !!o.saved });
+    } catch {
+      /* none kept */
+    }
+    setLessonUi('end');
+  };
   // 입문 5-2 (가이드라인 v1): its steps read from the 보정 card — x · y at the card's corner, then the pen at 0, then ▶.
   const [g2At, setG2At] = useState(0);
   const onDrawRecipe = useCallback((r: DrawRecipe) => {
@@ -4883,7 +4903,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     const st = courseStepRef.current;
     if (st?.id !== '5-4' || busyRef.current || !loaded) return;
     const c = myCardRef.current;
-    if (c.strokes.length < 2) return patchStep({ note: '획을 2개 넘게 그려요' });
+    if (c.strokes.length < 2) return patchStep({ note: '획을 2개 이상 그려요' });
     setMyCard((x) => ({ ...x, open: false }));
     const { steps, errors } = problemsFor(cardCode(c.strokes));
     if (errors.length) return addLog('err', `${errors[0].line}번째 줄: ${errors[0].msg}`);
@@ -5212,7 +5232,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   };
   const subNext = subNow ? nextIn(cPlan, subNow.id) : undefined;
   /** [다음 단계 →]: the next 절 (in the kind open now, if it has it), or the 학습 기록 at the course's end. */
-  const goNext = (n: CourseSub | 'record') => (n === 'record' ? setLessonUi('record') : void requestSub(n, subMode));
+  const goNext = (n: CourseSub | 'record') => (n === 'record' ? (course ? openEnd() : setLessonUi('record')) : void requestSub(n, subMode));
   // 입문 과정: the booth is '로봇 글씨 쓰기' on screen (피드백 v2; the full console keeps its name).
   const cellName = (c: CellId) => (course && c === 'draw' ? '로봇 글씨 쓰기' : CELL_BY_ID[c].name);
   const nextStep = course ? null : track && cellAt && lifeStep && lifeQuest ? (() => { const nx = missionsOf(cellAt.cell)[lifeStep.n]; return nx ? { cell: cellAt.cell, id: nx.id } : null; })() : null;
@@ -5253,10 +5273,12 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       }))
     : [];
   const locNow = locLessons.flatMap((l) => l.steps).find((x) => x.state === 'now');
+  // The 차시 open now (a 수행평가: its chapter's last 절's).
+  const locLesson = !subNow ? 0 : testSub ? (lessonStepsIn(cPlan).find((l) => l.steps.some((x) => x.kind === 'test' && x.sub.id === testSub.id))?.n ?? 0) : lessonIn(cPlan, subNow.id);
   const locBar =
     track && subNow && locNow ? (
       <LocationBar
-        lesson={testSub ? lessonStepsIn(cPlan).find((l) => l.steps.some((x) => x.kind === 'test' && x.sub.id === testSub.id))?.n ?? 0 : lessonIn(cPlan, subNow.id)}
+        lesson={locLesson}
         step={locNow}
         lessons={locLessons}
         kinds={{
@@ -5874,6 +5896,43 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
           }
           onWho={(name, no) => changeRec((r) => (r.name === name && r.no === no ? r : { ...r, name, no, at: Date.now() }))} onClose={() => setLessonUi(null)} />
       )}
+      {course && lessonUi === 'end' && (
+        <CourseEnd
+          title={cPlan.title}
+          plan={cPlan.tests ? '8차시' : '4차시'}
+          chapters={
+            cPlan.tests
+              ? [1, 2, 3, 4, 5].map((n) => {
+                  const r = testResults[String(n)];
+                  const t = CHAPTER_TESTS[n];
+                  const sub = subById(COURSE.find((c) => c.n === n)?.test ?? '');
+                  if (!t || !sub || !testReady(sub) || !t.mission.ready) return { chapter: n, right: r?.right ?? null, mission: '준비 중', level: null };
+                  const way = missionWay(r);
+                  const by = n === 5 && way && r?.missionBy ? ` (${r.missionBy === 'real' ? '실물' : '시뮬레이션'})` : '';
+                  return {
+                    chapter: n,
+                    right: r?.right ?? null,
+                    mission: way ? `${way}${by}` : r?.right != null ? '아직' : '안 함',
+                    level: r?.right != null && way ? courseLevelOf({ chapter: n, right: r.right, of: 5, mission: !!r.mission }).level : null,
+                  };
+                })
+              : undefined
+          }
+          missions={cPlan.tests ? undefined : missionSubsIn(cPlan).map((x) => ({ n: lessonIn(cPlan, x.id), id: x.id, title: x.title, passed: subDone(x) }))}
+          done={{ got: countedIn(cPlan).filter(subDone).length, of: countedIn(cPlan).length }}
+          subs={subsIn(cPlan)
+            .filter((x) => x.run)
+            .map((x) => ({ id: x.id, title: x.title }))}
+          real={lessonIn(cPlan, '5-5') > 0 && myCard.ran55}
+          card={lessonIn(cPlan, '5-4') > 0 ? myCard.strokes : null}
+          copyright={COPYRIGHT_RECORD_LINE}
+          review={review.review}
+          onReview={(r) => keepReview({ ...review, review: r })}
+          saved={review.saved}
+          onSaved={() => keepReview({ ...review, saved: true })}
+          onClose={() => setLessonUi(null)}
+        />
+      )}
       {track && lessonUi === 'teacher' && (
         <TeacherKey
           cardCheck={course && courseStep?.id === '5-5' && myCard.ran55 ? { checked: myCard.checked, onConfirm: () => patchCard({ checked: true }) } : undefined}
@@ -6025,8 +6084,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
           onHelp={() => setHelpOpen(true)}
           context={
             // A coding task belongs to the coding tabs (and the library): 수동 제어 shows none.
-            // 입문: a place's step card (top left) already says where you are.
-            ((view === 'sim' && tab !== 'direct') || view === 'library') && !(track && cellAt) ? (
+            // 입문: a place's step card (top left) already says where you are; 입문 과정: always the 위치 줄.
+            ((view === 'sim' && tab !== 'direct') || view === 'library') && !(track && cellAt) && !course ? (
               <TaskChip
                 mode={mode}
                 practice={practice}
@@ -6198,7 +6257,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                 site={lifeSite}
                 lesson={lessonNow?.n ?? (lifeSite === teacherSet.site ? teacherSet.lesson : 0)}
                 total={lessons.length}
-                course={course ? { lesson: subNow ? lessonIn(cPlan, subNow.id) : 0, total: cPlan.lessons.length, done: countedIn(cPlan).filter(subDone).length, of: countedIn(cPlan).length } : undefined}
+                course={course ? { lesson: locLesson, total: cPlan.lessons.length, done: countedIn(cPlan).filter(subDone).length, of: countedIn(cPlan).length } : undefined}
                 onOpen={() => setLessonUi('record')}
               />
             )}

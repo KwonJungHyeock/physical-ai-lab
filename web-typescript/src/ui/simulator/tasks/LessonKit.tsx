@@ -318,17 +318,20 @@ export function RecordPanel({ rec, site: start, onWho, onClose, course }: { rec:
             ×
           </button>
         </header>
-        <div className={css.who}>
-          <label>
-            번호
-            <input value={no} maxLength={8} inputMode="numeric" onChange={(e) => setNo(e.target.value)} onBlur={save} />
-          </label>
-          <label>
-            이름
-            <input value={name} maxLength={20} onChange={(e) => setName(e.target.value)} onBlur={save} />
-          </label>
-          {!who && <small>번호와 이름을 쓰면 기록지와 제출 파일에 들어가요</small>}
-        </div>
+        {/* 입문 과정: the name and the class go only into 6-3's one sheet (6장), never kept here. */}
+        {!course && (
+          <div className={css.who}>
+            <label>
+              번호
+              <input value={no} maxLength={8} inputMode="numeric" onChange={(e) => setNo(e.target.value)} onBlur={save} />
+            </label>
+            <label>
+              이름
+              <input value={name} maxLength={20} onChange={(e) => setName(e.target.value)} onBlur={save} />
+            </label>
+            {!who && <small>번호와 이름을 쓰면 기록지와 제출 파일에 들어가요</small>}
+          </div>
+        )}
         {course && (
           <div className={css.tableWrap}>
             <table className={css.table}>
@@ -445,32 +448,34 @@ export function RecordPanel({ rec, site: start, onWho, onClose, course }: { rec:
             type="button"
             className={css.ghost}
             onClick={() => {
-              save();
+              if (!course) save();
               const w = window.open('', '_blank');
               if (!w) return;
-              const who = { ...rec, name: name.trim(), no: no.trim() };
+              const who = course ? { ...rec, name: '', no: '' } : { ...rec, name: name.trim(), no: no.trim() };
               w.document.write(course ? courseSheetHtml(who, course) : sheetHtml(who));
               w.document.close();
             }}
           >
             기록지 인쇄 · PDF 저장
           </button>
-          <button
-            type="button"
-            className={css.key}
-            disabled={!who}
-            title={who ? '선생님께 낼 파일을 받아요' : '번호와 이름을 먼저 써 주세요'}
-            onClick={() => {
-              save();
-              const f = recordFile({ ...rec, name: name.trim(), no: no.trim() });
-              download(f.name, f.text, 'application/json');
-            }}
-          >
-            제출 파일 받기
-          </button>
+          {!course && (
+            <button
+              type="button"
+              className={css.key}
+              disabled={!who}
+              title={who ? '선생님께 낼 파일을 받아요' : '번호와 이름을 먼저 써 주세요'}
+              onClick={() => {
+                save();
+                const f = recordFile({ ...rec, name: name.trim(), no: no.trim() });
+                download(f.name, f.text, 'application/json');
+              }}
+            >
+              제출 파일 받기
+            </button>
+          )}
         </div>
         <small className={css.foot}>
-          기록은 이 브라우저에 남아요. 수업이 끝나면 제출 파일을 선생님께 내요(USB · 학급 게시판 · 메일).{' '}
+          {course ? '기록은 이 브라우저에 남아요. 이름 · 반은 과정 끝의 학습 기록 한 장에만 써요.' : '기록은 이 브라우저에 남아요. 수업이 끝나면 제출 파일을 선생님께 내요(USB · 학급 게시판 · 메일).'}{' '}
           {!course && (
             <a href="/guides/cafe-student.pdf" target="_blank" rel="noreferrer">
               교안 (학생용) PDF

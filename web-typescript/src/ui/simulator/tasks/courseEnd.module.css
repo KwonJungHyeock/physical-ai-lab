@@ -1,0 +1,229 @@
+/* 입문 과정 6장 마무리: a record page over everything (no 3D scene behind it). */
+.page {
+  position: fixed;
+  inset: 0;
+  z-index: 85;
+  overflow: auto;
+  background: #1b1e22;
+  color: var(--hud-tx, #f2f4f6);
+  display: grid;
+  place-items: start center;
+  padding: 24px 16px;
+  word-break: keep-all;
+}
+.sheet {
+  width: min(860px, 100%);
+  padding: 18px 22px;
+  border-radius: 14px;
+  background: var(--hud-plate);
+  box-shadow: var(--hud-plate-shadow);
+  display: grid;
+  gap: 14px;
+}
+.steps {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.steps span {
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--hud-dim, #8a9199);
+  font-size: 14px;
+  font-weight: 700;
+}
+.steps span[data-done] {
+  color: var(--hud-sub, #b4bbc2);
+}
+.steps span[data-on] {
+  background: #f2f4f6;
+  color: #15181c;
+  font-weight: 800;
+}
+/* (.sheet first: the console's .app button { color: inherit } would win over one class.) */
+.sheet .close {
+  margin-left: auto;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--hud-key);
+  box-shadow: var(--hud-key-shadow);
+  color: var(--hud-tx, #f2f4f6);
+  font-size: 18px;
+  cursor: pointer;
+}
+.sheet h2 {
+  margin: 0 0 4px;
+  font-size: 20px;
+}
+.lead {
+  margin: 0 0 10px;
+  color: var(--hud-sub, #b4bbc2);
+  font-size: 15px;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+.table th {
+  background: #22262a;
+  color: var(--hud-sub, #b4bbc2);
+  text-align: left;
+  font-weight: 800;
+  padding: 8px;
+}
+.table td {
+  padding: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.total {
+  margin: 10px 0 0;
+  font-size: 16px;
+}
+.total b {
+  font-size: 22px;
+  color: #fff;
+}
+.total small {
+  color: var(--hud-dim, #8a9199);
+  font-size: 13px;
+}
+.field {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+  font-size: 15px;
+  font-weight: 700;
+}
+.field small {
+  color: var(--hud-dim, #8a9199);
+  font-weight: 600;
+  font-size: 13px;
+}
+.field input,
+.field select,
+.who input {
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  background: #15181c;
+  color: #fff;
+  font: inherit;
+  font-weight: 500;
+}
+.stars {
+  display: flex;
+  gap: 4px;
+}
+.sheet .stars button {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 8px;
+  background: #15181c;
+  color: #4a4f56;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+.sheet .stars button[data-on] {
+  color: #f2f4f6;
+}
+.who {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+.who input {
+  width: 200px;
+}
+.who label {
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.preview {
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: #fbfaf6;
+  color: #15181c;
+  font-size: 14px;
+}
+.preview .table th {
+  background: #e8e8e4;
+  color: #15181c;
+}
+.preview .table td {
+  border-top: 1px solid #d4d4cf;
+}
+.preview .total b {
+  color: #15181c;
+}
+.cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 14px;
+  margin-top: 6px;
+}
+.cols p {
+  margin: 0 0 6px;
+}
+.preview .table td,
+.preview .table th {
+  padding: 5px 8px;
+}
+.card {
+  margin: 0;
+}
+.copy {
+  margin: 12px 0 0;
+  padding-top: 6px;
+  border-top: 1px solid #c9c9c4;
+  font-size: 12px;
+  color: #333;
+}
+.foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 12px;
+}
+.foot span {
+  flex: 1;
+  color: var(--hud-sub, #b4bbc2);
+  font-size: 14px;
+}
+.sheet .key,
+.sheet .ghost {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 9px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.sheet .key {
+  background: var(--hud-silver);
+  box-shadow: var(--hud-silver-shadow);
+  color: var(--hud-ink, #15181c);
+}
+.sheet .ghost {
+  background: var(--hud-key);
+  box-shadow: var(--hud-key-shadow);
+  color: var(--hud-tx, #f2f4f6);
+  font-weight: 700;
+}
+.sheet .key:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
