@@ -26,6 +26,8 @@ export interface ChapterTest {
     /** A mission done in the scene: the pose to copy (a see-through arm shows it) and how close each joint has to be, °. */
     pose?: readonly number[];
     tol?: number;
+    /** A mission done on the mat: the star drawn in one stroke from the vertex table (courseDraw.ts STAR). */
+    star?: boolean;
     /** Said when a try did not pass. */
     failText?: string;
   };
@@ -49,6 +51,12 @@ export const CHAPTER_TESTS: Record<number, ChapterTest> = {
     answers: ['O', 'O', 'X', 'O', 'X'],
     // From the 기본 자세 with the joint keys (5° steps reach it); judged on [확인].
     mission: { text: '반투명 로봇과 똑같은 자세를 관절 버튼으로 만들어요', ready: true, pose: [30, 30, -60, -20, 0, 0], tol: 3, failText: '자세가 목표와 달라요' },
+  },
+  4: {
+    chapter: 4,
+    answers: ['O', 'X', 'O', 'X', 'O'],
+    // On the mat (the card put away), from an empty vertex table, straight moves, the pen at 0: the five corners (교안, in no order) joined skipping one.
+    mission: { text: '꼭짓점 5개를 잇는 순서를 정해 표에 넣고 ▶ 시뮬레이션 버튼을 눌러요', ready: true, star: true, failText: '별이 아니에요' },
   },
 };
 

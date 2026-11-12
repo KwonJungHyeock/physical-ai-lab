@@ -152,8 +152,9 @@ import { lessonOfQuest, lessonsOf, siteOf } from '@/engine/simulator/cell/lesson
 import { COURSE, kindsOf, modeFor, subById, subOfRun, topicMark, MODE_NAME, type CourseSub, type SubMode } from '@/engine/simulator/cell/course';
 import { DEFAULT_PLAN, countedIn, lessonIn, lessonStepsIn, missionSubsIn, nextIn, testReady, type CoursePlan } from '@/engine/simulator/cell/courses';
 import { levelOf as courseLevelOf, mayOpen, noticeDue, noticeRead, readPlan, report } from '@/engine/simulator/cell/platform';
-import { COURSE_LOOK, courseViewOf } from '@/engine/simulator/cell/courseStage';
+import { COURSE_LOOK, MAT_VIEW, courseViewOf } from '@/engine/simulator/cell/courseStage';
 import { CARD_HOME } from '@/engine/simulator/cell/draw';
+import { CIRCLE_COUNTS, LINE_A, LINE_B, SQUARE, TOL, TRIANGLE, circlePoints, circleReport, circleRight, isStarOrder, lineReport, pathCode, rowsToPoints, sameShape, shapeReport, type Pt } from '@/engine/simulator/cell/courseDraw';
 import { AIM, DESK_PLACES, DOT_ABOVE_MM, DOT_AT, DOT_NEAR_MM, FAST_PCT, KIT_PARTS, LIMIT_POSE, PEN_START_MM, POSE_TOL_DEG, PRACTICE_POSE, PREP_POSE, SLOW_PCT, TURN_DEG } from '@/engine/simulator/cell/courseSteps';
 import { ARM_PARTS, PICK_VIEW, COURSE_STEPS, FOUND_SWING_DEG, HAND_SCENE, HAND_SLOW_S, STEPS_KEY, SWING, isCourseStep, type CourseStepId } from '@/engine/simulator/cell/courseSteps';
 import { CHAPTER_TESTS, MISSION_TRIES, TESTS_KEY, inOrder, loadTests, missionWay, type MissionStep, type OX, type TestResult } from '@/engine/simulator/cell/courseTests';
@@ -334,6 +335,28 @@ const FOLLOW_LEAD = 12;
 
 /** `chain` stands on the base (G base) when one is fitted; `rawChain` is the arm alone, for drawing it. */
 type Loaded = { robot: UrdfRobot; chain: ChainSegment[]; rawChain: ChainSegment[]; gripper: UrdfRobot };
+
+/** 입문 과정 4장: the panel's settings and what the runs drew (robot mm). */
+interface Draw4 {
+  /** 4-2: '직선 이동으로 쓰기'. */
+  linear: boolean;
+  /** 4-3 · 4장 미션: the vertex table. */
+  rows: { x: string; y: string }[];
+  /** 4-4: the circle's boxes and the point count. */
+  circle: { x: string; y: string; r: string };
+  count: number;
+  /** Lines kept from the runs before, each in its colour. */
+  lines: { pts: Pt[]; color: string }[];
+  /** What each run measured, as the panel says it. */
+  results: string[];
+  /** 4-2: the joint move ran to its end; 4-4: the counts run to their end. */
+  jointDone: boolean;
+  counts: number[];
+}
+const DRAW4_START: Draw4 = { linear: false, rows: [], circle: { x: '', y: '', r: '' }, count: CIRCLE_COUNTS[0], lines: [], results: [], jointDone: false, counts: [] };
+/** 4장: 관절 이동 (and 점 8개) orange, 직선 이동 (and 점 24개) blue. */
+const LINE_COLOR = { joint: '#f97316', straight: '#2563eb' } as const;
+const emptyRows = (n: number) => Array.from({ length: n }, () => ({ x: '', y: '' }));
 
 export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   /** The 트랙 this page sells (engine/simulator/tracks.ts); none = the full package. */
@@ -744,6 +767,15 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const [stepsDone, setStepsDone] = useState<Record<string, boolean>>({});
   /** A chapter's 수행평가 mission being done in the scene (2장): what has happened so far, in order, and the pen's height. */
   const [missionRun, setMissionRun] = useState<{ chapter: number; seen: MissionStep[]; pen: number } | null>(null);
+  // 입문 과정 4장 (4-2 · 4-3 · 4-4 and the 4장 미션): what is set on the panel and what the runs drew (courseDraw.ts).
+  const [draw4, setDraw4] = useState<Draw4>(DRAW4_START);
+  const draw4Ref = useRef(draw4);
+  // 입문 4-1: the 조작판 drawn afresh (its frame back to [관절]).
+  const [jogKey, setJogKey] = useState(0);
+  useEffect(() => {
+    draw4Ref.current = draw4;
+  }, [draw4]);
+  const patchDraw4 = (p: Partial<Draw4>) => setDraw4((d) => ({ ...d, ...p }));
   const missionRef = useRef(missionRun);
   useEffect(() => {
     missionRef.current = missionRun;
@@ -2636,6 +2668,24 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const playScene = useRef<() => void>(() => {});
   useEffect(() => {
     playScene.current = () => {
+      // 4-2 · 4-3 장면 보기: the joint move and then the straight one (도구 궤적 on); the triangle and then the square.
+      const four = courseStepRef.current?.id;
+      if (course && subMode === 'scene' && (four === '4-2' || four === '4-3')) {
+        if (busy || !loaded) return;
+        if (four === '4-2') setDisplay((d) => ({ ...d, path: true }));
+        setDraw4((d) => ({ ...d, lines: [], results: [] }));
+        clearSceneTimers();
+        sceneTimers.current.push(
+          window.setTimeout(() => {
+            void (async () => {
+              await runDraw(four === '4-2' ? 'joint' : 'triangle');
+              await new Promise((r) => window.setTimeout(r, 1200));
+              if (courseStepRef.current?.id === four) await runDraw(four === '4-2' ? 'straight' : 'square');
+            })();
+          }, 1500),
+        );
+        return;
+      }
       const c = cellRef.current;
       const sol = c?.mission ? missionById(c.mission)?.solution : undefined;
       if (!sceneView || !c?.mission || !sol || busy || !loaded) return;
@@ -3982,9 +4032,11 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     if (track) toPlainDesk();
     else if (cellRef.current) leaveCell();
     // 입문 과정 3-4: from the 기본 자세 always (from 3-2 the arm may be at a limit).
-    if (course && id === 'pose') {
+    // 4-1 too: from the 기본 자세, in 조작 › [관절] (the 조작판 drawn afresh, so its frame is the first one).
+    if (course && (id === 'pose' || id === 'taste')) {
       world.current.angles = arm.home.slice();
       setAnglesView(world.current.angles.slice());
+      if (id === 'taste') setJogKey((k) => k + 1);
     }
     // 공정 짜기 from its first screen.
     if (id === 'teach') setFlow({ ...flow, step: 1 });
@@ -4209,7 +4261,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
           ? null
           : { spots: built.marks, path: built.path, legs: planLegs, ghost: jointTry?.key === planKey ? jointTry.trail : undefined }
       : null;
-  const wholeBooth = courseStep?.id === '1-1';
+  // (4장 on the mat too: its own view of the mat stays while it draws.)
+  const wholeBooth = courseStep?.id === '1-1' || (!!courseStep && ['4-2', '4-3', '4-4'].includes(courseStep.id)) || missionRun?.chapter === 4;
   // 입문: while a step runs, the view goes to the station the tool works at (from its side, the cup in
   // view), unless the user has moved the view; back to the whole place when the run is over.
   const lifeCell = track && (cellAt?.cell === 'cafe' || cellAt?.cell === 'draw' || cellAt?.cell === 'board') ? cellAt.cell : null;
@@ -4411,6 +4464,16 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       if (id === '2-4') toolOff();
       return;
     }
+    if (id === '4-2' || id === '4-3' || id === '4-4') {
+      // 4장: the 글씨 부스's mat, the card and the lamp put away, the pen on at 0 (펜 값 0). 4-2: 도구 궤적 off and
+      // joint moves; 4-3: an empty vertex table (three rows), straight moves; 4-4: empty boxes, 8 points.
+      openCell('draw', 'G1');
+      setDraw4({ ...DRAW4_START, linear: id !== '4-2', rows: id === '4-3' ? emptyRows(3) : [] });
+      if (id === '4-2') setDisplay((d) => ({ ...d, path: false }));
+      if (mode === 'scene') setSceneRun((n) => n + 1);
+      window.setTimeout(() => stageApi.current?.lookAt(MAT_VIEW.eye, MAT_VIEW.target), 1200);
+      return;
+    }
     if (id === '1-1') {
       // 5-1's booth as it starts (보정 x 150 · y −40 · 펜 0, '사랑해', 손님 1명); its cards hidden.
       openCell('draw', 'G1');
@@ -4598,6 +4661,171 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       markStepDone('2-4');
     } else patchStep({ note: !ok ? '펜이 종이를 너무 눌렀어요 · 펜 칸을 고쳐요' : '점이 찍히지 않았어요 · 펜이 종이에서 떠 있어요' });
   };
+  /** 4장: the circle's boxes as numbers (null: one not filled in). */
+  const circleOf = (c: Draw4['circle']) => {
+    const v = [c.x, c.y, c.r].map((t) => (t.trim() === '' ? NaN : Number(t)));
+    return v.every(Number.isFinite) && v[2] > 0 ? { x: v[0], y: v[1], r: v[2] } : null;
+  };
+  /** 4-2 ②: the question asked once while the joint move draws (not marked). */
+  const asked42 = useRef(false);
+  /** 4장 ▶ (and 장면 보기, `show`): the pen along the points set, then what the ink shows. */
+  const runDraw = async (show?: 'joint' | 'straight' | 'triangle' | 'square') => {
+    const st = courseStepRef.current;
+    const m = missionRef.current;
+    const id = m?.chapter === 4 ? 'mission' : st?.id;
+    if (!id || busyRef.current || !loaded) return;
+    const d = draw4Ref.current;
+    const say = (note: string) => (st && !m ? patchStep({ note }) : addLog('warn', note));
+    let pts: Pt[];
+    let linear = true;
+    let close = true;
+    let circle: { x: number; y: number; r: number } | null = null;
+    if (id === '4-2') {
+      pts = [LINE_A, LINE_B];
+      linear = show ? show === 'straight' : d.linear;
+      close = false;
+      if (!show && st && st.step < 1) return say("먼저 표시 옵션의 '도구 궤적'을 켜요");
+    } else if (id === '4-4') {
+      circle = circleOf(d.circle);
+      if (!circle) return say('중심 x · y와 반지름을 모두 넣어요');
+      pts = circlePoints(circle, d.count);
+      if (!pts.every(([x, y]) => x >= 110 && x <= 300 && y >= -90 && y <= 70)) return say('원이 매트 밖으로 나가요 · 중심과 반지름을 고쳐요');
+    } else if (show) {
+      pts = (show === 'triangle' ? TRIANGLE : SQUARE).slice();
+    } else {
+      const r = rowsToPoints(d.rows);
+      if (r.bad) return say(r.bad);
+      if (r.pts.length < 3) return say('꼭짓점을 3개 넘게 넣어요');
+      pts = r.pts;
+    }
+    const { steps, errors } = problemsFor(pathCode(pts, { linear, close }));
+    if (errors.length) return addLog('err', `${errors[0].line}번째 줄: ${errors[0].msg}`);
+    world.current.trail = [];
+    if (st && !m) patchStep({ note: null });
+    // 4-2 ②: once the joint move is drawing, the scene holds for the question (answered: it goes on).
+    let watch = 0;
+    if (id === '4-2' && !linear && !show && !asked42.current)
+      watch = window.setInterval(() => {
+        if (heldRef.current || world.current.trail.reduce((n, s) => n + s.length, 0) < 25) return;
+        window.clearInterval(watch);
+        asked42.current = true;
+        heldRef.current = true;
+        setMoment({ key: 'course-4-2', ask: { q: '두 점 사이를 관절 이동으로 가고 있어요. 선은?', options: ['곧은 선', '휜 선'], answer: 1, why: '관절 이동은 관절이 한꺼번에 돌아서 펜 끝이 휘어 가요.' }, ox: false });
+      }, 60);
+    const { ok } = await runSteps(steps, { reset: false, quiet: true });
+    window.clearInterval(watch);
+    const ink: Pt[][] = world.current.trail.filter((s) => s.length > 1).map((s) => s.map(([x, y]) => [x, y] as Pt));
+    const scene = !!show;
+    const now = courseStepRef.current;
+    const keep = (color: string) => {
+      world.current.trail = [];
+      world.current.version += 1;
+      setDraw4((x) => ({ ...x, lines: [...x.lines.filter((l) => l.color !== color), ...ink.map((p) => ({ pts: p, color }))] }));
+    };
+    if (id === '4-2') {
+      const r = lineReport(ink);
+      if (!ok || !r.drawn) return say('끝까지 가지 못했어요 · 다시 눌러요');
+      keep(linear ? LINE_COLOR.straight : LINE_COLOR.joint);
+      const line = `${linear ? '직선 이동' : '관절 이동'}: 두 점을 이은 선에서 가장 먼 곳 ${r.maxDev} mm`;
+      setDraw4((x) => ({ ...x, jointDone: x.jointDone || !linear, results: [...x.results.filter((t) => !t.startsWith(linear ? '직선' : '관절')), line] }));
+      if (scene || !now || now.id !== '4-2') return;
+      if (!linear && now.step === 1) return patchStep({ step: 2, note: null });
+      if (linear && now.step === 3) {
+        if (!draw4Ref.current.jointDone) return say('먼저 관절 이동으로 한 번 가요');
+        if (!display.path) return say("표시 옵션의 '도구 궤적'을 켜 둬요");
+        if (r.maxDev > TOL.line || !r.ends) return say(`선이 두 점을 이은 선에서 ${r.maxDev} mm 벗어났어요`);
+        patchStep({ step: 4, note: null });
+        markStepDone('4-2');
+      }
+      return;
+    }
+    if (id === '4-4' && circle) {
+      const r = circleReport(ink, circle);
+      if (!ok || !r.drawn) return say('끝까지 가지 못했어요 · 다시 눌러요');
+      keep(d.count === CIRCLE_COUNTS[0] ? LINE_COLOR.joint : LINE_COLOR.straight);
+      const line = `점 ${d.count}개: 원과 가장 많이 벗어난 거리 ${r.maxDev} mm`;
+      setDraw4((x) => ({ ...x, counts: r.closed && !x.counts.includes(d.count) ? [...x.counts, d.count] : x.counts, results: [...x.results.filter((t) => !t.startsWith(`점 ${d.count}개`)), line] }));
+      if (!now || now.id !== '4-4') return;
+      if (now.step === 1) return d.count === CIRCLE_COUNTS[0] ? patchStep({ step: 2, note: null }) : say(`점 개수를 ${CIRCLE_COUNTS[0]}로 두고 다시 눌러요`);
+      if (now.step === 3) {
+        if (d.count !== CIRCLE_COUNTS[1]) return say(`점 개수를 ${CIRCLE_COUNTS[1]}로 바꿔요`);
+        if (!circleRight(circle)) return say('중심이나 반지름이 달라요 · 중심 x 200 · y −10, 반지름 30');
+        if (!r.closed) return say('원이 닫히지 않았어요');
+        if (r.maxDev > TOL.circle24) return say(`원과 ${r.maxDev} mm 벗어났어요 (${TOL.circle24} mm 안이어야 해요)`);
+        patchStep({ step: 4, note: null });
+        markStepDone('4-4');
+      }
+      return;
+    }
+    // 4-3 and the 4장 미션: the ink against the corners as joined (kept as a blue line: plain ink hardly shows on the green mat).
+    const r = shapeReport(ink, pts);
+    if (ok && ink.length) keep(LINE_COLOR.straight);
+    if (m) {
+      endMission(ok && r.ok && isStarOrder(pts));
+      return;
+    }
+    const lines = r.items.map((i) => `${i.ok ? '✓' : '✗'} ${i.label}${i.detail ? ` · ${i.detail}` : ''}`);
+    setDraw4((x) => ({ ...x, results: lines }));
+    if (scene || !now || now.id !== '4-3') return;
+    if (!ok) return say('끝까지 가지 못했어요 · 다시 눌러요');
+    const want = now.step < 2 ? TRIANGLE : SQUARE;
+    const shape = now.step < 2 ? '세모' : '네모';
+    if (!sameShape(pts, want)) return say(`교안의 ${shape} 꼭짓점과 달라요 · 표를 고쳐요`);
+    if (!r.ok) return say(`${shape}가 아직이에요 · ${r.items.find((i) => !i.ok)?.label ?? ''}`);
+    if (now.step <= 1) {
+      // ③: the table cleared to four rows for the square.
+      patchStep({ step: 2, note: null });
+      setDraw4((x) => ({ ...x, rows: emptyRows(4) }));
+    } else {
+      patchStep({ step: 4, note: null });
+      markStepDone('4-3');
+    }
+  };
+  /** 4장 on the mat: 4-2 · 4-3 · 4-4 and the 4장 미션 (the card and the lamp put away). */
+  const draw4On = !!course && ((!!courseStep && ['4-2', '4-3', '4-4'].includes(courseStep.id)) || missionRun?.chapter === 4);
+  // Its marks: 4-2's A · B; the corners typed (numbered; none in a 장면 보기, where no value shows); 4-4's points; the lines kept.
+  const draw4Marks = (() => {
+    if (!draw4On) return {};
+    const id = missionRun ? 'mission' : courseStep?.id;
+    const c = circleOf(draw4.circle);
+    const spots =
+      id === '4-2'
+        ? [
+            { at: LINE_A, tag: 'A' },
+            { at: LINE_B, tag: 'B' },
+          ]
+        : id === '4-4'
+          ? c && !sceneView && !draw4.counts.includes(draw4.count)
+            ? circlePoints(c, draw4.count).map((at) => ({ at }))
+            : []
+          : sceneView
+            ? []
+            : rowsToPoints(draw4.rows).pts.map((at, i) => ({ at, tag: String(i + 1) }));
+    return { spots, lines: draw4.lines };
+  })();
+  // 4장: the steps that are a setting, not a run — 도구 궤적 on (4-2 ①), the corners in (4-3 ① · ③), the circle in and 24 points (4-4 ① · ③).
+  const step4 = courseStep && courseStep.id.startsWith('4-') && !sceneView ? `${courseStep.id}:${courseStep.step}` : '';
+  useEffect(() => {
+    const st = courseStepRef.current;
+    if (!step4 || !st) return;
+    const d = draw4;
+    const filled = rowsToPoints(d.rows);
+    const c = circleOf(d.circle);
+    const next =
+      (st.id === '4-2' && st.step === 0 && display.path) ||
+      (st.id === '4-3' && ((st.step === 0 && !filled.bad && filled.pts.length >= 3) || (st.step === 2 && !filled.bad && filled.pts.length >= 4))) ||
+      (st.id === '4-4' && ((st.step === 0 && !!c && circleRight(c)) || (st.step === 2 && d.count === CIRCLE_COUNTS[1])));
+    if (next) patchStep({ step: st.step + 1, note: null });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the settings and the step only
+  }, [step4, draw4, display.path]);
+  /** 4-2 ③: the 직선 이동 switch (locked until the joint move has been seen). */
+  const toggleLinear = () => {
+    const st = courseStepRef.current;
+    if (!st || st.id !== '4-2' || st.step < 2 || busy) return;
+    const on = !draw4Ref.current.linear;
+    patchDraw4({ linear: on });
+    if (on && st.step === 2) patchStep({ step: 3, note: null });
+  };
   /** 2-1 ①: a part in the box pressed — its name shown. */
   const seePart = (part: number) => {
     const st = courseStepRef.current;
@@ -4724,7 +4952,12 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const startMission = (chapter: number) => {
     const t = CHAPTER_TESTS[chapter];
     if (busy || !t) return;
-    if (t.mission.pose) {
+    if (t.mission.star) {
+      // 4장: the mat as in 4-3 (the card and the lamp away), an empty table of five, straight moves, the pen at 0.
+      openCell('draw', 'G1');
+      setDraw4({ ...DRAW4_START, linear: true, rows: emptyRows(5) });
+      window.setTimeout(() => stageApi.current?.lookAt(MAT_VIEW.eye, MAT_VIEW.target), 1200);
+    } else if (t.mission.pose) {
       toPlainDesk();
       world.current.angles = arm.home.slice();
       setAnglesView(world.current.angles.slice());
@@ -4900,6 +5133,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
 
   const controlPanel = (
     <ControlPanel
+      key={jogKey}
       ko={!!track}
       startFrame={track && cellAt?.mission && missionById(cellAt.mission)?.target ? 'base' : undefined}
       moveOnly={!!(track && cellAt?.mission && missionById(cellAt.mission)?.target)}
@@ -6048,12 +6282,15 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   smoothFollow={robotMode && (!busy || realRun || !!tracking)}
                   tcpMm={tcpNow}
                   // (3-1: the joint to turn now is coloured.)
-                  ringJoint={courseStep?.id === '3-1' && courseStep.step < 6 ? courseStep.step : ringJoint}
+                  ringJoint={ringJoint}
+                  focusJoint={courseStep?.id === '3-1' && courseStep.step < 6 ? courseStep.step + 1 : null}
                   planMarks={planMarks}
                   cell={cellAt?.cell ?? null}
                   simRate={runRate}
                   courseMarks={
-                    courseStep?.id === '1-2'
+                    draw4On
+                      ? draw4Marks
+                      : courseStep?.id === '1-2'
                       ? { pick: { names: ARM_PARTS, found: courseStep.found, flash: courseStep.flash, onPick: pickPart } }
                       : courseStep?.id === '3-2' && courseStep.step < 2
                         ? // ① · ②: the target angle beside the joint.
@@ -6070,10 +6307,10 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   courseStage={course && (!cellAt || cellAt.cell === 'draw') ? COURSE_LOOK : null}
                   courseView={course && subNow ? courseViewOf(subNow.id, subNow.scene) : null}
                   // 2-1: what is not on the desk yet (the arm, the mat, the card; the lamp is not part of it).
-                  courseHide={courseStep?.id === '2-1' ? { arm: courseStep.placed < 1, mat: courseStep.placed < 2, card: courseStep.placed < 3, lamp: true } : null}
+                  courseHide={courseStep?.id === '2-1' ? { arm: courseStep.placed < 1, mat: courseStep.placed < 2, card: courseStep.placed < 3, lamp: true } : draw4On ? { arm: false, mat: false, card: true, lamp: true } : null}
                   cellClock={cellClock}
                   // (2장's 절 and its mission: no 관찰 bubbles — only the 위치 줄, 지금 할 일 and the place to press.)
-                  cellCallouts={!!track && !missionRun && !(courseStep && courseStep.id.startsWith('2-'))}
+                  cellCallouts={!!track && !missionRun && !(courseStep && (courseStep.id.startsWith('2-') || courseStep.id.startsWith('4-')))}
                   goalRing={(() => {
                     // 입문 맛보기: the ring the tool tip goes into now.
                     const at = lifeTut && !cellAt ? lifeTutorialById(lifeTut.id)?.steps[lifeTut.step]?.ring : undefined;
@@ -6397,6 +6634,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
               ) : null}
               <ViewTools
                 lite={!!track && !!cellAt}
+                liteDisplay={courseStep?.id === '4-2' && subMode === 'practice'}
                 api={getStage}
                 display={display}
                 onDisplay={chooseDisplay}
@@ -6452,7 +6690,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                 <div className={css.sideHeader}>
                   <button type="button" className={css.sideModel} onClick={() => setPicking(true)} disabled={busy || !choice} title={choice ? '로봇 모델 바꾸기' : undefined}>
                     <span>
-                      <b>{questOn && cellAt && workScreen === 'basic' ? cellName(cellAt.cell) : (SCREEN_TITLE[workScreen] ?? '')}</b>
+                      <b>{courseStep?.id === '2-1' ? '구성품 상자' : draw4On ? '좌표로 그리기' : questOn && cellAt && workScreen === 'basic' ? cellName(cellAt.cell) : (SCREEN_TITLE[workScreen] ?? '')}</b>
                     </span>
                     {choice && <em>바꾸기</em>}
                   </button>
@@ -6699,6 +6937,21 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                         )}
                         {courseStep?.id === '1-1' ? (
                           <CourseStepPanel id="1-1" busy={busy} onRun={runHandStep} hand={{ near: courseStep.handNear, onIn: handIn, onOut: handOut }} />
+                        ) : draw4On ? (
+                          // 4장: 4-2 the 직선 이동 switch; 4-3 · 4장 미션 the vertex table (straight moves, locked on); 4-4 the circle; then ▶ and what it measured.
+                          <CourseStepPanel
+                            id={missionRun ? undefined : (courseStep?.id as CourseStepId)}
+                            busy={busy}
+                            linear={courseStep?.id === '4-2' && !missionRun ? { on: draw4.linear, locked: courseStep.step < 2, onToggle: toggleLinear } : { on: true, locked: true, onToggle: () => {} }}
+                            vertices={missionRun || courseStep?.id === '4-3' ? { rows: draw4.rows, max: missionRun ? 5 : 4, onChange: (rows) => patchDraw4({ rows }) } : undefined}
+                            circle={
+                              courseStep?.id === '4-4' && !missionRun
+                                ? { ...draw4.circle, count: draw4.count, counts: CIRCLE_COUNTS, onChange: (circle) => patchDraw4({ circle }), onCount: (count) => patchDraw4({ count }) }
+                                : undefined
+                            }
+                            onRun={() => void runDraw()}
+                            results={missionRun ? undefined : draw4.results}
+                          />
                         ) : courseStep?.id === '2-4' || missionRun ? (
                           // 2-4: 도구 · 보정 (x · y locked) · ▶; 2장 미션: the same and the pose keys, nothing lit.
                           <CourseStepPanel

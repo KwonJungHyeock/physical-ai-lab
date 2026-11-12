@@ -105,3 +105,16 @@
   white-space: nowrap;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
 }
+
+/* 4장: a point's tag on the mat (A · B, 1 · 2 …), just above and right of it. */
+.spotTag {
+  display: inline-block;
+  transform: translate(16px, -16px);
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: #f5a524;
+  color: #1a1206;
+  font-size: 15px;
+  font-weight: 800;
+  white-space: nowrap;
+}

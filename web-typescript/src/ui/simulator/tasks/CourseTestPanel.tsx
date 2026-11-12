@@ -64,7 +64,7 @@ export default function CourseTestPanel({ test, result, onGraded, onNext, onMiss
               <output>O · X 5문항 중 {result?.right}개 맞혔어요</output>
             </div>
             <p className={css.soon}>미션: {test.mission.text}</p>
-            {test.mission.ready && (test.mission.steps || test.mission.pose) && (
+            {test.mission.ready && (test.mission.steps || test.mission.pose || test.mission.star) && (
               <div className={css.row} style={{ marginBottom: 18 }}>
                 {result?.mission == null ? (
                   <>

@@ -52,6 +52,10 @@ export interface CourseStageMarks {
   /** 3-2: the target angle shown beside a joint (0..5). */
   goal?: { joint: number; text: string } | null;
   places?: CoursePlaces | null;
+  /** 4장: points on the mat (robot mm), each with its tag (A · B, 1 · 2 …; none in a 장면 보기, where no value shows). */
+  spots?: readonly { at: readonly [number, number]; tag?: string }[];
+  /** 4장: lines already drawn, kept in their colour (관절 이동 · 직선 이동, 점 8개 · 24개), robot mm. */
+  lines?: readonly { pts: readonly (readonly [number, number])[]; color: string }[];
 }
 
 /** 1-2: 베이스 (J1)'s spot sits down on the turning base, apart from 어깨 (J2) just above it (its frame, m). */
@@ -160,6 +164,20 @@ export default function CourseMarks({ marks, joints, flange, tcpMm }: { marks: C
           </Html>,
           goalAt,
         )}
+      {marks.lines?.map((l, i) => (l.pts.length > 1 ? <Line key={`l${i}`} points={l.pts.map(([x, y]) => [m(x), m(y), m(0.3)] as [number, number, number])} color={l.color} lineWidth={3.5} /> : null))}
+      {marks.spots?.map((p, i) => (
+        <group key={`s${i}`} position={[m(p.at[0]), m(p.at[1]), m(0.4)]}>
+          <mesh>
+            <circleGeometry args={[m(2.6), 24]} />
+            <meshBasicMaterial color="#f5a524" />
+          </mesh>
+          {p.tag && (
+            <Html center zIndexRange={[18, 0]} style={{ pointerEvents: 'none' }}>
+              <span className={css.spotTag}>{p.tag}</span>
+            </Html>
+          )}
+        </group>
+      ))}
       {places && (
         <group ref={setRoot}>
           {places.rects.map((r, i) => (i < places.placed ? null : <Place key={r.name} r={r} z={1 + i * 0.6} onPress={(at) => places.onPick(placeAt(places, root, at))} />))}

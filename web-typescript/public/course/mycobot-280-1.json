@@ -212,9 +212,9 @@
       "chapter": 4,
       "title": "궤적선 켜고 선 긋기: 직선 이동 vs 관절 이동",
       "pages": [44, 45],
-      "status": "soon",
-      "scene": "soon",
-      "practice": "soon"
+      "status": "open",
+      "scene": "open",
+      "practice": "open"
     },
     {
       "id": "4-3",
@@ -230,9 +230,9 @@
       "chapter": 4,
       "title": "곡선과 원 그리기",
       "pages": [50, 51],
-      "status": "soon",
-      "scene": "soon",
-      "practice": "soon"
+      "status": "open",
+      "scene": "none",
+      "practice": "open"
     },
     {
       "id": "4-5",

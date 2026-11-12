@@ -7,7 +7,7 @@
  * The values marked 제안값 are the guideline's proposals: kept as given until confirmed.
  */
 
-export type CourseStepId = '1-1' | '1-2' | '1-3' | '2-1' | '2-3' | '2-4' | '3-1' | '3-2' | '3-5';
+export type CourseStepId = '1-1' | '1-2' | '1-3' | '2-1' | '2-3' | '2-4' | '3-1' | '3-2' | '3-5' | '4-2' | '4-3' | '4-4';
 
 export interface CourseStepLine {
   text: string;
@@ -71,6 +71,25 @@ export const COURSE_STEPS: Record<CourseStepId, readonly CourseStepLine[]> = {
     { text: '저장한 자세 버튼을 눌러 그 자세로 보내요', sel: POSE_GO },
     { text: '속도 슬라이더를 100%로 올리고 기본 자세 버튼을 눌러요', sel: '[aria-label="속도 조절"]' },
     { text: '저장한 자세 버튼을 다시 누르고, 움직이는 동안 정지 버튼을 눌러요', sel: POSE_GO },
+  ],
+  // 4장: on the 글씨 부스 mat, the card put away (courseDraw.ts).
+  '4-2': [
+    { text: "표시 옵션의 '도구 궤적'을 켜요", sel: '[aria-label="표시 옵션"]' },
+    { text: '▶ 시뮬레이션 버튼을 눌러 관절 이동으로 두 점 사이를 가요', sel: RUN },
+    { text: "'직선 이동으로 쓰기' 스위치를 켜요", sel: '[data-step="linear"]' },
+    { text: '▶ 시뮬레이션 버튼을 다시 눌러요', sel: RUN },
+  ],
+  '4-3': [
+    { text: '꼭짓점 표에 세모의 세 점을 넣어요', sel: '[data-step="vertices"]' },
+    { text: '▶ 시뮬레이션 버튼을 눌러요', sel: RUN },
+    { text: '꼭짓점 표에 네모의 네 점을 넣어요', sel: '[data-step="vertices"]' },
+    { text: '▶ 시뮬레이션 버튼을 눌러요', sel: RUN },
+  ],
+  '4-4': [
+    { text: '원 칸에 중심 x 200 · y −10, 반지름 30을 넣어요', sel: '[data-step="circle"]' },
+    { text: '점 개수를 8로 두고 ▶ 시뮬레이션 버튼을 눌러요', sel: RUN },
+    { text: '점 개수를 24로 바꿔요', sel: '[data-step="count"]' },
+    { text: '▶ 시뮬레이션 버튼을 눌러요', sel: RUN },
   ],
 };
 

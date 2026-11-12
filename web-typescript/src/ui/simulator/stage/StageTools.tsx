@@ -159,6 +159,7 @@ export function ViewTools({
   camera,
   onSnapshot,
   lite,
+  liteDisplay,
 }: {
   /** The 3D view's controls (null until it is ready). */
   api(): StageApi | null;
@@ -170,6 +171,8 @@ export function ViewTools({
   onSnapshot(ok: boolean): void;
   /** 입문 현장 (교실 수업형): only 처음 시점 — no cube, no other tools (the wheel still zooms). */
   lite?: boolean;
+  /** 입문 과정 4-2: the 표시 옵션 under 처음 시점 too (its ① turns 도구 궤적 on there). */
+  liteDisplay?: boolean;
 }) {
   const [pan, setPan] = useState(false);
   const [flat, setFlat] = useState(false);
@@ -192,6 +195,7 @@ export function ViewTools({
           <button type="button" title="처음 시점" aria-label="처음 시점" onClick={() => api()?.view('home')}>
             <ToolGlyph d={GLYPH.home} />
           </button>
+          {liteDisplay && <DisplayMenu display={display} onDisplay={onDisplay} />}
         </div>
       </div>
     );

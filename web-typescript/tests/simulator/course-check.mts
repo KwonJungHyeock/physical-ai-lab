@@ -41,7 +41,7 @@ assert.deepEqual(kinds('4-1'), { scene: 'none', practice: 'open' });
 for (const id of ['4-3', '5-1', '5-2', '5-3']) assert.deepEqual(kinds(id), { scene: 'open', practice: 'open' }, id);
 assert.equal(C.modeFor(C.subById('3-4')!, 'scene'), 'practice', '없는 종류로 오면 있는 쪽');
 assert.equal(C.modeFor(C.subById('5-2')!, 'scene'), 'scene');
-assert.equal(C.modeFor(C.subById('4-2')!, 'practice'), null, '만드는 중은 열리지 않아요');
+assert.equal(C.modeFor(C.subById('5-4')!, 'practice'), null, '만드는 중은 열리지 않아요');
 
 // 선택: 5-5 (the real robot) is in the 8차시 and never counted.
 assert.ok(C.subById('5-5')?.optional);
@@ -87,7 +87,7 @@ assert.deepEqual(
   ls.flatMap((l) => l.steps.filter((x) => x.kind === 'test').map((x) => `${l.n}:${x.sub.id}`)),
   ['1:1-4', '2:2-5', '4:3-6', '6:4-5', '8:5-6'],
 );
-for (const t of tests) assert.equal(K.testReady(t.sub), ['1-4', '2-5', '3-6'].includes(t.sub.id), `${t.sub.id}: 1 ~ 3장만 열림, 나머지 준비 중`);
+for (const t of tests) assert.equal(K.testReady(t.sub), ['1-4', '2-5', '3-6', '4-5'].includes(t.sub.id), `${t.sub.id}: 1 ~ 4장만 열림, 나머지 준비 중`);
 
 // 1장 (장별 가이드라인 v1): 1-1 · 1-2 · 1-3 open as the course's own 절; 1-1 has 장면 보기; 1장 수행평가 opens after 1-3.
 const S = await import('../../src/engine/simulator/cell/courseSteps');

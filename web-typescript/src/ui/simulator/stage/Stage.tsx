@@ -39,6 +39,7 @@ import {
   CanvasTexture,
   Float32BufferAttribute,
   DirectionalLight,
+  EdgesGeometry,
   Group,
   HemisphereLight,
   LineBasicMaterial,
@@ -209,6 +210,8 @@ interface StageProps {
   onReady?(): void;
   /** Ring this joint (1..6) — the one being zero-calibrated; null for none. */
   ringJoint?: number | null;
+  /** 입문 3-1: the joint being learnt (1-based): the link it turns, in the 지금 할 일 orange. */
+  focusJoint?: number | null;
   /** Drawing aids: frames, joint axes, path, grid, reach. */
   display: DisplayOpts;
   /**
@@ -411,6 +414,7 @@ function World({
   lights,
   onReady,
   ringJoint,
+  focusJoint = null,
   onRenderError,
   display,
   frameInsets,
@@ -440,30 +444,50 @@ function World({
 
   const arm = useMemo(() => buildArm(robot, chain, nodes, { dark: spec.dark, flange: spec.flange, textures: spec.textures, flangeLink: spec.flangeLink, finish: spec.finish }), [robot, chain, nodes, spec]);
   // The program's end pose: the same arm, see-through white, on screen only (not in the camera pictures).
+  // 입문 과정 (the 3장 미션's target pose): see-through orange with orange outlines drawn over everything,
+  // so it stands out on the desk and the background and stays apart from the real (white) arm over it.
+  const courseGhost = !!courseStage;
   const ghostArm = useMemo(() => {
     const g = buildArm(robot, chain, nodes, { dark: spec.dark, flange: spec.flange, textures: spec.textures, flangeLink: spec.flangeLink, finish: spec.finish });
-    const mat = new MeshBasicMaterial({ color: '#e8edf3', transparent: true, opacity: 0.12, depthWrite: false });
+    const mat = courseGhost ? new MeshBasicMaterial({ color: COURSE_FOCUS_COLOR, transparent: true, opacity: 0.32, depthWrite: false }) : new MeshBasicMaterial({ color: '#e8edf3', transparent: true, opacity: 0.12, depthWrite: false });
+    // Its outlines hide behind the real arm (depth tested), so where the two overlap the real arm shows.
+    const edge = courseGhost ? new LineBasicMaterial({ color: '#ff9f1a', transparent: true, opacity: 0.95 }) : null;
+    const meshes: Mesh[] = [];
     g.root.traverse((o) => {
       const m = o as Mesh;
-      if (!m.isMesh) return;
+      if (m.isMesh) meshes.push(m);
+    });
+    // The base never moves: in the course the target leaves it out (it would only cover the real one).
+    const moving = new Set<Object3D>();
+    g.joints[0]?.group.traverse((o) => moving.add(o));
+    for (const m of meshes) {
       m.material = mat;
       m.castShadow = false;
       m.receiveShadow = false;
       m.layers.set(SCREEN_ONLY);
-    });
+      if (courseGhost && !moving.has(m)) m.visible = false;
+      else if (edge) {
+        const lines = new LineSegments(new EdgesGeometry(m.geometry, 50), edge);
+        lines.layers.set(SCREEN_ONLY);
+        lines.renderOrder = 2;
+        m.add(lines);
+      }
+    }
     return g;
-  }, [robot, chain, nodes, spec]);
+  }, [robot, chain, nodes, spec, courseGhost]);
   useEffect(() => {
     if (ghost) ghostArm.setAngles(ghost);
   }, [ghost, ghostArm]);
   // A joint in caution or danger (engine/robot/jointAlert.ts: its motor's load, or its limit near):
   // the housing that holds its motor turns amber or red, pulsing when red. Its own copy of the materials.
   const tracker = useMemo(() => new AlertTracker(chain, tcpMm ?? 0, spec.family === 'mycobot280', arm.joints.length), [chain, tcpMm, spec, arm]);
+  // The housings, base to tip, and after them the link the last joint turns (the flange): the link
+  // joint n turns is the housing of joint n + 1, so entry n (0-based) is what joint n (1-based) moves.
   const housings = useMemo(
     () =>
-      arm.joints.map((j) => {
+      [...arm.joints.map((j) => j.housing), arm.joints[arm.joints.length - 1]?.moving ?? null].map((part) => {
         const mats: { m: MeshStandardMaterial; color: Color }[] = [];
-        j.housing?.traverse((o) => {
+        part?.traverse((o) => {
           const mesh = o as Mesh;
           if (!mesh.isMesh) return;
           // Once per mesh (a memo may run twice in development): later runs find the copy made.
@@ -499,12 +523,17 @@ function World({
     // warning on it wins).
     const soft = 0.35 + 0.25 * Math.sin(clock.elapsedTime * 4);
     housings.forEach((h, i) => {
-      const warn = touching?.includes(i + 1) ? 2 : (alerts[i]?.level ?? 0);
-      const lv = warn || (ringJoint === i + 1 ? 3 : 0);
+      const own = i < arm.joints.length;
+      const warn = own ? (touching?.includes(i + 1) ? 2 : (alerts[i]?.level ?? 0)) : 0;
+      const lv = warn || (own && ringJoint === i + 1 ? 3 : 0) || (focusJoint != null && focusJoint === i ? 4 : 0);
       if (lv === h.level && lv < 2) return;
       h.level = lv;
       for (const { m, color } of h.mats) {
-        if (lv === 3) {
+        if (lv === 4) {
+          m.color.copy(color).lerp(new Color(COURSE_FOCUS_COLOR), 0.6);
+          m.emissive.set(COURSE_FOCUS_COLOR);
+          m.emissiveIntensity = 0.3;
+        } else if (lv === 3) {
           m.color.copy(color).lerp(new Color(FOCUS_COLOR), 0.55);
           m.emissive.set(FOCUS_COLOR);
           m.emissiveIntensity = soft;
@@ -522,7 +551,7 @@ function World({
     const names = spec.jointNames ?? JOINTS;
     const next: TrackTag[] = [];
     housings.forEach((h, i) => {
-      if (!h.level) return;
+      if (!h.level || h.level === 4) return;
       const title = `J${i + 1} ${names[i]?.name ?? ''}`.trim();
       const detail = touching?.includes(i + 1) ? '물건 · 판에 닿았어요' : h.level === 3 ? '영점 맞추는 중' : (alerts[i]?.why ?? '');
       next.push({ joint: i + 1, level: h.level as TrackTag['level'], title, detail });
@@ -1023,6 +1052,8 @@ function readBaseLuminance(gl: WebGLRenderer, camera: Camera, base: Object3D): (
 
 /** The joint being zero-calibrated: its housing in the accent blue (the warnings' effect, ALERT_COLOR). */
 const FOCUS_COLOR = '#2f8cff';
+/** 입문 3-1: the link the joint being learnt turns, in the 지금 할 일 orange. */
+const COURSE_FOCUS_COLOR = '#f5a524';
 
 /**
  * The line is always drawn, fully transparent while it has no path: its shader then compiles

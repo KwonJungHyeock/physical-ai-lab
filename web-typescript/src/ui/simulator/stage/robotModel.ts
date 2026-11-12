@@ -293,8 +293,11 @@ function linkVisual(robot: UrdfRobot, linkName: string, nodes: GlbNodes, look?: 
 
 export interface ArmModel {
   root: Group;
-  /** Rotation group per movable joint, base to tip; `housing`: the link that holds its motor (the joint's parent link). */
-  joints: { group: Group; axis: Vector3; housing: Object3D | null }[];
+  /**
+   * Rotation group per movable joint, base to tip; `housing`: the link that holds its motor (the joint's
+   * parent link); `moving`: the link it turns (its child link, the first part that moves with it).
+   */
+  joints: { group: Group; axis: Vector3; housing: Object3D | null; moving?: Object3D | null }[];
   /** The flange link (joint6_flange on the 280, link6 on the 320 and mechArm): tools are attached here. */
   flange: Group;
   setAngles(anglesDeg: readonly number[]): void;
@@ -327,6 +330,7 @@ export function buildArm(robot: UrdfRobot, chain: readonly ChainSegment[], nodes
       else if (seg.mimic) followers.push({ group: r, axis: seg.axis.clone(), index: seg.mimic.index, k: seg.mimic.multiplier, offsetDeg: seg.mimic.offsetDeg });
       if (seg.joint.child === (look?.flangeLink ?? 'joint6_flange')) flange = r;
       addLink(seg.joint.child, r, depth + 1);
+      if (seg.movableIndex >= 0) joints[seg.movableIndex].moving = visuals.get(seg.joint.child) ?? null;
     }
   };
   addLink(robot.rootLink, root);

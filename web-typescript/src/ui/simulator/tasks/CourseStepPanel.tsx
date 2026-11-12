@@ -37,14 +37,21 @@ interface Props {
   hand?: { near: boolean; onIn(): void; onOut(): void };
   /** 1-3. */
   range?: { on: boolean; onToggle(): void };
+  /** 4-2: the '직선 이동으로 쓰기' switch (off: joint moves). */
+  linear?: { on: boolean; locked?: boolean; onToggle(): void };
+  /** 4-3 · 4장 미션: the vertex table (x · y, robot mm), joined in order and closed by the app. */
+  vertices?: { rows: readonly { x: string; y: string }[]; max: number; onChange(rows: { x: string; y: string }[]): void };
+  /** 4-4: the circle's centre and radius, and how many points. */
+  circle?: { x: string; y: string; r: string; count: number; counts: readonly number[]; onChange(c: { x: string; y: string; r: string }): void; onCount(n: number): void };
+  /** 4장: what the last runs measured (one line each). */
+  results?: readonly string[];
 }
 
-export default function CourseStepPanel({ id, busy, onRun, hand, range, tool, pen, poses, kit, confirm, times }: Props) {
+export default function CourseStepPanel({ id, busy, onRun, hand, range, tool, pen, poses, kit, confirm, times, linear, vertices, circle, results }: Props) {
   return (
     <div className={css.panel} role="group" aria-label={id ? `${id} 조작` : '미션 조작'}>
       {kit && (
         <div className={css.kit} data-step="kit" role="group" aria-label="구성품 상자">
-          <b>구성품 상자</b>
           <div>
             {kit.parts.map((p, i) => (
               <button key={p.id} type="button" data-seen={kit.seen.includes(i) || undefined} aria-label={kit.seen.includes(i) ? p.name : `구성품 ${i + 1}`} onClick={() => kit.onSee(i)}>
@@ -108,10 +115,74 @@ export default function CourseStepPanel({ id, busy, onRun, hand, range, tool, pe
           작업 범위 보기
         </label>
       )}
+      {linear && (
+        <label className={css.switch} data-step="linear">
+          <input type="checkbox" checked={linear.on} disabled={busy || linear.locked} onChange={linear.onToggle} />
+          <i aria-hidden="true" />
+          직선 이동으로 쓰기 <small>{linear.on ? '켜짐 · 곧게' : '꺼짐 · 관절 이동'}</small>
+        </label>
+      )}
+      {vertices && (
+        <div className={css.table} data-step="vertices" role="group" aria-label="꼭짓점 표">
+          <b>꼭짓점 표</b>
+          <div className={css.tableHead} aria-hidden="true">
+            <span>점</span>
+            <span>x (mm)</span>
+            <span>y (mm)</span>
+          </div>
+          {vertices.rows.map((r, i) => (
+            <div key={i} className={css.tableRow}>
+              <span>{i + 1}</span>
+              <input type="number" step={1} value={r.x} disabled={busy} aria-label={`${i + 1}번 점 x`} onChange={(e) => vertices.onChange(vertices.rows.map((q, k) => (k === i ? { ...q, x: e.target.value } : q)))} />
+              <input type="number" step={1} value={r.y} disabled={busy} aria-label={`${i + 1}번 점 y`} onChange={(e) => vertices.onChange(vertices.rows.map((q, k) => (k === i ? { ...q, y: e.target.value } : q)))} />
+            </div>
+          ))}
+          <div className={css.tableKeys}>
+            <button type="button" disabled={busy || vertices.rows.length >= vertices.max} onClick={() => vertices.onChange([...vertices.rows, { x: '', y: '' }])}>
+              + 점 더하기
+            </button>
+            <button type="button" disabled={busy || vertices.rows.length <= 1} onClick={() => vertices.onChange(vertices.rows.slice(0, -1))}>
+              − 마지막 점 빼기
+            </button>
+          </div>
+          <small>마지막 점에서 첫 점으로 돌아가는 선은 앱이 이어요</small>
+        </div>
+      )}
+      {circle && (
+        <div className={css.table} role="group" aria-label="원">
+          <b>원</b>
+          <div className={css.circleRow} data-step="circle">
+            <label>
+              중심 x <input type="number" step={1} value={circle.x} disabled={busy} aria-label="원 중심 x" onChange={(e) => circle.onChange({ x: e.target.value, y: circle.y, r: circle.r })} />
+            </label>
+            <label>
+              y <input type="number" step={1} value={circle.y} disabled={busy} aria-label="원 중심 y" onChange={(e) => circle.onChange({ x: circle.x, y: e.target.value, r: circle.r })} />
+            </label>
+            <label>
+              반지름 <input type="number" step={1} min={1} value={circle.r} disabled={busy} aria-label="원 반지름" onChange={(e) => circle.onChange({ x: circle.x, y: circle.y, r: e.target.value })} />
+            </label>
+          </div>
+          <div className={css.countRow} data-step="count" role="group" aria-label="점 개수">
+            <span>점 개수</span>
+            {circle.counts.map((n) => (
+              <button key={n} type="button" aria-pressed={circle.count === n} disabled={busy} onClick={() => circle.onCount(n)}>
+                {n}개
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       {onRun && (
         <button type="button" className={css.run} data-step="run" disabled={busy} onClick={onRun}>
           ▶ 시뮬레이션
         </button>
+      )}
+      {results && results.length > 0 && (
+        <ul className={css.results} aria-label="잰 값">
+          {results.map((r) => (
+            <li key={r}>{r}</li>
+          ))}
+        </ul>
       )}
       {poses && (
         <div className={css.poses}>

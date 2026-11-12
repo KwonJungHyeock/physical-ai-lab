@@ -82,6 +82,12 @@ export const COURSE_VIEWS: Record<string, CourseView> = {
   '5-3': { dir: from(50, 5), area: { min: [-20, -90, 0], max: [360, 180, 140] }, shot: { eye: [50, -600, 700], target: [250, -40, 100] } },
 };
 
+/**
+ * 4장 (4-2 · 4-3 · 4-4 · 4장 미션), on the 글씨 부스: the mat from above the customer's side, the arm at its
+ * left, the mat clear of the panel on the right (a fixed shot, robot mm: the booth keeps its own framing).
+ */
+export const MAT_VIEW = { eye: [190, -470, 560] as const, target: [255, -5, 70] as const };
+
 /** The home view of a 절 (its own, else its scene kind's; the others fall back to A). */
 export const courseViewOf = (sub: string, scene: string): CourseView => COURSE_VIEWS[sub] ?? COURSE_VIEWS[scene] ?? COURSE_VIEWS.A;
 
