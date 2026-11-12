@@ -747,3 +747,39 @@
 .recPill[data-course] b {
   font-size: 15px;
 }
+/* 입문 과정 5-5: the teacher's check of the card the robot wrote. */
+.cardCheck {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 4px 14px;
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(34, 197, 94, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.5);
+  font-size: 15px;
+}
+.cardCheck b {
+  font-size: 16px;
+}
+.cardCheck span {
+  grid-column: 1;
+}
+.cardCheck button {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 10px;
+  background: #22c55e;
+  color: #052e16;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.cardCheck button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

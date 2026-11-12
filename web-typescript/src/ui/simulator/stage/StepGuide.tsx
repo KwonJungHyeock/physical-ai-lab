@@ -75,7 +75,8 @@ export function PredictCard({ mission, onAnswer, onSkip }: { mission: string; on
  * card's foot (as Duolingo's), a 예측 that it is noted (it is compared after the run); then 이어서 보기.
  * Keys: O · X or 1 – 3 answer, Enter goes on, Esc skips.
  */
-export function MomentAsk({ ask, ox, n, onAnswer, onSkip }: { ask: Ask; ox?: string; n?: { at: number; of: number }; onAnswer(k: number): void; onSkip(): void }) {
+/** `docked`: 입문 과정 — inside the right panel, the scene left uncovered (the line being drawn, the arm). */
+export function MomentAsk({ ask, ox, n, onAnswer, onSkip, docked }: { ask: Ask; ox?: string; n?: { at: number; of: number }; onAnswer(k: number): void; onSkip(): void; docked?: boolean }) {
   const [chosen, setChosen] = useState<number | null>(null);
   const isOx = ask.options.join('') === 'OX';
   const pick = (k: number) => {
@@ -97,8 +98,8 @@ export function MomentAsk({ ask, ox, n, onAnswer, onSkip }: { ask: Ask; ox?: str
   const state = chosen === null ? 'ask' : !ox ? 'noted' : ok ? 'ok' : 'no';
   return (
     <>
-      <div className={css.qScrim} aria-hidden="true" />
-      <div className={css.quiz} role="dialog" aria-modal="true" aria-label={ox ? 'O X 퀴즈' : '예측'}>
+      {!docked && <div className={css.qScrim} aria-hidden="true" />}
+      <div className={docked ? css.quizDock : css.quiz} role="dialog" aria-modal={!docked} aria-label={ox ? 'O X 퀴즈' : '예측'}>
         <div className={css.qCard} data-state={state}>
           <header className={css.qTop}>
             <span className={css.qBadge}>

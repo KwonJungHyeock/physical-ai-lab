@@ -25,9 +25,11 @@ interface Props {
   onNext?: () => void;
   /** A mission done in the scene: start it. */
   onMission?: () => void;
+  /** 5장: the card mission judged from 5-5 (실물, the teacher's check) or 5-4 (시뮬레이션). */
+  onCard?: () => void;
 }
 
-export default function CourseTestPanel({ test, result, onGraded, onNext, onMission }: Props) {
+export default function CourseTestPanel({ test, result, onGraded, onNext, onMission, onCard }: Props) {
   const [chosen, setChosen] = useState<(OX | null)[]>(() => result?.chosen ?? [null, null, null, null, null]);
   const graded = result?.right != null;
   const all = chosen.every((c) => c !== null);
@@ -64,6 +66,22 @@ export default function CourseTestPanel({ test, result, onGraded, onNext, onMiss
               <output>O · X 5문항 중 {result?.right}개 맞혔어요</output>
             </div>
             <p className={css.soon}>미션: {test.mission.text}</p>
+            {test.mission.card && (
+              <div className={css.row} style={{ marginBottom: 18 }}>
+                {result?.mission ? (
+                  <output>
+                    미션 통과 ({result.missionBy === 'real' ? '실물' : '시뮬레이션'}) · 상 · 중 · 하 (임시): {levelOf({ chapter: test.chapter, right: result.right ?? 0, of: 5, mission: true }).level}
+                  </output>
+                ) : (
+                  <>
+                    <output>{result?.mission === false ? `미션 아직 · ${test.mission.failText} · 5-4를 통과하거나 5-5에서 확인을 받아요` : '5-5 실물 확인이나 5-4 통과로 판정해요'}</output>
+                    <button type="button" className={css.key} data-lit onClick={onCard}>
+                      카드 확인
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
             {test.mission.ready && (test.mission.steps || test.mission.pose || test.mission.star) && (
               <div className={css.row} style={{ marginBottom: 18 }}>
                 {result?.mission == null ? (

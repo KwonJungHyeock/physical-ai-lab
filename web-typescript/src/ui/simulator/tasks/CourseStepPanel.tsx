@@ -15,6 +15,14 @@ import { AssetSlot } from '../stage/CourseMarks';
 
 import css from './courseStep.module.css';
 
+/** 4장: one thing a run measured — a number (shown large, one decimal) with what it is, or a check line. */
+export interface Measure {
+  key: string;
+  label: string;
+  value?: number;
+  unit?: string;
+}
+
 interface Props {
   /** The 절 (none: a 수행평가 mission). */
   id?: CourseStepId;
@@ -43,11 +51,15 @@ interface Props {
   vertices?: { rows: readonly { x: string; y: string }[]; max: number; onChange(rows: { x: string; y: string }[]): void };
   /** 4-4: the circle's centre and radius, and how many points. */
   circle?: { x: string; y: string; r: string; count: number; counts: readonly number[]; onChange(c: { x: string; y: string; r: string }): void; onCount(n: number): void };
-  /** 4장: what the last runs measured (one line each). */
-  results?: readonly string[];
+  /** 4장: what the last runs measured. */
+  results?: readonly Measure[];
+  /** 5-4: the 획 그리기 판's key (open · close · 다시 그리기, always in this place) and its strokes' list (✕ one, or all). */
+  board?: { open: boolean; ran: boolean; count: number; onToggle(): void; onRemove(i: number): void; onClear(): void };
+  /** 5-5: the robot (connect), the speed sent with the program (%, over 30 locks [로봇 실행]), the teacher's check. */
+  real?: { connected: boolean; onConnect(): void; speed: number; onSpeed(v: number): void; ran: boolean; checked: boolean; onTeacher(): void };
 }
 
-export default function CourseStepPanel({ id, busy, onRun, hand, range, tool, pen, poses, kit, confirm, times, linear, vertices, circle, results }: Props) {
+export default function CourseStepPanel({ id, busy, onRun, hand, range, tool, pen, poses, kit, confirm, times, linear, vertices, circle, results, board, real }: Props) {
   return (
     <div className={css.panel} role="group" aria-label={id ? `${id} 조작` : '미션 조작'}>
       {kit && (
@@ -65,11 +77,31 @@ export default function CourseStepPanel({ id, busy, onRun, hand, range, tool, pe
       {times && (
         <div className={css.times}>
           <b>이동에 걸린 시간</b>
-          <span>
-            속도 30% · <output>{times.slow != null ? `${times.slow}초` : '—'}</output>
+          <span className={css.measure}>
+            <span>속도 30%</span>
+            <b>
+              {times.slow != null ? (
+                <>
+                  {times.slow.toFixed(1)}
+                  <small>초</small>
+                </>
+              ) : (
+                '—'
+              )}
+            </b>
           </span>
-          <span>
-            속도 100% · <output>{times.fast != null ? `${times.fast}초` : '—'}</output>
+          <span className={css.measure}>
+            <span>속도 100%</span>
+            <b>
+              {times.fast != null ? (
+                <>
+                  {times.fast.toFixed(1)}
+                  <small>초</small>
+                </>
+              ) : (
+                '—'
+              )}
+            </b>
           </span>
         </div>
       )}
@@ -172,6 +204,51 @@ export default function CourseStepPanel({ id, busy, onRun, hand, range, tool, pe
           </div>
         </div>
       )}
+      {board && (
+        <div className={css.table}>
+          <button type="button" className={css.boardKey} data-step="board" data-open={board.open || undefined} disabled={busy} onClick={board.onToggle}>
+            {board.open ? '판 닫기' : board.ran ? '다시 그리기' : '획 그리기 판 열기'}
+          </button>
+          <div className={css.strokes} data-step="strokes" role="group" aria-label="획 목록">
+            {board.count === 0 && <small>아직 그린 획이 없어요</small>}
+            {Array.from({ length: board.count }, (_, i) => (
+              <button key={i} type="button" disabled={busy} onClick={() => board.onRemove(i)} aria-label={`${i + 1}번 획 지우기`}>
+                {i + 1} <span aria-hidden="true">✕</span>
+              </button>
+            ))}
+          </div>
+          <button type="button" className={css.clearAll} disabled={busy || board.count === 0} onClick={board.onClear}>
+            모두 지우기
+          </button>
+        </div>
+      )}
+      {real && (
+        <div className={css.table}>
+          <div className={css.realRow}>
+            <span>
+              로봇 <b>{real.connected ? '연결됨' : '연결 안 됨'}</b>
+            </span>
+            <button type="button" data-step="connect" disabled={busy} onClick={real.onConnect}>
+              연결 창 열기
+            </button>
+          </div>
+          <label className={css.realSpeed}>
+            <span>
+              실물 속도 <b>{real.speed}%</b>
+              {real.speed > 30 && <em>30% 이하로 내려야 보낼 수 있어요</em>}
+            </span>
+            <input type="range" min={10} max={100} step={5} value={real.speed} disabled={busy} aria-label="실물 속도" onChange={(e) => real.onSpeed(Number(e.target.value))} />
+          </label>
+          <div className={css.realRow}>
+            <span>
+              선생님 확인 <b>{real.checked ? '받았어요' : real.ran ? '받기 전' : '실물 실행 뒤'}</b>
+            </span>
+            <button type="button" data-step="teacher" disabled={busy || !real.ran || real.checked} onClick={real.onTeacher}>
+              선생님 확인
+            </button>
+          </div>
+        </div>
+      )}
       {onRun && (
         <button type="button" className={css.run} data-step="run" disabled={busy} onClick={onRun}>
           ▶ 시뮬레이션
@@ -179,9 +256,19 @@ export default function CourseStepPanel({ id, busy, onRun, hand, range, tool, pe
       )}
       {results && results.length > 0 && (
         <ul className={css.results} aria-label="잰 값">
-          {results.map((r) => (
-            <li key={r}>{r}</li>
-          ))}
+          {results.map((r) =>
+            r.value == null ? (
+              <li key={r.key}>{r.label}</li>
+            ) : (
+              <li key={r.key} className={css.measure}>
+                <span>{r.label}</span>
+                <b>
+                  {r.value.toFixed(1)}
+                  <small>{r.unit}</small>
+                </b>
+              </li>
+            ),
+          )}
         </ul>
       )}
       {poses && (

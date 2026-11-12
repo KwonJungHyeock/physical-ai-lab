@@ -167,9 +167,14 @@ export default function CourseMarks({ marks, joints, flange, tcpMm }: { marks: C
       {marks.lines?.map((l, i) => (l.pts.length > 1 ? <Line key={`l${i}`} points={l.pts.map(([x, y]) => [m(x), m(y), m(0.3)] as [number, number, number])} color={l.color} lineWidth={3.5} /> : null))}
       {marks.spots?.map((p, i) => (
         <group key={`s${i}`} position={[m(p.at[0]), m(p.at[1]), m(0.4)]}>
+          {/* White with a dark ring: apart from the orange 'press here' badges (orange is only for those). */}
           <mesh>
-            <circleGeometry args={[m(2.6), 24]} />
-            <meshBasicMaterial color="#f5a524" />
+            <circleGeometry args={[m(3), 24]} />
+            <meshBasicMaterial color="#14171c" />
+          </mesh>
+          <mesh position={[0, 0, m(0.05)]}>
+            <circleGeometry args={[m(2.2), 24]} />
+            <meshBasicMaterial color="#ffffff" />
           </mesh>
           {p.tag && (
             <Html center zIndexRange={[18, 0]} style={{ pointerEvents: 'none' }}>

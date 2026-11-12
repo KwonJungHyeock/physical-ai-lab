@@ -349,9 +349,8 @@
   flex-basis: 100%;
   font-size: 16px;
 }
-.times output {
-  font-size: 20px;
-  font-weight: 800;
+.times > .measure {
+  flex: 1 1 140px;
 }
 /* 3장 미션: [확인]. */
 .confirm {
@@ -467,4 +466,110 @@
   color: #f6f7f9;
   font-size: 16px;
   font-weight: 600;
+}
+/* A measured number: large (≥ 22 px), its label ≥ 15 px. */
+.measure {
+  display: grid;
+  gap: 2px;
+}
+.measure > span {
+  font-size: 15px;
+  font-weight: 600;
+  color: #c9ced5;
+}
+.measure > b {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.15;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+.measure > b small {
+  margin-left: 4px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #c9ced5;
+}
+/* 5-4: the board's key, its strokes (✕ each), 모두 지우기. */
+.boardKey,
+.clearAll,
+.realRow button {
+  height: 48px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #f6f7f9;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.boardKey[data-open] {
+  background: #f6f7f9;
+  color: #14171c;
+}
+.clearAll {
+  height: 40px;
+  font-size: 15px;
+}
+.boardKey:disabled,
+.clearAll:disabled,
+.realRow button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.strokes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 40px;
+  align-items: center;
+}
+.strokes small {
+  font-size: 15px;
+  color: #c9ced5;
+}
+.strokes button {
+  height: 38px;
+  min-width: 52px;
+  padding: 0 10px;
+  border: 1.5px solid rgba(255, 255, 255, 0.55);
+  border-radius: 4px;
+  background: #fff;
+  color: #14171c;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.strokes button span {
+  margin-left: 4px;
+  color: #b91c1c;
+}
+/* 5-5: the robot, the speed sent, the teacher's check. */
+.realRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 16px;
+}
+.realRow button {
+  height: 44px;
+  padding: 0 14px;
+  font-size: 16px;
+}
+.realSpeed {
+  display: grid;
+  gap: 6px;
+  font-size: 16px;
+}
+.realSpeed em {
+  display: block;
+  font-style: normal;
+  font-size: 15px;
+  color: #fca5a5;
+}
+.realSpeed input {
+  width: 100%;
 }

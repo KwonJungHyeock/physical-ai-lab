@@ -153,15 +153,18 @@ import { COURSE, kindsOf, modeFor, subById, subOfRun, topicMark, MODE_NAME, type
 import { DEFAULT_PLAN, countedIn, lessonIn, lessonStepsIn, missionSubsIn, nextIn, testReady, type CoursePlan } from '@/engine/simulator/cell/courses';
 import { levelOf as courseLevelOf, mayOpen, noticeDue, noticeRead, readPlan, report } from '@/engine/simulator/cell/platform';
 import { COURSE_LOOK, MAT_VIEW, courseViewOf } from '@/engine/simulator/cell/courseStage';
-import { CARD_HOME } from '@/engine/simulator/cell/draw';
-import { CIRCLE_COUNTS, LINE_A, LINE_B, SQUARE, TOL, TRIANGLE, circlePoints, circleReport, circleRight, isStarOrder, lineReport, pathCode, rowsToPoints, sameShape, shapeReport, type Pt } from '@/engine/simulator/cell/courseDraw';
+import { CARD_HOME, G3_CARD } from '@/engine/simulator/cell/draw';
+import type { DrawRecipe } from '@/engine/simulator/cell/drawRecipe';
+import { CIRCLE_COUNTS, LINE_A, LINE_B, SQUARE, TOL, TRIANGLE, cardCode, circlePoints, circleReport, circleRight, isStarOrder, lineReport, myCardReport, onCard, pathCode, rowsToPoints, sameShape, shapeReport, type Pt } from '@/engine/simulator/cell/courseDraw';
 import { AIM, DESK_PLACES, DOT_ABOVE_MM, DOT_AT, DOT_NEAR_MM, FAST_PCT, KIT_PARTS, LIMIT_POSE, PEN_START_MM, POSE_TOL_DEG, PRACTICE_POSE, PREP_POSE, SLOW_PCT, TURN_DEG } from '@/engine/simulator/cell/courseSteps';
+import { G2_COURSE, MY_CARD_KEY, REAL_MAX_PCT } from '@/engine/simulator/cell/courseSteps';
 import { ARM_PARTS, PICK_VIEW, COURSE_STEPS, FOUND_SWING_DEG, HAND_SCENE, HAND_SLOW_S, STEPS_KEY, SWING, isCourseStep, type CourseStepId } from '@/engine/simulator/cell/courseSteps';
 import { CHAPTER_TESTS, MISSION_TRIES, TESTS_KEY, inOrder, loadTests, missionWay, type MissionStep, type OX, type TestResult } from '@/engine/simulator/cell/courseTests';
 import { COPYRIGHT_NOTICE, COPYRIGHT_RECORD_LINE } from '@/engine/simulator/copyright';
 import LocationBar, { type LocLesson } from './stage/LocationBar';
 import NowBar, { NowMark, QuestNow, TutNow } from './stage/NowBar';
-import CourseStepPanel from './tasks/CourseStepPanel';
+import CourseStepPanel, { type Measure } from './tasks/CourseStepPanel';
+import StrokeBoard from './tasks/StrokeBoard';
 import CourseTestPanel from './tasks/CourseTestPanel';
 import QuestNumbers from './stage/QuestNumbers';
 import { RECORD_KEY, TEACHER_KEY, answered as recAnswered, emptyRecord, loadRecord, loadTeacher, opened as recOpened, passed as recPassed, questOpen, teacherFromQuery, tried as recTried, type LessonRecord, type TeacherSet } from '@/engine/simulator/cell/lessonRecord';
@@ -347,16 +350,29 @@ interface Draw4 {
   count: number;
   /** Lines kept from the runs before, each in its colour. */
   lines: { pts: Pt[]; color: string }[];
-  /** What each run measured, as the panel says it. */
-  results: string[];
+  /** What each run measured, as the panel says it (a number shown large, or a check line). */
+  results: Measure[];
   /** 4-2: the joint move ran to its end; 4-4: the counts run to their end. */
   jointDone: boolean;
   counts: number[];
 }
 const DRAW4_START: Draw4 = { linear: false, rows: [], circle: { x: '', y: '', r: '' }, count: CIRCLE_COUNTS[0], lines: [], results: [], jointDone: false, counts: [] };
-/** 4장: 관절 이동 (and 점 8개) orange, 직선 이동 (and 점 24개) blue. */
-const LINE_COLOR = { joint: '#f97316', straight: '#2563eb' } as const;
+/** 4장: two lines compared — the first drawn white, the later blue; a shape drawn once blue (orange is only for what to press). */
+const LINE_COLOR = { first: '#f4f6f8', later: '#2563eb' } as const;
 const emptyRows = (n: number) => Array.from({ length: n }, () => ({ x: '', y: '' }));
+
+/** 입문 5-4 · 5-5: my card — strokes (card mm), the board, written; 5-4 passed; 5-5 the speed sent, the real run, the teacher's check. */
+interface MyCard {
+  strokes: Pt[][];
+  open: boolean;
+  ran: boolean;
+  passed: boolean;
+  results: Measure[];
+  speed: number;
+  ran55: boolean;
+  checked: boolean;
+}
+const MY_CARD_START: MyCard = { strokes: [], open: false, ran: false, passed: false, results: [], speed: 50, ran55: false, checked: false };
 
 export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   /** The 트랙 this page sells (engine/simulator/tracks.ts); none = the full package. */
@@ -770,6 +786,38 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   // 입문 과정 4장 (4-2 · 4-3 · 4-4 and the 4장 미션): what is set on the panel and what the runs drew (courseDraw.ts).
   const [draw4, setDraw4] = useState<Draw4>(DRAW4_START);
   const draw4Ref = useRef(draw4);
+  // 입문 5-4 · 5-5 · 5장 미션: my card — its strokes (card mm), the board open, written yet; 5-4 passed; 5-5's real run and the teacher's check (this browser).
+  const [myCard, setMyCard] = useState<MyCard>(MY_CARD_START);
+  const myCardRef = useRef(myCard);
+  useEffect(() => {
+    myCardRef.current = myCard;
+  }, [myCard]);
+  const patchCard = (p: Partial<MyCard>) =>
+    setMyCard((c) => {
+      const n = { ...c, ...p };
+      try {
+        localStorage.setItem(MY_CARD_KEY, JSON.stringify({ strokes: n.strokes, passed: n.passed, ran: n.ran55, checked: n.checked }));
+      } catch {
+        /* this session only */
+      }
+      return n;
+    });
+  useEffect(() => {
+    try {
+      const o = JSON.parse(localStorage.getItem(MY_CARD_KEY) ?? 'null') as { strokes?: Pt[][]; passed?: boolean; ran?: boolean; checked?: boolean } | null;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- read once from this browser
+      if (o) setMyCard((c) => ({ ...c, strokes: Array.isArray(o.strokes) ? o.strokes : [], passed: !!o.passed, ran55: !!o.ran, checked: !!o.checked }));
+    } catch {
+      /* none kept */
+    }
+  }, []);
+  // 입문 5-2 (가이드라인 v1): its steps read from the 보정 card — x · y at the card's corner, then the pen at 0, then ▶.
+  const [g2At, setG2At] = useState(0);
+  const onDrawRecipe = useCallback((r: DrawRecipe) => {
+    const c = r.cards.find((k) => k.k === 'setup');
+    if (!c || c.k !== 'setup') return;
+    setG2At(c.x !== G3_CARD.x || c.y !== G3_CARD.y ? 0 : c.z !== 0 ? 1 : 2);
+  }, []);
   // 입문 4-1: the 조작판 drawn afresh (its frame back to [관절]).
   const [jogKey, setJogKey] = useState(0);
   useEffect(() => {
@@ -865,7 +913,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const sceneView = course && subMode === 'scene' && !!cellAt?.mission;
   // (입문 과정 절: the panel stays while the run goes — 1-1's hand keys are pressed during it.)
   // (1-2 · 2-1: pressed in the scene itself, no 조작판.)
-  const dockShown = dockOpen && (!runFold || !!courseStep || !!missionRun) && !sceneView && courseStep?.id !== '1-2';
+  // (입문 과정: open while a question waits in it.)
+  const dockShown = dockOpen && (!runFold || !!courseStep || !!missionRun || (course && !!moment)) && !sceneView && courseStep?.id !== '1-2';
   useEffect(() => {
     try {
       const v = JSON.parse(localStorage.getItem(CELL_PASSED_KEY) ?? '{}') as Record<string, boolean>;
@@ -4262,7 +4311,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
           : { spots: built.marks, path: built.path, legs: planLegs, ghost: jointTry?.key === planKey ? jointTry.trail : undefined }
       : null;
   // (4장 on the mat too: its own view of the mat stays while it draws.)
-  const wholeBooth = courseStep?.id === '1-1' || (!!courseStep && ['4-2', '4-3', '4-4'].includes(courseStep.id)) || missionRun?.chapter === 4;
+  const wholeBooth = courseStep?.id === '1-1' || (!!courseStep && ['4-2', '4-3', '4-4', '5-4', '5-5'].includes(courseStep.id)) || missionRun?.chapter === 4;
   // 입문: while a step runs, the view goes to the station the tool works at (from its side, the cup in
   // view), unless the user has moved the view; back to the whole place when the run is over.
   const lifeCell = track && (cellAt?.cell === 'cafe' || cellAt?.cell === 'draw' || cellAt?.cell === 'board') ? cellAt.cell : null;
@@ -4462,6 +4511,13 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       // 2-4 with the card at its usual corner (150, −40), no tool yet and the pen 5 mm up.
       openCell('draw', 'G1');
       if (id === '2-4') toolOff();
+      return;
+    }
+    if (id === '5-4' || id === '5-5') {
+      // 5-1's booth (보정 x 150 · y −40 · 펜 0, straight moves, the pen lifted between strokes, one customer); 5-4: the board shut,
+      // the strokes kept from before; 5-5: 5-4's program (else 5-1's '사랑해'), sent at the speed set (50 % to start).
+      openCell('draw', 'G1');
+      setMyCard((c) => ({ ...c, open: false, ran: false, results: [], speed: 50 }));
       return;
     }
     if (id === '4-2' || id === '4-3' || id === '4-4') {
@@ -4702,18 +4758,21 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     if (errors.length) return addLog('err', `${errors[0].line}번째 줄: ${errors[0].msg}`);
     world.current.trail = [];
     if (st && !m) patchStep({ note: null });
-    // 4-2 ②: once the joint move is drawing, the scene holds for the question (answered: it goes on).
+    // 4-2 ②: the moment the pen touches A for the joint move, the scene holds for the question (answered: it goes on).
+    // Checked every frame: at ×4 the whole move to B takes about a tenth of a second.
     let watch = 0;
-    if (id === '4-2' && !linear && !show && !asked42.current)
-      watch = window.setInterval(() => {
-        if (heldRef.current || world.current.trail.reduce((n, s) => n + s.length, 0) < 25) return;
-        window.clearInterval(watch);
+    const look = () => {
+      if (world.current.trail.some((st) => st.length > 0)) {
         asked42.current = true;
         heldRef.current = true;
         setMoment({ key: 'course-4-2', ask: { q: '두 점 사이를 관절 이동으로 가고 있어요. 선은?', options: ['곧은 선', '휜 선'], answer: 1, why: '관절 이동은 관절이 한꺼번에 돌아서 펜 끝이 휘어 가요.' }, ox: false });
-      }, 60);
+        return;
+      }
+      watch = requestAnimationFrame(look);
+    };
+    if (id === '4-2' && !linear && !show && !asked42.current) watch = requestAnimationFrame(look);
     const { ok } = await runSteps(steps, { reset: false, quiet: true });
-    window.clearInterval(watch);
+    cancelAnimationFrame(watch);
     const ink: Pt[][] = world.current.trail.filter((s) => s.length > 1).map((s) => s.map(([x, y]) => [x, y] as Pt));
     const scene = !!show;
     const now = courseStepRef.current;
@@ -4725,15 +4784,15 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     if (id === '4-2') {
       const r = lineReport(ink);
       if (!ok || !r.drawn) return say('끝까지 가지 못했어요 · 다시 눌러요');
-      keep(linear ? LINE_COLOR.straight : LINE_COLOR.joint);
-      const line = `${linear ? '직선 이동' : '관절 이동'}: 두 점을 이은 선에서 가장 먼 곳 ${r.maxDev} mm`;
-      setDraw4((x) => ({ ...x, jointDone: x.jointDone || !linear, results: [...x.results.filter((t) => !t.startsWith(linear ? '직선' : '관절')), line] }));
+      keep(linear ? LINE_COLOR.later : LINE_COLOR.first);
+      const line: Measure = { key: linear ? 'straight' : 'joint', label: `${linear ? '직선 이동' : '관절 이동'} · 두 점을 이은 선에서 가장 먼 곳`, value: r.maxDev, unit: 'mm' };
+      setDraw4((x) => ({ ...x, jointDone: x.jointDone || !linear, results: [...x.results.filter((t) => t.key !== line.key), line].sort((a, b) => (a.key === 'joint' ? -1 : b.key === 'joint' ? 1 : 0)) }));
       if (scene || !now || now.id !== '4-2') return;
       if (!linear && now.step === 1) return patchStep({ step: 2, note: null });
       if (linear && now.step === 3) {
         if (!draw4Ref.current.jointDone) return say('먼저 관절 이동으로 한 번 가요');
         if (!display.path) return say("표시 옵션의 '도구 궤적'을 켜 둬요");
-        if (r.maxDev > TOL.line || !r.ends) return say(`선이 두 점을 이은 선에서 ${r.maxDev} mm 벗어났어요`);
+        if (r.maxDev > TOL.line || !r.ends) return say(`선이 두 점을 이은 선에서 ${r.maxDev.toFixed(1)} mm 벗어났어요`);
         patchStep({ step: 4, note: null });
         markStepDone('4-2');
       }
@@ -4742,16 +4801,16 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     if (id === '4-4' && circle) {
       const r = circleReport(ink, circle);
       if (!ok || !r.drawn) return say('끝까지 가지 못했어요 · 다시 눌러요');
-      keep(d.count === CIRCLE_COUNTS[0] ? LINE_COLOR.joint : LINE_COLOR.straight);
-      const line = `점 ${d.count}개: 원과 가장 많이 벗어난 거리 ${r.maxDev} mm`;
-      setDraw4((x) => ({ ...x, counts: r.closed && !x.counts.includes(d.count) ? [...x.counts, d.count] : x.counts, results: [...x.results.filter((t) => !t.startsWith(`점 ${d.count}개`)), line] }));
+      keep(d.count === CIRCLE_COUNTS[0] ? LINE_COLOR.first : LINE_COLOR.later);
+      const line: Measure = { key: String(d.count), label: `점 ${d.count}개 · 원과 가장 많이 벗어난 거리`, value: r.maxDev, unit: 'mm' };
+      setDraw4((x) => ({ ...x, counts: r.closed && !x.counts.includes(d.count) ? [...x.counts, d.count] : x.counts, results: [...x.results.filter((t) => t.key !== line.key), line].sort((a, b) => Number(a.key) - Number(b.key)) }));
       if (!now || now.id !== '4-4') return;
       if (now.step === 1) return d.count === CIRCLE_COUNTS[0] ? patchStep({ step: 2, note: null }) : say(`점 개수를 ${CIRCLE_COUNTS[0]}로 두고 다시 눌러요`);
       if (now.step === 3) {
         if (d.count !== CIRCLE_COUNTS[1]) return say(`점 개수를 ${CIRCLE_COUNTS[1]}로 바꿔요`);
         if (!circleRight(circle)) return say('중심이나 반지름이 달라요 · 중심 x 200 · y −10, 반지름 30');
         if (!r.closed) return say('원이 닫히지 않았어요');
-        if (r.maxDev > TOL.circle24) return say(`원과 ${r.maxDev} mm 벗어났어요 (${TOL.circle24} mm 안이어야 해요)`);
+        if (r.maxDev > TOL.circle24) return say(`원과 ${r.maxDev.toFixed(1)} mm 벗어났어요 (${TOL.circle24} mm 안이어야 해요)`);
         patchStep({ step: 4, note: null });
         markStepDone('4-4');
       }
@@ -4759,12 +4818,12 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     }
     // 4-3 and the 4장 미션: the ink against the corners as joined (kept as a blue line: plain ink hardly shows on the green mat).
     const r = shapeReport(ink, pts);
-    if (ok && ink.length) keep(LINE_COLOR.straight);
+    if (ok && ink.length) keep(LINE_COLOR.later);
     if (m) {
       endMission(ok && r.ok && isStarOrder(pts));
       return;
     }
-    const lines = r.items.map((i) => `${i.ok ? '✓' : '✗'} ${i.label}${i.detail ? ` · ${i.detail}` : ''}`);
+    const lines: Measure[] = r.items.map((i, k) => ({ key: String(k), label: `${i.ok ? '✓' : '✗'} ${i.label}${i.detail ? ` · ${i.detail}` : ''}` }));
     setDraw4((x) => ({ ...x, results: lines }));
     if (scene || !now || now.id !== '4-3') return;
     if (!ok) return say('끝까지 가지 못했어요 · 다시 눌러요');
@@ -4818,6 +4877,86 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     if (next) patchStep({ step: st.step + 1, note: null });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- the settings and the step only
   }, [step4, draw4, display.path]);
+  /** 5-4 ▶: the board shut, my strokes written on the card, then 5-3's reading of the ink. */
+  const run54 = async () => {
+    const st = courseStepRef.current;
+    if (st?.id !== '5-4' || busyRef.current || !loaded) return;
+    const c = myCardRef.current;
+    if (c.strokes.length < 2) return patchStep({ note: '획을 2개 넘게 그려요' });
+    setMyCard((x) => ({ ...x, open: false }));
+    const { steps, errors } = problemsFor(cardCode(c.strokes));
+    if (errors.length) return addLog('err', `${errors[0].line}번째 줄: ${errors[0].msg}`);
+    world.current.trail = [];
+    patchStep({ step: 2, note: null });
+    const { ok } = await runSteps(steps, { reset: false, quiet: true });
+    const ink: Pt[][] = world.current.trail.filter((x) => x.length > 1).map((x) => x.map(([a, b]) => [a, b] as Pt));
+    const r = myCardReport(ink, c.strokes);
+    const items = [...r.items, { label: '충돌 · 고장 · 파손 없이', ok, detail: undefined }];
+    const passed = ok && r.ok;
+    patchCard({ ran: true, passed: c.passed || passed, results: items.map((i, k) => ({ key: String(k), label: `${i.ok ? '✓' : '✗'} ${i.label}${i.detail ? ` · ${i.detail}` : ''}` })) });
+    if (courseStepRef.current?.id !== '5-4') return;
+    if (passed) {
+      patchStep({ step: 3, note: null });
+      markStepDone('5-4');
+    } else patchStep({ note: `아직이에요 · ${items.find((i) => !i.ok)?.label ?? ''} · 다시 그리기로 고쳐요` });
+  };
+  /** 5-5's program: 5-4's card (else 5-1's '사랑해'), the speed set first. */
+  const program55 = (speed: number) => {
+    const c = myCardRef.current;
+    if (c.strokes.length >= 2 && c.passed) return cardCode(c.strokes, { speed });
+    const sol = missionById('G1')?.solution ?? '';
+    return sol.replace(/\n\n/, `\n\nrobot.set_speed(${Math.round(speed)})\n`);
+  };
+  /** 5장 미션 [카드 확인]: 5-5 checked by the teacher (실물), else 5-4 passed (시뮬레이션). */
+  const checkCard = () => {
+    const c = myCardRef.current;
+    const by: 'real' | 'sim' | null = c.checked ? 'real' : c.passed || stepsDone['5-4'] ? 'sim' : null;
+    setTestResults((r) => {
+      const prev = r['5'];
+      if (!prev) return r;
+      const n = { ...r, '5': { ...prev, mission: !!by, missionBy: by ?? undefined, missionTries: 1, at: Date.now() } };
+      try {
+        localStorage.setItem(TESTS_KEY, JSON.stringify(n));
+      } catch {
+        /* this session only */
+      }
+      return n;
+    });
+    const sub = COURSE.find((x) => x.n === 5)?.test;
+    if (sub) report({ sub, mode: 'practice', what: by ? 'passed' : 'failed', at: Date.now() });
+  };
+  // 5-4: ① two strokes or more drawn → ② (the numbers checked with the board open) → ③ once the board is shut.
+  const step54 = courseStep?.id === '5-4' ? courseStep.step : -1;
+  useEffect(() => {
+    if (step54 < 0) return;
+    if (step54 === 0 && myCard.strokes.length >= 2) patchStep({ step: 1, note: null });
+    else if (step54 === 1 && !myCard.open && myCard.strokes.length >= 2) patchStep({ step: 2, note: null });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the strokes, the board and the step only
+  }, [step54, myCard.strokes.length, myCard.open]);
+  // 5-5: the program to simulate and send (its speed line follows the slider); ① connected → ② 30 % or less → ③ the real run over → ④ the teacher's check.
+  const step55 = courseStep?.id === '5-5' ? courseStep.step : -1;
+  useEffect(() => {
+    if (step55 < 0 || !cellAt) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the program follows the speed set
+    setCode(program55(myCard.speed));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the speed and the 절 only
+  }, [step55 >= 0, myCard.speed, cellAt]);
+  const connected = robotMode && !!robot?.connected;
+  useEffect(() => {
+    if (step55 < 0 || step55 > 3) return;
+    const next = (step55 === 0 && connected) || (step55 === 1 && myCard.speed <= REAL_MAX_PCT) || (step55 === 2 && myCard.ran55) || (step55 === 3 && myCard.checked);
+    if (!next) return;
+    patchStep({ step: step55 + 1, note: null });
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the last step done
+    if (step55 === 3) markStepDone('5-5');
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the robot, the speed, the run and the check only
+  }, [step55, connected, myCard.speed, myCard.ran55, myCard.checked]);
+  // A real run of 5-5's program over: kept (the 5장 미션's 실물 side waits for the teacher).
+  const realWas = useRef(false);
+  useEffect(() => {
+    if (realWas.current && !realRun && courseStepRef.current?.id === '5-5') patchCard({ ran55: true });
+    realWas.current = realRun;
+  }, [realRun]);
   /** 4-2 ③: the 직선 이동 switch (locked until the joint move has been seen). */
   const toggleLinear = () => {
     const st = courseStepRef.current;
@@ -5076,6 +5215,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   // 입문 과정: the booth is '로봇 글씨 쓰기' on screen (피드백 v2; the full console keeps its name).
   const cellName = (c: CellId) => (course && c === 'draw' ? '로봇 글씨 쓰기' : CELL_BY_ID[c].name);
   const nextStep = course ? null : track && cellAt && lifeStep && lifeQuest ? (() => { const nx = missionsOf(cellAt.cell)[lifeStep.n]; return nx ? { cell: cellAt.cell, id: nx.id } : null; })() : null;
+  // 입문 5-5: a program is not sent to the robot faster than 30 %.
+  const speedLocked = course && courseStep?.id === '5-5' && myCard.speed > REAL_MAX_PCT;
   const runBar = (
     <RunBar
       passed={gateOpen}
@@ -5084,8 +5225,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       busy={busy}
       ready={!!loaded && quickProg === null}
       realProgress={realRun && robot && robot.step >= 0 ? `${robot.step + 1}/${robot.total}` : null}
-      realDisabled={!gateOpen || (robotMode && !robot?.connected)}
-      realBlocked={robotMode && !robot?.connected ? '로봇 연결 필요' : !gateOpen ? '시뮬레이션 통과 후' : null}
+      realDisabled={!gateOpen || (robotMode && !robot?.connected) || speedLocked}
+      realBlocked={speedLocked ? `속도 ${REAL_MAX_PCT}% 이하로` : robotMode && !robot?.connected ? '로봇 연결 필요' : !gateOpen ? '시뮬레이션 통과 후' : null}
       onSim={track ? simulateLife : simulate}
       simRate={simRate}
       onSimRate={chooseSimRate}
@@ -5131,6 +5272,26 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       />
     ) : null;
 
+  // 잠깐 예측 · 퀴즈 (the scene held): over the scene; 입문 과정: in the right panel, the scene left in sight.
+  const askCard = (docked: boolean) =>
+    moment ? (
+      <MomentAsk
+        key={moment.key}
+        docked={docked}
+        ask={moment.ask}
+        ox={moment.ox ? 'O · X 퀴즈' : undefined}
+        n={lifeStep ? { at: asksOf(lifeStep.id).findIndex((a) => a.key === moment.key) + 1, of: asksOf(lifeStep.id).length } : undefined}
+        onAnswer={(k) => {
+          savePrediction(moment.key, k);
+          setPreds((p) => ({ ...p, [moment.key]: k }));
+          letGo();
+        }}
+        onSkip={() => {
+          setSkipped((x) => ({ ...x, [moment.key]: true }));
+          letGo();
+        }}
+      />
+    ) : null;
   const controlPanel = (
     <ControlPanel
       key={jogKey}
@@ -5696,7 +5857,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                             const r = testResults[String(st.chapter.n)];
                             const t = CHAPTER_TESTS[st.chapter.n];
                             const way = missionWay(r);
-                            const what = r?.right != null ? ` · O · X ${r.right}/5${t && !t.mission.ready ? ' · 미션 준비 중' : way ? ` · 미션 ${way}` : ''}` : '';
+                            const what = r?.right != null ? ` · O · X ${r.right}/5${t && !t.mission.ready ? ' · 미션 준비 중' : way ? ` · 미션 ${way}${r?.missionBy ? ` (${r.missionBy === 'real' ? '실물' : '시뮬레이션'})` : ''}` : ''}` : '';
                             return { id: `${st.chapter.n}장`, title: `수행평가${what}`, done: subDone(st.sub), soon: !testReady(st.sub), pending: !testReady(st.sub) };
                           })()
                         : { id: st.sub.id, title: st.sub.title, done: subDone(st.sub), soon: !st.sub.run, optional: !!st.sub.optional },
@@ -5713,6 +5874,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       )}
       {track && lessonUi === 'teacher' && (
         <TeacherKey
+          cardCheck={course && courseStep?.id === '5-5' && myCard.ran55 ? { checked: myCard.checked, onConfirm: () => patchCard({ checked: true }) } : undefined}
           courseLink={course ? `/track/life${subNow ? `?sub=${subNow.id}&mode=${subMode}` : ''}` : undefined}
           teacher={teacherSet}
           onTeacher={changeTeacher}
@@ -6039,7 +6201,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
               />
             )}
             {/* On the simulator the link sits in the 3D view's top-left corner (StageTitle), unless a cell or a window holds that corner. 입문 퀘스트: not shown (simulation only). */}
-            {!stageTitle && !questOn && !course && (
+            {((!stageTitle && !questOn && !course) || (course && courseStep?.id === '5-5')) && (
             <button
               type="button"
               className={css.connPill}
@@ -6165,6 +6327,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
             result={testResults[String(courseTest)]}
             onGraded={(chosen, right) => gradeTest(courseTest, chosen, right)}
             onMission={() => startMission(courseTest)}
+            onCard={checkCard}
             onNext={subNext ? () => goNext(subNext) : undefined}
           />
         )}
@@ -6223,7 +6386,17 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
               const at = Math.min(courseStep.step, lines.length - 1);
               const line = lines[at];
               // 3-5 ③ · ④: two keys in one step — the speed, then 기본 자세; the saved pose, then 정지 while it moves.
-              const sel = courseStep.id === '3-5' && at === 2 && jogSpeed >= FAST_PCT ? '[data-step="pose-home"]' : courseStep.id === '3-5' && at === 3 && busy ? '[data-step="stop"]' : line.sel;
+              // 5-4 ①: the board when it is open; 5-5 ③: ▶ 시뮬레이션 first, then [로봇 실행].
+              const sel =
+                courseStep.id === '3-5' && at === 2 && jogSpeed >= FAST_PCT
+                  ? '[data-step="pose-home"]'
+                  : courseStep.id === '3-5' && at === 3 && busy
+                    ? '[data-step="stop"]'
+                    : courseStep.id === '5-4' && at === 0 && myCard.open
+                      ? '[data-board]'
+                      : courseStep.id === '5-5' && at === 2 && !gateOpen
+                        ? 'button[aria-label="시뮬레이션"]'
+                        : line.sel;
               return (
                 <>
                   <NowBar n={at + 1} text={courseStep.note ?? line.text} state={courseStep.note ? 'no' : 'do'} next={nx} meter={courseStep.id === '1-2' ? { v: courseStep.found.length, of: ARM_PARTS.length, unit: '곳' } : undefined} />
@@ -6236,8 +6409,9 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
           ) : lifeStep && questPhase ? (
             <QuestNow
               key={lifeStep.id}
-              steps={questSteps(lifeStep.id)}
-              sels={leadSels}
+              steps={course && lifeStep.id === 'G2' ? G2_COURSE.map((x) => x.text) : questSteps(lifeStep.id)}
+              sels={course && lifeStep.id === 'G2' ? G2_COURSE.map((x) => x.sel) : leadSels}
+              at={course && lifeStep.id === 'G2' ? g2At : undefined}
               phase={moment || lessonUi ? 'run' : questPhase}
               passed={cellResult}
               next={subNext ? { onClick: () => goNext(subNext), lit: !!lifeQuest && !!lessonRec.quests[lifeQuest]?.passed } : undefined}
@@ -6288,7 +6462,10 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   cell={cellAt?.cell ?? null}
                   simRate={runRate}
                   courseMarks={
-                    draw4On
+                    courseStep?.id === '5-4'
+                      ? // The strokes on the card before they are written (the board shut): in the card or not, seen before ▶.
+                        { lines: !myCard.open && !myCard.ran && !busy ? myCard.strokes.map((st) => ({ pts: st.map(onCard), color: '#5b6470' })) : [] }
+                      : draw4On
                       ? draw4Marks
                       : courseStep?.id === '1-2'
                       ? { pick: { names: ARM_PARTS, found: courseStep.found, flash: courseStep.flash, onPick: pickPart } }
@@ -6310,7 +6487,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   courseHide={courseStep?.id === '2-1' ? { arm: courseStep.placed < 1, mat: courseStep.placed < 2, card: courseStep.placed < 3, lamp: true } : draw4On ? { arm: false, mat: false, card: true, lamp: true } : null}
                   cellClock={cellClock}
                   // (2장's 절 and its mission: no 관찰 bubbles — only the 위치 줄, 지금 할 일 and the place to press.)
-                  cellCallouts={!!track && !missionRun && !(courseStep && (courseStep.id.startsWith('2-') || courseStep.id.startsWith('4-')))}
+                  cellCallouts={!!track && !missionRun && !(courseStep && (courseStep.id.startsWith('2-') || courseStep.id.startsWith('4-') || courseStep.id === '5-4' || courseStep.id === '5-5'))}
                   goalRing={(() => {
                     // 입문 맛보기: the ring the tool tip goes into now.
                     const at = lifeTut && !cellAt ? lifeTutorialById(lifeTut.id)?.steps[lifeTut.step]?.ring : undefined;
@@ -6403,23 +6580,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
               )}
               {loaded && view === 'sim' && ringSpot && !busy && !lessonUi && <LeadSpot step={ringSpot} read={() => tutCtxRef.current()} once />}
               {loaded && pastIntro && splashDone && view === 'sim' && !course && questLead && questOn && questPhase === 'do' && !moment && !roadmapOpen && !touring && !lessonUi && <LeadSpot key={lifeStep?.id} step={questLead} read={() => tutCtxRef.current()} once />}
-              {loaded && view === 'sim' && moment && (
-                <MomentAsk
-                  key={moment.key}
-                  ask={moment.ask}
-                  ox={moment.ox ? 'O · X 퀴즈' : undefined}
-                  n={lifeStep ? { at: asksOf(lifeStep.id).findIndex((a) => a.key === moment.key) + 1, of: asksOf(lifeStep.id).length } : undefined}
-                  onAnswer={(k) => {
-                    savePrediction(moment.key, k);
-                    setPreds((p) => ({ ...p, [moment.key]: k }));
-                    letGo();
-                  }}
-                  onSkip={() => {
-                    setSkipped((x) => ({ ...x, [moment.key]: true }));
-                    letGo();
-                  }}
-                />
-              )}
+              {loaded && view === 'sim' && !course && askCard(false)}
+              {loaded && view === 'sim' && courseStep?.id === '5-4' && myCard.open && !sceneView && <StrokeBoard strokes={myCard.strokes} onAdd={(st) => patchCard({ strokes: [...myCard.strokes, st], ran: false })} />}
               {loaded && view === 'sim' && asking && cellAt?.mission && (
                 <PredictCard
                   mission={cellAt.mission}
@@ -6719,6 +6881,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                 </div>
                 {shownTab === 'direct' ? (
                   <div className={css.dockScroll} role="region" aria-label={SCREEN_TITLE[workScreen]}>
+                    {course && loaded && askCard(true)}
                     {zeroMode ? (
                       <div className={css.screen}>{zeroPanel}</div>
                     ) : workScreen === 'theme' ? (
@@ -6862,6 +7025,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   </div>
                 ) : (
                   <div className={css.codeTab} role="region" aria-label={recipeOn ? '작업 순서' : LEVEL_TAB[level].name}>
+                    {course && loaded && askCard(true)}
                     {!recipeOn && <LangSeg
                       level={cellAt ? (cellTerm ? 'python' : 'basic') : level}
                       levels={track?.levels}
@@ -6937,6 +7101,32 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                         )}
                         {courseStep?.id === '1-1' ? (
                           <CourseStepPanel id="1-1" busy={busy} onRun={runHandStep} hand={{ near: courseStep.handNear, onIn: handIn, onOut: handOut }} />
+                        ) : courseStep?.id === '5-4' ? (
+                          // 5-4: the board's key (open · close · 다시 그리기) and its strokes, ▶, what the run read.
+                          <CourseStepPanel
+                            id="5-4"
+                            busy={busy}
+                            board={{
+                              open: myCard.open,
+                              ran: myCard.ran,
+                              count: myCard.strokes.length,
+                              onToggle: () => setMyCard((c) => ({ ...c, open: !c.open })),
+                              onRemove: (i) => patchCard({ strokes: myCard.strokes.filter((_, k) => k !== i), ran: false }),
+                              onClear: () => patchCard({ strokes: [], ran: false }),
+                            }}
+                            onRun={() => void run54()}
+                            results={myCard.results}
+                          />
+                        ) : courseStep?.id === '5-5' ? (
+                          // 5-5 (선택, 실물): the robot, the speed sent, the app's own run keys (▶ 시뮬레이션 · 로봇 실행), the teacher's check.
+                          <>
+                            <CourseStepPanel
+                              id="5-5"
+                              busy={busy}
+                              real={{ connected, onConnect: () => setConnectOpen(true), speed: myCard.speed, onSpeed: (v) => setMyCard((c) => ({ ...c, speed: v })), ran: myCard.ran55, checked: myCard.checked, onTeacher: () => setLessonUi('teacher') }}
+                            />
+                            {runBar}
+                          </>
                         ) : draw4On ? (
                           // 4장: 4-2 the 직선 이동 switch; 4-3 · 4장 미션 the vertex table (straight moves, locked on); 4-4 the circle; then ▶ and what it measured.
                           <CourseStepPanel
@@ -6966,7 +7156,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                           // 2-1 ①: the box of parts, where the other 절 have their 조작판.
                           <CourseStepPanel id="2-1" busy={busy} kit={{ parts: KIT_PARTS, seen: courseStep.seen, onSee: seePart }} />
                         ) : cellAt!.cell === 'draw' ? (
-                          <DrawCards key={cellAt!.mission ?? 'free'} mission={cellAt!.mission} busy={busy} runningLine={runningLine} onCode={onRecipeCode} glow={questGlow} glowAdd={questGlowAdd} flow={questOn && !!lifeStep} />
+                          <DrawCards key={cellAt!.mission ?? 'free'} mission={cellAt!.mission} busy={busy} runningLine={runningLine} onCode={onRecipeCode} glow={questGlow} glowAdd={questGlowAdd} flow={questOn && !!lifeStep} onRecipe={course ? onDrawRecipe : undefined} />
                         ) : cellAt!.cell === 'board' ? (
                           <BoardCards key={cellAt!.mission ?? 'free'} mission={cellAt!.mission} busy={busy} runningLine={runningLine} onCode={onRecipeCode} glow={questGlow} glowAdd={questGlowAdd} flow={questOn && !!lifeStep} />
                         ) : (

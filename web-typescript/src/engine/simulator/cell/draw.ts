@@ -252,7 +252,11 @@ export interface InkReport {
 
 /** How the ink on a card compares with the phrase as it should stand on it. */
 export function readInk(ink: Strokes, phrase: Phrase, corner: { x: number; y: number }): InkReport {
-  const want = placedStrokes(phrase, corner);
+  return readInkFor(ink, placedStrokes(phrase, corner), corner);
+}
+
+/** How the ink on a card compares with any strokes as they should stand on it (robot mm). */
+export function readInkFor(ink: Strokes, want: Strokes, corner: { x: number; y: number }): InkReport {
   const lines = ink.filter((l) => l.length > 1);
   const got = samples(lines);
   const covered = samples(want).filter((p) => distTo(p, lines) <= 1.2);

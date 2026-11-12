@@ -85,9 +85,10 @@ const SIM: Record<string, { scene: SceneKind; run?: SubRun }> = {
   '5-1': { scene: 'A', run: q('G1') },
   '5-2': { scene: 'E', run: q('G2') },
   '5-3': { scene: 'E', run: q('G4') },
-  '5-4': { scene: 'D' },
-  '5-5': { scene: 'A' },
-  '5-6': { scene: 'A' },
+  '5-4': { scene: 'D', run: st('5-4') },
+  // 5-5 (선택, 실물): the 5장 미션's real side — 5-4's program sent to the robot, the teacher's check.
+  '5-5': { scene: 'A', run: st('5-5') },
+  '5-6': { scene: 'A', run: test(5) },
   '6-1': { scene: 'F' },
   '6-2': { scene: 'F' },
   '6-3': { scene: 'F' },

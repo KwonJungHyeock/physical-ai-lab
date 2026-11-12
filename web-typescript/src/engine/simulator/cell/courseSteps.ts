@@ -7,7 +7,7 @@
  * The values marked 제안값 are the guideline's proposals: kept as given until confirmed.
  */
 
-export type CourseStepId = '1-1' | '1-2' | '1-3' | '2-1' | '2-3' | '2-4' | '3-1' | '3-2' | '3-5' | '4-2' | '4-3' | '4-4';
+export type CourseStepId = '1-1' | '1-2' | '1-3' | '2-1' | '2-3' | '2-4' | '3-1' | '3-2' | '3-5' | '4-2' | '4-3' | '4-4' | '5-4' | '5-5';
 
 export interface CourseStepLine {
   text: string;
@@ -91,7 +91,31 @@ export const COURSE_STEPS: Record<CourseStepId, readonly CourseStepLine[]> = {
     { text: '점 개수를 24로 바꿔요', sel: '[data-step="count"]' },
     { text: '▶ 시뮬레이션 버튼을 눌러요', sel: RUN },
   ],
+  // 5-4: the 획 그리기 판 over the scene (확정 B안); ② with the board open.
+  '5-4': [
+    { text: '획 그리기 판에 내 글자를 한 획씩 그려요 (2~3자)', sel: '[data-step="board"]' },
+    { text: '획마다 붙은 순서 번호를 보고, 틀린 획은 지우고 다시 그려요', sel: '[data-step="strokes"]' },
+    { text: '▶ 시뮬레이션 버튼을 눌러요', sel: RUN },
+  ],
+  // 5-5 (선택): the real robot; [로봇 실행] is the app's own key to send the program (RunBar).
+  '5-5': [
+    { text: '연결 창에서 로봇을 연결해요', sel: '[data-step="connect"]' },
+    { text: '실물 속도를 30% 이하로 맞춰요', sel: '[aria-label="실물 속도"]' },
+    { text: '▶ 시뮬레이션으로 확인하고 로봇 실행 버튼으로 실물에 보내요', sel: '[aria-label="로봇에서 실행"]' },
+    { text: '다 쓴 카드를 선생님께 보여 주고 확인을 받아요', sel: '[data-step="teacher"]' },
+  ],
 };
+
+/** 5-2 in the course (가이드라인 v1): the 보정 card's x · y, then its pen, then ▶ — the 글씨 부스 step G2's own lines split in three. */
+export const G2_COURSE: readonly { text: string; sel: string }[] = [
+  { text: '매트 눈금을 읽어 보정 카드의 x · y 칸을 고쳐요', sel: 'aside [aria-label="x"]' },
+  { text: '보정 카드의 펜 칸을 고쳐요', sel: 'aside [aria-label="펜"]' },
+  { text: '▶ 시뮬레이션 버튼을 눌러요', sel: 'button[aria-label="시뮬레이션"]' },
+];
+/** 5-5: the most speed a program may be sent to the robot with, %. */
+export const REAL_MAX_PCT = 30;
+/** 5-4's card program, kept for 5-5 and the 5장 미션 (this browser). */
+export const MY_CARD_KEY = 'life-course-my-card';
 
 export const isCourseStep = (id: string): id is CourseStepId => id in COURSE_STEPS;
 

@@ -8,7 +8,7 @@
  * verdicts read the ink (the pen's trail on the paper, robot mm). No React.
  */
 
-import { LIFT_MM, MAT } from './draw';
+import { CARD_HOME, CARD_MM, LIFT_MM, MAT, readInkFor } from './draw';
 
 export type Pt = readonly [number, number];
 export type Ink = readonly (readonly Pt[])[];
@@ -184,4 +184,67 @@ export function rowsToPoints(rows: readonly { x: string; y: string }[]): { pts: 
     pts.push([x, y]);
   }
   return { pts, bad: null };
+}
+
+/* --- 5-4 내 글자 쓰기: strokes drawn on the board, written on the card ------------------------------ */
+
+/** The card 5-4 writes on (its bottom-left corner, robot mm) and its size; the board's drawing area inside it (card mm, 10 mm in from each side). */
+export const MY_CARD = { corner: CARD_HOME, w: CARD_MM.w, h: CARD_MM.h } as const;
+export const MY_AREA = { x0: 10, x1: 110, y0: 10, y1: 70 } as const;
+/** A stroke shorter than this (a tap) is dropped, mm; points kept along a stroke at least this far apart, mm. */
+export const STROKE_MIN_MM = 2;
+export const STROKE_STEP_MM = 1.5;
+
+/** Card mm → robot mm. */
+export const onCard = ([u, v]: Pt): Pt => [MY_CARD.corner.x + u, MY_CARD.corner.y + v];
+
+/** A stroke as drawn (card mm) thinned to points at least STROKE_STEP_MM apart (its last point kept); null when it is a tap. */
+export function thinStroke(pts: readonly Pt[]): Pt[] | null {
+  if (pts.length < 2) return null;
+  const out: Pt[] = [pts[0]];
+  for (const p of pts.slice(1)) if (dist(p, out[out.length - 1]) >= STROKE_STEP_MM) out.push(p);
+  const last = pts[pts.length - 1];
+  if (dist(last, out[out.length - 1]) > 0.3) out.push(last);
+  let len = 0;
+  for (let i = 1; i < out.length; i += 1) len += dist(out[i - 1], out[i]);
+  return len >= STROKE_MIN_MM && out.length >= 2 ? out : null;
+}
+
+/** Whether a card point lies in the drawing area (with `slack` mm). */
+export const inArea = ([u, v]: Pt, slack = 0) => u >= MY_AREA.x0 - slack && u <= MY_AREA.x1 + slack && v >= MY_AREA.y0 - slack && v <= MY_AREA.y1 + slack;
+
+/**
+ * 5-4's program (and 5-5's, sent to the robot as it is): every stroke from above (the pen down onto its
+ * start, along it, up again: 획 사이 펜 들기 on), straight moves, the pen at `z`, then back home. A
+ * `speed` (5-5's 실물 속도, %) is set first when given.
+ */
+export function cardCode(strokes: readonly (readonly Pt[])[], o: { z?: number; speed?: number } = {}): string {
+  const z = o.z ?? 0;
+  let code = 'from edu import robot\n\n';
+  if (o.speed != null) code += `robot.set_speed(${Math.round(o.speed)})\n`;
+  for (const s of strokes) {
+    const pts = s.map(onCard);
+    const [x0, y0] = pts[0];
+    code += to(x0, y0, z + LIFT_MM) + to(x0, y0, z);
+    for (const [x, y] of pts.slice(1)) code += to(x, y, z);
+    const [xe, ye] = pts[pts.length - 1];
+    code += to(xe, ye, z + LIFT_MM);
+  }
+  return code + 'robot.home()\n';
+}
+
+/** 5-4's checks: the card's ink against the strokes drawn (5-3's own reading: outside ≤ 2 mm, lines between strokes ≤ 3 mm), two strokes or more (the run's own end — no collision, fault or break — is judged by the caller). */
+export function myCardReport(ink: Ink, strokes: readonly (readonly Pt[])[]): ShapeReport {
+  const want = strokes.map((s) => s.map(onCard) as [number, number][]);
+  const r = readInkFor(
+    ink.map((s) => s.map(([x, y]) => [x, y] as [number, number])),
+    want,
+    MY_CARD.corner,
+  );
+  const items = [
+    { label: '획이 2개 넘게', ok: strokes.length >= 2, detail: `획 ${strokes.length}개` },
+    { label: '글자 전체가 카드 안 (밖 2 mm 이하)', ok: r.length >= 3 && r.outside <= 2, detail: `카드 밖 ${Math.round(r.outside)} mm` },
+    { label: '획 사이에 필요 없는 줄 3 mm 이하', ok: r.length >= 3 && r.stray <= 3, detail: `필요 없는 줄 ${Math.round(r.stray)} mm` },
+  ];
+  return { ok: items.every((i) => i.ok), items };
 }

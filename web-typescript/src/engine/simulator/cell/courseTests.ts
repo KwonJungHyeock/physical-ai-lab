@@ -28,6 +28,8 @@ export interface ChapterTest {
     tol?: number;
     /** A mission done on the mat: the star drawn in one stroke from the vertex table (courseDraw.ts STAR). */
     star?: boolean;
+    /** 5장: passed by what was done before — 5-5 with the teacher's check (실물), else 5-4 passed (시뮬레이션). */
+    card?: boolean;
     /** Said when a try did not pass. */
     failText?: string;
   };
@@ -58,6 +60,12 @@ export const CHAPTER_TESTS: Record<number, ChapterTest> = {
     // On the mat (the card put away), from an empty vertex table, straight moves, the pen at 0: the five corners (교안, in no order) joined skipping one.
     mission: { text: '꼭짓점 5개를 잇는 순서를 정해 표에 넣고 ▶ 시뮬레이션 버튼을 눌러요', ready: true, star: true, failText: '별이 아니에요' },
   },
+  5: {
+    chapter: 5,
+    answers: ['O', 'X', 'O', 'O', 'X'],
+    // One activity with 5-5: the real card checked by the teacher, or (no robot) 5-4 passed in the simulation.
+    mission: { text: '메시지 카드 한 장 완성: 실물은 5-5에서 선생님 확인, 실물이 없으면 5-4 통과', ready: true, card: true, failText: '아직 카드가 없어요' },
+  },
 };
 
 /** A scene mission may be tried twice (the second try counts as a pass too); the O · X keep their first answers. */
@@ -80,6 +88,8 @@ export interface TestResult {
   mission: boolean | null;
   /** Tries made at the mission (1 or 2). */
   missionTries?: number;
+  /** 5장: how the card was made (실물 · 시뮬레이션). */
+  missionBy?: 'real' | 'sim';
   at: number;
 }
 

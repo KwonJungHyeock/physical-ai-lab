@@ -276,18 +276,18 @@
       "chapter": 5,
       "title": "내 글자 쓰기 (시뮬레이션)",
       "pages": [66, 67],
-      "status": "soon",
-      "scene": "soon",
-      "practice": "soon"
+      "status": "open",
+      "scene": "none",
+      "practice": "open"
     },
     {
       "id": "5-5",
       "chapter": 5,
       "title": "실물로 쓰기",
       "pages": [70, 71],
-      "status": "soon",
-      "scene": "soon",
-      "practice": "soon",
+      "status": "open",
+      "scene": "none",
+      "practice": "open",
       "optional": true
     },
     {

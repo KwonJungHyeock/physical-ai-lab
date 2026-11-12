@@ -1,0 +1,96 @@
+/* 입문 과정 5-4: the 획 그리기 판 over the scene (beside the panel, under the 위치 줄 and 지금 할 일). */
+.board {
+  position: absolute;
+  z-index: 14;
+  left: calc((var(--inset-l, 0px) + 100% - var(--inset-r, 0px)) / 2);
+  top: calc(var(--top, 0px) + (100% - var(--top, 0px)) / 2);
+  transform: translate(-50%, -50%);
+  padding: 12px 14px 14px;
+  border-radius: 16px;
+  background: rgba(24, 28, 35, 0.94);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.2),
+    0 24px 60px rgba(0, 0, 0, 0.5);
+  word-break: keep-all;
+}
+.head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0 0 10px;
+  color: #f6f7f9;
+}
+.head b {
+  font-size: 18px;
+}
+.head span {
+  font-size: 15px;
+  color: #c9ced5;
+}
+/* The card itself: white, its edge the board's edge. */
+.card {
+  display: block;
+  border-radius: 4px;
+  background: #fbfaf6;
+  box-shadow: inset 0 0 0 2px #2b3038;
+  touch-action: none;
+  cursor: crosshair;
+}
+.grid {
+  stroke: #e3e6ea;
+  stroke-width: 1;
+}
+.area {
+  fill: none;
+  stroke: #5b6470;
+  stroke-width: 2;
+  stroke-dasharray: 10 7;
+}
+.stroke,
+.out {
+  fill: none;
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.stroke {
+  stroke: #2563eb;
+}
+.out {
+  stroke: #dc2626;
+}
+.arrow {
+  fill: #1e3a8a;
+}
+/* The card and the tags on it. */
+.wrap {
+  position: relative;
+}
+/* A stroke's order number at its start. */
+.num,
+.outTag {
+  position: absolute;
+  pointer-events: none;
+}
+.num {
+  transform: translate(-50%, -130%);
+  min-width: 24px;
+  padding: 1px 6px;
+  border: 1.5px solid #14171c;
+  border-radius: 3px;
+  background: #fff;
+  color: #14171c;
+  font-size: 16px;
+  font-weight: 800;
+  text-align: center;
+}
+.outTag {
+  transform: translate(8px, 6px);
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+}

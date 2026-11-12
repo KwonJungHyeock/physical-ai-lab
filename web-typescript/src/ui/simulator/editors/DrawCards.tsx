@@ -43,6 +43,8 @@ interface Props {
   glowAdd?: boolean;
   /** Under the quest card in one scrolling panel: the cards take their own height (no inner scroll). */
   flow?: boolean;
+  /** The cards as they stand now (입문 과정 5-2: which of its steps is done). */
+  onRecipe?: (r: DrawRecipe) => void;
 }
 
 /** A number box that only takes what it may (whole mm), written as it is typed. */
@@ -55,13 +57,14 @@ function Num({ value, min, max, busy, label, onChange }: { value: number; min: n
   );
 }
 
-export default function DrawCards({ mission, busy, runningLine, onCode, glow, glowAdd, flow }: Props) {
+export default function DrawCards({ mission, busy, runningLine, onCode, glow, glowAdd, flow, onRecipe }: Props) {
   const start = (m: string | null) => copy(G_START[m ?? ''] ?? { cards: [], times: 1 });
   const [recipe, setRecipe] = useState<DrawRecipe>(() => start(mission));
   const [open, setOpen] = useState(false);
   // The cards opened (▾): the quest's cards to change start open, so their boxes and switches are in sight.
   const [shown, setShown] = useState<ReadonlySet<number>>(() => new Set((glow ?? []).map((n) => n - 1)));
   const made = useMemo(() => drawCode(recipe), [recipe]);
+  useEffect(() => onRecipe?.(recipe), [recipe, onRecipe]);
   useEffect(
     () =>
       onCode(made.code, (line) => {

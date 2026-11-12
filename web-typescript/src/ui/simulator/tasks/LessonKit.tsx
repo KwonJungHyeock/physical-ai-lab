@@ -491,6 +491,7 @@ export function TeacherKey({
   onProjector,
   onClose,
   courseLink,
+  cardCheck,
 }: {
   teacher: TeacherSet;
   onTeacher(t: TeacherSet): void;
@@ -499,6 +500,8 @@ export function TeacherKey({
   onClose(): void;
   /** 입문 과정: the address of the 절 open now in its kind (the course comes from the platform; the places' 차시 · 현장 settings hidden). */
   courseLink?: string;
+  /** 입문 과정 5-5: the card the robot wrote, checked by the teacher (no automatic marking). */
+  cardCheck?: { checked: boolean; onConfirm(): void };
 }) {
   const [files, setFiles] = useState<LessonRecord[]>([]);
   const [bad, setBad] = useState(0);
@@ -528,6 +531,15 @@ export function TeacherKey({
             ×
           </button>
         </header>
+        {cardCheck && (
+          <section className={css.cardCheck} aria-label="5-5 실물 카드 확인">
+            <b>5-5 실물로 쓰기 · 카드 확인</b>
+            <span>{cardCheck.checked ? '확인했어요' : '로봇이 쓴 카드를 보고 확인해 주세요'}</span>
+            <button type="button" data-step="teacher-ok" disabled={cardCheck.checked} onClick={cardCheck.onConfirm}>
+              카드 확인했어요
+            </button>
+          </section>
+        )}
         {!courseLink && (
           <>
             <div className={css.set}>

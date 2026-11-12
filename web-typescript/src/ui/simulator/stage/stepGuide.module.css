@@ -541,3 +541,32 @@
     0 0 0 1px rgba(255, 255, 255, 0.3),
     0 18px 60px rgba(0, 0, 0, 0.55);
 }
+
+/* 입문 과정: the question in the right panel (the scene stays in sight while it holds). */
+.quizDock {
+  position: relative;
+  margin: 0 0 12px;
+  word-break: keep-all;
+}
+.quizDock .qCard {
+  padding: 16px 16px 14px;
+  border-radius: 14px;
+  box-shadow:
+    var(--hud-plate-shadow),
+    0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+.quizDock .qQ {
+  margin: 0 0 14px;
+  font-size: 20px;
+}
+.quizDock .qOpts button {
+  min-height: 56px;
+  padding: 10px 12px;
+  font-size: 17px;
+}
+.quizDock .qFeed {
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 14px -16px -14px;
+  padding: 12px 16px 14px;
+}

@@ -153,7 +153,8 @@ export function TutNow({ tut, step, start, read, next }: { tut: LifeTutorial; st
 }
 
 /** A 현장 quest as 지금 할 일: its controls in turn (one at a time), then the run and the result. */
-export function QuestNow({ steps, sels, phase, passed, next }: { steps: readonly string[]; sels: readonly string[]; phase: 'do' | 'run' | 'result'; passed: boolean | null; next?: NowNext }) {
+/** `at`: the step reached as the caller reads it (입문 과정 5-2: from the cards' values), instead of moving on with each press. */
+export function QuestNow({ steps, sels, phase, passed, next, at: atNow }: { steps: readonly string[]; sels: readonly string[]; phase: 'do' | 'run' | 'result'; passed: boolean | null; next?: NowNext; at?: number }) {
   const [k, setK] = useState(0);
   // A new try starts from the first place again.
   const key = `${sels.join('|')}:${phase}`;
@@ -164,13 +165,13 @@ export function QuestNow({ steps, sels, phase, passed, next }: { steps: readonly
   }
   if (phase === 'run') return <NowBar state="run" text="실행 중이에요 · 장면을 지켜봐요" next={next} />;
   if (phase === 'result' && passed) return <NowBar state="ok" text="통과했어요" next={next ? { ...next, lit: true } : undefined} />;
-  const at = Math.min(k, Math.max(0, steps.length - 1));
+  const at = Math.min(atNow ?? k, Math.max(0, steps.length - 1));
   const text = phase === 'result' ? `아직이에요 · ${steps[at] ?? '다시 고쳐서 ▶ 시뮬레이션'}` : (steps[at] ?? '');
   const sel = sels[at];
   return (
     <>
       <NowBar state={phase === 'result' ? 'no' : 'do'} n={at + 1} text={text} next={next} />
-      {sel && <NowMark key={at} find={() => [...document.querySelectorAll<HTMLElement>(sel)].find(shown) ?? null} n={at + 1} onHit={() => setK((x) => Math.min(x + 1, sels.length - 1))} />}
+      {sel && <NowMark key={at} find={() => [...document.querySelectorAll<HTMLElement>(sel)].find(shown) ?? null} n={at + 1} onHit={atNow == null ? () => setK((x) => Math.min(x + 1, sels.length - 1)) : undefined} />}
     </>
   );
 }

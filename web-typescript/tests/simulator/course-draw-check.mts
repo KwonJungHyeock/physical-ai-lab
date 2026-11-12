@@ -129,4 +129,38 @@ assert.ok(!D.isStarOrder(S), '4장 미션: the outline (next corner each time) i
 const sr = D.shapeReport(await draw(D.pathCode(star, { linear: true, close: true })), star);
 assert.ok(sr.ok, `4장 미션 별: ${JSON.stringify(sr.items)}`);
 console.log(`  ok   4장 미션 별: ${sr.items.map((i) => i.detail ?? i.label).join(' · ')}`);
-console.log('입문 4장 그리기: 통과');
+// 5-4: my strokes (card mm) written on the card with the pen lifted between them; one that runs off the card fails.
+const mine: [number, number][][] = [
+  [
+    [20, 55],
+    [50, 55],
+    [50, 25],
+  ],
+  [
+    [65, 60],
+    [65, 20],
+    [95, 20],
+  ],
+];
+const card = D.myCardReport(await draw(D.cardCode(mine)), mine);
+assert.ok(card.ok, `5-4 내 글자: ${JSON.stringify(card.items)}`);
+const offCard: [number, number][][] = [
+  ...mine,
+  [
+    [100, 40],
+    [127, 40],
+  ],
+];
+const offR = D.myCardReport(await draw(D.cardCode(offCard)), offCard);
+assert.ok(!offR.ok && !offR.items[1].ok, `5-4 카드 밖으로 나간 획은 아직: ${JSON.stringify(offR.items)}`);
+assert.equal(
+  D.thinStroke([
+    [10, 10],
+    [10.5, 10.5],
+  ]),
+  null,
+  '5-4: a tap is no stroke',
+);
+assert.ok(/robot\.set_speed\(30\)/.test(D.cardCode(mine, { speed: 30 })), '5-5: the speed set first');
+console.log(`  ok   5-4 내 글자: ${card.items.map((i) => i.detail ?? i.label).join(' · ')} · 카드 밖 획: ${offR.items[1].detail}`);
+console.log('입문 4 · 5장 그리기: 통과');
