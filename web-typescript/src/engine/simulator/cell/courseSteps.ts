@@ -56,5 +56,8 @@ export const SWING = { joint: 0, deg: 90, times: 3 } as const;
 /** The course's own 절 done (this browser): { '1-2': true }. */
 export const STEPS_KEY = 'life-course-steps';
 
-/** 1-2: the view of the arm standing straight up (robot mm): the whole arm about 70 % of the scene's height. */
-export const PICK_VIEW = { eye: [820, -820, 330] as const, target: [0, 0, 225] as const };
+/**
+ * 1-2: the view of the arm standing straight up (robot mm): the whole arm about 74 % of the scene's
+ * height, from the customer's side and high enough that the desk fills the bottom (courseStage.ts).
+ */
+export const PICK_VIEW = { eye: [228, -553, 803] as const, target: [100, 0, 250] as const };

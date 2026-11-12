@@ -152,7 +152,7 @@ import { lessonOfQuest, lessonsOf, siteOf } from '@/engine/simulator/cell/lesson
 import { COURSE, kindsOf, modeFor, subById, subOfRun, topicMark, MODE_NAME, type CourseSub, type SubMode } from '@/engine/simulator/cell/course';
 import { DEFAULT_PLAN, countedIn, lessonIn, lessonStepsIn, missionSubsIn, nextIn, testReady, type CoursePlan } from '@/engine/simulator/cell/courses';
 import { mayOpen, noticeDue, noticeRead, readPlan, report } from '@/engine/simulator/cell/platform';
-import { DRAFT_SUBS, STAGE_TONES, isStageTone, type StageTone } from '@/engine/simulator/cell/courseStage';
+import { COURSE_LOOK, courseViewOf } from '@/engine/simulator/cell/courseStage';
 import { ARM_PARTS, PICK_VIEW, COURSE_STEPS, FOUND_SWING_DEG, HAND_SCENE, HAND_SLOW_S, STEPS_KEY, SWING, isCourseStep, type CourseStepId } from '@/engine/simulator/cell/courseSteps';
 import { CHAPTER_TESTS, TESTS_KEY, loadTests, type OX, type TestResult } from '@/engine/simulator/cell/courseTests';
 import { COPYRIGHT_NOTICE, COPYRIGHT_RECORD_LINE } from '@/engine/simulator/copyright';
@@ -347,9 +347,6 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     const q = new URLSearchParams(window.location.search);
     const sub = q.get('sub');
     if (sub) asked.current = { sub, mode: q.get('mode') === 'scene' ? 'scene' : 'practice' };
-    // 무대 시안 (courseStage.ts, 1단계): only from the address, until a tone is confirmed.
-    const tone = q.get('stage');
-    if (isStageTone(tone)) setStageTone(tone);
     // Read after hydration (this browser's day).
     setNoticeAsk(noticeDue((k) => localStorage.getItem(k), Date.now()));
     let live = true;
@@ -358,8 +355,6 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       live = false;
     };
   }, [course]);
-  /** 무대 시안 asked for in the address (?stage=a · b), shown on DRAFT_SUBS only. */
-  const [stageTone, setStageTone] = useState<StageTone | null>(null);
   /** The 저작권 안내 is due (not read yet today: platform.ts). */
   const [noticeAsk, setNoticeAsk] = useState(true);
   /** This user may not open the course (platform.ts mayOpen): its notice, no scene. */
@@ -921,6 +916,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       r: tools && tools.width ? Math.max(r, v.right - tools.left + 8) : r,
       t: top ? Math.max(0, top.bottom - v.top + 8) : 0,
       b: 0,
+      // What the panel hides of the scene on the right (the 입문 과정 무대 keeps the rest to the desk).
+      hide: onRight && p.width ? Math.max(0, v.right - p.left) : 0,
     };
   }, []);
   const cams = useRef<CameraViewsHandle>(null);
@@ -5358,7 +5355,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       <div className={css.inner}>
         <TopBar
           view={view}
-          track={track ? { name: track.name, grade: track.grade, color: track.color, screens: track.screens } : undefined}
+          track={track ? { name: track.name, grade: track.grade, color: track.color, screens: track.screens, course } : undefined}
           onView={(v) => {
             chooseView(v);
           }}
@@ -5766,7 +5763,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                     scene: desk.scene,
                     objects: desk.objects,
                     // A demo's desk has no practice mat.
-                    mat: !demo && (practiceUsesMat(practice.id) || desk.mat),
+                    // (입문 과정 4-1: the paper mat's 10 mm grid instead of the floor grid, which the 무대 has not.)
+                    mat: !demo && (practiceUsesMat(practice.id) || desk.mat || (course && subNow?.id === '4-1')),
                     edit: !busy && theme === 'arm' ? { selected: deskSel, onSelect: setDeskSel, onMove: deskDrag, onDrop: (id, x, y) => deskUpdate(id, { x, y }), onRemove: deskRemove } : undefined,
                   }}
                   gripperRobot={loaded.gripper}
@@ -5788,10 +5786,13 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                     courseStep?.id === '1-2'
                       ? { pick: { names: ARM_PARTS, found: courseStep.found, flash: courseStep.flash, onPick: pickPart } }
                       : courseStep?.id === '1-1'
-                        ? { slots: [{ id: 'hand', label: '다가오는 손', at: [350, 0, 40], w: 210, h: 120, enter: { in: courseStep.handNear, from: [0, -300] } }] }
+                        ? // From the customer's side (the bottom of the picture) to just in front of the card.
+                          { slots: [{ id: 'hand', label: '다가오는 손', at: [210, -110, 40], w: 200, h: 120, enter: { in: courseStep.handNear, from: [0, 300] } }] }
                         : null
                   }
-                  courseStage={course && stageTone && courseStep && DRAFT_SUBS.includes(courseStep.id) ? STAGE_TONES[stageTone] : null}
+                  // 입문 과정 무대 (courseStage.ts): the one desk under every 절 (the 글씨 부스 on it, or the bare arm).
+                  courseStage={course && (!cellAt || cellAt.cell === 'draw') ? COURSE_LOOK : null}
+                  courseView={course && subNow ? courseViewOf(subNow.id, subNow.scene) : null}
                   cellClock={cellClock}
                   cellCallouts={!!track}
                   goalRing={(() => {

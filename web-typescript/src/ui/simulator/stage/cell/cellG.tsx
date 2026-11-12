@@ -13,15 +13,18 @@
  * down or taking it, the lamp.
  */
 
+import { Html } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import { Suspense, useMemo, useRef, type RefObject } from 'react';
+import { Suspense, useMemo, useRef, useState, type RefObject } from 'react';
 import { BufferGeometry, Float32BufferAttribute, type Group, type Mesh, type MeshStandardMaterial } from 'three';
 
+import { WAITING_CARDS } from '@/engine/simulator/cell/courseStage';
 import { CARD_HOME, CARD_MM, MAT } from '@/engine/simulator/cell/draw';
 import type { WorldState } from '@/engine/simulator/sim';
 
 import Model from '@/ui/education/lab/ambient/Model';
 
+import { AssetSlot } from '../CourseMarks';
 import { RBox, Turned, brushed, wood } from '../sceneKit';
 import { Tagged, m, useSheet } from './kit';
 
@@ -60,9 +63,12 @@ export function Contact({ at, w, d, k = 0.5 }: { at: [number, number]; w: number
 }
 
 /** The event table: a white laminate top with a rounded edge, a printed front skirt facing the customer, steel legs. */
-/** The table and the robot's plate; `desk` = the 입문 과정 무대's desk colour, without the printed skirt (courseStage.ts). */
-export function BoothTable({ desk }: { desk?: string } = {}) {
-  const T = TABLE;
+/**
+ * The table and the robot's plate. `desk` · `box`: the 입문 과정 무대's desk (courseStage.ts) — its
+ * colour and size, without the printed skirt.
+ */
+export function BoothTable({ desk, box }: { desk?: string; box?: { x0: number; x1: number; y0: number; y1: number } } = {}) {
+  const T = box ?? TABLE;
   const skirt = useSheet('draw-skirt', 510, 160, (ctx, w, h) => {
     ctx.fillStyle = '#18201d';
     ctx.fillRect(0, 0, w, h);
@@ -354,6 +360,62 @@ function Hand({ world }: { world: RefObject<WorldState | null> }) {
   );
 }
 
+/**
+ * 입문 과정 무대: the customer's hand as the team's picture (asset slot, CourseMarks.tsx) at the card,
+ * coming in from the customer's side (the bottom of the picture) while it puts a card down (hand-card)
+ * or reaches in to take the written one (hand), and going back out.
+ */
+function HandSlot({ world }: { world: RefObject<WorldState | null> }) {
+  const [now, setNow] = useState<{ id: 'hand' | 'hand-card'; in: boolean; x: number; y: number }>({ id: 'hand-card', in: false, x: CARD_HOME.x, y: CARD_HOME.y });
+  const seen = useRef('');
+  useFrame(() => {
+    const d = world.current?.cell?.draw;
+    if (!d) return;
+    const c = d.corner ?? d.place;
+    const id = d.hand?.then === 'put' ? 'hand-card' : 'hand';
+    const key = `${id}:${!!d.hand}:${c.x}:${c.y}`;
+    if (key === seen.current) return;
+    seen.current = key;
+    setNow((p) => ({ id: d.hand ? id : p.id, in: !!d.hand, x: c.x, y: c.y }));
+  });
+  return (
+    <group position={[m(now.x + CARD_MM.w / 2), m(now.y - 40), m(40)]}>
+      <Html center zIndexRange={[18, 0]} style={{ pointerEvents: 'none' }}>
+        <AssetSlot key={now.id} slot={{ id: now.id, label: now.id === 'hand' ? '다가오는 손' : '카드 놓는 손', at: [0, 0, 0], w: 200, h: 120, enter: { in: now.in, from: [0, 260] } }} />
+      </Html>
+    </group>
+  );
+}
+
+/**
+ * 입문 과정 무대 (5-3): the next customers' cards waiting beside the mat, one per place, its number on it (1 · 2 · 3)
+ * (courseStage.ts WAITING_CARDS) — as many as there are customers still to come (the queue less the
+ * card on the mat or in the hand).
+ */
+function WaitingCards({ world }: { world: RefObject<WorldState | null> }) {
+  const [n, setN] = useState(0);
+  useFrame(() => {
+    const d = world.current?.cell?.draw;
+    const k = d ? Math.max(0, Math.min(WAITING_CARDS.length, d.orders - (d.corner ? 1 : 0) - (d.hand?.then === 'put' ? 1 : 0))) : 0;
+    if (k !== n) setN(k);
+  });
+  return (
+    <>
+      {WAITING_CARDS.slice(0, n).map((p, i) => (
+        <group key={i} position={[m(p.x + CARD_MM.w / 2), m(p.y + CARD_MM.h / 2), m(CARD_T / 2)]}>
+          <mesh castShadow receiveShadow>
+            <boxGeometry args={[m(CARD_MM.w), m(CARD_MM.h), m(CARD_T)]} />
+            <meshPhysicalMaterial color="#f3ede2" roughness={0.82} sheen={0.3} sheenRoughness={0.9} />
+          </mesh>
+          <Html center zIndexRange={[18, 0]} style={{ pointerEvents: 'none' }}>
+            <span style={{ display: 'grid', placeItems: 'center', width: 30, height: 30, borderRadius: 15, background: 'rgba(24,28,35,0.88)', color: '#fff', font: '800 17px Pretendard, sans-serif' }}>{i + 1}</span>
+          </Html>
+        </group>
+      ))}
+    </>
+  );
+}
+
 /** The 완성 lamp at the customer's corner: a white cap that glows green when the card is ready. */
 function DoneLamp({ world }: { world: RefObject<WorldState | null> }) {
   const mat = useRef<MeshStandardMaterial>(null);
@@ -502,9 +564,10 @@ export function DrawCell({ world, onHover, bare }: { world: RefObject<WorldState
     <>
       {!bare && <Hall />}
       {!bare && <People />}
-      <BoothTable desk={bare?.desk} />
+      {/* (The 무대's desk, the robot's plate and its shadow are the stage's own: CourseDesk.tsx.) */}
+      {!bare && <BoothTable />}
       {/* Soft contact shadows on the table: the robot's plate, the lamp, the pen stand, the card tray. */}
-      <Contact at={[0, 0]} w={170} d={170} k={0.35} />
+      {!bare && <Contact at={[0, 0]} w={170} d={170} k={0.35} />}
       <Contact at={[312, -140]} w={48} d={48} />
       {!bare && <Contact at={[55, 135]} w={30} d={30} />}
       {!bare && <Contact at={[-95, -110]} w={140} d={100} k={0.35} />}
@@ -515,7 +578,9 @@ export function DrawCell({ world, onHover, bare }: { world: RefObject<WorldState
         <CardOnMat world={world} />
       </Tagged>
       <Ink world={world} />
-      <Hand world={world} />
+      {/* The customer's hand: on the 무대 the team's picture (an asset slot), else the hand drawn here. */}
+      {bare ? <HandSlot world={world} /> : <Hand world={world} />}
+      {bare && <WaitingCards world={world} />}
       <Tagged name="완성 램프" onHover={onHover}>
         <DoneLamp world={world} />
       </Tagged>

@@ -9431,3 +9431,14 @@ div.zeroFlow {
     z-index: 29;
   }
 }
+
+/* 입문 과정 (무대 2단계 7): no text under 14 px in the top line at 1366 × 768. */
+.topBar[data-course] .product em {
+  font-size: 14px;
+}
+.topBar[data-course] .product b {
+  font-size: 15px;
+}
+.topBar[data-course] .trackBadge {
+  font-size: 14px;
+}

@@ -742,3 +742,8 @@
   font-size: 34px;
   color: var(--hud-tx, #e9edf1);
 }
+
+/* 입문 과정: the 학습 기록 key at 15 px (무대 2단계 7). */
+.recPill[data-course] b {
+  font-size: 15px;
+}

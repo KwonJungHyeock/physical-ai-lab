@@ -787,7 +787,7 @@ export function RecordPill({ rec, site, lesson, total, onOpen, course }: { rec: 
   // 입문 과정: the key only (the 위치 줄 has the 차시; 완료 is in the panel) — the top bar keeps its room for the 위치 줄.
   if (course)
     return (
-      <button type="button" className={css.recPill} onClick={onOpen} title={`학습 기록 · ${course.lesson ? `${course.lesson}차시 / ${course.total}` : `${course.total}차시`} · 완료 ${course.done}/${course.of}`}>
+      <button type="button" className={css.recPill} data-course onClick={onOpen} title={`학습 기록 · ${course.lesson ? `${course.lesson}차시 / ${course.total}` : `${course.total}차시`} · 완료 ${course.done}/${course.of}`}>
         <b>학습 기록</b>
       </button>
     );

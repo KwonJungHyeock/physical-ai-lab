@@ -38,7 +38,7 @@ interface Props {
   /** [?] 도움말: the screen, the order of work, the keys, the manual. */
   onHelp(): void;
   /** A 트랙 page (engine/simulator/tracks.ts): its badge, and only its screens. */
-  track?: { name: string; grade: string; color: string; screens: readonly string[] };
+  track?: { name: string; grade: string; color: string; screens: readonly string[]; course?: boolean };
 }
 
 /** A chip with a small menu under it; closes on a click outside or Esc. */
@@ -116,7 +116,8 @@ function FullscreenChip() {
 
 export default function TopBar({ view, onView, busy, context, settings, status, robotStop, onStop, onHelp, track }: Props) {
   return (
-    <header className={css.topBar} data-panel="topbar">
+    // data-course: the 입문 과정 (no text under 14 px in its top line).
+    <header className={css.topBar} data-panel="topbar" data-course={track?.course || undefined}>
       <button type="button" className={css.lockup} onClick={() => onView('sim')} title="ROBODYNE SYSTEMS · Physical AI 로봇 학습 시뮬레이터 (시뮬레이터로)">
         {/* eslint-disable-next-line @next/next/no-img-element -- a small fixed logo, also in the static export for the robot */}
         <img src="/brand/sim-logo-white.svg" alt="ROBODYNE SYSTEMS" width={73} height={36} />

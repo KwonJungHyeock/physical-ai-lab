@@ -304,7 +304,8 @@ export default function CellScene({
   const shop = cell === 'cafe' || cell === 'draw' || cell === 'board';
   return (
     <group>
-      <Backdrop color={stage?.bg} />
+      {/* (On the 입문 과정 무대 the background is the stage's: CourseDesk.tsx.) */}
+      {!stage && <Backdrop />}
       {!shop && <Floor box={ZONE[cell]} />}
       {!shop && <Fence />}
       {!shop && <Pedestal />}

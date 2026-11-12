@@ -94,10 +94,11 @@ import type { ArmSpec } from '@/engine/robot/arms';
 import { CellObjects, CellPhysics, DeskObjects, DeskPhysics, type CellClock, type DeskEdit } from './DeskObjects';
 import CellScene, { CELL_VIEW } from './CellScene';
 import CourseDesk from './CourseDesk';
+import { deskSafe, shownOf } from './deskView';
 import CourseMarks, { type CourseStageMarks } from './CourseMarks';
 import GoalRing from './GoalRing';
 import type { CellId } from '@/engine/simulator/cell/cells';
-import type { StageLook } from '@/engine/simulator/cell/courseStage';
+import { COURSE_DESK, type CourseView, type StageLook } from '@/engine/simulator/cell/courseStage';
 import { ScenePreset } from './ScenePreset';
 import PlanMarks, { type PlanMarksData } from './PlanMarks';
 
@@ -214,7 +215,8 @@ interface StageProps {
    * Pixels of the view covered by floating panels on each side (PC layout), measured when the
    * view is framed; null when nothing floats over the view.
    */
-  frameInsets?: () => { l: number; r: number; t: number; b: number } | null;
+  /** `hide`: the pixels a panel hides on the scene's right (0: none) — the 입문 과정 무대 keeps what shows to the desk. */
+  frameInsets?: () => { l: number; r: number; t: number; b: number; hide?: number } | null;
   /** Changes when panels open or fold: the view is framed again (unless the user moved it). */
   layoutKey?: string;
   /** The robot stands on a base (G base) this many mm above the table; 0 = on the table. */
@@ -245,6 +247,8 @@ interface StageProps {
   courseMarks?: CourseStageMarks | null;
   /** 입문 과정 무대 (courseStage.ts): one desk and a plain mid-tone background for every 절; none: the usual scene. */
   courseStage?: StageLook | null;
+  /** 입문 과정 무대: the 절's home view (courseStage.ts); every view then keeps to the desk (deskView.ts). */
+  courseView?: CourseView | null;
 }
 
 /**
@@ -417,6 +421,7 @@ function World({
   goalRing = null,
   courseMarks = null,
   courseStage = null,
+  courseView = null,
 }: StageProps & { lights: Lights }) {
   // Every node of the arm's model files, by name (a later file wins a shared name).
   const gltfs = useGLTF(spec.glbs as string[], DRACO_PATH) as unknown as { nodes: GlbNodes }[];
@@ -610,6 +615,11 @@ function World({
   const controls = useThree((s) => s.controls) as CameraControlsImpl | null;
   const size = useThree((s) => s.size);
   const fitReq = useRef<{ name: ViewName; animate: boolean } | null>({ name: 'home', animate: false });
+  /** 입문 과정 무대: what of the view shows (the panel on the right and the bars on top hide the rest). */
+  const deskShown = () => {
+    const i = frameInsets?.();
+    return shownOf(i ? { r: i.hide ?? 0, t: i.t } : null, gl.domElement.clientWidth, gl.domElement.clientHeight);
+  };
   const lastView = useRef<ViewName>('home');
   const userMoved = useRef(false);
   /** A glide by lookAt (a tour, a station) holds until the next view: a resize does not re-frame it. */
@@ -618,7 +628,13 @@ function World({
     const req = fitReq.current;
     if (!req || !controls || !root.current) return;
     fitReq.current = null;
-    const f = fitView(req.name, root.current, arm.root, cell ? CELL_VIEW[cell] : WORK_AREA[theme], camera as PerspectiveCamera, cell && req.name === 'home' ? CELL_VIEW[cell].home : null, freeFrame(frameInsets?.() ?? null, gl.domElement.clientWidth, gl.domElement.clientHeight));
+    const free = freeFrame(frameInsets?.() ?? null, gl.domElement.clientWidth, gl.domElement.clientHeight);
+    // 입문 과정 무대: the 절's own home view (robot frame direction -> three.js), and every view kept to the desk.
+    const own = courseStage && courseView && req.name === 'home' ? courseView : null;
+    const area = own ? own.area : cell ? CELL_VIEW[cell] : WORK_AREA[theme];
+    const home = own ? [own.dir[0], own.dir[2], -own.dir[1]] : cell && req.name === 'home' ? CELL_VIEW[cell].home : null;
+    const f = own?.shot ? { position: new Vector3(own.shot.eye[0], own.shot.eye[2], -own.shot.eye[1]).multiplyScalar(0.001), target: new Vector3(own.shot.target[0], own.shot.target[2], -own.shot.target[1]).multiplyScalar(0.001) } : fitView(req.name, root.current, arm.root, area, camera as PerspectiveCamera, home, free);
+    if (courseStage) f.position.copy(deskSafe(f.position, f.target, camera as PerspectiveCamera, COURSE_DESK, deskShown()));
     void controls.setLookAt(f.position.x, f.position.y, f.position.z, f.target.x, f.target.y, f.target.z, req.animate);
     if (req.name !== 'fit') lastView.current = req.name;
     userMoved.current = false;
@@ -694,7 +710,11 @@ function World({
       if (!c) return;
       c.smoothTime = slow ? 1.1 : 0.45;
       // Robot frame (z up) to three.js (y up): x -> x, y -> -z, z -> y.
-      void c.setLookAt(eye[0] / 1000, eye[2] / 1000, -eye[1] / 1000, target[0] / 1000, target[2] / 1000, -target[1] / 1000, true);
+      const at = new Vector3(target[0] / 1000, target[2] / 1000, -target[1] / 1000);
+      let from = new Vector3(eye[0] / 1000, eye[2] / 1000, -eye[1] / 1000);
+      // 입문 과정 무대: kept to the desk (deskView.ts).
+      if (courseStage) from = deskSafe(from, at, camera as PerspectiveCamera, COURSE_DESK, deskShown());
+      void c.setLookAt(from.x, from.y, from.z, at.x, at.y, at.z, true);
       userMoved.current = false;
       held.current = true;
     },
@@ -736,7 +756,7 @@ function World({
   return (
     <group ref={root} rotation={[-Math.PI / 2, 0, 0]}>
       {!cell && !courseStage && <Desk z={theme === 'kit' ? DESK_Z : 0} finish={spec.finish} />}
-      {!cell && courseStage && <CourseDesk look={courseStage} />}
+      {courseStage && <CourseDesk look={courseStage} />}
       {goalRing && <GoalRing at={goalRing.at} label={goalRing.label} />}
       {courseMarks && <CourseMarks marks={courseMarks} joints={arm.joints} flange={arm.flange} tcpMm={tcpMm} />}
       {cell ? (
@@ -753,7 +773,7 @@ function World({
       ) : (
         <>
           {desk && desk.scene !== 'empty' && desk.scene !== 'kit' && <ScenePreset id={desk.scene} />}
-          {(desk?.mat ?? true) && !courseStage && <WorkMat />}
+          {(desk?.mat ?? true) && <WorkMat />}
           {desk && <DeskObjects world={world} objects={desk.objects} edit={desk.edit} />}
           {desk && <DeskPhysics world={world} chain={chain} tcpMm={tcpMm} effector={effector} />}
         </>
