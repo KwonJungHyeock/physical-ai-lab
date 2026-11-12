@@ -769,19 +769,20 @@ export function Fence() {
 }
 
 /** The workshop round the cell: a dark, hazy backdrop (the HUD's ground) the lit cell stands out against (the stage's own is put back on leaving). */
-export function Backdrop() {
+export function Backdrop({ color = '#1c1f23' }: { color?: string } = {}) {
   const get = useThree((s) => s.get);
   useEffect(() => {
     const scene = get().scene;
     const bg = scene.background;
     const fog = scene.fog;
-    scene.background = new Color('#1c1f23');
-    scene.fog = new Fog('#1c1f23', 1.4, 3.6);
+    // (입문 과정 무대 courseStage.ts: its own plain mid tone instead of the dark hall.)
+    scene.background = new Color(color);
+    scene.fog = new Fog(color, 1.4, 3.6);
     return () => {
       scene.background = bg;
       scene.fog = fog;
     };
-  }, [get]);
+  }, [get, color]);
   return null;
 }
 

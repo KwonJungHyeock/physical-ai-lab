@@ -93,9 +93,11 @@ import { workspaceEnvelope } from '../../education/stage/learn3d';
 import type { ArmSpec } from '@/engine/robot/arms';
 import { CellObjects, CellPhysics, DeskObjects, DeskPhysics, type CellClock, type DeskEdit } from './DeskObjects';
 import CellScene, { CELL_VIEW } from './CellScene';
+import CourseDesk from './CourseDesk';
 import CourseMarks, { type CourseStageMarks } from './CourseMarks';
 import GoalRing from './GoalRing';
 import type { CellId } from '@/engine/simulator/cell/cells';
+import type { StageLook } from '@/engine/simulator/cell/courseStage';
 import { ScenePreset } from './ScenePreset';
 import PlanMarks, { type PlanMarksData } from './PlanMarks';
 
@@ -241,6 +243,8 @@ interface StageProps {
   goalRing?: { at: readonly [number, number, number]; label: string } | null;
   /** 입문 과정 절: press spots on the arm, asset slots in the scene (CourseMarks.tsx); none: nothing. */
   courseMarks?: CourseStageMarks | null;
+  /** 입문 과정 무대 (courseStage.ts): one desk and a plain mid-tone background for every 절; none: the usual scene. */
+  courseStage?: StageLook | null;
 }
 
 /**
@@ -314,7 +318,7 @@ export default function Stage(props: StageProps) {
       }}
     >
       <color attach="background" args={[look.sky]} />
-      <StudioLight intensity={props.cell ? 0.75 : 0.5} softbox={!props.cell} factory={!!props.cell} />
+      <StudioLight intensity={props.cell || props.courseStage ? 0.75 : 0.5} softbox={!props.cell && !props.courseStage} factory={!!props.cell || !!props.courseStage} />
       <hemisphereLight ref={hemi} args={['#ffffff', '#cfd6de', 0.3]} />
       <directionalLight
         ref={key}
@@ -339,7 +343,7 @@ export default function Stage(props: StageProps) {
       <Suspense fallback={null}>
         <World {...props} lights={lights} />
       </Suspense>
-      {props.display.grid && !props.cell && (
+      {props.display.grid && !props.cell && !props.courseStage && (
         <Grid
           onUpdate={(g) => g.layers.set(SCREEN_ONLY)}
           position={[0.14, (props.theme === 'kit' ? DESK_Z : 0) / 1000 + 0.0001, 0]}
@@ -412,6 +416,7 @@ function World({
   cellCallouts = false,
   goalRing = null,
   courseMarks = null,
+  courseStage = null,
 }: StageProps & { lights: Lights }) {
   // Every node of the arm's model files, by name (a later file wins a shared name).
   const gltfs = useGLTF(spec.glbs as string[], DRACO_PATH) as unknown as { nodes: GlbNodes }[];
@@ -730,12 +735,13 @@ function World({
 
   return (
     <group ref={root} rotation={[-Math.PI / 2, 0, 0]}>
-      {!cell && <Desk z={theme === 'kit' ? DESK_Z : 0} finish={spec.finish} />}
+      {!cell && !courseStage && <Desk z={theme === 'kit' ? DESK_Z : 0} finish={spec.finish} />}
+      {!cell && courseStage && <CourseDesk look={courseStage} />}
       {goalRing && <GoalRing at={goalRing.at} label={goalRing.label} />}
       {courseMarks && <CourseMarks marks={courseMarks} joints={arm.joints} flange={arm.flange} tcpMm={tcpMm} />}
       {cell ? (
         <>
-          <CellScene world={world} cell={cell} tags={cellTags} callouts={cellCallouts} />
+          <CellScene world={world} cell={cell} tags={cellTags} callouts={cellCallouts} stage={courseStage} />
           <CellObjects world={world} />
           <CellPhysics world={world} chain={chain} tcpMm={tcpMm} effector={effector} rate={simRate} clock={cellClock} />
         </>
@@ -747,7 +753,7 @@ function World({
       ) : (
         <>
           {desk && desk.scene !== 'empty' && desk.scene !== 'kit' && <ScenePreset id={desk.scene} />}
-          {(desk?.mat ?? true) && <WorkMat />}
+          {(desk?.mat ?? true) && !courseStage && <WorkMat />}
           {desk && <DeskObjects world={world} objects={desk.objects} edit={desk.edit} />}
           {desk && <DeskPhysics world={world} chain={chain} tcpMm={tcpMm} effector={effector} />}
         </>
@@ -757,7 +763,7 @@ function World({
       {/* The calligraphy booth draws its own ink (cell/cellG.tsx). */}
       {cell !== 'draw' && <PenTrail world={world} />}
       {mountMm > 0 && <MountBase mm={mountMm} />}
-      {theme === 'arm' && !cell && <primitive object={dressing} />}
+      {theme === 'arm' && !cell && !courseStage && <primitive object={dressing} />}
       {/* On a base the arm and its base axes stand mountMm above the table; the table, kit and blocks stay put. */}
       <group position={[0, 0, mountMm / 1000]}>
         <primitive object={arm.root} />

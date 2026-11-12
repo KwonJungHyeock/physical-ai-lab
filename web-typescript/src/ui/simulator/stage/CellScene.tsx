@@ -15,6 +15,7 @@ import { useRef, useState, type ReactNode, type RefObject } from 'react';
 import { Vector3, type Group } from 'three';
 
 import { cellLayout, type CellId } from '@/engine/simulator/cell/cells';
+import type { StageLook } from '@/engine/simulator/cell/courseStage';
 import { guideOf } from '@/engine/simulator/cell/guides';
 import { missionById } from '@/engine/simulator/cell/missions';
 import { NARRATE_AT, NARRATED, type Narration } from '@/engine/simulator/cell/narrate';
@@ -281,7 +282,20 @@ function TargetRing({ world }: { world: RefObject<WorldState | null> }) {
   return <GoalRing at={at} label="여기로 · 고리 안" />;
 }
 
-export default function CellScene({ world, cell, tags = [], callouts = false }: { world: RefObject<WorldState | null>; cell: CellId; tags?: readonly string[]; callouts?: boolean }) {
+export default function CellScene({
+  world,
+  cell,
+  tags = [],
+  callouts = false,
+  stage = null,
+}: {
+  world: RefObject<WorldState | null>;
+  cell: CellId;
+  tags?: readonly string[];
+  callouts?: boolean;
+  /** 입문 과정 무대 (courseStage.ts): its background, and the booth with only the lesson's things. */
+  stage?: StageLook | null;
+}) {
   const [hover, setHover] = useState<string | null>(null);
   const T = TAGS[cell];
   const shown = [...new Set([...tags, ...(hover ? [hover] : [])])].filter((n) => T[n]);
@@ -290,11 +304,11 @@ export default function CellScene({ world, cell, tags = [], callouts = false }: 
   const shop = cell === 'cafe' || cell === 'draw' || cell === 'board';
   return (
     <group>
-      <Backdrop />
+      <Backdrop color={stage?.bg} />
       {!shop && <Floor box={ZONE[cell]} />}
       {!shop && <Fence />}
       {!shop && <Pedestal />}
-      <Equipment world={world} onHover={setHover} />
+      {cell === 'draw' && stage ? <DrawCell world={world} onHover={setHover} bare={stage} /> : <Equipment world={world} onHover={setHover} />}
       {!shop && (
         <>
           <Tagged name="제어함" onHover={setHover}>

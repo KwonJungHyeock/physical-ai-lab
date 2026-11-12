@@ -42,7 +42,7 @@ function handAt(d: NonNullable<NonNullable<WorldState['cell']>['draw']>, t: numb
 }
 
 /** A soft contact shadow under a thing on the table (a radial fade under the key light's sharp one). */
-function Contact({ at, w, d, k = 0.5 }: { at: [number, number]; w: number; d: number; k?: number }) {
+export function Contact({ at, w, d, k = 0.5 }: { at: [number, number]; w: number; d: number; k?: number }) {
   const tex = useSheet('draw-contact', 64, 64, (ctx, cw, ch) => {
     const g = ctx.createRadialGradient(cw / 2, ch / 2, 0, cw / 2, ch / 2, cw / 2);
     g.addColorStop(0, 'rgba(0,0,0,0.8)');
@@ -60,7 +60,8 @@ function Contact({ at, w, d, k = 0.5 }: { at: [number, number]; w: number; d: nu
 }
 
 /** The event table: a white laminate top with a rounded edge, a printed front skirt facing the customer, steel legs. */
-function BoothTable() {
+/** The table and the robot's plate; `desk` = the 입문 과정 무대's desk colour, without the printed skirt (courseStage.ts). */
+export function BoothTable({ desk }: { desk?: string } = {}) {
   const T = TABLE;
   const skirt = useSheet('draw-skirt', 510, 160, (ctx, w, h) => {
     ctx.fillStyle = '#18201d';
@@ -83,10 +84,10 @@ function BoothTable() {
   return (
     <group>
       <RBox at={[cx, cy, TABLE_Z - 12.5]} size={[T.x1 - T.x0, T.y1 - T.y0, 25]} radius={6}>
-        <meshPhysicalMaterial color="#f4f4f1" roughness={0.42} clearcoat={0.4} clearcoatRoughness={0.3} />
+        <meshPhysicalMaterial color={desk ?? '#f4f4f1'} roughness={0.42} clearcoat={desk ? 0.15 : 0.4} clearcoatRoughness={0.3} />
       </RBox>
       {/* The printed skirt on the customer's side, down to near the floor. */}
-      <mesh position={[m(cx), m(T.y0 - 1.5), m((TABLE_Z - 25 + FLOOR_Z + 40) / 2)]} rotation={[Math.PI / 2, 0, 0]}>
+      <mesh visible={!desk} position={[m(cx), m(T.y0 - 1.5), m((TABLE_Z - 25 + FLOOR_Z + 40) / 2)]} rotation={[Math.PI / 2, 0, 0]}>
         <planeGeometry args={[m(T.x1 - T.x0), m(TABLE_Z - 25 - FLOOR_Z - 40)]} />
         <meshStandardMaterial map={skirt} roughness={0.85} />
       </mesh>
@@ -491,17 +492,22 @@ function People() {
   );
 }
 
-export function DrawCell({ world, onHover }: { world: RefObject<WorldState | null>; onHover: (n: string | null) => void }) {
+/**
+ * `bare`: the 입문 과정 무대 (courseStage.ts) — the same booth with only what the lesson uses (the
+ * mat, the card, the ink, the 완성 램프), no hall, people, sample board or pen stand, the desk in
+ * the stage's colour. Those are only switched off here, not removed.
+ */
+export function DrawCell({ world, onHover, bare }: { world: RefObject<WorldState | null>; onHover: (n: string | null) => void; bare?: { desk: string } | null }) {
   return (
     <>
-      <Hall />
-      <People />
-      <BoothTable />
+      {!bare && <Hall />}
+      {!bare && <People />}
+      <BoothTable desk={bare?.desk} />
       {/* Soft contact shadows on the table: the robot's plate, the lamp, the pen stand, the card tray. */}
       <Contact at={[0, 0]} w={170} d={170} k={0.35} />
       <Contact at={[312, -140]} w={48} d={48} />
-      <Contact at={[55, 135]} w={30} d={30} />
-      <Contact at={[-95, -110]} w={140} d={100} k={0.35} />
+      {!bare && <Contact at={[55, 135]} w={30} d={30} />}
+      {!bare && <Contact at={[-95, -110]} w={140} d={100} k={0.35} />}
       <Tagged name="커팅 매트" onHover={onHover}>
         <Mat />
       </Tagged>
@@ -513,12 +519,16 @@ export function DrawCell({ world, onHover }: { world: RefObject<WorldState | nul
       <Tagged name="완성 램프" onHover={onHover}>
         <DoneLamp world={world} />
       </Tagged>
-      <Tagged name="펜 꽂이" onHover={onHover}>
-        <PenStand />
-      </Tagged>
-      <Tagged name="샘플 보드" onHover={onHover}>
-        <SampleBoard />
-      </Tagged>
+      {!bare && (
+        <Tagged name="펜 꽂이" onHover={onHover}>
+          <PenStand />
+        </Tagged>
+      )}
+      {!bare && (
+        <Tagged name="샘플 보드" onHover={onHover}>
+          <SampleBoard />
+        </Tagged>
+      )}
     </>
   );
 }

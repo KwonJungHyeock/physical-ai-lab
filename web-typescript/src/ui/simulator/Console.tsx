@@ -152,6 +152,7 @@ import { lessonOfQuest, lessonsOf, siteOf } from '@/engine/simulator/cell/lesson
 import { COURSE, kindsOf, modeFor, subById, subOfRun, topicMark, MODE_NAME, type CourseSub, type SubMode } from '@/engine/simulator/cell/course';
 import { DEFAULT_PLAN, countedIn, lessonIn, lessonStepsIn, missionSubsIn, nextIn, testReady, type CoursePlan } from '@/engine/simulator/cell/courses';
 import { mayOpen, noticeDue, noticeRead, readPlan, report } from '@/engine/simulator/cell/platform';
+import { DRAFT_SUBS, STAGE_TONES, isStageTone, type StageTone } from '@/engine/simulator/cell/courseStage';
 import { ARM_PARTS, PICK_VIEW, COURSE_STEPS, FOUND_SWING_DEG, HAND_SCENE, HAND_SLOW_S, STEPS_KEY, SWING, isCourseStep, type CourseStepId } from '@/engine/simulator/cell/courseSteps';
 import { CHAPTER_TESTS, TESTS_KEY, loadTests, type OX, type TestResult } from '@/engine/simulator/cell/courseTests';
 import { COPYRIGHT_NOTICE, COPYRIGHT_RECORD_LINE } from '@/engine/simulator/copyright';
@@ -346,6 +347,9 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     const q = new URLSearchParams(window.location.search);
     const sub = q.get('sub');
     if (sub) asked.current = { sub, mode: q.get('mode') === 'scene' ? 'scene' : 'practice' };
+    // 무대 시안 (courseStage.ts, 1단계): only from the address, until a tone is confirmed.
+    const tone = q.get('stage');
+    if (isStageTone(tone)) setStageTone(tone);
     // Read after hydration (this browser's day).
     setNoticeAsk(noticeDue((k) => localStorage.getItem(k), Date.now()));
     let live = true;
@@ -354,6 +358,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       live = false;
     };
   }, [course]);
+  /** 무대 시안 asked for in the address (?stage=a · b), shown on DRAFT_SUBS only. */
+  const [stageTone, setStageTone] = useState<StageTone | null>(null);
   /** The 저작권 안내 is due (not read yet today: platform.ts). */
   const [noticeAsk, setNoticeAsk] = useState(true);
   /** This user may not open the course (platform.ts mayOpen): its notice, no scene. */
@@ -5785,6 +5791,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                         ? { slots: [{ id: 'hand', label: '다가오는 손', at: [350, 0, 40], w: 210, h: 120, enter: { in: courseStep.handNear, from: [0, -300] } }] }
                         : null
                   }
+                  courseStage={course && stageTone && courseStep && DRAFT_SUBS.includes(courseStep.id) ? STAGE_TONES[stageTone] : null}
                   cellClock={cellClock}
                   cellCallouts={!!track}
                   goalRing={(() => {
