@@ -559,7 +559,18 @@ function People() {
  * mat, the card, the ink, the 완성 램프), no hall, people, sample board or pen stand, the desk in
  * the stage's colour. Those are only switched off here, not removed.
  */
-export function DrawCell({ world, onHover, bare }: { world: RefObject<WorldState | null>; onHover: (n: string | null) => void; bare?: { desk: string } | null }) {
+export function DrawCell({
+  world,
+  onHover,
+  bare,
+  hide,
+}: {
+  world: RefObject<WorldState | null>;
+  onHover: (n: string | null) => void;
+  bare?: { desk: string } | null;
+  /** 입문 과정 2-1: what is not on the desk yet. */
+  hide?: { mat?: boolean; card?: boolean; lamp?: boolean } | null;
+}) {
   return (
     <>
       {!bare && <Hall />}
@@ -568,22 +579,28 @@ export function DrawCell({ world, onHover, bare }: { world: RefObject<WorldState
       {!bare && <BoothTable />}
       {/* Soft contact shadows on the table: the robot's plate, the lamp, the pen stand, the card tray. */}
       {!bare && <Contact at={[0, 0]} w={170} d={170} k={0.35} />}
-      <Contact at={[312, -140]} w={48} d={48} />
+      {!hide?.lamp && <Contact at={[312, -140]} w={48} d={48} />}
       {!bare && <Contact at={[55, 135]} w={30} d={30} />}
       {!bare && <Contact at={[-95, -110]} w={140} d={100} k={0.35} />}
-      <Tagged name="커팅 매트" onHover={onHover}>
-        <Mat />
-      </Tagged>
-      <Tagged name="메시지 카드" onHover={onHover}>
-        <CardOnMat world={world} />
-      </Tagged>
+      <group visible={!hide?.mat}>
+        <Tagged name="커팅 매트" onHover={onHover}>
+          <Mat />
+        </Tagged>
+      </group>
+      <group visible={!hide?.card}>
+        <Tagged name="메시지 카드" onHover={onHover}>
+          <CardOnMat world={world} />
+        </Tagged>
+      </group>
       <Ink world={world} />
       {/* The customer's hand: on the 무대 the team's picture (an asset slot), else the hand drawn here. */}
       {bare ? <HandSlot world={world} /> : <Hand world={world} />}
       {bare && <WaitingCards world={world} />}
-      <Tagged name="완성 램프" onHover={onHover}>
-        <DoneLamp world={world} />
-      </Tagged>
+      <group visible={!hide?.lamp}>
+        <Tagged name="완성 램프" onHover={onHover}>
+          <DoneLamp world={world} />
+        </Tagged>
+      </group>
       {!bare && (
         <Tagged name="펜 꽂이" onHover={onHover}>
           <PenStand />

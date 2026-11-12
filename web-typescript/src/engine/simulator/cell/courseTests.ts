@@ -7,6 +7,12 @@
 
 export type OX = 'O' | 'X';
 
+/** What a scene mission watches for (2장: the arm at 0°, at the 기본 자세, the pen on, a dot made). */
+export type MissionStep = 'zero' | 'home' | 'pen' | 'dot';
+
+/** The steps done in order: those seen, first time each, against the order asked. */
+export const inOrder = (want: readonly MissionStep[], seen: readonly MissionStep[]) => want.length === seen.length && want.every((w, i) => seen[i] === w);
+
 export interface ChapterTest {
   chapter: number;
   answers: readonly [OX, OX, OX, OX, OX];
@@ -15,6 +21,8 @@ export interface ChapterTest {
     text: string;
     /** Its pictures or scene are in the app (else 준비 중). */
     ready: boolean;
+    /** A mission done in the scene: what has to happen, in this order. */
+    steps?: readonly MissionStep[];
   };
 }
 
@@ -24,6 +32,12 @@ export const CHAPTER_TESTS: Record<number, ChapterTest> = {
     answers: ['O', 'X', 'O', 'X', 'O'],
     // The six photos are asset slots; the team sends which photos (until then 준비 중).
     mission: { text: '사진 6장 중 협동로봇을 모두 골라 누르고 확인을 눌러요', ready: false },
+  },
+  2: {
+    chapter: 2,
+    answers: ['X', 'O', 'O', 'X', 'O'],
+    // In the scene: 2-3's pose, no tool, the pen 5 mm up — the four in this order (judged as in 2-3 · 2-4).
+    mission: { text: '영점 자세 → 기본 자세 → 펜 달기 → 점 찍기를 순서대로 해요', ready: true, steps: ['zero', 'home', 'pen', 'dot'] },
   },
 };
 

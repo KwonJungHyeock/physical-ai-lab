@@ -9,10 +9,10 @@
  *    작업 범위 circle …) is never drawn in code.
  */
 
-import { Html } from '@react-three/drei';
-import { createPortal } from '@react-three/fiber';
-import { Fragment, useState } from 'react';
-import type { Group } from 'three';
+import { Html, Line } from '@react-three/drei';
+import { createPortal, useThree } from '@react-three/fiber';
+import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Vector3, type Group } from 'three';
 
 import { m } from './cell/kit';
 import css from './courseMarks.module.css';
@@ -39,9 +39,27 @@ export interface CoursePick {
   onPick(part: number): void;
 }
 
+/** 2-1: the box of parts (each one's picture an asset slot), pressed one by one to see its name. */
+export interface CourseKit {
+  parts: readonly { name: string; id: string }[];
+  seen: readonly number[];
+  onSee(part: number): void;
+  /** Where the box stands on the desk (robot mm). */
+  at: readonly [number, number, number];
+}
+
+/** 2-1: the empty places on the desk (robot mm), put down in order: the ones not put down yet show their outline and can be pressed. */
+export interface CoursePlaces {
+  rects: readonly { name: string; x0: number; x1: number; y0: number; y1: number }[];
+  placed: number;
+  onPick(place: number): void;
+}
+
 export interface CourseStageMarks {
   pick?: CoursePick | null;
   slots?: readonly CourseSlot[];
+  kit?: CourseKit | null;
+  places?: CoursePlaces | null;
 }
 
 /** 1-2: 베이스 (J1)'s spot sits down on the turning base, apart from 어깨 (J2) just above it (its frame, m). */
@@ -67,10 +85,108 @@ export function AssetSlot({ slot }: { slot: CourseSlot }) {
   );
 }
 
+/** The box of parts: a tile per part, its name once pressed. */
+function KitBox({ kit }: { kit: CourseKit }) {
+  return (
+    <group position={[m(kit.at[0]), m(kit.at[1]), m(kit.at[2])]}>
+      <Html center zIndexRange={[22, 0]}>
+        <div className={css.kit} data-step="kit" role="group" aria-label="구성품 상자">
+          <b>구성품 상자</b>
+          <div>
+            {kit.parts.map((p, i) => (
+              <button key={p.id} type="button" data-seen={kit.seen.includes(i) || undefined} aria-label={kit.seen.includes(i) ? p.name : `구성품 ${i + 1}`} onClick={() => kit.onSee(i)}>
+                <AssetSlot slot={{ id: p.id, label: p.name, at: [0, 0, 0], w: 92, h: 58 }} />
+                <span>{kit.seen.includes(i) ? p.name : '?'}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </Html>
+    </group>
+  );
+}
+
+/** An empty place: its dashed outline on the desk and an invisible face to press (the later ones lie higher: the card's place is on the mat's). */
+function Place({ r, z, onPress }: { r: CoursePlaces['rects'][number]; z: number; onPress(at: Vector3): void }) {
+  const pts = useMemo(
+    () =>
+      [
+        [r.x0, r.y0],
+        [r.x1, r.y0],
+        [r.x1, r.y1],
+        [r.x0, r.y1],
+        [r.x0, r.y0],
+      ].map(([x, y]) => [m(x), m(y), m(z)] as [number, number, number]),
+    [r, z],
+  );
+  return (
+    <group>
+      <Line points={pts} color="#fff7e8" lineWidth={2.5} dashed dashSize={m(10)} gapSize={m(6)} />
+      <mesh
+        position={[m((r.x0 + r.x1) / 2), m((r.y0 + r.y1) / 2), m(z)]}
+        onClick={(e) => {
+          e.stopPropagation();
+          onPress(e.point.clone());
+        }}
+        onPointerOver={() => (document.body.style.cursor = 'pointer')}
+        onPointerOut={() => (document.body.style.cursor = '')}
+      >
+        <planeGeometry args={[m(r.x1 - r.x0), m(r.y1 - r.y0)]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
+    </group>
+  );
+}
+
+/**
+ * The place a press is for. The card's place lies inside the mat's: a press where both are means the
+ * one that comes next if it is one of them (the mat before the card), else the smaller one (so a press
+ * there before the robot is down says "먼저 로봇을 놓아요", as anywhere).
+ */
+function placeAt(places: CoursePlaces, root: Group | null, world: Vector3): number {
+  const p = root ? root.worldToLocal(world) : world;
+  const x = p.x * 1000;
+  const y = p.y * 1000;
+  const hits = places.rects.map((r, i) => ({ r, i })).filter(({ r, i }) => i >= places.placed && x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1);
+  const next = hits.find((h) => h.i === places.placed);
+  if (next) return next.i;
+  const area = (r: CoursePlaces['rects'][number]) => (r.x1 - r.x0) * (r.y1 - r.y0);
+  return hits.sort((a, b) => area(a.r) - area(b.r))[0]?.i ?? places.placed;
+}
+
+/** For the behaviour checks (as Console's __cell* hooks): where on screen each 2-1 place's middle is, px. */
+function PlacesHook({ places, root }: { places: CoursePlaces; root: Group | null }) {
+  const camera = useThree((t) => t.camera);
+  const size = useThree((t) => t.size);
+  useEffect(() => {
+    const w = window as unknown as { __placeAt?: () => [number, number][] };
+    w.__placeAt = () =>
+      places.rects.map((r) => {
+        const v = new Vector3(m((r.x0 + r.x1) / 2), m((r.y0 + r.y1) / 2), 0);
+        root?.localToWorld(v);
+        v.project(camera);
+        return [((v.x + 1) / 2) * size.width, ((1 - v.y) / 2) * size.height];
+      });
+    return () => {
+      delete w.__placeAt;
+    };
+  }, [places, root, camera, size]);
+  return null;
+}
+
 export default function CourseMarks({ marks, joints, flange, tcpMm }: { marks: CourseStageMarks; joints: readonly { group: Group }[]; flange: Group; tcpMm: number }) {
   const pick = marks.pick;
+  const places = marks.places;
+  const [root, setRoot] = useState<Group | null>(null);
   return (
     <>
+      {marks.kit && <KitBox kit={marks.kit} />}
+      {places && (
+        <group ref={setRoot}>
+          {places.rects.map((r, i) => (i < places.placed ? null : <Place key={r.name} r={r} z={1 + i * 0.6} onPress={(at) => places.onPick(placeAt(places, root, at))} />))}
+          <PlacesHook places={places} root={root} />
+        </group>
+      )}
       {marks.slots?.map((s) => (
         <group key={s.id} position={[m(s.at[0]), m(s.at[1]), m(s.at[2])]}>
           <Html center zIndexRange={[18, 0]} style={{ pointerEvents: 'none' }}>

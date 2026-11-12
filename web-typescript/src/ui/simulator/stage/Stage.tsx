@@ -249,6 +249,15 @@ interface StageProps {
   courseStage?: StageLook | null;
   /** 입문 과정 무대: the 절's home view (courseStage.ts); every view then keeps to the desk (deskView.ts). */
   courseView?: CourseView | null;
+  /** 입문 과정 2-1: what is not on the desk yet (the arm; the booth's mat, card and lamp). */
+  courseHide?: CourseHide | null;
+}
+
+export interface CourseHide {
+  arm?: boolean;
+  mat?: boolean;
+  card?: boolean;
+  lamp?: boolean;
 }
 
 /**
@@ -422,6 +431,7 @@ function World({
   courseMarks = null,
   courseStage = null,
   courseView = null,
+  courseHide = null,
 }: StageProps & { lights: Lights }) {
   // Every node of the arm's model files, by name (a later file wins a shared name).
   const gltfs = useGLTF(spec.glbs as string[], DRACO_PATH) as unknown as { nodes: GlbNodes }[];
@@ -545,6 +555,10 @@ function World({
   const checked = useRef(0);
   const misses = useRef(0);
   const displayReach = useRef(display.reach);
+  const armOff = useRef(!!courseHide?.arm);
+  useEffect(() => {
+    armOff.current = !!courseHide?.arm;
+  }, [courseHide?.arm]);
   useEffect(() => {
     displayReach.current = display.reach;
   }, [display.reach]);
@@ -572,8 +586,9 @@ function World({
       return;
     }
     if (checked.current < 0) return;
-    // The workspace shell tints the base blue: no reading then (it would look like no robot).
-    if (displayReach.current) return;
+    // The workspace shell tints the base blue: no reading then (it would look like no robot). Nor while
+    // the 입문 과정 has the arm off the desk (2-1: not put down yet).
+    if (displayReach.current || armOff.current) return;
     checked.current += 1;
     if (checked.current < 45 || !root.current) return;
     checked.current = -1;
@@ -761,7 +776,7 @@ function World({
       {courseMarks && <CourseMarks marks={courseMarks} joints={arm.joints} flange={arm.flange} tcpMm={tcpMm} />}
       {cell ? (
         <>
-          <CellScene world={world} cell={cell} tags={cellTags} callouts={cellCallouts} stage={courseStage} />
+          <CellScene world={world} cell={cell} tags={cellTags} callouts={cellCallouts} stage={courseStage} hide={courseHide} />
           <CellObjects world={world} />
           <CellPhysics world={world} chain={chain} tcpMm={tcpMm} effector={effector} rate={simRate} clock={cellClock} />
         </>
@@ -786,7 +801,7 @@ function World({
       {theme === 'arm' && !cell && !courseStage && <primitive object={dressing} />}
       {/* On a base the arm and its base axes stand mountMm above the table; the table, kit and blocks stay put. */}
       <group position={[0, 0, mountMm / 1000]}>
-        <primitive object={arm.root} />
+        <primitive object={arm.root} visible={!courseHide?.arm} />
         <TrackTags tags={tags} joints={arm.joints} />
         {ghost && <primitive object={ghostArm.root} />}
         {miniRect && monitor && (

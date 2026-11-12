@@ -213,3 +213,95 @@
   font-size: 16px;
   color: #dfe4ea;
 }
+
+/* 2-4 · 2장: the tool row, the 보정 card, the pose keys. */
+.toolRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 52px;
+  padding: 0 8px 0 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #f6f7f9;
+  font-size: 16px;
+}
+.toolRow b {
+  margin-left: 8px;
+  font-size: 17px;
+}
+.toolRow button,
+.poses button {
+  height: 44px;
+  padding: 0 16px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f6f7f9;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.toolRow button:disabled,
+.poses button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.calib {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #f6f7f9;
+  font-size: 16px;
+}
+.calib > b {
+  font-size: 17px;
+}
+.calib output {
+  margin-left: 4px;
+  color: #c9ced5;
+  font-weight: 700;
+}
+.calib input {
+  width: 72px;
+  height: 38px;
+  margin: 0 6px;
+  padding: 0 8px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  background: #0f1217;
+  color: #fff;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 700;
+}
+.calib small {
+  flex-basis: 100%;
+  font-size: 14px;
+  color: #c9ced5;
+}
+.poses {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+.poses button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 8px;
+}
+.poses .stop {
+  border-color: rgba(239, 68, 68, 0.6);
+  color: #fca5a5;
+}
+.poses kbd {
+  font-size: 12px;
+  opacity: 0.8;
+}

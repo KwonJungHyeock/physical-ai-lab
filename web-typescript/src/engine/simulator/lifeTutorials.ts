@@ -136,17 +136,24 @@ export const LIFE_TUTORIALS: LifeTutorial[] = [
 
 /** How close the tool tip has to come to a ring's centre, mm. */
 export const RING_MM = 15;
+/** A ring's lead leaves an axis alone once the tip is this close on it, mm (the ring is round, 15 mm). */
+const LEAD_SLACK_MM = 6;
 const dist = (tip: TutCtx['tip'], r: readonly [number, number, number]) => Math.hypot(tip.x - r[0], tip.y - r[1], tip.z - r[2]);
 /** The 좌표 jog keys by axis and way (their labels end "(X+)", "(Y−)"), and what each is called on the pad. */
 const TIP_KEYS: Record<string, string> = { 'X+': '앞', 'X−': '뒤', 'Y+': '왼쪽', 'Y−': '오른쪽', 'Z+': '위', 'Z−': '아래' };
 const COORD_KEY: TutTarget = { sel: '[title^="좌표: 손끝"]', say: '좌표 버튼을 눌러요' };
 /**
- * The key that brings the tip nearest the ring now: the axis it is furthest off on. Where the 좌표
- * keys are not on screen (관절 mode), the 좌표 button first.
+ * The key that brings the tip to the ring: up first, then across (the axis it is furthest off on),
+ * down last — the way a tip is carried over the desk. Across first, low past the robot's base, the
+ * tip meets the arm's reach and hardly moves (맛보기 고리 3 from 고리 2: Y− at z 110), so a student who
+ * only presses the lit key would not get there. Where the 좌표 keys are not on screen (관절 mode),
+ * the 좌표 button first.
  */
 export function ringLead(tip: TutCtx['tip'], r: readonly [number, number, number]): TutTarget[] {
   const d = [r[0] - tip.x, r[1] - tip.y, r[2] - tip.z];
-  const k = d.reduce((b, v, i) => (Math.abs(v) > Math.abs(d[b]) ? i : b), 0);
+  const off = (i: number) => Math.abs(d[i]) > LEAD_SLACK_MM;
+  const across = Math.abs(d[0]) >= Math.abs(d[1]) ? 0 : 1;
+  const k = d[2] > LEAD_SLACK_MM ? 2 : off(across) ? across : off(1 - across) ? 1 - across : 2;
   const key = `${'XYZ'[k]}${d[k] > 0 ? '+' : '−'}`;
   return [{ sel: `[aria-label$="(${key})"]`, say: `${TIP_KEYS[key]} (${key}) 키를 눌러요` }, COORD_KEY];
 }

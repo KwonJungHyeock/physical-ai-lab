@@ -288,6 +288,7 @@ export default function CellScene({
   tags = [],
   callouts = false,
   stage = null,
+  hide = null,
 }: {
   world: RefObject<WorldState | null>;
   cell: CellId;
@@ -295,6 +296,8 @@ export default function CellScene({
   callouts?: boolean;
   /** 입문 과정 무대 (courseStage.ts): its background, and the booth with only the lesson's things. */
   stage?: StageLook | null;
+  /** 입문 과정 2-1: the booth's things not put down yet. */
+  hide?: { mat?: boolean; card?: boolean; lamp?: boolean } | null;
 }) {
   const [hover, setHover] = useState<string | null>(null);
   const T = TAGS[cell];
@@ -309,7 +312,7 @@ export default function CellScene({
       {!shop && <Floor box={ZONE[cell]} />}
       {!shop && <Fence />}
       {!shop && <Pedestal />}
-      {cell === 'draw' && stage ? <DrawCell world={world} onHover={setHover} bare={stage} /> : <Equipment world={world} onHover={setHover} />}
+      {cell === 'draw' && stage ? <DrawCell world={world} onHover={setHover} bare={stage} hide={hide} /> : <Equipment world={world} onHover={setHover} />}
       {!shop && (
         <>
           <Tagged name="제어함" onHover={setHover}>

@@ -7,7 +7,7 @@
  * The values marked 제안값 are the guideline's proposals: kept as given until confirmed.
  */
 
-export type CourseStepId = '1-1' | '1-2' | '1-3';
+export type CourseStepId = '1-1' | '1-2' | '1-3' | '2-1' | '2-3' | '2-4';
 
 export interface CourseStepLine {
   text: string;
@@ -40,6 +40,20 @@ export const COURSE_STEPS: Record<CourseStepId, readonly CourseStepLine[]> = {
     { text: '▶ 시뮬레이션 버튼을 눌러 로봇을 움직여요', sel: RUN },
     { text: '로봇이 움직이는 동안 정지 버튼을 눌러요', sel: '[data-step="stop"]' },
   ],
+  '2-1': [
+    { text: '상자 속 구성품 5개를 하나씩 눌러 이름을 봐요', sel: '[data-step="kit"]' },
+    // (Where to put each is the student's to find: no place is lit.)
+    { text: '책상 위 빈 자리를 로봇 → 매트 → 카드 순서로 눌러 놓아요' },
+  ],
+  '2-3': [
+    { text: '일자로 펴기 버튼을 눌러 영점 자세로 보내요', sel: '[data-step="zero"]' },
+    { text: '기본 자세 버튼을 눌러 기본 자세로 보내요', sel: '[data-step="home"]' },
+  ],
+  '2-4': [
+    { text: '도구의 달기 버튼을 눌러 펜을 달아요', sel: '[data-step="attach"]' },
+    { text: '보정 카드의 펜 칸을 고쳐요', sel: '[data-step="pen"]' },
+    { text: '▶ 시뮬레이션 버튼을 눌러 점을 하나 찍어요', sel: RUN },
+  ],
 };
 
 export const isCourseStep = (id: string): id is CourseStepId => id in COURSE_STEPS;
@@ -61,3 +75,34 @@ export const STEPS_KEY = 'life-course-steps';
  * height, from the customer's side and high enough that the desk fills the bottom (courseStage.ts).
  */
 export const PICK_VIEW = { eye: [228, -553, 803] as const, target: [100, 0, 250] as const };
+
+/* --- 2장 로봇 준비하기 ------------------------------------------------------------------- */
+
+/** 2-1: what is in the box, in the order shown, and each one's picture (an asset slot, /course/assets/<id>.png). */
+export const KIT_PARTS = [
+  { name: '로봇', id: 'part-robot' },
+  { name: '매트', id: 'part-mat' },
+  { name: '펜', id: 'part-pen' },
+  { name: '카드', id: 'part-card' },
+  { name: '케이블', id: 'part-cable' },
+] as const;
+
+/** 2-1: the places on the desk, in the order they are put down (robot mm; fixed: the robot's base on its plate at (0, 0), the mat, the card's usual corner (150, −40)). */
+export const DESK_PLACES = [
+  { name: '로봇', x0: -85, x1: 85, y0: -85, y1: 85 },
+  { name: '매트', x0: 110, x1: 300, y0: -90, y1: 70 },
+  { name: '카드', x0: 150, x1: 270, y0: -40, y1: 40 },
+] as const;
+
+/** 2-3: neither 영점 nor 기본 자세 (제안값), °. */
+export const PREP_POSE = [30, 20, -40, -20, 0, 0] as const;
+/** 2-3: how close each joint has to come to 0° or the 기본 자세, °. */
+export const POSE_TOL_DEG = 2;
+
+/** 2-4: the pen's height as it starts (above the paper: no dot), mm; the dot at the card's middle (robot mm). */
+export const PEN_START_MM = 5;
+export const DOT_AT = { x: 210, y: 0 } as const;
+/** 2-4: the pen moves to its height from this far above the paper, and back, mm. */
+export const DOT_ABOVE_MM = 20;
+/** 2-4: a dot is ink within this far of DOT_AT, mm (the pen draws at tip z ≤ 0.8 mm: sim.ts). */
+export const DOT_NEAR_MM = 3;

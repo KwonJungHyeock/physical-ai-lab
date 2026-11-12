@@ -100,9 +100,9 @@
       "chapter": 2,
       "title": "구성품과 작업대 놓기",
       "pages": [12, 13],
-      "status": "soon",
-      "scene": "soon",
-      "practice": "soon"
+      "status": "open",
+      "scene": "none",
+      "practice": "open"
     },
     {
       "id": "2-2",
@@ -119,18 +119,18 @@
       "chapter": 2,
       "title": "영점과 기본 자세 확인",
       "pages": [18, 19],
-      "status": "soon",
-      "scene": "soon",
-      "practice": "soon"
+      "status": "open",
+      "scene": "none",
+      "practice": "open"
     },
     {
       "id": "2-4",
       "chapter": 2,
       "title": "펜 끼우고 높이 맞추기",
       "pages": [20, 21],
-      "status": "soon",
-      "scene": "soon",
-      "practice": "soon"
+      "status": "open",
+      "scene": "none",
+      "practice": "open"
     },
     {
       "id": "2-5",

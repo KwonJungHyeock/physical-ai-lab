@@ -3,12 +3,15 @@
 /**
  * A chapter's 수행평가 (장별 가이드라인 v1): the O · X 5문항 by number (the questions are in the 교안),
  * graded once on [확인] (the first answers kept), then the mission — one line, no number badges. A
- * mission whose pictures are not in yet shows its asset slots and 준비 중; the O · X still count.
+ * mission whose pictures are not in yet shows its asset slots and 준비 중; the O · X still count. A
+ * mission done in the scene (2장) starts from [미션 시작] (the card steps aside); its first result is
+ * kept, and with it the chapter's 상 · 중 · 하 (임시, platform.ts levelOf).
  */
 
 import { useState } from 'react';
 
 import { gradeOX, type ChapterTest, type OX, type TestResult } from '@/engine/simulator/cell/courseTests';
+import { levelOf } from '@/engine/simulator/cell/platform';
 
 import { AssetSlot } from '../stage/CourseMarks';
 import css from './courseStep.module.css';
@@ -19,9 +22,11 @@ interface Props {
   onGraded(chosen: OX[], right: number): void;
   /** [다음 단계 →] (none: the course's end is elsewhere). */
   onNext?: () => void;
+  /** A mission done in the scene: start it. */
+  onMission?: () => void;
 }
 
-export default function CourseTestPanel({ test, result, onGraded, onNext }: Props) {
+export default function CourseTestPanel({ test, result, onGraded, onNext, onMission }: Props) {
   const [chosen, setChosen] = useState<(OX | null)[]>(() => result?.chosen ?? [null, null, null, null, null]);
   const graded = result?.right != null;
   const all = chosen.every((c) => c !== null);
@@ -58,6 +63,22 @@ export default function CourseTestPanel({ test, result, onGraded, onNext }: Prop
               <output>O · X 5문항 중 {result?.right}개 맞혔어요</output>
             </div>
             <p className={css.soon}>미션: {test.mission.text}</p>
+            {test.mission.ready && test.mission.steps && (
+              <div className={css.row} style={{ marginBottom: 18 }}>
+                {result?.mission == null ? (
+                  <>
+                    <output>장면에서 해요 · 끝나면 이 카드로 돌아와요</output>
+                    <button type="button" className={css.key} data-lit onClick={onMission}>
+                      미션 시작
+                    </button>
+                  </>
+                ) : (
+                  <output>
+                    미션 {result.mission ? '통과' : '아직 · 순서가 달랐어요'} · 상 · 중 · 하 (임시): {levelOf({ chapter: test.chapter, right: result.right ?? 0, of: 5, mission: result.mission }).level}
+                  </output>
+                )}
+              </div>
+            )}
             {!test.mission.ready && (
               <>
                 <div className={css.photos}>

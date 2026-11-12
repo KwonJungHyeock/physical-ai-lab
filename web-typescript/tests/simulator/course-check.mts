@@ -86,7 +86,7 @@ assert.deepEqual(
   ls.flatMap((l) => l.steps.filter((x) => x.kind === 'test').map((x) => `${l.n}:${x.sub.id}`)),
   ['1:1-4', '2:2-5', '4:3-6', '6:4-5', '8:5-6'],
 );
-for (const t of tests) assert.equal(K.testReady(t.sub), t.sub.id === '1-4', `${t.sub.id}: 1장만 열림, 나머지 준비 중`);
+for (const t of tests) assert.equal(K.testReady(t.sub), ['1-4', '2-5'].includes(t.sub.id), `${t.sub.id}: 1 · 2장만 열림, 나머지 준비 중`);
 
 // 1장 (장별 가이드라인 v1): 1-1 · 1-2 · 1-3 open as the course's own 절; 1-1 has 장면 보기; 1장 수행평가 opens after 1-3.
 const S = await import('../../src/engine/simulator/cell/courseSteps');
@@ -130,6 +130,31 @@ assert.equal(
   true,
   '다음 날은 다시',
 );
+
+// 2장 (장별 가이드라인 v1): 2-1 · 2-3 · 2-4 open (실습 하기 only), 2장 수행평가 after 2-4, its mission done in the scene.
+for (const id of ['2-1', '2-3', '2-4']) assert.deepEqual(C.subById(id)!.kinds, { scene: 'none', practice: 'open' }, id);
+assert.deepEqual(
+  ['2-1', '2-3', '2-4'].map((id) => S.COURSE_STEPS[id as '2-1'].length),
+  [2, 2, 3],
+);
+assert.equal((K.nextIn(full, '2-4') as { id: string }).id, '2-5', '2-4 다음은 2장 수행평가');
+assert.deepEqual(T.CHAPTER_TESTS[2].answers, ['X', 'O', 'O', 'X', 'O']);
+assert.equal(T.CHAPTER_TESTS[2].mission.ready, true);
+assert.equal(T.inOrder(T.CHAPTER_TESTS[2].mission.steps!, ['zero', 'home', 'pen', 'dot']), true);
+assert.equal(T.inOrder(T.CHAPTER_TESTS[2].mission.steps!, ['pen', 'zero', 'home', 'dot']), false, '순서가 다르면 아직');
+assert.equal(S.KIT_PARTS.length, 5);
+assert.deepEqual(
+  S.DESK_PLACES.map((p) => p.name),
+  ['로봇', '매트', '카드'],
+);
+assert.deepEqual([...S.PREP_POSE], [30, 20, -40, -20, 0, 0]);
+// 4-1 맛보기: the lit key takes the tip up first and down last (고리 3 from 고리 2: up, not across low past the base).
+const L = await import('../../src/engine/simulator/lifeTutorials');
+const key = (tip: { x: number; y: number; z: number }, r: [number, number, number]) => (L.ringLead(tip, r)[0] as { sel?: string }).sel;
+assert.equal(key({ x: 130, y: 120, z: 110 }, [130, -130, 190]), '[aria-label$="(Z+)"]', '고리 3: 먼저 위로');
+assert.equal(key({ x: 130, y: 120, z: 190 }, [130, -130, 190]), '[aria-label$="(Y−)"]', '그다음 옆으로');
+assert.equal(key({ x: 170, y: 0, z: 150 }, [130, 120, 110]), '[aria-label$="(Y+)"]', '고리 2: 옆으로 먼저, 아래는 마지막');
+assert.equal(key({ x: 130, y: 120, z: 150 }, [130, 120, 110]), '[aria-label$="(Z−)"]');
 
 // 접근: today every course may be opened.
 assert.equal(await P.mayOpen({ course: 'full8', sub: '5-2', mode: 'scene' }), true);

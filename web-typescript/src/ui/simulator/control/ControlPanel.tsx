@@ -408,6 +408,8 @@ export default function ControlPanel(p: Props) {
 
   const tipKey = (axis: 'x' | 'y' | 'z', dir: -1 | 1, word: string, arrow: keyof typeof ARROW, kind: 'wedge' | 'lift', side?: string) => (
     <JogKey
+      // (Keyed: the pad's four keys come from a list.)
+      key={`${axis}${dir}`}
       kind={kind}
       side={side}
       dir={dir}
