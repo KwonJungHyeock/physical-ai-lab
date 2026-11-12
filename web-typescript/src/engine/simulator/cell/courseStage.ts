@@ -66,10 +66,12 @@ export const COURSE_VIEWS: Record<string, CourseView> = {
   A: { dir: from(40, 10), area: { min: [-60, -150, 0], max: [340, 170, 200] } },
   // 1-3: the whole 작업 범위 circle on the desk, from high over the customer's side.
   '1-3': { dir: from(64, 0), area: { min: [-280, -280, 0], max: [280, 280, 120] }, shot: { eye: [250, -500, 1350], target: [250, 0, 300] } },
-  // B 책상과 구성품 (2-1): the empty desk from above — the box of parts at its left end, the places for the robot, the mat and the card.
-  '2-1': { dir: from(70, 0), area: { min: [-480, -160, 0], max: [310, 160, 40] } },
+  // B 책상 (2-1): the empty desk from above — the places for the robot, the mat and the card (the parts are in the right panel).
+  '2-1': { dir: from(70, 0), area: { min: [-110, -110, 0], max: [310, 110, 40] } },
   // 2-3: the arm from its 2-3 pose up to 영점 (straight up) and back to the 기본 자세, all in view.
   '2-3': { dir: from(30, 10), area: { min: [-60, -120, 0], max: [200, 120, 460] } },
+  // 3장 미션 (3-6): the arm and the see-through target pose above it, both whole.
+  '3-6': { dir: from(30, 10), area: { min: [-60, -160, 0], max: [260, 160, 500] } },
   // C 로봇 근접 (3-4): the arm and the mat in front of it.
   C: { dir: from(30, 10), area: { min: [-60, -120, 0], max: [260, 120, 300] } },
   // D 매트 위에서 (4-1 · 4-3): the mat from above the customer's side.

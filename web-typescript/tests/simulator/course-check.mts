@@ -41,7 +41,7 @@ assert.deepEqual(kinds('4-1'), { scene: 'none', practice: 'open' });
 for (const id of ['4-3', '5-1', '5-2', '5-3']) assert.deepEqual(kinds(id), { scene: 'open', practice: 'open' }, id);
 assert.equal(C.modeFor(C.subById('3-4')!, 'scene'), 'practice', '없는 종류로 오면 있는 쪽');
 assert.equal(C.modeFor(C.subById('5-2')!, 'scene'), 'scene');
-assert.equal(C.modeFor(C.subById('3-2')!, 'practice'), null, '만드는 중은 열리지 않아요');
+assert.equal(C.modeFor(C.subById('4-2')!, 'practice'), null, '만드는 중은 열리지 않아요');
 
 // 선택: 5-5 (the real robot) is in the 8차시 and never counted.
 assert.ok(C.subById('5-5')?.optional);
@@ -66,7 +66,8 @@ assert.deepEqual(
 );
 
 // Next: the next 절 that opens, then the 학습 기록 at the end.
-assert.equal((K.nextIn(full, '3-4') as { id: string }).id, '4-1');
+assert.equal((K.nextIn(full, '3-4') as { id: string }).id, '3-5');
+assert.equal((K.nextIn(full, '3-5') as { id: string }).id, '3-6');
 assert.equal((K.nextIn(full, '5-2') as { id: string }).id, '5-3');
 assert.equal(K.nextIn(full, '5-3'), 'record');
 assert.equal(K.nextIn(focus, '5-3'), 'record');
@@ -86,7 +87,7 @@ assert.deepEqual(
   ls.flatMap((l) => l.steps.filter((x) => x.kind === 'test').map((x) => `${l.n}:${x.sub.id}`)),
   ['1:1-4', '2:2-5', '4:3-6', '6:4-5', '8:5-6'],
 );
-for (const t of tests) assert.equal(K.testReady(t.sub), ['1-4', '2-5'].includes(t.sub.id), `${t.sub.id}: 1 · 2장만 열림, 나머지 준비 중`);
+for (const t of tests) assert.equal(K.testReady(t.sub), ['1-4', '2-5', '3-6'].includes(t.sub.id), `${t.sub.id}: 1 ~ 3장만 열림, 나머지 준비 중`);
 
 // 1장 (장별 가이드라인 v1): 1-1 · 1-2 · 1-3 open as the course's own 절; 1-1 has 장면 보기; 1장 수행평가 opens after 1-3.
 const S = await import('../../src/engine/simulator/cell/courseSteps');
@@ -150,11 +151,48 @@ assert.deepEqual(
 assert.deepEqual([...S.PREP_POSE], [30, 20, -40, -20, 0, 0]);
 // 4-1 맛보기: the lit key takes the tip up first and down last (고리 3 from 고리 2: up, not across low past the base).
 const L = await import('../../src/engine/simulator/lifeTutorials');
-const key = (tip: { x: number; y: number; z: number }, r: [number, number, number]) => (L.ringLead(tip, r)[0] as { sel?: string }).sel;
+const key = (tip: { x: number; y: number; z: number }, r: readonly [number, number, number]) => (L.ringLead(tip, r)[0] as { sel?: string }).sel;
 assert.equal(key({ x: 130, y: 120, z: 110 }, [130, -130, 190]), '[aria-label$="(Z+)"]', '고리 3: 먼저 위로');
 assert.equal(key({ x: 130, y: 120, z: 190 }, [130, -130, 190]), '[aria-label$="(Y−)"]', '그다음 옆으로');
 assert.equal(key({ x: 170, y: 0, z: 150 }, [130, 120, 110]), '[aria-label$="(Y+)"]', '고리 2: 옆으로 먼저, 아래는 마지막');
 assert.equal(key({ x: 130, y: 120, z: 150 }, [130, 120, 110]), '[aria-label$="(Z−)"]');
+
+// 4-1 맛보기 (고리 3개를 매트 위 가까이): following only the lit key (10 mm steps, the tip moved as asked) gets
+// into all three, using X, Y and Z, and takes about 50 presses.
+{
+  const tip = { x: 65.9, y: -62.3, z: 238.8 };
+  const used = new Set<string>();
+  let presses = 0;
+  for (const st of L.LIFE_TASTE.steps) {
+    const r = st.ring!;
+    for (let k = 0; k < 60 && Math.hypot(tip.x - r[0], tip.y - r[1], tip.z - r[2]) > L.RING_MM; k += 1) {
+      const m = /\(([XYZ])([+−])\)/.exec(key(tip, r) ?? '')!;
+      used.add(m[1]);
+      tip[m[1].toLowerCase() as 'x' | 'y' | 'z'] += m[2] === '+' ? 10 : -10;
+      presses += 1;
+    }
+    assert.ok(Math.hypot(tip.x - r[0], tip.y - r[1], tip.z - r[2]) <= L.RING_MM, `고리 ${r} 통과`);
+  }
+  assert.deepEqual([...used].sort(), ['X', 'Y', 'Z'], '세 축을 모두 씀');
+  assert.ok(presses >= 45 && presses <= 60, `누른 횟수 ${presses}`);
+}
+
+// 3장 (장별 가이드라인 v1): 3-1 · 3-2 · 3-5 open (실습 하기 only), 3-4 from the 기본 자세, 3장 수행평가 after 3-5.
+for (const id of ['3-1', '3-2', '3-5']) assert.deepEqual(C.subById(id)!.kinds, { scene: 'none', practice: 'open' }, id);
+assert.deepEqual(
+  ['3-1', '3-2', '3-5'].map((id) => S.COURSE_STEPS[id as '3-1'].length),
+  [6, 3, 4],
+);
+assert.equal((K.nextIn(full, '3-5') as { id: string }).id, '3-6', '3-5 다음은 3장 수행평가');
+assert.deepEqual(T.CHAPTER_TESTS[3].answers, ['O', 'O', 'X', 'O', 'X']);
+assert.deepEqual(T.CHAPTER_TESTS[3].mission.pose, [30, 30, -60, -20, 0, 0]);
+// 미션: one more try; the 기록 tells first-try, second-try and not-passed apart; a second-try pass is a pass.
+const tr = (mission: boolean | null, missionTries?: number) => ({ chosen: [], right: 5, mission, missionTries, at: 0 });
+assert.equal(T.missionWay(tr(true, 1)), '한 번에 통과');
+assert.equal(T.missionWay(tr(true, 2)), '다시 해서 통과');
+assert.equal(T.missionWay(tr(false, 1)), null, '한 번 더 할 수 있음');
+assert.equal(T.missionWay(tr(false, 2)), '통과 못 함');
+assert.equal(P.levelOf({ chapter: 3, right: 5, of: 5, mission: true }).level, '상', '다시 해서 통과해도 통과');
 
 // 접근: today every course may be opened.
 assert.equal(await P.mayOpen({ course: 'full8', sub: '5-2', mode: 'scene' }), true);

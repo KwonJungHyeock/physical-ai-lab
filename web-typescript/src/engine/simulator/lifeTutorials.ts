@@ -182,7 +182,9 @@ export const LIFE_TASTE: LifeTutorial = {
   id: 'taste',
   title: '맛보기 · 고리 3개 통과',
   note: '제어 키로 손끝을 빛나는 고리 안에',
-  steps: [ringStep(1, [170, 0, 150]), ringStep(2, [130, 120, 110]), ringStep(3, [130, -130, 190])],
+  // (입문 과정 4-1: three rings over the mat, near enough that the lit keys take about 50 presses at the
+  // 10 mm step; on the way they use X, Y and Z, both ways.)
+  steps: [ringStep(1, [170, -60, 170]), ringStep(2, [170, 60, 150]), ringStep(3, [110, -60, 200])],
   concept: { term: '손끝 (TCP)', def: '로봇이 일하는 곳은 손끝이에요. 관절을 돌리면 손끝이 움직여요.' },
 };
 

@@ -23,6 +23,11 @@ export interface ChapterTest {
     ready: boolean;
     /** A mission done in the scene: what has to happen, in this order. */
     steps?: readonly MissionStep[];
+    /** A mission done in the scene: the pose to copy (a see-through arm shows it) and how close each joint has to be, °. */
+    pose?: readonly number[];
+    tol?: number;
+    /** Said when a try did not pass. */
+    failText?: string;
   };
 }
 
@@ -37,17 +42,36 @@ export const CHAPTER_TESTS: Record<number, ChapterTest> = {
     chapter: 2,
     answers: ['X', 'O', 'O', 'X', 'O'],
     // In the scene: 2-3's pose, no tool, the pen 5 mm up — the four in this order (judged as in 2-3 · 2-4).
-    mission: { text: '영점 자세 → 기본 자세 → 펜 달기 → 점 찍기를 순서대로 해요', ready: true, steps: ['zero', 'home', 'pen', 'dot'] },
+    mission: { text: '영점 자세 → 기본 자세 → 펜 달기 → 점 찍기를 순서대로 해요', ready: true, steps: ['zero', 'home', 'pen', 'dot'], failText: '순서가 달랐어요' },
+  },
+  3: {
+    chapter: 3,
+    answers: ['O', 'O', 'X', 'O', 'X'],
+    // From the 기본 자세 with the joint keys (5° steps reach it); judged on [확인].
+    mission: { text: '반투명 로봇과 똑같은 자세를 관절 버튼으로 만들어요', ready: true, pose: [30, 30, -60, -20, 0, 0], tol: 3, failText: '자세가 목표와 달라요' },
   },
 };
+
+/** A scene mission may be tried twice (the second try counts as a pass too); the O · X keep their first answers. */
+export const MISSION_TRIES = 2;
+
+/** How the mission went, for the 기록 (none: not finished yet). */
+export function missionWay(r: TestResult | undefined): '한 번에 통과' | '다시 해서 통과' | '통과 못 함' | null {
+  if (!r || r.mission == null) return null;
+  const tries = r.missionTries ?? 1;
+  if (r.mission) return tries <= 1 ? '한 번에 통과' : '다시 해서 통과';
+  return tries >= MISSION_TRIES ? '통과 못 함' : null;
+}
 
 /** What a student did in a chapter's 수행평가 (kept in this browser). */
 export interface TestResult {
   chosen: (OX | null)[];
   /** Right of 5 (once all five are answered and 확인 pressed). */
   right: number | null;
-  /** The mission passed (null: not taken, or 준비 중). */
+  /** The mission passed (null: not taken, or 준비 중; false with a try left: may be tried again). */
   mission: boolean | null;
+  /** Tries made at the mission (1 or 2). */
+  missionTries?: number;
   at: number;
 }
 

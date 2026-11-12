@@ -291,6 +291,8 @@
   gap: 8px;
 }
 .poses button {
+  height: 56px;
+  font-size: 17px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -304,4 +306,64 @@
 .poses kbd {
   font-size: 12px;
   opacity: 0.8;
+}
+
+/* 2-1: the box of parts in the panel — five at a glance, each at least 120 px wide. */
+.kit > b {
+  display: block;
+  margin: 0 0 10px;
+  color: #f6f7f9;
+  font-size: 17px;
+  font-weight: 800;
+}
+.kit > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(140px, 1fr));
+  gap: 10px;
+}
+.kit button {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #f6f7f9;
+  font: inherit;
+  cursor: pointer;
+}
+.kit button[data-seen] {
+  border-color: #22c55e;
+}
+.kit button > span {
+  font-size: 17px;
+  font-weight: 800;
+}
+/* 3-5: the two moves' times. */
+.times {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #f6f7f9;
+  font-size: 16px;
+}
+.times b {
+  flex-basis: 100%;
+  font-size: 16px;
+}
+.times output {
+  font-size: 20px;
+  font-weight: 800;
+}
+/* 3장 미션: [확인]. */
+.confirm {
+  display: grid;
+  gap: 10px;
+  color: #f6f7f9;
+  font-size: 16px;
 }

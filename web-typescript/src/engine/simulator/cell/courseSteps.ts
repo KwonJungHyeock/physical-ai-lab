@@ -7,7 +7,7 @@
  * The values marked 제안값 are the guideline's proposals: kept as given until confirmed.
  */
 
-export type CourseStepId = '1-1' | '1-2' | '1-3' | '2-1' | '2-3' | '2-4';
+export type CourseStepId = '1-1' | '1-2' | '1-3' | '2-1' | '2-3' | '2-4' | '3-1' | '3-2' | '3-5';
 
 export interface CourseStepLine {
   text: string;
@@ -19,6 +19,11 @@ export interface CourseStepLine {
 export const ARM_PARTS = ['베이스 (J1)', '어깨 (J2)', '팔꿈치 (J3)', '손목 꺾기 (J4)', '손목 돌리기 (J5)', '손끝 돌리기 (J6)', '도구가 달린 손끝'] as const;
 
 const RUN = '[data-step="run"]';
+/** A saved pose's go key in the 자세 panel. */
+const POSE_GO = '[data-pose][title$="움직여요"]';
+/** 3장: the joints as the 조작판 names them, and their keys' names. */
+const JOINT_NAMES = ['베이스', '어깨', '팔꿈치', '손목 꺾기', '손목 돌리기', '손끝 돌리기'] as const;
+const JOINT_KEYS = ['베이스 (J1)', '어깨 (J2)', '팔꿈치 (J3)', '손목 꺾기 (J4)', '손목 돌리기 (J5)', '손끝 돌리기 (J6)'] as const;
 
 export const COURSE_STEPS: Record<CourseStepId, readonly CourseStepLine[]> = {
   '1-1': [
@@ -53,6 +58,19 @@ export const COURSE_STEPS: Record<CourseStepId, readonly CourseStepLine[]> = {
     { text: '도구의 달기 버튼을 눌러 펜을 달아요', sel: '[data-step="attach"]' },
     { text: '보정 카드의 펜 칸을 고쳐요', sel: '[data-step="pen"]' },
     { text: '▶ 시뮬레이션 버튼을 눌러 점을 하나 찍어요', sel: RUN },
+  ],
+  // (3-1: the joint being moved is coloured in the scene; each line names its +5° key.)
+  '3-1': JOINT_NAMES.map((n, i) => ({ text: `${n}의 +5° 버튼을 눌러 10° 움직여요`, sel: `[aria-label="${JOINT_KEYS[i]} +5°"]` })),
+  '3-2': [
+    { text: '베이스의 +5° 버튼을 눌러 +45°로 맞춰요', sel: '[aria-label="베이스 (J1) +5°"]' },
+    { text: '어깨의 −5° 버튼을 눌러 −30°로 맞춰요', sel: '[aria-label="어깨 (J2) −5°"]' },
+    { text: '팔꿈치의 +5° 버튼을 한계 경고가 나올 때까지 눌러요', sel: '[aria-label="팔꿈치 (J3) +5°"]' },
+  ],
+  '3-5': [
+    { text: '속도 슬라이더를 30%로 맞춰요', sel: '[aria-label="속도 조절"]' },
+    { text: '저장한 자세 버튼을 눌러 그 자세로 보내요', sel: POSE_GO },
+    { text: '속도 슬라이더를 100%로 올리고 기본 자세 버튼을 눌러요', sel: '[aria-label="속도 조절"]' },
+    { text: '저장한 자세 버튼을 다시 누르고, 움직이는 동안 정지 버튼을 눌러요', sel: POSE_GO },
   ],
 };
 
@@ -106,3 +124,15 @@ export const DOT_AT = { x: 210, y: 0 } as const;
 export const DOT_ABOVE_MM = 20;
 /** 2-4: a dot is ink within this far of DOT_AT, mm (the pen draws at tip z ≤ 0.8 mm: sim.ts). */
 export const DOT_NEAR_MM = 3;
+
+/* --- 3장 관절 제어 --------------------------------------------------------------------- */
+
+/** 3-1: how far each joint has to turn from where its step started, ° (either way). */
+export const TURN_DEG = 10;
+/** 3-2: the targets (① 베이스, ② 어깨), the tolerance, and the pose the arm takes itself to for ③ (팔꿈치 +120°: six presses from its +150° limit). */
+export const AIM = { base: 45, shoulder: -30, tol: 2 } as const;
+export const LIMIT_POSE = [45, -30, 120, 0, 0, 0] as const;
+/** 3-5: the slow and the fast speeds (%), and the pose put in when none is saved (제안값). */
+export const SLOW_PCT = 30;
+export const FAST_PCT = 90;
+export const PRACTICE_POSE = { name: '연습 자세', angles: [60, 20, -60, -30, 0, 0] } as const;

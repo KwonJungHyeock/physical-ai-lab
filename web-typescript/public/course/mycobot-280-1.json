@@ -147,18 +147,18 @@
       "chapter": 3,
       "title": "관절 6개 알아보기",
       "pages": [26, 27],
-      "status": "soon",
-      "scene": "soon",
-      "practice": "soon"
+      "status": "open",
+      "scene": "none",
+      "practice": "open"
     },
     {
       "id": "3-2",
       "chapter": 3,
       "title": "관절 하나씩 움직이기: 각도와 방향",
       "pages": [28, 29],
-      "status": "soon",
-      "scene": "soon",
-      "practice": "soon"
+      "status": "open",
+      "scene": "none",
+      "practice": "open"
     },
     {
       "id": "3-3",
@@ -184,9 +184,9 @@
       "chapter": 3,
       "title": "속도 조절과 멈추기",
       "pages": [36, 37],
-      "status": "soon",
-      "scene": "soon",
-      "practice": "soon"
+      "status": "open",
+      "scene": "none",
+      "practice": "open"
     },
     {
       "id": "3-6",

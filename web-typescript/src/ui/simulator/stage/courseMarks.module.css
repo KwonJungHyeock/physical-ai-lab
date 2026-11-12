@@ -92,44 +92,16 @@
     opacity 0.9s ease-in-out;
 }
 
-/* 2-1: the box of parts. */
-.kit {
-  padding: 10px 12px 12px;
-  border-radius: 14px;
-  background: rgba(24, 28, 35, 0.92);
-  color: #f6f7f9;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-}
-.kit > b {
+/* 3-2: the target angle beside the joint. */
+.goal {
   display: block;
-  margin: 0 0 8px;
-  font-size: 15px;
-  font-weight: 800;
-}
-.kit > div {
-  display: grid;
-  grid-template-columns: repeat(3, 100px);
-  gap: 8px;
-}
-.kit button {
-  display: grid;
-  justify-items: center;
-  gap: 4px;
-  padding: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  transform: translateX(96px);
+  padding: 6px 12px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.05);
-  color: #f6f7f9;
-  font: inherit;
-  cursor: pointer;
-}
-.kit button[data-seen] {
-  border-color: #22c55e;
-}
-.kit button span {
-  font-size: 15px;
+  background: #f0a23b;
+  color: #18120a;
+  font-size: 17px;
   font-weight: 800;
-}
-.kit .slot span {
-  font-size: 11px;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
 }

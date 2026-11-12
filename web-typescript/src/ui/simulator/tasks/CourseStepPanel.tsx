@@ -11,6 +11,7 @@
 import type { CourseStepId } from '@/engine/simulator/cell/courseSteps';
 
 import Icon from '../Icon';
+import { AssetSlot } from '../stage/CourseMarks';
 
 import css from './courseStep.module.css';
 
@@ -26,15 +27,53 @@ interface Props {
   pen?: { x: number; y: number; z: number; onZ(z: number): void };
   /** 2-3 · 2장: back to the 기본 자세, straight up (영점), stop. */
   poses?: { onHome(): void; onZero(): void; onStop(): void };
+  /** 2-1 ①: the box of parts (each one's picture an asset slot), pressed one by one to see its name. */
+  kit?: { parts: readonly { name: string; id: string }[]; seen: readonly number[]; onSee(part: number): void };
+  /** 3장 미션: the [확인] that judges the pose. */
+  confirm?: { text: string; onConfirm(): void };
+  /** 3-5: the moves timed so far, s. */
+  times?: { slow?: number; fast?: number };
   /** 1-1. */
   hand?: { near: boolean; onIn(): void; onOut(): void };
   /** 1-3. */
   range?: { on: boolean; onToggle(): void };
 }
 
-export default function CourseStepPanel({ id, busy, onRun, hand, range, tool, pen, poses }: Props) {
+export default function CourseStepPanel({ id, busy, onRun, hand, range, tool, pen, poses, kit, confirm, times }: Props) {
   return (
     <div className={css.panel} role="group" aria-label={id ? `${id} 조작` : '미션 조작'}>
+      {kit && (
+        <div className={css.kit} data-step="kit" role="group" aria-label="구성품 상자">
+          <b>구성품 상자</b>
+          <div>
+            {kit.parts.map((p, i) => (
+              <button key={p.id} type="button" data-seen={kit.seen.includes(i) || undefined} aria-label={kit.seen.includes(i) ? p.name : `구성품 ${i + 1}`} onClick={() => kit.onSee(i)}>
+                <AssetSlot slot={{ id: p.id, label: p.name, at: [0, 0, 0], w: 132, h: 84 }} />
+                <span>{kit.seen.includes(i) ? p.name : '?'}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {times && (
+        <div className={css.times}>
+          <b>이동에 걸린 시간</b>
+          <span>
+            속도 30% · <output>{times.slow != null ? `${times.slow}초` : '—'}</output>
+          </span>
+          <span>
+            속도 100% · <output>{times.fast != null ? `${times.fast}초` : '—'}</output>
+          </span>
+        </div>
+      )}
+      {confirm && (
+        <div className={css.confirm}>
+          <span>{confirm.text}</span>
+          <button type="button" className={css.run} disabled={busy} onClick={confirm.onConfirm}>
+            확인
+          </button>
+        </div>
+      )}
       {tool && (
         <div className={css.toolRow}>
           <span>

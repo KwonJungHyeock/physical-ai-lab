@@ -4,13 +4,14 @@
  * A chapter's 수행평가 (장별 가이드라인 v1): the O · X 5문항 by number (the questions are in the 교안),
  * graded once on [확인] (the first answers kept), then the mission — one line, no number badges. A
  * mission whose pictures are not in yet shows its asset slots and 준비 중; the O · X still count. A
- * mission done in the scene (2장) starts from [미션 시작] (the card steps aside); its first result is
- * kept, and with it the chapter's 상 · 중 · 하 (임시, platform.ts levelOf).
+ * mission done in the scene (2장 · 3장) starts from [미션 시작] (the card steps aside); one more try is
+ * allowed after a miss ([다시 하기]), and the 기록 says how it went (한 번에 · 다시 해서 · 통과 못 함). Once
+ * it is over, the chapter's 상 · 중 · 하 (임시, platform.ts levelOf: a pass on the second try is a pass).
  */
 
 import { useState } from 'react';
 
-import { gradeOX, type ChapterTest, type OX, type TestResult } from '@/engine/simulator/cell/courseTests';
+import { MISSION_TRIES, gradeOX, missionWay, type ChapterTest, type OX, type TestResult } from '@/engine/simulator/cell/courseTests';
 import { levelOf } from '@/engine/simulator/cell/platform';
 
 import { AssetSlot } from '../stage/CourseMarks';
@@ -63,7 +64,7 @@ export default function CourseTestPanel({ test, result, onGraded, onNext, onMiss
               <output>O · X 5문항 중 {result?.right}개 맞혔어요</output>
             </div>
             <p className={css.soon}>미션: {test.mission.text}</p>
-            {test.mission.ready && test.mission.steps && (
+            {test.mission.ready && (test.mission.steps || test.mission.pose) && (
               <div className={css.row} style={{ marginBottom: 18 }}>
                 {result?.mission == null ? (
                   <>
@@ -72,9 +73,18 @@ export default function CourseTestPanel({ test, result, onGraded, onNext, onMiss
                       미션 시작
                     </button>
                   </>
+                ) : !missionWay(result) ? (
+                  <>
+                    <output>
+                      미션 아직 · {test.mission.failText ?? '다시 해 봐요'} · 다시 하기 {MISSION_TRIES - (result.missionTries ?? 1)}번 남았어요
+                    </output>
+                    <button type="button" className={css.key} data-lit onClick={onMission}>
+                      다시 하기
+                    </button>
+                  </>
                 ) : (
                   <output>
-                    미션 {result.mission ? '통과' : '아직 · 순서가 달랐어요'} · 상 · 중 · 하 (임시): {levelOf({ chapter: test.chapter, right: result.right ?? 0, of: 5, mission: result.mission }).level}
+                    미션 {missionWay(result)} · 상 · 중 · 하 (임시): {levelOf({ chapter: test.chapter, right: result.right ?? 0, of: 5, mission: !!result.mission }).level}
                   </output>
                 )}
               </div>

@@ -39,15 +39,6 @@ export interface CoursePick {
   onPick(part: number): void;
 }
 
-/** 2-1: the box of parts (each one's picture an asset slot), pressed one by one to see its name. */
-export interface CourseKit {
-  parts: readonly { name: string; id: string }[];
-  seen: readonly number[];
-  onSee(part: number): void;
-  /** Where the box stands on the desk (robot mm). */
-  at: readonly [number, number, number];
-}
-
 /** 2-1: the empty places on the desk (robot mm), put down in order: the ones not put down yet show their outline and can be pressed. */
 export interface CoursePlaces {
   rects: readonly { name: string; x0: number; x1: number; y0: number; y1: number }[];
@@ -58,7 +49,8 @@ export interface CoursePlaces {
 export interface CourseStageMarks {
   pick?: CoursePick | null;
   slots?: readonly CourseSlot[];
-  kit?: CourseKit | null;
+  /** 3-2: the target angle shown beside a joint (0..5). */
+  goal?: { joint: number; text: string } | null;
   places?: CoursePlaces | null;
 }
 
@@ -82,27 +74,6 @@ export function AssetSlot({ slot }: { slot: CourseSlot }) {
         </span>
       )}
     </div>
-  );
-}
-
-/** The box of parts: a tile per part, its name once pressed. */
-function KitBox({ kit }: { kit: CourseKit }) {
-  return (
-    <group position={[m(kit.at[0]), m(kit.at[1]), m(kit.at[2])]}>
-      <Html center zIndexRange={[22, 0]}>
-        <div className={css.kit} data-step="kit" role="group" aria-label="구성품 상자">
-          <b>구성품 상자</b>
-          <div>
-            {kit.parts.map((p, i) => (
-              <button key={p.id} type="button" data-seen={kit.seen.includes(i) || undefined} aria-label={kit.seen.includes(i) ? p.name : `구성품 ${i + 1}`} onClick={() => kit.onSee(i)}>
-                <AssetSlot slot={{ id: p.id, label: p.name, at: [0, 0, 0], w: 92, h: 58 }} />
-                <span>{kit.seen.includes(i) ? p.name : '?'}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </Html>
-    </group>
   );
 }
 
@@ -178,9 +149,17 @@ export default function CourseMarks({ marks, joints, flange, tcpMm }: { marks: C
   const pick = marks.pick;
   const places = marks.places;
   const [root, setRoot] = useState<Group | null>(null);
+  const goalAt = marks.goal ? joints[marks.goal.joint]?.group : undefined;
   return (
     <>
-      {marks.kit && <KitBox kit={marks.kit} />}
+      {marks.goal &&
+        goalAt &&
+        createPortal(
+          <Html center zIndexRange={[22, 0]} style={{ pointerEvents: 'none' }}>
+            <span className={css.goal}>{marks.goal.text}</span>
+          </Html>,
+          goalAt,
+        )}
       {places && (
         <group ref={setRoot}>
           {places.rects.map((r, i) => (i < places.placed ? null : <Place key={r.name} r={r} z={1 + i * 0.6} onPress={(at) => places.onPick(placeAt(places, root, at))} />))}
