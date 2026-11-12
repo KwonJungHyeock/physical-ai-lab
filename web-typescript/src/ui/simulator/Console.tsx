@@ -2692,7 +2692,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     const run = world.current.cell;
     if (!c || !run) return;
     run.endT = run.line.t;
-    if (!c.mission || sceneView) return;
+    // (입문 5-5: the booth runs 5-4's own card, not the step's — no step checks, nothing marked for 5-1.)
+    if (!c.mission || sceneView || courseStepRef.current?.id === '5-5') return;
     await new Promise((r) => window.setTimeout(r, 1200));
     if (cellRef.current !== c || world.current.cell !== run) return;
     const res = cellChecks(world.current);
@@ -5232,7 +5233,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       onSimRate={chooseSimRate}
       onReal={robotMode ? runReal : openExport}
       onStop={stop}
-      more={questOn && cellAt && lifeStep ? [{ label: '자유 연습 (채점 없이)', onClick: () => openCell(cellAt.cell, null), disabled: busy }] : undefined}
+      // (입문 5-5: [로봇 실행] in the bar itself, not behind ⋯ — it is the step's key.)
+      more={questOn && cellAt && lifeStep && courseStep?.id !== '5-5' ? [{ label: '자유 연습 (채점 없이)', onClick: () => openCell(cellAt.cell, null), disabled: busy }] : undefined}
       quick={quickOn ? { onClick: () => void runQuick(), progress: quickProg, disabled: busy || !loaded } : undefined}
       next={course ? undefined : nextStep ? { onClick: () => openCell(nextStep.cell, nextStep.id), lit: !!(lifeQuest && lessonRec.quests[lifeQuest]?.passed), disabled: questIsOpen(nextStep.id) === false } : undefined}
     />
