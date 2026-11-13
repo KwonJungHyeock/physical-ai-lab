@@ -236,15 +236,17 @@ export default function CourseMap({ plan, now, done, onPick, onClose, end }: Pro
 }
 
 /** An address named a 절 that does not open: what it is, and the way to the list. */
-export function CourseMissing({ id, onList }: { id: string; onList(): void }) {
+export function CourseMissing({ id, outside, onList }: { id: string; outside?: boolean; onList(): void }) {
   const s = subById(id);
   const say = !s
     ? `${id}라는 절은 없어요`
-    : s.status === 'end'
-      ? `${id}${topicMark(id)} 과정을 마치면 열려요`
-      : s.status === 'unused' || s.status === 'test'
-        ? `${subName(s)}${topicMark(s.was ?? id)} 이번 과정에서 쓰지 않는 절이에요`
-        : `${id}${topicMark(id)} 아직 만드는 중이에요`;
+    : outside
+      ? `${subName(s)}${topicMark(id)} 이번 과정에서 쓰지 않는 절이에요`
+      : s.status === 'end'
+        ? `${id}${topicMark(id)} 과정을 마치면 열려요`
+        : s.status === 'unused' || s.status === 'test'
+          ? `${subName(s)}${topicMark(s.was ?? id)} 이번 과정에서 쓰지 않는 절이에요`
+          : `${id}${topicMark(id)} 아직 만드는 중이에요`;
   return (
     <div className={css.scrim} role="alertdialog" aria-modal="true" aria-label="열 수 없는 절">
       <div className={`${css.map} ${css.missing}`}>

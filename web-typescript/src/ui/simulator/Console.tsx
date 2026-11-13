@@ -2794,7 +2794,11 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     addLog('sim', '시뮬레이션을 시작해요.');
     if (cellRef.current) setCellResult(null);
     const { ok, actions } = await runSteps(steps, { reset: true, label: true });
-    if (cellRef.current) return finishCellRun(ok);
+    if (cellRef.current) {
+      // 입문 5-5: the booth's ▶ 시뮬레이션 passed is what opens [로봇 실행] · [코드 받기] (the run is the program sent).
+      if (course && courseStepRef.current?.id === '5-5') setPassed(ok ? { code: text, actions } : null);
+      return finishCellRun(ok);
+    }
     if (ok) passedRun(text, actions);
     else setPassed(null);
   };
@@ -4852,7 +4856,11 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     const z = m ? m.pen : st!.pen;
     const at = (h: number) => `robot.move_to(${DOT_AT.x}, ${DOT_AT.y}, ${h})\n`;
     const { steps, errors } = problemsFor(`from edu import robot\n\n${at(DOT_ABOVE_MM)}${at(z)}${at(DOT_ABOVE_MM)}`);
-    if (errors.length) return addLog('err', `${errors[0].line}번째 줄: ${errors[0].msg}`);
+    if (errors.length) {
+      // 2-3: a pen box below the paper is refused before the run (수정 지시서 v4 파트 6: its line shows).
+      if (!m && st) return patchStep({ note: failLine('2-3', 'tooLow') });
+      return addLog('err', `${errors[0].line}번째 줄: ${errors[0].msg}`);
+    }
     world.current.trail = [];
     if (st) patchStep({ step: Math.max(st.step, 2), note: null });
     const { ok } = await runSteps(steps, { reset: false, quiet: true });
@@ -5374,7 +5382,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     const s = subByNumber(a.sub);
     // A 수행평가 has a number of its own (수정 지시서 v3 파트 8-2): its address opens it where the course has it.
     const asTest = !!s?.test && cPlan.tests.includes(s.id) && testReady(s);
-    if (!s || (unlisted(s) && !asTest) || !modeFor(s, a.mode)) return setSubMissing(a.sub);
+    // (A 절 the course's 차시 do not have — 4차시: 1-2, 5-4 … — is not opened either: no 위치 줄 or [다음으로] would follow it.)
+    if (!s || (unlisted(s) && !asTest) || (!s.test && !unlisted(s) && lessonIn(cPlan, s.id) === 0) || !modeFor(s, a.mode)) return setSubMissing(a.sub);
     const mode = await requestSub(s, a.mode);
     if (mode && mode !== a.mode) setSubNote(`${s.id}${topicMark(s.id)} ${MODE_NAME[mode]}만 있어요. ${MODE_NAME[mode]}로 열었어요`);
   };
@@ -6040,7 +6049,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                             const t = CHAPTER_TESTS[st.chapter.n];
                             const way = missionWay(r);
                             const how = t && !t.mission.ready ? ' · 미션 준비 중' : way ? ` · 미션 ${way}${r?.missionBy ? ` (${panelText(r.missionBy === 'real' ? 'byReal' : 'bySim')})` : ''}` : '';
-                            const what = cPlan.ox ? (r?.right != null ? ` · O · X ${r.right}/5${how}` : '') : how;
+                            // (4차시: the mission only — passed or not, as 6-1 · 6-3 have it.)
+                            const what = cPlan.ox ? (r?.right != null ? ` · O · X ${r.right}/5${how}` : '') : r ? ` · 미션 ${endText(r.mission ? 'passed' : 'notYet')}` : '';
                             return { id: st.sub.id, title: `${st.sub.title}${what}`, done: subDone(st.sub), soon: !testReady(st.sub), pending: !testReady(st.sub), test: true };
                           })()
                         : { id: st.sub.id, title: st.sub.title, done: subDone(st.sub), soon: !st.sub.run, optional: !!st.sub.optional },
@@ -6541,6 +6551,10 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
         {subMissing && course && (
           <CourseMissing
             id={subMissing}
+            outside={(() => {
+              const s = subById(subMissing);
+              return !!s && !unlisted(s) && lessonIn(cPlan, s.id) === 0;
+            })()}
             onList={() => {
               setSubMissing(null);
               setRoadmapOpen(true);
