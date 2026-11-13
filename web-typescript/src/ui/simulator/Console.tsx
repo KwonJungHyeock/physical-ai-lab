@@ -451,7 +451,9 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     if (!course) return;
     const q = new URLSearchParams(window.location.search);
     const old = q.get('sub');
-    const sub = q.get('no') ?? (old ? fromOldNumber(old) : null);
+    const now = old ? subById(fromOldNumber(old)) : undefined;
+    // (An old number of a 수행평가 taken out since — ?sub=1-4 · 2-5 · 4-5: the number it had, so the list opens as for ?no=1-4.)
+    const sub = q.get('no') ?? (old ? (now?.test && now.status === 'unused' && now.was ? now.was : fromOldNumber(old)) : null);
     if (sub) asked.current = { sub, mode: q.get('mode') === 'scene' ? 'scene' : 'practice' };
     if (old) {
       q.delete('sub');
@@ -6074,7 +6076,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                 name: st.sub.title,
                 lesson: lessonStepsIn(cPlan).find((l) => l.steps.some((x) => x.kind === 'test' && x.sub.id === st.sub.id))?.n ?? 0,
                 right: cPlan.ox ? (r?.right ?? null) : null,
-                mission: way ? `${way}${by}` : endText(r && (r.right != null || r.mission != null) ? 'notYet' : 'notDone'),
+                // (4차시: the mission only — whether it passed, no more.)
+                mission: !cPlan.ox ? endText(r?.mission ? 'passed' : 'notYet') : way ? `${way}${by}` : endText(r && (r.right != null || r.mission != null) ? 'notYet' : 'notDone'),
                 level: cPlan.ox && over && r?.right != null ? courseLevelOf({ chapter: n, right: r.right, of: 5, mission: !!r.mission }).level : null,
               },
             ];
@@ -7205,7 +7208,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                           <>
                             {/* 3-4: the two moves' times; 3장 미션: its [확인]. Over the usual 조작판. */}
                             {courseStep?.id === '3-4' && <CourseStepPanel id="3-4" busy={busy} times={courseStep.times} />}
-                            {missionRun?.chapter === 3 && <CourseStepPanel busy={busy} confirm={{ text: '반투명 로봇과 자세가 같아지면 확인을 눌러요', onConfirm: confirmPose }} />}
+                            {missionRun?.chapter === 3 && <CourseStepPanel busy={busy} confirm={{ text: panelText('confirmPose'), onConfirm: confirmPose }} />}
                             {controlPanel}
                             {/* 입문 과정: the tool row is 2-3's own (CourseStepPanel); under the 조작판 it is not used. */}
                             {!course && toolRow}

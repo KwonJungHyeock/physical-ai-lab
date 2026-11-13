@@ -17,6 +17,8 @@
 
 import TABLE from '../../../../public/course/mycobot-280-1.json';
 
+import { panelText } from './courseText';
+
 /** The six kinds of scene, all on one stage (보고 #49): the camera and the props change. */
 export type SceneKind = 'A' | 'B' | 'C' | 'D' | 'E' | 'F';
 
@@ -189,6 +191,6 @@ export const testName = (chapter: number): string => {
   return (id && subById(id)?.title) || `${chapter}장 수행평가`;
 };
 /** '범위 1~3장' of a 수행평가 (none: ''). */
-export const rangeText = (s: CourseSub | undefined): string => (s?.range ? `범위 ${s.range[0]}~${s.range[1]}장` : '');
+export const rangeText = (s: CourseSub | undefined): string => (s?.range ? panelText('range', { a: s.range[0], b: s.range[1] }) : '');
 /** A 절 as it is said to a person: its number, or '옛 2-2' for one not used. */
 export const subName = (s: CourseSub): string => (s.was ? `옛 ${s.was}` : s.id);
