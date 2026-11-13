@@ -9520,3 +9520,8 @@ div.zeroFlow {
   color: #fff;
 }
 
+/* B-3 버튼 글자는 한 줄: the run row's 코드 받기 · 로봇 실행 keeps its name only — why it is locked is said by the
+   지금 할 일 line and the panel (5-5), and by the key's own tip. */
+.app[data-course] .runRealText small {
+  display: none;
+}
