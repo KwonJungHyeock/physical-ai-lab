@@ -274,3 +274,20 @@
 .steps i[data-on] {
   background: #f0a23b;
 }
+/* (A narrow window — 1280 px: where a 절 has both its meter and its steps, the meter's bar is shorter, so the sentence is whole.) */
+@media (max-width: 1340px) {
+  .now:has(.steps) .meter > i {
+    width: 120px;
+  }
+  .now:has(.steps) .meter output {
+    min-width: 0;
+  }
+}
+/* 대응표 */
+:where(html[data-vq~='24']) .now:has(.steps) .meter > i {
+  width: 120px;
+}
+/* 대응표 */
+:where(html[data-vq~='24']) .now:has(.steps) .meter output {
+  min-width: 0;
+}

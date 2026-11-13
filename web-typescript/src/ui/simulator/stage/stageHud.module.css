@@ -253,11 +253,11 @@
   }
 }
 /* 대응표 */
-:where(html[data-vq~='25']) .gauges {
+:where(html[data-vq~='26']) .gauges {
   display: none;
 }
 /* 대응표 */
-:where(html[data-vq~='25']) .arm {
+:where(html[data-vq~='26']) .arm {
   font-size: 21px;
   font-size: 23px;
 }
