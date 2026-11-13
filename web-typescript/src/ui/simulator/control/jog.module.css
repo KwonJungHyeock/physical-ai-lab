@@ -1573,59 +1573,59 @@
   }
 }
 /* 대응표 */
-:where(html[data-vq~='19']) .jog {
+:where(html[data-vq~='20']) .jog {
   gap: 8px;
 }
 /* 대응표 */
-:where(html[data-vq~='19']) .row {
+:where(html[data-vq~='20']) .row {
   min-height: 50px;
 }
 /* 대응표 */
-:where(html[data-vq~='19']) .mid {
+:where(html[data-vq~='20']) .mid {
   gap: 2px;
   padding: 4px 10px 2px;
 }
 /* 대응표 */
-:where(html[data-vq~='19']) .what {
+:where(html[data-vq~='20']) .what {
   display: none;
 }
 /* 대응표 */
-:where(html[data-vq~='19']) .jog .modes button {
+:where(html[data-vq~='20']) .jog .modes button {
   padding: 7px 4px 6px;
 }
 /* 대응표 */
-:where(html[data-vq~='19']) .jog .modes button small {
+:where(html[data-vq~='20']) .jog .modes button small {
   display: none;
 }
 /* 대응표 */
-:where(html[data-vq~='19']) .tip {
+:where(html[data-vq~='20']) .tip {
   padding: 7px 10px;
   font-size: 13px;
 }
 /* 대응표 */
-:where(html[data-vq~='19']) .readout span {
+:where(html[data-vq~='20']) .readout span {
   padding: 6px 10px;
 }
 /* 대응표 */
-:where(html[data-vq~='19']) .padWrap {
+:where(html[data-vq~='20']) .padWrap {
   --pad: clamp(166px, calc(100vh - 610px), 252px);
 }
 /* 대응표 */
-:where(html[data-vq~='19']) .jog .key[data-kind='wedge'] b,
-:where(html[data-vq~='19']) .jog .key[data-kind='lift'] b {
+:where(html[data-vq~='20']) .jog .key[data-kind='wedge'] b,
+:where(html[data-vq~='20']) .jog .key[data-kind='lift'] b {
   font-size: 14.5px;
   font-size: 14px;
 }
 /* 대응표 */
-:where(html[data-vq~='19']) .rocker {
+:where(html[data-vq~='20']) .rocker {
   width: 66px;
 }
 /* 대응표 */
-:where(html[data-vq~='19']) .turn {
+:where(html[data-vq~='20']) .turn {
   height: 36px;
 }
 /* 대응표 */
-:where(html[data-vq~='19']) .readout + .cap {
+:where(html[data-vq~='20']) .readout + .cap {
   display: none;
 }
 /* 좌표 is the taller view: its closing hint goes first */
@@ -1635,7 +1635,7 @@
   }
 }
 /* 대응표 */
-:where(html[data-vq~='20']) .turns + .tip {
+:where(html[data-vq~='21']) .turns + .tip {
   display: none;
 }
 @media (pointer: coarse) {
@@ -1925,11 +1925,11 @@
   }
 }
 /* 대응표 */
-:where(html[data-vq~='19']) .jog {
+:where(html[data-vq~='20']) .jog {
   gap: 8px;
 }
 /* 대응표 */
-:where(html[data-vq~='19']) .rows {
+:where(html[data-vq~='20']) .rows {
   gap: 5px;
 }
 @media (max-height: 800px) {
@@ -1944,15 +1944,15 @@
   }
 }
 /* 대응표 */
-:where(html[data-vq~='21']) .row {
+:where(html[data-vq~='22']) .row {
   min-height: 46px;
 }
 /* 대응표 */
-:where(html[data-vq~='21']) .head output {
+:where(html[data-vq~='22']) .head output {
   font-size: 16px;
 }
 /* 대응표 */
-:where(html[data-vq~='21']) .tip {
+:where(html[data-vq~='22']) .tip {
   padding: 4px 10px;
 }
 /* STEP: the numbers on the keys, the unit once after them. */
@@ -2359,28 +2359,28 @@
   }
 }
 /* 대응표 */
-:where(html[data-vq~='22']) [data-course] :global(.life-shell) .row {
+:where(html[data-vq~='19']) [data-course] :global(.life-shell) .row {
   min-height: 40px;
 }
 /* 대응표 */
-:where(html[data-vq~='22']) [data-course] :global(.life-shell) .row > * {
+:where(html[data-vq~='19']) [data-course] :global(.life-shell) .row > * {
   min-height: 40px;
   height: 40px;
 }
 /* 대응표 */
-:where(html[data-vq~='22']) [data-course] :global(.life-shell) .head b {
+:where(html[data-vq~='19']) [data-course] :global(.life-shell) .head b {
   line-height: 18px;
 }
 /* 대응표 */
-:where(html[data-vq~='22']) [data-course] :global(.life-shell) .bar {
+:where(html[data-vq~='19']) [data-course] :global(.life-shell) .bar {
   height: 14px;
 }
 /* 대응표 */
-:where(html[data-vq~='22']) [data-course] :global(.life-shell) .track {
+:where(html[data-vq~='19']) [data-course] :global(.life-shell) .track {
   top: 4px;
 }
 /* 대응표 */
-:where(html[data-vq~='22']) [data-course] :global(.life-shell) .opts {
+:where(html[data-vq~='19']) [data-course] :global(.life-shell) .opts {
   padding-top: 4px;
   padding-bottom: 4px;
 }

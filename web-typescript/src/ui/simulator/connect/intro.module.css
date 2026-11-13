@@ -576,3 +576,128 @@
   outline: 2px solid #fff;
   outline-offset: 3px;
 }
+
+/* ===========================================================================
+ * 입문 과정의 표지 (수정 지시서 v4 파트 5, proposal_intro): the words on a dark column at the left, the course's
+ * picture filling the rest (no words over it); the loading and the version at the column's foot.
+ * ======================================================================== */
+.splash[data-cover] {
+  display: grid;
+  grid-template-columns: minmax(480px, 40%) minmax(0, 1fr);
+  background: #14171c;
+  color: #f6f7f9;
+}
+.cover {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: clamp(32px, 6.6vh, 72px) clamp(32px, 3.8vw, 72px) clamp(24px, 4.4vh, 48px);
+}
+/* 대응표 */
+:where([data-course]) .cover {
+  --cv1: calc(6.6vh / var(--course-zoom, 1));
+  --cv2: calc(3.8vw / var(--course-zoom, 1));
+  --cv3: calc(4.4vh / var(--course-zoom, 1));
+  padding: clamp(32px, var(--cv1), 72px) clamp(32px, var(--cv2), 72px) clamp(24px, var(--cv3), 48px);
+}
+.coverBody {
+  margin: auto 0;
+}
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 24px;
+}
+.tags > * {
+  padding: 4px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #f6f7f9;
+}
+/* 대응표 */
+:where([data-course]) .tags > * {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+.tags > b {
+  border-color: #f0a23b;
+  color: #f0a23b;
+}
+.cover h1 {
+  margin: 0;
+  font-size: clamp(40px, 4.4vw, 60px);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+/* 대응표 */
+:where([data-course]) .cover h1 {
+  font-size: clamp(40px, calc(4.4vw / var(--course-zoom, 1)), 60px);
+}
+.coverSub {
+  margin: 16px 0 0;
+  font-size: clamp(23px, 2.2vw, 34px);
+  font-weight: 700;
+  color: #c9ced5;
+}
+/* 대응표 */
+:where([data-course]) .coverSub {
+  font-size: clamp(23px, calc(2.2vw / var(--course-zoom, 1)), 34px);
+}
+.coverLead {
+  margin: 32px 0 0;
+  font-size: 18px;
+  line-height: 1.7;
+  color: #c9ced5;
+}
+/* What comes in what order: the four in a row, an arrow between them. */
+.flow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 32px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.flow li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.flow li::before {
+  content: '→';
+  color: #c9ced5;
+}
+.flow li:first-child::before {
+  content: none;
+}
+.flow li > span {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f6f7f9;
+}
+.coverFoot .row {
+  margin-top: 12px;
+}
+.coverVersion {
+  font-size: 14px;
+  color: #c9ced5;
+}
+/* The course's picture: the whole of the right side. */
+.coverArt {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: cover;
+}
+.splash[data-cover][data-quiet] .coverBody,
+.splash[data-cover][data-quiet] .coverArt {
+  visibility: hidden;
+}

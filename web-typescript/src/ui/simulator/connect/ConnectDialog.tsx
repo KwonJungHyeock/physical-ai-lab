@@ -31,6 +31,7 @@ import { remoteRobot, setRemoteRobot } from '@/engine/simulator/robotLink';
 import { identifyRobot, networkPrefix, otherWifiHint, pcLan, probeRobot, ROBOT_PORT, sameRobot, scanNetwork, type FoundRobot } from '@/engine/simulator/discover';
 
 import { DIRECT_IP } from '@/engine/simulator/usbKit';
+import { tidy } from '@/engine/simulator/cell/courseText';
 
 import Icon from '../Icon';
 import { skipIntroOnce } from './Intro';
@@ -65,6 +66,8 @@ interface Props {
   auto?: boolean;
   /** The open program, as an address part (`#carry=…`) for the robot's console to put back. */
   carry?: () => string;
+  /** 입문 과정: its 표기 for the lines of the first screen (5-5 opens this window). */
+  course?: boolean;
   /** Open this robot at once (a USB result's [연결]): its checks, then its console. */
   start?: { addr: string; label: string } | null;
   /** Desktop program: robots not on the Wi-Fi yet → 로봇 USB 만들기. */
@@ -74,7 +77,9 @@ interface Props {
   onClose(): void;
 }
 
-export default function ConnectDialog({ current, auto, carry, start, onUsb, onSetup, onClose }: Props) {
+export default function ConnectDialog({ current, auto, carry, start, onUsb, onSetup, onClose, course }: Props) {
+  // 입문 과정의 표기 (수정 지시서 v4 파트 6-9): the particle closed up, the range's tilde closed up, no period at a line's end.
+  const t = (s: string) => (course ? tidy(s).replace(/\.$/, '') : s);
   const [tab, setTab] = useState<Tab>('find');
   // On a robot's console its own network is the one to search; elsewhere the last one used.
   const hereNet = current?.ips[0]?.replace(/\d+$/, '');
@@ -193,7 +198,7 @@ export default function ConnectDialog({ current, auto, carry, start, onUsb, onSe
   return (
     <div className={css.picker} role="dialog" aria-modal="true" aria-label="로봇 연결" onKeyDown={(e) => e.key === 'Escape' && onClose()}>
       <div className={`${css.pickerBox} ${css.connectBox}`}>
-        <Radar scanning={scan.scanning} found={scan.found} progress={scan.progress} link={link} net={networkPrefix(prefix)} />
+        <Radar scanning={scan.scanning} found={scan.found} progress={scan.progress} link={link} net={networkPrefix(prefix)} t={t} />
         <div className={css.connectMain}>
           <header className={css.pickerHead}>
             <span className={css.connectIcon}>
@@ -206,7 +211,7 @@ export default function ConnectDialog({ current, auto, carry, start, onUsb, onSe
                   ? '로봇이 붙을 Wi-Fi 를 정해요. 교실 공유기에 한 번 연결해 두면 다음부터 켜기만 하면 돼요.'
                   : current
                     ? '다른 로봇으로 바꾸려면 찾거나 ID 를 넣어요.'
-                    : '[Wi-Fi] 는 같은 공유기의 로봇을, [랜선 직결] 은 랜선 하나로 PC 와 이은 로봇을 연결해요. 로봇 없이 연습하려면 [시뮬레이션만].'}
+                    : t('[Wi-Fi] 는 같은 공유기의 로봇을, [랜선 직결] 은 랜선 하나로 PC 와 이은 로봇을 연결해요. 로봇 없이 연습하려면 [시뮬레이션만].')}
               </p>
             </div>
             <button type="button" className={css.pickerClose} onClick={onClose} aria-label="닫기">
@@ -227,9 +232,9 @@ export default function ConnectDialog({ current, auto, carry, start, onUsb, onSe
 
           {!link && tab === 'find' && (
             <>
-              <FindRobots prefix={prefix} setPrefix={setPrefix} here={current?.ips ?? []} auto={auto} onScan={setScan} onConnect={(r) => go(r.address, r.robotId, r)} onUsb={onUsb} />
+              <FindRobots prefix={prefix} setPrefix={setPrefix} here={current?.ips ?? []} auto={auto} onScan={setScan} onConnect={(r) => go(r.address, r.robotId, r)} onUsb={onUsb} t={t} />
               <details className={css.idFold} onToggle={(e) => (e.currentTarget as HTMLDetailsElement).open && input.current?.focus()}>
-                <summary>목록에 없나요? 로봇 ID 로 연결</summary>
+                <summary>{t('목록에 없나요? 로봇 ID 로 연결')}</summary>
                 <form
                   className={css.connectForm}
                   onSubmit={(e) => {
@@ -365,7 +370,8 @@ function blipAt(r: FoundRobot): { left: string; top: string } {
   return { left: `${50 + Math.cos(a) * d * 46}%`, top: `${50 + Math.sin(a) * d * 46}%` };
 }
 
-function Radar({ scanning, found, progress, link, net }: { scanning: boolean; found: FoundRobot[]; progress: number; link: Link | null; net: string | null }) {
+/** `t`: the line as the screen writes it (입문 과정: its 표기). */
+function Radar({ scanning, found, progress, link, net, t }: { scanning: boolean; found: FoundRobot[]; progress: number; link: Link | null; net: string | null; t(s: string): string }) {
   const linked = !!link && link.step >= LINK_STEPS.length;
   return (
     <aside className={css.radarSide} data-scanning={scanning || undefined} data-linked={linked || undefined} aria-hidden="true">
@@ -399,7 +405,7 @@ function Radar({ scanning, found, progress, link, net }: { scanning: boolean; fo
             ? `찾는 중 · ${Math.round(progress * 100)}% · ${found.length}대`
             : found.length
               ? `로봇 ${found.length}대를 찾았어요`
-              : '같은 Wi-Fi 의 로봇을 찾아요'}
+              : t('같은 Wi-Fi 의 로봇을 찾아요')}
       </p>
       <dl className={css.radarStats}>
         <div>
@@ -507,6 +513,7 @@ function FindRobots({
   onScan,
   onConnect,
   onUsb,
+  t,
 }: {
   prefix: string;
   setPrefix(p: string): void;
@@ -516,6 +523,8 @@ function FindRobots({
   onScan(s: { scanning: boolean; found: FoundRobot[]; progress: number }): void;
   onConnect(r: FoundRobot): void;
   onUsb?: () => void;
+  /** The line as the screen writes it (입문 과정: its 표기). */
+  t(s: string): string;
 }) {
   const [found, setFound] = useState<FoundRobot[]>([]);
   const [progress, setProgress] = useState<number | null>(null);
@@ -660,7 +669,7 @@ function FindRobots({
               ? found.length
                 ? `로봇 ${found.length}대를 찾았어요. 이름·IP 로 내 로봇을 고르고(헷갈리면 [움직여 확인]) [연결] 해요.`
                 : '이 네트워크에서 로봇을 찾지 못했어요.'
-              : `[로봇 찾기] 를 누르면 ${net}1 ~ 254 를 살펴봐요 (몇 초 걸려요).`}
+              : t(`[로봇 찾기] 를 누르면 ${net}1 ~ 254 를 살펴봐요 (몇 초 걸려요).`)}
       </p>
       {onUsb && scanned && !scanning && !found.length && (
         <button type="button" className={css.usbHint} onClick={onUsb}>

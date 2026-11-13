@@ -142,7 +142,7 @@ export function MomentAsk({ ask, ox, n, onAnswer, onSkip, docked }: { ask: Ask; 
             <footer className={css.qFeed}>
               <span>
                 <b>{!ox ? '예측했어요!' : ok ? '정답이에요!' : `아쉬워요 · 정답은 ${ask.options[ask.answer]}`}</b>
-                <small>{!ox ? '맞았는지는 장면을 보며 확인해요.' : ask.why}</small>
+                <small>{!ox ? (docked ? '맞았는지는 장면을 보며 확인해요' : '맞았는지는 장면을 보며 확인해요.') : ask.why}</small>
               </span>
               <button type="button" autoFocus onClick={() => onAnswer(chosen)}>
                 이어서 보기 ▶

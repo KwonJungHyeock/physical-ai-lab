@@ -1,11 +1,14 @@
 /**
- * 입문 과정의 장별 수행평가 (장별 가이드라인 v1): O · X 5문항 (the questions are in the 교안; the app has
- * their numbers and O · X only) and a mission. A mission whose pictures or scene are not here yet is
- * 준비 중: the O · X still count, and no 상 · 중 · 하 is given without the mission (never a 하).
+ * 입문 과정의 수행평가 (장별 가이드라인 v1; 수정 지시서 v4 파트 1: two of them): O · X 5문항 (the questions
+ * are in the 교안; the app has their numbers and O · X only) and a mission. 중간 수행평가 (3-5, 1 ~ 3장) is
+ * the test kept under chapter 3, 마무리 수행평가 (5-6, 4 ~ 5장) the one under chapter 5 — results are kept
+ * by that chapter number, as before. The tests of chapters 1 · 2 · 4 are not used: their code and what a
+ * browser kept of them stay, on no screen and in no count. A mission whose pictures or scene are not
+ * here yet is 준비 중: the O · X still count, and no 상 · 중 · 하 is given without the mission (never a 하).
  * No React.
  */
 
-import { testText } from './courseText';
+import { panelText, testText } from './courseText';
 
 export type OX = 'O' | 'X';
 
@@ -77,13 +80,24 @@ export const CHAPTER_TESTS: Record<number, ChapterTest> = {
 /** A scene mission may be tried twice (the second try counts as a pass too); the O · X keep their first answers. */
 export const MISSION_TRIES = 2;
 
-/** How the mission went, for the 기록 (none: not finished yet). */
-export function missionWay(r: TestResult | undefined): '한 번에 통과' | '다시 해서 통과' | '통과 못 함' | null {
+/** How the mission went (none: not finished yet). */
+export function missionEnd(r: TestResult | undefined): 'once' | 'again' | 'failed' | null {
   if (!r || r.mission == null) return null;
   const tries = r.missionTries ?? 1;
-  if (r.mission) return tries <= 1 ? '한 번에 통과' : '다시 해서 통과';
-  return tries >= MISSION_TRIES ? '통과 못 함' : null;
+  if (r.mission) return tries <= 1 ? 'once' : 'again';
+  return tries >= MISSION_TRIES ? 'failed' : null;
 }
+/** The same in words, for the 기록: '한 번에 통과' · '다시 해서 통과' · '통과 못 함' (none: not finished yet). */
+export function missionWay(r: TestResult | undefined): string | null {
+  const e = missionEnd(r);
+  return e === 'once' ? panelText('wayOnce') : e === 'again' ? panelText('wayAgain') : e === 'failed' ? panelText('wayFailed') : null;
+}
+/**
+ * A 수행평가 is over (수정 지시서 v4 파트 1-9: '… 를 마쳤어요' only then): its O · X graded (a course with
+ * O · X) and its mission ended — passed, or its tries used up. (5장's 카드 확인 has no limit: over once passed.)
+ */
+export const testOver = (t: ChapterTest | undefined, r: TestResult | undefined, ox: boolean): boolean =>
+  !!t && !!r && (!ox || r.right != null) && (!t.mission.ready ? r.right != null : t.mission.card ? r.mission === true : missionEnd(r) !== null);
 
 /** What a student did in a chapter's 수행평가 (kept in this browser). */
 export interface TestResult {

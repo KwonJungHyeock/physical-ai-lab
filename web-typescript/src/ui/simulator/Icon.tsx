@@ -56,6 +56,7 @@ const PATHS: Record<string, string> = {
   pc: 'M3.5 5h17v11h-17zM9 20h6M12 16v4',
     gallery: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
   table: 'M3 10h18M5 10v9M19 10v9M7 10V6h4v4M13 10V7h4v3',
+  list: 'M5 7h14M5 12h14M5 17h14',
   shuffle: 'M4 7h3.5c4 0 5 10 9 10H20M4 17h3.5c1.6 0 2.6-1.6 3.4-3.4M13.2 9.4C14 8 15 7 16.5 7H20M18 4.5 20.5 7 18 9.5M18 14.5l2.5 2.5-2.5 2.5',
 };
 

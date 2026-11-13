@@ -7,6 +7,7 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useSta
 import type { CameraId } from '@/engine/simulator/program';
 
 import { activeArm } from '@/engine/robot/arms';
+import { buttonName, tidy } from '@/engine/simulator/cell/courseText';
 
 import { AXIS_COLORS, type DisplayOpts } from './sceneHelpers';
 import type { CameraFrame, StageApi, ViewName } from './Stage';
@@ -54,7 +55,8 @@ function DisplayMenu({ display, onDisplay, named }: { display: DisplayOpts; onDi
       </button>
       {open && (
         <div className={css.displayMenu} role="group" aria-label="3D 표시">
-          {DISPLAY_ITEMS.map((it) => (
+          {/* 입문 과정 (`named`, 수정 지시서 v4 파트 6): 궤적선 by the name its 절 uses, no 블록 코딩 · 패널 접기 items, the notes in the course's 표기. */}
+          {DISPLAY_ITEMS.filter((it) => !named || (it.key !== 'ghost' && it.key !== 'autoFold')).map((it) => (
             <label key={it.key} className={css.displayItem}>
               <input type="checkbox" checked={display[it.key]} onChange={(e) => onDisplay({ ...display, [it.key]: e.target.checked })} />
               <span className={css.displaySwatch} aria-hidden="true">
@@ -63,8 +65,8 @@ function DisplayMenu({ display, onDisplay, named }: { display: DisplayOpts; onDi
                 ))}
               </span>
               <span>
-                <b>{it.label}</b>
-                <small>{it.key === 'reach' ? `${it.note} (반지름 약 ${activeArm().reachMm}mm)` : it.note}</small>
+                <b>{named && it.key === 'path' ? buttonName('path') : it.label}</b>
+                <small>{((t: string) => (named ? tidy(t) : t))(it.key === 'reach' ? `${it.note} (반지름 약 ${activeArm().reachMm}mm)` : it.note)}</small>
               </span>
             </label>
           ))}
@@ -149,6 +151,14 @@ export function ViewCube({ orient, onView }: { orient(): { azimuth: number; pola
   );
 }
 
+/** 입문 과정: the ways to look, by name (수정 지시서 v4 파트 4-2). */
+const LITE_VIEWS: readonly (readonly [ViewName, string])[] = [
+  ['front', '앞'],
+  ['side', '옆'],
+  ['top', '위'],
+  ['home', '처음 시점'],
+];
+
 /**
  * The view tools at the right of the 3D view, as in modelling programs: the view cube, then one
  * column of buttons — first view, fit all, zoom in and out, turn or move, perspective or flat,
@@ -162,6 +172,7 @@ export function ViewTools({
   onSnapshot,
   lite,
   liteDisplay,
+  liteViews,
 }: {
   /** The 3D view's controls (null until it is ready). */
   api(): StageApi | null;
@@ -175,6 +186,8 @@ export function ViewTools({
   lite?: boolean;
   /** 입문 과정 4-2: the 표시 옵션 under 처음 시점 too (its ① turns 도구 궤적 on there). */
   liteDisplay?: boolean;
+  /** 입문 과정 (수정 지시서 v4 파트 4-2): the ways to look as words in a row — 앞 · 옆 · 위 · 처음 시점. */
+  liteViews?: boolean;
 }) {
   const [pan, setPan] = useState(false);
   const [flat, setFlat] = useState(false);
@@ -190,6 +203,23 @@ export function ViewTools({
     a.click();
     onSnapshot(true);
   };
+  if (lite && liteViews)
+    return (
+      <div className={css.viewTools} data-panel="viewtools">
+        <div className={css.viewWords} role="toolbar" aria-label="보는 방향">
+          {LITE_VIEWS.map(([name, label]) => (
+            <button key={name} type="button" onClick={() => api()?.view(name)}>
+              {label}
+            </button>
+          ))}
+        </div>
+        {liteDisplay && (
+          <div className={css.viewRail} role="toolbar" aria-label="3D 보기 도구" aria-orientation="vertical">
+            <DisplayMenu display={display} onDisplay={onDisplay} named />
+          </div>
+        )}
+      </div>
+    );
   if (lite)
     return (
       <div className={css.viewTools} data-panel="viewtools">

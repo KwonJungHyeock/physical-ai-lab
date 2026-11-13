@@ -42,7 +42,7 @@ interface Props {
   /** 입문 퀘스트: ⚡ 결과 바로 — the run computed without drawing (cell/quick.ts); `progress` while it runs. */
   quick?: { onClick(): void; progress: string | null; disabled?: boolean };
   /** 입문 과정: the two run keys' names as the 문구 파일 has them (none: the console's own). */
-  names?: { run: string; real: string; stop: string };
+  names?: { run: string; real: string; stop: string; code?: string };
   /** 입문 트랙 (지시서 v1): [다음 단계 →] — never automatic; lit (the one accent) once this step is passed. */
   next?: { onClick(): void; lit: boolean; disabled?: boolean };
 }
@@ -161,7 +161,7 @@ export default function RunBar(p: Props) {
       <button type="button" className={css.runReal} data-done={p.robotDone || undefined} disabled={p.realDisabled} onClick={p.onReal} aria-label={p.robotMode ? '로봇에서 실행' : '로봇용 코드 받기'} title={realTitle}>
         {p.realBlocked ? <Icon name="lock" size={16} /> : p.robotMode ? <RobotPlay /> : <Icon name="code" size={18} />}
         <span className={css.runRealText}>
-          {p.robotMode ? (p.names?.real ?? '로봇 실행') : '코드 받기'}
+          {p.robotMode ? (p.names?.real ?? '로봇 실행') : (p.names?.code ?? '코드 받기')}
           {p.realBlocked && <small>{p.realBlocked}</small>}
         </span>
         {p.realProgress && <kbd>{p.realProgress}</kbd>}

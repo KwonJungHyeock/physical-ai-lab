@@ -84,7 +84,22 @@ interface Props {
     notice: { kicker: string; title: string; lines: readonly string[]; owner: string; ok: string };
     ask: boolean;
     onEnter(): void;
+    /** The 구성 for the cover's tags (수정 지시서 v4 파트 5-2): its 차시, whether it has the real robot's 절 (5-5) and 5-4. */
+    plan?: { lessons: number; real: boolean; own: boolean };
   };
+}
+
+/** 입문 과정의 대표 그림: the team's file (/course/assets/<art>.png), or — until it comes — the picture used so far. */
+function CoverArt({ art, fallback }: { art: string; fallback?: string }) {
+  const [missing, setMissing] = useState(false);
+  const img = useRef<HTMLImageElement>(null);
+  // (A file that failed before the page's script ran sends no error to it: looked at once here.)
+  useEffect(() => {
+    const el = img.current;
+    if (el && el.complete && el.naturalWidth === 0) setMissing(true);
+  }, []);
+  // eslint-disable-next-line @next/next/no-img-element -- an asset slot: the team's picture, also in the static export
+  return <img ref={img} className={css.coverArt} src={missing && fallback ? fallback : `/course/assets/${art}.png`} alt="" aria-hidden="true" onError={() => setMissing(true)} />;
 }
 
 /** How long each of a cover's pictures stays, ms. */
@@ -172,6 +187,93 @@ export default function Intro({ progress, ready, note, gate, brand, courses }: P
   });
   const now = scenes[scene] ?? scenes[0];
   const choose = gate && final && (!quiet || !!courses);
+  // 입문 과정 (수정 지시서 v4 파트 5, proposal_intro): the course's name in Korean on the left — its tags, its order in
+  // one line, the loading and the version at the foot — and its picture on the right (no words over it).
+  if (courses && brand?.cover) {
+    const c = brand.cover;
+    const plan = courses.plan;
+    return (
+      <div
+        className={css.splash}
+        data-cover
+        data-done={done || undefined}
+        data-quiet={quiet || undefined}
+        data-skipped={played || undefined}
+        data-final={(choose && !entered) || undefined}
+        aria-hidden={done}
+        role={choose ? 'dialog' : 'status'}
+        aria-label="Physical AI 로봇 학습 프로그램"
+        onClick={() => setPlayed(true)}
+      >
+        <section className={css.cover}>
+          <span className={css.mark}>
+            {/* eslint-disable-next-line @next/next/no-img-element -- the simulator's mark, also in the static export */}
+            <img src="/brand/sim-mark-white.svg" alt="" width={272} height={228} />
+            <i />
+            {/* eslint-disable-next-line @next/next/no-img-element -- the company's logo, also in the static export */}
+            <img src="/brand/robodyne-name-white.png" alt="ROBODYNE SYSTEMS" width={615} height={174} />
+          </span>
+          <div className={css.coverBody}>
+            <p className={css.tags}>
+              <b>{c.kind}</b>
+              {plan && <span>{plan.lessons}차시</span>}
+              <span>{!plan || plan.real ? c.modes.real : c.modes.sim}</span>
+            </p>
+            <h1>
+              {c.name[0]}
+              <br />
+              {c.name[1]}
+            </h1>
+            <p className={css.coverSub}>{c.sub}</p>
+            <p className={css.coverLead}>
+              {c.lead[0]}
+              <br />
+              {!plan || plan.own ? c.lead[1] : c.leadPlain}
+            </p>
+            <ol className={css.flow}>
+              {c.flow.map((f) => (
+                <li key={f}>
+                  <span>{f}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+          <footer className={css.coverFoot}>
+            <div className={css.load} role="progressbar" aria-label="불러오기" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(target * 100)}>
+              <i ref={bar} />
+            </div>
+            <span className={css.row}>
+              <small className={css.note}>{note}</small>
+              <small className={css.coverVersion}>v1.{RELEASE}</small>
+            </span>
+          </footer>
+        </section>
+        <CoverArt art={c.art} fallback={brand.scenes[0]?.img} />
+        {choose && courses.ask && !noticed && (
+          <div className={css.notice} role="alertdialog" aria-modal="true" aria-labelledby="copyright-title" onClick={(e) => e.stopPropagation()}>
+            <div>
+              <small>{courses.notice.kicker}</small>
+              <h2 id="copyright-title">{courses.notice.title}</h2>
+              {courses.notice.lines.map((l) => (
+                <p key={l}>{l}</p>
+              ))}
+              <em>{courses.notice.owner}</em>
+              <button
+                type="button"
+                autoFocus
+                onClick={() => {
+                  setNoticed(true);
+                  enter(courses.onEnter);
+                }}
+              >
+                {courses.notice.ok}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
   return (
     <div
       className={css.splash}

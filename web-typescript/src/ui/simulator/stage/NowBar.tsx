@@ -36,9 +36,11 @@ interface BarProps {
   next?: NowNext;
   /** 장면 보기 (수정 지시서 v3 파트 2-2): the line names the scene and carries [다시 보기] (no '지금 할 일', no step). */
   replay?: { onClick(): void; disabled?: boolean };
+  /** 'N / M 단계' and its bar, left of [다음으로 →] (수정 지시서 v4 파트 2-5): the step reached of the 절's steps (all done: M / M). */
+  steps?: { n: number; of: number };
 }
 
-export default function NowBar({ n, text, state = 'do', meter, next, replay }: BarProps) {
+export default function NowBar({ n, text, state = 'do', meter, next, replay, steps }: BarProps) {
   // A number and its unit: a space before mm (110 mm), none before ° or 곳.
   const unit = meter ? (meter.unit === 'mm' ? ' mm' : meter.unit) : '';
   return (
@@ -58,6 +60,16 @@ export default function NowBar({ n, text, state = 'do', meter, next, replay }: B
             {unit} / {meter.of}
             {unit}
           </output>
+        </span>
+      )}
+      {steps && steps.of > 0 && (
+        <span className={css.steps} aria-label={commonLine('stepOf', { n: steps.n, of: steps.of })}>
+          <output>{commonLine('stepOf', { n: steps.n, of: steps.of })}</output>
+          <span aria-hidden="true">
+            {Array.from({ length: steps.of }, (_, k) => (
+              <i key={k} data-on={k < steps.n || undefined} />
+            ))}
+          </span>
         </span>
       )}
       {replay && (
@@ -144,7 +156,8 @@ const asLead = (say: string) => say.replace(/눌러요$/, '눌러');
 
 /** 기초 조작 (입문 tutorial) as 지금 할 일: the step's sentence, its meter, its one place to press. */
 /** `shorts` · `done`: the sentences and the line when done as the caller has them (입문 과정: its 문구 파일), in place of the tutorial's own. */
-export function TutNow({ tut, step, start, read, next, shorts, done }: { tut: LifeTutorial; step: number; start: TutCtx; read(): TutCtx; next?: NowNext; shorts?: readonly string[]; done?: string }) {
+/** `count`: show 'N / M 단계' (입문 과정). */
+export function TutNow({ tut, step, start, read, next, shorts, done, count }: { tut: LifeTutorial; step: number; start: TutCtx; read(): TutCtx; next?: NowNext; shorts?: readonly string[]; done?: string; count?: boolean }) {
   const cur = tut.steps[step];
   const [now, setNow] = useState<TutCtx | null>(null);
   const readRef = useRef(read);
@@ -155,7 +168,8 @@ export function TutNow({ tut, step, start, read, next, shorts, done }: { tut: Li
     const id = window.setInterval(() => setNow(readRef.current()), 250);
     return () => window.clearInterval(id);
   }, []);
-  if (!cur) return <NowBar state="ok" text={done ?? `다 했어요 · ${tut.concept.term}: ${tut.concept.def}`} next={next ? { ...next, lit: true } : undefined} />;
+  const of = tut.steps.length;
+  if (!cur) return <NowBar state="ok" text={done ?? `다 했어요 · ${tut.concept.term}: ${tut.concept.def}`} next={next ? { ...next, lit: true } : undefined} steps={count ? { n: of, of } : undefined} />;
   const short = shorts?.[step] ?? cur.short;
   const targets = cur.lead && now ? cur.lead(now) : cur.target;
   // The first of the targets on screen is the one to press (a lead's others are where to go first).
@@ -165,7 +179,7 @@ export function TutNow({ tut, step, start, read, next, shorts, done }: { tut: Li
   const m = cur.meter && now ? cur.meter(now, start) : null;
   return (
     <>
-      <NowBar n={step + 1} text={text} meter={m} next={next ? { ...next, lit: false } : undefined} />
+      <NowBar n={step + 1} text={text} meter={m} next={next ? { ...next, lit: false } : undefined} steps={count ? { n: step + 1, of } : undefined} />
       {targets.length > 0 && <NowMark key={step} find={pick} n={step + 1} />}
     </>
   );
@@ -174,7 +188,26 @@ export function TutNow({ tut, step, start, read, next, shorts, done }: { tut: Li
 /** A 현장 quest as 지금 할 일: its controls in turn (one at a time), then the run and the result. */
 /** `at`: the step reached as the caller reads it (입문 과정 5-2: from the cards' values), instead of moving on with each press. */
 /** `done`: the line when it passed (입문 과정: '다 했어요 · …'), in place of '통과했어요'. */
-export function QuestNow({ steps, sels, phase, passed, next, at: atNow, done }: { steps: readonly string[]; sels: readonly string[]; phase: 'do' | 'run' | 'result'; passed: boolean | null; next?: NowNext; at?: number; done?: string }) {
+/** `count`: show 'N / M 단계' (입문 과정). */
+export function QuestNow({
+  steps,
+  sels,
+  phase,
+  passed,
+  next,
+  at: atNow,
+  done,
+  count,
+}: {
+  steps: readonly string[];
+  sels: readonly string[];
+  phase: 'do' | 'run' | 'result';
+  passed: boolean | null;
+  next?: NowNext;
+  at?: number;
+  done?: string;
+  count?: boolean;
+}) {
   const [k, setK] = useState(0);
   // A new try starts from the first place again.
   const key = `${sels.join('|')}:${phase}`;
@@ -183,14 +216,15 @@ export function QuestNow({ steps, sels, phase, passed, next, at: atNow, done }: 
     setWas(key);
     if (phase === 'do') setK(0);
   }
-  if (phase === 'run') return <NowBar state="run" text={commonLine('running')} next={next} />;
-  if (phase === 'result' && passed) return <NowBar state="ok" text={done ?? '통과했어요'} next={next ? { ...next, lit: true } : undefined} />;
+  const of = steps.length;
   const at = Math.min(atNow ?? k, Math.max(0, steps.length - 1));
+  if (phase === 'run') return <NowBar state="run" text={commonLine('running')} next={next} steps={count ? { n: of, of } : undefined} />;
+  if (phase === 'result' && passed) return <NowBar state="ok" text={done ?? '통과했어요'} next={next ? { ...next, lit: true } : undefined} steps={count ? { n: of, of } : undefined} />;
   const text = phase === 'result' ? commonLine('notYet', { step: steps[at] ?? `▶ ${buttonName('run')}` }) : (steps[at] ?? '');
   const sel = sels[at];
   return (
     <>
-      <NowBar state={phase === 'result' ? 'no' : 'do'} n={at + 1} text={text} next={next} />
+      <NowBar state={phase === 'result' ? 'no' : 'do'} n={at + 1} text={text} next={next} steps={count ? { n: at + 1, of } : undefined} />
       {sel && <NowMark key={at} find={() => [...document.querySelectorAll<HTMLElement>(sel)].find(shown) ?? null} n={at + 1} onHit={atNow == null ? () => setK((x) => Math.min(x + 1, sels.length - 1)) : undefined} />}
     </>
   );

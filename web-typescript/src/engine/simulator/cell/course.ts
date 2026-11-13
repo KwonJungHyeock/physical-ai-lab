@@ -6,8 +6,10 @@
  * number ('3-3': the 교안's 장 · 절 number, 1 upward in each chapter — 수정 지시서 v3 파트 8, `numbering` 2),
  * name, 교안 pages (temporary until the 8차시 교안), its status (열림 / 만드는 중 / 수행평가 / 사용 안 함)
  * and, for each kind (장면 보기 · 실습 하기), 있음 / 만드는 중 / 없음; and the two courses (8차시 · 4차시).
- * Change pages or states there only. A chapter's 수행평가 has the chapter's last number ('3-5'); a 절 not
- * used keeps no number (its `was` is the old one); `renumbered` says which old number is which new one.
+ * Change states there only (the 교안 pages are kept in the table, on no screen: 수정 지시서 v4 파트 2-1).
+ * A 수행평가 has its chapter's last number ('3-5' 중간 · '5-6' 마무리: two, 수정 지시서 v4 파트 1); a 절 not
+ * used keeps no number (its `was` is the one it had); `renumbered` says which old number is which new one,
+ * `retired` which 수행평가 numbers were taken out of the list (1-4 · 2-4 · 4-5: kept, not used).
  *
  * What the simulator alone knows is here: the scene each 절 sits in and what its 실습 opens (a 실습 셀
  * quest — 글씨 쓰기 G1 … — or a 기초 조작 tutorial, lifeTutorials.ts). No React.
@@ -46,8 +48,10 @@ export interface CourseSub {
   kinds: Record<SubMode, KindState>;
   /** 선택: the real robot's 절. A class without a robot skips it; it never counts against the record. */
   optional?: boolean;
-  /** A chapter's 수행평가 (O · X 5 + 미션): the chapter's last number; it follows the chapter's last 절. */
+  /** A 수행평가 (O · X 5 + 미션): its chapter's last number; it follows the chapter's last 절. */
   test?: boolean;
+  /** A 수행평가: the chapters it covers, 처음 ~ 끝 (중간: 1 ~ 3장, 마무리: 4 ~ 5장). */
+  range?: readonly [number, number];
   scene: SceneKind;
   /** What its 실습 하기 opens (its 장면 보기 plays the same quest by itself). */
   run?: SubRun;
@@ -71,12 +75,12 @@ const SIM: Record<string, { scene: SceneKind; run?: SubRun }> = {
   '1-1': { scene: 'A', run: st('1-1') },
   '1-2': { scene: 'C', run: st('1-2') },
   '1-3': { scene: 'A', run: st('1-3') },
-  '1-4': { scene: 'F', run: test(1) },
+  'unused-test-1': { scene: 'F', run: test(1) },
   '2-1': { scene: 'B', run: st('2-1') },
   'unused-setup': { scene: 'A' },
   '2-2': { scene: 'C', run: st('2-2') },
   '2-3': { scene: 'E', run: st('2-3') },
-  '2-4': { scene: 'F', run: test(2) },
+  'unused-test-2': { scene: 'F', run: test(2) },
   '3-1': { scene: 'C', run: st('3-1') },
   '3-2': { scene: 'C', run: st('3-2') },
   'unused-limits': { scene: 'C' },
@@ -88,7 +92,7 @@ const SIM: Record<string, { scene: SceneKind; run?: SubRun }> = {
   // 4-3: rebuilt (가이드라인 v1): shapes from their corners; the 직선 이동 switch moved to 4-2 (G3 stays the 글씨 부스's own step).
   '4-3': { scene: 'D', run: st('4-3') },
   '4-4': { scene: 'D', run: st('4-4') },
-  '4-5': { scene: 'D', run: test(4) },
+  'unused-test-4': { scene: 'D', run: test(4) },
   '5-1': { scene: 'A', run: q('G1') },
   '5-2': { scene: 'E', run: q('G2') },
   '5-3': { scene: 'E', run: q('G4') },
@@ -121,6 +125,7 @@ export const COURSE_SUBS: CourseSub[] = TABLE.sections.map((s) => {
     kinds,
     ...('optional' in s && s.optional ? { optional: true } : {}),
     ...('test' in s && s.test ? { test: true } : {}),
+    ...('range' in s && s.range ? { range: [s.range[0], s.range[1]] as const } : {}),
     scene: sim.scene,
     // A 절 opens only with a kind that is there and something to open.
     // (A chapter's 수행평가 opens with its chapter, not as a 절 of its own.)
@@ -168,6 +173,22 @@ export const unlisted = (s: { status: SubStatus }) => s.status === 'unused' || s
  * used gives that 절 (it has no number now); any other number is the same in both.
  */
 const RENUMBERED: Readonly<Record<string, string>> = TABLE.renumbered.from;
-export const fromOldNumber = (old: string): string => RENUMBERED[old] ?? COURSE_SUBS.find((s) => s.was === old)?.id ?? old;
+export const fromOldNumber = (old: string): string => {
+  const now = RENUMBERED[old];
+  // (An old number that became a 수행평가 number taken out since: that 수행평가, kept and not used.)
+  if (now) return subByNumber(now)?.id ?? now;
+  return COURSE_SUBS.find((s) => s.was === old)?.id ?? old;
+};
+/** A 수행평가 taken out of the list (수정 지시서 v4 파트 1-2: 1-4 · 2-4 · 4-5), by the number it had. */
+export const retiredTest = (no: string): CourseSub | undefined => COURSE_SUBS.find((s) => s.test && s.status === 'unused' && s.was === no);
+/** The 절 a number in an address names: today's, or a 수행평가 taken out (its address goes to the list). */
+export const subByNumber = (no: string): CourseSub | undefined => subById(no) ?? retiredTest(no);
+/** A chapter's 수행평가 as the screens name it: '중간 수행평가' · '마무리 수행평가' (none: 'N장 수행평가'). */
+export const testName = (chapter: number): string => {
+  const id = COURSE.find((c) => c.n === chapter)?.test;
+  return (id && subById(id)?.title) || `${chapter}장 수행평가`;
+};
+/** '범위 1~3장' of a 수행평가 (none: ''). */
+export const rangeText = (s: CourseSub | undefined): string => (s?.range ? `범위 ${s.range[0]}~${s.range[1]}장` : '');
 /** A 절 as it is said to a person: its number, or '옛 2-2' for one not used. */
 export const subName = (s: CourseSub): string => (s.was ? `옛 ${s.was}` : s.id);

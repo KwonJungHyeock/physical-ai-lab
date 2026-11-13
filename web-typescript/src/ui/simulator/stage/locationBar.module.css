@@ -308,3 +308,62 @@
 [data-course] .kinds button {
   height: 40px;
 }
+
+/* 입문 과정 (수정 지시서 v4 파트 2-3): from the left — [목록], the 절's number, its name, its 차시 as a tag. */
+.loc[data-flat] {
+  gap: 16px;
+  color: #f6f7f9;
+  white-space: nowrap;
+}
+.list {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f6f7f9;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .list {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+.list:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+.loc[data-flat] > b {
+  flex: none;
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #f6f7f9;
+}
+.loc[data-flat] > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 23px;
+  font-weight: 700;
+  color: #f6f7f9;
+}
+.loc[data-flat] > small {
+  flex: none;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  font-size: 18px;
+  font-weight: 700;
+  color: #f6f7f9;
+}
+/* 장면 보기 | 실습 하기 at the top bar's right (before 학습 기록). */
+.kinds[data-top] {
+  margin-left: 0;
+}

@@ -193,7 +193,7 @@ export interface CourseRecord {
   /** optional: a 선택 절 (the real robot) — never counted against 완료. */
   lessons: { n: number; subs: { id: string; title: string; done: boolean; soon: boolean; optional?: boolean; pending?: boolean; /** A chapter's 수행평가: listed, not counted (완료 counts 절 only). */ test?: boolean }[] }[];
   /** 상 · 중 · 하 of the 수행평가 taken (임시: the browser's, until the platform's). None taken: none — never a 하. */
-  levels: { chapter: number; level: string }[];
+  levels: { chapter: number; /** '중간 수행평가' (none: 'N장'). */ name?: string; level: string }[];
   /** 4차시: the mission of each 차시's last 절 is what is recorded. */
   missions?: { id: string; passed: boolean; soon: boolean }[];
   copyright: string;
@@ -205,7 +205,7 @@ const courseTotals = (c: CourseRecord) => {
   return { got: all.filter((x) => x.done).length, of: all.length };
 };
 /** '상 · 중 · 하 (임시) 3장 상 · …', or why there is none yet. */
-const levelsText = (c: CourseRecord) => (c.levels.length ? `상 · 중 · 하 (임시): ${c.levels.map((x) => `${x.chapter}장 ${x.level}`).join(' · ')}` : '상 · 중 · 하 (임시): 아직 없어요 — 수행평가 준비 중');
+const levelsText = (c: CourseRecord) => (c.levels.length ? `상 · 중 · 하 (임시): ${c.levels.map((x) => `${x.name ?? `${x.chapter}장`} ${x.level}`).join(' · ')}` : '상 · 중 · 하 (임시): 아직 없어요 — 수행평가 준비 중');
 /** 4차시 missions: ' · 차시 미션 1-3 통과 · 3-3 아직 …' (one not built yet left out). */
 const missionsText = (c: CourseRecord) => {
   const m = (c.missions ?? []).filter((x) => !x.soon);
@@ -475,7 +475,7 @@ export function RecordPanel({ rec, site: start, onWho, onClose, course }: { rec:
           )}
         </div>
         <small className={css.foot}>
-          {course ? '기록은 이 브라우저에 남아요. 이름 · 반은 과정 끝의 학습 기록 한 장에만 써요.' : '기록은 이 브라우저에 남아요. 수업이 끝나면 제출 파일을 선생님께 내요(USB · 학급 게시판 · 메일).'}{' '}
+          {course ? '기록은 이 브라우저에 남아요. 이름 · 반은 과정 끝의 학습 기록 한 장에만 써요' : '기록은 이 브라우저에 남아요. 수업이 끝나면 제출 파일을 선생님께 내요(USB · 학급 게시판 · 메일).'}{' '}
           {!course && (
             <a href="/guides/cafe-student.pdf" target="_blank" rel="noreferrer">
               교안 (학생용) PDF

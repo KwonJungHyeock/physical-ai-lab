@@ -151,6 +151,13 @@ export interface StageApi {
  * The direction is what counts: the distance and the point looked at come from framing the
  * arm and its work area (fitView).
  */
+/** 입문 과정: the directions of 앞 · 옆 · 위 (three.js: x = robot x, y up, z = robot −y). */
+const COURSE_LOOKS = {
+  front: [0, Math.sin(Math.PI / 6), Math.cos(Math.PI / 6)],
+  side: [0.906, 0.423, 0],
+  top: [0, 1, 0.02],
+} as const;
+
 export const VIEWS: Record<Exclude<ViewName, 'fit'>, { pos: [number, number, number]; target: [number, number, number] }> = {
   home: { pos: [0.62, 0.62, 0.72], target: [0.13, 0.06, 0] },
   top: { pos: [0.16, 1.05, 0.0005], target: [0.16, 0, 0] },
@@ -690,11 +697,16 @@ function World({
     fitReq.current = null;
     const free = freeFrame(frameInsets?.() ?? null, gl.domElement.clientWidth, gl.domElement.clientHeight);
     // 입문 과정 무대: the 절's own home view (robot frame direction -> three.js), and every view kept to the desk.
-    const own = courseStage && courseView && req.name === 'home' ? courseView : null;
+    // (앞 · 옆 · 위, 수정 지시서 v4 파트 4-2: the 절's own area seen as the student sits — 앞: from the customer's side
+    // (robot −y), 30° up; 옆: from the mat's end (robot +x), 25° up; 위: straight down, the desk's long side across the
+    // picture.)
+    const turned = courseStage && courseView && (req.name === 'front' || req.name === 'side' || req.name === 'top') ? req.name : null;
+    const own = courseStage && courseView && (req.name === 'home' || turned) ? courseView : null;
     const area = own ? own.area : cell ? CELL_VIEW[cell] : WORK_AREA[theme];
-    const home = own ? [own.dir[0], own.dir[2], -own.dir[1]] : cell && req.name === 'home' ? CELL_VIEW[cell].home : null;
-    const f = own?.shot ? { position: new Vector3(own.shot.eye[0], own.shot.eye[2], -own.shot.eye[1]).multiplyScalar(0.001), target: new Vector3(own.shot.target[0], own.shot.target[2], -own.shot.target[1]).multiplyScalar(0.001) } : fitView(req.name, root.current, arm.root, area, camera as PerspectiveCamera, home, free);
-    if (courseStage) f.position.copy(deskSafe(f.position, f.target, camera as PerspectiveCamera, COURSE_DESK, deskShown()));
+    const home = turned === 'front' ? COURSE_LOOKS.front : turned === 'side' ? COURSE_LOOKS.side : turned === 'top' ? COURSE_LOOKS.top : own ? [own.dir[0], own.dir[2], -own.dir[1]] : cell && req.name === 'home' ? CELL_VIEW[cell].home : null;
+    const f = own?.shot && !turned ? { position: new Vector3(own.shot.eye[0], own.shot.eye[2], -own.shot.eye[1]).multiplyScalar(0.001), target: new Vector3(own.shot.target[0], own.shot.target[2], -own.shot.target[1]).multiplyScalar(0.001) } : fitView(req.name, root.current, arm.root, area, camera as PerspectiveCamera, home, free);
+    // (옆: not kept to the desk — along the 600 mm-deep desk no picture of the whole arm keeps to it; its edge shows.)
+    if (courseStage && turned !== 'side') f.position.copy(deskSafe(f.position, f.target, camera as PerspectiveCamera, COURSE_DESK, deskShown()));
     void controls.setLookAt(f.position.x, f.position.y, f.position.z, f.target.x, f.target.y, f.target.z, req.animate);
     if (req.name !== 'fit') lastView.current = req.name;
     userMoved.current = false;

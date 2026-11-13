@@ -149,8 +149,8 @@ import RunBar from './tasks/RunBar';
 import { quickRun } from '@/engine/simulator/cell/quick';
 import { LessonCheck, LessonPlate, Projector, RecordPanel, RecordPill, TeacherKey, questPages } from './tasks/LessonKit';
 import { lessonOfQuest, lessonsOf, siteOf } from '@/engine/simulator/cell/lessons';
-import { COURSE, barTitle, fromOldNumber, kindsOf, modeFor, subById, subOfRun, topicMark, unlisted, MODE_NAME, type CourseSub, type SubMode } from '@/engine/simulator/cell/course';
-import { DEFAULT_PLAN, countedIn, lessonIn, lessonStepsIn, missionSubsIn, nextIn, subsIn, testReady, type CoursePlan } from '@/engine/simulator/cell/courses';
+import { COURSE, barTitle, fromOldNumber, kindsOf, modeFor, rangeText, retiredTest, subById, subByNumber, subOfRun, testName, topicMark, unlisted, MODE_NAME, type CourseSub, type SubMode } from '@/engine/simulator/cell/course';
+import { DEFAULT_PLAN, countedIn, lessonIn, lessonStepsIn, missionSubsIn, nextIn, stepsIn, subBeforeTest, subsIn, testReady, type CoursePlan } from '@/engine/simulator/cell/courses';
 import { levelOf as courseLevelOf, mayOpen, noticeDue, noticeRead, readPlan, report } from '@/engine/simulator/cell/platform';
 import { COURSE_LOOK, MAT_VIEW, courseViewOf } from '@/engine/simulator/cell/courseStage';
 import { CARD_HOME, G3_CARD } from '@/engine/simulator/cell/draw';
@@ -158,12 +158,12 @@ import type { DrawRecipe } from '@/engine/simulator/cell/drawRecipe';
 import { CIRCLE_COUNTS, LINE_A, LINE_B, SQUARE, TOL, TRIANGLE, cardCode, circlePoints, circleReport, circleRight, isStarOrder, lineReport, myCardReport, onCard, pathCode, rowsToPoints, sameShape, shapeReport, type Pt } from '@/engine/simulator/cell/courseDraw';
 import { AIM, DESK_PLACES, DOT_ABOVE_MM, DOT_AT, DOT_NEAR_MM, FAST_PCT, KIT_PARTS, LIMIT_POSE, PEN_START_MM, POSE_TOL_DEG, PRACTICE_POSE, PREP_POSE, SLOW_PCT, TURN_DEG } from '@/engine/simulator/cell/courseSteps';
 import { G2_COURSE, MY_CARD_KEY, REAL_MAX_PCT, REVIEW_KEY } from '@/engine/simulator/cell/courseSteps';
-import { buttonName, checkName, commonLine, doneLine, failLine, quizText, stepTexts, testLine } from '@/engine/simulator/cell/courseText';
+import { buttonName, checkName, commonLine, doneLine, endText, failLine, panelText, quizText, stepTexts, testLine, testText, tidy } from '@/engine/simulator/cell/courseText';
 import { ARM_PARTS, PICK_VIEW, COURSE_STEPS, FOUND_SWING_DEG, HAND_SCENE, HAND_SLOW_S, STEPS_KEY, SWING, isCourseStep, loadSteps, type CourseStepId } from '@/engine/simulator/cell/courseSteps';
-import { CHAPTER_TESTS, MISSION_TRIES, TESTS_KEY, inOrder, loadTests, missionWay, type MissionStep, type OX, type TestResult } from '@/engine/simulator/cell/courseTests';
+import { CHAPTER_TESTS, MISSION_TRIES, TESTS_KEY, inOrder, loadTests, missionWay, testOver, type MissionStep, type OX, type TestResult } from '@/engine/simulator/cell/courseTests';
 import { COPYRIGHT_NOTICE, COPYRIGHT_RECORD_LINE } from '@/engine/simulator/copyright';
 import { COURSE_MEDIA } from './courseMedia.gen';
-import LocationBar, { type LocLesson } from './stage/LocationBar';
+import LocationBar, { LocKindsSwitch, type LocLesson } from './stage/LocationBar';
 import NowBar, { NowMark, QuestNow, TutNow } from './stage/NowBar';
 import CourseStepPanel, { VerdictLines, type Measure } from './tasks/CourseStepPanel';
 import StrokeBoard from './tasks/StrokeBoard';
@@ -375,6 +375,8 @@ interface MyCard {
   ran55: boolean;
   checked: boolean;
 }
+/** 입문 과정: the 조작판's [자세히 보기 ▸ 좌표 · 속도 · 부하 · 보조 그림] (수정 지시서 v4 파트 0-1: off; its code stays). */
+const COURSE_JOG_DETAIL: boolean = false;
 const MY_CARD_START: MyCard = { strokes: [], open: false, ran: false, passed: false, results: [], speed: 50, ran55: false, checked: false };
 
 /** 입문 과정: the window width its screens are laid out for, px (wider: the whole screen is shown larger). */
@@ -459,7 +461,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     // Read after hydration (this browser's day).
     setNoticeAsk(noticeDue((k) => localStorage.getItem(k), Date.now()));
     let live = true;
-    void readPlan().then((p) => live && setCPlan(p));
+    // (?plan=4: 시험용 — the 4차시 구성's screens; the class's own 구성 still comes from the platform.)
+    void readPlan(q.get('plan')).then((p) => live && setCPlan(p));
     return () => {
       live = false;
     };
@@ -889,7 +892,10 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       /* this session only */
     }
   };
-  const openEnd = () => {
+  /** 6장's page to open at (0: 6-1 결과 확인 — the course's end; the list opens 6-2 · 6-3 too). */
+  const [endPage, setEndPage] = useState(0);
+  const openEnd = (page = 0) => {
+    setEndPage(page);
     try {
       const o = JSON.parse(localStorage.getItem(REVIEW_KEY) ?? 'null') as { review?: Partial<Review>; saved?: boolean } | null;
       if (o) setReview({ review: { ...REVIEW_START, ...o.review }, saved: !!o.saved });
@@ -4319,7 +4325,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       {poseNames.length === 0 && (
         <>
           <p className={css.poseHelp}>
-            [제어]로 팔을 옮긴 뒤 저장하면 관절 {arm.home.length}개의 각도가 이름과 함께 여기에 쌓여요.
+            [제어]로 팔을 옮긴 뒤 저장하면 관절 {arm.home.length}개의 각도가 이름과 함께 여기에 쌓여요{course ? '' : '.'}
           </p>
           <ul aria-label="고정 자세">
             {(
@@ -4338,7 +4344,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   <small>{angles.map((a) => `${course ? signedNum(Math.round(a * 10) / 10) : Math.round(a * 10) / 10}°`).join(' ')}</small>
                 </span>
                 <button type="button" className={css.poseGo} disabled={busy} onClick={() => goPose(id)}>
-                  이 자세로
+                  {course ? buttonName('goPose') : '이 자세로'}
                 </button>
                 <em className={css.poseFixed} title="고정 자세 (지울 수 없어요)" aria-label="고정">
                   <Icon name="lock" size={14} />
@@ -4360,7 +4366,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                 <small>{poses[n].map((a) => `${course ? signedNum(a) : a}°`).join(' ')}</small>
               </span>
               <button type="button" className={css.poseGo} disabled={busy} data-pose={n} onClick={goSaved} title={`${n}(으)로 움직여요`}>
-                이 자세로
+                {course ? buttonName('goPose') : '이 자세로'}
               </button>
               <button type="button" className={css.poseDel} aria-label={`${n} 지우기`} data-pose={n} onClick={deleteSaved}>
                 지우기
@@ -4369,7 +4375,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
           ))}
         </ul>
       )}
-      {poseNames.length > 0 && (
+      {/* (입문 과정: no word of the blocks — 수정 지시서 v4 파트 6-4.) */}
+      {poseNames.length > 0 && !course && (
         <p className={css.subNote}>{level === 'basic' ? '블록의 [자세로 가기]에서도 이 이름으로 쓸 수 있어요.' : '마우스를 올리면 각도가 보여요. send_angles([...]) 에 그대로 쓸 수 있어요.'}</p>
       )}
     </div>
@@ -4598,7 +4605,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const testSub = courseTest !== null ? subById(COURSE.find((c) => c.n === courseTest)?.test ?? '') : undefined;
   const subNow = course ? (testSub ?? (courseStep ? subById(courseStep.id) : lifeQuest ? subOfRun('quest', lifeQuest) : lifeTut ? subOfRun('tutorial', lifeTut.id) : undefined)) : undefined;
   const subDone = (s: CourseSub) =>
-    s.run?.kind === 'quest' ? !!cellPassed[s.run.id] : s.run?.kind === 'tutorial' ? !!tutDone[s.run.id] : s.run?.kind === 'step' ? !!stepsDone[s.run.id] : s.run?.kind === 'test' ? testResults[s.run.id]?.right != null : false;
+    s.run?.kind === 'quest' ? !!cellPassed[s.run.id] : s.run?.kind === 'tutorial' ? !!tutDone[s.run.id] : s.run?.kind === 'step' ? !!stepsDone[s.run.id] : s.run?.kind === 'test' ? testOver(CHAPTER_TESTS[Number(s.run.id)], testResults[s.run.id], cPlan.ox) : false;
 
   /* --- 입문 과정 절 built for the course (courseSteps.ts) ------------------------------- */
   const patchStep = (p: Partial<NonNullable<typeof courseStep>>) => setCourseStep((c) => (c ? { ...c, ...p } : c));
@@ -4834,6 +4841,11 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       if (st) patchStep({ note: failLine('2-3', 'attachFirst') });
       return;
     }
+    // 2-3 ②: the pen box is changed before ▶ (수정 지시서 v4 파트 6-7): not yet — one line, and the step stays.
+    if (!m && st && st.step < 2) {
+      patchStep({ note: failLine('2-3', 'penFirst') });
+      return;
+    }
     const z = m ? m.pen : st!.pen;
     const at = (h: number) => `robot.move_to(${DOT_AT.x}, ${DOT_AT.y}, ${h})\n`;
     const { steps, errors } = problemsFor(`from edu import robot\n\n${at(DOT_ABOVE_MM)}${at(z)}${at(DOT_ABOVE_MM)}`);
@@ -5048,9 +5060,12 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   /** 5장 미션 [카드 확인]: 5-5 checked by the teacher (실물), else 5-4 passed (시뮬레이션). */
   const checkCard = () => {
     const c = myCardRef.current;
-    const by: 'real' | 'sim' | null = c.checked ? 'real' : c.passed || stepsDone['5-4'] ? 'sim' : null;
+    // 4차시 (the mission only, no 5-4 · 5-5 in the course): judged by the 절 just before it — 5-3 passed.
+    const before = lessonIn(cPlan, '5-4') > 0 ? undefined : subBeforeTest(cPlan, COURSE.find((x) => x.n === 5)?.test ?? '');
+    const by: 'real' | 'sim' | null = before ? (subDone(before) ? 'sim' : null) : c.checked ? 'real' : c.passed || stepsDone['5-4'] ? 'sim' : null;
     setTestResults((r) => {
-      const prev = r['5'];
+      // (The mission only: no O · X came before it — the record starts here, in the same form.)
+      const prev: TestResult | undefined = r['5'] ?? (cPlan.ox ? undefined : { chosen: [], right: null, mission: null, at: Date.now() });
       if (!prev) return r;
       const n = { ...r, '5': { ...prev, mission: !!by, missionBy: by ?? undefined, missionTries: 1, at: Date.now() } };
       try {
@@ -5178,6 +5193,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     if (st.step === 1 && m.pct <= SLOW_PCT) patchStep({ step: 2, times: { ...st.times, slow: secs }, note: null });
     else if (st.step === 2 && m.pct >= FAST_PCT) patchStep({ step: 3, times: { ...st.times, fast: secs }, note: null });
     else if (st.step === 1) patchStep({ note: failLine('3-4', 'slowFirst', { pct: SLOW_PCT }) });
+    // ①: the arm was moved (a joint key, 기본 자세) before the speed was down — the same line (수정 지시서 v4 파트 6-6).
+    else if (st.step === 0 && m.pct > SLOW_PCT) patchStep({ note: failLine('3-4', 'slowFirst', { pct: SLOW_PCT }) });
     else if (st.step === 2) patchStep({ note: failLine('3-4', 'fastFirst') });
     else if (st.step === 3) patchStep({ note: failLine('3-4', 'late') });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- a move's start and end (busy) only
@@ -5338,17 +5355,25 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     setEntered(true);
     const a = asked.current;
     asked.current = null;
-    if (!a) {
-      if (await mayOpen({ course: cPlan.id })) setRoadmapOpen(true);
-      else setDenied(true);
+    // A 수행평가 taken out of the list (1-4 · 2-4 · 4-5, 수정 지시서 v4 파트 1-2): its address goes to the list
+    // (over the 절 to go on with, so closing the list leaves a 절 open).
+    const retired = !!a && !!retiredTest(a.sub);
+    if (!a || retired) {
+      // No 절 in the address (수정 지시서 v4 파트 3-6): the 절 to go on with opens — the first still to do (a 선택 절 is
+      // never asked for), or, all done, the course's last step. The list opens from [목록] only.
+      if (!(await mayOpen({ course: cPlan.id }))) return setDenied(true);
+      const all = stepsIn(cPlan).filter((x) => x.sub.run);
+      const go = all.find((x) => !x.sub.optional && !subDone(x.sub)) ?? all[all.length - 1];
+      if (go) void requestSub(go.sub, 'practice');
+      if (!go || retired) setRoadmapOpen(true);
       return;
     }
-    const s = subById(a.sub);
-    // A chapter's 수행평가 has a number of its own (수정 지시서 v3 파트 8-2): its address opens it where the course has tests.
-    const asTest = !!s?.test && cPlan.tests && testReady(s);
+    const s = subByNumber(a.sub);
+    // A 수행평가 has a number of its own (수정 지시서 v3 파트 8-2): its address opens it where the course has it.
+    const asTest = !!s?.test && cPlan.tests.includes(s.id) && testReady(s);
     if (!s || (unlisted(s) && !asTest) || !modeFor(s, a.mode)) return setSubMissing(a.sub);
     const mode = await requestSub(s, a.mode);
-    if (mode && mode !== a.mode) setSubNote(`${s.id}${topicMark(s.id)} ${MODE_NAME[mode]}만 있어요. ${MODE_NAME[mode]}로 열었어요.`);
+    if (mode && mode !== a.mode) setSubNote(`${s.id}${topicMark(s.id)} ${MODE_NAME[mode]}만 있어요. ${MODE_NAME[mode]}로 열었어요`);
   };
   const subNext = subNow ? nextIn(cPlan, subNow.id) : undefined;
   /** [다음 단계 →]: the next 절 (in the kind open now, if it has it), or the 학습 기록 at the course's end. */
@@ -5358,6 +5383,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const nextStep = course ? null : track && cellAt && lifeStep && lifeQuest ? (() => { const nx = missionsOf(cellAt.cell)[lifeStep.n]; return nx ? { cell: cellAt.cell, id: nx.id } : null; })() : null;
   // 입문 5-5: a program is not sent to the robot faster than 30 %.
   const speedLocked = course && courseStep?.id === '5-5' && myCard.speed > REAL_MAX_PCT;
+  // 5-5: why its second key is locked — the speed, the robot not connected, or the simulation not passed yet (the 문구 파일's lines).
+  const realWhy = !(course && courseStep?.id === '5-5') ? null : speedLocked ? failLine('5-5', 'tooFast') : robotMode && !robot?.connected ? failLine('5-5', 'needRobot') : !gateOpen ? failLine('5-5', 'needSim') : null;
   const runBar = (
     <RunBar
       passed={gateOpen}
@@ -5368,7 +5395,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       realProgress={realRun && robot && robot.step >= 0 ? `${robot.step + 1}/${robot.total}` : null}
       realDisabled={!gateOpen || (robotMode && !robot?.connected) || speedLocked}
       realBlocked={speedLocked ? `속도 ${REAL_MAX_PCT}% 이하로` : robotMode && !robot?.connected ? '로봇 연결 필요' : !gateOpen ? '시뮬레이션 통과 후' : null}
-      names={course ? { run: buttonName('run'), real: buttonName('real'), stop: buttonName('stop') } : undefined}
+      names={course ? { run: buttonName('run'), real: buttonName('real'), stop: buttonName('stop'), code: buttonName('export') } : undefined}
       onSim={track ? simulateLife : simulate}
       simRate={simRate}
       onSimRate={chooseSimRate}
@@ -5389,7 +5416,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
         steps: l.steps.map((st) => {
           const x = st.sub;
           // A chapter's 수행평가: 준비 중 (skipped) until its questions come.
-          if (st.kind === 'test') return { id: x.id, label: x.id, title: `${st.chapter.n}장 수행평가`, pages: x.pages, state: courseTest === st.chapter.n ? ('now' as const) : subDone(x) ? ('done' as const) : ('todo' as const), soon: !testReady(x), tag: testReady(x) ? undefined : '준비 중' };
+          if (st.kind === 'test') return { id: x.id, label: x.id, title: x.title, pages: x.pages, state: courseTest === st.chapter.n ? ('now' as const) : subDone(x) ? ('done' as const) : ('todo' as const), soon: !testReady(x), tag: testReady(x) ? undefined : '준비 중' };
           return { id: x.id, label: x.id, title: x.title, pages: x.pages, state: x.id === subNow.id ? ('now' as const) : subDone(x) ? ('done' as const) : ('todo' as const), soon: !x.run };
         }),
       }))
@@ -5415,8 +5442,12 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
           const x = subById(id);
           if (x) void requestSub(x, subMode);
         }}
+        // 입문 과정 (수정 지시서 v4 파트 2-3 · 3-6): [목록] opens the list screen; the kinds sit at the top bar's right.
+        onList={course ? () => setRoadmapOpen(true) : undefined}
       />
     ) : null;
+  // 장면 보기 | 실습 하기 at the top bar's right: a 절 that has a 장면 보기 only (none for a 수행평가).
+  const locKinds = course && subNow && !testSub ? <LocKindsSwitch kinds={{ now: subMode, has: kindsOf(subNow).map((m) => ({ mode: m, open: subNow.kinds[m] === 'open' })), onMode: (m) => void requestSub(subNow, m), busy }} /> : null;
 
   // 잠깐 예측 · 퀴즈 (the scene held): over the scene; 입문 과정: in the right panel, the scene left in sight.
   const askCard = (docked: boolean) =>
@@ -5442,7 +5473,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     <ControlPanel
       key={jogKey}
       ko={!!track}
-      minus={course}
+      course={course}
       startFrame={track && cellAt?.mission && missionById(cellAt.mission)?.target ? 'base' : undefined}
       moveOnly={!!(track && cellAt?.mission && missionById(cellAt.mission)?.target)}
       live={live}
@@ -5937,6 +5968,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
             ? {
                 notice: COPYRIGHT_NOTICE,
                 ask: noticeAsk,
+                plan: { lessons: cPlan.lessons.length, real: lessonIn(cPlan, '5-5') > 0, own: lessonIn(cPlan, '5-4') > 0 },
                 onEnter: () => {
                   if (noticeAsk)
                     noticeRead((k, v) => {
@@ -6004,14 +6036,16 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                             const r = testResults[String(st.chapter.n)];
                             const t = CHAPTER_TESTS[st.chapter.n];
                             const way = missionWay(r);
-                            const what = r?.right != null ? ` · O · X ${r.right}/5${t && !t.mission.ready ? ' · 미션 준비 중' : way ? ` · 미션 ${way}${r?.missionBy ? ` (${r.missionBy === 'real' ? '실물' : '시뮬레이션'})` : ''}` : ''}` : '';
-                            return { id: st.sub.id, title: `${st.chapter.n}장 수행평가${what}`, done: subDone(st.sub), soon: !testReady(st.sub), pending: !testReady(st.sub), test: true };
+                            const how = t && !t.mission.ready ? ' · 미션 준비 중' : way ? ` · 미션 ${way}${r?.missionBy ? ` (${panelText(r.missionBy === 'real' ? 'byReal' : 'bySim')})` : ''}` : '';
+                            const what = cPlan.ox ? (r?.right != null ? ` · O · X ${r.right}/5${how}` : '') : how;
+                            return { id: st.sub.id, title: `${st.sub.title}${what}`, done: subDone(st.sub), soon: !testReady(st.sub), pending: !testReady(st.sub), test: true };
                           })()
                         : { id: st.sub.id, title: st.sub.title, done: subDone(st.sub), soon: !st.sub.run, optional: !!st.sub.optional },
                     ),
                   })),
                   // 수행평가 taken with their mission (one 준비 중 has none): only these get a level, 임시 (platform.ts levelOf).
-                  levels: Object.entries(testResults).flatMap(([ch, r]) => (r.right != null && missionWay(r) && CHAPTER_TESTS[Number(ch)]?.mission.ready ? [{ chapter: Number(ch), level: courseLevelOf({ chapter: Number(ch), right: r.right, of: 5, mission: !!r.mission }).level }] : [])),
+                  // (Only the 수행평가 of this course — 중간 · 마무리: what a browser kept of the 1 · 2 · 4장 tests stays, in no count. 4차시: the mission only, no level.)
+                  levels: !cPlan.ox ? [] : stepsIn(cPlan).flatMap((st) => { if (st.kind !== 'test') return []; const ch = st.chapter.n; const r = testResults[String(ch)]; return r && r.right != null && testOver(CHAPTER_TESTS[ch], r, true) ? [{ chapter: ch, name: st.sub.title, level: courseLevelOf({ chapter: ch, right: r.right, of: 5, mission: !!r.mission }).level }] : []; }),
                   missions: missionSubsIn(cPlan).map((x) => ({ id: x.id, passed: subDone(x), soon: !x.run })),
                   copyright: COPYRIGHT_RECORD_LINE,
                 }
@@ -6021,27 +6055,30 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       )}
       {course && lessonUi === 'end' && (
         <CourseEnd
+          key={endPage}
+          start={endPage}
           title={cPlan.title}
-          plan={cPlan.tests ? '8차시' : '4차시'}
-          chapters={
-            cPlan.tests
-              ? [1, 2, 3, 4, 5].map((n) => {
-                  const r = testResults[String(n)];
-                  const t = CHAPTER_TESTS[n];
-                  const sub = subById(COURSE.find((c) => c.n === n)?.test ?? '');
-                  if (!t || !sub || !testReady(sub) || !t.mission.ready) return { chapter: n, right: r?.right ?? null, mission: '준비 중', level: null };
-                  const way = missionWay(r);
-                  const by = n === 5 && way && r?.missionBy ? ` (${r.missionBy === 'real' ? '실물' : '시뮬레이션'})` : '';
-                  return {
-                    chapter: n,
-                    right: r?.right ?? null,
-                    mission: way ? `${way}${by}` : r?.right != null ? '아직' : '안 함',
-                    level: r?.right != null && way ? courseLevelOf({ chapter: n, right: r.right, of: 5, mission: !!r.mission }).level : null,
-                  };
-                })
-              : undefined
-          }
-          missions={cPlan.tests ? undefined : missionSubsIn(cPlan).map((x) => ({ n: lessonIn(cPlan, x.id), id: x.id, title: x.title, passed: subDone(x) }))}
+          plan={`${cPlan.lessons.length}차시`}
+          ox={cPlan.ox}
+          tests={stepsIn(cPlan).flatMap((st) => {
+            if (st.kind !== 'test') return [];
+            const n = st.chapter.n;
+            const r = testResults[String(n)];
+            const way = missionWay(r);
+            const by = way && r?.missionBy ? ` (${panelText(r.missionBy === 'real' ? 'byReal' : 'bySim')})` : '';
+            const over = testOver(CHAPTER_TESTS[n], r, cPlan.ox);
+            return [
+              {
+                id: st.sub.id,
+                name: st.sub.title,
+                lesson: lessonStepsIn(cPlan).find((l) => l.steps.some((x) => x.kind === 'test' && x.sub.id === st.sub.id))?.n ?? 0,
+                right: cPlan.ox ? (r?.right ?? null) : null,
+                mission: way ? `${way}${by}` : endText(r && (r.right != null || r.mission != null) ? 'notYet' : 'notDone'),
+                level: cPlan.ox && over && r?.right != null ? courseLevelOf({ chapter: n, right: r.right, of: 5, mission: !!r.mission }).level : null,
+              },
+            ];
+          })}
+          missions={cPlan.ox ? undefined : missionSubsIn(cPlan).map((x) => ({ n: lessonIn(cPlan, x.id), id: x.id, title: x.title, passed: subDone(x) }))}
           done={{ got: countedIn(cPlan).filter(subDone).length, of: countedIn(cPlan).length }}
           subs={subsIn(cPlan)
             .filter((x) => x.run)
@@ -6087,6 +6124,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
           onUsb={usbOk ? () => (setConnectOpen(false), setUsbOpen(true)) : undefined}
           onSetup={usbOk ? () => (setConnectOpen(false), setSetupOpen(true)) : undefined}
           carry={() => (practice.id === 'demo' ? '' : carryHash({ level, theme, id: practice.id, code }))}
+          course={course}
           onClose={() => (setConnectOpen(false), setConnectTo(null))} />
       )}
       {setupOpen && (
@@ -6374,6 +6412,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
           )}
           status={
             <>
+            {locKinds}
             {track && (
               <RecordPill
                 rec={lessonRec}
@@ -6391,7 +6430,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
               className={css.connPill}
               data-state={!robotMode ? 'sim' : robot?.connected ? 'real' : 'lost'}
               onClick={() => setConnectOpen(true)}
-              title={robotMode ? '다른 로봇으로 바꾸기 · 로봇 Wi-Fi 설정' : '같은 Wi-Fi 의 로봇을 찾아 연결해요'}
+              title={robotMode ? '다른 로봇으로 바꾸기 · 로봇 Wi-Fi 설정' : course ? tidy('같은 Wi-Fi 의 로봇을 찾아 연결해요') : '같은 Wi-Fi 의 로봇을 찾아 연결해요'}
             >
               <span className={css.connOrb} aria-hidden="true" />
               <span>
@@ -6508,6 +6547,11 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
           <CourseTestPanel
             key={courseTest}
             test={CHAPTER_TESTS[courseTest]}
+            number={testSub?.id ?? ''}
+            name={testName(courseTest)}
+            range={rangeText(testSub)}
+            ox={cPlan.ox}
+            judgedBy={cPlan.ox || !testSub ? undefined : subBeforeTest(cPlan, testSub.id)?.id}
             result={testResults[String(courseTest)]}
             onGraded={(chosen, right) => gradeTest(courseTest, chosen, right)}
             onMission={() => startMission(courseTest)}
@@ -6520,6 +6564,11 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
             plan={cPlan}
             now={subNow?.id}
             done={subDone}
+            // 6장: opens once the course's last step is done (as [다음으로 →] after it does).
+            end={{
+              open: (() => { const all = stepsIn(cPlan).filter((x) => x.sub.run && !x.sub.optional); const lastStep = all[all.length - 1]; return !!lastStep && subDone(lastStep.sub); })(),
+              onOpen: (page) => { setRoadmapOpen(false); openEnd(page); },
+            }}
             onClose={() => setRoadmapOpen(false)}
             onPick={(x, m) => {
               setRoadmapOpen(false);
@@ -6560,16 +6609,25 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
             missionRun && CHAPTER_TESTS[missionRun.chapter] ? (
               <NowBar text={CHAPTER_TESTS[missionRun.chapter].mission.text} />
             ) : (
-              <NowBar text={testResults[String(courseTest)]?.right != null ? testLine('testDone', { n: courseTest }) : testLine('testAsk')} state={testResults[String(courseTest)]?.right != null ? 'ok' : 'do'} />
+              // '… 를 마쳤어요' only once its mission is over too (수정 지시서 v4 파트 1-9); till then: the O · X, then the mission's sentence.
+              (() => {
+                const t = CHAPTER_TESTS[courseTest];
+                const r = testResults[String(courseTest)];
+                const by = cPlan.ox || !testSub ? undefined : subBeforeTest(cPlan, testSub.id)?.id;
+                if (testOver(t, r, cPlan.ox)) return <NowBar state="ok" text={testLine('testDone', { name: testName(courseTest) })} />;
+                if (cPlan.ox && r?.right == null) return <NowBar text={testLine('testAsk')} />;
+                return <NowBar text={(by && testText(courseTest).missionOnly?.replace('{sub}', by)) || t.mission.text} />;
+              })()
             )
           ) : courseStep ? (
             (() => {
               const lines = COURSE_STEPS[courseStep.id];
               const done = !!stepsDone[courseStep.id] && (courseStep.step >= lines.length || (courseStep.id === '1-3' && courseStep.stopped && courseStep.range));
               const nx = subNext ? { onClick: () => goNext(subNext), lit: done } : undefined;
-              if (done) return <NowBar state="ok" text={doneLine(courseStep.id)} next={nx} />;
+              // 'N / M 단계' (수정 지시서 v4 파트 2-5): the step reached of the 절's steps.
+              if (done) return <NowBar state="ok" text={doneLine(courseStep.id)} next={nx} steps={{ n: lines.length, of: lines.length }} />;
               // 1-1: the card goes on after the hand left — watched, nothing to press.
-              if (courseStep.id === '1-1' && courseStep.step === 3) return <NowBar state="run" text={failLine('1-1', 'resume')} next={nx} />;
+              if (courseStep.id === '1-1' && courseStep.step === 3) return <NowBar state="run" text={failLine('1-1', 'resume')} next={nx} steps={{ n: lines.length, of: lines.length }} />;
               const at = Math.min(courseStep.step, lines.length - 1);
               const line = lines[at];
               // 3-4 ③ · ④: two keys in one step — the speed, then 기본 자세; the saved pose, then 정지 while it moves.
@@ -6586,16 +6644,17 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                         : line.sel;
               return (
                 <>
-                  <NowBar n={at + 1} text={courseStep.note ?? line.text} state={courseStep.note ? 'no' : 'do'} next={nx} meter={courseStep.id === '1-2' ? { v: courseStep.found.length, of: ARM_PARTS.length, unit: '곳' } : undefined} />
+                  <NowBar n={at + 1} steps={{ n: at + 1, of: lines.length }} text={(courseStep.note ?? line.text).replace('{realNow}', buttonName(robotMode ? 'real' : 'export'))} state={courseStep.note ? 'no' : 'do'} next={nx} meter={courseStep.id === '1-2' ? { v: courseStep.found.length, of: ARM_PARTS.length, unit: '곳' } : undefined} />
                   {sel && <NowMark key={`${courseStep.id}:${at}:${sel}`} find={() => [...document.querySelectorAll<HTMLElement>(sel)].find((e) => e.getBoundingClientRect().width > 0) ?? null} n={at + 1} />}
                 </>
               );
             })()
           ) : lifeTut && lifeTutorialById(lifeTut.id) ? (
-            <TutNow key={lifeTut.id} tut={lifeTutorialById(lifeTut.id)!} step={lifeTut.step} start={lifeTut.start} read={() => tutCtxRef.current()} shorts={course && subNow ? stepTexts(subNow.id) : undefined} done={course && subNow ? doneLine(subNow.id) : undefined} next={subNext ? { onClick: () => goNext(subNext), lit: false } : undefined} />
+            <TutNow key={lifeTut.id} count={course} tut={lifeTutorialById(lifeTut.id)!} step={lifeTut.step} start={lifeTut.start} read={() => tutCtxRef.current()} shorts={course && subNow ? stepTexts(subNow.id) : undefined} done={course && subNow ? doneLine(subNow.id) : undefined} next={subNext ? { onClick: () => goNext(subNext), lit: false } : undefined} />
           ) : lifeStep && questPhase ? (
             <QuestNow
               key={lifeStep.id}
+              count={course}
               steps={course && subNow ? stepTexts(subNow.id) : questSteps(lifeStep.id)}
               done={course && subNow ? doneLine(subNow.id) : undefined}
               sels={course && lifeStep.id === 'G2' ? G2_COURSE.map((x) => x.sel) : leadSels}
@@ -6703,7 +6762,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                       <span>3D 화면을 다시 불러오는 중이에요</span>
                     ) : (
                       <>
-                        <span>3D 화면이 멈췄어요. 그린 획과 진행은 그대로 있어요.</span>
+                        <span>3D 화면이 멈췄어요. 그린 획과 진행은 그대로 있어요{course ? '' : '.'}</span>
                         <button type="button" data-step="gl-reload" onClick={remakeStage} style={{ minHeight: 40, padding: '0 18px', border: 0, borderRadius: 9, background: 'var(--hud-silver)', boxShadow: 'var(--hud-silver-shadow)', color: '#15181c', fontSize: 15, fontWeight: 800, cursor: 'pointer' }}>
                           화면을 다시 불러와요
                         </button>
@@ -7006,6 +7065,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
               ) : null}
               <ViewTools
                 lite={(!!track && !!cellAt) || course}
+                liteViews={course}
                 liteDisplay={courseStep?.id === '4-2' && subMode === 'practice'}
                 api={getStage}
                 display={display}
@@ -7150,7 +7210,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                             {!course && toolRow}
                           </>
                         )}
-                        {course && !cellAt && !courseStep && (
+                        {/* (수정 지시서 v4 파트 0-1: the 조작판's 자세히 보기 ▸ 좌표 · 속도 · 부하 · 보조 그림 is off in the 입문 과정 — kept, not drawn.) */}
+                        {COURSE_JOG_DETAIL && course && !cellAt && !courseStep && (
                           <button type="button" className={css.moreKey} aria-expanded={detail} onClick={() => setDetail((d) => !d)}>
                             <b>자세히 보기 {detail ? '▾' : '▸'}</b>
                             <span>좌표 · 속도 · 부하 · 보조 그림</span>
@@ -7340,6 +7401,12 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                               real={{ connected, onConnect: () => setConnectOpen(true), speed: myCard.speed, onSpeed: (v) => setMyCard((c) => ({ ...c, speed: v })), ran: myCard.ran55, checked: myCard.checked, onTeacher: () => setLessonUi('teacher') }}
                             />
                             {runBar}
+                            {/* Why [로봇 실행] is locked, one line under it (수정 지시서 v4 파트 6-5). */}
+                            {realWhy && (
+                              <p className={css.runWhy} role="status">
+                                <Icon name="lock" size={16} /> {realWhy}
+                              </p>
+                            )}
                           </>
                         ) : draw4On ? (
                           // 4장: 4-2 the 직선 이동 switch; 4-3 · 4장 미션 the vertex table (straight moves, locked on); 4-4 the circle; then ▶ and what it measured.

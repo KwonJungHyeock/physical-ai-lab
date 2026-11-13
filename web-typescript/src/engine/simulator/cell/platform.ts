@@ -14,7 +14,7 @@
  * Storage comes in as functions (the screens pass localStorage), so: no React, no DOM.
  */
 
-import { DEFAULT_PLAN, planOf, type CoursePlan } from './courses';
+import { COURSES, DEFAULT_PLAN, planOf, type CoursePlan } from './courses';
 import type { SubMode } from './course';
 
 /** May this user open this course (and this 절)? Today: always. No: the scene does not open, a notice does. */
@@ -69,13 +69,17 @@ export function levelOf(r: TestResult): { level: '상' | '중' | '하'; temporar
   return { level: missed === 0 ? '상' : missed === 1 ? '중' : '하', temporary: true };
 }
 
-/** The 구성 for this class (none handed over: the default). */
-export async function readPlan(): Promise<CoursePlan> {
+/**
+ * The 구성 for this class (none handed over: the default). `test`: the address's ?plan= (수정 지시서 v4
+ * 파트 7-1) — '4' shows the 4차시 구성's screens for checking; how a class's 구성 is handed over is as before.
+ */
+export async function readPlan(test?: string | null): Promise<CoursePlan> {
+  if (test === '4') return COURSES.find((c) => c.lessons.length === 4) ?? DEFAULT_PLAN;
   return DEFAULT_PLAN;
 }
 
 /** The platform's own 구성, as it will hand it over: 차시 of 절 numbers. */
-export const planFromPlatform = (p: { title?: string; short?: string; lessons: readonly (readonly string[])[]; tests?: boolean }): CoursePlan => planOf({ id: 'class', ...p });
+export const planFromPlatform = (p: { title?: string; short?: string; lessons: readonly (readonly string[])[]; tests?: boolean | readonly string[]; testsMissionOnly?: boolean }): CoursePlan => planOf({ id: 'class', ...p });
 
 /** One thing that happened in a 절. */
 export interface CourseEvent {

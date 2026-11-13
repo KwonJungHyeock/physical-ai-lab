@@ -50,8 +50,8 @@ interface Props {
   moveOnly?: boolean;
   /** 입문 트랙: Korean only (no English tags over the mode buttons). */
   ko?: boolean;
-  /** 입문 과정: a negative 손 방향 value with '−' (the full version keeps '-'). */
-  minus?: boolean;
+  /** 입문 과정의 표기 (수정 지시서 v3 파트 5 · v4 파트 6): a negative 손 방향 value with '−', a joint's name closed up ('베이스(J1)'), mm after a space — the full version keeps its own. */
+  course?: boolean;
   /** Tool tip position for given angles, mm. */
   tipOf(angles: readonly number[]): ToolNow | null;
   busy: boolean;
@@ -268,6 +268,9 @@ export default function ControlPanel(p: Props) {
   const [drag, setDrag] = useState<{ i: number; deg: number } | null>(null);
   const dof = activeArm().dof;
   const names = jointLabels();
+  // '베이스 (J1)'; 입문 과정: '베이스(J1)' and '10 mm'.
+  const jointName = (i: number) => `${names[i].name}${p.course ? '' : ' '}(J${i + 1})`;
+  const mmUnit = p.course ? ' mm' : 'mm';
 
   const commit = () => {
     if (drag) p.onJointCommit(drag.i, drag.deg);
@@ -419,7 +422,7 @@ export default function ControlPanel(p: Props) {
       word={word}
       sub={`${axis.toUpperCase()}${dir > 0 ? '+' : '−'}`}
       state={stateOf(axis, dir)}
-      label={`${toward(word)} ${tStep}mm (${axis.toUpperCase()}${dir > 0 ? '+' : '−'})`}
+      label={`${toward(word)} ${tStep}${mmUnit} (${axis.toUpperCase()}${dir > 0 ? '+' : '−'})`}
       disabled={p.busy}
       onStep={() => p.onTipStep(axis, dir * tStep)}
       onStart={() => {
@@ -472,7 +475,7 @@ export default function ControlPanel(p: Props) {
         </span>
         <span className={css.chips} role="group" aria-label="한 번 누를 때 움직이는 양">
           {steps.map((v) => (
-            <button key={v} type="button" aria-pressed={step === v} onClick={() => (frame === 'joint' ? setJStep(v) : setTStep(v))} aria-label={`${v}${unit}`}>
+            <button key={v} type="button" aria-pressed={step === v} onClick={() => (frame === 'joint' ? setJStep(v) : setTStep(v))} aria-label={`${v}${unit === 'mm' ? mmUnit : unit}`}>
               {v}
             </button>
           ))}
@@ -552,8 +555,8 @@ export default function ControlPanel(p: Props) {
                     if (!sel) p.onSelect(i);
                   }}
                 >
-                  <JogKey dir={-1} word={`−${jStep}°`} label={`${names[i].name} (J${i + 1}) −${jStep}°`} disabled={p.busy} onStep={() => p.onJointStep(i, -jStep)} onStart={() => p.onJointJog(i, -1)} onStop={p.onJogStop} />
-                  <div className={css.mid} title={`${names[i].name} (J${i + 1}) · ${lo}° ~ ${hi}°`}>
+                  <JogKey dir={-1} word={`−${jStep}°`} label={`${jointName(i)} −${jStep}°`} disabled={p.busy} onStep={() => p.onJointStep(i, -jStep)} onStart={() => p.onJointJog(i, -1)} onStop={p.onJogStop} />
+                  <div className={css.mid} title={p.course ? `${jointName(i)} · ${lo}°~${hi}°` : `${jointName(i)} · ${lo}° ~ ${hi}°`}>
                     <span className={css.head}>
                       <b>{names[i].name}</b>
                       <em>J{i + 1}</em>
@@ -588,7 +591,7 @@ export default function ControlPanel(p: Props) {
                       />
                     </span>
                   </div>
-                  <JogKey dir={1} word={`+${jStep}°`} label={`${names[i].name} (J${i + 1}) +${jStep}°`} disabled={p.busy} onStep={() => p.onJointStep(i, jStep)} onStart={() => p.onJointJog(i, 1)} onStop={p.onJogStop} />
+                  <JogKey dir={1} word={`+${jStep}°`} label={`${jointName(i)} +${jStep}°`} disabled={p.busy} onStep={() => p.onJointStep(i, jStep)} onStart={() => p.onJointJog(i, 1)} onStop={p.onJogStop} />
                 </div>
               );
             })}
@@ -664,7 +667,7 @@ export default function ControlPanel(p: Props) {
                     </svg>
                     <em style={{ color }}>{name}</em>
                     <b className={css.turnWhat}>{what}</b>
-                    <output>{v === undefined ? '—' : `${p.minus ? (Math.abs(v) < 0.05 ? 0 : v).toFixed(1).replace('-', '−') : (Math.abs(v) < 0.05 ? 0 : v).toFixed(1)}°`}</output>
+                    <output>{v === undefined ? '—' : `${p.course ? (Math.abs(v) < 0.05 ? 0 : v).toFixed(1).replace('-', '−') : (Math.abs(v) < 0.05 ? 0 : v).toFixed(1)}°`}</output>
                   </span>
                   <JogKey kind="slim" dir={-1} state={stateOf(axis, -1)} label={`${what} (${name}) −${turnStep}°`} disabled={p.busy} onStep={() => p.onTipStep(axis, -turnStep)} onStart={() => p.onTipJog(axis, -1)} onStop={p.onJogStop} />
                   <JogKey kind="slim" dir={1} state={stateOf(axis, 1)} label={`${what} (${name}) +${turnStep}°`} disabled={p.busy} onStep={() => p.onTipStep(axis, turnStep)} onStart={() => p.onTipJog(axis, 1)} onStop={p.onJogStop} />

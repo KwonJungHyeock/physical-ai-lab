@@ -245,3 +245,32 @@
   transform: scale(var(--course-zoom));
   transform-origin: 100% 100%;
 }
+
+/* 'N / M 단계' and its bar, left of [다음으로 →] (수정 지시서 v4 파트 2-5): the steps reached in the accent, the rest plain. */
+.steps {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  white-space: nowrap;
+}
+.steps output {
+  font-size: 18px;
+  font-weight: 700;
+  color: #c9ced5;
+  font-variant-numeric: tabular-nums;
+}
+.steps > span {
+  display: inline-flex;
+  gap: 4px;
+}
+.steps i {
+  display: block;
+  width: 24px;
+  height: 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.16);
+}
+.steps i[data-on] {
+  background: #f0a23b;
+}

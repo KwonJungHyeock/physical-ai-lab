@@ -19,14 +19,14 @@ export interface CourseStepLine {
 }
 
 /** 1-2: the parts to find on the arm, in order (the 조작판's own words), the tool tip last. */
-export const ARM_PARTS = ['베이스 (J1)', '어깨 (J2)', '팔꿈치 (J3)', '손목 꺾기 (J4)', '손목 돌리기 (J5)', '손끝 돌리기 (J6)', '손끝'] as const;
+export const ARM_PARTS = ['베이스(J1)', '어깨(J2)', '팔꿈치(J3)', '손목 꺾기(J4)', '손목 돌리기(J5)', '손끝 돌리기(J6)', '손끝'] as const;
 
 const RUN = '[data-step="run"]';
 /** A saved pose's go key in the 자세 panel. */
 const POSE_GO = '[data-pose][title$="움직여요"]';
 /** 3장: the joints as the 조작판 names them, and their keys' names. */
 const JOINT_NAMES = ['베이스', '어깨', '팔꿈치', '손목 꺾기', '손목 돌리기', '손끝 돌리기'] as const;
-const JOINT_KEYS = ['베이스 (J1)', '어깨 (J2)', '팔꿈치 (J3)', '손목 꺾기 (J4)', '손목 돌리기 (J5)', '손끝 돌리기 (J6)'] as const;
+const JOINT_KEYS = ['베이스(J1)', '어깨(J2)', '팔꿈치(J3)', '손목 꺾기(J4)', '손목 돌리기(J5)', '손끝 돌리기(J6)'] as const;
 
 export const COURSE_STEPS: Record<CourseStepId, readonly CourseStepLine[]> = {
   '1-1': [
@@ -57,9 +57,9 @@ export const COURSE_STEPS: Record<CourseStepId, readonly CourseStepLine[]> = {
   // (3-1: the joint being moved is coloured in the scene; each line names its +5° key.)
   '3-1': JOINT_NAMES.map((_, i) => ({ text: T('3-1', i), sel: `[aria-label="${JOINT_KEYS[i]} +5°"]` })),
   '3-2': [
-    { text: T('3-2', 0), sel: '[aria-label="베이스 (J1) +5°"]' },
-    { text: T('3-2', 1), sel: '[aria-label="어깨 (J2) −5°"]' },
-    { text: T('3-2', 2), sel: '[aria-label="팔꿈치 (J3) +5°"]' },
+    { text: T('3-2', 0), sel: '[aria-label="베이스(J1) +5°"]' },
+    { text: T('3-2', 1), sel: '[aria-label="어깨(J2) −5°"]' },
+    { text: T('3-2', 2), sel: '[aria-label="팔꿈치(J3) +5°"]' },
   ],
   '3-4': [
     { text: T('3-4', 0), sel: '[aria-label="속도 조절"]' },

@@ -4,23 +4,29 @@
  * 입문 과정 6장 마무리 (장별 가이드라인 v1): after the last 수행평가, three pages with no 3D scene —
  * 6-1 결과 확인, 6-2 수업 후기, 6-3 학습 기록 한 장. The 후기 stays in this browser; the name and the
  * class are typed on 6-3 only, go into the one sheet saved, and are kept nowhere else.
+ * The results (수정 지시서 v4 파트 1-7): the course's 수행평가 — 8차시: 중간 · 마무리, each with its O · X,
+ * its mission and 상 · 중 · 하; 4차시: each 차시's mission, then 마무리 with whether its mission passed.
+ * Its words: the 문구 파일's end (courseText.ts endText). No 교안 쪽 (수정 지시서 v4 파트 2-1).
  */
 
 import { useState } from 'react';
 
-import { pagesText, subById } from '@/engine/simulator/cell/course';
+import { subById } from '@/engine/simulator/cell/course';
 import type { Pt } from '@/engine/simulator/cell/courseDraw';
-import { buttonName } from '@/engine/simulator/cell/courseText';
+import { buttonName, endText } from '@/engine/simulator/cell/courseText';
 
 import css from './courseEnd.module.css';
 
-export interface ChapterResult {
-  chapter: number;
-  /** O · X right of 5 (null: not taken). */
+export interface TestRow {
+  /** '3-5' and '중간 수행평가'; its 차시 in the course. */
+  id: string;
+  name: string;
+  lesson: number;
+  /** O · X right of 5 (null: not taken, or the course has the mission only). */
   right: number | null;
-  /** The mission: 통과 · 아직 · 안 함 · 준비 중 (and how, for 5장). */
+  /** The mission: 통과 · 아직 · 안 함 (and how, for 마무리). */
   mission: string;
-  /** 상 · 중 · 하 (임시), when the 수행평가 has its mission. */
+  /** 상 · 중 · 하 (임시), once the 수행평가 is over (a course with O · X). */
   level: string | null;
 }
 
@@ -38,8 +44,11 @@ interface Props {
   title: string;
   /** '8차시' · '4차시'. */
   plan: string;
-  /** 8차시: each chapter's results; 4차시: each 차시's mission. */
-  chapters?: readonly ChapterResult[];
+  /** The course's 수행평가 (8차시: two, with their O · X; 4차시: 마무리, its mission only). */
+  tests: readonly TestRow[];
+  /** The 수행평가 have their O · X (8차시). */
+  ox: boolean;
+  /** 4차시: each 차시's mission. */
   missions?: readonly { n: number; id: string; title: string; passed: boolean }[];
   done: { got: number; of: number };
   /** The 절 to pick the most fun from. */
@@ -54,6 +63,8 @@ interface Props {
   saved: boolean;
   onSaved(): void;
   onClose(): void;
+  /** The page to open at (0 · 1 · 2: 6-1 · 6-2 · 6-3; the list opens one of them). */
+  start?: number;
 }
 
 // 6장's three pages: their names from the table (mycobot-280-1.json), as every 절's.
@@ -70,51 +81,63 @@ function cardSvg(card: readonly (readonly Pt[])[], w = 240): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${80 * k}" viewBox="0 0 ${w} ${80 * k}"><rect x="0.5" y="0.5" width="${w - 1}" height="${80 * k - 1}" fill="#fbfaf6" stroke="#555"/>${lines}</svg>`;
 }
 
+/** A 후기 question's name without its circled number ('③ 어려웠던 점…' → '어려웠던 점…'): the printed sheet's. */
+const unnumbered = (t: string) => t.replace(/^[①-⑳]\s*/, '');
+
 /** The one sheet (printed: one A4 page): the course, who, the results, the 후기, the card, the copyright line. */
 export function sheetHtml(p: Props, who: { name: string; cls: string; day: string }): string {
-  const rows = p.chapters
-    ? p.chapters.map((c) => `<tr><td>${c.chapter}장</td><td>${c.right == null ? '-' : `${c.right} / 5`}</td><td>${esc(c.mission)}</td><td>${c.level ?? '-'}</td></tr>`).join('')
-    : (p.missions ?? []).map((m) => `<tr><td>${m.n}차시</td><td colspan="2">${esc(`${m.id} ${m.title}`)}</td><td>${m.passed ? '통과' : '아직'}</td></tr>`).join('');
-  const head = p.chapters ? '<tr><th>장</th><th>O · X</th><th>미션</th><th>상 · 중 · 하 (임시)</th></tr>' : '<tr><th>차시</th><th colspan="2">미션</th><th>결과</th></tr>';
+  const td = (v: string, span = 1) => `<td${span > 1 ? ` colspan="${span}"` : ''}>${esc(v)}</td>`;
+  const none = endText('none');
+  const rows = p.ox
+    ? p.tests.map((t) => `<tr>${td(`${t.id} ${t.name}`)}${td(t.right == null ? none : `${t.right} / 5`)}${td(t.mission)}${td(t.level ?? none)}</tr>`).join('')
+    : [
+        ...(p.missions ?? []).map((m) => `<tr>${td(endText('lessonN', { n: m.n }))}${td(`${m.id} ${m.title}`, 2)}${td(endText(m.passed ? 'passed' : 'notYet'))}</tr>`),
+        ...p.tests.map((t) => `<tr>${td(endText('lessonN', { n: t.lesson }))}${td(`${t.id} ${endText('missionOnly', { name: t.name })}`, 2)}${td(t.mission)}</tr>`),
+      ].join('');
+  const th = (v: string, span = 1) => `<th${span > 1 ? ` colspan="${span}"` : ''}>${esc(v)}</th>`;
+  const head = p.ox ? `<tr>${th(endText('testCol'))}${th(endText('oxCol'))}${th(endText('missionCol'))}${th(endText('levelCol'))}</tr>` : `<tr>${th(endText('lessonCol'))}${th(endText('missionCol'), 2)}${th(endText('resultCol'))}</tr>`;
   const r = p.review;
   const line = (k: string, v: string) => (v.trim() ? `<p><b>${k}</b> ${esc(v.trim())}</p>` : '');
-  return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>학습 기록 한 장</title><style>
+  return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${esc(endText('sheetTitle'))}</title><style>
 @page{size:A4;margin:14mm}body{font-family:'Noto Sans KR','Malgun Gothic',sans-serif;color:#111;font-size:13px;word-break:keep-all;margin:0}
 h1{font-size:19px;margin:0 0 6px}.who{display:flex;flex-wrap:wrap;gap:18px;border-bottom:2px solid #111;padding-bottom:6px;margin-bottom:12px}
 table{width:calc(100% - 1px);border-collapse:collapse;margin:6px 0 10px}th,td{border:1px solid #999;padding:6px;text-align:left}th{background:#eee}
 h2{font-size:15px;margin:14px 0 4px}p{margin:3px 0}.tot{font-weight:700}.copy{margin-top:22px;padding-top:6px;border-top:1px solid #999;font-size:11px;color:#333}</style></head><body>
 <h1>${esc(p.title)}</h1>
-<div class="who"><span>구성 <b>${esc(p.plan)}</b></span><span>이름 <b>${esc(who.name) || '__________'}</b></span><span>반 <b>${esc(who.cls) || '______'}</b></span><span>날짜 <b>${esc(who.day)}</b></span></div>
-<h2>장별 결과</h2><table>${head}${rows}</table>
-<p class="tot">끝낸 절 ${p.done.got} / ${p.done.of} (선택 절 빼고)</p>
-<h2>수업 후기</h2>
-<p><b>별점</b> ${'★'.repeat(r.stars)}${'☆'.repeat(5 - r.stars)}</p>
-${line('가장 재미있던 활동', p.subs.find((s) => s.id === r.best) ? `${r.best} ${p.subs.find((s) => s.id === r.best)!.title}` : '')}
-${line('어려웠던 점과 해결한 방법', r.hard)}${p.real ? line('실물과 시뮬레이션의 차이', r.real) : ''}${line('더 해 보고 싶은 것', r.more)}
-${p.card ? `<h2>내가 쓴 글자 카드 (5-4)</h2>${p.card.length ? cardSvg(p.card, 360) : '<p>아직 없어요</p>'}` : ''}
+<div class="who"><span>${esc(endText('plan'))} <b>${esc(p.plan)}</b></span><span>${esc(endText('who'))} <b>${esc(who.name) || '__________'}</b></span><span>${esc(endText('class'))} <b>${esc(who.cls) || '______'}</b></span><span>${esc(endText('day'))} <b>${esc(who.day)}</b></span></div>
+<h2>${esc(endText(p.ox ? 'sheetResults' : 'sheetMissions'))}</h2><table>${head}${rows}</table>
+<p class="tot">${esc(endText('total'))} ${p.done.got} / ${p.done.of} ${esc(endText('totalNote'))}</p>
+<h2>${esc(endText('sheetReview'))}</h2>
+<p><b>${esc(endText('starsName'))}</b> ${'★'.repeat(r.stars)}${'☆'.repeat(5 - r.stars)}</p>
+${line(endText('bestName'), p.subs.find((s) => s.id === r.best) ? `${r.best} ${p.subs.find((s) => s.id === r.best)!.title}` : '')}
+${line(unnumbered(endText('hard')), r.hard)}${p.real ? line(unnumbered(endText('realDiff')), r.real) : ''}${line(unnumbered(endText('more')), r.more)}
+${p.card ? `<h2>${esc(endText('sheetCard'))}</h2>${p.card.length ? cardSvg(p.card, 360) : `<p>${esc(endText('sheetCardNone'))}</p>`}` : ''}
 <p class="copy">${esc(p.copyright)}</p></body></html>`;
 }
 
 function Results(p: Props) {
+  const none = endText('none');
   return (
     <>
-      {p.chapters ? (
+      {p.ox ? (
         <table className={css.table}>
           <thead>
             <tr>
-              <th>장</th>
-              <th>O · X</th>
-              <th>미션</th>
-              <th>상 · 중 · 하 (임시)</th>
+              <th>{endText('testCol')}</th>
+              <th>{endText('oxCol')}</th>
+              <th>{endText('missionCol')}</th>
+              <th>{endText('levelCol')}</th>
             </tr>
           </thead>
           <tbody>
-            {p.chapters.map((c) => (
-              <tr key={c.chapter}>
-                <td>{c.chapter}장</td>
-                <td>{c.right == null ? '-' : `${c.right} / 5`}</td>
-                <td>{c.mission}</td>
-                <td>{c.level ?? '-'}</td>
+            {p.tests.map((t) => (
+              <tr key={t.id}>
+                <td>
+                  {t.id} {t.name}
+                </td>
+                <td>{t.right == null ? none : `${t.right} / 5`}</td>
+                <td>{t.mission}</td>
+                <td>{t.level ?? none}</td>
               </tr>
             ))}
           </tbody>
@@ -123,37 +146,47 @@ function Results(p: Props) {
         <table className={css.table}>
           <thead>
             <tr>
-              <th>차시</th>
-              <th>미션</th>
-              <th>결과</th>
+              <th>{endText('lessonCol')}</th>
+              <th>{endText('missionCol')}</th>
+              <th>{endText('resultCol')}</th>
             </tr>
           </thead>
           <tbody>
             {(p.missions ?? []).map((m) => (
               <tr key={m.id}>
-                <td>{m.n}차시</td>
+                <td>{endText('lessonN', { n: m.n })}</td>
                 <td>
                   {m.id} {m.title}
                 </td>
-                <td>{m.passed ? '통과' : '아직'}</td>
+                <td>{endText(m.passed ? 'passed' : 'notYet')}</td>
+              </tr>
+            ))}
+            {/* 4차시: 마무리 수행평가, its mission only — whether it passed (no 상 · 중 · 하). */}
+            {p.tests.map((t) => (
+              <tr key={t.id}>
+                <td>{endText('lessonN', { n: t.lesson })}</td>
+                <td>
+                  {t.id} {endText('missionOnly', { name: t.name })}
+                </td>
+                <td>{t.mission}</td>
               </tr>
             ))}
           </tbody>
         </table>
       )}
       <p className={css.total}>
-        끝낸 절{' '}
+        {endText('total')}{' '}
         <b>
           {p.done.got} / {p.done.of}
         </b>{' '}
-        <small>(선택 절 빼고)</small>
+        <small>{endText('totalNote')}</small>
       </p>
     </>
   );
 }
 
 export default function CourseEnd(p: Props) {
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(p.start ?? 0);
   const [name, setName] = useState('');
   const [cls, setCls] = useState('');
   const [day, setDay] = useState(() => new Date().toLocaleDateString('ko-KR'));
@@ -183,23 +216,22 @@ export default function CourseEnd(p: Props) {
       <span>
         {label}{' '}
         <small>
-          {need ?? '안 써도 돼요'} · {r[k].length} / {REVIEW_MAX}자
+          {need ?? endText('optional')} · {endText('count', { n: r[k].length, max: REVIEW_MAX })}
         </small>
       </span>
       <input value={r[k]} maxLength={REVIEW_MAX} onChange={(e) => set({ [k]: e.target.value })} aria-label={label} />
     </label>
   );
   return (
-    <div className={css.page} role="dialog" aria-label="6장 마무리">
+    <div className={css.page} role="dialog" aria-label={endText('window')}>
       <div className={css.sheet}>
         <nav className={css.steps} aria-label="6장">
           {PAGES.map((x, i) => (
             <span key={x.id} data-on={i === page || undefined} data-done={i < page || undefined}>
               {x.id} {x.title}
-              {subById(x.id)?.pages && <small> · {pagesText(subById(x.id)!.pages)}</small>}
             </span>
           ))}
-          <button type="button" className={css.close} onClick={p.onClose} aria-label="닫기">
+          <button type="button" className={css.close} onClick={p.onClose} aria-label={endText('close')}>
             ×
           </button>
         </nav>
@@ -219,14 +251,14 @@ export default function CourseEnd(p: Props) {
             <h2>
               {PAGES[1].id} {PAGES[1].title}
             </h2>
-            <p className={css.lead}>① · ②는 꼭 골라요. 쓴 글은 이 컴퓨터의 브라우저에만 남아요.</p>
+            <p className={css.lead}>{endText('reviewLead')}</p>
             <div className={css.field}>
               <span>
-                ① 별점 <small>꼭 골라요</small>
+                {endText('stars')} <small>{endText('must')}</small>
               </span>
-              <div className={css.stars} role="radiogroup" aria-label="별점">
+              <div className={css.stars} role="radiogroup" aria-label={endText('starsName')}>
                 {[1, 2, 3, 4, 5].map((n) => (
-                  <button key={n} type="button" role="radio" aria-checked={r.stars === n} aria-label={`별 ${n}개`} data-on={n <= r.stars || undefined} onClick={() => set({ stars: n })}>
+                  <button key={n} type="button" role="radio" aria-checked={r.stars === n} aria-label={endText('starN', { n })} data-on={n <= r.stars || undefined} onClick={() => set({ stars: n })}>
                     {n <= r.stars ? '★' : '☆'}
                   </button>
                 ))}
@@ -234,10 +266,10 @@ export default function CourseEnd(p: Props) {
             </div>
             <label className={css.field}>
               <span>
-                ② 가장 재미있던 활동 <small>꼭 골라요</small>
+                {endText('best')} <small>{endText('must')}</small>
               </span>
-              <select value={r.best} onChange={(e) => set({ best: e.target.value })} aria-label="가장 재미있던 활동">
-                <option value="">절을 골라요</option>
+              <select value={r.best} onChange={(e) => set({ best: e.target.value })} aria-label={endText('bestName')}>
+                <option value="">{endText('bestPick')}</option>
                 {p.subs.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.id} {s.title}
@@ -245,9 +277,9 @@ export default function CourseEnd(p: Props) {
                 ))}
               </select>
             </label>
-            {text('hard', '③ 어려웠던 점과 해결한 방법')}
-            {p.real && text('real', '④ 실물과 시뮬레이션의 차이', '5-5를 했다면')}
-            {text('more', '⑤ 더 해 보고 싶은 것')}
+            {text('hard', endText('hard'))}
+            {p.real && text('real', endText('realDiff'), endText('realNeed'))}
+            {text('more', endText('more'))}
           </section>
         )}
         {page === 2 && (
@@ -255,16 +287,16 @@ export default function CourseEnd(p: Props) {
             <h2>
               {PAGES[2].id} {PAGES[2].title}
             </h2>
-            <p className={css.lead}>이름 · 반은 이 한 장에만 들어가요. 어디에도 남기거나 보내지 않아요.</p>
+            <p className={css.lead}>{endText('sheetLead')}</p>
             <div className={css.who}>
               <label>
-                이름 <input value={name} maxLength={20} onChange={(e) => setName(e.target.value)} aria-label="이름" />
+                {endText('who')} <input value={name} maxLength={20} onChange={(e) => setName(e.target.value)} aria-label={endText('who')} />
               </label>
               <label>
-                반 <input value={cls} maxLength={12} onChange={(e) => setCls(e.target.value)} aria-label="반" />
+                {endText('class')} <input value={cls} maxLength={12} onChange={(e) => setCls(e.target.value)} aria-label={endText('class')} />
               </label>
               <label>
-                날짜 <input value={day} maxLength={20} onChange={(e) => setDay(e.target.value)} aria-label="날짜" />
+                {endText('day')} <input value={day} maxLength={20} onChange={(e) => setDay(e.target.value)} aria-label={endText('day')} />
               </label>
             </div>
             <div className={css.preview}>
@@ -275,12 +307,12 @@ export default function CourseEnd(p: Props) {
                 </div>
                 <div>
                   <p>
-                    후기 {'★'.repeat(r.stars)}
+                    {endText('review')} {'★'.repeat(r.stars)}
                     {'☆'.repeat(5 - r.stars)}
                     <br />
-                    가장 재미있던 활동 · {p.subs.find((s) => s.id === r.best)?.title ?? '-'}
+                    {endText('bestName')} · {p.subs.find((s) => s.id === r.best)?.title ?? endText('none')}
                   </p>
-                  {p.card && <div className={css.card} dangerouslySetInnerHTML={{ __html: p.card.length ? cardSvg(p.card, 280) : '<p>5-4 글자 카드 아직 없음</p>' }} />}
+                  {p.card && <div className={css.card} dangerouslySetInnerHTML={{ __html: p.card.length ? cardSvg(p.card, 280) : `<p>${esc(endText('cardNone'))}</p>` }} />}
                 </div>
               </div>
               <p className={css.copy}>{p.copyright}</p>
@@ -290,17 +322,17 @@ export default function CourseEnd(p: Props) {
         <footer className={css.foot}>
           {page > 0 && (
             <button type="button" className={css.ghost} onClick={() => setPage(page - 1)}>
-              ← 앞으로
+              {endText('back')}
             </button>
           )}
-          <span>{page === 1 && !reviewed ? '① 별점과 ② 활동을 골라야 다음으로 가요' : page === 2 ? (p.saved ? '인쇄 창을 열었어요' : '인쇄 창에서 PDF로 저장을 고를 수 있어요') : ''}</span>
+          <span>{page === 1 && !reviewed ? endText('needReview') : page === 2 ? endText(p.saved ? 'printed' : 'printHint') : ''}</span>
           {page < 2 ? (
             <button type="button" className={css.key} data-step="end-next" disabled={page === 1 && !reviewed} onClick={() => setPage(page + 1)}>
               {buttonName('next')}
             </button>
           ) : (
             <button type="button" className={css.key} data-step="end-save" onClick={save}>
-              인쇄 · PDF로 저장
+              {endText('save')}
             </button>
           )}
         </footer>

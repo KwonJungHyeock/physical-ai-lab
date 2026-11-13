@@ -29,14 +29,15 @@ for (const c of K.COURSES)
 for (const id of focus.lessons.flat()) assert.ok(K.lessonIn(full, id) > 0, `4차시의 ${id} 는 8차시에도 있어요`);
 
 // 사용 안 함 (no number) · 수행평가 (the chapter's last number) · 6장: kept in the table, never in a course's list.
-for (const id of ['1-4', 'unused-setup', '2-4', 'unused-limits', '3-5', '4-5', '5-6', '6-1', '6-2', '6-3']) {
+for (const id of ['unused-test-1', 'unused-setup', 'unused-test-2', 'unused-limits', '3-5', 'unused-test-4', '5-6', '6-1', '6-2', '6-3']) {
   // 6장: 과정 끝에 열림 (the course's end opens it, never a list).
   assert.equal(C.subById(id)?.status, id.startsWith('6-') ? 'end' : id.startsWith('unused-') ? 'unused' : 'test', `${id} 사용 안 함 · 수행평가 · 6장은 과정 끝에 열림`);
   for (const c of K.COURSES) assert.equal(K.lessonIn(c, id), 0, `${c.id} 목록에 ${id} 없음`);
 }
 
 // 절 번호 다시 매기기 (수정 지시서 v3 파트 8): in each chapter the numbers run 1, 2, 3 … with none left out,
-// the 수행평가 has the last one, a 절 not used has no number (its old one is kept as `was`).
+// a 수행평가 has its chapter's last one, a 절 not used has no number (the one it had is kept as `was`).
+// 수정 지시서 v4 파트 1: two 수행평가 — 3-5 중간 · 5-6 마무리; 1-4 · 2-4 · 4-5 are kept, not used, their numbers left empty.
 for (const c of C.COURSE) {
   const numbered = c.subs.filter((x) => x.status !== 'unused').map((x) => x.id);
   assert.deepEqual(
@@ -47,16 +48,39 @@ for (const c of C.COURSE) {
   if (c.test) assert.equal(c.test, numbered[numbered.length - 1], `${c.n}장 수행평가는 마지막 번호`);
 }
 assert.deepEqual(
-  C.COURSE_SUBS.filter((x) => x.status === 'unused').map((x) => [x.id, x.was, /\d/.test(x.id)]),
+  C.COURSE_SUBS.filter((x) => x.status === 'unused').map((x) => [x.id, x.was, /^\d+-\d+$/.test(x.id)]),
   [
+    ['unused-test-1', '1-4', false],
     ['unused-setup', '2-2', false],
+    ['unused-test-2', '2-4', false],
     ['unused-limits', '3-3', false],
+    ['unused-test-4', '4-5', false],
   ],
   '쓰지 않는 옛 절은 번호 없이 남아요',
 );
 assert.deepEqual(
   C.COURSE.map((c) => c.test ?? ''),
-  ['1-4', '2-4', '3-5', '4-5', '5-6', ''],
+  ['', '', '3-5', '', '5-6', ''],
+);
+assert.deepEqual(
+  ['3-5', '5-6'].map((id) => [C.subById(id)?.title, C.rangeText(C.subById(id))]),
+  [
+    ['중간 수행평가', '범위 1~3장'],
+    ['마무리 수행평가', '범위 4~5장'],
+  ],
+);
+assert.deepEqual([C.testName(3), C.testName(5)], ['중간 수행평가', '마무리 수행평가']);
+// A number taken out names its 수행평가 (its address goes to the list); it is no 절 of today's.
+for (const no of ['1-4', '2-4', '4-5']) {
+  assert.equal(C.subById(no), undefined, `${no} 는 이제 절 번호가 아니에요`);
+  assert.equal(C.retiredTest(no)?.status, 'unused', `${no} 는 쓰지 않는 수행평가`);
+  assert.equal(C.subByNumber(no)?.test, true);
+}
+assert.equal(C.retiredTest('3-5'), undefined);
+// 장 이름 = 플랫폼 등록 이름.
+assert.deepEqual(
+  C.COURSE.slice(3).map((c) => c.title),
+  ['기초 제어 ② 좌표 제어', '로봇 글씨 쓰기', '마무리'],
 );
 // Names as decided.
 assert.equal(C.COURSE[1].title, '로봇 준비하기');
@@ -78,13 +102,13 @@ assert.deepEqual(['1-1', '2-1', '2-2', '2-3', '2-4', '2-5', '3-2', '3-3', '3-4',
   'unused-setup',
   '2-2',
   '2-3',
-  '2-4',
+  'unused-test-2',
   '3-2',
   'unused-limits',
   '3-3',
   '3-4',
   '3-5',
-  '4-5',
+  'unused-test-4',
   '5-6',
 ]);
 assert.equal(C.subById(C.fromOldNumber('2-3'))!.title, '영점 자세와 기본 자세', '옛 2-3 = 새 2-2 (같은 절)');
@@ -123,18 +147,26 @@ assert.ok(C.subById('5-5')?.optional);
 assert.ok(K.lessonIn(full, '5-5') > 0);
 assert.ok(!K.countedIn(full).some((s) => s.optional));
 
-// 수행평가: after each chapter's last 절 in 8차시; none in 4차시 (its 차시 missions instead).
+// 수행평가: 8차시 — 중간 after 3-4, 마무리 after 5-5, with their O · X; 4차시 — 마무리 only after 5-3, its mission only (and its 차시 missions).
 const steps = K.stepsIn(full);
 const tests = steps.filter((x) => x.kind === 'test');
 assert.deepEqual(
   tests.map((x) => x.sub.id),
-  ['1-4', '2-4', '3-5', '4-5', '5-6'],
+  ['3-5', '5-6'],
 );
+assert.deepEqual([full.tests, full.ox, focus.tests, focus.ox], [['3-5', '5-6'], true, ['5-6'], false]);
 for (const t of tests) {
   const k = steps.indexOf(t);
   assert.equal(steps[k - 1].sub.chapter, t.chapter.n, `${t.sub.id} 는 그 장의 마지막 절 뒤`);
 }
-assert.equal(K.stepsIn(focus).filter((x) => x.kind === 'test').length, 0);
+assert.deepEqual(
+  K.stepsIn(focus)
+    .filter((x) => x.kind === 'test')
+    .map((x) => x.sub.id),
+  ['5-6'],
+);
+assert.equal(K.subBeforeTest(focus, '5-6')?.id, '5-3', '4차시 마무리 미션은 5-3 통과로 판정');
+assert.equal(K.subBeforeTest(full, '5-6')?.id, '5-5');
 assert.deepEqual(
   K.missionSubsIn(focus).map((s) => s.id),
   ['1-3', '3-3', '4-3', '5-3'],
@@ -148,7 +180,11 @@ assert.equal((K.nextIn(full, '5-3') as { id: string }).id, '5-4');
 assert.equal((K.nextIn(full, '5-4') as { id: string }).id, '5-5');
 assert.equal((K.nextIn(full, '5-5') as { id: string }).id, '5-6');
 assert.equal(K.nextIn(full, '5-6'), 'record');
-assert.equal(K.nextIn(focus, '5-3'), 'record');
+assert.equal((K.nextIn(focus, '5-3') as { id: string }).id, '5-6');
+assert.equal(K.nextIn(focus, '5-6'), 'record');
+assert.equal((K.nextIn(full, '1-3') as { id: string }).id, '2-1', '1-3 다음은 2-1 (1장 수행평가 없음)');
+assert.equal((K.nextIn(full, '2-3') as { id: string }).id, '3-1');
+assert.equal((K.nextIn(full, '4-4') as { id: string }).id, '5-1');
 
 // 차시 from the course: 5-1 is the 7th in 8차시, the 4th in 4차시.
 assert.equal(K.lessonIn(full, '5-1'), 7);
@@ -158,14 +194,24 @@ assert.equal(K.lessonIn(focus, '5-1'), 4);
 const P = await import('../../src/engine/simulator/cell/platform');
 const own = P.planFromPlatform({ lessons: [['1-1', '9-9'], ['unused-limits'], ['5-1', '5-2']] });
 assert.deepEqual(own.lessons, [['1-1'], ['5-1', '5-2']]);
+assert.deepEqual([own.tests, own.ox], [['3-5', '5-6'], true], '넘겨받은 구성: 표의 수행평가 (그 장의 마지막 절이 있을 때 열림)');
+assert.deepEqual(P.planFromPlatform({ lessons: [['1-1']], tests: false }).tests, []);
+// ?plan=4 (시험용): the 4차시 구성; anything else: the default.
+assert.equal((await P.readPlan('4')).lessons.length, 4);
+assert.equal((await P.readPlan(null)).lessons.length, 8);
+assert.equal((await P.readPlan('9')).lessons.length, 8);
 
 // 수행평가 준비 중: shown in the 차시 of its chapter's last 절, skipped, never counted.
 const ls = K.lessonStepsIn(full);
 assert.deepEqual(
   ls.flatMap((l) => l.steps.filter((x) => x.kind === 'test').map((x) => `${l.n}:${x.sub.id}`)),
-  ['1:1-4', '2:2-4', '4:3-5', '6:4-5', '8:5-6'],
+  ['4:3-5', '8:5-6'],
 );
-for (const t of tests) assert.equal(K.testReady(t.sub), ['1-4', '2-4', '3-5', '4-5', '5-6'].includes(t.sub.id), `${t.sub.id}: 1 ~ 5장 모두 열림`);
+assert.deepEqual(
+  K.lessonStepsIn(focus).flatMap((l) => l.steps.filter((x) => x.kind === 'test').map((x) => `${l.n}:${x.sub.id}`)),
+  ['4:5-6'],
+);
+for (const t of tests) assert.equal(K.testReady(t.sub), true, `${t.sub.id} 열림`);
 
 // 1장 (장별 가이드라인 v1): 1-1 · 1-2 · 1-3 open as the course's own 절; 1-1 has 장면 보기; 1장 수행평가 opens after 1-3.
 const S = await import('../../src/engine/simulator/cell/courseSteps');
@@ -177,8 +223,7 @@ assert.equal(S.COURSE_STEPS['1-1'].length, 3);
 assert.equal(S.COURSE_STEPS['1-2'].length, 7);
 assert.equal(S.COURSE_STEPS['1-3'].length, 3);
 assert.equal(S.ARM_PARTS.length, 7);
-assert.equal((K.nextIn(full, '1-3') as { id: string }).id, '1-4', '1-3 다음은 1장 수행평가');
-assert.equal(C.modeFor(C.subById('1-4')!, 'scene'), 'practice');
+assert.equal(C.modeFor(C.subById('3-5')!, 'scene'), 'practice');
 assert.deepEqual(T.CHAPTER_TESTS[1].answers, ['O', 'X', 'O', 'X', 'O']);
 assert.equal(T.gradeOX(T.CHAPTER_TESTS[1], ['O', 'X', 'O', 'O', 'O']), 4);
 assert.equal(T.CHAPTER_TESTS[1].mission.ready, false, '사진 6장은 팀에서 받기 전까지 준비 중');
@@ -216,7 +261,6 @@ assert.deepEqual(
   ['2-1', '2-2', '2-3'].map((id) => S.COURSE_STEPS[id as '2-1'].length),
   [2, 2, 3],
 );
-assert.equal((K.nextIn(full, '2-3') as { id: string }).id, '2-4', '2-3 다음은 2장 수행평가');
 assert.deepEqual(T.CHAPTER_TESTS[2].answers, ['X', 'O', 'O', 'X', 'O']);
 assert.equal(T.CHAPTER_TESTS[2].mission.ready, true);
 assert.equal(T.inOrder(T.CHAPTER_TESTS[2].mission.steps!, ['zero', 'home', 'pen', 'dot']), true);
@@ -262,7 +306,9 @@ assert.deepEqual(
   [6, 3, 4],
 );
 assert.equal((K.nextIn(full, '3-4') as { id: string }).id, '3-5', '3-4 다음은 3장 수행평가');
-assert.deepEqual(T.CHAPTER_TESTS[3].answers, ['O', 'O', 'X', 'O', 'X']);
+// 수정 지시서 v4 파트 1-4 · 1-5: the answers of 중간 (kept under chapter 3) and 마무리 (chapter 5).
+assert.deepEqual(T.CHAPTER_TESTS[3].answers, ['X', 'O', 'X', 'O', 'X']);
+assert.deepEqual(T.CHAPTER_TESTS[5].answers, ['O', 'X', 'X', 'O', 'X']);
 assert.deepEqual(T.CHAPTER_TESTS[3].mission.pose, [30, 30, -60, -20, 0, 0]);
 // 미션: one more try; the 기록 tells first-try, second-try and not-passed apart; a second-try pass is a pass.
 const tr = (mission: boolean | null, missionTries?: number) => ({ chosen: [], right: 5, mission, missionTries, at: 0 });
@@ -271,6 +317,15 @@ assert.equal(T.missionWay(tr(true, 2)), '다시 해서 통과');
 assert.equal(T.missionWay(tr(false, 1)), null, '한 번 더 할 수 있음');
 assert.equal(T.missionWay(tr(false, 2)), '통과 못 함');
 assert.equal(P.levelOf({ chapter: 3, right: 5, of: 5, mission: true }).level, '상', '다시 해서 통과해도 통과');
+// A 수행평가 is over ('… 를 마쳤어요') only once its mission ended too (수정 지시서 v4 파트 1-9).
+assert.equal(T.testOver(T.CHAPTER_TESTS[3], { chosen: [], right: 5, mission: null, at: 0 }, true), false, 'O · X [확인] 직후에는 아직');
+assert.equal(T.testOver(T.CHAPTER_TESTS[3], tr(false, 1), true), false, '미션 한 번 더 할 수 있으면 아직');
+assert.equal(T.testOver(T.CHAPTER_TESTS[3], tr(false, 2), true), true);
+assert.equal(T.testOver(T.CHAPTER_TESTS[3], tr(true, 1), true), true);
+assert.equal(T.testOver(T.CHAPTER_TESTS[5], { chosen: [], right: 4, mission: false, missionTries: 1, at: 0 }, true), false, '마무리: 카드가 통과해야 끝');
+assert.equal(T.testOver(T.CHAPTER_TESTS[5], { chosen: [], right: null, mission: true, at: 0 }, false), true, '4차시: 미션만');
+assert.equal(T.testOver(T.CHAPTER_TESTS[5], { chosen: [], right: null, mission: true, at: 0 }, true), false);
+assert.equal(T.testOver(T.CHAPTER_TESTS[3], undefined, true), false);
 
 // 접근: today every course may be opened.
 assert.equal(await P.mayOpen({ course: 'full8', sub: '5-2', mode: 'scene' }), true);
@@ -300,6 +355,16 @@ for (const n of [1, 2, 3, 4, 5]) {
   assert.ok(T.CHAPTER_TESTS[n].mission.text, `${n}장 미션 문장`);
 }
 assert.equal(W.failLine('3-4', 'slowFirst', { pct: 30 }), '속도를 30% 이하로 맞추고 다시 눌러요');
+// 수정 지시서 v4 파트 6: names as the buttons show them, no period at a line's end, the particle and the unit as decided.
+assert.equal(W.stepText('4-2', 0), "표시 옵션의 '궤적선'을 켜요");
+assert.equal(W.stepText('3-4', 1), '[이 자세로] 버튼을 눌러 그 자세로 보내요');
+assert.equal(W.failLine('2-3', 'penFirst'), '먼저 보정의 펜 칸을 고쳐요');
+for (const id of full.lessons.flat()) assert.ok(!W.doneLine(id).endsWith('.'), `${id} 완료 한 줄 끝에 마침표 없음`);
+assert.equal(W.tidy('[로봇 찾기] 를 누르면 192.168.0.1 ~ 254 를 살펴봐요'), '[로봇 찾기]를 누르면 192.168.0.1~254를 살펴봐요');
+assert.equal(W.tidy('J1~J6 이 도는 축 · 앞으로 10mm (X+) · 1cm 칸'), 'J1~J6이 도는 축 · 앞으로 10 mm (X+) · 1 cm 칸');
+assert.equal(W.testLine('testDone', { name: C.testName(3) }), '중간 수행평가를 마쳤어요');
+assert.equal(W.panelText('range', { a: 1, b: 3 }), '범위 1~3장');
+assert.equal(W.endText('count', { n: 3, max: 100 }), '3 / 100자');
 // 수정 지시서 v3 파트 5: a button named in a sentence is the button's own name; a minus sign is '−'.
 assert.equal(W.buttonName('zero'), '영점 자세');
 assert.equal(W.stepText('2-2', 0), '영점 자세 버튼을 눌러요');

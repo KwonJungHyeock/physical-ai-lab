@@ -539,8 +539,30 @@
   }
 }
 /* 대응표 */
-:where(html[data-vq~='22']) .times {
+:where(html[data-vq~='19']) .times {
   padding: 4px 16px;
+}
+/* 수정 지시서 v4 파트 4-1: 3-4's times on one line (its name, then the two measures) — the fixed rows under the
+   조작판 are two now ([기본 자세] · [영점 자세], then [정지]), and the six joint rows stay clear of them. */
+[data-course] .times {
+  grid-template-columns: auto 1fr 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+}
+[data-course] .times > b {
+  grid-column: auto;
+  max-width: 5.2em;
+  font-size: 14px;
+  line-height: 1.25;
+}
+[data-course] .times > .measure {
+  justify-content: flex-end;
+  gap: 4px;
+  white-space: nowrap;
+}
+[data-course] .times .measure > b {
+  font-size: 23px;
 }
 /* 3장 미션: [확인]. */
 .confirm {
@@ -854,4 +876,32 @@
 }
 .realSpeed input {
   width: 100%;
+}
+
+/* 수정 지시서 v4 파트 4-1: 2-2's three keys as the fixed rows of every other 절 — [기본 자세] · [영점 자세] in a row,
+   [정지] a whole row under them, at the panel's foot. */
+[data-course] .poses {
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+[data-course] .poses button {
+  height: 40px;
+  font-size: 16px;
+}
+[data-course] .poses .stop {
+  grid-column: 1 / -1;
+  height: 48px;
+  font-size: 18px;
+}
+[data-course] .panel:has(> .poses:only-child) {
+  margin-top: auto;
+  padding: 0;
+  background: none;
+}
+/* The 수행평가 window: the chapters it covers, beside its name. */
+.test h2 small {
+  margin-left: 12px;
+  font-size: 16px;
+  font-weight: 400;
+  color: #c9ced5;
 }

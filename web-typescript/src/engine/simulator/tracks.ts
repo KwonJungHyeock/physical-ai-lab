@@ -40,6 +40,23 @@ export interface TrackIntro {
   ko: string;
   lead: [string, string];
   scenes: { img: string; tag: string; line: string }[];
+  /**
+   * 입문 과정의 표지 (수정 지시서 v4 파트 5): the course's name in Korean (no English title), its tags
+   * (입문 과정 · N차시 · 시뮬레이션 + 실물: the 차시 and the last one from the 구성), one line of what comes in
+   * what order, and the picture — an asset slot (/course/assets/<art>.png; until its file comes: the first of `scenes`).
+   */
+  cover?: {
+    name: [string, string];
+    sub: string;
+    kind: string;
+    /** With the real robot's 절 (5-5) in the 구성, and without it. */
+    modes: { real: string; sim: string };
+    /** The second line where the 구성 has 5-4 (내 글자), and where it does not. */
+    lead: [string, string];
+    leadPlain: string;
+    flow: string[];
+    art: string;
+  };
 }
 
 export const TRACKS: Record<TrackId, Track> = {
@@ -62,6 +79,16 @@ export const TRACKS: Record<TrackId, Track> = {
       lead: ['관절 · 좌표 조작부터 로봇 글씨 쓰기까지,', `${DEFAULT_PLAN.lessons.length}차시 동안 시뮬레이션으로 익히고 실물로 써 봐요.`],
       // One picture of every place the track teaches (the three booths side by side).
       scenes: [{ img: '/brand/life/sites.webp', tag: 'LIFE COBOT SITES', line: '로봇 카페 · 글씨 쓰기 부스 · 보드게임 카페' }],
+      cover: {
+        name: ['myCobot 280', '협동로봇 1단계'],
+        sub: '기초 조작과 로봇 글씨 쓰기',
+        kind: '입문 과정',
+        modes: { real: '시뮬레이션 + 실물', sim: '시뮬레이션' },
+        lead: ['관절과 좌표로 로봇팔을 움직이고,', '마지막에는 내 글자를 카드에 써 봅니다'],
+        leadPlain: '마지막에는 카드에 글씨를 써 봅니다',
+        flow: ['관절 조작', '좌표 이동', '도형 그리기', '글씨 쓰기'],
+        art: 'intro-life-1',
+      },
     },
   },
   food: {

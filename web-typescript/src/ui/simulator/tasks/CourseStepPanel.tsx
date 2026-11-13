@@ -288,7 +288,7 @@ export default function CourseStepPanel({ id, busy, onRun, hand, range, tool, pe
         </ul>
       )}
       {poses && (
-        <div className={css.poses}>
+        <div className={css.poses} data-foot>
           <button type="button" data-step="home" disabled={busy} onClick={poses.onHome}>
             <Icon name="home" size={16} /> {buttonName('home')}
           </button>

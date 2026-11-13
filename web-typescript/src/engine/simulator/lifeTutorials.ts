@@ -65,8 +65,8 @@ const maxDiff = (a: readonly number[], b: readonly number[]) => Math.max(0, ...a
 /** Poses saved since `start` (new names, or a name saved again with other angles). */
 const newPoses = (now: TutCtx, start: TutCtx) => Object.entries(now.poses).filter(([k, v]) => !start.poses[k] || maxDiff(v, start.poses[k]) > 0.5);
 
-/** The jog keys of a joint (their labels: "베이스 (J1) +5°"). */
-const jointKeys = (name: string, j: number): TutTarget[] => [{ sel: `[aria-label^="${name} (J${j}) +"]` }, { sel: `[aria-label^="${name} (J${j}) −"]` }];
+/** The jog keys of a joint (their labels: "베이스 (J1) +5°"; 입문 과정: "베이스(J1) +5°" — either is found). */
+const jointKeys = (name: string, j: number): TutTarget[] => [{ sel: `[aria-label^="${name}"][aria-label*="(J${j}) +"]` }, { sel: `[aria-label^="${name}"][aria-label*="(J${j}) −"]` }];
 const HOME_KEY: TutTarget = { sel: '[title="관찰 자세 (공식 AI 키트)"]' };
 
 export const LIFE_TUTORIALS: LifeTutorial[] = [
@@ -102,7 +102,7 @@ export const LIFE_TUTORIALS: LifeTutorial[] = [
         // The sentence names the one key to press (피드백 v2: one place at a time).
         short: '어깨 +5° 버튼을 눌러 팔을 20° 움직여요',
         panel: 'jog',
-        target: [{ sel: '[aria-label^="어깨 (J2) +"]' }],
+        target: [{ sel: '[aria-label^="어깨"][aria-label*="(J2) +"]' }],
         meter: (n, s) => ({ v: maxDiff(n.angles, s.angles), of: 20, unit: '°' }),
         done: (n, s) => maxDiff(n.angles, s.angles) >= 20,
       },

@@ -123,7 +123,8 @@ export default function TopBar({ view, onView, busy, context, settings, status, 
         <img src="/brand/sim-logo-white.svg" alt="ROBODYNE SYSTEMS" width={73} height={36} />
         <i aria-hidden="true" />
         <span className={css.product}>
-          <em>PHYSICAL AI</em>
+          {/* 입문 과정 (수정 지시서 v4 파트 2-2): the logo and the name only. */}
+          {!track?.course && <em>PHYSICAL AI</em>}
           <b>로봇 학습 시뮬레이터</b>
         </span>
       </button>

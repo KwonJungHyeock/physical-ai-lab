@@ -1,19 +1,19 @@
 'use client';
 
 /**
- * A chapter's 수행평가 (장별 가이드라인 v1): the O · X 5문항 by number (the questions are in the 교안),
- * graded once on [확인] (the first answers kept), then the mission — one line, no number badges. A
- * mission whose pictures are not in yet shows its asset slots and 준비 중; the O · X still count. A
- * mission done in the scene (2장 · 3장) starts from [미션 시작] (the card steps aside); one more try is
- * allowed after a miss ([다시 하기]), and the 기록 says how it went (한 번에 · 다시 해서 · 통과 못 함). Once
- * it is over, the chapter's 상 · 중 · 하 (임시, platform.ts levelOf: a pass on the second try is a pass).
+ * A 수행평가 (장별 가이드라인 v1; 수정 지시서 v4 파트 1: 중간 · 마무리): the O · X 5문항 by number (the
+ * questions are in the 교안), graded once on [확인] (the first answers kept), then the mission — one line,
+ * no number badges. A mission done in the scene starts from [미션 시작] (the card steps aside); one more
+ * try is allowed after a miss ([다시 하기]), and the 기록 says how it went (한 번에 · 다시 해서 · 통과 못 함).
+ * Once it is over, its 상 · 중 · 하 (임시, platform.ts levelOf: a pass on the second try is a pass).
+ * A course that has the mission only (4차시): no O · X and no 상 · 중 · 하 — the mission and whether it passed.
+ * Its words: the 문구 파일's testPanel (courseText.ts panelText).
  */
 
 import { useState } from 'react';
 
-import { COURSE } from '@/engine/simulator/cell/course';
-import { MISSION_TRIES, gradeOX, missionWay, type ChapterTest, type OX, type TestResult } from '@/engine/simulator/cell/courseTests';
-import { buttonName } from '@/engine/simulator/cell/courseText';
+import { MISSION_TRIES, gradeOX, missionEnd, missionWay, type ChapterTest, type OX, type TestResult } from '@/engine/simulator/cell/courseTests';
+import { buttonName, panelText, testText } from '@/engine/simulator/cell/courseText';
 import { levelOf } from '@/engine/simulator/cell/platform';
 
 import PlayText from '../PlayText';
@@ -22,69 +22,97 @@ import css from './courseStep.module.css';
 
 interface Props {
   test: ChapterTest;
+  /** Its number and name as the 위치 줄 has them ('3-5', '중간 수행평가'), and '범위 1~3장'. */
+  number: string;
+  name: string;
+  range: string;
+  /** The course has its O · X (8차시); not: the mission only (4차시). */
+  ox: boolean;
+  /** The mission only: the 절 it is judged by ('5-3'). */
+  judgedBy?: string;
   result?: TestResult;
   onGraded(chosen: OX[], right: number): void;
   /** [다음 단계 →] (none: the course's end is elsewhere). */
   onNext?: () => void;
   /** A mission done in the scene: start it. */
   onMission?: () => void;
-  /** 5장: the card mission judged from 5-5 (실물, the teacher's check) or 5-4 (시뮬레이션). */
+  /** 5장: the card mission judged from 5-5 (실물, the teacher's check) or 5-4 (시뮬레이션); the mission only: from `judgedBy`. */
   onCard?: () => void;
 }
 
-export default function CourseTestPanel({ test, result, onGraded, onNext, onMission, onCard }: Props) {
-  const [chosen, setChosen] = useState<(OX | null)[]>(() => result?.chosen ?? [null, null, null, null, null]);
-  const graded = result?.right != null;
+export default function CourseTestPanel({ test, number, name, range, ox, judgedBy, result, onGraded, onNext, onMission, onCard }: Props) {
+  const [chosen, setChosen] = useState<(OX | null)[]>(() => (result?.chosen?.length === 5 ? result.chosen : [null, null, null, null, null]));
+  const graded = !ox || result?.right != null;
   const all = chosen.every((c) => c !== null);
+  const level = () => panelText('level', { level: levelOf({ chapter: test.chapter, right: result?.right ?? 0, of: 5, mission: !!result?.mission }).level });
+  const only = !ox && judgedBy ? testText(test.chapter).missionOnly?.replace('{sub}', judgedBy) : undefined;
   return (
-    <div className={css.scrim} role="dialog" aria-label={`${test.chapter}장 수행평가`}>
+    <div className={css.scrim} role="dialog" aria-label={name}>
       <div className={css.test}>
-        {/* Its number (the chapter's last) beside its name (수정 지시서 v3 파트 8-2). */}
+        {/* Its number (its chapter's last) beside its name (수정 지시서 v3 파트 8-2), and the chapters it covers. */}
         <h2>
-          {COURSE.find((c) => c.n === test.chapter)?.test} {test.chapter}장 수행평가
+          {number} {name}
+          {range && <small>{range}</small>}
         </h2>
-        <p>교안의 문제를 읽고 번호마다 O 또는 X를 눌러요.</p>
-        <ol className={css.ox}>
-          {test.answers.map((ans, i) => (
-            <li key={i}>
-              <b>{i + 1}번</b>
-              {(['O', 'X'] as const).map((v) => (
-                <button key={v} type="button" aria-pressed={chosen[i] === v} disabled={graded} onClick={() => setChosen((c) => c.map((x, k) => (k === i ? v : x)))}>
-                  {v}
-                </button>
+        {ox ? (
+          <>
+            <p>{panelText('read')}</p>
+            <ol className={css.ox}>
+              {test.answers.map((ans, i) => (
+                <li key={i}>
+                  <b>{panelText('item', { n: i + 1 })}</b>
+                  {(['O', 'X'] as const).map((v) => (
+                    <button key={v} type="button" aria-pressed={chosen[i] === v} disabled={graded} onClick={() => setChosen((c) => c.map((x, k) => (k === i ? v : x)))}>
+                      {v}
+                    </button>
+                  ))}
+                  <em data-ok={(graded && chosen[i] === ans) || undefined} data-no={(graded && chosen[i] !== ans) || undefined}>
+                    {graded ? panelText(chosen[i] === ans ? 'right' : 'wrong') : ''}
+                  </em>
+                </li>
               ))}
-              <em data-ok={(graded && chosen[i] === ans) || undefined} data-no={(graded && chosen[i] !== ans) || undefined}>
-                {graded ? (chosen[i] === ans ? '맞음' : '틀림') : ''}
-              </em>
-            </li>
-          ))}
-        </ol>
+            </ol>
+          </>
+        ) : (
+          <p>{panelText('missionOnly')}</p>
+        )}
         {!graded ? (
           <div className={css.row}>
-            <output>{all ? '' : `${chosen.filter((c) => c !== null).length} / 5 골랐어요`}</output>
+            <output>{all ? '' : panelText('picked', { n: chosen.filter((c) => c !== null).length })}</output>
             <button type="button" className={css.key} data-lit={all || undefined} disabled={!all} onClick={() => onGraded(chosen as OX[], gradeOX(test, chosen))}>
-              확인
+              {panelText('confirm')}
             </button>
           </div>
         ) : (
           <>
-            <div className={css.row} style={{ marginBottom: 18 }}>
-              <output>O · X 5문항 중 {result?.right}개 맞혔어요</output>
-            </div>
+            {ox && (
+              <div className={css.row} style={{ marginBottom: 18 }}>
+                <output>{panelText('score', { n: result?.right ?? 0 })}</output>
+              </div>
+            )}
             <p className={css.soon}>
-              미션: <PlayText text={test.mission.text} size={15} />
+              {panelText('mission')}: <PlayText text={only ?? test.mission.text} size={15} />
             </p>
             {test.mission.card && (
               <div className={css.row} style={{ marginBottom: 18 }}>
                 {result?.mission ? (
                   <output>
-                    미션 통과 ({result.missionBy === 'real' ? '실물' : '시뮬레이션'}) · 상 · 중 · 하 (임시): {levelOf({ chapter: test.chapter, right: result.right ?? 0, of: 5, mission: true }).level}
+                    {panelText('cardPassed', { by: panelText(result.missionBy === 'real' ? 'byReal' : 'bySim') })}
+                    {ox && ` · ${level()}`}
                   </output>
                 ) : (
                   <>
-                    <output>{result?.mission === false ? `미션 아직 · ${test.mission.failText} · 5-4를 통과하거나 5-5에서 확인을 받아요` : '5-5 실물 확인이나 5-4 통과로 판정해요'}</output>
+                    <output>
+                      {only
+                        ? result?.mission === false
+                          ? panelText('cardNotYetOnly', { fail: test.mission.failText ?? '', sub: judgedBy ?? '' })
+                          : panelText('cardHintOnly', { sub: judgedBy ?? '' })
+                        : result?.mission === false
+                          ? panelText('cardNotYet', { fail: test.mission.failText ?? '' })
+                          : panelText('cardHint')}
+                    </output>
                     <button type="button" className={css.key} data-lit onClick={onCard}>
-                      카드 확인
+                      {panelText('cardCheck')}
                     </button>
                   </>
                 )}
@@ -94,23 +122,22 @@ export default function CourseTestPanel({ test, result, onGraded, onNext, onMiss
               <div className={css.row} style={{ marginBottom: 18 }}>
                 {result?.mission == null ? (
                   <>
-                    <output>장면에서 해요 · 끝나면 이 카드로 돌아와요</output>
+                    <output>{panelText('sceneHint')}</output>
                     <button type="button" className={css.key} data-lit onClick={onMission}>
-                      미션 시작
+                      {panelText('missionStart')}
                     </button>
                   </>
-                ) : !missionWay(result) ? (
+                ) : !missionEnd(result) ? (
                   <>
-                    <output>
-                      미션 아직 · {test.mission.failText ?? '다시 해 봐요'} · 다시 하기 {MISSION_TRIES - (result.missionTries ?? 1)}번 남았어요
-                    </output>
+                    <output>{panelText('again', { fail: test.mission.failText ?? panelText('againPlain'), n: MISSION_TRIES - (result.missionTries ?? 1) })}</output>
                     <button type="button" className={css.key} data-lit onClick={onMission}>
-                      다시 하기
+                      {panelText('retry')}
                     </button>
                   </>
                 ) : (
                   <output>
-                    미션 {missionWay(result)} · 상 · 중 · 하 (임시): {levelOf({ chapter: test.chapter, right: result.right ?? 0, of: 5, mission: !!result.mission }).level}
+                    {panelText('missionEnd', { way: missionWay(result) ?? '' })}
+                    {ox && ` · ${level()}`}
                   </output>
                 )}
               </div>
@@ -122,7 +149,7 @@ export default function CourseTestPanel({ test, result, onGraded, onNext, onMiss
                     <AssetSlot key={k} slot={{ id: `test${test.chapter}-photo${k + 1}`, label: `사진 ${k + 1}`, at: [0, 0, 0], w: 220, h: 140 }} />
                   ))}
                 </div>
-                <p className={css.soon}>미션 사진은 준비 중이에요. 준비되면 이 자리에서 고를 수 있어요.</p>
+                <p className={css.soon}>{panelText('photosSoon')}</p>
               </>
             )}
             {onNext && (

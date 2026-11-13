@@ -12917,3 +12917,129 @@ div.zeroFlow {
   font-size: 14px;
   white-space: nowrap;
 }
+
+/* 입문 과정 (수정 지시서 v4 파트 2-3 · 2-6): the top line reads from the left (로고 → 목록 → 절 번호 → 절 이름 →
+   차시), and the top line and 지금 할 일 start and end on the same lines (24 px from each side). */
+.topBar[data-course] {
+  padding-left: 24px;
+  padding-right: 24px;
+}
+.topBar[data-course] .context {
+  justify-content: flex-start;
+}
+.topBar[data-course] .product b {
+  margin-top: 0;
+}
+
+/* 입문 과정 (수정 지시서 v4 파트 4-1): [정지] a whole row at the foot of the 조작판, [기본 자세] · [영점 자세] in the
+   row above it — the same place in every 절. */
+.app[data-course] .side .poseDock {
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding-top: 8px;
+}
+.app[data-course] .side .poseDock .poseStop {
+  grid-column: 1 / -1;
+  height: 48px;
+  font-size: 18px;
+}
+/* (The room under [정지] goes to the rows above it.) */
+.app[data-course] .side .dockScroll {
+  padding-bottom: 2px;
+}
+.app[data-course] .side:has(.poseDock) {
+  padding-bottom: 8px;
+}
+/* (768 px high and lower: the panel's head and its blocks set closer — the same room the second fixed row took.) */
+@media (max-height: 820px) {
+  .app[data-course] .side:has(.poseDock) {
+    gap: 4px;
+  }
+  .app[data-course] .side:has(.poseDock) .sideHeader {
+    padding-top: 6px;
+    padding-bottom: 4px;
+  }
+  .app[data-course] .side:has(.poseDock) .screen {
+    gap: 6px;
+  }
+}
+/* 대응표 */
+:where(html[data-vq~='18']) .app[data-course] .side:has(.poseDock) {
+  gap: 4px;
+}
+/* 대응표 */
+:where(html[data-vq~='18']) .app[data-course] .side:has(.poseDock) .sideHeader {
+  padding-top: 6px;
+  padding-bottom: 4px;
+}
+/* 대응표 */
+:where(html[data-vq~='18']) .app[data-course] .side:has(.poseDock) .screen {
+  gap: 6px;
+}
+/* (A low window — 720 px: the two fixed rows set closer, so the six joint rows stay clear of them, 3-4's too.) */
+@media (max-height: 740px) {
+  .app[data-course] .side .dockScroll {
+    gap: 6px;
+  }
+  .app[data-course] .side .poseDock {
+    padding-top: 4px;
+  }
+  .app[data-course] .side .poseDock .poseStop {
+    height: 44px;
+  }
+}
+/* 대응표 */
+:where(html[data-vq~='19']) .app[data-course] .side .dockScroll {
+  gap: 6px;
+}
+/* 대응표 */
+:where(html[data-vq~='19']) .app[data-course] .side .poseDock {
+  padding-top: 4px;
+}
+/* 대응표 */
+:where(html[data-vq~='19']) .app[data-course] .side .poseDock .poseStop {
+  height: 44px;
+}
+
+/* 입문 과정 (수정 지시서 v4 파트 4-2): the ways to look as words in a row at the scene's top right — 앞 · 옆 · 위 · 처음 시점. */
+.app[data-course] .viewTools {
+  align-items: flex-end;
+}
+.viewWords {
+  display: flex;
+  gap: 8px;
+}
+.viewWords button {
+  height: 40px;
+  min-width: 48px;
+  padding: 0 16px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  background: rgba(24, 28, 35, 0.9);
+  color: #f6f7f9;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.viewWords button:hover {
+  background: rgba(48, 52, 60, 0.95);
+}
+/* (2-2: its own three keys sit at the panel's foot, where the fixed rows of every other 절 are.) */
+.app[data-course] .side .screen:has([data-foot]) {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 입문 과정 5-5 (수정 지시서 v4 파트 6-5): why [로봇 실행] is locked — one line under the run keys. */
+.runWhy {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0 4px;
+  font-size: 16px;
+  color: #c9ced5;
+}
