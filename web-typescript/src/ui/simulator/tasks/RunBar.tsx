@@ -149,7 +149,7 @@ export default function RunBar(p: Props) {
           <b aria-hidden="true">→</b>
         </button>
       )}
-      {p.more && (
+      {p.more && p.more.length > 0 && (
         <button type="button" className={css.runMore} aria-expanded={open} aria-label="더 보기" title="코드 받기 · 자유 연습" onClick={() => setOpen((o) => !o)}>
           <Icon name="dots" size={20} />
         </button>

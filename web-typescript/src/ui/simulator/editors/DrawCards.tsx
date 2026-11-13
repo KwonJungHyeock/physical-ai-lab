@@ -44,7 +44,9 @@ interface Props {
   /** Under the quest card in one scrolling panel: the cards take their own height (no inner scroll). */
   flow?: boolean;
   /** The cards as they stand now (입문 과정 5-2: which of its steps is done). */
-  onRecipe?: (r: DrawRecipe) => void;
+  onRecipe?: (r: DrawRecipe, mission: string | null) => void;
+  /** The cards to come back with (입문 과정: the panel was folded while a run played) instead of the step's start. */
+  keep?: DrawRecipe;
 }
 
 /** A number box that only takes what it may (whole mm), written as it is typed. */
@@ -57,14 +59,14 @@ function Num({ value, min, max, busy, label, onChange }: { value: number; min: n
   );
 }
 
-export default function DrawCards({ mission, busy, runningLine, onCode, glow, glowAdd, flow, onRecipe }: Props) {
+export default function DrawCards({ mission, busy, runningLine, onCode, glow, glowAdd, flow, onRecipe, keep }: Props) {
   const start = (m: string | null) => copy(G_START[m ?? ''] ?? { cards: [], times: 1 });
-  const [recipe, setRecipe] = useState<DrawRecipe>(() => start(mission));
+  const [recipe, setRecipe] = useState<DrawRecipe>(() => (keep ? copy(keep) : start(mission)));
   const [open, setOpen] = useState(false);
   // The cards opened (▾): the quest's cards to change start open, so their boxes and switches are in sight.
   const [shown, setShown] = useState<ReadonlySet<number>>(() => new Set((glow ?? []).map((n) => n - 1)));
   const made = useMemo(() => drawCode(recipe), [recipe]);
-  useEffect(() => onRecipe?.(recipe), [recipe, onRecipe]);
+  useEffect(() => onRecipe?.(recipe, mission), [recipe, onRecipe, mission]);
   useEffect(
     () =>
       onCode(made.code, (line) => {
@@ -134,7 +136,7 @@ export default function DrawCards({ mission, busy, runningLine, onCode, glow, gl
   const head = (
     <div className={css.head}>
       <span className={css.order} aria-label="주문">
-        <em>ORDER</em>
+        <em>{onRecipe ? '주문' : 'ORDER'}</em>
         <b>
           손님 {customers}명 · &apos;{phrase?.k === 'write' ? phrase.phrase : '자유'}&apos;
         </b>

@@ -10,8 +10,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import { MODE_NAME, pagesText, type SubMode } from '@/engine/simulator/cell/course';
+import { MODE_NAME, pagesText, shortTitle, type SubMode } from '@/engine/simulator/cell/course';
 
+import Icon from '../Icon';
 import css from './locationBar.module.css';
 
 export interface LocStep {
@@ -19,7 +20,8 @@ export interface LocStep {
   /** '3-4': the 교안's 장 · 절 number. */
   label: string;
   title: string;
-  pages: readonly [number, number];
+  /** null: no 교안 쪽 yet — left out of the line. */
+  pages: readonly [number, number] | null;
   state: 'done' | 'now' | 'todo';
   /** Not in the app yet (만드는 중): listed, not opened. */
   soon?: boolean;
@@ -86,11 +88,9 @@ export default function LocationBar({
       <button type="button" className={css.bar} aria-expanded={open} aria-haspopup="true" onClick={() => setOpen((o) => !o)} title="차시 · 단계 목록: 눌러서 원하는 단계로 가요">
         {/* The 장 · 절 number biggest and brightest; the 차시 and the 교안 pages beside it as one piece. */}
         <b>{step.label}</b>
-        <span>{step.title}</span>
-        <small>
-          {lesson ? `${lesson}차시 · ` : ''}
-          {pagesText(step.pages)}
-        </small>
+        {/* The name up to its colon (the whole name: the list and the printed sheet). */}
+        <span title={step.title}>{shortTitle(step.title)}</span>
+        {(lesson > 0 || step.pages) && <small>{[lesson ? `${lesson}차시` : '', pagesText(step.pages)].filter(Boolean).join(' · ')}</small>}
         <i aria-hidden="true">목록 {open ? '▴' : '▾'}</i>
       </button>
       {kinds && kinds.has.length > 0 && (
@@ -104,7 +104,8 @@ export default function LocationBar({
       )}
       {kinds?.onReplay && (
         <button type="button" className={css.replay} disabled={kinds.busy} onClick={kinds.onReplay}>
-          ▶ 다시 보기
+          <Icon name="play" size={16} />
+          다시 보기
         </button>
       )}
       {note && <output className={css.note}>{note}</output>}
@@ -130,7 +131,7 @@ export default function LocationBar({
                   <span>
                     {s.label} {s.title}
                   </span>
-                  <small>{pagesText(s.pages)}</small>
+                  {s.pages && <small>{pagesText(s.pages)}</small>}
                 </button>
               ))}
               {l.checks && onChecks && (

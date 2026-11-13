@@ -8,6 +8,10 @@
   background: rgba(255, 255, 255, 0.04);
 }
 .panel .run {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   height: 52px;
   border: 0;
   border-radius: 12px;
@@ -197,8 +201,12 @@
   font-weight: 800;
   cursor: pointer;
 }
-.key:disabled {
-  opacity: 0.4;
+/* Locked (O · X not all chosen): its word stays readable — a quiet face, not a faded one. */
+.key.key:disabled {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+  color: #c9ced5;
   cursor: default;
 }
 .key[data-lit] {
@@ -293,15 +301,18 @@
 .poses button {
   height: 56px;
   font-size: 17px;
+  white-space: nowrap;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   padding: 0 8px;
 }
+/* 정지: the one that stands out (filled red, as in the fixed row under the 조작판). */
 .poses .stop {
-  border-color: rgba(239, 68, 68, 0.6);
-  color: #fca5a5;
+  border-color: #d32f2a;
+  background: #d32f2a;
+  color: #fff;
 }
 .poses kbd {
   font-size: 12px;
@@ -334,23 +345,29 @@
   font-weight: 800;
 }
 /* 3-5: the two moves' times. */
+/* 3-5: the two times side by side, each on one line with its speed (the six joint rows under it stay clear of the fixed row at 1366 × 768). */
 .times {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 6px 16px;
-  padding: 12px 14px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 16px;
+  padding: 8px 14px;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.06);
   color: #f6f7f9;
   font-size: 16px;
 }
-.times b {
-  flex-basis: 100%;
+.times > b {
+  grid-column: 1 / -1;
   font-size: 16px;
 }
 .times > .measure {
-  flex: 1 1 140px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.panel:has(> .times:only-child) {
+  padding: 0;
+  background: none;
 }
 /* 3장 미션: [확인]. */
 .confirm {
@@ -450,9 +467,11 @@
   align-items: center;
   gap: 8px;
 }
+/* The one chosen: white, as 장면 보기 · 실습 하기 (green is for done · right only). */
 .countRow button[aria-pressed='true'] {
-  border-color: #22c55e;
-  background: rgba(34, 197, 94, 0.18);
+  border-color: #f6f7f9;
+  background: #f6f7f9;
+  color: #14171c;
 }
 /* 4장: what the runs measured. */
 .results {

@@ -96,9 +96,11 @@ interface TimelineProps {
   onClose(): void;
   /** Start playing at once (from the result card's [다시 보기]). */
   autoplay?: number;
+  /** 입문 과정: the 절's number — the head's line then reads '5-1 · 건네기 · 102 / 102' (the 절, the card's name, how far). */
+  head?: string;
 }
 
-export function RunTimeline({ replay, lineLabel, onSeek, onClose, autoplay }: TimelineProps) {
+export function RunTimeline({ replay, lineLabel, onSeek, onClose, autoplay, head }: TimelineProps) {
   const { frames, marks, duration } = replay;
   const [t, setT] = useState(duration);
   const [playing, setPlaying] = useState(false);
@@ -185,10 +187,14 @@ export function RunTimeline({ replay, lineLabel, onSeek, onClose, autoplay }: Ti
           <span key={`${m.line}-${i}`} className={css.tlMark} data-past={m.t <= t || undefined} style={{ left: pct(m.t) }} title={`${m.line}번째 줄 · ${lineLabel(m.line)}`} />
         ))}
         <span className={css.tlHead} style={{ left: pct(t) }}>
-          {nowLine > 0 && (
-            <em>
-              {step + 1}/{marks.length} · {lineLabel(nowLine)}
-            </em>
+          {head ? (
+            <em>{[head, nowLine > 0 ? lineLabel(nowLine).split(' · ')[0] : '', `${step + 1} / ${marks.length}`].filter(Boolean).join(' · ')}</em>
+          ) : (
+            nowLine > 0 && (
+              <em>
+                {step + 1}/{marks.length} · {lineLabel(nowLine)}
+              </em>
+            )
           )}
         </span>
       </div>

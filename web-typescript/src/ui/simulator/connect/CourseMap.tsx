@@ -69,9 +69,7 @@ export default function CourseMap({ plan, now, done, onPick, onClose }: Props) {
                           {s.title}
                           {s.optional && <u>선택</u>}
                         </b>
-                        <small>
-                          {lessonIn(plan, s.id)}차시 · {pagesText(s.pages)}
-                        </small>
+                        <small>{[`${lessonIn(plan, s.id)}차시`, pagesText(s.pages)].filter(Boolean).join(' · ')}</small>
                       </span>
                       <span className={css.kinds}>
                         {kindsOf(s).map((m) => (
@@ -120,7 +118,13 @@ export default function CourseMap({ plan, now, done, onPick, onClose }: Props) {
 /** An address named a 절 that does not open: what it is, and the way to the list. */
 export function CourseMissing({ id, onList }: { id: string; onList(): void }) {
   const s = subById(id);
-  const say = !s ? `${id}라는 절은 없어요.` : s.status === 'unused' ? `${id}${topicMark(id)} 이번 과정에서 쓰지 않는 절이에요.` : `${id}${topicMark(id)} 아직 만드는 중이에요.`;
+  const say = !s
+    ? `${id}라는 절은 없어요.`
+    : s.status === 'end'
+      ? `${id}${topicMark(id)} 과정을 마치면 열려요.`
+      : s.status === 'unused'
+        ? `${id}${topicMark(id)} 이번 과정에서 쓰지 않는 절이에요.`
+        : `${id}${topicMark(id)} 아직 만드는 중이에요.`;
   return (
     <div className={css.scrim} role="alertdialog" aria-modal="true" aria-label="열 수 없는 절">
       <div className={`${css.map} ${css.missing}`}>

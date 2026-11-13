@@ -55,11 +55,8 @@ interface Props {
   onClose(): void;
 }
 
-const PAGES = [
-  { id: '6-1', title: '결과 확인' },
-  { id: '6-2', title: '수업 후기' },
-  { id: '6-3', title: '학습 기록 한 장' },
-] as const;
+// 6장's three pages: their names from the table (mycobot-280-1.json), as every 절's.
+const PAGES = (['6-1', '6-2', '6-3'] as const).map((id) => ({ id, title: subById(id)?.title ?? id }));
 
 const esc = (t: string) => t.replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch] ?? ch);
 
@@ -198,7 +195,7 @@ export default function CourseEnd(p: Props) {
           {PAGES.map((x, i) => (
             <span key={x.id} data-on={i === page || undefined} data-done={i < page || undefined}>
               {x.id} {x.title}
-              {subById(x.id) && <small> · {pagesText(subById(x.id)!.pages)}</small>}
+              {subById(x.id)?.pages && <small> · {pagesText(subById(x.id)!.pages)}</small>}
             </span>
           ))}
           <button type="button" className={css.close} onClick={p.onClose} aria-label="닫기">
@@ -207,7 +204,9 @@ export default function CourseEnd(p: Props) {
         </nav>
         {page === 0 && (
           <section>
-            <h2>6-1 결과 확인</h2>
+            <h2>
+              {PAGES[0].id} {PAGES[0].title}
+            </h2>
             <p className={css.lead}>
               {p.title} · {p.plan}
             </p>
@@ -216,7 +215,9 @@ export default function CourseEnd(p: Props) {
         )}
         {page === 1 && (
           <section>
-            <h2>6-2 수업 후기</h2>
+            <h2>
+              {PAGES[1].id} {PAGES[1].title}
+            </h2>
             <p className={css.lead}>① · ②는 꼭 골라요. 쓴 글은 이 컴퓨터의 브라우저에만 남아요.</p>
             <div className={css.field}>
               <span>
@@ -250,7 +251,9 @@ export default function CourseEnd(p: Props) {
         )}
         {page === 2 && (
           <section>
-            <h2>6-3 학습 기록 한 장</h2>
+            <h2>
+              {PAGES[2].id} {PAGES[2].title}
+            </h2>
             <p className={css.lead}>이름 · 반은 이 한 장에만 들어가요. 어디에도 남기거나 보내지 않아요.</p>
             <div className={css.who}>
               <label>

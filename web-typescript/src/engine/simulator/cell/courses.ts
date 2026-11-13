@@ -11,7 +11,7 @@
 
 import TABLE from '../../../../public/course/mycobot-280-1.json';
 
-import { COURSE, COURSE_SUBS, type CourseChapter, type CourseSub } from './course';
+import { COURSE, COURSE_SUBS, unlisted, type CourseChapter, type CourseSub } from './course';
 
 export interface CoursePlan {
   /** 'full8', 'focus4', or the platform's own ('class'). */
@@ -26,7 +26,7 @@ export interface CoursePlan {
 }
 
 /** A 절 the course may list: in the table, and not 사용 안 함. */
-const listable = (id: string) => COURSE_SUBS.some((s) => s.id === id && s.status !== 'unused');
+const listable = (id: string) => COURSE_SUBS.some((s) => s.id === id && !unlisted(s));
 
 /** A plan from lessons of 절 numbers (the table's or the platform's): unknown and 사용 안 함 절 dropped, empty 차시 too. */
 export function planOf(p: { id: string; title?: string; short?: string; lessons: readonly (readonly string[])[]; tests?: boolean }): CoursePlan {

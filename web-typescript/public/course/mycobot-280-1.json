@@ -6,7 +6,8 @@
     "status": {
       "open": "열림",
       "soon": "만드는 중",
-      "unused": "사용 안 함"
+      "unused": "사용 안 함",
+      "end": "과정 끝에 열림 (차시 목록에 넣지 않는다. 마지막 절 뒤 6장 화면에서 차례로 열린다)"
     },
     "kind": {
       "open": "있음",
@@ -54,7 +55,7 @@
     {
       "n": 6,
       "title": "마무리: 학습 기록과 수업 후기",
-      "unused": true
+      "end": true
     }
   ],
   "sections": [
@@ -303,31 +304,31 @@
     {
       "id": "6-1",
       "chapter": 6,
-      "title": "챕터별 평가 결과 확인",
+      "title": "결과 확인",
       "pages": [76, 76],
-      "status": "unused",
+      "status": "end",
       "scene": "none",
       "practice": "none",
-      "note": "5장 마지막 절 뒤 학습 기록 화면으로"
+      "note": "8차시: 5장 수행평가 뒤 · 4차시: 5-3 뒤에 열린다"
     },
     {
       "id": "6-2",
       "chapter": 6,
-      "title": "수업 후기 쓰기",
+      "title": "수업 후기",
       "pages": [77, 78],
-      "status": "unused",
+      "status": "end",
       "scene": "none",
       "practice": "none"
     },
     {
       "id": "6-3",
       "chapter": 6,
-      "title": "학습 기록 PDF로 저장하기",
+      "title": "학습 기록 한 장",
       "pages": [79, 79],
-      "status": "unused",
+      "status": "end",
       "scene": "none",
       "practice": "none",
-      "note": "학습 기록 화면에 있음"
+      "note": "인쇄 · PDF로 저장"
     }
   ],
   "courses": [

@@ -9,6 +9,7 @@
  */
 
 import type { CourseStepId } from '@/engine/simulator/cell/courseSteps';
+import { failLine } from '@/engine/simulator/cell/courseText';
 
 import Icon from '../Icon';
 import { AssetSlot } from '../stage/CourseMarks';
@@ -59,6 +60,20 @@ interface Props {
   real?: { connected: boolean; onConnect(): void; speed: number; onSpeed(v: number): void; ran: boolean; checked: boolean; onTeacher(): void };
 }
 
+/** 판정 줄 (수정 지시서 v2 파트 B-1): what a run read, ✓ · ✗ a line each — 5-1 · 5-2 · 5-3 show it in the panel as 4-3 · 5-4 do. */
+export function VerdictLines({ checks }: { checks: readonly { label: string; ok: boolean; detail?: string }[] }) {
+  return (
+    <ul className={css.results} aria-label="판정">
+      {checks.map((c, i) => (
+        <li key={i}>
+          {c.ok ? '✓' : '✗'} {c.label}
+          {c.detail ? ` · ${c.detail}` : ''}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export default function CourseStepPanel({ id, busy, onRun, hand, range, tool, pen, poses, kit, confirm, times, linear, vertices, circle, results, board, real }: Props) {
   return (
     <div className={css.panel} role="group" aria-label={id ? `${id} 조작` : '미션 조작'}>
@@ -68,7 +83,7 @@ export default function CourseStepPanel({ id, busy, onRun, hand, range, tool, pe
             {kit.parts.map((p, i) => (
               <button key={p.id} type="button" data-seen={kit.seen.includes(i) || undefined} aria-label={kit.seen.includes(i) ? p.name : `구성품 ${i + 1}`} onClick={() => kit.onSee(i)}>
                 <AssetSlot slot={{ id: p.id, label: p.name, at: [0, 0, 0], w: 132, h: 84 }} />
-                <span>{kit.seen.includes(i) ? p.name : '?'}</span>
+                <span>{kit.seen.includes(i) ? p.name : '\u00a0'}</span>
               </button>
             ))}
           </div>
@@ -235,7 +250,7 @@ export default function CourseStepPanel({ id, busy, onRun, hand, range, tool, pe
           <label className={css.realSpeed}>
             <span>
               실물 속도 <b>{real.speed}%</b>
-              {real.speed > 30 && <em>30% 이하로 내려야 보낼 수 있어요</em>}
+              {real.speed > 30 && <em>{failLine('5-5', 'tooFast')}</em>}
             </span>
             <input type="range" min={10} max={100} step={5} value={real.speed} disabled={busy} aria-label="실물 속도" onChange={(e) => real.onSpeed(Number(e.target.value))} />
           </label>
@@ -251,7 +266,8 @@ export default function CourseStepPanel({ id, busy, onRun, hand, range, tool, pe
       )}
       {onRun && (
         <button type="button" className={css.run} data-step="run" disabled={busy} onClick={onRun}>
-          ▶ 시뮬레이션
+          <Icon name="play" size={18} />
+          시뮬레이션
         </button>
       )}
       {results && results.length > 0 && (

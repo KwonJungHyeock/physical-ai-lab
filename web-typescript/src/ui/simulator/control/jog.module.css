@@ -1701,3 +1701,51 @@
     min-height: 54px;
   }
 }
+
+/* 입문 과정 (수정 지시서 v2 파트 A-3 · D-6): on a 768 px-high screen the six rows end above the fixed row
+   (기본 자세 · 일자로 펴기 · 정지) in every 절, 3-5 with its times included; the keys stay 40 px or more. */
+@media (max-height: 820px) {
+  [data-course] :global(.life-shell) .rows {
+    gap: 4px;
+  }
+  [data-course] :global(.life-shell) .row {
+    min-height: 44px;
+  }
+  [data-course] :global(.life-shell) .head b {
+    line-height: 20px;
+  }
+  [data-course] :global(.life-shell) .bar {
+    height: 16px;
+  }
+  [data-course] :global(.life-shell) .track {
+    top: 5px;
+  }
+  [data-course] :global(.life-shell) .key svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+/* 입문 과정 (수정 지시서 v2 파트 D-5 · D-6): the 관절 · 좌표 tabs' words 15 px, and the keys that are pressed 40 px or
+   more (이동 단위, 손 방향, 손 아래로). The 이동 단위 box gives up its own padding for it, so the rows keep their place. */
+[data-course] :global(.life-shell) .jog .modes button {
+  min-height: 40px;
+}
+[data-course] :global(.life-shell) .jog .modes button b {
+  font-size: 15px;
+}
+[data-course] :global(.life-shell) .opts {
+  padding-top: 6px;
+  padding-bottom: 8px;
+}
+[data-course] :global(.life-shell) .jog .chips button {
+  min-width: 40px;
+  min-height: 40px;
+}
+[data-course] :global(.life-shell) .turn > button {
+  height: 40px;
+}
+[data-course] :global(.life-shell) .jog .toolDown {
+  min-height: 40px;
+}
+

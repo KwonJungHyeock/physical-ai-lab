@@ -9442,3 +9442,81 @@ div.zeroFlow {
 .topBar[data-course] .trackBadge {
   font-size: 14px;
 }
+
+/* ===========================================================================
+ * 입문 과정 (수정 지시서 v2 파트 C · D): under [data-course] only — the full version keeps its own.
+ * The colours that mean something are five: orange (the place to press now), green (done · right),
+ * red (a limit · an error · wrong · 정지), blue (the line drawn), white (the line compared).
+ * ======================================================================== */
+/* C-2 과정 배지: a plain outline (green is for done · right). */
+.topBar[data-course] .trackBadge {
+  background: transparent !important;
+  border-color: rgba(255, 255, 255, 0.45);
+}
+/* C-1 다시 보기 줄: its play key and its line in white and grey (red is for a limit · an error · 정지). */
+.app[data-course] .tlPlay {
+  width: 40px;
+  height: 40px;
+  background: #f6f7f9;
+  color: #14171c;
+  box-shadow: none;
+}
+.app[data-course] .tlDone {
+  background: #f6f7f9;
+  box-shadow: none;
+}
+.app[data-course] .tlMark[data-past] {
+  background: #c9ced5;
+  border-color: #f6f7f9;
+}
+.app[data-course] .tlHead em {
+  padding: 2px 8px;
+  background: #f6f7f9;
+  color: #14171c;
+  font-size: 13px;
+}
+/* D-2 보기 도구: 처음 시점 only, 40 px; 4-2's 표시 옵션 with its name beside the picture. */
+.app[data-course] .viewRail {
+  align-items: flex-end;
+}
+.app[data-course] .viewRail button {
+  width: 40px;
+  height: 40px;
+}
+.app[data-course] .viewRail button[data-named] {
+  width: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px 0 10px;
+  color: #f6f7f9;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.app[data-course] .viewRail .displayCount {
+  background: #f6f7f9;
+}
+/* D-4 조작판 아래 고정 줄: the words 15 px, the keys 40 px, 정지 the one that stands out (filled red). */
+.app[data-course] .side .poseDock button {
+  height: 40px;
+  font-size: 15px;
+  white-space: nowrap;
+}
+.app[data-course] .side .poseDock .poseStop {
+  background: #d32f2a;
+  border-color: #d32f2a;
+  color: #fff;
+  font-weight: 800;
+  box-shadow: var(--hud-key-shadow);
+}
+.app[data-course] .side .poseDock .poseStop:hover:not(:disabled) {
+  background: #d32f2a;
+  filter: brightness(1.1);
+}
+.app[data-course] .poseStop kbd {
+  background: rgba(0, 0, 0, 0.28);
+  color: #fff;
+}
+

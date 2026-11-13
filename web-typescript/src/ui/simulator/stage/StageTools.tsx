@@ -25,7 +25,8 @@ const DISPLAY_ITEMS: { key: keyof DisplayOpts; label: string; note: string; swat
 ];
 
 /** The 표시 menu: which drawing aids the 3D view shows. */
-function DisplayMenu({ display, onDisplay }: { display: DisplayOpts; onDisplay(d: DisplayOpts): void }) {
+/** `named`: its name beside the picture (입문 과정 4-2, where it is the step's place to press). */
+function DisplayMenu({ display, onDisplay, named }: { display: DisplayOpts; onDisplay(d: DisplayOpts): void; named?: boolean }) {
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLSpanElement>(null);
   useEffect(() => {
@@ -46,8 +47,9 @@ function DisplayMenu({ display, onDisplay }: { display: DisplayOpts; onDisplay(d
   const on = DISPLAY_ITEMS.filter((i) => display[i.key]).length;
   return (
     <span className={css.displayWrap} ref={box}>
-      <button type="button" aria-expanded={open} aria-haspopup="true" aria-label="표시 옵션" title={`표시 옵션: 좌표축·관절축·궤적 등 (${on}개 켜짐)`} onClick={() => setOpen((o) => !o)}>
+      <button type="button" aria-expanded={open} aria-haspopup="true" aria-label="표시 옵션" data-named={named || undefined} title={`표시 옵션: 좌표축·관절축·궤적 등 (${on}개 켜짐)`} onClick={() => setOpen((o) => !o)}>
         <ToolGlyph d={GLYPH.layers} />
+        {named && <span>표시 옵션</span>}
         {on > 0 && <i className={css.displayCount} aria-hidden="true" />}
       </button>
       {open && (
@@ -195,7 +197,7 @@ export function ViewTools({
           <button type="button" title="처음 시점" aria-label="처음 시점" onClick={() => api()?.view('home')}>
             <ToolGlyph d={GLYPH.home} />
           </button>
-          {liteDisplay && <DisplayMenu display={display} onDisplay={onDisplay} />}
+          {liteDisplay && <DisplayMenu display={display} onDisplay={onDisplay} named />}
         </div>
       </div>
     );

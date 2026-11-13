@@ -14,6 +14,7 @@ import { useState } from 'react';
 import { MISSION_TRIES, gradeOX, missionWay, type ChapterTest, type OX, type TestResult } from '@/engine/simulator/cell/courseTests';
 import { levelOf } from '@/engine/simulator/cell/platform';
 
+import PlayText from '../PlayText';
 import { AssetSlot } from '../stage/CourseMarks';
 import css from './courseStep.module.css';
 
@@ -65,7 +66,9 @@ export default function CourseTestPanel({ test, result, onGraded, onNext, onMiss
             <div className={css.row} style={{ marginBottom: 18 }}>
               <output>O · X 5문항 중 {result?.right}개 맞혔어요</output>
             </div>
-            <p className={css.soon}>미션: {test.mission.text}</p>
+            <p className={css.soon}>
+              미션: <PlayText text={test.mission.text} size={15} />
+            </p>
             {test.mission.card && (
               <div className={css.row} style={{ marginBottom: 18 }}>
                 {result?.mission ? (

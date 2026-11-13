@@ -15,6 +15,7 @@ import { createPortal } from 'react-dom';
 
 import type { LifeTutorial, TutCtx, TutTarget } from '@/engine/simulator/lifeTutorials';
 
+import PlayText from '../PlayText';
 import css from './nowBar.module.css';
 
 export interface NowNext {
@@ -37,7 +38,9 @@ export default function NowBar({ n, text, state = 'do', meter, next }: BarProps)
     <div className={css.now} data-state={state} role="status" aria-live="polite">
       <em>지금 할 일</em>
       {n ? <i className={css.n}>{n}</i> : state === 'ok' ? <i className={css.ok}>✓</i> : null}
-      <p>{text}</p>
+      <p>
+        <PlayText text={text} size={26} />
+      </p>
       {meter && (
         <span className={css.meter} aria-label={`${Math.min(meter.v, meter.of).toFixed(0)} / ${meter.of}${meter.unit}`}>
           <i>
@@ -126,7 +129,8 @@ export function NowMark({ find, n, onHit }: { find: () => HTMLElement | null; n:
 const asLead = (say: string) => say.replace(/눌러요$/, '눌러');
 
 /** 기초 조작 (입문 tutorial) as 지금 할 일: the step's sentence, its meter, its one place to press. */
-export function TutNow({ tut, step, start, read, next }: { tut: LifeTutorial; step: number; start: TutCtx; read(): TutCtx; next?: NowNext }) {
+/** `shorts` · `done`: the sentences and the line when done as the caller has them (입문 과정: its 문구 파일), in place of the tutorial's own. */
+export function TutNow({ tut, step, start, read, next, shorts, done }: { tut: LifeTutorial; step: number; start: TutCtx; read(): TutCtx; next?: NowNext; shorts?: readonly string[]; done?: string }) {
   const cur = tut.steps[step];
   const [now, setNow] = useState<TutCtx | null>(null);
   const readRef = useRef(read);
@@ -137,12 +141,13 @@ export function TutNow({ tut, step, start, read, next }: { tut: LifeTutorial; st
     const id = window.setInterval(() => setNow(readRef.current()), 250);
     return () => window.clearInterval(id);
   }, []);
-  if (!cur) return <NowBar state="ok" text={`다 했어요 · ${tut.concept.term}: ${tut.concept.def}`} next={next ? { ...next, lit: true } : undefined} />;
+  if (!cur) return <NowBar state="ok" text={done ?? `다 했어요 · ${tut.concept.term}: ${tut.concept.def}`} next={next ? { ...next, lit: true } : undefined} />;
+  const short = shorts?.[step] ?? cur.short;
   const targets = cur.lead && now ? cur.lead(now) : cur.target;
   // The first of the targets on screen is the one to press (a lead's others are where to go first).
   const pick = () => targets.map(findTarget).find(Boolean) ?? null;
   const say = targets.find((t) => t.say && findTarget(t))?.say;
-  const text = say ? `${asLead(say)} ${cur.short}` : cur.short;
+  const text = say ? `${asLead(say)} ${short}` : short;
   const m = cur.meter && now ? cur.meter(now, start) : null;
   return (
     <>
@@ -154,7 +159,8 @@ export function TutNow({ tut, step, start, read, next }: { tut: LifeTutorial; st
 
 /** A 현장 quest as 지금 할 일: its controls in turn (one at a time), then the run and the result. */
 /** `at`: the step reached as the caller reads it (입문 과정 5-2: from the cards' values), instead of moving on with each press. */
-export function QuestNow({ steps, sels, phase, passed, next, at: atNow }: { steps: readonly string[]; sels: readonly string[]; phase: 'do' | 'run' | 'result'; passed: boolean | null; next?: NowNext; at?: number }) {
+/** `done`: the line when it passed (입문 과정: '다 했어요 · …'), in place of '통과했어요'. */
+export function QuestNow({ steps, sels, phase, passed, next, at: atNow, done }: { steps: readonly string[]; sels: readonly string[]; phase: 'do' | 'run' | 'result'; passed: boolean | null; next?: NowNext; at?: number; done?: string }) {
   const [k, setK] = useState(0);
   // A new try starts from the first place again.
   const key = `${sels.join('|')}:${phase}`;
@@ -164,7 +170,7 @@ export function QuestNow({ steps, sels, phase, passed, next, at: atNow }: { step
     if (phase === 'do') setK(0);
   }
   if (phase === 'run') return <NowBar state="run" text="실행 중이에요 · 장면을 지켜봐요" next={next} />;
-  if (phase === 'result' && passed) return <NowBar state="ok" text="통과했어요" next={next ? { ...next, lit: true } : undefined} />;
+  if (phase === 'result' && passed) return <NowBar state="ok" text={done ?? '통과했어요'} next={next ? { ...next, lit: true } : undefined} />;
   const at = Math.min(atNow ?? k, Math.max(0, steps.length - 1));
   const text = phase === 'result' ? `아직이에요 · ${steps[at] ?? '다시 고쳐서 ▶ 시뮬레이션'}` : (steps[at] ?? '');
   const sel = sels[at];

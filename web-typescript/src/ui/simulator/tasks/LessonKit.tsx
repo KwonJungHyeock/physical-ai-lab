@@ -191,7 +191,7 @@ export interface CourseRecord {
   title: string;
   short: string;
   /** optional: a 선택 절 (the real robot) — never counted against 완료. */
-  lessons: { n: number; subs: { id: string; title: string; done: boolean; soon: boolean; optional?: boolean; pending?: boolean }[] }[];
+  lessons: { n: number; subs: { id: string; title: string; done: boolean; soon: boolean; optional?: boolean; pending?: boolean; /** A chapter's 수행평가: listed, not counted (완료 counts 절 only). */ test?: boolean }[] }[];
   /** 상 · 중 · 하 of the 수행평가 taken (임시: the browser's, until the platform's). None taken: none — never a 하. */
   levels: { chapter: number; level: string }[];
   /** 4차시: the mission of each 차시's last 절 is what is recorded. */
@@ -199,9 +199,9 @@ export interface CourseRecord {
   copyright: string;
 }
 
-/** 완료: the 절 that open and are not 선택, done / all. */
+/** 완료: the 절 of the course that open and are not 선택, done / all — the same count as the list's (수행평가 rows are not 절). */
 const courseTotals = (c: CourseRecord) => {
-  const all = c.lessons.flatMap((l) => l.subs.filter((x) => !x.soon && !x.optional));
+  const all = c.lessons.flatMap((l) => l.subs.filter((x) => !x.soon && !x.optional && !x.test));
   return { got: all.filter((x) => x.done).length, of: all.length };
 };
 /** '상 · 중 · 하 (임시) 3장 상 · …', or why there is none yet. */

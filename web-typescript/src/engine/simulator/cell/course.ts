@@ -20,7 +20,8 @@ export type SceneKind = 'A' | 'B' | 'C' | 'D' | 'E' | 'F';
 export type SubRun = { kind: 'quest'; id: string } | { kind: 'tutorial'; id: string } | { kind: 'step'; id: string } | { kind: 'test'; id: string };
 
 /** A 절 in the course: 열림 (something opens), 만드는 중, 사용 안 함 (kept, never listed). */
-export type SubStatus = 'open' | 'soon' | 'unused';
+/** end: 6장 — never in a course's list or opened by its number; the course's end opens it. */
+export type SubStatus = 'open' | 'soon' | 'unused' | 'end';
 /** One kind of a 절 (장면 보기 or 실습 하기): 있음, 만드는 중, 없음 (no button for it). */
 export type KindState = 'open' | 'soon' | 'none';
 /** 장면 보기 (the scene and its motion, nothing to press: the teacher shows it) or 실습 하기. */
@@ -33,8 +34,8 @@ export interface CourseSub {
   id: string;
   title: string;
   chapter: number;
-  /** Its 교안 pages (temporary until the 8차시 교안). */
-  pages: readonly [number, number];
+  /** Its 교안 pages, 시작 ~ 끝 (temporary until the 8차시 교안); null: none yet — the 위치 줄 leaves '교안 쪽' out. */
+  pages: readonly [number, number] | null;
   status: SubStatus;
   kinds: Record<SubMode, KindState>;
   /** 선택: the real robot's 절. A class without a robot skips it; it never counts against the record. */
@@ -94,8 +95,11 @@ const SIM: Record<string, { scene: SceneKind; run?: SubRun }> = {
   '6-3': { scene: 'F' },
 };
 
-const isStatus = (v: string): v is SubStatus => v === 'open' || v === 'soon' || v === 'unused';
+const isStatus = (v: string): v is SubStatus => v === 'open' || v === 'soon' || v === 'unused' || v === 'end';
 const isKind = (v: string): v is KindState => v === 'open' || v === 'soon' || v === 'none';
+
+/** The table's 쪽 값: [시작, 끝] (one number: that page); none yet (empty or left out): null. */
+const pagesOf = (p: readonly number[] | null | undefined): readonly [number, number] | null => (p && p.length ? [p[0], p[1] ?? p[0]] : null);
 
 export const COURSE_SUBS: CourseSub[] = TABLE.sections.map((s) => {
   const sim = SIM[s.id] ?? { scene: 'A' as const };
@@ -104,7 +108,7 @@ export const COURSE_SUBS: CourseSub[] = TABLE.sections.map((s) => {
     id: s.id,
     title: s.title,
     chapter: s.chapter,
-    pages: [s.pages[0], s.pages[1] ?? s.pages[0]] as const,
+    pages: pagesOf((s as { pages?: readonly number[] | null }).pages),
     status: isStatus(s.status) ? s.status : 'soon',
     kinds,
     ...('optional' in s && s.optional ? { optional: true } : {}),
@@ -140,4 +144,10 @@ export function modeFor(s: CourseSub, want: SubMode): SubMode | null {
 export const topicMark = (id: string) => (/[013678]$/.test(id) ? '은' : '는');
 
 /** '교안 34~35쪽' (or '교안 76쪽'). */
-export const pagesText = (p: readonly [number, number]) => (p[0] === p[1] ? `교안 ${p[0]}쪽` : `교안 ${p[0]}~${p[1]}쪽`);
+export const pagesText = (p: readonly [number, number] | null) => (!p ? '' : p[0] === p[1] ? `교안 ${p[0]}쪽` : `교안 ${p[0]}~${p[1]}쪽`);
+
+/** A 절's name as the 위치 줄 says it: up to the colon ('관절 하나씩 움직이기: 각도와 방향' → '관절 하나씩 움직이기'). */
+export const shortTitle = (t: string) => t.split(':')[0].trim();
+
+/** Not a 절 of a course's list: 사용 안 함, or 6장 (opened by the course's end). */
+export const unlisted = (s: { status: SubStatus }) => s.status === 'unused' || s.status === 'end';

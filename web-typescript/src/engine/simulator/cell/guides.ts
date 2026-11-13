@@ -19,6 +19,7 @@ import { CARD_HOME, CARD_MM } from './draw';
 import { BOARD, pointXY, robotStones } from './board';
 import { STONE_TRAY } from './cells';
 import type { CellRun } from './run';
+import { quizText } from './courseText';
 
 export interface Observation {
   id: string;
@@ -101,7 +102,8 @@ export const STEP_GUIDES: Record<string, StepGuide> = {
 
   /* --- G: 로봇 캘리그라피 --- */
   G1: {
-    predict: { q: '한 획을 다 썼어요. 다음 획으로 옮길 때 펜은?', options: ['종이에 닿은 채로 간다', '조금 들어 올려서 간다'], answer: 1, why: '펜을 들어야 옮기는 길이 선으로 남지 않아요.', at: lifted },
+    // (입문 과정 5-1 · 5-2 · 5-3: the question's words are in the 문구 파일, courseText.ts.)
+    predict: { ...quizText('5-1'), at: lifted },
     observe: [
       { id: 'card', text: '[카드 있음]: 손님이 카드를 놓았어요', at: CARD, when: on('카드 있음') },
       { id: 'ink', text: '펜 끝이 종이에 닿으면 선이 나와요', at: CARD, when: inking },
@@ -110,13 +112,7 @@ export const STEP_GUIDES: Record<string, StepGuide> = {
     concept: { term: '작업 흐름 (한 사이클)', def: '카드 받기 → 쓰기 → 완성 알리기가 한 사이클이에요. 손님마다 같은 사이클을 반복해요.', real: '행사장 그림 · 글씨 로봇 부스는 한 장에 평균 40초쯤 걸려요.' },
   },
   G2: {
-    predict: {
-      q: '손님이 카드를 매트의 다른 자리에 놓았어요. 로봇에게 알려 주지 않으면?',
-      options: ['로봇이 알아서 카드를 찾는다', '글씨가 그만큼 비켜서 써진다'],
-      answer: 1,
-      why: '로봇은 카드를 보지 못해요. 알려 준 기준점(원점)과 높이에 맞춰 그대로 써요.',
-      at: on('카드 있음'),
-    },
+    predict: { ...quizText('5-2'), at: on('카드 있음') },
     observe: [
       { id: 'ink', text: '펜이 종이에 닿았어요: 선이 나와요', at: CARD, when: inking },
       { id: 'lamp', text: '[완성 램프]: 다 썼어요', at: LAMP, when: out('완성 램프') },
@@ -136,7 +132,7 @@ export const STEP_GUIDES: Record<string, StepGuide> = {
     concept: { term: '직선 이동 vs 관절 이동', def: '직선 이동은 펜 끝이 곧게 가고, 관절 이동은 관절이 한꺼번에 돌아서 끝이 휘어 가요.', real: '접착제를 바르는 공장 로봇도 직선 이동으로 곧고 고른 선을 그어요.' },
   },
   G4: {
-    predict: { q: '펜을 내린 채 다음 획의 시작점으로 가면?', options: ['글자 사이에 줄이 생긴다', '아무 일도 없다'], answer: 0, why: '펜이 닿은 채 움직인 길은 모두 선이 돼요.', at: inking },
+    predict: { ...quizText('5-3'), at: inking },
     observe: [
       { id: 'ink', text: '그리기 이동: 펜이 닿아 있어요', at: CARD, when: inking },
       { id: 'up', text: '빈 이동: 펜을 들고 옮겨요', at: CARD, when: lifted },

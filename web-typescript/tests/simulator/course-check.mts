@@ -30,7 +30,8 @@ for (const id of focus.lessons.flat()) assert.ok(K.lessonIn(full, id) > 0, `4차
 
 // 사용 안 함: kept in the table, never in a course's list.
 for (const id of ['1-4', '2-2', '2-5', '3-3', '3-6', '4-5', '5-6', '6-1', '6-2', '6-3']) {
-  assert.equal(C.subById(id)?.status, 'unused', `${id} 사용 안 함`);
+  // 6장: 과정 끝에 열림 (the course's end opens it, never a list).
+  assert.equal(C.subById(id)?.status, id.startsWith('6-') ? 'end' : 'unused', `${id} 사용 안 함 · 6장은 과정 끝에 열림`);
   for (const c of K.COURSES) assert.equal(K.lessonIn(c, id), 0, `${c.id} 목록에 ${id} 없음`);
 }
 
@@ -200,5 +201,36 @@ assert.equal(P.levelOf({ chapter: 3, right: 5, of: 5, mission: true }).level, '�
 
 // 접근: today every course may be opened.
 assert.equal(await P.mayOpen({ course: 'full8', sub: '5-2', mode: 'scene' }), true);
+
+// 문구 파일 (수정 지시서 v2 파트 G-1): every 절 of a course has its 지금 할 일 sentences and its one line when done,
+// each step a sentence, the 6장 names as the screens show them, the 수행평가 answers five O · X each.
+const W = await import('../../src/engine/simulator/cell/courseText');
+for (const id of full.lessons.flat()) {
+  assert.ok(W.stepTexts(id).length > 0, `${id} 지금 할 일 문장이 문구 파일에 있어요`);
+  assert.ok(W.doneLine(id).startsWith('다 했어요 · '), `${id} 완료 한 줄이 '다 했어요 · …'`);
+}
+for (const [id, lines] of Object.entries(S.COURSE_STEPS)) {
+  assert.equal(W.stepTexts(id).length, lines.length, `${id} 단계 수와 문장 수가 같아요`);
+  for (const l of lines) assert.ok(l.text, `${id} 단계 문장이 비어 있지 않아요`);
+}
+for (const l of S.G2_COURSE) assert.ok(l.text, '5-2 단계 문장');
+for (const id of ['4-2', '5-1', '5-2', '5-3']) {
+  const z = W.quizText(id);
+  assert.ok(z.q && z.options.length === 2 && z.answer >= 0 && z.answer < 2 && z.why, `${id} 잠깐 퀴즈가 문구 파일에 있어요`);
+}
+for (const n of [1, 2, 3, 4, 5]) {
+  assert.equal(T.CHAPTER_TESTS[n].answers.length, 5, `${n}장 O · X 정답 5개`);
+  assert.ok(
+    T.CHAPTER_TESTS[n].answers.every((a: string) => a === 'O' || a === 'X'),
+    `${n}장 정답은 O · X`,
+  );
+  assert.ok(T.CHAPTER_TESTS[n].mission.text, `${n}장 미션 문장`);
+}
+assert.equal(W.failLine('3-5', 'slowFirst', { pct: 30 }), '속도를 30% 이하로 맞추고 다시 눌러요');
+assert.deepEqual(
+  ['6-1', '6-2', '6-3'].map((id) => C.subById(id)?.title),
+  ['결과 확인', '수업 후기', '학습 기록 한 장'],
+);
+assert.equal(C.shortTitle('관절 하나씩 움직이기: 방향과 한계'), '관절 하나씩 움직이기');
 
 console.log(`입문 과정: 표 ${C.COURSE_SUBS.length}절 · 8차시 ${full.lessons.flat().length}절 · 4차시 ${focus.lessons.flat().length}절 · 수행평가 ${tests.length} — 통과`);
