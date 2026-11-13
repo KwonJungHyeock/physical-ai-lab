@@ -196,7 +196,7 @@ const own = P.planFromPlatform({ lessons: [['1-1', '9-9'], ['unused-limits'], ['
 assert.deepEqual(own.lessons, [['1-1'], ['5-1', '5-2']]);
 assert.deepEqual([own.tests, own.ox], [['3-5', '5-6'], true], '넘겨받은 구성: 표의 수행평가 (그 장의 마지막 절이 있을 때 열림)');
 assert.deepEqual(P.planFromPlatform({ lessons: [['1-1']], tests: false }).tests, []);
-// ?plan=4 (시험용): the 4차시 구성; anything else: the default.
+// ?course=4 (시험용): the 4차시 구성; anything else: the default.
 assert.equal((await P.readPlan('4')).lessons.length, 4);
 assert.equal((await P.readPlan(null)).lessons.length, 8);
 assert.equal((await P.readPlan('9')).lessons.length, 8);

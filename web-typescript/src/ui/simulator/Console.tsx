@@ -461,8 +461,9 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     // Read after hydration (this browser's day).
     setNoticeAsk(noticeDue((k) => localStorage.getItem(k), Date.now()));
     let live = true;
-    // (?plan=4: 시험용 — the 4차시 구성's screens; the class's own 구성 still comes from the platform.)
-    void readPlan(q.get('plan')).then((p) => live && setCPlan(p));
+    // (?course=4: 시험용 — the 4차시 구성's screens; the class's own 구성 still comes from the platform. Not ?plan=:
+    // that name is the older class link's — lessonRecord.ts.)
+    void readPlan(q.get('course')).then((p) => live && setCPlan(p));
     return () => {
       live = false;
     };

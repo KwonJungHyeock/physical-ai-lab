@@ -13043,3 +13043,7 @@ div.zeroFlow {
   font-size: 16px;
   color: #c9ced5;
 }
+/* (The logo key keeps 40 px to press with the one line of its name.) */
+.topBar[data-course] .lockup {
+  min-height: 40px;
+}

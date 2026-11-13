@@ -70,7 +70,7 @@ export function levelOf(r: TestResult): { level: '상' | '중' | '하'; temporar
 }
 
 /**
- * The 구성 for this class (none handed over: the default). `test`: the address's ?plan= (수정 지시서 v4
+ * The 구성 for this class (none handed over: the default). `test`: the address's ?course= (수정 지시서 v4
  * 파트 7-1) — '4' shows the 4차시 구성's screens for checking; how a class's 구성 is handed over is as before.
  */
 export async function readPlan(test?: string | null): Promise<CoursePlan> {
