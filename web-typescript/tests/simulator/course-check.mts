@@ -300,6 +300,13 @@ for (const n of [1, 2, 3, 4, 5]) {
   assert.ok(T.CHAPTER_TESTS[n].mission.text, `${n}장 미션 문장`);
 }
 assert.equal(W.failLine('3-4', 'slowFirst', { pct: 30 }), '속도를 30% 이하로 맞추고 다시 눌러요');
+// 수정 지시서 v3 파트 5: a button named in a sentence is the button's own name; a minus sign is '−'.
+assert.equal(W.buttonName('zero'), '영점 자세');
+assert.equal(W.stepText('2-2', 0), '영점 자세 버튼을 눌러요');
+assert.equal(W.checkName('speedAt', { pct: 30 }), '속도 30%');
+assert.equal(W.signed(-40), '−40');
+assert.equal(W.failLine('4-3', 'offMat', { n: 2, x0: W.signed(110), x1: W.signed(300), y0: W.signed(-90), y1: W.signed(70) }), '2번 점이 매트 밖이에요 (x 110~300 · y −90~70)');
+assert.equal(W.failLine('4-3', 'needMore'), '꼭짓점을 3개 이상 넣어요');
 assert.deepEqual(
   ['6-1', '6-2', '6-3'].map((id) => C.subById(id)?.title),
   ['결과 확인', '수업 후기', '학습 기록 한 장'],

@@ -28,6 +28,9 @@ type Vars = Readonly<Record<string, string | number>>;
 /** `{name}` in a sentence: a button's name (buttons), else the app's own value (vars); left as it is when neither has it. */
 const fill = (t: string, vars?: Vars) => t.replace(/\{(\w+)\}/g, (m, k: string) => (vars && k in vars ? String(vars[k]) : k in BUTTONS ? BUTTONS[k] : m));
 
+/** A number as the screens write it: the minus sign '−', never the hyphen (수정 지시서 v3 파트 5-7). */
+export const signed = (n: number): string => String(n).replace('-', '−');
+
 /** A button's or a switch's name as its key shows it: `buttonName('zero')` = '영점 자세'. */
 export const buttonName = (key: keyof typeof TEXT.buttons): string => BUTTONS[key];
 

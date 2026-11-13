@@ -8,7 +8,7 @@
  * verdicts read the ink (the pen's trail on the paper, robot mm). No React.
  */
 
-import { checkName } from './courseText';
+import { checkName, failLine, signed } from './courseText';
 import { CARD_HOME, CARD_MM, LIFT_MM, MAT, readInkFor } from './draw';
 
 export type Pt = readonly [number, number];
@@ -180,8 +180,8 @@ export function rowsToPoints(rows: readonly { x: string; y: string }[]): { pts: 
     if (!sx && !sy) continue;
     const x = Number(sx);
     const y = Number(sy);
-    if (!sx || !sy || !Number.isFinite(x) || !Number.isFinite(y)) return { pts, bad: `${k + 1}번 점의 x와 y를 모두 넣어요` };
-    if (!onMat([x, y])) return { pts, bad: `${k + 1}번 점이 매트 밖이에요 (x ${MAT.x0}~${MAT.x1} · y ${MAT.y0}~${MAT.y1})` };
+    if (!sx || !sy || !Number.isFinite(x) || !Number.isFinite(y)) return { pts, bad: failLine('4-3', 'needBoth', { n: k + 1 }) };
+    if (!onMat([x, y])) return { pts, bad: failLine('4-3', 'offMat', { n: k + 1, x0: signed(MAT.x0), x1: signed(MAT.x1), y0: signed(MAT.y0), y1: signed(MAT.y1) }) };
     pts.push([x, y]);
   }
   return { pts, bad: null };

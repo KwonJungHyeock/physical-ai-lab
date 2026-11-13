@@ -10,11 +10,8 @@
  * No React: DrawCards.tsx shows them, tests/simulator/cell-g-check.mts runs the starters.
  */
 
-import { buttonName } from './courseText';
+import { buttonName, signed } from './courseText';
 import { CARD_HOME, G3_CARD, LIFT_MM, PHRASES, phraseStrokes, placedStrokes, type Phrase } from './draw';
-
-/** A number as the screens write it: the minus sign '−' (수정 지시서 v3 파트 5-7). */
-const signed = (n: number) => String(n).replace('-', '−');
 
 export type DrawCard = { k: 'receive' } | { k: 'setup'; x: number; y: number; z: number } | { k: 'write'; phrase: Phrase; lift: boolean; straight: boolean } | { k: 'give' };
 

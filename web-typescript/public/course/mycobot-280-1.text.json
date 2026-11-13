@@ -41,7 +41,9 @@
     "inCard": "글자 전체가 카드 안 (밖 {mm} mm 이하)",
     "noStray": "획 사이에 필요 없는 줄 {mm} mm 이하",
     "lineDev": "{way} · 두 점을 이은 선에서 가장 먼 곳",
-    "circleDev": "점 {n}개 · 원과 가장 많이 벗어난 거리"
+    "circleDev": "점 {n}개 · 원과 가장 많이 벗어난 거리",
+    "moveTime": "이동에 걸린 시간",
+    "speedAt": "속도 {pct}%"
   },
   "sections": {
     "1-1": {
@@ -203,7 +205,9 @@
         "needMore": "꼭짓점을 3개 이상 넣어요",
         "notFinished": "끝까지 가지 못했어요 · 다시 눌러요",
         "shapeWrong": "교안의 {shape} 꼭짓점과 달라요 · 표를 고쳐요",
-        "shapeNotYet": "{shape}가 아직이에요 · {what}"
+        "shapeNotYet": "{shape}가 아직이에요 · {what}",
+        "needBoth": "{n}번 점의 x와 y를 모두 넣어요",
+        "offMat": "{n}번 점이 매트 밖이에요 (x {x0}~{x1} · y {y0}~{y1})"
       }
     },
     "4-4": {

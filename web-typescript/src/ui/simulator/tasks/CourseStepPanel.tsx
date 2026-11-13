@@ -8,8 +8,8 @@
  * 수행평가: all of these, nothing lit.
  */
 
-import type { CourseStepId } from '@/engine/simulator/cell/courseSteps';
-import { buttonName, failLine } from '@/engine/simulator/cell/courseText';
+import { SLOW_PCT, type CourseStepId } from '@/engine/simulator/cell/courseSteps';
+import { buttonName, checkName, failLine, signed } from '@/engine/simulator/cell/courseText';
 
 import Icon from '../Icon';
 import { AssetSlot } from '../stage/CourseMarks';
@@ -91,9 +91,9 @@ export default function CourseStepPanel({ id, busy, onRun, hand, range, tool, pe
       )}
       {times && (
         <div className={css.times}>
-          <b>이동에 걸린 시간</b>
+          <b>{checkName('moveTime')}</b>
           <span className={css.measure}>
-            <span>속도 30%</span>
+            <span>{checkName('speedAt', { pct: SLOW_PCT })}</span>
             <b>
               {times.slow != null ? (
                 <>
@@ -106,7 +106,7 @@ export default function CourseStepPanel({ id, busy, onRun, hand, range, tool, pe
             </b>
           </span>
           <span className={css.measure}>
-            <span>속도 100%</span>
+            <span>{checkName('speedAt', { pct: 100 })}</span>
             <b>
               {times.fast != null ? (
                 <>
@@ -142,10 +142,10 @@ export default function CourseStepPanel({ id, busy, onRun, hand, range, tool, pe
         <div className={css.calib} data-step="pen">
           <b>보정</b>
           <label>
-            x <output>{pen.x}</output>
+            x <output>{signed(pen.x)}</output>
           </label>
           <label>
-            y <output>{pen.y}</output>
+            y <output>{signed(pen.y)}</output>
           </label>
           <label>
             펜

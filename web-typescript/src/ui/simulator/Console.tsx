@@ -4314,7 +4314,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const recordRow = (
     <div className={css.poseList}>
       <button className={`${css.jogWide} ${css.poseSave}`} type="button" disabled={busy} onClick={recordPose}>
-        <Icon name="save" size={15} /> 지금 자세 저장하기
+        <Icon name="save" size={15} /> {course ? buttonName('savePose') : '지금 자세 저장하기'}
       </button>
       {poseNames.length === 0 && (
         <>
@@ -4325,7 +4325,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
             {(
               [
                 ['home', '기본 자세', arm.home],
-                ['zero', '일자', arm.zero],
+                // 입문 과정: the 0° pose has one name, the button's (수정 지시서 v3 파트 5-3).
+                ['zero', course ? buttonName('zero') : '일자', arm.zero],
               ] as const
             ).map(([id, name, angles]) => (
               <li key={id}>
@@ -5028,7 +5029,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     const { ok } = await runSteps(steps, { reset: false, quiet: true });
     const ink: Pt[][] = world.current.trail.filter((x) => x.length > 1).map((x) => x.map(([a, b]) => [a, b] as Pt));
     const r = myCardReport(ink, c.strokes);
-    const items = [...r.items, { label: '충돌 · 고장 · 파손 없이', ok, detail: undefined }];
+    const items = [...r.items, { label: checkName('safe'), ok, detail: undefined }];
     const passed = ok && r.ok;
     patchCard({ ran: true, passed: c.passed || passed, results: items.map((i, k) => ({ key: String(k), label: `${i.ok ? '✓' : '✗'} ${i.label}${i.detail ? ` · ${i.detail}` : ''}` })) });
     if (courseStepRef.current?.id !== '5-4') return;
@@ -5367,7 +5368,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       realProgress={realRun && robot && robot.step >= 0 ? `${robot.step + 1}/${robot.total}` : null}
       realDisabled={!gateOpen || (robotMode && !robot?.connected) || speedLocked}
       realBlocked={speedLocked ? `속도 ${REAL_MAX_PCT}% 이하로` : robotMode && !robot?.connected ? '로봇 연결 필요' : !gateOpen ? '시뮬레이션 통과 후' : null}
-      names={course ? { run: buttonName('run'), real: buttonName('real') } : undefined}
+      names={course ? { run: buttonName('run'), real: buttonName('real'), stop: buttonName('stop') } : undefined}
       onSim={track ? simulateLife : simulate}
       simRate={simRate}
       onSimRate={chooseSimRate}
@@ -7161,13 +7162,13 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                       // (입문 과정 2-2: its own three keys at the top of the panel instead.)
                       <div className={css.poseDock}>
                         <button type="button" disabled={busy} data-step="pose-home" onClick={() => goPose('home')} title="관찰 자세 (공식 AI 키트)">
-                          <Icon name="home" size={15} /> 기본 자세
+                          <Icon name="home" size={15} /> {course ? buttonName('home') : '기본 자세'}
                         </button>
                         <button type="button" disabled={busy} onClick={() => goPose('zero')} title="모든 관절 0° (팔이 위로 곧게)">
                           <Icon name="zero" size={15} /> {course ? buttonName('zero') : '일자로 펴기'}
                         </button>
                         <button type="button" className={css.poseStop} data-step="stop" onClick={() => void stop()} title="움직임을 바로 멈춰요 (Esc)">
-                          <Icon name="stop" size={14} /> 정지 <kbd>Esc</kbd>
+                          <Icon name="stop" size={14} /> {course ? buttonName('stop') : '정지'} <kbd>Esc</kbd>
                         </button>
                       </div>
                     )}

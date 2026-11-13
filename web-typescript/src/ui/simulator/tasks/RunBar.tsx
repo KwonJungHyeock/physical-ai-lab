@@ -42,7 +42,7 @@ interface Props {
   /** 입문 퀘스트: ⚡ 결과 바로 — the run computed without drawing (cell/quick.ts); `progress` while it runs. */
   quick?: { onClick(): void; progress: string | null; disabled?: boolean };
   /** 입문 과정: the two run keys' names as the 문구 파일 has them (none: the console's own). */
-  names?: { run: string; real: string };
+  names?: { run: string; real: string; stop: string };
   /** 입문 트랙 (지시서 v1): [다음 단계 →] — never automatic; lit (the one accent) once this step is passed. */
   next?: { onClick(): void; lit: boolean; disabled?: boolean };
 }
@@ -177,7 +177,7 @@ export default function RunBar(p: Props) {
       {(!p.more || p.busy) && (
         <button type="button" className={css.runStop} onClick={p.onStop} aria-label="정지" title="정지 (Esc · 스페이스)">
           <Icon name="stop" size={16} />
-          <span>정지</span>
+          <span>{p.names?.stop ?? '정지'}</span>
         </button>
       )}
     </div>
