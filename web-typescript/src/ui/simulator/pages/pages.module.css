@@ -1002,19 +1002,19 @@
   }
 }
 /* 대응표 */
-:where(html[data-vq~='22']) .page,
-:where(html[data-vq~='22']) .explorer {
+:where(html[data-vq~='23']) .page,
+:where(html[data-vq~='23']) .explorer {
   grid-template-columns: minmax(0, 1fr);
   grid-auto-rows: auto;
   overflow: auto;
 }
 /* 대응표 */
-:where(html[data-vq~='22']) .pageNav {
+:where(html[data-vq~='23']) .pageNav {
   border-right: 0;
   border-bottom: 1px solid var(--edge);
 }
 /* 대응표 */
-:where(html[data-vq~='22']) .preview {
+:where(html[data-vq~='23']) .preview {
   border-left: 0;
   border-top: 1px solid var(--edge);
 }

@@ -22,6 +22,7 @@ export const COURSE_MEDIA: readonly string[] = [
   '(max-height: 960px)',
   '(max-height: 1000px)',
   '(max-height: 800px)',
+  '(max-height: 740px)',
   '(max-width: 1099px)',
   '(max-height: 860px)',
   '(max-width: 1280px), (max-height: 760px)',

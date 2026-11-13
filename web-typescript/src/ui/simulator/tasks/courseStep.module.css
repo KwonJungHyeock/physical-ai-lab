@@ -532,6 +532,16 @@
   padding: 0;
   background: none;
 }
+/* On a 720 px-high screen the card is set closer (the six joint rows under it stay clear of the fixed row). */
+@media (max-height: 740px) {
+  .times {
+    padding: 4px 16px;
+  }
+}
+/* 대응표 */
+:where(html[data-vq~='22']) .times {
+  padding: 4px 16px;
+}
 /* 3장 미션: [확인]. */
 .confirm {
   display: grid;

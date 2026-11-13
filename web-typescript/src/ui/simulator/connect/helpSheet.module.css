@@ -232,3 +232,7 @@
 .inner dd {
   color: var(--hud-sub);
 }
+/* 입문 과정 (수정 지시서 v3 파트 1): the keys' column holds the widest key at 13 px (it ran over its words). */
+:global(html[data-course]) .keys > div {
+  grid-template-columns: 184px minmax(0, 1fr);
+}

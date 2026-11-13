@@ -1126,3 +1126,7 @@
   opacity: 0.5;
   cursor: default;
 }
+/* 입문 과정 (수정 지시서 v3 파트 1): the 구성's name is a plain tag — no colour that means something. */
+:global(html[data-course]) .page {
+  background: rgba(255, 255, 255, 0.16);
+}

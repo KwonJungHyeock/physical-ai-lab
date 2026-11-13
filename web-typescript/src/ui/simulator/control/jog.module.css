@@ -2334,3 +2334,53 @@
 [data-course] :global(.life-shell) .bar[data-near] .knob {
   border-color: #ff8f86;
 }
+/* 입문 과정 (수정 지시서 v3 파트 1-3): on a 720 px-high screen (1280 × 720) the six rows end above the fixed row
+   in 3-4 too, with its times card over them — the rows are 40 px there (the keys stay 40 px). */
+@media (max-height: 740px) {
+  [data-course] :global(.life-shell) .row {
+    min-height: 40px;
+  }
+  [data-course] :global(.life-shell) .row > * {
+    min-height: 40px;
+    height: 40px;
+  }
+  [data-course] :global(.life-shell) .head b {
+    line-height: 18px;
+  }
+  [data-course] :global(.life-shell) .bar {
+    height: 14px;
+  }
+  [data-course] :global(.life-shell) .track {
+    top: 4px;
+  }
+  [data-course] :global(.life-shell) .opts {
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+}
+/* 대응표 */
+:where(html[data-vq~='22']) [data-course] :global(.life-shell) .row {
+  min-height: 40px;
+}
+/* 대응표 */
+:where(html[data-vq~='22']) [data-course] :global(.life-shell) .row > * {
+  min-height: 40px;
+  height: 40px;
+}
+/* 대응표 */
+:where(html[data-vq~='22']) [data-course] :global(.life-shell) .head b {
+  line-height: 18px;
+}
+/* 대응표 */
+:where(html[data-vq~='22']) [data-course] :global(.life-shell) .bar {
+  height: 14px;
+}
+/* 대응표 */
+:where(html[data-vq~='22']) [data-course] :global(.life-shell) .track {
+  top: 4px;
+}
+/* 대응표 */
+:where(html[data-vq~='22']) [data-course] :global(.life-shell) .opts {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
