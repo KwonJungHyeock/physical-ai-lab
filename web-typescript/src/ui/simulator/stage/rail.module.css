@@ -35,6 +35,13 @@
   color: #9da1a7;
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .groupName {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: #c9ced5;
+}
 .groupName::after {
   content: '';
   flex: 1;
@@ -58,6 +65,10 @@
   word-break: keep-all;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .rail button {
+  color: #c9ced5;
+}
 .rail button svg {
   width: 24px;
   height: 24px;
@@ -65,6 +76,11 @@
 .rail button:hover:not(:disabled):not([aria-pressed="true"]) {
   background: rgba(255, 255, 255, 0.05);
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .rail button:hover:not(:disabled):not([aria-pressed="true"]) {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f6f7f9;
 }
 /* The open one: a raised, lighter tile, its icon in brand red and a red mark on the bar's edge. */
 .rail button[aria-pressed="true"] {
@@ -75,8 +91,17 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.12),
     0 6px 14px -6px rgba(0, 0, 0, 0.6);
 }
+/* 대응표 */
+:where([data-course]) .rail button[aria-pressed="true"] {
+  color: #f6f7f9;
+  font-weight: 700;
+}
 .rail button[aria-pressed="true"] svg {
   color: #f4f6f9;
+}
+/* 대응표 */
+:where([data-course]) .rail button[aria-pressed="true"] svg {
+  color: #f6f7f9;
 }
 .rail button[aria-pressed="true"]::before {
   content: '';
@@ -107,6 +132,13 @@
   font-weight: 800;
   line-height: 17px;
 }
+/* 대응표 */
+:where([data-course]) .rail button i {
+  border-radius: 8px;
+  color: #f6f7f9;
+  font-size: 13px;
+  font-weight: 700;
+}
 /* a smaller window: the bar narrows, the same words in a smaller size */
 @media (max-width: 1280px), (max-height: 700px) {
   .rail {
@@ -115,6 +147,10 @@
   .rail button {
     padding: 7px 0 6px;
     font-size: 12.5px;
+  }
+  /* 대응표 */
+  :where([data-course]) .rail button {
+    font-size: 13px;
   }
   .rail button svg {
     width: 21px;
@@ -127,6 +163,35 @@
     padding: 8px 2px 3px;
     font-size: 11.5px;
   }
+  /* 대응표 */
+  :where([data-course]) .groupName {
+    font-size: 13px;
+  }
+}
+/* 대응표 */
+:where(html[data-vq~='17']) .rail {
+  padding: 4px 6px 6px;
+}
+/* 대응표 */
+:where(html[data-vq~='17']) .rail button {
+  padding: 7px 0 6px;
+  font-size: 12.5px;
+  font-size: 13px;
+}
+/* 대응표 */
+:where(html[data-vq~='17']) .rail button svg {
+  width: 21px;
+  height: 21px;
+}
+/* 대응표 */
+:where(html[data-vq~='17']) .rail button[aria-pressed="true"]::before {
+  left: -6px;
+}
+/* 대응표 */
+:where(html[data-vq~='17']) .groupName {
+  padding: 8px 2px 3px;
+  font-size: 11.5px;
+  font-size: 13px;
 }
 @media (max-height: 860px) {
   .rail {
@@ -137,6 +202,10 @@
     gap: 2px;
     font-size: 12.5px;
   }
+  /* 대응표 */
+  :where([data-course]) .rail button {
+    font-size: 13px;
+  }
   .rail button svg {
     width: 20px;
     height: 20px;
@@ -145,6 +214,32 @@
     padding: 5px 2px 2px;
     font-size: 11.5px;
   }
+  /* 대응표 */
+  :where([data-course]) .groupName {
+    font-size: 13px;
+  }
+}
+/* 대응표 */
+:where(html[data-vq~='23']) .rail {
+  padding-top: 2px;
+}
+/* 대응표 */
+:where(html[data-vq~='23']) .rail button {
+  padding: 5px 0 4px;
+  gap: 2px;
+  font-size: 12.5px;
+  font-size: 13px;
+}
+/* 대응표 */
+:where(html[data-vq~='23']) .rail button svg {
+  width: 20px;
+  height: 20px;
+}
+/* 대응표 */
+:where(html[data-vq~='23']) .groupName {
+  padding: 5px 2px 2px;
+  font-size: 11.5px;
+  font-size: 13px;
 }
 @media (pointer: coarse) {
   .rail button {
@@ -188,6 +283,10 @@
   background: var(--hud-plate);
   box-shadow: var(--hud-plate-shadow);
 }
+/* 대응표 */
+:where([data-course]) .rail {
+  border-radius: 12px;
+}
 .group {
   gap: 7px;
 }
@@ -220,6 +319,10 @@
   font-size: 13px;
   font-weight: 500;
 }
+/* 대응표 */
+:where([data-course]) .rail button {
+  font-weight: 600;
+}
 .rail button svg {
   display: none;
 }
@@ -229,6 +332,11 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   color: var(--hud-tx);
+}
+/* 대응표 */
+:where([data-course]) .rail button em {
+  font-size: 13px;
+  letter-spacing: 0;
 }
 .rail button:hover:not(:disabled):not([aria-pressed="true"]) {
   background: var(--hud-key);
@@ -252,6 +360,10 @@
   background: var(--hud-light);
   color: #101214;
 }
+/* 대응표 */
+:where([data-course]) .rail button i {
+  color: #14171c;
+}
 @media (max-height: 860px) {
   .rail {
     padding: 8px 7px;
@@ -263,7 +375,34 @@
     padding: 5px 2px 4px;
     font-size: 12px;
   }
+  /* 대응표 */
+  :where([data-course]) .rail button {
+    font-size: 13px;
+  }
   .rail button em {
     font-size: 10.5px;
   }
+  /* 대응표 */
+  :where([data-course]) .rail button em {
+    font-size: 13px;
+  }
+}
+/* 대응표 */
+:where(html[data-vq~='23']) .rail {
+  padding: 8px 7px;
+}
+/* 대응표 */
+:where(html[data-vq~='23']) .group {
+  gap: 5px;
+}
+/* 대응표 */
+:where(html[data-vq~='23']) .rail button {
+  padding: 5px 2px 4px;
+  font-size: 12px;
+  font-size: 13px;
+}
+/* 대응표 */
+:where(html[data-vq~='23']) .rail button em {
+  font-size: 10.5px;
+  font-size: 13px;
 }

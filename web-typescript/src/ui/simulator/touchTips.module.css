@@ -15,6 +15,13 @@
   transform: translate(-50%, -100%);
   pointer-events: none;
 }
+/* 대응표 */
+:where([data-course]) .tip {
+  max-width: min(320px, calc(calc(100vw / var(--course-zoom, 1)) - 32px));
+  border-radius: 12px;
+  color: #f6f7f9;
+  font-size: 14px;
+}
 .tip[data-below] {
   transform: translate(-50%, 0);
 }

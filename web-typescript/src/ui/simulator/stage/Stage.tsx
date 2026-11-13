@@ -255,6 +255,8 @@ interface StageProps {
   courseMarks?: CourseStageMarks | null;
   /** 입문 과정 무대 (courseStage.ts): one desk and a plain mid-tone background for every 절; none: the usual scene. */
   courseStage?: StageLook | null;
+  /** 입문 과정 on a wide window: the page is shown this many times larger (CSS transform), so the picture is drawn that much finer. */
+  zoom?: number;
   /** 입문 과정 무대: the 절's home view (courseStage.ts); every view then keeps to the desk (deskView.ts). */
   courseView?: CourseView | null;
   /** 입문 과정 2-1: what is not on the desk yet (the arm; the booth's mat, card and lamp). */
@@ -307,6 +309,7 @@ function cameraLighting(scene: Scene, lights: Lights): () => void {
 
 export default function Stage(props: StageProps) {
   const high = props.quality === 'high';
+  const zoom = props.zoom ?? 1;
   const hemi = useRef<HemisphereLight>(null);
   const key = useRef<DirectionalLight>(null);
   const fill = useRef<DirectionalLight>(null);
@@ -318,7 +321,9 @@ export default function Stage(props: StageProps) {
       // PCF, the cheapest ('soft' = PCFSoft is deprecated in this three and falls back to it anyway).
       shadows={high ? 'variance' : 'percentage'}
       gl={{ antialias: !high, preserveDrawingBuffer: true, powerPreference: 'high-performance' }}
-      dpr={high ? [1, 2] : [1, 1.5]}
+      dpr={zoom > 1 ? Math.min(Math.max(window.devicePixelRatio, 1), high ? 2 : 1.5) * zoom : high ? [1, 2] : [1, 1.5]}
+      // Shown larger by a transform: the canvas keeps its laid-out size (the size measured on screen is the larger one).
+      resize={zoom > 1 ? { offsetSize: true } : undefined}
       frameloop={props.paused ? 'never' : 'always'}
       camera={{ position: VIEWS.home.pos, fov: VIEW_FOV, near: 0.01, far: 20 }}
       // A new renderer per quality: antialiasing is fixed when the renderer is made.

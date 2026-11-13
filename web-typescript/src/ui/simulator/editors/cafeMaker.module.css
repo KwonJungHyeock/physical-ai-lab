@@ -17,6 +17,13 @@
   letter-spacing: 0.18em;
   color: var(--hud-dim);
 }
+/* 대응표 */
+:where([data-course]) .maker em {
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
 
 .order {
   display: flex;
@@ -57,10 +64,19 @@
   font-weight: 700;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .maker .tab,
+:where([data-course]) .maker .add {
+  border-radius: 8px;
+}
 .tab i {
   font-style: normal;
   font-size: 11px;
   color: var(--hud-dim);
+}
+/* 대응표 */
+:where([data-course]) .tab i {
+  font-size: 13px;
 }
 .maker .tab[data-on] {
   background: linear-gradient(180deg, #565c64 0%, #3d4248 42%, #2e3136 100%);
@@ -92,6 +108,10 @@
   font-size: 12px;
   color: var(--hud-sub);
 }
+/* 대응표 */
+:where([data-course]) .cycle {
+  font-size: 13px;
+}
 .cycle b {
   font:
     800 14px ui-monospace,
@@ -99,6 +119,13 @@
     Menlo,
     monospace;
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .cycle b {
+  font-weight: 700;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  color: #f6f7f9;
 }
 
 .cup {
@@ -128,8 +155,18 @@
     monospace;
   color: var(--hud-sub);
 }
+/* 대응표 */
+:where([data-course]) .cup small {
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+}
 .cup small b {
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .cup small b {
+  color: #f6f7f9;
 }
 .cup[data-over] .glass {
   box-shadow:
@@ -141,6 +178,10 @@
   letter-spacing: 0;
   font-family: inherit;
   font-weight: 800;
+}
+/* 대응표 */
+:where([data-course]) .cup small em {
+  font-weight: 700;
 }
 
 .presets {
@@ -162,11 +203,20 @@
   font-weight: 700;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .maker .presets button {
+  border-radius: 8px;
+  font-size: 13px;
+}
 .maker .presets button[data-on] {
   color: #fff;
   box-shadow:
     var(--hud-groove-shadow),
     inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+/* 대응표 */
+:where([data-course]) .maker .presets button[data-on] {
+  color: #f6f7f9;
 }
 
 .fields {
@@ -197,6 +247,12 @@
   font: inherit;
   font-weight: 800;
 }
+/* 대응표 */
+:where([data-course]) .name input {
+  border-radius: 8px;
+  color: #f6f7f9;
+  font-weight: 700;
+}
 .seg {
   display: inline-flex;
   border-radius: 8px;
@@ -212,6 +268,10 @@
   font: inherit;
   font-weight: 800;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .maker .seg button {
+  font-weight: 700;
 }
 .maker .seg button[data-on] {
   background: #fff;
@@ -230,6 +290,11 @@
   color: #fff;
   font-size: 15px;
 }
+/* 대응표 */
+:where([data-course]) .step b {
+  color: #f6f7f9;
+  font-size: 16px;
+}
 .maker .step button {
   width: 32px;
   height: 32px;
@@ -240,6 +305,10 @@
   color: var(--hud-tx);
   font: inherit;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .maker .step button {
+  border-radius: 8px;
 }
 .range {
   grid-column: 1 / -1;
@@ -252,6 +321,11 @@
 .range b {
   color: #fff;
   font-weight: 800;
+}
+/* 대응표 */
+:where([data-course]) .range b {
+  color: #f6f7f9;
+  font-weight: 700;
 }
 .range input {
   width: 100%;
@@ -268,11 +342,19 @@
   background: var(--hud-groove);
   box-shadow: var(--hud-groove-shadow);
 }
+/* 대응표 */
+:where([data-course]) .range input::-webkit-slider-runnable-track {
+  border-radius: 8px;
+}
 .range input::-moz-range-track {
   height: 6px;
   border-radius: 3px;
   background: var(--hud-groove);
   box-shadow: var(--hud-groove-shadow);
+}
+/* 대응표 */
+:where([data-course]) .range input::-moz-range-track {
+  border-radius: 8px;
 }
 .range input::-webkit-slider-thumb {
   width: 24px;
@@ -309,6 +391,12 @@
   font-style: normal;
   color: var(--hud-dim);
 }
+/* 대응표 */
+:where([data-course]) .axis i {
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+}
 .rows {
   list-style: none;
   margin: 0;
@@ -323,6 +411,10 @@
   min-height: 34px;
   border-radius: 7px;
 }
+/* 대응표 */
+:where([data-course]) .rows li {
+  border-radius: 8px;
+}
 .rows li[data-on] {
   background: rgba(255, 255, 255, 0.08);
 }
@@ -334,6 +426,10 @@
 .label small {
   font-size: 11px;
   color: var(--hud-green);
+}
+/* 대응표 */
+:where([data-course]) .label small {
+  font-size: 13px;
 }
 .label small[data-v='short'] {
   color: var(--hud-amber);
@@ -350,12 +446,21 @@
   cursor: pointer;
   border-radius: 5px;
 }
+/* 대응표 */
+:where([data-course]) .door {
+  font-size: 13px;
+  border-radius: 8px;
+}
 .track {
   position: relative;
   height: 26px;
   border-radius: 6px;
   background: var(--hud-groove);
   box-shadow: var(--hud-groove-shadow);
+}
+/* 대응표 */
+:where([data-course]) .track {
+  border-radius: 8px;
 }
 .track i {
   position: absolute;
@@ -367,6 +472,10 @@
   border-radius: 3px;
   background: linear-gradient(180deg, #f4f6f8, #cfd4d9);
 }
+/* 대응표 */
+:where([data-course]) .arm {
+  border-radius: 8px;
+}
 .arm[data-on] {
   box-shadow: 0 0 8px #fff;
 }
@@ -375,6 +484,10 @@
   height: 18px;
   border-radius: 4px;
   background: linear-gradient(180deg, #5d6670, #3f464d);
+}
+/* 대응표 */
+:where([data-course]) .pour {
+  border-radius: 8px;
 }
 .wait {
   top: 10px;
@@ -385,6 +498,10 @@
     #f0a23b 0 5px,
     #d98a24 5px 10px
   );
+}
+/* 대응표 */
+:where([data-course]) .wait {
+  border-radius: 8px;
 }
 .wait[data-signal] {
   background: repeating-linear-gradient(
@@ -408,6 +525,10 @@
   cursor: ew-resize;
   touch-action: none;
 }
+/* 대응표 */
+:where([data-course]) .handle {
+  border-radius: 8px;
+}
 
 .stats {
   display: grid;
@@ -424,6 +545,10 @@
   font-size: 12px;
   color: var(--hud-sub);
 }
+/* 대응표 */
+:where([data-course]) .stats span {
+  font-size: 13px;
+}
 .stats b {
   font:
     800 16px ui-monospace,
@@ -431,6 +556,13 @@
     Menlo,
     monospace;
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .stats b {
+  font-weight: 700;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  color: #f6f7f9;
 }
 .stats span[data-ok] b {
   color: var(--hud-green);
@@ -446,6 +578,10 @@
   gap: 3px;
   font-size: 12px;
   color: var(--hud-sub);
+}
+/* 대응표 */
+:where([data-course]) .why {
+  font-size: 13px;
 }
 .why b {
   color: var(--hud-amber);
@@ -467,6 +603,10 @@
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .maker .ghost {
+  border-radius: 8px;
 }
 .maker .ghost[data-on] {
   background: var(--hud-silver);
@@ -510,6 +650,10 @@
   color: var(--hud-sub);
   list-style: none;
 }
+/* 대응표 */
+:where([data-course]) .more > summary {
+  font-size: 13px;
+}
 
 .more > summary::-webkit-details-marker {
   display: none;
@@ -533,6 +677,11 @@
   background: rgba(255, 255, 255, 0.05);
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .doorBig {
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+}
 
 .doorBig input {
   width: 22px;
@@ -548,10 +697,18 @@
 .doorBig b {
   font-size: 15px;
 }
+/* 대응표 */
+:where([data-course]) .doorBig b {
+  font-size: 16px;
+}
 
 .doorBig small {
   font-size: 12px;
   color: var(--hud-sub);
+}
+/* 대응표 */
+:where([data-course]) .doorBig small {
+  font-size: 13px;
 }
 
 .doorBig[data-glow] {
@@ -569,6 +726,10 @@
   box-shadow: var(--hud-groove-shadow);
   list-style: none;
 }
+/* 대응표 */
+:where([data-course]) .sockets {
+  border-radius: 12px;
+}
 
 .sockets li {
   display: grid;
@@ -577,6 +738,10 @@
   font-size: 12px;
   font-weight: 700;
   color: var(--hud-dim);
+}
+/* 대응표 */
+:where([data-course]) .sockets li {
+  font-size: 13px;
 }
 
 .sockets i {
@@ -593,6 +758,12 @@
     Menlo,
     monospace;
   font-style: normal;
+}
+/* 대응표 */
+:where([data-course]) .sockets i {
+  font-weight: 700;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
 }
 
 .sockets li[data-ok] {
@@ -618,6 +789,11 @@
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.05);
 }
+/* 대응표 */
+:where([data-course]) .repeat {
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+}
 .repeat > span:first-child {
   display: grid;
   gap: 2px;
@@ -625,13 +801,26 @@
 .repeat > span:first-child b {
   font-size: 15px;
 }
+/* 대응표 */
+:where([data-course]) .repeat > span:first-child b {
+  font-size: 16px;
+}
 .repeat > span:first-child small {
   font-size: 12px;
   color: var(--hud-sub);
 }
+/* 대응표 */
+:where([data-course]) .repeat > span:first-child small {
+  font-size: 13px;
+}
 .repeat .step b {
   font-size: 20px;
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .repeat .step b {
+  font-size: 23px;
+  color: #f6f7f9;
 }
 .repeat[data-glow] {
   box-shadow: 0 0 0 2px #ffd257;
@@ -648,6 +837,10 @@
   background: var(--hud-groove);
   box-shadow: var(--hud-groove-shadow);
 }
+/* 대응표 */
+:where([data-course]) .aim {
+  border-radius: 12px;
+}
 .aim > em {
   grid-column: 1 / -1;
   font:
@@ -659,6 +852,14 @@
   color: var(--hud-dim);
   font-style: normal;
 }
+/* 대응표 */
+:where([data-course]) .aim > em {
+  font-weight: 700;
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
 .aim span {
   display: grid;
   justify-items: center;
@@ -667,9 +868,17 @@
   font-size: 12px;
   color: var(--hud-sub);
 }
+/* 대응표 */
+:where([data-course]) .aim span {
+  font-size: 13px;
+}
 .aim span b {
   font-size: 18px;
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .aim span b {
+  color: #f6f7f9;
 }
 .aim span[data-ok] {
   background: rgba(91, 209, 122, 0.16);
@@ -681,6 +890,10 @@
   align-self: center;
   font-size: 12px;
   color: var(--hud-sub);
+}
+/* 대응표 */
+:where([data-course]) .aim > small {
+  font-size: 13px;
 }
 
 /* 로봇 동작 블록: one block a motion step (a card cut from the plate), wrapped as the quests go on by
@@ -705,6 +918,10 @@
   font-size: 13px;
   color: var(--hud-tx);
   cursor: grab;
+}
+/* 대응표 */
+:where([data-course]) .block {
+  border-radius: 8px;
 }
 .block[data-kind='cup'] {
   border-left-color: #c8b28a;
@@ -734,9 +951,17 @@
   color: var(--hud-dim);
   font-size: 12px;
 }
+/* 대응표 */
+:where([data-course]) .grip {
+  font-size: 13px;
+}
 .icon {
   font-size: 17px;
   text-align: center;
+}
+/* 대응표 */
+:where([data-course]) .icon {
+  font-size: 18px;
 }
 .btitle {
   font-size: 13px;
@@ -744,6 +969,10 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+/* 대응표 */
+:where([data-course]) .btitle {
+  font-weight: 700;
 }
 .waitChip {
   display: inline-flex;
@@ -764,11 +993,23 @@
   font-weight: 800;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .maker .waitChip button {
+  border-radius: 8px;
+  color: #f6f7f9;
+  font-size: 13px;
+  font-weight: 700;
+}
 .waitChip em {
   font-style: normal;
   font-size: 11px;
   font-weight: 800;
   color: var(--hud-amber);
+}
+/* 대응표 */
+:where([data-course]) .waitChip em {
+  font-size: 13px;
+  font-weight: 700;
 }
 .waitChip[data-v='short'] em {
   color: var(--hud-red, #eb4034);
@@ -784,6 +1025,13 @@
   font-size: 12px;
   font-weight: 800;
   padding: 0 6px;
+}
+/* 대응표 */
+:where([data-course]) .serve select {
+  border-radius: 8px;
+  color: #f6f7f9;
+  font-size: 13px;
+  font-weight: 700;
 }
 .serve[data-glow] select {
   box-shadow: 0 0 0 2px #ffd257;
@@ -805,6 +1053,11 @@
   line-height: 14px;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .maker .moveKeys button {
+  border-radius: 8px;
+  font-size: 13px;
+}
 .maker .moveKeys button:disabled {
   opacity: 0.25;
   cursor: default;
@@ -820,12 +1073,21 @@
   display: grid;
   gap: 2px;
 }
+/* 대응표 */
+:where([data-course]) .module {
+  border-radius: 8px;
+  font-size: 13px;
+}
 .wrap {
   margin-top: 8px;
   padding: 6px 6px 8px 10px;
   border-radius: 10px;
   border-left: 5px solid #8b5cf6;
   background: rgba(139, 92, 246, 0.07);
+}
+/* 대응표 */
+:where([data-course]) .wrap {
+  border-radius: 12px;
 }
 .wrap[data-kind='if'] {
   border-left-color: #3b82f6;
@@ -844,16 +1106,29 @@
   font-weight: 800;
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .wrapHead {
+  font-weight: 700;
+  color: #f6f7f9;
+}
 .wrapHead small {
   flex-basis: 100%;
   font-size: 12px;
   font-weight: 600;
   color: var(--hud-sub);
 }
+/* 대응표 */
+:where([data-course]) .wrapHead small {
+  font-size: 13px;
+}
 .wrapHead[data-glow] {
   border-radius: 7px;
   box-shadow: 0 0 0 2px #ffd257;
   padding: 2px 4px;
+}
+/* 대응표 */
+:where([data-course]) .wrapHead[data-glow] {
+  border-radius: 8px;
 }
 .maker .branchOff {
   display: block;
@@ -870,4 +1145,9 @@
   font-weight: 700;
   text-align: left;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .maker .branchOff {
+  border-radius: 8px;
+  font-size: 13px;
 }

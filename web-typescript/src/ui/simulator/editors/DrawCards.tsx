@@ -12,6 +12,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { DRAW_PALETTE, G_ANSWER, G_START, PEN_Z, PHRASES, drawCardText, drawCode, drawRows, type DrawCard, type DrawRecipe } from '@/engine/simulator/cell/drawRecipe';
+import { buttonName } from '@/engine/simulator/cell/courseText';
 import { MAT, type Phrase } from '@/engine/simulator/cell/draw';
 import { missionById } from '@/engine/simulator/cell/missions';
 import { QUESTS } from '@/engine/simulator/cell/quests';
@@ -63,6 +64,8 @@ export default function DrawCards({ mission, busy, runningLine, onCode, glow, gl
   const start = (m: string | null) => copy(G_START[m ?? ''] ?? { cards: [], times: 1 });
   const [recipe, setRecipe] = useState<DrawRecipe>(() => (keep ? copy(keep) : start(mission)));
   const [open, setOpen] = useState(false);
+  /** 입문 과정: the cards report their values back (Console keeps them over a run). */
+  const course = !!onRecipe;
   // The cards opened (▾): the quest's cards to change start open, so their boxes and switches are in sight.
   const [shown, setShown] = useState<ReadonlySet<number>>(() => new Set((glow ?? []).map((n) => n - 1)));
   const made = useMemo(() => drawCode(recipe), [recipe]);
@@ -136,7 +139,7 @@ export default function DrawCards({ mission, busy, runningLine, onCode, glow, gl
   const head = (
     <div className={css.head}>
       <span className={css.order} aria-label="주문">
-        <em>{onRecipe ? '주문' : 'ORDER'}</em>
+        <em>{course ? '주문' : 'ORDER'}</em>
         <b>
           손님 {customers}명 · &apos;{phrase?.k === 'write' ? phrase.phrase : '자유'}&apos;
         </b>
@@ -170,10 +173,18 @@ export default function DrawCards({ mission, busy, runningLine, onCode, glow, gl
           </span>
           {!isOpen && <small className={css.sum}>{now ? `지금 · ${now}` : off ? `꺼짐 · ${off.text}` : `동작 ${rows.length}개`}</small>}
           {isOpen && (
-            <ol className={css.rows}>
+            <ol className={css.rows} data-plain={course || undefined}>
               {rows.map((r, i) => (
                 <li key={i} data-on={(k === running && i === runningRow) || undefined} data-off={(r.toggle && !r.on) || undefined}>
-                  {r.toggle ? (
+                  {r.toggle && course ? (
+                    // 입문 과정 (수정 지시서 v3 파트 4-3): one shape for on · off — the switch, as in 4-2.
+                    <label className={css.sw}>
+                      <input type="checkbox" disabled={busy} checked={!!r.on} onChange={(e) => flip(k, c, r.toggle!, e.target.checked)} />
+                      <i aria-hidden="true" />
+                      {r.text}
+                      {r.toggle === 'straight' && <small>{buttonName(r.on ? 'linear' : 'joint')}</small>}
+                    </label>
+                  ) : r.toggle ? (
                     <label>
                       <input type="checkbox" disabled={busy} checked={!!r.on} onChange={(e) => flip(k, c, r.toggle!, e.target.checked)} />
                       {r.text}
@@ -273,7 +284,7 @@ export default function DrawCards({ mission, busy, runningLine, onCode, glow, gl
   const startN = start(mission).cards.length;
   const shownCards = [...focus, ...(q?.add ? recipe.cards.map((_, k) => k).filter((k) => k >= startN) : [])];
   return (
-    <div className={css.recipe} data-flow>
+    <div className={css.recipe} data-flow data-course={course || undefined}>
       {q?.times && head}
       {shownCards.length > 0 && <ol className={css.list}>{shownCards.map((k) => item(recipe.cards[k], k, true))}</ol>}
       {q?.add && (
@@ -282,13 +293,16 @@ export default function DrawCards({ mission, busy, runningLine, onCode, glow, gl
           {palette}
         </>
       )}
-      <details className={css.moreAll}>
-        <summary>자세히 ▾ · 카드 전체 {recipe.cards.length}장</summary>
-        {!q?.times && head}
-        {list}
-        {!q?.add && foot}
-        {!q?.add && palette}
-      </details>
+      {/* 입문 과정 (수정 지시서 v3 파트 3-3): the whole recipe and its keys are not used in 5-1 ~ 5-3 — off there only. */}
+      {!course && (
+        <details className={css.moreAll}>
+          <summary>자세히 ▾ · 카드 전체 {recipe.cards.length}장</summary>
+          {!q?.times && head}
+          {list}
+          {!q?.add && foot}
+          {!q?.add && palette}
+        </details>
+      )}
     </div>
   );
 }

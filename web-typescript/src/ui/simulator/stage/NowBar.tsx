@@ -15,6 +15,9 @@ import { createPortal } from 'react-dom';
 
 import type { LifeTutorial, TutCtx, TutTarget } from '@/engine/simulator/lifeTutorials';
 
+import { buttonName, commonLine } from '@/engine/simulator/cell/courseText';
+
+import Icon from '../Icon';
 import PlayText from '../PlayText';
 import css from './nowBar.module.css';
 
@@ -31,12 +34,16 @@ interface BarProps {
   state?: 'do' | 'run' | 'ok' | 'no';
   meter?: { v: number; of: number; unit: string } | null;
   next?: NowNext;
+  /** 장면 보기 (수정 지시서 v3 파트 2-2): the line names the scene and carries [다시 보기] (no '지금 할 일', no step). */
+  replay?: { onClick(): void; disabled?: boolean };
 }
 
-export default function NowBar({ n, text, state = 'do', meter, next }: BarProps) {
+export default function NowBar({ n, text, state = 'do', meter, next, replay }: BarProps) {
+  // A number and its unit: a space before mm (110 mm), none before ° or 곳.
+  const unit = meter ? (meter.unit === 'mm' ? ' mm' : meter.unit) : '';
   return (
     <div className={css.now} data-state={state} role="status" aria-live="polite">
-      <em>지금 할 일</em>
+      {!replay && <em>지금 할 일</em>}
       {n ? <i className={css.n}>{n}</i> : state === 'ok' ? <i className={css.ok}>✓</i> : null}
       <p>
         <PlayText text={text} size={26} />
@@ -48,14 +55,20 @@ export default function NowBar({ n, text, state = 'do', meter, next }: BarProps)
           </i>
           <output>
             {Math.min(meter.v, meter.of).toFixed(0)}
-            {meter.unit} / {meter.of}
-            {meter.unit}
+            {unit} / {meter.of}
+            {unit}
           </output>
         </span>
       )}
+      {replay && (
+        <button type="button" className={css.replay} disabled={replay.disabled} onClick={replay.onClick}>
+          <Icon name="play" size={16} />
+          {buttonName('replay')}
+        </button>
+      )}
       {next && (
         <button type="button" className={css.next} data-lit={next.lit || undefined} onClick={next.onClick}>
-          다음 단계 →
+          {buttonName('next')}
         </button>
       )}
     </div>
@@ -97,7 +110,7 @@ export function NowMark({ find, n, onHit }: { find: () => HTMLElement | null; n:
       const row = t?.closest('[data-row]');
       row?.parentElement?.querySelectorAll<HTMLElement>(':scope > [data-row]').forEach((r) => {
         if (r === row) return;
-        r.style.opacity = '0.35';
+        r.style.opacity = '0.55';
         dimmed.add(r);
       });
     };
@@ -117,7 +130,8 @@ export function NowMark({ find, n, onHit }: { find: () => HTMLElement | null; n:
   return createPortal(
     <>
       <span className={css.ring} style={{ left: at.left - 4, top: at.top - 4, width: at.width + 8, height: at.height + 8 }} aria-hidden="true" />
-      <i className={css.badge} style={{ left: at.left - 12, top: at.top - 12 }} aria-hidden="true">
+      {/* The badge sits outside the ring's top-left corner: nothing inside the ring is covered (수정 지시서 v3 파트 4-1). */}
+      <i className={css.badge} style={{ left: Math.max(2, at.left - 28), top: Math.max(2, at.top - 28) }} aria-hidden="true">
         {n}
       </i>
     </>,
@@ -169,10 +183,10 @@ export function QuestNow({ steps, sels, phase, passed, next, at: atNow, done }: 
     setWas(key);
     if (phase === 'do') setK(0);
   }
-  if (phase === 'run') return <NowBar state="run" text="실행 중이에요 · 장면을 지켜봐요" next={next} />;
+  if (phase === 'run') return <NowBar state="run" text={commonLine('running')} next={next} />;
   if (phase === 'result' && passed) return <NowBar state="ok" text={done ?? '통과했어요'} next={next ? { ...next, lit: true } : undefined} />;
   const at = Math.min(atNow ?? k, Math.max(0, steps.length - 1));
-  const text = phase === 'result' ? `아직이에요 · ${steps[at] ?? '다시 고쳐서 ▶ 시뮬레이션'}` : (steps[at] ?? '');
+  const text = phase === 'result' ? commonLine('notYet', { step: steps[at] ?? `▶ ${buttonName('run')}` }) : (steps[at] ?? '');
   const sel = sels[at];
   return (
     <>

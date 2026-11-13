@@ -11,7 +11,9 @@
 
 import { useState } from 'react';
 
+import { COURSE } from '@/engine/simulator/cell/course';
 import { MISSION_TRIES, gradeOX, missionWay, type ChapterTest, type OX, type TestResult } from '@/engine/simulator/cell/courseTests';
+import { buttonName } from '@/engine/simulator/cell/courseText';
 import { levelOf } from '@/engine/simulator/cell/platform';
 
 import PlayText from '../PlayText';
@@ -37,7 +39,10 @@ export default function CourseTestPanel({ test, result, onGraded, onNext, onMiss
   return (
     <div className={css.scrim} role="dialog" aria-label={`${test.chapter}장 수행평가`}>
       <div className={css.test}>
-        <h2>{test.chapter}장 수행평가</h2>
+        {/* Its number (the chapter's last) beside its name (수정 지시서 v3 파트 8-2). */}
+        <h2>
+          {COURSE.find((c) => c.n === test.chapter)?.test} {test.chapter}장 수행평가
+        </h2>
         <p>교안의 문제를 읽고 번호마다 O 또는 X를 눌러요.</p>
         <ol className={css.ox}>
           {test.answers.map((ans, i) => (
@@ -124,7 +129,7 @@ export default function CourseTestPanel({ test, result, onGraded, onNext, onMiss
               <div className={css.row}>
                 <output />
                 <button type="button" className={css.key} data-lit onClick={onNext}>
-                  다음 단계 →
+                  {buttonName('next')}
                 </button>
               </div>
             )}

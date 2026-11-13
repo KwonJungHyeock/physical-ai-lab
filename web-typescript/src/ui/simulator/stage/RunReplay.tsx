@@ -8,6 +8,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+import { commonLine } from '@/engine/simulator/cell/courseText';
 import type { WorldState } from '@/engine/simulator/sim';
 
 import Icon from '../Icon';
@@ -96,7 +97,7 @@ interface TimelineProps {
   onClose(): void;
   /** Start playing at once (from the result card's [다시 보기]). */
   autoplay?: number;
-  /** 입문 과정: the 절's number — the head's line then reads '5-1 · 건네기 · 102 / 102' (the 절, the card's name, how far). */
+  /** 입문 과정: the 절's number — the head's line then reads '5-1 다시 보기' only (수정 지시서 v3: no card name, no count). */
   head?: string;
 }
 
@@ -188,7 +189,7 @@ export function RunTimeline({ replay, lineLabel, onSeek, onClose, autoplay, head
         ))}
         <span className={css.tlHead} style={{ left: pct(t) }}>
           {head ? (
-            <em>{[head, nowLine > 0 ? lineLabel(nowLine).split(' · ')[0] : '', `${step + 1} / ${marks.length}`].filter(Boolean).join(' · ')}</em>
+            <em>{commonLine('replayOf', { sub: head })}</em>
           ) : (
             nowLine > 0 && (
               <em>
@@ -198,9 +199,7 @@ export function RunTimeline({ replay, lineLabel, onSeek, onClose, autoplay, head
           )}
         </span>
       </div>
-      <span className={css.tlTime}>
-        {t.toFixed(1)}s / {duration.toFixed(1)}s
-      </span>
+      <span className={css.tlTime}>{head ? `${t.toFixed(1)} / ${duration.toFixed(1)}초` : `${t.toFixed(1)}s / ${duration.toFixed(1)}s`}</span>
       <span className={css.tlRate} role="group" aria-label="다시 보기 배속">
         {[1, 2, 4].map((r) => (
           <button key={r} type="button" aria-pressed={rate === r} onClick={() => setRate(r)}>

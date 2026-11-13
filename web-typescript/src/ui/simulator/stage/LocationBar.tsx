@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * 위치 줄 (입문 트랙, 학생 화면 맨 위): "N차시 · 3-4 · 교안 N쪽" and the 서브챕터's name, big enough to
+ * 위치 줄 (입문 트랙, 학생 화면 맨 위): "N차시 · 3-3 · 교안 N쪽" and the 서브챕터's name, big enough to
  * read from the back of the classroom — the same numbers as the PDF 교안 the teacher shows (course.ts).
  * Pressed, it opens the 차시 · 절 list: a student who came late goes straight to the one the
  * teacher is on (one skipped stays 미완료; the record is kept as before). Beside it: the kind open now
@@ -10,14 +10,14 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import { MODE_NAME, pagesText, shortTitle, type SubMode } from '@/engine/simulator/cell/course';
+import { MODE_NAME, barTitle, pagesText, type SubMode } from '@/engine/simulator/cell/course';
 
 import Icon from '../Icon';
 import css from './locationBar.module.css';
 
 export interface LocStep {
   id: string;
-  /** '3-4': the 교안's 장 · 절 number. */
+  /** '3-3': the 교안's 장 · 절 number. */
   label: string;
   title: string;
   /** null: no 교안 쪽 yet — left out of the line. */
@@ -89,9 +89,11 @@ export default function LocationBar({
         {/* The 장 · 절 number biggest and brightest; the 차시 and the 교안 pages beside it as one piece. */}
         <b>{step.label}</b>
         {/* The name up to its colon (the whole name: the list and the printed sheet). */}
-        <span title={step.title}>{shortTitle(step.title)}</span>
+        <span title={step.title}>{barTitle(step.label, step.title)}</span>
         {(lesson > 0 || step.pages) && <small>{[lesson ? `${lesson}차시` : '', pagesText(step.pages)].filter(Boolean).join(' · ')}</small>}
-        <i aria-hidden="true">목록 {open ? '▴' : '▾'}</i>
+        <i aria-hidden="true" data-open={open || undefined}>
+          목록 <Icon name="chevron" size={14} />
+        </i>
       </button>
       {kinds && kinds.has.length > 0 && (
         <span className={css.kinds} role="group" aria-label="장면 보기 · 실습 하기">

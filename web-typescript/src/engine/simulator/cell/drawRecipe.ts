@@ -10,7 +10,11 @@
  * No React: DrawCards.tsx shows them, tests/simulator/cell-g-check.mts runs the starters.
  */
 
+import { buttonName } from './courseText';
 import { CARD_HOME, G3_CARD, LIFT_MM, PHRASES, phraseStrokes, placedStrokes, type Phrase } from './draw';
+
+/** A number as the screens write it: the minus sign '−' (수정 지시서 v3 파트 5-7). */
+const signed = (n: number) => String(n).replace('-', '−');
 
 export type DrawCard = { k: 'receive' } | { k: 'setup'; x: number; y: number; z: number } | { k: 'write'; phrase: Phrase; lift: boolean; straight: boolean } | { k: 'give' };
 
@@ -81,14 +85,14 @@ function rowsWith(c: DrawCard, s: Settings): DrawRow[] {
       s.corner = { x: c.x, y: c.y };
       s.z = c.z;
       return [
-        { text: `카드 왼쪽 아래 모서리: x ${c.x} · y ${c.y} mm`, code: '' },
-        { text: `쓸 때 펜 끝 높이: 종이 위 ${c.z} mm`, code: '' },
+        { text: `카드 왼쪽 아래 모서리: x ${signed(c.x)} · y ${signed(c.y)} mm`, code: '' },
+        { text: `쓸 때 펜 끝 높이: 종이 위 ${signed(c.z)} mm`, code: '' },
       ];
     case 'write':
       return [
         { text: `'${c.phrase}' 획 ${phraseStrokes(c.phrase).strokes.length}개 쓰기`, code: writeCode(c, s) },
-        { text: '직선 이동으로 쓰기 (끄면 관절 이동)', code: '', toggle: 'straight', on: c.straight },
-        { text: '획 사이 펜 들기', code: '', toggle: 'lift', on: c.lift },
+        { text: buttonName('linear'), code: '', toggle: 'straight', on: c.straight },
+        { text: buttonName('lift'), code: '', toggle: 'lift', on: c.lift },
       ];
     case 'give':
       return [

@@ -11,6 +11,11 @@
   word-break: keep-all;
   animation: guideIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
+/* 대응표 */
+:where([data-course]) .predict,
+:where([data-course]) .result {
+  border-radius: 12px;
+}
 @keyframes guideIn {
   from {
     opacity: 0;
@@ -29,6 +34,14 @@
   letter-spacing: 0.2em;
   color: var(--hud-dim);
 }
+/* 대응표 */
+:where([data-course]) .predict em,
+:where([data-course]) .result em {
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
 
 /* 예측: over the 3D view's bottom right, by the run button. */
 .predict {
@@ -42,6 +55,10 @@
     var(--hud-plate-shadow),
     0 0 0 1px rgba(255, 255, 255, 0.28),
     0 0 22px rgba(236, 241, 248, 0.14);
+}
+/* 대응표 */
+:where([data-course]) .predict {
+  padding: 12px 16px 12px;
 }
 .predict header {
   display: flex;
@@ -60,9 +77,17 @@
   font-weight: 700;
   line-height: 1.4;
 }
+/* 대응표 */
+:where([data-course]) .predict p {
+  font-size: 16px;
+}
 .opts {
   display: grid;
   gap: 6px;
+}
+/* 대응표 */
+:where([data-course]) .opts {
+  gap: 8px;
 }
 /* Two classes: the console's `.app button { color: inherit }` outranks one. */
 .predict .opts button {
@@ -81,6 +106,12 @@
   font-weight: 600;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .predict .opts button {
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 12px;
+}
 .predict .opts button:hover {
   filter: brightness(1.12);
   box-shadow: var(--hud-key-shadow), var(--hud-key-on);
@@ -90,11 +121,19 @@
   color: var(--hud-light);
   font-weight: 800;
 }
+/* 대응표 */
+:where([data-course]) .opts i {
+  font-weight: 700;
+}
 .predict small {
   display: block;
   margin-top: 8px;
   font-size: 11.5px;
   color: var(--hud-dim);
+}
+/* 대응표 */
+:where([data-course]) .predict small {
+  font-size: 13px;
 }
 .x {
   margin-left: auto;
@@ -105,8 +144,16 @@
   font-size: 12px;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .x {
+  font-size: 13px;
+}
 .x:hover {
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .x:hover {
+  color: #f6f7f9;
 }
 
 /* 결과: in the notices column at the top centre. */
@@ -118,6 +165,10 @@
     var(--hud-plate-shadow),
     inset 0 2px 0 var(--hud-amber);
 }
+/* 대응표 */
+:where([data-course]) .result {
+  padding: 12px 16px 12px;
+}
 .result[data-ok] {
   box-shadow:
     var(--hud-plate-shadow),
@@ -128,6 +179,10 @@
   align-items: center;
   gap: 11px;
 }
+/* 대응표 */
+:where([data-course]) .result header {
+  gap: 12px;
+}
 .result header b {
   display: block;
   font-size: 16px;
@@ -135,6 +190,10 @@
 .result header small {
   font-size: 12px;
   color: var(--hud-sub);
+}
+/* 대응표 */
+:where([data-course]) .result header small {
+  font-size: 13px;
 }
 .result header .x {
   font-size: 18px;
@@ -150,6 +209,10 @@
   font-weight: 900;
   background: var(--hud-amber);
   color: var(--hud-ink);
+}
+/* 대응표 */
+:where([data-course]) .medal {
+  font-weight: 700;
 }
 .result[data-ok] .medal {
   background: var(--hud-green);
@@ -168,12 +231,21 @@
   padding: 4px 0;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
+/* 대응표 */
+:where([data-course]) .checks li {
+  gap: 8px;
+  border-top-color: rgba(255, 255, 255, 0.18);
+}
 .checks i {
   font-style: normal;
   font-weight: 800;
   width: 14px;
   text-align: center;
   color: var(--hud-amber);
+}
+/* 대응표 */
+:where([data-course]) .checks i {
+  font-weight: 700;
 }
 .checks li[data-ok] i {
   color: var(--hud-green);
@@ -185,6 +257,10 @@
   letter-spacing: 0;
   color: var(--hud-sub);
   white-space: nowrap;
+}
+/* 대응표 */
+:where([data-course]) .checks em {
+  font-size: 13px;
 }
 .compare {
   margin: 8px 0 0;
@@ -201,6 +277,10 @@
   margin-top: 9px;
   padding-top: 9px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+/* 대응표 */
+:where([data-course]) .concept {
+  border-top-color: rgba(255, 255, 255, 0.18);
 }
 .concept em {
   color: var(--hud-light);
@@ -221,6 +301,10 @@
   color: var(--hud-sub);
   line-height: 1.45;
 }
+/* 대응표 */
+:where([data-course]) .concept small {
+  font-size: 13px;
+}
 .result .next {
   margin-top: 11px;
   height: 36px;
@@ -234,6 +318,12 @@
   font-size: 13px;
   font-weight: 800;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .result .next {
+  padding: 0 16px;
+  border-radius: 12px;
+  font-weight: 700;
 }
 
 /* The result card in the side panel (퀘스트 모드), above the cards. */
@@ -272,6 +362,11 @@
   overflow: hidden;
   animation: qIn 0.34s cubic-bezier(0.2, 0.9, 0.3, 1.15);
 }
+/* 대응표 */
+:where([data-course]) .qCard {
+  padding: 24px 30px 24px;
+  border-radius: 12px;
+}
 @keyframes qFade {
   from {
     opacity: 0;
@@ -302,6 +397,12 @@
   font-weight: 900;
   animation: qPop 0.5s 0.1s cubic-bezier(0.3, 1.6, 0.5, 1) both;
 }
+/* 대응표 */
+:where([data-course]) .qBadge {
+  gap: 8px;
+  color: #14171c;
+  font-weight: 700;
+}
 /* The pause sign: two bars. */
 .qBadge i {
   width: 12px;
@@ -319,11 +420,19 @@
   align-items: center;
   gap: 6px;
 }
+/* 대응표 */
+:where([data-course]) .qCount {
+  gap: 8px;
+}
 .qCount i {
   width: 22px;
   height: 6px;
   border-radius: 3px;
   background: rgba(255, 255, 255, 0.16);
+}
+/* 대응표 */
+:where([data-course]) .qCount i {
+  border-radius: 8px;
 }
 .qCount i[data-on] {
   background: #f0a23b;
@@ -334,11 +443,19 @@
   font-variant-numeric: tabular-nums;
   color: var(--hud-sub);
 }
+/* 대응표 */
+:where([data-course]) .qCount b {
+  font-size: 16px;
+}
 .qSub {
   margin: 16px 0 6px;
   font-size: 15px;
   line-height: 1.5;
   color: var(--hud-sub);
+}
+/* 대응표 */
+:where([data-course]) .qSub {
+  font-size: 16px;
 }
 .qQ {
   margin: 0 0 22px;
@@ -347,10 +464,20 @@
   line-height: 1.45;
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .qQ {
+  font-size: 28px;
+  font-weight: 700;
+  color: #f6f7f9;
+}
 .qOpts {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 14px;
+}
+/* 대응표 */
+:where([data-course]) .qOpts {
+  gap: 16px;
 }
 .qOpts[data-n='3'] {
   grid-template-columns: 1fr;
@@ -378,6 +505,12 @@
     opacity 0.2s,
     box-shadow 0.2s;
 }
+/* 대응표 */
+:where([data-course]) .qOpts button {
+  padding: 16px 16px;
+  border-radius: 12px;
+  color: #f6f7f9;
+}
 .qOpts button:not(:disabled):hover,
 .qOpts button:focus-visible {
   box-shadow: var(--hud-key-shadow), var(--hud-key-on);
@@ -401,6 +534,10 @@
   font-style: normal;
   font-size: 22px;
   color: var(--hud-light);
+}
+/* 대응표 */
+:where([data-course]) .qOpts i {
+  font-size: 23px;
 }
 /* O · X: two tall keys, a blue ring and a red cross (colour and shape, for every eye). */
 .qOpts[data-ox] button {
@@ -428,6 +565,11 @@
   border-radius: 7px;
   background: #ef4444;
   transform: translate(-50%, -50%) rotate(45deg);
+}
+/* 대응표 */
+:where([data-course]) .xMark::before,
+:where([data-course]) .xMark::after {
+  border-radius: 8px;
 }
 .xMark::after {
   transform: translate(-50%, -50%) rotate(-45deg);
@@ -478,6 +620,11 @@
   animation: qUp 0.28s ease-out;
   --tone: #93c5fd;
 }
+/* 대응표 */
+:where([data-course]) .qFeed {
+  gap: 16px;
+  padding: 16px 30px 24px;
+}
 .qCard[data-state='ok'] .qFeed {
   background: rgba(52, 211, 153, 0.14);
   box-shadow: inset 0 3px 0 #34d399;
@@ -498,15 +645,28 @@
   gap: 6px;
   flex: 1;
 }
+/* 대응표 */
+:where([data-course]) .qFeed span {
+  gap: 8px;
+}
 .qFeed b {
   font-size: 21px;
   font-weight: 900;
   color: var(--tone);
 }
+/* 대응표 */
+:where([data-course]) .qFeed b {
+  font-size: 23px;
+  font-weight: 700;
+}
 .qFeed small {
   font-size: 16px;
   line-height: 1.55;
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .qFeed small {
+  color: #f6f7f9;
 }
 .qFeed button {
   flex: none;
@@ -521,6 +681,12 @@
   font-size: 17px;
   font-weight: 800;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .qFeed button {
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: 700;
 }
 
 /* 퀘스트 모드: the result in the middle of the scene (StepResult modal). */
@@ -541,6 +707,10 @@
     0 0 0 1px rgba(255, 255, 255, 0.3),
     0 18px 60px rgba(0, 0, 0, 0.55);
 }
+/* 대응표 */
+:where([data-course]) .resultModal .result {
+  max-height: calc(calc(100vh / var(--course-zoom, 1)) - 220px);
+}
 
 /* 입문 과정: the question in the right panel (the scene stays in sight while it holds). */
 .quizDock {
@@ -555,18 +725,64 @@
     var(--hud-plate-shadow),
     0 0 0 1px rgba(255, 255, 255, 0.35);
 }
+/* 대응표 */
+:where([data-course]) .quizDock .qCard {
+  padding: 16px 16px 16px;
+  border-radius: 12px;
+}
 .quizDock .qQ {
   margin: 0 0 14px;
   font-size: 20px;
+}
+/* 대응표 */
+:where([data-course]) .quizDock .qQ {
+  font-size: 23px;
 }
 .quizDock .qOpts button {
   min-height: 56px;
   padding: 10px 12px;
   font-size: 17px;
 }
+/* 대응표 */
+:where([data-course]) .quizDock .qOpts button {
+  padding: 12px 12px;
+  font-size: 18px;
+}
 .quizDock .qFeed {
   flex-wrap: wrap;
   gap: 10px;
   margin: 14px -16px -14px;
   padding: 12px 16px 14px;
+}
+/* 대응표 */
+:where([data-course]) .quizDock .qFeed {
+  gap: 12px;
+  padding: 12px 16px 16px;
+}
+
+/* 수정 지시서 v3 (입문 과정의 잠깐 퀴즈): 문장 18 px · 700, 보기 16 px; the tag and the 풀이 strip without a colour
+   that means something (orange is the place to press, blue the line drawn). */
+[data-course] .quizDock .qQ {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+[data-course] .quizDock .qOpts button {
+  min-height: 48px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+[data-course] .qBadge {
+  background: rgba(255, 255, 255, 0.16);
+  color: #f6f7f9;
+  font-weight: 700;
+}
+[data-course] .qFeed {
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.45);
+  --tone: #f6f7f9;
+}
+[data-course] .qSkip {
+  min-height: 40px;
 }

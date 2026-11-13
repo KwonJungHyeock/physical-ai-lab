@@ -38,6 +38,10 @@
   color: #fff;
   margin-bottom: 2px;
 }
+/* 대응표 */
+:where([data-course]) .cellName {
+  color: #f6f7f9;
+}
 .soon {
   margin-left: 8px;
   font-size: 11px;
@@ -46,6 +50,12 @@
   border: 1px solid #7c3a1d;
   border-radius: 5px;
   padding: 0 6px;
+}
+/* 대응표 */
+:where([data-course]) .soon {
+  font-size: 13px;
+  color: #f0a23b;
+  border-radius: 8px;
 }
 .tileWrap {
   display: inline-flex;
@@ -73,8 +83,19 @@
   cursor: pointer;
   transition: transform 0.12s;
 }
+/* 대응표 */
+:where([data-course]) .tile {
+  border-radius: 8px;
+  color: #f6f7f9;
+  font-weight: 700;
+  font-size: 13px;
+}
 .tile[data-done] {
   color: #6ee7a8;
+}
+/* 대응표 */
+:where([data-course]) .tile[data-done] {
+  color: #86efac;
 }
 .tile[data-done]::after {
   content: '✓';
@@ -83,12 +104,20 @@
   top: -1px;
   font-size: 9px;
 }
+/* 대응표 */
+:where([data-course]) .tile[data-done]::after {
+  font-size: 13px;
+}
 .tile[data-cur] {
   transform: translateY(-4px);
   background: #3a4741;
   border-color: #e9eeeb;
   color: #fff;
   box-shadow: 0 4px 0 #0e1311;
+}
+/* 대응표 */
+:where([data-course]) .tile[data-cur] {
+  color: #f6f7f9;
 }
 .tile[data-cur]::before {
   content: '';
@@ -105,9 +134,17 @@
   background: #1f2825;
   cursor: default;
 }
+/* 대응표 */
+:where([data-course]) .tile:disabled {
+  color: #c9ced5;
+}
 .tile small {
   font-size: 9px;
   margin-left: 2px;
+}
+/* 대응표 */
+:where([data-course]) .tile small {
+  font-size: 13px;
 }
 .tile[data-free] {
   min-width: 46px;
@@ -125,6 +162,12 @@
   overflow: auto;
   min-height: 0;
 }
+/* 대응표 */
+:where([data-course]) .card,
+:where([data-course]) .fault,
+:where([data-course]) .stop {
+  color: #f6f7f9;
+}
 .card {
   flex: 0 1 auto;
 }
@@ -138,6 +181,10 @@
   font-size: 16px;
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .card header b {
+  color: #f6f7f9;
+}
 .card header span {
   font-size: 11.5px;
   color: #b9c4bf;
@@ -146,10 +193,21 @@
   padding: 0 7px;
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .card header span {
+  font-size: 13px;
+  color: #c9ced5;
+  border-radius: 8px;
+}
 .adds {
   margin: 7px 0 4px;
   color: #9fd8bf;
   font-size: 12.5px;
+}
+/* 대응표 */
+:where([data-course]) .adds {
+  color: #c9ced5;
+  font-size: 13px;
 }
 .goal {
   margin: 0;
@@ -172,8 +230,16 @@
   text-align: center;
   font-weight: 800;
 }
+/* 대응표 */
+:where([data-course]) .checks i {
+  font-weight: 700;
+}
 .checks li[data-ok] i {
   color: #34d399;
+}
+/* 대응표 */
+:where([data-course]) .checks li[data-ok] i {
+  color: #86efac;
 }
 .checks em {
   margin-left: auto;
@@ -181,6 +247,11 @@
   font-size: 12px;
   color: #b9c4bf;
   white-space: nowrap;
+}
+/* 대응표 */
+:where([data-course]) .checks em {
+  font-size: 13px;
+  color: #c9ced5;
 }
 .result {
   margin: 9px 0 0;
@@ -207,6 +278,11 @@
   text-decoration: underline;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .link {
+  color: #c9ced5;
+  font-size: 13px;
+}
 .link:disabled {
   opacity: 0.5;
 }
@@ -216,6 +292,10 @@
   border-radius: 8px;
   background: #2b3531;
   font-size: 12.5px;
+}
+/* 대응표 */
+:where([data-course]) .hint {
+  font-size: 13px;
 }
 
 .fault {
@@ -227,12 +307,22 @@
   font-size: 14.5px;
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .fault b,
+:where([data-course]) .stop b {
+  font-size: 14px;
+  color: #f6f7f9;
+}
 .fault p,
 .stop p {
   margin: 5px 0 0;
 }
 .fix {
   color: #fde68a;
+}
+/* 대응표 */
+:where([data-course]) .fix {
+  color: #f0a23b;
 }
 .repair {
   margin-top: 9px;
@@ -246,6 +336,11 @@
   cursor: pointer;
   border-bottom: 3px solid #b45309;
 }
+/* 대응표 */
+:where([data-course]) .repair {
+  color: #14171c;
+  font-weight: 700;
+}
 .stop {
   background: rgba(124, 45, 18, 0.93);
 }
@@ -253,6 +348,10 @@
   display: block;
   margin-top: 4px;
   color: #fed7aa;
+}
+/* 대응표 */
+:where([data-course]) .stop small {
+  color: #f0a23b;
 }
 
 /* 자유 실습's equipment panel. */
@@ -274,9 +373,18 @@
   font-weight: 700;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .seg button {
+  border-radius: 8px;
+  color: #c9ced5;
+}
 .seg button[aria-pressed='true'] {
   background: #fff;
   color: #18201d;
+}
+/* 대응표 */
+:where([data-course]) .seg button[aria-pressed='true'] {
+  color: #14171c;
 }
 .ctl {
   display: grid;
@@ -296,10 +404,20 @@
   cursor: pointer;
   border-bottom: 3px solid #222a27;
 }
+/* 대응표 */
+:where([data-course]) .key {
+  border-radius: 8px;
+  color: #f6f7f9;
+  font-weight: 700;
+}
 .key[data-on] {
   background: #f59e0b;
   color: #1a1204;
   border-bottom-color: #b45309;
+}
+/* 대응표 */
+:where([data-course]) .key[data-on] {
+  color: #14171c;
 }
 .key[data-go] {
   background: #0f6b4c;
@@ -323,6 +441,11 @@
   padding: 9px 12px;
   font-size: 12px;
 }
+/* 대응표 */
+:where([data-course]) .lamps {
+  color: #f6f7f9;
+  font-size: 13px;
+}
 .grp {
   display: flex;
   flex-wrap: wrap;
@@ -332,6 +455,11 @@
 .grp > b {
   font-size: 11px;
   color: #9aa49f;
+}
+/* 대응표 */
+:where([data-course]) .grp > b {
+  font-size: 13px;
+  color: #c9ced5;
 }
 .lamp {
   display: inline-flex;
@@ -375,11 +503,22 @@
   text-align: left;
   font-variant-numeric: tabular-nums;
 }
+/* 대응표 */
+:where([data-course]) .kpi {
+  font-weight: 700;
+  font-size: 16px;
+  color: #f6f7f9;
+}
 .kpi small {
   display: block;
   font-size: 10.5px;
   font-weight: 700;
   color: #9aa49f;
+}
+/* 대응표 */
+:where([data-course]) .kpi small {
+  font-size: 13px;
+  color: #c9ced5;
 }
 
 /* 실습 셀 B's camera window (CellCamera.tsx): top right of the 3D view, left of the view tools. */
@@ -398,6 +537,11 @@
   line-height: 1.45;
   word-break: keep-all;
 }
+/* 대응표 */
+:where([data-course]) .camera {
+  color: #f6f7f9;
+  font-size: 13px;
+}
 .camera header {
   display: flex;
   justify-content: space-between;
@@ -408,11 +552,20 @@
   font-size: 11px;
   color: #9aa49f;
 }
+/* 대응표 */
+:where([data-course]) .camera header span {
+  font-size: 13px;
+  color: #c9ced5;
+}
 .camera canvas {
   display: block;
   width: 248px;
   border-radius: 6px;
   border: 1px solid #3a4440;
+}
+/* 대응표 */
+:where([data-course]) .camera canvas {
+  border-radius: 8px;
 }
 .camera p {
   margin: 7px 0 0;
@@ -421,6 +574,11 @@
   font-style: normal;
   font-weight: 800;
   color: #9fd8bf;
+}
+/* 대응표 */
+:where([data-course]) .camera em {
+  font-weight: 700;
+  color: #c9ced5;
 }
 
 /* 입문 트랙: the folded signal lamps' toggle, at the foot of the column. */
@@ -440,6 +598,12 @@
   font-weight: 700;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .lampsToggle {
+  border-radius: 12px;
+  color: #f6f7f9;
+  font-size: 13px;
+}
 .lampsToggle em {
   font-style: normal;
   font-size: 9.5px;
@@ -447,10 +611,22 @@
   letter-spacing: 0.12em;
   color: #9aa7a1;
 }
+/* 대응표 */
+:where([data-course]) .lampsToggle em {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: #c9ced5;
+}
 .lampsToggle span {
   font-size: 11.5px;
   font-weight: 600;
   color: #34d399;
+}
+/* 대응표 */
+:where([data-course]) .lampsToggle span {
+  font-size: 13px;
+  color: #86efac;
 }
 .lampsToggle[aria-expanded='true'] + .lamps {
   margin-top: 0;
@@ -467,6 +643,10 @@
   box-shadow: var(--hud-plate-shadow);
   color: var(--hud-tx);
 }
+/* 대응표 */
+:where([data-course]) .stepper {
+  border-radius: 12px;
+}
 .stepper header {
   display: flex;
   align-items: baseline;
@@ -479,10 +659,19 @@
   letter-spacing: 0.22em;
   color: var(--hud-dim);
 }
+/* 대응표 */
+:where([data-course]) .stepper header em {
+  font-size: 13px;
+  letter-spacing: 0;
+}
 .stepper header b {
   font-size: 14px;
   font-weight: 800;
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.55);
+}
+/* 대응표 */
+:where([data-course]) .stepper header b {
+  font-weight: 700;
 }
 .stepTicks {
   margin-left: auto;
@@ -491,6 +680,13 @@
 .stepper header span {
   font: 700 12px ui-monospace, SFMono-Regular, Menlo, monospace;
   color: #9aa1a9;
+}
+/* 대응표 */
+:where([data-course]) .stepper header span {
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  color: #c9ced5;
 }
 .stepper ol {
   list-style: none;
@@ -536,6 +732,13 @@
     transform 0.15s,
     box-shadow 0.15s;
 }
+/* 대응표 */
+:where([data-course]) .stepper ol > li button {
+  font-weight: 700;
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+}
 .stepper ol > li button:hover:not(:disabled) {
   box-shadow: inset 0 0 0 1.5px #c9ced5;
 }
@@ -544,12 +747,20 @@
   box-shadow: inset 0 0 0 1.5px #34d399;
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .stepper ol > li[data-done] button {
+  color: #f6f7f9;
+}
 .stepper ol > li[data-cur] button {
   background: #fff;
   box-shadow:
     0 0 0 4px rgba(255, 255, 255, 0.12),
     0 0 16px rgba(255, 255, 255, 0.55);
   color: #15181c;
+}
+/* 대응표 */
+:where([data-course]) .stepper ol > li[data-cur] button {
+  color: #14171c;
 }
 .stepper ol > li[data-locked] button {
   background: #23262a;
@@ -569,6 +780,11 @@
   font: 700 11.5px inherit;
   font-family: inherit;
 }
+/* 대응표 */
+:where([data-course]) .stepper ol > li.freeStep button {
+  border-radius: 8px;
+  font-size: 13px;
+}
 .stepper ol > li.freeStep[data-cur] button {
   transform: none;
 }
@@ -581,12 +797,24 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* 대응표 */
+:where([data-course]) .stepper p {
+  color: #f6f7f9;
+}
 .stepper p i {
   font-style: normal;
   font: 800 11px ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: 0.08em;
   color: var(--hud-dim);
   margin-right: 7px;
+}
+/* 대응표 */
+:where([data-course]) .stepper p i {
+  font-weight: 700;
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
 }
 /* 입문: the signals key, a HUD key with bright words (it read too faint over the scene). Two
    classes: the console's `.app button { color: inherit }` outranks one. */
@@ -602,6 +830,10 @@
   color: var(--hud-dim);
   letter-spacing: 0.2em;
 }
+/* 대응표 */
+:where([data-course]) .hud .lampsToggle em {
+  letter-spacing: 0;
+}
 .hud .lampsToggle span {
   color: var(--hud-green);
 }
@@ -616,12 +848,24 @@
   white-space: normal;
   color: var(--hud-tx);
 }
+/* 대응표 */
+:where([data-course]) .stepper .qTitle {
+  font-size: 16px;
+  font-weight: 700;
+}
 .stepper .qTitle i {
   display: block;
   margin: 0 0 3px;
   font: 700 10.5px ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: 0.2em;
   color: var(--hud-dim);
+}
+/* 대응표 */
+:where([data-course]) .stepper .qTitle i {
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
 }
 .qChecks {
   list-style: none;
@@ -651,6 +895,12 @@
   font-weight: 900;
   box-shadow: inset 0 0 0 1.5px var(--hud-dim);
 }
+/* 대응표 */
+:where([data-course]) .qChecks i {
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
 .qChecks li[data-ok] {
   color: var(--hud-tx);
 }
@@ -671,11 +921,22 @@
   background: var(--hud-groove);
   box-shadow: var(--hud-groove-shadow), inset 3px 0 0 var(--hud-light);
 }
+/* 대응표 */
+:where([data-course]) .qNow {
+  border-radius: 12px;
+}
 .qNow em {
   font: 700 10.5px ui-monospace, SFMono-Regular, Menlo, monospace;
   font-style: normal;
   letter-spacing: 0.2em;
   color: var(--hud-light);
+}
+/* 대응표 */
+:where([data-course]) .qNow em {
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
 }
 .stepper .qNow p {
   margin: 4px 0 0;
@@ -685,6 +946,10 @@
   white-space: normal;
   word-break: keep-all;
   color: var(--hud-tx);
+}
+/* 대응표 */
+:where([data-course]) .stepper .qNow p {
+  font-size: 14px;
 }
 .qNow[data-phase='result'] {
   box-shadow: var(--hud-groove-shadow), inset 3px 0 0 var(--hud-green);
@@ -702,6 +967,10 @@
   text-underline-offset: 3px;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .stepper .qHint {
+  font-size: 13px;
+}
 .qHintText {
   display: block;
   margin-top: 5px;
@@ -709,6 +978,10 @@
   line-height: 1.5;
   color: var(--hud-sub);
   word-break: keep-all;
+}
+/* 대응표 */
+:where([data-course]) .qHintText {
+  font-size: 13px;
 }
 .stepper .qList {
   margin-top: 10px;
@@ -723,6 +996,10 @@
   font-size: 12.5px;
   font-weight: 700;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .stepper .qList {
+  font-size: 13px;
 }
 
 /* 퀘스트 모드: the quest card at the top of the side panel (not over the scene). */
@@ -744,6 +1021,11 @@
   font-weight: 700;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .stepper .qListHead {
+  border-radius: 8px;
+  font-size: 13px;
+}
 .stepper[data-panel] {
   padding: 10px 12px 11px;
 }
@@ -761,6 +1043,10 @@
 .stepper[data-panel] .qChecks li {
   font-size: 12.5px;
 }
+/* 대응표 */
+:where([data-course]) .stepper[data-panel] .qChecks li {
+  font-size: 13px;
+}
 .stepper[data-panel] .qNow {
   margin-top: 8px;
   padding: 7px 10px 8px;
@@ -775,6 +1061,10 @@
   font-style: normal;
   font-size: 12px;
   color: var(--hud-amber);
+}
+/* 대응표 */
+:where([data-course]) .qChecks li em {
+  font-size: 13px;
 }
 
 /* 퀘스트 모드: the place's 공정 띠 stands at the scene's top left; a stop or a fault comes under it. */
@@ -794,10 +1084,19 @@
   letter-spacing: 0;
   color: var(--hud-sub);
 }
+/* 대응표 */
+:where([data-course]) .sheet {
+  border-radius: 8px;
+  font-size: 13px;
+}
 .stepper[data-panel] ol > li button {
   width: 22px;
   height: 22px;
   font-size: 10.5px;
+}
+/* 대응표 */
+:where([data-course]) .stepper[data-panel] ol > li button {
+  font-size: 13px;
 }
 .stepper[data-panel] ol > li.freeStep button {
   width: auto;
@@ -805,6 +1104,11 @@
   border-radius: 7px;
   white-space: nowrap;
   font-size: 11px;
+}
+/* 대응표 */
+:where([data-course]) .stepper[data-panel] ol > li.freeStep button {
+  border-radius: 8px;
+  font-size: 13px;
 }
 
 /* 신호 관제판 (로봇 카페, 입문): the equipment in a row, each with its signals. */
@@ -818,6 +1122,13 @@
   box-shadow: var(--hud-plate-shadow, 0 0 0 1px rgba(0, 0, 0, 0.5));
   color: var(--hud-tx, #e9edf1);
   font-size: 12px;
+}
+/* 대응표 */
+:where([data-course]) .board {
+  --cv1: calc(100vw / var(--course-zoom, 1));
+  width: min(860px, calc(var(--cv1) - var(--inset-l, 12px) - var(--inset-r, 12px) - 40px));
+  border-radius: 12px;
+  font-size: 13px;
 }
 .board header {
   display: flex;
@@ -859,6 +1170,10 @@
   color: #fff;
   font-variant-numeric: tabular-nums;
 }
+/* 대응표 */
+:where([data-course]) .boardKpi b {
+  color: #f6f7f9;
+}
 .board ol {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
@@ -875,6 +1190,10 @@
   border-radius: 10px;
   background: rgba(0, 0, 0, 0.28);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+/* 대응표 */
+:where([data-course]) .board li {
+  border-radius: 12px;
 }
 .board li[data-lit] {
   box-shadow:
@@ -897,6 +1216,10 @@
   font-size: 12.5px;
   line-height: 1.2;
 }
+/* 대응표 */
+:where([data-course]) .stTop b {
+  font-size: 13px;
+}
 .sig {
   display: flex;
   align-items: center;
@@ -906,9 +1229,17 @@
   color: var(--hud-sub, #aab1b9);
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .sig {
+  font-size: 13px;
+}
 .sig[data-on] {
   color: #fff;
   font-weight: 700;
+}
+/* 대응표 */
+:where([data-course]) .sig[data-on] {
+  color: #f6f7f9;
 }
 .sig[data-on] i {
   background: #34d399;
@@ -935,6 +1266,10 @@
   box-shadow: var(--hud-plate-shadow);
   color: var(--hud-tx);
 }
+/* 대응표 */
+:where([data-course]) .qPanel {
+  border-radius: 12px;
+}
 
 .qHead {
   display: flex;
@@ -949,6 +1284,11 @@
   letter-spacing: 0.22em;
   color: var(--hud-dim);
 }
+/* 대응표 */
+:where([data-course]) .qHead em {
+  font-size: 13px;
+  letter-spacing: 0;
+}
 
 .qNum {
   font:
@@ -960,11 +1300,23 @@
   color: var(--hud-light);
   text-shadow: 0 0 12px rgba(236, 241, 248, 0.35);
 }
+/* 대응표 */
+:where([data-course]) .qNum {
+  font-weight: 700;
+  font-size: 23px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
 
 .qNum small {
   font-size: 12px;
   color: var(--hud-dim);
   text-shadow: none;
+}
+/* 대응표 */
+:where([data-course]) .qNum small {
+  font-size: 13px;
 }
 
 .qName {
@@ -975,6 +1327,11 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+/* 대응표 */
+:where([data-course]) .qName {
+  font-size: 16px;
+  font-weight: 700;
 }
 
 .qListKey {
@@ -1046,6 +1403,12 @@
     monospace;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .qTrack button {
+  font-weight: 700;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+}
 
 .qTrack li[data-lock] button {
   opacity: 0.4;
@@ -1056,6 +1419,10 @@
   background: var(--hud-green);
   box-shadow: none;
   color: #0e2316;
+}
+/* 대응표 */
+:where([data-course]) .qTrack li[data-done] button {
+  color: #14171c;
 }
 
 .qTrack li[data-cur] button {
@@ -1091,6 +1458,10 @@
   text-align: center;
   color: var(--hud-sub);
 }
+/* 대응표 */
+:where([data-course]) .qGauge li {
+  font-size: 13px;
+}
 
 .qGauge li i {
   height: 4px;
@@ -1123,6 +1494,10 @@
   background: var(--hud-groove);
   box-shadow: var(--hud-groove-shadow);
 }
+/* 대응표 */
+:where([data-course]) .qGoal {
+  border-radius: 12px;
+}
 
 .qGoal > i {
   flex: none;
@@ -1146,6 +1521,11 @@
   font-weight: 800;
   line-height: 1.35;
 }
+/* 대응표 */
+:where([data-course]) .qGoal p {
+  font-size: 16px;
+  font-weight: 700;
+}
 
 .qGoal button {
   flex: none;
@@ -1159,6 +1539,10 @@
   font-size: 13px;
   font-weight: 800;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .qGoal button {
+  font-weight: 700;
 }
 
 .qGoal button[aria-expanded='true'] {
@@ -1174,6 +1558,10 @@
   font-size: 13px;
   line-height: 1.55;
   color: var(--hud-sub);
+}
+/* 대응표 */
+:where([data-course]) .qGoal small {
+  border-top-color: rgba(255, 255, 255, 0.18);
 }
 
 .qGoal small b {
@@ -1197,6 +1585,13 @@
   font-weight: 800;
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .qPage {
+  border-radius: 8px;
+  color: #f6f7f9;
+  font-size: 13px;
+  font-weight: 700;
+}
 
 /* 지금 신호 (주문 한 잔 따라가기): one machine, two columns of signal pills — read across the room. */
 .now {
@@ -1210,6 +1605,10 @@
     0 12px 32px rgba(0, 0, 0, 0.35);
   color: var(--hud-tx, #e9edf1);
   word-break: keep-all;
+}
+/* 대응표 */
+:where([data-course]) .now {
+  border-radius: 12px;
 }
 .now header {
   display: flex;
@@ -1234,6 +1633,10 @@
   letter-spacing: 0.04em;
   color: var(--hud-sub, #aab1b9);
 }
+/* 대응표 */
+:where([data-course]) .now header small {
+  letter-spacing: 0;
+}
 .now header b {
   display: flex;
   align-items: center;
@@ -1241,6 +1644,11 @@
   font-size: 19px;
   line-height: 1.2;
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .now header b {
+  font-size: 18px;
+  color: #f6f7f9;
 }
 .no {
   display: inline-grid;
@@ -1253,6 +1661,11 @@
   font-size: 14px;
   font-style: normal;
   font-weight: 800;
+}
+/* 대응표 */
+:where([data-course]) .no {
+  color: #f6f7f9;
+  font-weight: 700;
 }
 .nowCols {
   display: grid;
@@ -1277,6 +1690,10 @@
   line-height: 1.3;
   color: var(--tone);
 }
+/* 대응표 */
+:where([data-course]) .nowCol small {
+  font-weight: 700;
+}
 .nowCol em {
   font-size: 14px;
   font-style: normal;
@@ -1298,6 +1715,10 @@
     background 0.2s,
     color 0.2s;
 }
+/* 대응표 */
+:where([data-course]) .pill {
+  font-size: 14px;
+}
 .pill i {
   width: 10px;
   height: 10px;
@@ -1310,6 +1731,11 @@
   box-shadow: 0 0 14px color-mix(in srgb, var(--tone) 55%, transparent);
   color: #15181c;
   font-weight: 800;
+}
+/* 대응표 */
+:where([data-course]) .pill[data-on] {
+  color: #14171c;
+  font-weight: 700;
 }
 .pill[data-on] i {
   background: #15181c;
@@ -1325,6 +1751,11 @@
   height: 100vh;
   pointer-events: none;
   overflow: visible;
+}
+/* 대응표 */
+:where([data-course]) .track {
+  width: calc(100vw / var(--course-zoom, 1));
+  height: calc(100vh / var(--course-zoom, 1));
 }
 .track path {
   fill: none;
@@ -1382,6 +1813,10 @@
   color: #fff;
   word-break: keep-all;
 }
+/* 대응표 */
+:where([data-course]) .qTodo {
+  color: #f6f7f9;
+}
 .qTodo[data-dim] {
   color: var(--hud-sub, #aab1b9);
 }
@@ -1403,9 +1838,18 @@
   font-style: normal;
   font-weight: 800;
 }
+/* 대응표 */
+:where([data-course]) .qStep i {
+  color: #14171c;
+  font-weight: 700;
+}
 .qTodo[data-dim] .qStep i {
   background: #3a414b;
   color: #dfe4ea;
+}
+/* 대응표 */
+:where([data-course]) .qTodo[data-dim] .qStep i {
+  color: #f6f7f9;
 }
 .qSeen {
   margin-top: 14px;
@@ -1425,12 +1869,25 @@
   line-height: 1.45;
   color: #eef1f4;
 }
+/* 대응표 */
+:where([data-course]) .qSeen li {
+  color: #f6f7f9;
+}
 .qSeen li i {
   flex: none;
   font-style: normal;
   font-weight: 800;
   color: #f87171;
 }
+/* 대응표 */
+:where([data-course]) .qSeen li i {
+  font-weight: 700;
+  color: #ff8f86;
+}
 .qSeen li[data-ok] i {
   color: #4ade80;
+}
+/* 대응표 */
+:where([data-course]) .qSeen li[data-ok] i {
+  color: #86efac;
 }

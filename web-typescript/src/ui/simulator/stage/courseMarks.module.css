@@ -1,19 +1,27 @@
 /* 입문 과정 절: press spots on the arm (1-2) and asset slots in the scene. */
+/* The place to press is 40 px (수정 지시서 v3 파트 4-2); the ring seen stays 34 px, in its middle. */
 .spot {
   position: relative;
   display: block;
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   padding: 0;
   border: 0;
   border-radius: 50%;
   background: transparent;
   cursor: pointer;
 }
-.spot:hover {
+.spot::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.spot:hover::after {
   box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.55);
 }
-.spot[data-found] {
+.spot[data-found]::after {
   box-shadow: inset 0 0 0 3px #22c55e;
 }
 .spot b {
@@ -30,12 +38,18 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
   pointer-events: none;
 }
+/* 대응표 */
+:where([data-course]) .spot b {
+  padding: 4px 12px;
+  font-size: 16px;
+  font-weight: 700;
+}
 /* Left and right in turn, 80 px out, a line back to the joint. */
 .spot[data-side='right'] b {
-  left: 114px;
+  left: 117px;
 }
 .spot[data-side='left'] b {
-  right: 114px;
+  right: 117px;
 }
 .spot b::before {
   content: '';
@@ -55,6 +69,10 @@
   background: rgba(24, 28, 35, 0.95);
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .spot b[data-wrong] {
+  color: #f6f7f9;
+}
 
 .slot {
   display: grid;
@@ -73,6 +91,11 @@
   color: #fff;
   text-align: center;
 }
+/* 대응표 */
+:where([data-course]) .slot[data-missing] {
+  border-color: rgba(255, 255, 255, 0.45);
+  color: #f6f7f9;
+}
 .slot span {
   font-size: 14px;
   font-weight: 700;
@@ -83,6 +106,11 @@
   font-size: 12px;
   font-weight: 500;
   color: #c9ced5;
+}
+/* 대응표 */
+:where([data-course]) .slot small {
+  font-size: 13px;
+  font-weight: 600;
 }
 
 /* A slot that comes in from the side (1-1's hand) and goes back out. */
@@ -105,6 +133,14 @@
   white-space: nowrap;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
 }
+/* 대응표 */
+:where([data-course]) .goal {
+  padding: 8px 12px;
+  border-radius: 12px;
+  color: #14171c;
+  font-size: 18px;
+  font-weight: 700;
+}
 
 /* 4장: a point's tag on the mat (A · B, 1 · 2 …), just above and right of it — white and square-cornered, unlike the round orange 'press here' badges. */
 .spotTag {
@@ -118,4 +154,11 @@
   font-size: 15px;
   font-weight: 800;
   white-space: nowrap;
+}
+/* 대응표 */
+:where([data-course]) .spotTag {
+  padding: 1px 8px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 700;
 }

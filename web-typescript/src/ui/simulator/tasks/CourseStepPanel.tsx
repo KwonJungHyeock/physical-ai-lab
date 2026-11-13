@@ -3,13 +3,13 @@
 /**
  * 입문 과정 절의 조작판 (장별 가이드라인 v1): only the keys a 절 asks for, each marked with its
  * `data-step` (the '지금 할 일' rings the one to press now). 1-1: ▶ 시뮬레이션 · 손 다가가기 · 손 치우기.
- * 1-3: 작업 범위 보기 · ▶ 시뮬레이션 (정지 is the 정지 key below, as everywhere). 2-3: 기본 자세 · 일자로
- * 펴기 · 정지 only. 2-4: 도구 [달기 ›] · 보정 카드 (x · y locked, the pen's height) · ▶ 시뮬레이션. 2장
+ * 1-3: 작업 범위 보기 · ▶ 시뮬레이션 (정지 is the 정지 key below, as everywhere). 2-2: 기본 자세 · 일자로
+ * 펴기 · 정지 only. 2-3: 도구 [달기 ›] · 보정 카드 (x · y locked, the pen's height) · ▶ 시뮬레이션. 2장
  * 수행평가: all of these, nothing lit.
  */
 
 import type { CourseStepId } from '@/engine/simulator/cell/courseSteps';
-import { failLine } from '@/engine/simulator/cell/courseText';
+import { buttonName, failLine } from '@/engine/simulator/cell/courseText';
 
 import Icon from '../Icon';
 import { AssetSlot } from '../stage/CourseMarks';
@@ -30,17 +30,17 @@ interface Props {
   busy: boolean;
   /** ▶ 시뮬레이션 (none: no run in this 절). */
   onRun?: () => void;
-  /** 2-4 · 2장: the tool row (none on: [달기 ›] puts the pen on). */
+  /** 2-3 · 2장: the tool row (none on: [달기 ›] puts the pen on). */
   tool?: { on: boolean; onAttach(): void };
-  /** 2-4 · 2장: the 보정 card — the card's corner (shown, locked) and the pen's height above the paper, mm. */
+  /** 2-3 · 2장: the 보정 card — the card's corner (shown, locked) and the pen's height above the paper, mm. */
   pen?: { x: number; y: number; z: number; onZ(z: number): void };
-  /** 2-3 · 2장: back to the 기본 자세, straight up (영점), stop. */
+  /** 2-2 · 2장: back to the 기본 자세, straight up (영점), stop. */
   poses?: { onHome(): void; onZero(): void; onStop(): void };
   /** 2-1 ①: the box of parts (each one's picture an asset slot), pressed one by one to see its name. */
   kit?: { parts: readonly { name: string; id: string }[]; seen: readonly number[]; onSee(part: number): void };
   /** 3장 미션: the [확인] that judges the pose. */
   confirm?: { text: string; onConfirm(): void };
-  /** 3-5: the moves timed so far, s. */
+  /** 3-4: the moves timed so far, s. */
   times?: { slow?: number; fast?: number };
   /** 1-1. */
   hand?: { near: boolean; onIn(): void; onOut(): void };
@@ -134,7 +134,7 @@ export default function CourseStepPanel({ id, busy, onRun, hand, range, tool, pe
             도구 <b>{tool.on ? '펜' : '없음'}</b>
           </span>
           <button type="button" data-step="attach" disabled={busy || tool.on} onClick={tool.onAttach}>
-            달기 ›
+            {buttonName('attach')} ›
           </button>
         </div>
       )}
@@ -159,14 +159,14 @@ export default function CourseStepPanel({ id, busy, onRun, hand, range, tool, pe
         <label className={css.switch} data-step="range">
           <input type="checkbox" checked={range.on} onChange={range.onToggle} />
           <i aria-hidden="true" />
-          작업 범위 보기
+          {buttonName('range')}
         </label>
       )}
       {linear && (
         <label className={css.switch} data-step="linear">
           <input type="checkbox" checked={linear.on} disabled={busy || linear.locked} onChange={linear.onToggle} />
           <i aria-hidden="true" />
-          직선 이동으로 쓰기 <small>{linear.on ? '켜짐 · 곧게' : '꺼짐 · 관절 이동'}</small>
+          {buttonName('linear')} <small>{buttonName(linear.on ? 'linear' : 'joint')}</small>
         </label>
       )}
       {vertices && (
@@ -228,7 +228,7 @@ export default function CourseStepPanel({ id, busy, onRun, hand, range, tool, pe
             {board.count === 0 && <small>아직 그린 획이 없어요</small>}
             {Array.from({ length: board.count }, (_, i) => (
               <button key={i} type="button" disabled={busy} onClick={() => board.onRemove(i)} aria-label={`${i + 1}번 획 지우기`}>
-                {i + 1} <span aria-hidden="true">✕</span>
+                {i + 1} <Icon name="close" size={14} />
               </button>
             ))}
           </div>
@@ -267,7 +267,7 @@ export default function CourseStepPanel({ id, busy, onRun, hand, range, tool, pe
       {onRun && (
         <button type="button" className={css.run} data-step="run" disabled={busy} onClick={onRun}>
           <Icon name="play" size={18} />
-          시뮬레이션
+          {buttonName('run')}
         </button>
       )}
       {results && results.length > 0 && (
@@ -290,23 +290,23 @@ export default function CourseStepPanel({ id, busy, onRun, hand, range, tool, pe
       {poses && (
         <div className={css.poses}>
           <button type="button" data-step="home" disabled={busy} onClick={poses.onHome}>
-            <Icon name="home" size={16} /> 기본 자세
+            <Icon name="home" size={16} /> {buttonName('home')}
           </button>
           <button type="button" data-step="zero" disabled={busy} onClick={poses.onZero}>
-            <Icon name="zero" size={16} /> 일자로 펴기
+            <Icon name="zero" size={16} /> {buttonName('zero')}
           </button>
           <button type="button" className={css.stop} data-step="stop" onClick={poses.onStop}>
-            <Icon name="stop" size={15} /> 정지 <kbd>Esc</kbd>
+            <Icon name="stop" size={15} /> {buttonName('stop')} <kbd>Esc</kbd>
           </button>
         </div>
       )}
       {hand && (
         <div className={css.pair}>
           <button type="button" data-step="hand-in" data-on={hand.near || undefined} onClick={hand.onIn}>
-            손 다가가기
+            {buttonName('handIn')}
           </button>
           <button type="button" data-step="hand-out" onClick={hand.onOut}>
-            손 치우기
+            {buttonName('handOut')}
           </button>
         </div>
       )}

@@ -67,6 +67,10 @@
   align-items: flex-start;
   pointer-events: none;
 }
+/* 대응표 */
+:where([data-course]) .top {
+  top: clamp(28px, calc(5vh / var(--course-zoom, 1)), 50px);
+}
 .splash {
   --gut: clamp(28px, 4vw, 72px);
 }
@@ -101,11 +105,21 @@
   letter-spacing: 0.2em;
   color: var(--hud-dim);
 }
+/* 대응표 */
+:where([data-course]) .version small,
+:where([data-course]) .caption small {
+  font-size: 16px;
+  letter-spacing: 0;
+}
 .version b {
   font-size: 26px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.55);
+}
+/* 대응표 */
+:where([data-course]) .version b {
+  font-size: 28px;
 }
 
 /* The scene's name, right under the version: index, name, one line, six ticks. */
@@ -120,11 +134,20 @@
   color: var(--hud-light);
   pointer-events: none;
 }
+/* 대응표 */
+:where([data-course]) .caption {
+  top: clamp(130px, calc(21vh / var(--course-zoom, 1)), 190px);
+}
 .caption b {
   margin-top: 8px;
   font-size: 20px;
   letter-spacing: 0.12em;
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.55);
+}
+/* 대응표 */
+:where([data-course]) .caption b {
+  font-size: 23px;
+  letter-spacing: 0;
 }
 .caption span {
   margin-top: 7px;
@@ -159,6 +182,10 @@
   transform: translateY(-46%);
   width: min(620px, 44vw);
 }
+/* 대응표 */
+:where([data-course]) .hero {
+  width: min(620px, calc(44vw / var(--course-zoom, 1)));
+}
 .hero h1 {
   margin: 0;
   font-size: clamp(36px, 3.4vw, 56px);
@@ -171,11 +198,21 @@
   opacity: 0;
   animation: rise 0.7s 0.15s ease-out forwards;
 }
+/* 대응표 */
+:where([data-course]) .hero h1 {
+  font-size: clamp(36px, calc(3.4vw / var(--course-zoom, 1)), 56px);
+  letter-spacing: 0;
+  color: #f6f7f9;
+}
 .ko {
   margin: 16px 0 0;
   font-size: clamp(19px, 1.5vw, 24px);
   font-weight: 600;
   color: var(--hud-sub);
+}
+/* 대응표 */
+:where([data-course]) .ko {
+  font-size: clamp(19px, calc(1.5vw / var(--course-zoom, 1)), 24px);
 }
 .lead {
   margin: 22px 0 0;
@@ -183,12 +220,20 @@
   line-height: 1.65;
   color: var(--hud-sub);
 }
+/* 대응표 */
+:where([data-course]) .lead {
+  font-size: 18px;
+}
 .actions {
   display: flex;
   flex-wrap: wrap;
   gap: 14px;
   margin-top: clamp(28px, 5vh, 48px);
   animation: rise 0.45s ease-out;
+}
+/* 대응표 */
+:where([data-course]) .actions {
+  margin-top: clamp(28px, calc(5vh / var(--course-zoom, 1)), 48px);
 }
 .actions button {
   display: flex;
@@ -209,6 +254,10 @@
     filter 0.15s ease,
     transform 0.15s ease;
 }
+/* 대응표 */
+:where([data-course]) .actions button {
+  border-radius: 8px;
+}
 .actions button:hover:not(:disabled) {
   filter: brightness(1.12);
 }
@@ -228,6 +277,11 @@
 .actions b {
   font-size: 17px;
   letter-spacing: 0.16em;
+}
+/* 대응표 */
+:where([data-course]) .actions b {
+  font-size: 18px;
+  letter-spacing: 0;
 }
 .actions small {
   font-size: 14px;
@@ -273,6 +327,11 @@
   font-size: 15px;
   color: var(--hud-dim);
 }
+/* 대응표 */
+:where([data-course]) .hint {
+  margin-top: clamp(28px, calc(5vh / var(--course-zoom, 1)), 48px);
+  font-size: 16px;
+}
 
 /* The foot: a silver hairline that fills white as the program loads, the step on the left, the state on the right. */
 .foot {
@@ -281,6 +340,10 @@
   right: var(--gut);
   bottom: clamp(22px, 4.4vh, 40px);
   pointer-events: none;
+}
+/* 대응표 */
+:where([data-course]) .foot {
+  bottom: clamp(22px, calc(4.4vh / var(--course-zoom, 1)), 40px);
 }
 .load {
   position: relative;
@@ -312,6 +375,10 @@
   font-size: 15px;
   color: var(--hud-dim);
 }
+/* 대응표 */
+:where([data-course]) .note {
+  font-size: 16px;
+}
 .status {
   display: flex;
   align-items: center;
@@ -321,11 +388,21 @@
   letter-spacing: 0.2em;
   color: var(--hud-dim);
 }
+/* 대응표 */
+:where([data-course]) .status {
+  font-size: 16px;
+  letter-spacing: 0;
+}
 .status small {
   font-size: 15px;
   font-weight: 500;
   letter-spacing: 0;
   color: var(--hud-sub);
+}
+/* 대응표 */
+:where([data-course]) .status small {
+  font-size: 16px;
+  font-weight: 600;
 }
 .status i {
   width: 10px;
@@ -350,10 +427,23 @@
     display: none;
   }
 }
+/* 대응표 */
+:where(html[data-vq~='0']) .hero {
+  width: auto;
+  right: var(--gut);
+}
+/* 대응표 */
+:where(html[data-vq~='0']) .caption {
+  display: none;
+}
 @media (max-height: 640px) {
   .lead {
     display: none;
   }
+}
+/* 대응표 */
+:where(html[data-vq~='1']) .lead {
+  display: none;
 }
 
 @keyframes fadeIn {
@@ -413,11 +503,20 @@
   background: #191c23;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
 }
+/* 대응표 */
+:where([data-course]) .notice > div {
+  border-radius: 12px;
+}
 .notice small {
   display: block;
   font-size: 15px;
   font-weight: 700;
   color: #a9b1ba;
+}
+/* 대응표 */
+:where([data-course]) .notice small {
+  font-size: 16px;
+  color: #c9ced5;
 }
 .notice h2 {
   margin: 10px 0 18px;
@@ -425,11 +524,21 @@
   font-weight: 800;
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .notice h2 {
+  font-weight: 700;
+  color: #f6f7f9;
+}
 .notice p {
   margin: 0 0 10px;
   font-size: 17px;
   line-height: 1.6;
   color: #eef1f4;
+}
+/* 대응표 */
+:where([data-course]) .notice p {
+  font-size: 18px;
+  color: #f6f7f9;
 }
 .notice em {
   display: block;
@@ -437,6 +546,10 @@
   font-size: 14px;
   font-style: normal;
   color: #a9b1ba;
+}
+/* 대응표 */
+:where([data-course]) .notice em {
+  color: #c9ced5;
 }
 .notice button {
   display: block;
@@ -451,6 +564,13 @@
   font-size: 17px;
   font-weight: 800;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .notice button {
+  border-radius: 12px;
+  color: #14171c;
+  font-size: 18px;
+  font-weight: 700;
 }
 .notice button:focus-visible {
   outline: 2px solid #fff;

@@ -10,7 +10,7 @@
 
 import { useEffect } from 'react';
 
-import { kindsOf, pagesText, subById, topicMark, MODE_NAME, type CourseSub, type SubMode } from '@/engine/simulator/cell/course';
+import { kindsOf, pagesText, subById, subName, topicMark, MODE_NAME, type CourseSub, type SubMode } from '@/engine/simulator/cell/course';
 import { chaptersIn, countedIn, lessonIn, testReady, type CoursePlan } from '@/engine/simulator/cell/courses';
 
 import css from './courseMap.module.css';
@@ -90,7 +90,7 @@ export default function CourseMap({ plan, now, done, onPick, onClose }: Props) {
                     if (!t) return null;
                     return (
                       <div className={css.row} data-soon={!testReady(t) || undefined} data-state={t.id === now ? 'now' : done(t) ? 'done' : 'todo'} data-test>
-                        <i />
+                        <i>{t.id}</i>
                         <span>
                           <b>{c.n}장 수행평가</b>
                           <small>{Math.max(...c.subs.map((x) => lessonIn(plan, x.id)))}차시 · O · X 5 + 미션</small>
@@ -122,8 +122,8 @@ export function CourseMissing({ id, onList }: { id: string; onList(): void }) {
     ? `${id}라는 절은 없어요.`
     : s.status === 'end'
       ? `${id}${topicMark(id)} 과정을 마치면 열려요.`
-      : s.status === 'unused'
-        ? `${id}${topicMark(id)} 이번 과정에서 쓰지 않는 절이에요.`
+      : s.status === 'unused' || s.status === 'test'
+        ? `${subName(s)}${topicMark(s.was ?? id)} 이번 과정에서 쓰지 않는 절이에요.`
         : `${id}${topicMark(id)} 아직 만드는 중이에요.`;
   return (
     <div className={css.scrim} role="alertdialog" aria-modal="true" aria-label="열 수 없는 절">

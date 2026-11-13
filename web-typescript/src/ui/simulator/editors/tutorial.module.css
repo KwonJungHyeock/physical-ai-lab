@@ -16,6 +16,10 @@
   background: #282a2e;
   box-shadow: inset 0 0 0 1px #424448;
 }
+/* 대응표 */
+:where([data-course]) .langs {
+  border-radius: 12px;
+}
 .langs button {
   position: relative;
   display: flex;
@@ -32,15 +36,30 @@
   font-weight: 800;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .langs button {
+  color: #c9ced5;
+  font-size: 14px;
+  font-weight: 700;
+}
 .langs button small {
   font-size: 11px;
   font-weight: 600;
   color: #9da1a7;
 }
+/* 대응표 */
+:where([data-course]) .langs button small {
+  font-size: 13px;
+  color: #c9ced5;
+}
 .langs button[aria-selected='true'] {
   color: #fff;
   background: linear-gradient(180deg, #56585c, #47494d);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 3px 8px -2px rgba(0, 0, 0, 0.55);
+}
+/* 대응표 */
+:where([data-course]) .langs button[aria-selected='true'] {
+  color: #f6f7f9;
 }
 .langs button[aria-selected='true']::after {
   content: '';
@@ -74,6 +93,12 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), inset 0 0 0 1px #535559;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .btn {
+  color: #f6f7f9;
+  font-size: 13px;
+  font-weight: 700;
+}
 .btn:hover:not(:disabled) {
   background: linear-gradient(#515357, #434549);
 }
@@ -92,8 +117,17 @@
   font-weight: 700;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .link {
+  color: #c9ced5;
+  font-size: 13px;
+}
 .link:hover:not(:disabled) {
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .link:hover:not(:disabled) {
+  color: #f6f7f9;
 }
 
 /* tutorial card */
@@ -110,6 +144,10 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
   color: #f1f4f9;
 }
+/* 대응표 */
+:where([data-course]) .card {
+  color: #f6f7f9;
+}
 .cardIcon {
   grid-row: span 2;
   width: 36px;
@@ -119,6 +157,11 @@
   place-items: center;
   background: rgba(236, 241, 248, 0.16);
   color: #f4f6f9;
+}
+/* 대응표 */
+:where([data-course]) .cardIcon {
+  border-radius: 12px;
+  color: #f6f7f9;
 }
 .cardText {
   min-width: 0;
@@ -131,6 +174,11 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .cardText b {
+  font-size: 14px;
+  font-weight: 700;
+}
 .cardText small {
   display: block;
   font-size: 11.5px;
@@ -138,6 +186,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+/* 대응표 */
+:where([data-course]) .cardText small {
+  font-size: 13px;
+  color: #c9ced5;
 }
 .cardActs {
   display: flex;
@@ -158,6 +211,10 @@
   background: #282a2e;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .steps > button {
+  border-radius: 8px;
+}
 .steps > button[data-state='done'] {
   background: #616367;
 }
@@ -169,6 +226,11 @@
   font-size: 11px;
   color: #9da1a7;
   white-space: nowrap;
+}
+/* 대응표 */
+:where([data-course]) .steps small {
+  font-size: 13px;
+  color: #c9ced5;
 }
 .steps .link {
   margin-left: 8px;
@@ -185,6 +247,11 @@
   box-shadow: inset 0 1px 0 #535559;
   font-size: 12px;
   color: #ffd9d6;
+}
+/* 대응표 */
+:where([data-course]) .need {
+  font-size: 13px;
+  color: #f6f7f9;
 }
 
 
@@ -210,9 +277,21 @@
   font-size: 11.5px;
   color: #9da1a7;
 }
+/* 대응표 */
+:where([data-course]) .edBar {
+  font-size: 13px;
+  color: #c9ced5;
+}
 .edBar b {
   color: #f1f4f9;
   font: 700 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+/* 대응표 */
+:where([data-course]) .edBar b {
+  color: #f6f7f9;
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
 }
 .toggle {
   margin-left: auto;
@@ -233,10 +312,21 @@
   font-weight: 800;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .toggle button {
+  border-radius: 8px;
+  color: #c9ced5;
+  font-size: 13px;
+  font-weight: 700;
+}
 .toggle button[aria-pressed='true'] {
   color: #fff;
   background: linear-gradient(180deg, #56585c, #47494d);
   box-shadow: inset 0 -2px 0 #f4f6f9;
+}
+/* 대응표 */
+:where([data-course]) .toggle button[aria-pressed='true'] {
+  color: #f6f7f9;
 }
 .code {
   flex: 1;
@@ -246,6 +336,13 @@
   font: 500 13px/1.75 ui-monospace, SFMono-Regular, Menlo, monospace;
   color: #cbd0d7;
   scrollbar-width: thin;
+}
+/* 대응표 */
+:where([data-course]) .code {
+  font-weight: 600;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  color: #c9ced5;
 }
 .ln {
   display: grid;
@@ -263,9 +360,17 @@
   font-size: 11px;
   color: #616367;
 }
+/* 대응표 */
+:where([data-course]) .no {
+  font-size: 13px;
+}
 .lock {
   font-size: 9px;
   opacity: 0.6;
+}
+/* 대응표 */
+:where([data-course]) .lock {
+  font-size: 13px;
 }
 .ln:not([data-edit]) code {
   opacity: 0.55;
@@ -275,6 +380,10 @@
 }
 .ln[data-edit] .no {
   color: #ffd58a;
+}
+/* 대응표 */
+:where([data-course]) .ln[data-edit] .no {
+  color: #f0a23b;
 }
 .ln[data-run] {
   background: rgba(61, 220, 132, 0.12);
@@ -295,6 +404,10 @@
   box-shadow: inset 0 -1.5px 0 rgba(245, 165, 36, 0.7);
   vertical-align: baseline;
 }
+/* 대응표 */
+:where([data-course]) .slot {
+  border-radius: 8px;
+}
 .slot sup {
   font: 800 9px Pretendard, system-ui, sans-serif;
   color: #1a1204;
@@ -302,6 +415,13 @@
   border-radius: 4px;
   padding: 0 3px;
   line-height: 1.4;
+}
+/* 대응표 */
+:where([data-course]) .slot sup {
+  font-weight: 700;
+  font-size: 13px;
+  color: #14171c;
+  border-radius: 8px;
 }
 .slot input,
 .slot select {
@@ -314,13 +434,26 @@
   font: inherit;
   font-weight: 700;
 }
+/* 대응표 */
+:where([data-course]) .slot input,
+:where([data-course]) .slot select {
+  color: #f0a23b;
+}
 .slot select option {
   color: #101828;
+}
+/* 대응표 */
+:where([data-course]) .slot select option {
+  color: #14171c;
 }
 /* A half-typed value: the program keeps its last good one until this one fits. */
 .slot input[aria-invalid] {
   color: #ffb4a8;
   text-decoration: underline wavy rgba(255, 120, 100, 0.8);
+}
+/* 대응표 */
+:where([data-course]) .slot input[aria-invalid] {
+  color: #f6f7f9;
 }
 .slot[data-hot] {
   background: rgba(245, 165, 36, 0.24);
@@ -346,6 +479,12 @@
   font-size: 12px;
   color: #9da1a7;
 }
+/* 대응표 */
+:where([data-course]) .fullBar {
+  border-radius: 12px;
+  font-size: 13px;
+  color: #c9ced5;
+}
 
 /* mission snippets: one row of chips, each puts its code in */
 .snips {
@@ -369,10 +508,21 @@
   color: #f1f4f9;
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .snips h4 {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f6f7f9;
+}
 .snips h4 small {
   font-size: 11px;
   font-weight: 600;
   color: #9da1a7;
+}
+/* 대응표 */
+:where([data-course]) .snips h4 small {
+  font-size: 13px;
+  color: #c9ced5;
 }
 .snipList {
   display: flex;
@@ -395,6 +545,12 @@
   white-space: nowrap;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .snip {
+  color: #f6f7f9;
+  font-size: 13px;
+  font-weight: 700;
+}
 .snip i {
   font-style: normal;
   width: 18px;
@@ -404,6 +560,11 @@
   place-items: center;
   background: rgba(245, 165, 36, 0.2);
   color: #ffd58a;
+}
+/* 대응표 */
+:where([data-course]) .snip i {
+  border-radius: 8px;
+  color: #f0a23b;
 }
 .snip:hover:not(:disabled) {
   background: #303236;
@@ -425,6 +586,20 @@
     width: 30px;
     height: 30px;
   }
+}
+/* 대응표 */
+:where(html[data-vq~='18']) .snips h4 small {
+  display: none;
+}
+/* 대응표 */
+:where(html[data-vq~='18']) .card {
+  padding: 7px 10px;
+  gap: 3px 10px;
+}
+/* 대응표 */
+:where(html[data-vq~='18']) .cardIcon {
+  width: 30px;
+  height: 30px;
 }
 
 /* One row for getting about (2026-10-30): the three languages share it, the Python tab's 코드 | 터미널
@@ -449,6 +624,10 @@
   padding: 5px 9px;
   font-size: 12px;
 }
+/* 대응표 */
+:where([data-course]) .langs > [role='tablist'] button {
+  font-size: 13px;
+}
 
 /* 처음 예제로 · 내 프로그램 sit at the row's end, also when there are no steps (터미널). */
 .steps .link:first-of-type {
@@ -459,4 +638,9 @@
 .snip i {
   background: rgba(255, 255, 255, 0.12);
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .snip i {
+  background: rgba(255, 255, 255, 0.16);
+  color: #f6f7f9;
 }

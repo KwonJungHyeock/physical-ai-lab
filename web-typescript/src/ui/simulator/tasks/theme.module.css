@@ -30,16 +30,32 @@
   letter-spacing: 0.22em;
   color: var(--hud-dim);
 }
+/* 대응표 */
+:where([data-course]) .theme h4 em,
+:where([data-course]) .tutStart h4 em {
+  font-size: 13px;
+  letter-spacing: 0;
+}
 .theme h4 b,
 .tutStart h4 b {
   font-size: 14px;
   font-weight: 800;
+}
+/* 대응표 */
+:where([data-course]) .theme h4 b,
+:where([data-course]) .tutStart h4 b {
+  font-weight: 700;
 }
 .theme h4 small,
 .tutStart h4 small {
   margin-left: auto;
   font-size: 12px;
   color: var(--hud-dim);
+}
+/* 대응표 */
+:where([data-course]) .theme h4 small,
+:where([data-course]) .tutStart h4 small {
+  font-size: 13px;
 }
 
 .sites {
@@ -106,10 +122,20 @@
   color: var(--hud-dim);
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .tagRow em {
+  font-size: 13px;
+  letter-spacing: 0;
+}
 .info b {
   font-size: 14.5px;
   font-weight: 800;
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.55);
+}
+/* 대응표 */
+:where([data-course]) .info b {
+  font-size: 14px;
+  font-weight: 700;
 }
 .info > small {
   font-size: 12px;
@@ -117,6 +143,10 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+/* 대응표 */
+:where([data-course]) .info > small {
+  font-size: 13px;
 }
 
 /* The place's state at the row's end: a lamp and a tracked word. */
@@ -130,6 +160,12 @@
   letter-spacing: 0.1em;
   color: var(--hud-light);
   white-space: nowrap;
+}
+/* 대응표 */
+:where([data-course]) .flag {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
 }
 .flag::before {
   content: '';
@@ -178,6 +214,12 @@
   color: var(--hud-dim);
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .prog em {
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+}
 
 /* The tutorials: one brushed plate, a groove between rows. */
 .tuts {
@@ -212,6 +254,10 @@
 .tuts button:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.05);
 }
+/* 대응표 */
+:where([data-course]) .tuts button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+}
 .tuts button[aria-pressed='true'] {
   background: rgba(255, 255, 255, 0.08);
   box-shadow: inset 2px 0 0 var(--hud-light);
@@ -230,6 +276,14 @@
   letter-spacing: 0.06em;
   color: var(--hud-dim);
 }
+/* 대응표 */
+:where([data-course]) .tuts i {
+  font-weight: 700;
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
 .tuts button[aria-pressed='true'] i {
   color: var(--hud-light);
 }
@@ -245,15 +299,29 @@
   font-weight: 800;
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.55);
 }
+/* 대응표 */
+:where([data-course]) .tuts b {
+  font-size: 14px;
+  font-weight: 700;
+}
 .tuts small {
   font-size: 12px;
   color: var(--hud-sub);
+}
+/* 대응표 */
+:where([data-course]) .tuts small {
+  font-size: 13px;
 }
 .tuts em {
   font-style: normal;
   font-size: 11.5px;
   letter-spacing: 0.04em;
   color: var(--hud-dim);
+}
+/* 대응표 */
+:where([data-course]) .tuts em {
+  font-size: 13px;
+  letter-spacing: 0;
 }
 
 /* 제어's tutorial list folded while one runs: [목록 ▾] opens it. */
@@ -269,4 +337,8 @@
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .tutFold {
+  font-size: 13px;
 }

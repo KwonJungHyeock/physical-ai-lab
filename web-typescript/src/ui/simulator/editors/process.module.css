@@ -11,6 +11,11 @@
   color: #e4eaf2;
   font-size: 13.5px;
 }
+/* 대응표 */
+:where([data-course]) .wrap {
+  color: #f6f7f9;
+  font-size: 14px;
+}
 
 .head,
 .tools,
@@ -23,9 +28,19 @@
   padding: 9px 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
+/* 대응표 */
+:where([data-course]) .head,
+:where([data-course]) .tools,
+:where([data-course]) .files {
+  border-bottom-color: rgba(255, 255, 255, 0.18);
+}
 .files {
   border-bottom: 0;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+/* 대응표 */
+:where([data-course]) .files {
+  border-top-color: rgba(255, 255, 255, 0.18);
 }
 
 .name {
@@ -40,12 +55,20 @@
   font: inherit;
   font-weight: 700;
 }
+/* 대응표 */
+:where([data-course]) .name {
+  color: #f6f7f9;
+}
 
 .seg {
   display: inline-flex;
   border: 1px solid #535559;
   border-radius: 9px;
   overflow: hidden;
+}
+/* 대응표 */
+:where([data-course]) .seg {
+  border-radius: 8px;
 }
 .seg button {
   padding: 6px 11px;
@@ -57,6 +80,12 @@
   font-weight: 800;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .seg button {
+  color: #c9ced5;
+  font-size: 13px;
+  font-weight: 700;
+}
 .seg {
   padding: 2px;
   gap: 2px;
@@ -66,10 +95,18 @@
   position: relative;
   border-radius: 7px;
 }
+/* 대응표 */
+:where([data-course]) .seg button {
+  border-radius: 8px;
+}
 .seg button[aria-checked='true'] {
   background: linear-gradient(180deg, #56585c, #47494d);
   color: #fff;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 3px 8px -2px rgba(0, 0, 0, 0.55);
+}
+/* 대응표 */
+:where([data-course]) .seg button[aria-checked='true'] {
+  color: #f6f7f9;
 }
 .seg button[aria-checked='true']::after {
   content: '';
@@ -94,6 +131,12 @@
   font: inherit;
   font-size: 12.5px;
 }
+/* 대응표 */
+:where([data-course]) .speed,
+:where([data-course]) .files select {
+  color: #f6f7f9;
+  font-size: 13px;
+}
 
 .tools button,
 .files button,
@@ -109,6 +152,15 @@
   font-weight: 800;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .tools button,
+:where([data-course]) .files button,
+:where([data-course]) .rowTools button {
+  border-radius: 8px;
+  color: #f6f7f9;
+  font-size: 13px;
+  font-weight: 700;
+}
 .tools button:disabled,
 .files button:disabled,
 .rowTools button:disabled {
@@ -119,9 +171,17 @@
   border-color: #7a5cf5;
   color: #cdd2d9;
 }
+/* 대응표 */
+:where([data-course]) .tools .j {
+  color: #c9ced5;
+}
 .tools .l {
   border-color: #1ea7df;
   color: #a6e1f7;
+}
+/* 대응표 */
+:where([data-course]) .tools .l {
+  color: #93c5fd;
 }
 
 .rows {
@@ -145,11 +205,23 @@
   letter-spacing: 0.08em;
   text-align: center;
 }
+/* 대응표 */
+:where([data-course]) .edge {
+  border-radius: 8px;
+  color: #c9ced5;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
 .empty {
   padding: 14px 10px;
   color: #91959b;
   font-size: 13px;
   text-align: center;
+}
+/* 대응표 */
+:where([data-course]) .empty {
+  color: #c9ced5;
 }
 
 .row {
@@ -157,6 +229,10 @@
   border-radius: 10px;
   background: #383a3e;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+/* 대응표 */
+:where([data-course]) .row {
+  border-radius: 12px;
 }
 .row[data-pick] {
   border-color: #616367;
@@ -192,8 +268,16 @@
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
+/* 대응표 */
+:where([data-course]) .rowMain i {
+  color: #c9ced5;
+}
 .rowMain b {
   font-weight: 800;
+}
+/* 대응표 */
+:where([data-course]) .rowMain b {
+  font-weight: 700;
 }
 .badge {
   padding: 3px 0;
@@ -204,17 +288,36 @@
   font-weight: 800;
   text-align: center;
 }
+/* 대응표 */
+:where([data-course]) .badge {
+  border-radius: 8px;
+  color: #c9ced5;
+  font-size: 13px;
+  font-weight: 700;
+}
 .badge[data-mode='J'] {
   background: #3b2f73;
   color: #cdd2d9;
+}
+/* 대응표 */
+:where([data-course]) .badge[data-mode='J'] {
+  color: #c9ced5;
 }
 .badge[data-mode='L'] {
   background: #173f52;
   color: #a6e1f7;
 }
+/* 대응표 */
+:where([data-course]) .badge[data-mode='L'] {
+  color: #93c5fd;
+}
 .badge[data-mode='G'] {
   background: #4a3a12;
   color: #ffd58a;
+}
+/* 대응표 */
+:where([data-course]) .badge[data-mode='G'] {
+  color: #f0a23b;
 }
 .xyz {
   overflow: hidden;
@@ -224,6 +327,13 @@
   white-space: nowrap;
   text-overflow: ellipsis;
   text-align: right;
+}
+/* 대응표 */
+:where([data-course]) .xyz {
+  color: #c9ced5;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
 }
 
 .rowTools {
@@ -238,8 +348,16 @@
   background: #f1f4f9;
   color: #101828;
 }
+/* 대응표 */
+:where([data-course]) .rowTools .save {
+  color: #14171c;
+}
 .rowTools .del {
   color: #ff9b9e;
+}
+/* 대응표 */
+:where([data-course]) .rowTools .del {
+  color: #f6f7f9;
 }
 .gap {
   flex: 1;
@@ -250,6 +368,10 @@
   gap: 4px;
   font-size: 12.5px;
 }
+/* 대응표 */
+:where([data-course]) .sec {
+  font-size: 13px;
+}
 .sec input {
   width: 64px;
   height: 32px;
@@ -259,6 +381,10 @@
   background: #282a2e;
   color: #fff;
   font: inherit;
+}
+/* 대응표 */
+:where([data-course]) .sec input {
+  color: #f6f7f9;
 }
 
 @media (pointer: coarse) {

@@ -8,6 +8,11 @@
   background: #1b2029;
   color: #f2f4f7;
 }
+/* 대응표 */
+:where([data-course]) .tool {
+  min-height: calc(100vh / var(--course-zoom, 1));
+  color: #f6f7f9;
+}
 
 .head {
   display: flex;
@@ -20,11 +25,21 @@
   font-size: 26px;
   font-weight: 800;
 }
+/* 대응표 */
+:where([data-course]) .head h1 {
+  font-size: 28px;
+  font-weight: 700;
+}
 
 .head p {
   margin: 4px 0 0;
   color: #aeb6c4;
   font-size: 15px;
+}
+/* 대응표 */
+:where([data-course]) .head p {
+  color: #c9ced5;
+  font-size: 16px;
 }
 
 .cards {
@@ -48,6 +63,10 @@
   text-align: left;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .card {
+  border-radius: 12px;
+}
 
 .card:hover:not(:disabled) {
   border-color: #3454d1;
@@ -62,11 +81,19 @@
 .card b {
   font-size: 19px;
 }
+/* 대응표 */
+:where([data-course]) .card b {
+  font-size: 18px;
+}
 
 .card span {
   color: #aeb6c4;
   font-size: 14px;
   line-height: 1.55;
+}
+/* 대응표 */
+:where([data-course]) .card span {
+  color: #c9ced5;
 }
 
 .note {
@@ -75,13 +102,26 @@
   color: #f5c46b;
   font-size: 15px;
 }
+/* 대응표 */
+:where([data-course]) .note {
+  color: #f0a23b;
+  font-size: 16px;
+}
 
 .foot {
   margin-top: auto;
   color: #8c95a5;
   font-size: 13px;
 }
+/* 대응표 */
+:where([data-course]) .foot {
+  color: #c9ced5;
+}
 
 .foot a {
   color: #8fa7ff;
+}
+/* 대응표 */
+:where([data-course]) .foot a {
+  color: #93c5fd;
 }

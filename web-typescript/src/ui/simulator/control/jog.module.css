@@ -10,6 +10,10 @@
   color: #f1f4f9;
   outline: none;
 }
+/* 대응표 */
+:where([data-course]) .jog {
+  color: #f6f7f9;
+}
 
 /* 관절 | 좌표 */
 .modes {
@@ -32,10 +36,20 @@
   text-align: center;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .jog .modes button {
+  border-radius: 8px;
+  color: #c9ced5;
+}
 .jog .modes button b {
   font-size: 17px;
   font-weight: 800;
   line-height: 1.2;
+}
+/* 대응표 */
+:where([data-course]) .jog .modes button b {
+  font-size: 18px;
+  font-weight: 700;
 }
 .jog .modes button small {
   font-size: 12.5px;
@@ -43,17 +57,35 @@
   color: #91959b;
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .jog .modes button small {
+  font-size: 13px;
+  color: #c9ced5;
+}
 .jog .modes button:hover:not([aria-pressed='true']) {
   background: rgba(255, 255, 255, 0.05);
   color: #e4eaf2;
+}
+/* 대응표 */
+:where([data-course]) .jog .modes button:hover:not([aria-pressed='true']) {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f6f7f9;
 }
 .jog .modes button[aria-pressed='true'] {
   background: #59616a;
   color: #fff;
   box-shadow: 0 6px 16px -8px rgba(255, 255, 255, 0.405);
 }
+/* 대응표 */
+:where([data-course]) .jog .modes button[aria-pressed='true'] {
+  color: #f6f7f9;
+}
 .jog .modes button[aria-pressed='true'] small {
   color: #ffd9d6;
+}
+/* 대응표 */
+:where([data-course]) .jog .modes button[aria-pressed='true'] small {
+  color: #f6f7f9;
 }
 
 /* 한 번에 [0.5° 1° 5° 10°] · 속도 ━━●━━ 50% */
@@ -68,6 +100,11 @@
   font-weight: 700;
   color: #b8bdc4;
   white-space: nowrap;
+}
+/* 대응표 */
+:where([data-course]) .optName {
+  font-size: 14px;
+  color: #c9ced5;
 }
 .chips {
   display: grid;
@@ -86,12 +123,21 @@
   font-variant-numeric: tabular-nums;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .jog .chips button {
+  color: #c9ced5;
+  font-size: 16px;
+}
 .jog .chips button i {
   font-style: normal;
   font-size: 12px;
   margin-left: 1px;
   color: inherit;
   opacity: 0.75;
+}
+/* 대응표 */
+:where([data-course]) .jog .chips button i {
+  font-size: 13px;
 }
 .jog .chips button:hover:not([aria-pressed='true']) {
   background: #333539;
@@ -100,6 +146,10 @@
   background: #424448;
   color: #fff;
   box-shadow: inset 0 0 0 2px #f4f6f9;
+}
+/* 대응표 */
+:where([data-course]) .jog .chips button[aria-pressed='true'] {
+  color: #f6f7f9;
 }
 .speed {
   display: grid;
@@ -113,6 +163,11 @@
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .speed output {
+  font-weight: 700;
+  color: #f6f7f9;
 }
 .speed input {
   appearance: none;
@@ -159,12 +214,21 @@
   user-select: none;
   transition: transform 0.06s, background 0.1s;
 }
+/* 대응표 */
+:where([data-course]) .jog .key {
+  color: #f6f7f9;
+}
 .jog .key b {
   font-size: 15px;
   font-weight: 800;
   line-height: 1.1;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
+}
+/* 대응표 */
+:where([data-course]) .jog .key b {
+  font-size: 16px;
+  font-weight: 700;
 }
 .jog .key:hover:not(:disabled) {
   background: #4e5054;
@@ -185,6 +249,12 @@
   border-color: rgba(255, 255, 255, 0.07);
   cursor: not-allowed;
 }
+/* 대응표 */
+:where([data-course]) .jog .key:disabled {
+  color: #c9ced5;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+}
 /* a key pressed from the keyboard or moving while held; a key whose last move could not be made */
 .jog .key[data-state='on'],
 .jog .key[data-state='hold'] {
@@ -195,6 +265,10 @@
   background: #3e1a24;
   border-color: #7a2a33;
   color: #ffd2cf;
+}
+/* 대응표 */
+:where([data-course]) .jog .key[data-state='blocked'] {
+  color: #f6f7f9;
 }
 
 /* --- 관절: one row per joint ------------------------------------------------------------------- */
@@ -242,6 +316,12 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* 대응표 */
+:where([data-course]) .head b {
+  font-size: 18px;
+  font-weight: 700;
+  color: #f6f7f9;
+}
 .head output {
   margin-left: auto;
   font: 700 19px ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -249,8 +329,19 @@
   color: #fff;
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .head output {
+  font-size: 18px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  color: #f6f7f9;
+}
 .head output[data-near] {
   color: #ffcf7a;
+}
+/* 대응표 */
+:where([data-course]) .head output[data-near] {
+  color: #f0a23b;
 }
 .what {
   font-size: 12.5px;
@@ -259,6 +350,11 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+/* 대응표 */
+:where([data-course]) .what {
+  font-size: 13px;
+  color: #c9ced5;
 }
 .head em {
   flex: none;
@@ -269,9 +365,21 @@
   border-radius: 4px;
   padding: 0 4px;
 }
+/* 대응표 */
+:where([data-course]) .head em {
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  color: #c9ced5;
+  border-radius: 8px;
+}
 .row[data-sel] .head em {
   background: rgba(236, 241, 248, 0.4);
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .row[data-sel] .head em {
+  color: #f6f7f9;
 }
 /* the angle between the joint's limits, draggable */
 .bar {
@@ -287,12 +395,20 @@
   border-radius: 4px;
   background: #424448;
 }
+/* 대응표 */
+:where([data-course]) .track {
+  border-radius: 8px;
+}
 .fill {
   position: absolute;
   top: 0;
   bottom: 0;
   border-radius: 4px;
   background: rgba(236, 241, 248, 0.5);
+}
+/* 대응표 */
+:where([data-course]) .fill {
+  border-radius: 8px;
 }
 .row[data-sel] .fill {
   background: linear-gradient(90deg, #f4f6f9, #ff9a95);
@@ -360,14 +476,27 @@
   line-height: 1.45;
   color: #d8dee6;
 }
+/* 대응표 */
+:where([data-course]) .lesson {
+  color: #f6f7f9;
+}
 .lesson b {
   font-size: 16px;
   font-weight: 800;
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .lesson b {
+  font-weight: 700;
+  color: #f6f7f9;
+}
 .lesson b em {
   font-style: normal;
   color: #ffb3ad;
+}
+/* 대응표 */
+:where([data-course]) .lesson b em {
+  color: #f6f7f9;
 }
 .lessonDots {
   display: flex;
@@ -391,11 +520,20 @@
   color: #fff;
   font-variant-numeric: tabular-nums;
 }
+/* 대응표 */
+:where([data-course]) .lessonMeter {
+  font-weight: 700;
+  color: #f6f7f9;
+}
 .lessonMeter i {
   flex: 1;
   height: 6px;
   border-radius: 3px;
   background: linear-gradient(90deg, #4cd18a var(--got, 0%), #424448 var(--got, 0%));
+}
+/* 대응표 */
+:where([data-course]) .lessonMeter i {
+  border-radius: 8px;
 }
 .jog .lessonGo {
   justify-self: start;
@@ -409,6 +547,12 @@
   font-size: 14px;
   font-weight: 800;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .jog .lessonGo {
+  border-radius: 8px;
+  color: #f6f7f9;
+  font-weight: 700;
 }
 .jog .lessonGo:disabled {
   opacity: 0.5;
@@ -427,9 +571,18 @@
   line-height: 1;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .jog .lessonClose {
+  border-radius: 8px;
+  color: #c9ced5;
+}
 .jog .lessonClose:hover {
   background: rgba(255, 255, 255, 0.08);
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .jog .lessonClose:hover {
+  color: #f6f7f9;
 }
 
 /* the line under the keys: how they work, and the lesson's button */
@@ -444,8 +597,17 @@
   line-height: 1.45;
   color: #b8bdc4;
 }
+/* 대응표 */
+:where([data-course]) .tip {
+  border-radius: 12px;
+  color: #c9ced5;
+}
 .tip b {
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .tip b {
+  color: #f6f7f9;
 }
 .jog .learn {
   flex: none;
@@ -461,13 +623,27 @@
   white-space: nowrap;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .jog .learn {
+  border-radius: 8px;
+  color: #f6f7f9;
+  font-weight: 700;
+}
 .jog .learn::before {
   content: '▶ ';
   font-size: 11px;
 }
+/* 대응표 */
+:where([data-course]) .jog .learn::before {
+  font-size: 13px;
+}
 .jog .learn:hover:not(:disabled) {
   background: rgba(255, 90, 78, 0.26);
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .jog .learn:hover:not(:disabled) {
+  color: #f6f7f9;
 }
 .jog .learn:disabled {
   opacity: 0.5;
@@ -490,18 +666,38 @@
   border-radius: 10px;
   background: #383a3e;
 }
+/* 대응표 */
+:where([data-course]) .readout span {
+  border-radius: 12px;
+}
 .readout b {
   font-size: 17px;
   font-weight: 900;
+}
+/* 대응표 */
+:where([data-course]) .readout b {
+  font-size: 18px;
+  font-weight: 700;
 }
 .readout output {
   font: 700 18px ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: -0.4px;
   color: #a7f3d0;
 }
+/* 대응표 */
+:where([data-course]) .readout output {
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  color: #86efac;
+}
 .readout small {
   font-size: 12.5px;
   color: #a4a8ae;
+}
+/* 대응표 */
+:where([data-course]) .readout small {
+  font-size: 13px;
+  color: #c9ced5;
 }
 .cap {
   display: flex;
@@ -512,10 +708,20 @@
   font-weight: 800;
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .cap {
+  font-size: 16px;
+  font-weight: 700;
+  color: #f6f7f9;
+}
 .cap small {
   font-size: 13px;
   font-weight: 600;
   color: #a4a8ae;
+}
+/* 대응표 */
+:where([data-course]) .cap small {
+  color: #c9ced5;
 }
 .jog .toolDown {
   margin-left: auto;
@@ -530,8 +736,20 @@
   font-weight: 800;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .jog .toolDown {
+  border-radius: 8px;
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  color: #f6f7f9;
+  font-weight: 700;
+}
 .jog .toolDown:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.135);
+}
+/* 대응표 */
+:where([data-course]) .jog .toolDown:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.16);
 }
 .jog .toolDown:disabled {
   opacity: 0.45;
@@ -611,8 +829,19 @@
   font: 700 10.5px ui-monospace, SFMono-Regular, Menlo, monospace;
   color: #b8bdc4;
 }
+/* 대응표 */
+:where([data-course]) .jog .key[data-kind='wedge'] small {
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  color: #c9ced5;
+}
 .jog .key[data-kind='wedge'][data-state='blocked'] small {
   color: #ffb3ad;
+}
+/* 대응표 */
+:where([data-course]) .jog .key[data-kind='wedge'][data-state='blocked'] small {
+  color: #f6f7f9;
 }
 /* the gaps between the quarters and the axis colour along each edge (X red, Y green) */
 .padRing {
@@ -677,6 +906,11 @@
   color: #a4a8ae;
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .padHub small {
+  font-size: 13px;
+  color: #c9ced5;
+}
 
 /* --- 위 · 아래: a rocker with the tip's height between, a gauge beside it (bottom = 0, the desk) - */
 .lift {
@@ -694,6 +928,10 @@
   padding: 5px;
   border-radius: 37px;
   background: #282a2e;
+}
+/* 대응표 */
+:where([data-course]) .rocker {
+  border-radius: 12px;
 }
 .jog .key[data-kind='lift'] {
   height: auto;
@@ -722,6 +960,10 @@
 .jog .key[data-kind='lift']:disabled {
   background: rgba(255, 255, 255, 0.04);
 }
+/* 대응표 */
+:where([data-course]) .jog .key[data-kind='lift']:disabled {
+  background: rgba(255, 255, 255, 0.08);
+}
 .liftName {
   display: grid;
   justify-items: center;
@@ -730,9 +972,21 @@
   font-weight: 700;
   color: #a4a8ae;
 }
+/* 대응표 */
+:where([data-course]) .liftName {
+  font-size: 13px;
+  color: #c9ced5;
+}
 .liftName output {
   font: 700 15px ui-monospace, SFMono-Regular, Menlo, monospace;
   color: #a7f3d0;
+}
+/* 대응표 */
+:where([data-course]) .liftName output {
+  font-size: 16px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  color: #86efac;
 }
 .gauge {
   position: relative;
@@ -740,6 +994,10 @@
   margin: 12px 0;
   border-radius: 4px;
   background: #3a3c40;
+}
+/* 대응표 */
+:where([data-course]) .gauge {
+  border-radius: 8px;
 }
 .gauge i {
   position: absolute;
@@ -749,6 +1007,10 @@
   border-radius: 4px;
   background: #4f5155;
   opacity: 0.55;
+}
+/* 대응표 */
+:where([data-course]) .gauge i {
+  border-radius: 8px;
 }
 .gauge b {
   position: absolute;
@@ -771,6 +1033,11 @@
   font-weight: 600;
   color: #a4a8ae;
 }
+/* 대응표 */
+:where([data-course]) .keys {
+  font-size: 13px;
+  color: #c9ced5;
+}
 .keys kbd {
   min-width: 20px;
   padding: 1px 5px;
@@ -781,6 +1048,14 @@
   font: 700 11.5px ui-monospace, SFMono-Regular, Menlo, monospace;
   text-align: center;
   color: #e4eaf2;
+}
+/* 대응표 */
+:where([data-course]) .keys kbd {
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  color: #f6f7f9;
 }
 .turns {
   display: grid;
@@ -801,15 +1076,31 @@
   border-radius: 10px;
   background: #383a3e;
 }
+/* 대응표 */
+:where([data-course]) .turnMid {
+  border-radius: 12px;
+}
 .turnMid b {
   font-size: 15.5px;
   font-weight: 800;
   color: #fff;
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .turnMid b {
+  font-size: 16px;
+  font-weight: 700;
+  color: #f6f7f9;
+}
 .turnMid em {
   font: 700 12.5px ui-monospace, SFMono-Regular, Menlo, monospace;
   font-style: normal;
+}
+/* 대응표 */
+:where([data-course]) .turnMid em {
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
 }
 .turnMid output {
   margin-left: auto;
@@ -817,6 +1108,12 @@
   letter-spacing: -0.4px;
   color: #e4eaf2;
   white-space: nowrap;
+}
+/* 대응표 */
+:where([data-course]) .turnMid output {
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  color: #f6f7f9;
 }
 
 /* --- 4안+ (2026-10-23): slate surfaces, raised keys, chosen = a raised tile + a red mark --------- */
@@ -839,6 +1136,10 @@
   background: #282a2e;
   box-shadow: inset 0 0 0 1px #424448;
 }
+/* 대응표 */
+:where([data-course]) .chips {
+  border-radius: 12px;
+}
 .jog .chips button {
   position: relative;
   /* the groove's 3 px each side come out of the key's own padding: the row keeps its height */
@@ -846,8 +1147,16 @@
   background: transparent;
   color: #d2d7de;
 }
+/* 대응표 */
+:where([data-course]) .jog .chips button {
+  color: #c9ced5;
+}
 .jog .chips button:hover:not([aria-pressed='true']) {
   background: rgba(255, 255, 255, 0.05);
+}
+/* 대응표 */
+:where([data-course]) .jog .chips button:hover:not([aria-pressed='true']) {
+  background: rgba(255, 255, 255, 0.08);
 }
 .jog .chips button[aria-pressed='true'] {
   background: linear-gradient(180deg, #56585c, #47494d);
@@ -855,6 +1164,10 @@
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.16),
     0 3px 8px -2px rgba(0, 0, 0, 0.55);
+}
+/* 대응표 */
+:where([data-course]) .jog .chips button[aria-pressed='true'] {
+  color: #f6f7f9;
 }
 .jog .chips button[aria-pressed='true']::after {
   content: '';
@@ -910,6 +1223,10 @@
   background: rgba(255, 255, 255, 0.04);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
+/* 대응표 */
+:where([data-course]) .jog .key:disabled {
+  background: rgba(255, 255, 255, 0.08);
+}
 /* the chosen joint: its middle raised and lighter, a red mark on its left, the J badge red */
 .row {
   position: relative;
@@ -935,6 +1252,10 @@
   background: #59616a;
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .row[data-sel] .head em {
+  color: #f6f7f9;
+}
 .fill {
   background: rgba(210, 215, 222, 0.35);
 }
@@ -956,9 +1277,17 @@
   color: #101828;
   box-shadow: 0 4px 12px -6px rgba(0, 0, 0, 0.6);
 }
+/* 대응표 */
+:where([data-course]) .jog .learn {
+  color: #14171c;
+}
 .jog .learn:hover:not(:disabled) {
   background: #fff;
   color: #101828;
+}
+/* 대응표 */
+:where([data-course]) .jog .learn:hover:not(:disabled) {
+  color: #14171c;
 }
 .lesson {
   background: linear-gradient(180deg, #4f5155, #424448);
@@ -988,6 +1317,10 @@
 }
 .readout output {
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .readout output {
+  color: #f6f7f9;
 }
 .jog .toolDown {
   border: 0;
@@ -1027,10 +1360,20 @@
 .jog .key[data-kind='wedge'] small {
   color: #b8bdc4;
 }
+/* 대응표 */
+:where([data-course]) .jog .key[data-kind='wedge'] small {
+  color: #c9ced5;
+}
 .jog .key[data-kind='wedge']:active:not(:disabled) small,
 .jog .key[data-kind='wedge'][data-state='on'] small,
 .jog .key[data-kind='wedge'][data-state='hold'] small {
   color: #ffd9d6;
+}
+/* 대응표 */
+:where([data-course]) .jog .key[data-kind='wedge']:active:not(:disabled) small,
+:where([data-course]) .jog .key[data-kind='wedge'][data-state='on'] small,
+:where([data-course]) .jog .key[data-kind='wedge'][data-state='hold'] small {
+  color: #f6f7f9;
 }
 .padRing path:first-child {
   stroke: #303236;
@@ -1073,8 +1416,19 @@
   font: 700 10px ui-monospace, SFMono-Regular, Menlo, monospace;
   color: #9da1a7;
 }
+/* 대응표 */
+:where([data-course]) .jog .key[data-kind='lift'] small {
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  color: #c9ced5;
+}
 .liftName output {
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .liftName output {
+  color: #f6f7f9;
 }
 /* the height gauge: a scale every 50 mm beside an inset track, the tip's height as a red-ringed mark */
 .gauge {
@@ -1119,8 +1473,16 @@
   .head b {
     font-size: 15.5px;
   }
+  /* 대응표 */
+  :where([data-course]) .head b {
+    font-size: 16px;
+  }
   .head output {
     font-size: 17px;
+  }
+  /* 대응표 */
+  :where([data-course]) .head output {
+    font-size: 18px;
   }
   .jog .key b {
     font-size: 14px;
@@ -1128,8 +1490,16 @@
   .jog .modes button small {
     font-size: 11.5px;
   }
+  /* 대응표 */
+  :where([data-course]) .jog .modes button small {
+    font-size: 13px;
+  }
   .optName {
     font-size: 13.5px;
+  }
+  /* 대응표 */
+  :where([data-course]) .optName {
+    font-size: 14px;
   }
   .jog .chips button {
     font-size: 14px;
@@ -1187,6 +1557,11 @@
   .jog .key[data-kind='lift'] b {
     font-size: 14.5px;
   }
+  /* 대응표 */
+  :where([data-course]) .jog .key[data-kind='wedge'] b,
+  :where([data-course]) .jog .key[data-kind='lift'] b {
+    font-size: 14px;
+  }
   .rocker {
     width: 66px;
   }
@@ -1197,11 +1572,71 @@
     display: none;
   }
 }
+/* 대응표 */
+:where(html[data-vq~='19']) .jog {
+  gap: 8px;
+}
+/* 대응표 */
+:where(html[data-vq~='19']) .row {
+  min-height: 50px;
+}
+/* 대응표 */
+:where(html[data-vq~='19']) .mid {
+  gap: 2px;
+  padding: 4px 10px 2px;
+}
+/* 대응표 */
+:where(html[data-vq~='19']) .what {
+  display: none;
+}
+/* 대응표 */
+:where(html[data-vq~='19']) .jog .modes button {
+  padding: 7px 4px 6px;
+}
+/* 대응표 */
+:where(html[data-vq~='19']) .jog .modes button small {
+  display: none;
+}
+/* 대응표 */
+:where(html[data-vq~='19']) .tip {
+  padding: 7px 10px;
+  font-size: 13px;
+}
+/* 대응표 */
+:where(html[data-vq~='19']) .readout span {
+  padding: 6px 10px;
+}
+/* 대응표 */
+:where(html[data-vq~='19']) .padWrap {
+  --pad: clamp(166px, calc(100vh - 610px), 252px);
+}
+/* 대응표 */
+:where(html[data-vq~='19']) .jog .key[data-kind='wedge'] b,
+:where(html[data-vq~='19']) .jog .key[data-kind='lift'] b {
+  font-size: 14.5px;
+  font-size: 14px;
+}
+/* 대응표 */
+:where(html[data-vq~='19']) .rocker {
+  width: 66px;
+}
+/* 대응표 */
+:where(html[data-vq~='19']) .turn {
+  height: 36px;
+}
+/* 대응표 */
+:where(html[data-vq~='19']) .readout + .cap {
+  display: none;
+}
 /* 좌표 is the taller view: its closing hint goes first */
 @media (max-height: 1000px) {
   .turns + .tip {
     display: none;
   }
+}
+/* 대응표 */
+:where(html[data-vq~='20']) .turns + .tip {
+  display: none;
 }
 @media (pointer: coarse) {
   .row {
@@ -1241,10 +1676,19 @@
   letter-spacing: 0.14em;
   color: var(--hud-tx);
 }
+/* 대응표 */
+:where([data-course]) .jog .modes button em {
+  font-size: 13px;
+  letter-spacing: 0;
+}
 .jog .modes button b {
   font-size: 13px;
   font-weight: 500;
   color: var(--hud-sub);
+}
+/* 대응표 */
+:where([data-course]) .jog .modes button b {
+  font-weight: 600;
 }
 .jog .modes button small {
   display: none;
@@ -1265,6 +1709,11 @@
   letter-spacing: 0.12em;
   color: var(--hud-dim);
 }
+/* 대응표 */
+:where([data-course]) .optName {
+  font-size: 13px;
+  letter-spacing: 0;
+}
 .chips {
   gap: 6px;
   padding: 0;
@@ -1278,6 +1727,10 @@
   box-shadow: var(--hud-key-shadow);
   color: var(--hud-tx);
   font-weight: 600;
+}
+/* 대응표 */
+:where([data-course]) .jog .chips button {
+  border-radius: 8px;
 }
 .jog .chips button:hover:not([aria-pressed='true']) {
   background: var(--hud-key);
@@ -1362,6 +1815,10 @@
   background: var(--hud-groove);
   box-shadow: var(--hud-groove-shadow);
 }
+/* 대응표 */
+:where([data-course]) .mid {
+  border-radius: 8px;
+}
 .what {
   display: none;
 }
@@ -1370,10 +1827,18 @@
   font-weight: 600;
   color: var(--hud-tx);
 }
+/* 대응표 */
+:where([data-course]) .head b {
+  font-size: 16px;
+}
 .head em {
   background: none;
   color: var(--hud-dim);
   letter-spacing: 0.12em;
+}
+/* 대응표 */
+:where([data-course]) .head em {
+  letter-spacing: 0;
 }
 .head output {
   font-family: inherit;
@@ -1459,6 +1924,14 @@
     gap: 5px;
   }
 }
+/* 대응표 */
+:where(html[data-vq~='19']) .jog {
+  gap: 8px;
+}
+/* 대응표 */
+:where(html[data-vq~='19']) .rows {
+  gap: 5px;
+}
 @media (max-height: 800px) {
   .row {
     min-height: 46px;
@@ -1470,6 +1943,18 @@
     padding: 4px 10px;
   }
 }
+/* 대응표 */
+:where(html[data-vq~='21']) .row {
+  min-height: 46px;
+}
+/* 대응표 */
+:where(html[data-vq~='21']) .head output {
+  font-size: 16px;
+}
+/* 대응표 */
+:where(html[data-vq~='21']) .tip {
+  padding: 4px 10px;
+}
 /* STEP: the numbers on the keys, the unit once after them. */
 .chips {
   grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
@@ -1480,6 +1965,10 @@
   font-style: normal;
   font-size: 12.5px;
   color: var(--hud-dim);
+}
+/* 대응표 */
+:where([data-course]) .chips .chipUnit {
+  font-size: 13px;
 }
 
 /* --- 좌표 조그: one brushed-metal dial (the round pad and the 위 · 아래 rocker alike), dark glass keys,
@@ -1509,10 +1998,20 @@
   font-weight: 600;
   color: #eef1f4;
 }
+/* 대응표 */
+:where([data-course]) .jog .key[data-kind='wedge'] b,
+:where([data-course]) .jog .key[data-kind='lift'] b {
+  color: #f6f7f9;
+}
 .jog .key[data-kind='wedge'] svg,
 .jog .key[data-kind='lift'] svg {
   color: #fff;
   opacity: 1;
+}
+/* 대응표 */
+:where([data-course]) .jog .key[data-kind='wedge'] svg,
+:where([data-course]) .jog .key[data-kind='lift'] svg {
+  color: #f6f7f9;
 }
 .jog .key[data-kind='wedge']:active:not(:disabled) :is(b, svg),
 .jog .key[data-kind='wedge'][data-state='on'] :is(b, svg),
@@ -1527,6 +2026,11 @@
   font-weight: 700;
   letter-spacing: 0.04em;
 }
+/* 대응표 */
+:where([data-course]) .jog .key[data-kind='wedge'] small,
+:where([data-course]) .jog .key[data-kind='lift'] small {
+  letter-spacing: 0;
+}
 .jog .key[data-side='up'] small,
 .jog .key[data-side='down'] small {
   color: #ff8f86;
@@ -1535,8 +2039,17 @@
 .jog .key[data-side='right'] small {
   color: #74e0a2;
 }
+/* 대응표 */
+:where([data-course]) .jog .key[data-side='left'] small,
+:where([data-course]) .jog .key[data-side='right'] small {
+  color: #86efac;
+}
 .jog .key[data-kind='lift'] small {
   color: #93b4ff;
+}
+/* 대응표 */
+:where([data-course]) .jog .key[data-kind='lift'] small {
+  color: #93c5fd;
 }
 .padRing path[data-axis] {
   display: none;
@@ -1558,6 +2071,10 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.35),
     0 0 0 5px rgba(0, 0, 0, 0.35),
     0 6px 14px rgba(0, 0, 0, 0.5);
+}
+/* 대응표 */
+:where([data-course]) .padHub {
+  border-color: rgba(255, 255, 255, 0.45);
 }
 .rocker {
   padding: 4px;
@@ -1584,6 +2101,10 @@
   border-radius: 10px;
   background: #16181b;
   box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.7);
+}
+/* 대응표 */
+:where([data-course]) .liftName {
+  border-radius: 12px;
 }
 .gauge {
   width: 6px;
@@ -1616,6 +2137,11 @@
   font-size: 11.5px;
   letter-spacing: 0.16em;
 }
+/* 대응표 */
+:where([data-course]) .optName {
+  font-size: 13px;
+  letter-spacing: 0;
+}
 .jog .chips button {
   padding: 6px 0;
   font-size: 14px;
@@ -1631,6 +2157,10 @@
 }
 .speed output {
   font-size: 15px;
+}
+/* 대응표 */
+:where([data-course]) .speed output {
+  font-size: 16px;
 }
 
 /* --- 손 방향: three cards (the axis drawn, name, value; ↺ ↻ under) ------------------------------------ */
@@ -1674,6 +2204,11 @@
   font-size: 11px;
   letter-spacing: 0.1em;
 }
+/* 대응표 */
+:where([data-course]) .turnMid em {
+  font-size: 13px;
+  letter-spacing: 0;
+}
 .turnMid .turnWhat {
   display: none;
 }
@@ -1681,6 +2216,10 @@
   margin: 0;
   font-size: 16px;
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .turnMid output {
+  color: #f6f7f9;
 }
 .turn > button {
   grid-row: 2;
@@ -1701,9 +2240,13 @@
     min-height: 54px;
   }
 }
+/* 대응표 */
+:where(html[data-vq~='18']) :global(.life-shell) .row {
+  min-height: 54px;
+}
 
 /* 입문 과정 (수정 지시서 v2 파트 A-3 · D-6): on a 768 px-high screen the six rows end above the fixed row
-   (기본 자세 · 일자로 펴기 · 정지) in every 절, 3-5 with its times included; the keys stay 40 px or more. */
+   (기본 자세 · 일자로 펴기 · 정지) in every 절, 3-4 with its times included; the keys stay 40 px or more. */
 @media (max-height: 820px) {
   [data-course] :global(.life-shell) .rows {
     gap: 4px;
@@ -1725,6 +2268,31 @@
     height: 16px;
   }
 }
+/* 대응표 */
+:where(html[data-vq~='18']) [data-course] :global(.life-shell) .rows {
+  gap: 4px;
+}
+/* 대응표 */
+:where(html[data-vq~='18']) [data-course] :global(.life-shell) .row {
+  min-height: 44px;
+}
+/* 대응표 */
+:where(html[data-vq~='18']) [data-course] :global(.life-shell) .head b {
+  line-height: 20px;
+}
+/* 대응표 */
+:where(html[data-vq~='18']) [data-course] :global(.life-shell) .bar {
+  height: 16px;
+}
+/* 대응표 */
+:where(html[data-vq~='18']) [data-course] :global(.life-shell) .track {
+  top: 5px;
+}
+/* 대응표 */
+:where(html[data-vq~='18']) [data-course] :global(.life-shell) .key svg {
+  width: 16px;
+  height: 16px;
+}
 
 /* 입문 과정 (수정 지시서 v2 파트 D-5 · D-6): the 관절 · 좌표 tabs' words 15 px, and the keys that are pressed 40 px or
    more (이동 단위, 손 방향, 손 아래로). The 이동 단위 box gives up its own padding for it, so the rows keep their place. */
@@ -1733,6 +2301,10 @@
 }
 [data-course] :global(.life-shell) .jog .modes button b {
   font-size: 15px;
+}
+/* 대응표 */
+:where([data-course]) [data-course] :global(.life-shell) .jog .modes button b {
+  font-size: 16px;
 }
 [data-course] :global(.life-shell) .opts {
   padding-top: 6px;
@@ -1749,3 +2321,16 @@
   min-height: 40px;
 }
 
+/* 입문 과정 (수정 지시서 v3 파트 3-2): [관절 익히기] is not a step of any 절 — off there (the full version keeps it). */
+[data-course] :global(.life-shell) .jog .learn,
+[data-course] :global(.life-shell) .jog .tip {
+  display: none;
+}
+
+/* 수정 지시서 v3: a value at its limit is red (a limit · an error), not orange (the place to press). */
+[data-course] :global(.life-shell) .head output[data-near] {
+  color: #ff8f86;
+}
+[data-course] :global(.life-shell) .bar[data-near] .knob {
+  border-color: #ff8f86;
+}

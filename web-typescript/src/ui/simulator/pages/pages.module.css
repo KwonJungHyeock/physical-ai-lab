@@ -39,6 +39,13 @@
   letter-spacing: 0.14em;
   color: var(--faint);
 }
+/* 대응표 */
+:where([data-course]) .pageNav h5 {
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  letter-spacing: 0;
+}
 .page .pageNav button {
   display: flex;
   align-items: center;
@@ -56,6 +63,11 @@
     background 0.12s,
     color 0.12s;
 }
+/* 대응표 */
+:where([data-course]) .page .pageNav button {
+  border-radius: 12px;
+  font-weight: 600;
+}
 .pageNav button svg {
   color: var(--faint);
   flex: none;
@@ -67,6 +79,10 @@
   font-weight: 600;
   color: var(--faint);
   font-variant-numeric: tabular-nums;
+}
+/* 대응표 */
+:where([data-course]) .pageNav button em {
+  font-size: 13px;
 }
 .page .pageNav button:hover {
   background: var(--hover);
@@ -95,6 +111,10 @@
   background: var(--soft);
   border: 1px solid var(--edge);
 }
+/* 대응표 */
+:where([data-course]) .pageHelp {
+  font-size: 13px;
+}
 
 /* --- the open section: its heading, then its content ------------------------------------ */
 .pageMain {
@@ -115,10 +135,19 @@
   font-weight: 800;
   letter-spacing: -0.02em;
 }
+/* 대응표 */
+:where([data-course]) .pageHead h1 {
+  font-size: 28px;
+  font-weight: 700;
+}
 .pageHead p {
   margin: 4px 0 0;
   color: var(--muted);
   font-size: 13.5px;
+}
+/* 대응표 */
+:where([data-course]) .pageHead p {
+  font-size: 14px;
 }
 .pageHead > :last-child:not(div) {
   margin-left: auto;
@@ -153,11 +182,19 @@
   font-weight: 800;
   letter-spacing: -0.01em;
 }
+/* 대응표 */
+:where([data-course]) .groupHead h2 {
+  font-weight: 700;
+}
 .groupHead h2 small {
   font-size: 12px;
   font-weight: 700;
   color: var(--faint);
   font-variant-numeric: tabular-nums;
+}
+/* 대응표 */
+:where([data-course]) .groupHead h2 small {
+  font-size: 13px;
 }
 .groupHead p {
   margin: 0;
@@ -174,6 +211,10 @@
   font-size: 12.5px;
   font-weight: 700;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .page .groupMore {
+  font-size: 13px;
 }
 .page .groupMore:hover {
   text-decoration: underline;
@@ -207,6 +248,10 @@
     transform 0.18s cubic-bezier(0.2, 0.7, 0.3, 1),
     box-shadow 0.18s,
     border-color 0.18s;
+}
+/* 대응표 */
+:where([data-course]) .page .card {
+  border-radius: 12px;
 }
 .page .card:hover:not(:disabled) {
   transform: translateY(-3px);
@@ -278,6 +323,12 @@
   border-radius: 999px;
   backdrop-filter: blur(6px);
 }
+/* 대응표 */
+:where([data-course]) .cardBadge,
+:where([data-course]) .cardNow {
+  font-size: 13px;
+  font-weight: 700;
+}
 .cardBadge {
   left: 10px;
   color: var(--ink);
@@ -289,6 +340,10 @@
   color: #fff;
   background: var(--accent);
   box-shadow: 0 2px 8px rgba(52, 84, 209, 0.35);
+}
+/* 대응표 */
+:where([data-course]) .cardNow {
+  color: #f6f7f9;
 }
 .cardBody {
   display: flex;
@@ -311,6 +366,11 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+/* 대응표 */
+:where([data-course]) .cardTitle b {
+  font-size: 16px;
+  font-weight: 700;
 }
 .cardState {
   flex: none;
@@ -337,6 +397,10 @@
   line-height: 1.5;
   color: var(--muted);
 }
+/* 대응표 */
+:where([data-course]) .cardBody small {
+  font-size: 13px;
+}
 .cardTags {
   margin-top: auto;
   display: flex;
@@ -356,6 +420,12 @@
   background: var(--soft);
   border: 1px solid var(--edge);
   white-space: nowrap;
+}
+/* 대응표 */
+:where([data-course]) .cardTags em {
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 8px;
 }
 @media (prefers-reduced-motion: reduce) {
   .cardMedia {
@@ -415,6 +485,10 @@
   font-size: 13.5px;
   font-weight: 600;
 }
+/* 대응표 */
+:where([data-course]) .page .pageNav .treeName {
+  font-size: 14px;
+}
 .treeName span {
   min-width: 0;
   white-space: nowrap;
@@ -438,6 +512,10 @@
   background: var(--card, #fff);
   box-shadow: var(--card-shadow);
 }
+/* 대응표 */
+:where([data-course]) .toolbar {
+  border-radius: 12px;
+}
 .page .toolBtn,
 .page .viewSeg button {
   width: 34px;
@@ -450,6 +528,11 @@
   background: none;
   color: var(--muted);
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .page .toolBtn,
+:where([data-course]) .page .viewSeg button {
+  border-radius: 8px;
 }
 .page .toolBtn:hover:not(:disabled),
 .page .viewSeg button:hover {
@@ -471,6 +554,10 @@
   border-radius: 9px;
   background: var(--soft);
 }
+/* 대응표 */
+:where([data-course]) .crumbs {
+  border-radius: 8px;
+}
 .crumbs > span {
   display: flex;
   align-items: center;
@@ -491,6 +578,10 @@
   white-space: nowrap;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .page .crumbs button {
+  border-radius: 8px;
+}
 .page .crumbs button:hover {
   background: var(--card, #fff);
   color: var(--ink);
@@ -499,12 +590,20 @@
   color: var(--ink);
   font-weight: 750;
 }
+/* 대응표 */
+:where([data-course]) .page .crumbs button[aria-current='page'] {
+  font-weight: 700;
+}
 .viewSeg {
   display: flex;
   gap: 2px;
   padding: 2px;
   border-radius: 11px;
   background: var(--soft);
+}
+/* 대응표 */
+:where([data-course]) .viewSeg {
+  border-radius: 12px;
 }
 .page .viewSeg button[aria-pressed='true'] {
   background: var(--card, #fff);
@@ -517,6 +616,10 @@
   margin: 10px 4px 8px;
   font-size: 12.5px;
   color: var(--muted);
+}
+/* 대응표 */
+:where([data-course]) .folderNote {
+  font-size: 13px;
 }
 .files {
   flex: 1;
@@ -575,6 +678,10 @@
     0 0 0 1px rgba(16, 24, 40, 0.08),
     0 3px 8px rgba(16, 24, 40, 0.1);
 }
+/* 대응표 */
+:where([data-course]) .entryArt img {
+  border-radius: 8px;
+}
 .entryArt img[data-type='gif'] {
   width: 100%;
   height: auto;
@@ -597,6 +704,14 @@
   letter-spacing: 0.02em;
   box-shadow: 0 1px 3px rgba(16, 24, 40, 0.25);
 }
+/* 대응표 */
+:where([data-course]) .typeTag {
+  border-radius: 8px;
+  color: #f6f7f9;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
 .files[data-view='grid'] .entry b {
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -608,10 +723,18 @@
   word-break: keep-all;
   overflow-wrap: anywhere;
 }
+/* 대응표 */
+:where([data-course]) .files[data-view='grid'] .entry b {
+  font-size: 13px;
+}
 .files[data-view='grid'] .entry small {
   font-size: 11.5px;
   color: var(--faint);
   font-variant-numeric: tabular-nums;
+}
+/* 대응표 */
+:where([data-course]) .files[data-view='grid'] .entry small {
+  font-size: 13px;
 }
 /* the list: name · type · size, like a file manager's details view */
 .files[data-view='list'] {
@@ -636,6 +759,10 @@
   font-weight: 700;
   color: var(--faint);
 }
+/* 대응표 */
+:where([data-course]) .listHead {
+  font-size: 13px;
+}
 .listHead span:last-child,
 .files[data-view='list'] .entry small:last-child {
   text-align: right;
@@ -644,6 +771,10 @@
   padding: 7px 12px;
   border-radius: 9px;
   font-size: 13px;
+}
+/* 대응표 */
+:where([data-course]) .page .files[data-view='list'] .entry {
+  border-radius: 8px;
 }
 .entryName {
   display: flex;
@@ -666,6 +797,10 @@
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
+/* 대응표 */
+:where([data-course]) .files[data-view='list'] .entry small {
+  font-size: 13px;
+}
 .statusBar {
   display: flex;
   justify-content: space-between;
@@ -674,6 +809,10 @@
   border-top: 1px solid var(--edge);
   font-size: 11.5px;
   color: var(--faint);
+}
+/* 대응표 */
+:where([data-course]) .statusBar {
+  font-size: 13px;
 }
 .statusBar span:last-child {
   white-space: nowrap;
@@ -700,6 +839,10 @@
   background: radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0.08), transparent 70%), var(--soft);
   border: 1px solid var(--edge);
 }
+/* 대응표 */
+:where([data-course]) .previewArt {
+  border-radius: 12px;
+}
 .previewArt img {
   display: block;
   max-width: 100%;
@@ -709,6 +852,10 @@
   box-shadow:
     0 0 0 1px rgba(16, 24, 40, 0.08),
     0 10px 24px rgba(16, 24, 40, 0.14);
+}
+/* 대응표 */
+:where([data-course]) .previewArt img {
+  border-radius: 8px;
 }
 .previewArt[data-type='gif'][data-thumb] {
   min-height: 0;
@@ -746,6 +893,10 @@
   border-top: 1px solid var(--edge);
   font-size: 12.5px;
 }
+/* 대응표 */
+:where([data-course]) .facts {
+  font-size: 13px;
+}
 .facts dt {
   color: var(--faint);
   font-weight: 600;
@@ -777,6 +928,13 @@
   text-decoration: none;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .page .primary,
+:where([data-course]) .page .secondary {
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+}
 .page .primary {
   border: 0;
   color: #fff;
@@ -784,6 +942,10 @@
   box-shadow:
     0 1px 2px rgba(16, 24, 40, 0.1),
     0 4px 12px rgba(52, 84, 209, 0.28);
+}
+/* 대응표 */
+:where([data-course]) .page .primary {
+  color: #f6f7f9;
 }
 .page .primary:only-child {
   grid-column: 1 / -1;
@@ -810,10 +972,18 @@
   background: var(--soft);
   font-size: 12px !important;
 }
+/* 대응표 */
+:where([data-course]) .previewHint {
+  font-size: 13px !important;
+}
 @media (max-width: 1280px) {
   .explorer {
     grid-template-columns: 220px minmax(0, 1fr) 260px;
   }
+}
+/* 대응표 */
+:where(html[data-vq~='14']) .explorer {
+  grid-template-columns: 220px minmax(0, 1fr) 260px;
 }
 @media (max-width: 1099px) {
   .page,
@@ -830,6 +1000,23 @@
     border-left: 0;
     border-top: 1px solid var(--edge);
   }
+}
+/* 대응표 */
+:where(html[data-vq~='22']) .page,
+:where(html[data-vq~='22']) .explorer {
+  grid-template-columns: minmax(0, 1fr);
+  grid-auto-rows: auto;
+  overflow: auto;
+}
+/* 대응표 */
+:where(html[data-vq~='22']) .pageNav {
+  border-right: 0;
+  border-bottom: 1px solid var(--edge);
+}
+/* 대응표 */
+:where(html[data-vq~='22']) .preview {
+  border-left: 0;
+  border-top: 1px solid var(--edge);
 }
 
 /* Metal Mission HUD (2026-10-29): the pages on the same dark metal ground as the console; cards as

@@ -28,6 +28,10 @@
   color: var(--ink, #25272b);
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .fold summary {
+  font-size: 14px;
+}
 
 /* The four stages: done (green), now (blue), stopped (red), still to come (grey). */
 .stages {
@@ -49,6 +53,10 @@
   font-weight: 700;
   color: var(--muted, #72757a);
 }
+/* 대응표 */
+:where([data-course]) .stages li {
+  border-radius: 12px;
+}
 .stages li span {
   display: grid;
   place-items: center;
@@ -59,13 +67,25 @@
   background: #fff;
   font-size: 12px;
 }
+/* 대응표 */
+:where([data-course]) .stages li span {
+  font-size: 13px;
+}
 .stages li[data-state='done'] {
   background: #f0faf3;
   color: #1c7c43;
 }
+/* 대응표 */
+:where([data-course]) .stages li[data-state='done'] {
+  color: #86efac;
+}
 .stages li[data-state='done'] span {
   background: #1c7c43;
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .stages li[data-state='done'] span {
+  color: #f6f7f9;
 }
 .stages li[data-state='now'] {
   background: var(--accent-soft, #e9eff7);
@@ -74,6 +94,10 @@
 .stages li[data-state='now'] span {
   background: var(--accent, #2563eb);
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .stages li[data-state='now'] span {
+  color: #f6f7f9;
 }
 .stages li[data-state='bad'] {
   background: #fdecec;
@@ -85,6 +109,10 @@
   font-size: 13.5px;
   font-weight: 600;
   color: var(--ink, #25272b);
+}
+/* 대응표 */
+:where([data-course]) .line {
+  font-size: 14px;
 }
 .log {
   margin: 0;
@@ -98,6 +126,12 @@
   line-height: 1.5;
   white-space: pre-wrap;
 }
+/* 대응표 */
+:where([data-course]) .log {
+  border-radius: 12px;
+  color: #f6f7f9;
+  font-size: 13px;
+}
 .result {
   margin: 0;
   display: grid;
@@ -110,6 +144,11 @@
   font-size: 12.5px;
   font-weight: 500;
   color: var(--muted, #72757a);
+}
+/* 대응표 */
+:where([data-course]) .result small {
+  font-size: 13px;
+  font-weight: 600;
 }
 .row {
   display: flex;
@@ -127,6 +166,10 @@
   gap: 8px;
   font-size: 14px;
   color: #c5cad1;
+}
+/* 대응표 */
+:where([data-course]) .plain {
+  color: #c9ced5;
 }
 .plain li {
   counter-increment: plain;
@@ -151,8 +194,17 @@
   font-size: 12px;
   font-weight: 700;
 }
+/* 대응표 */
+:where([data-course]) .plain li::before {
+  color: #f6f7f9;
+  font-size: 13px;
+}
 .plain b {
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .plain b {
+  color: #f6f7f9;
 }
 .fold {
   min-width: 0;
@@ -164,6 +216,10 @@
 .fold summary {
   font-size: 14px;
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .fold summary {
+  color: #f6f7f9;
 }
 .fold[open] summary {
   margin-bottom: 4px;
@@ -177,14 +233,27 @@
   font-size: 13.5px;
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .stages li {
+  color: #c9ced5;
+  font-size: 14px;
+}
 .stages li span {
   background: #393b3f;
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .stages li span {
+  color: #f6f7f9;
 }
 .stages li[data-state='done'] {
   background: rgba(22, 149, 90, 0.14);
   border-color: rgba(34, 197, 94, 0.45);
   color: #4ade80;
+}
+/* 대응표 */
+:where([data-course]) .stages li[data-state='done'] {
+  color: #86efac;
 }
 .stages li[data-state='done'] span {
   background: #16955a;
@@ -194,6 +263,10 @@
   border-color: #e8392f;
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .stages li[data-state='now'] {
+  color: #f6f7f9;
+}
 .stages li[data-state='now'] span {
   background: #e8392f;
 }
@@ -202,9 +275,17 @@
   border-color: rgba(232, 57, 47, 0.6);
   color: #ffb4ab;
 }
+/* 대응표 */
+:where([data-course]) .stages li[data-state='bad'] {
+  color: #f6f7f9;
+}
 .line {
   font-size: 14px;
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .line {
+  color: #f6f7f9;
 }
 .log {
   background: #181a1e;
@@ -213,6 +294,14 @@
 .result {
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .result {
+  color: #f6f7f9;
+}
 .result small {
   color: #b2b7be;
+}
+/* 대응표 */
+:where([data-course]) .result small {
+  color: #c9ced5;
 }

@@ -16,6 +16,11 @@
   font-size: 12px;
   line-height: 1.35;
 }
+/* 대응표 */
+:where([data-course]) .hud {
+  color: #f6f7f9;
+  font-size: 13px;
+}
 .hud::-webkit-scrollbar {
   display: none;
 }
@@ -32,6 +37,10 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
   padding: 9px 11px;
   font-variant-numeric: tabular-nums;
+}
+/* 대응표 */
+:where([data-course]) .glass {
+  border-color: rgba(255, 255, 255, 0.18);
 }
 .ic {
   width: 14px;
@@ -67,10 +76,23 @@
   position: relative;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .hud .bar button,
+:where([data-course]) .hud .showBtn {
+  font-size: 13px;
+  font-weight: 700;
+  color: #c9ced5;
+}
 .hud .bar button:hover,
 .hud .showBtn:hover {
   color: #e4eaf2;
   background: rgba(255, 255, 255, 0.05);
+}
+/* 대응표 */
+:where([data-course]) .hud .bar button:hover,
+:where([data-course]) .hud .showBtn:hover {
+  color: #f6f7f9;
+  background: rgba(255, 255, 255, 0.08);
 }
 .hud .bar button[aria-pressed='true'] {
   color: #fff;
@@ -78,6 +100,10 @@
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.16),
     0 3px 8px -2px rgba(0, 0, 0, 0.55);
+}
+/* 대응표 */
+:where([data-course]) .hud .bar button[aria-pressed='true'] {
+  color: #f6f7f9;
 }
 .hud .bar button[aria-pressed='true']::after {
   content: '';
@@ -94,6 +120,11 @@
   border-left: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 0 8px 8px 0;
 }
+/* 대응표 */
+:where([data-course]) .hud .bar .hideBtn {
+  color: #c9ced5;
+  border-left-color: rgba(255, 255, 255, 0.18);
+}
 /* `all: unset` above makes it inherit the column's pointer-events: none; the glass look comes back here. */
 .hud .showBtn {
   align-self: flex-start;
@@ -105,6 +136,12 @@
   border: 1px solid rgba(255, 255, 255, 0.084);
   border-radius: 10px;
   backdrop-filter: blur(12px) saturate(1.2);
+}
+/* 대응표 */
+:where([data-course]) .hud .showBtn {
+  color: #c9ced5;
+  border-color: rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
 }
 
 /* Panel headers */
@@ -119,6 +156,13 @@
   align-items: center;
   gap: 6px;
 }
+/* 대응표 */
+:where([data-course]) .glass h5 {
+  font-size: 13px;
+  letter-spacing: 0;
+  color: #c9ced5;
+  font-weight: 700;
+}
 .ht {
   display: flex;
   align-items: center;
@@ -129,6 +173,10 @@
   height: 13px;
   color: #ff9a95;
 }
+/* 대응표 */
+:where([data-course]) .ht .ic {
+  color: #ff8f86;
+}
 .glass h5 em {
   font-style: normal;
   letter-spacing: 0;
@@ -136,6 +184,11 @@
   font-weight: 600;
   font-size: 10px;
   text-align: right;
+}
+/* 대응표 */
+:where([data-course]) .glass h5 em {
+  color: #c9ced5;
+  font-size: 13px;
 }
 .status {
   display: inline-flex;
@@ -150,6 +203,11 @@
   background: rgba(61, 220, 132, 0.1);
   border: 1px solid rgba(61, 220, 132, 0.25);
 }
+/* 대응표 */
+:where([data-course]) .status {
+  font-size: 13px;
+  color: #86efac;
+}
 .status i {
   width: 6px;
   height: 6px;
@@ -162,6 +220,12 @@
   background: rgba(255, 255, 255, 0.054);
   border-color: rgba(255, 255, 255, 0.158);
 }
+/* 대응표 */
+:where([data-course]) .status[data-tone='run'] {
+  color: #f6f7f9;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+}
 .status[data-tone='run'] i {
   background: #e4eaf2;
   box-shadow: 0 0 8px rgba(228, 234, 242, 0.7);
@@ -172,6 +236,10 @@
   background: rgba(255, 173, 31, 0.1);
   border-color: rgba(255, 173, 31, 0.35);
 }
+/* 대응표 */
+:where([data-course]) .status[data-tone='real'] {
+  color: #f0a23b;
+}
 .status[data-tone='real'] i {
   background: #ffad1f;
   box-shadow: 0 0 8px #ffad1f;
@@ -180,6 +248,10 @@
   color: #ff9b93;
   background: rgba(255, 90, 78, 0.1);
   border-color: rgba(255, 90, 78, 0.35);
+}
+/* 대응표 */
+:where([data-course]) .status[data-tone='stop'] {
+  color: #ff8f86;
 }
 .status[data-tone='stop'] i {
   background: #ff5a4e;
@@ -284,11 +356,20 @@
   fill: #84878c;
   text-anchor: middle;
 }
+/* 대응표 */
+:where([data-course]) .minmax {
+  font-size: 13px;
+}
 .loadPct {
   font-size: 8.5px;
   font-weight: 800;
   fill: #3ddc84;
   text-anchor: middle;
+}
+/* 대응표 */
+:where([data-course]) .loadPct {
+  font-size: 13px;
+  font-weight: 700;
 }
 .dial[data-load='mid'] .loadPct {
   fill: #ffad1f;
@@ -305,10 +386,20 @@
   font-weight: 800;
   color: #b8bdc4;
 }
+/* 대응표 */
+:where([data-course]) .lab {
+  font-size: 13px;
+  font-weight: 700;
+  color: #c9ced5;
+}
 .lab span {
   color: #91959b;
   font-weight: 600;
   margin-left: 2px;
+}
+/* 대응표 */
+:where([data-course]) .lab span {
+  color: #c9ced5;
 }
 .val {
   position: absolute;
@@ -320,6 +411,12 @@
   color: #fff;
   letter-spacing: -0.01em;
 }
+/* 대응표 */
+:where([data-course]) .val {
+  font-size: 14px;
+  font-weight: 700;
+  color: #f6f7f9;
+}
 .spd {
   position: absolute;
   left: 0;
@@ -327,6 +424,11 @@
   top: 63px;
   font-size: 9px;
   color: #9da1a7;
+}
+/* 대응표 */
+:where([data-course]) .spd {
+  font-size: 13px;
+  color: #c9ced5;
 }
 .dial[data-warn] .fill,
 .dial[data-warn] .glow {
@@ -341,8 +443,16 @@
 .dial[data-warn] .val {
   color: #ffcf7a;
 }
+/* 대응표 */
+:where([data-course]) .dial[data-warn] .val {
+  color: #f0a23b;
+}
 .dial[data-warn] .spd {
   color: #ffad1f;
+}
+/* 대응표 */
+:where([data-course]) .dial[data-warn] .spd {
+  color: #f0a23b;
 }
 @keyframes warn {
   50% {
@@ -356,6 +466,11 @@
   margin-top: 4px;
   font-size: 9.5px;
   color: #9da1a7;
+}
+/* 대응표 */
+:where([data-course]) .legend {
+  font-size: 13px;
+  color: #c9ced5;
 }
 .legend i {
   display: inline-block;
@@ -380,6 +495,11 @@
   color: #9da1a7;
   font-size: 10.5px;
 }
+/* 대응표 */
+:where([data-course]) .hint {
+  color: #c9ced5;
+  font-size: 13px;
+}
 
 /* Tool tip */
 .grid3 {
@@ -393,20 +513,44 @@
   border-radius: 7px;
   padding: 4px 7px;
 }
+/* 대응표 */
+:where([data-course]) .cell {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+}
 .cell small {
   display: block;
   color: #9da1a7;
   font-weight: 800;
   font-size: 9.5px;
 }
+/* 대응표 */
+:where([data-course]) .cell small {
+  color: #c9ced5;
+  font-weight: 700;
+  font-size: 13px;
+}
 .cell small[data-ax='X'] {
   color: #ff7a7a;
+}
+/* 대응표 */
+:where([data-course]) .cell small[data-ax='X'] {
+  color: #ff8f86;
 }
 .cell small[data-ax='Y'] {
   color: #5fe0a0;
 }
+/* 대응표 */
+:where([data-course]) .cell small[data-ax='Y'] {
+  color: #86efac;
+}
 .cell small[data-ax='Z'] {
   color: #ff9a95;
+}
+/* 대응표 */
+:where([data-course]) .cell small[data-ax='Z'] {
+  color: #ff8f86;
 }
 .cell b {
   font-size: 13px;
@@ -415,12 +559,22 @@
   font-size: 11.5px;
   color: #d8dee6;
 }
+/* 대응표 */
+:where([data-course]) .cell[data-rot] b {
+  font-size: 13px;
+  color: #f6f7f9;
+}
 .cell b i {
   font-style: normal;
   font-size: 9px;
   color: #9da1a7;
   margin-left: 2px;
   font-weight: 600;
+}
+/* 대응표 */
+:where([data-course]) .cell b i {
+  font-size: 13px;
+  color: #c9ced5;
 }
 .speed {
   margin-top: 6px;
@@ -437,6 +591,11 @@
   margin-left: 4px;
   font-size: 10.5px;
 }
+/* 대응표 */
+:where([data-course]) .speed span {
+  color: #c9ced5;
+  font-size: 13px;
+}
 .trace {
   display: block;
   width: 100%;
@@ -448,6 +607,11 @@
   color: #9ff0c4;
   font-weight: 700;
   font-size: 10.5px;
+}
+/* 대응표 */
+:where([data-course]) .held {
+  color: #86efac;
+  font-size: 13px;
 }
 .held:empty {
   display: none;
@@ -473,6 +637,13 @@
   background: rgba(255, 255, 255, 0.05);
   color: #cbd0d7;
 }
+/* 대응표 */
+:where([data-course]) .chips span {
+  font-size: 13px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.08);
+  color: #c9ced5;
+}
 .chips i {
   display: inline-block;
   width: 8px;
@@ -495,6 +666,10 @@
   border-radius: 10px;
   backdrop-filter: none;
   box-shadow: var(--hud-plate-shadow);
+}
+/* 대응표 */
+:where([data-course]) .glass {
+  border-radius: 12px;
 }
 
 /* The monitor's panel keys: on = silver; a joint's load ring white, amber and red only when it works hard. */

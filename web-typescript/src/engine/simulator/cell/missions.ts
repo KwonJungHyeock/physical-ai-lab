@@ -17,6 +17,7 @@ import type { LineState } from './line';
 import { ICED_AMERICANO, drinkVerdict, menuOf, type CafeOrder, type CafeSpawn, type CafeState } from './cafe';
 import { cafeProgram, newRecipe, type MenuRecipe } from './cafeMenu';
 import { G3_CARD, LIFT_MM, cardsOf, inkVerdict, readInk, type DrawState, type Phrase, type Strokes } from './draw';
+import { checkName } from './courseText';
 import { G_ANSWER, drawCode, type DrawRecipe } from './drawRecipe';
 import { ON_POINT_MM, robotStones, stoneAt, type BoardState, type Pt } from './board';
 import { H_ANSWER, boardCode, type BoardRecipe } from './boardRecipe';
@@ -1308,6 +1309,8 @@ const F: CellMission[] = [
 const cardsNow = (j: Judge) => (j.draw ? cardsOf(j.draw, j.trail ?? []) : []);
 
 /** The card on the mat (or the last one written) reads `phrase` well. */
+/** 글씨 쓰기 (입문 과정 5장): the same check, its name from the 문구 파일 (courseText.ts). */
+const safeDraw: Check = { ...safe, label: checkName('safe') };
 function written(phrase: Phrase, label: string): Check {
   return {
     label,
@@ -1322,7 +1325,7 @@ function written(phrase: Phrase, label: string): Check {
 
 /** The writing stands in the card's middle (within 3 mm). */
 const centred: Check = {
-  label: '글씨가 카드 가운데에 (3 mm 안)',
+  label: checkName('centred', { mm: 3 }),
   judge: (j) => {
     const c = cardsNow(j).at(-1);
     if (!c) return { ok: false, detail: '카드가 없어요' };
@@ -1347,7 +1350,7 @@ const straight: Check = {
 /** `n` cards handed to the customers, each reading `phrase` well. */
 function delivered(n: number, phrase: Phrase): Check {
   return {
-    label: `손님 ${n}명에게 '${phrase}' 카드`,
+    label: checkName('delivered', { n, text: phrase }),
     judge: (j) => {
       const done = j.draw?.done ?? [];
       const verdicts = done.map((c) => inkVerdict(readInk(c.ink, phrase, c.corner)));
@@ -1371,7 +1374,7 @@ const G: CellMission[] = [
     goal: "준비된 순서로 손님의 메시지 카드에 '사랑해'를 써서 건네요. 펜이 언제 내려가고 언제 들리는지 보세요.",
     hint: '실제 캘리그라피 부스도 카드 받기 → 쓰기 → 완성 알리기 순서예요. 펜은 획을 쓸 때만 종이에 닿고, 다음 획으로 갈 때는 들려요.',
     setup: { parts: () => [], auto: false, orders: 1 },
-    checks: [delivered(1, '사랑해'), safe],
+    checks: [delivered(1, '사랑해'), safeDraw],
     solution: gAnswer(G_ANSWER.G1),
   },
   {
@@ -1383,7 +1386,7 @@ const G: CellMission[] = [
     goal: "새 펜으로 갈았고, 카드도 다른 자리에 놓였어요. 펜 높이를 다시 맞추고 매트 눈금으로 카드 모서리 좌표를 넣어 'HELLO'를 카드 가운데에 써요.",
     hint: '펜 끝이 종이(0 mm)에 닿아야 선이 나와요. 로봇은 카드를 보지 못해서, 로봇 좌표(매트 눈금, mm)로 카드 왼쪽 아래 모서리를 알려 줘야 그 점을 기준으로 써요. 실제 부스도 설치할 때 이 두 가지부터 맞춰요.',
     setup: { parts: () => [], auto: false, orders: 1, card: { ...G3_CARD } },
-    checks: [written('HELLO', "카드에 'HELLO'가 또렷하게"), centred, safe],
+    checks: [written('HELLO', checkName('written', { text: 'HELLO' })), centred, safeDraw],
     solution: gAnswer(G_ANSWER.G2),
   },
   {
@@ -1395,7 +1398,7 @@ const G: CellMission[] = [
     goal: '카드에 한 변 56 mm 네모를 그려요. 네 변이 곧아야 해요(선에서 1 mm 안).',
     hint: '관절 이동은 모든 관절이 한꺼번에 돌아서 펜 끝이 휘어 가요. 직선 이동은 로봇이 길을 잘게 나눠 펜 끝이 곧게 가요. 공장의 실링 · 접착제 도포도 직선 이동을 써요.',
     setup: { parts: () => [], auto: false, orders: 1 },
-    checks: [written('네모', '카드에 네모'), straight, safe],
+    checks: [written('네모', '카드에 네모'), straight, safeDraw],
     solution: gAnswer(G_ANSWER.G3),
   },
   {
@@ -1407,7 +1410,7 @@ const G: CellMission[] = [
     goal: "줄 선 손님 2명에게 '사랑해' 카드를 한 장씩 써서 건네요. 획 사이에 줄이 그어지면 안 돼요.",
     hint: `펜을 내린 채로 다음 획의 시작점으로 가면 그 길도 선이 돼요. 획이 끝나면 펜을 ${LIFT_MM} mm 들고 옮겨요('빈 이동'). 손님이 카드를 놓거나 가져가는 동안 팔이 카드 위로 가면 멈춰요.`,
     setup: { parts: () => [], auto: false, orders: 2 },
-    checks: [delivered(2, '사랑해'), safe],
+    checks: [delivered(2, '사랑해'), safeDraw],
     solution: gAnswer(G_ANSWER.G4),
   },
 ];

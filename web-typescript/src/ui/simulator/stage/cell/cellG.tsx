@@ -209,8 +209,8 @@ function Mat() {
     ctx.fillText('x (mm) →', w - k * 2, h - k * 6);
     ctx.textAlign = 'left';
     ctx.fillText('↑ y (mm)', k * 12, k * 7);
-    // The usual card place: corner marks and a note.
-    ctx.strokeStyle = '#ffd36b';
+    // The usual card place: corner marks and a note (white: not a place to press, 수정 지시서 v3 파트 3-7).
+    ctx.strokeStyle = '#f6f7f9';
     ctx.lineWidth = k * 0.7;
     const [cx, cy] = [X(CARD_HOME.x), Y(CARD_HOME.y)];
     const L = k * 8;
@@ -223,7 +223,7 @@ function Mat() {
     ctx.lineTo(ex, ey);
     ctx.lineTo(ex, ey + L);
     ctx.stroke();
-    ctx.fillStyle = '#ffd36b';
+    ctx.fillStyle = '#f6f7f9';
     ctx.beginPath();
     ctx.arc(cx, cy, k * 1.3, 0, Math.PI * 2);
     ctx.fill();

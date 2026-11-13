@@ -10,6 +10,10 @@
   height: 100%;
   color: var(--hud-tx);
 }
+/* 대응표 */
+:where([data-course]) .recipe {
+  gap: 12px;
+}
 
 .head {
   display: flex;
@@ -21,6 +25,11 @@
   font-size: 15px;
   font-weight: 800;
 }
+/* 대응표 */
+:where([data-course]) .head b {
+  font-size: 16px;
+  font-weight: 700;
+}
 
 .times {
   display: inline-flex;
@@ -29,6 +38,10 @@
   font-size: 13px;
   color: var(--hud-dim);
 }
+/* 대응표 */
+:where([data-course]) .times {
+  gap: 8px;
+}
 
 .times em {
   font-style: normal;
@@ -36,6 +49,11 @@
   color: #fff;
   min-width: 34px;
   text-align: center;
+}
+/* 대응표 */
+:where([data-course]) .times em {
+  font-weight: 700;
+  color: #f6f7f9;
 }
 
 /* Two classes each: the console's `.app button { color: inherit }` outranks one. */
@@ -51,6 +69,12 @@
   font: inherit;
   font-size: 12px;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .recipe .times button,
+:where([data-course]) .recipe .tools button {
+  border-radius: 8px;
+  font-size: 13px;
 }
 
 .times button:disabled,
@@ -69,6 +93,10 @@
   min-height: 0;
   flex: 1;
 }
+/* 대응표 */
+:where([data-course]) .list {
+  gap: 8px;
+}
 
 .card {
   display: grid;
@@ -81,6 +109,11 @@
   border-left: 3px solid #6b7280;
   background: var(--hud-plate);
   box-shadow: var(--hud-plate-shadow);
+}
+/* 대응표 */
+:where([data-course]) .card {
+  padding: 8px 8px 8px 12px;
+  border-radius: 12px;
 }
 
 .card[data-on] {
@@ -96,6 +129,13 @@
     monospace;
   color: var(--hud-dim);
   text-align: center;
+}
+/* 대응표 */
+:where([data-course]) .n {
+  font-weight: 700;
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
 }
 .card[data-on] .n {
   color: var(--hud-light);
@@ -114,6 +154,10 @@
   align-items: center;
   gap: 4px;
 }
+/* 대응표 */
+:where([data-course]) .title {
+  font-size: 16px;
+}
 
 .title select {
   background: var(--hud-groove);
@@ -125,11 +169,20 @@
   font-weight: 700;
   padding: 2px 4px;
 }
+/* 대응표 */
+:where([data-course]) .title select {
+  color: #f6f7f9;
+  border-radius: 8px;
+}
 
 .body small {
   color: var(--hud-sub);
   font-size: 12px;
   line-height: 1.4;
+}
+/* 대응표 */
+:where([data-course]) .body small {
+  font-size: 13px;
 }
 
 .wait {
@@ -138,6 +191,10 @@
   gap: 6px;
   font-size: 13px;
   color: var(--hud-sub);
+}
+/* 대응표 */
+:where([data-course]) .wait {
+  gap: 8px;
 }
 
 .tools {
@@ -152,6 +209,11 @@
   color: var(--hud-sub);
   font-size: 13px;
   text-align: center;
+}
+/* 대응표 */
+:where([data-course]) .empty {
+  padding: 16px 12px;
+  border-radius: 12px;
 }
 
 .foot {
@@ -168,6 +230,11 @@
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .add,
+:where([data-course]) .ghost {
+  border-radius: 8px;
 }
 
 .recipe .add {
@@ -195,6 +262,10 @@
   grid-template-columns: 1fr 1fr;
   gap: 6px;
 }
+/* 대응표 */
+:where([data-course]) .palette {
+  gap: 8px;
+}
 
 .recipe .palette button {
   text-align: left;
@@ -210,6 +281,10 @@
   font-weight: 600;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .recipe .palette button {
+  padding: 8px 12px;
+}
 
 /* DrawCards: number boxes and two switches on one card. */
 .nums,
@@ -219,10 +294,19 @@
   align-items: center;
   gap: 6px 12px;
 }
+/* 대응표 */
+:where([data-course]) .nums,
+:where([data-course]) .switches {
+  gap: 8px 12px;
+}
 
 .nums small {
   color: var(--hud-sub);
   font-size: 12px;
+}
+/* 대응표 */
+:where([data-course]) .nums small {
+  font-size: 13px;
 }
 
 .num {
@@ -232,6 +316,10 @@
   font-size: 13px;
   font-weight: 700;
   color: var(--hud-tx);
+}
+/* 대응표 */
+:where([data-course]) .num {
+  gap: 4px;
 }
 
 .num input {
@@ -244,6 +332,12 @@
   font: inherit;
   font-weight: 700;
   padding: 2px 6px;
+}
+/* 대응표 */
+:where([data-course]) .num input {
+  color: #f6f7f9;
+  border-radius: 8px;
+  padding: 2px 8px;
 }
 
 /* 퀘스트 모드: the card to change now (and [+ 카드] when one is missing) breathes a white ring. */
@@ -286,14 +380,31 @@
   letter-spacing: 0.14em;
   color: var(--hud-amber);
 }
+/* 대응표 */
+:where([data-course]) .order em {
+  font-weight: 700;
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
 .head .order b {
   font-size: 13px;
   font-weight: 800;
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .head .order b {
+  font-weight: 700;
+  color: #f6f7f9;
+}
 .order small {
   font-size: 12px;
   color: var(--hud-sub);
+}
+/* 대응표 */
+:where([data-course]) .order small {
+  font-size: 13px;
 }
 
 /* Under the quest card, the whole panel scrolls: the cards take their own height. */
@@ -330,6 +441,10 @@
   font-weight: 600;
   color: var(--hud-sub);
 }
+/* 대응표 */
+:where([data-course]) .amt {
+  gap: 4px;
+}
 .amt input {
   width: 58px;
   height: 32px;
@@ -342,9 +457,20 @@
   font-weight: 800;
   padding: 2px 6px;
 }
+/* 대응표 */
+:where([data-course]) .amt input {
+  color: #f6f7f9;
+  border-radius: 8px;
+  font-weight: 700;
+  padding: 2px 8px;
+}
 .title small {
   margin-left: 6px;
   font-weight: 500;
+}
+/* 대응표 */
+:where([data-course]) .title small {
+  font-weight: 600;
 }
 .sum {
   display: block;
@@ -365,6 +491,10 @@
   gap: 4px;
   counter-reset: row;
 }
+/* 대응표 */
+:where([data-course]) .rows {
+  padding: 8px 0 0;
+}
 .rows li {
   counter-increment: row;
   display: flex;
@@ -374,6 +504,12 @@
   color: var(--hud-tx);
   padding: 3px 6px;
   border-radius: 6px;
+}
+/* 대응표 */
+:where([data-course]) .rows li {
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 8px;
 }
 .rows li::before {
   content: counter(row);
@@ -385,11 +521,21 @@
   color: var(--hud-dim);
   width: 12px;
 }
+/* 대응표 */
+:where([data-course]) .rows li::before {
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+}
 .rows li label {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .rows li label {
+  gap: 8px;
 }
 .rows li[data-off] {
   color: var(--hud-amber);
@@ -398,12 +544,22 @@
   background: rgba(255, 255, 255, 0.12);
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .rows li[data-on] {
+  background: rgba(255, 255, 255, 0.16);
+  color: #f6f7f9;
+}
 
 .recipe .palette button small {
   display: block;
   font-size: 12px;
   font-weight: 500;
   color: var(--hud-sub);
+}
+/* 대응표 */
+:where([data-course]) .recipe .palette button small {
+  font-size: 13px;
+  font-weight: 600;
 }
 
 /* 캘리그라피 · 보드게임 공정 카드: a choice in a card's title line, and the unit after its boxes. */
@@ -417,10 +573,20 @@
   font-weight: 800;
   padding: 2px 4px;
 }
+/* 대응표 */
+:where([data-course]) .amt select {
+  color: #f6f7f9;
+  border-radius: 8px;
+  font-weight: 700;
+}
 .unit {
   margin-left: 4px;
   font-size: 12px;
   color: var(--hud-sub);
+}
+/* 대응표 */
+:where([data-course]) .unit {
+  font-size: 13px;
 }
 .title {
   flex-wrap: wrap;
@@ -432,6 +598,10 @@
   margin-top: 6px;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.03);
+}
+/* 대응표 */
+:where([data-course]) .moreAll {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .moreAll > summary {
@@ -470,6 +640,11 @@
   box-shadow: var(--hud-groove-shadow);
   font-size: 14px;
 }
+/* 대응표 */
+:where([data-course]) .blocks li {
+  gap: 8px;
+  padding: 4px 8px;
+}
 .blocks li button {
   height: 28px;
   border: 0;
@@ -479,6 +654,10 @@
   color: var(--hud-tx);
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .blocks li button {
+  border-radius: 8px;
+}
 .blocks li button:disabled {
   opacity: 0.35;
   cursor: default;
@@ -487,4 +666,86 @@
   color: var(--hud-amber);
   font-weight: 800;
   text-align: center;
+}
+/* 대응표 */
+:where([data-course]) .blockN {
+  font-weight: 700;
+}
+
+/* 입문 과정 (수정 지시서 v3 파트 3 · 4): no number before a row (the numbers on screen are 지금 할 일's steps),
+   on · off as the one switch (4-2's), the − + keys 40 px. Under [data-course] only. */
+.rows[data-plain] li::before {
+  content: none;
+}
+.rows[data-plain] li {
+  padding: 4px 8px;
+  font-size: 14px;
+}
+.rows[data-plain] li[data-off] {
+  color: #f6f7f9;
+}
+.rows li .sw {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 40px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #f6f7f9;
+  cursor: pointer;
+}
+.sw input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.sw i {
+  position: relative;
+  flex: none;
+  width: 44px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+}
+.sw i::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #c9ced5;
+  transition: transform 0.15s;
+}
+.sw input:checked + i {
+  background: #f6f7f9;
+}
+.sw input:checked + i::after {
+  transform: translateX(20px);
+  background: #14171c;
+}
+.sw input:focus-visible + i {
+  outline: 2px solid #f0a23b;
+  outline-offset: 2px;
+}
+.sw small {
+  margin-left: auto;
+  font-size: 14px;
+  font-weight: 600;
+  color: #c9ced5;
+}
+.recipe[data-course] .times button {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  font-size: 18px;
+}
+
+/* 수정 지시서 v3: '주문' is a tag, not a place to press — no orange. */
+.recipe[data-course] .order em,
+[data-course] .order em {
+  color: #c9ced5;
 }

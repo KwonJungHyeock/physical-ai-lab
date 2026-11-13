@@ -10,6 +10,13 @@
   color: #101828;
   box-shadow: 0 24px 64px rgba(15, 23, 42, 0.32);
 }
+/* 대응표 */
+:where([data-course]) .sheet {
+  border-radius: 12px;
+  width: min(640px, calc(calc(100vw / var(--course-zoom, 1)) - 32px));
+  max-height: calc(calc(100vh / var(--course-zoom, 1)) - 48px);
+  color: #14171c;
+}
 .sheet::backdrop {
   background: rgba(15, 23, 42, 0.4);
 }
@@ -29,10 +36,20 @@
   font-size: 19px;
   font-weight: 800;
 }
+/* 대응표 */
+:where([data-course]) .head h2 {
+  font-size: 18px;
+  font-weight: 700;
+}
 .head p {
   margin: 2px 0 0;
   color: #6c6f74;
   font-size: 12.5px;
+}
+/* 대응표 */
+:where([data-course]) .head p {
+  color: #c9ced5;
+  font-size: 13px;
 }
 .mark {
   display: inline-grid;
@@ -42,6 +59,10 @@
   border-radius: 12px;
   background: #ecf2fa;
   color: #3454d1;
+}
+/* 대응표 */
+:where([data-course]) .mark {
+  color: #93c5fd;
 }
 .close {
   margin-left: auto;
@@ -54,11 +75,21 @@
   line-height: 1;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .close {
+  border-radius: 12px;
+  font-size: 23px;
+}
 .inner h3 {
   margin: 0 0 8px;
   font-size: 13px;
   font-weight: 800;
   color: #3454d1;
+}
+/* 대응표 */
+:where([data-course]) .inner h3 {
+  font-weight: 700;
+  color: #93c5fd;
 }
 .parts,
 .keys {
@@ -75,6 +106,10 @@
 }
 .parts dt {
   font-weight: 800;
+}
+/* 대응표 */
+:where([data-course]) .parts dt {
+  font-weight: 700;
 }
 .parts dd,
 .keys dd {
@@ -93,6 +128,11 @@
   font-size: 12.5px;
   font-weight: 700;
   white-space: nowrap;
+}
+/* 대응표 */
+:where([data-course]) .keys kbd {
+  border-radius: 8px;
+  font-size: 13px;
 }
 .steps {
   display: grid;
@@ -125,10 +165,20 @@
   text-decoration: none;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .foot button,
+:where([data-course]) .foot a {
+  border-radius: 12px;
+  color: #14171c;
+}
 .foot a {
   border-color: #3454d1;
   background: #3454d1;
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .foot a {
+  color: #f6f7f9;
 }
 
 /* Metal Mission HUD (2026-10-29): the sheet a metal plate, words light, the accent white. */
@@ -147,6 +197,10 @@
 .inner h3 {
   color: var(--hud-light);
   letter-spacing: 0.08em;
+}
+/* 대응표 */
+:where([data-course]) .inner h3 {
+  letter-spacing: 0;
 }
 .mark {
   background: rgba(236, 241, 248, 0.12);

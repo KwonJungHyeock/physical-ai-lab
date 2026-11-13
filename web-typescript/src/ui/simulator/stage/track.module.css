@@ -9,6 +9,10 @@
   word-break: keep-all;
   animation: in 0.25s ease-out;
 }
+/* 대응표 */
+:where([data-course]) .tag {
+  color: #f6f7f9;
+}
 .tag[data-level='2'] {
   --c: #ff5a5a;
 }
@@ -73,6 +77,11 @@
   font-weight: 700;
   letter-spacing: 0.02em;
 }
+/* 대응표 */
+:where([data-course]) .label b {
+  font-size: 16px;
+  letter-spacing: 0;
+}
 .label b::first-letter {
   color: var(--c);
 }
@@ -81,6 +90,10 @@
   color: rgba(244, 247, 251, 0.78);
   border-top: 1px solid color-mix(in srgb, var(--c) 70%, transparent);
   padding-top: 2px;
+}
+/* 대응표 */
+:where([data-course]) .label small {
+  font-size: 13px;
 }
 @keyframes ping {
   from {
@@ -126,4 +139,8 @@
 }
 .label b {
   letter-spacing: 0.1em;
+}
+/* 대응표 */
+:where([data-course]) .label b {
+  letter-spacing: 0;
 }

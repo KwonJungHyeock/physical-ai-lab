@@ -7,9 +7,10 @@
  * The values marked 제안값 are the guideline's proposals: kept as given until confirmed.
  */
 
+import { fromOldNumber } from './course';
 import { stepText as T } from './courseText';
 
-export type CourseStepId = '1-1' | '1-2' | '1-3' | '2-1' | '2-3' | '2-4' | '3-1' | '3-2' | '3-5' | '4-2' | '4-3' | '4-4' | '5-4' | '5-5';
+export type CourseStepId = '1-1' | '1-2' | '1-3' | '2-1' | '2-2' | '2-3' | '3-1' | '3-2' | '3-4' | '4-2' | '4-3' | '4-4' | '5-4' | '5-5';
 
 export interface CourseStepLine {
   text: string;
@@ -18,7 +19,7 @@ export interface CourseStepLine {
 }
 
 /** 1-2: the parts to find on the arm, in order (the 조작판's own words), the tool tip last. */
-export const ARM_PARTS = ['베이스 (J1)', '어깨 (J2)', '팔꿈치 (J3)', '손목 꺾기 (J4)', '손목 돌리기 (J5)', '손끝 돌리기 (J6)', '도구가 달린 손끝'] as const;
+export const ARM_PARTS = ['베이스 (J1)', '어깨 (J2)', '팔꿈치 (J3)', '손목 꺾기 (J4)', '손목 돌리기 (J5)', '손끝 돌리기 (J6)', '손끝'] as const;
 
 const RUN = '[data-step="run"]';
 /** A saved pose's go key in the 자세 panel. */
@@ -44,14 +45,14 @@ export const COURSE_STEPS: Record<CourseStepId, readonly CourseStepLine[]> = {
     // (Where to put each is the student's to find: no place is lit.)
     { text: T('2-1', 1) },
   ],
-  '2-3': [
-    { text: T('2-3', 0), sel: '[data-step="zero"]' },
-    { text: T('2-3', 1), sel: '[data-step="home"]' },
+  '2-2': [
+    { text: T('2-2', 0), sel: '[data-step="zero"]' },
+    { text: T('2-2', 1), sel: '[data-step="home"]' },
   ],
-  '2-4': [
-    { text: T('2-4', 0), sel: '[data-step="attach"]' },
-    { text: T('2-4', 1), sel: '[data-step="pen"]' },
-    { text: T('2-4', 2), sel: RUN },
+  '2-3': [
+    { text: T('2-3', 0), sel: '[data-step="attach"]' },
+    { text: T('2-3', 1), sel: '[data-step="pen"]' },
+    { text: T('2-3', 2), sel: RUN },
   ],
   // (3-1: the joint being moved is coloured in the scene; each line names its +5° key.)
   '3-1': JOINT_NAMES.map((_, i) => ({ text: T('3-1', i), sel: `[aria-label="${JOINT_KEYS[i]} +5°"]` })),
@@ -60,11 +61,11 @@ export const COURSE_STEPS: Record<CourseStepId, readonly CourseStepLine[]> = {
     { text: T('3-2', 1), sel: '[aria-label="어깨 (J2) −5°"]' },
     { text: T('3-2', 2), sel: '[aria-label="팔꿈치 (J3) +5°"]' },
   ],
-  '3-5': [
-    { text: T('3-5', 0), sel: '[aria-label="속도 조절"]' },
-    { text: T('3-5', 1), sel: POSE_GO },
-    { text: T('3-5', 2), sel: '[aria-label="속도 조절"]' },
-    { text: T('3-5', 3), sel: POSE_GO },
+  '3-4': [
+    { text: T('3-4', 0), sel: '[aria-label="속도 조절"]' },
+    { text: T('3-4', 1), sel: POSE_GO },
+    { text: T('3-4', 2), sel: '[aria-label="속도 조절"]' },
+    { text: T('3-4', 3), sel: POSE_GO },
   ],
   // 4장: on the 글씨 부스 mat, the card put away (courseDraw.ts).
   '4-2': [
@@ -102,8 +103,8 @@ export const COURSE_STEPS: Record<CourseStepId, readonly CourseStepLine[]> = {
 
 /** 5-2 in the course (가이드라인 v1): the 보정 card's x · y, then its pen, then ▶ — the 글씨 부스 step G2's own lines split in three. */
 export const G2_COURSE: readonly { text: string; sel: string }[] = [
-  { text: T('5-2', 0), sel: 'aside [aria-label="x"]' },
-  { text: T('5-2', 1), sel: 'aside [aria-label="펜"]' },
+  { text: T('5-2', 0), sel: 'aside label:has(> [aria-label="x"])' },
+  { text: T('5-2', 1), sel: 'aside label:has(> [aria-label="펜"])' },
   { text: T('5-2', 2), sel: 'button[aria-label="시뮬레이션"]' },
 ];
 /** 5-5: the most speed a program may be sent to the robot with, %. */
@@ -125,8 +126,33 @@ export const FOUND_SWING_DEG = 10;
 /** 1-3: the motion to stop — 베이스 (J1) only, to this far and back, this many times (제안값). */
 export const SWING = { joint: 0, deg: 90, times: 3 } as const;
 
-/** The course's own 절 done (this browser): { '1-2': true }. */
-export const STEPS_KEY = 'life-course-steps';
+/** The course's own 절 done (this browser): { '1-2': true }, by today's numbers (the table's numbering 2). */
+export const STEPS_KEY = 'life-course-steps-2';
+/** The same record under the old numbers (numbering 1): read through fromOldNumber, never removed. */
+export const STEPS_KEY_OLD = 'life-course-steps';
+
+/**
+ * The 절 done, read from this browser: today's record, or — none yet — the old one with each number
+ * turned into today's (수정 지시서 v3 파트 8-8; `keep` writes it under STEPS_KEY, the old record stays).
+ */
+export function loadSteps(get: (k: string) => string | null, keep?: (k: string, v: string) => void): Record<string, boolean> {
+  const read = (k: string): Record<string, boolean> | null => {
+    try {
+      const v: unknown = JSON.parse(get(k) ?? 'null');
+      return v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, boolean>) : null;
+    } catch {
+      return null;
+    }
+  };
+  const now = read(STEPS_KEY);
+  if (now) return now;
+  const old = read(STEPS_KEY_OLD);
+  if (!old) return {};
+  const next: Record<string, boolean> = {};
+  for (const [id, done] of Object.entries(old)) if (done === true) next[fromOldNumber(id)] = true;
+  keep?.(STEPS_KEY, JSON.stringify(next));
+  return next;
+}
 
 /**
  * 1-2: the view of the arm standing straight up (robot mm): the whole arm about 74 % of the scene's
@@ -152,17 +178,17 @@ export const DESK_PLACES = [
   { name: '카드', x0: 150, x1: 270, y0: -40, y1: 40 },
 ] as const;
 
-/** 2-3: neither 영점 nor 기본 자세 (제안값), °. */
+/** 2-2: neither 영점 nor 기본 자세 (제안값), °. */
 export const PREP_POSE = [30, 20, -40, -20, 0, 0] as const;
-/** 2-3: how close each joint has to come to 0° or the 기본 자세, °. */
+/** 2-2: how close each joint has to come to 0° or the 기본 자세, °. */
 export const POSE_TOL_DEG = 2;
 
-/** 2-4: the pen's height as it starts (above the paper: no dot), mm; the dot at the card's middle (robot mm). */
+/** 2-3: the pen's height as it starts (above the paper: no dot), mm; the dot at the card's middle (robot mm). */
 export const PEN_START_MM = 5;
 export const DOT_AT = { x: 210, y: 0 } as const;
-/** 2-4: the pen moves to its height from this far above the paper, and back, mm. */
+/** 2-3: the pen moves to its height from this far above the paper, and back, mm. */
 export const DOT_ABOVE_MM = 20;
-/** 2-4: a dot is ink within this far of DOT_AT, mm (the pen draws at tip z ≤ 0.8 mm: sim.ts). */
+/** 2-3: a dot is ink within this far of DOT_AT, mm (the pen draws at tip z ≤ 0.8 mm: sim.ts). */
 export const DOT_NEAR_MM = 3;
 
 /* --- 3장 관절 제어 --------------------------------------------------------------------- */
@@ -172,7 +198,7 @@ export const TURN_DEG = 10;
 /** 3-2: the targets (① 베이스, ② 어깨), the tolerance, and the pose the arm takes itself to for ③ (팔꿈치 +120°: six presses from its +150° limit). */
 export const AIM = { base: 45, shoulder: -30, tol: 2 } as const;
 export const LIMIT_POSE = [45, -30, 120, 0, 0, 0] as const;
-/** 3-5: the slow and the fast speeds (%), and the pose put in when none is saved (제안값). */
+/** 3-4: the slow and the fast speeds (%), and the pose put in when none is saved (제안값). */
 export const SLOW_PCT = 30;
 export const FAST_PCT = 90;
 export const PRACTICE_POSE = { name: '연습 자세', angles: [60, 20, -60, -30, 0, 0] } as const;

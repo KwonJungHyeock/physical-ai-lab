@@ -11,6 +11,10 @@
   display: grid;
   gap: 8px;
 }
+/* 대응표 */
+:where([data-course]) .plate {
+  padding: 12px 16px;
+}
 .plate header,
 .mHead {
   display: flex;
@@ -29,16 +33,37 @@
   color: var(--hud-dim, #8a9199);
   font-style: normal;
 }
+/* 대응표 */
+:where([data-course]) .plate em,
+:where([data-course]) .mHead em,
+:where([data-course]) .projector header em {
+  font-weight: 700;
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
 .plate header b,
 .mHead b {
   font-size: 15px;
   font-weight: 800;
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .plate header b,
+:where([data-course]) .mHead b {
+  font-size: 16px;
+  font-weight: 700;
+  color: #f6f7f9;
+}
 .plate header b small {
   font-size: 12px;
   color: var(--hud-dim, #8a9199);
   font-weight: 700;
+}
+/* 대응표 */
+:where([data-course]) .plate header b small {
+  font-size: 13px;
 }
 .page {
   margin-left: auto;
@@ -50,6 +75,14 @@
   font-weight: 800;
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .page {
+  padding: 4px 8px;
+  border-radius: 8px;
+  color: #f6f7f9;
+  font-size: 13px;
+  font-weight: 700;
+}
 .goals {
   list-style: none;
   margin: 0;
@@ -60,6 +93,11 @@
   display: grid;
   gap: 6px;
 }
+/* 대응표 */
+:where([data-course]) .goals {
+  padding: 8px 12px;
+  gap: 8px;
+}
 .goals li {
   display: grid;
   grid-template-columns: 20px 1fr;
@@ -67,6 +105,10 @@
   font-size: 13px;
   line-height: 1.45;
   color: var(--hud-tx, #e9edf1);
+}
+/* 대응표 */
+:where([data-course]) .goals li {
+  gap: 8px;
 }
 .goals li i {
   font-style: normal;
@@ -79,9 +121,19 @@
   place-items: center;
   background: rgba(255, 255, 255, 0.1);
 }
+/* 대응표 */
+:where([data-course]) .goals li i {
+  font-weight: 700;
+  font-size: 13px;
+  background: rgba(255, 255, 255, 0.08);
+}
 .goals li[data-done] i {
   background: var(--hud-green, #5bd17a);
   color: #0d1a10;
+}
+/* 대응표 */
+:where([data-course]) .goals li[data-done] i {
+  color: #14171c;
 }
 .row {
   display: flex;
@@ -95,10 +147,18 @@
   color: var(--hud-sub, #b4bbc2);
   font-size: 12px;
 }
+/* 대응표 */
+:where([data-course]) .row > small {
+  font-size: 13px;
+}
 .foot {
   color: var(--hud-dim, #8a9199);
   font-size: 12px;
   line-height: 1.45;
+}
+/* 대응표 */
+:where([data-course]) .foot {
+  font-size: 13px;
 }
 
 /* Two classes each: the console's `.app button { color: inherit }` outranks one. */
@@ -117,6 +177,14 @@
   font-weight: 800;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .plate .key,
+:where([data-course]) .modal .key,
+:where([data-course]) .projector .key {
+  padding: 0 16px;
+  border-radius: 8px;
+  font-weight: 700;
+}
 .plate .ghost,
 .modal .ghost,
 .projector .ghost {
@@ -131,6 +199,13 @@
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .plate .ghost,
+:where([data-course]) .modal .ghost,
+:where([data-course]) .projector .ghost {
+  padding: 0 16px;
+  border-radius: 8px;
 }
 .plate .key:disabled,
 .modal .key:disabled,
@@ -175,8 +250,19 @@
   display: grid;
   gap: 12px;
 }
+/* 대응표 */
+:where([data-course]) .modal {
+  width: min(560px, calc(calc(100vw / var(--course-zoom, 1)) - 32px));
+  max-height: calc(calc(100vh / var(--course-zoom, 1)) - 48px);
+  padding: 16px 16px;
+  border-radius: 12px;
+}
 .modal[data-wide] {
   width: min(820px, calc(100vw - 32px));
+}
+/* 대응표 */
+:where([data-course]) .modal[data-wide] {
+  width: min(820px, calc(calc(100vw / var(--course-zoom, 1)) - 32px));
 }
 .modal .x,
 .projector .x {
@@ -199,11 +285,19 @@
   gap: 6px;
   margin-left: 8px;
 }
+/* 대응표 */
+:where([data-course]) .dots {
+  gap: 8px;
+}
 .dots i {
   width: 10px;
   height: 10px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.18);
+}
+/* 대응표 */
+:where([data-course]) .dots i {
+  background: rgba(255, 255, 255, 0.16);
 }
 .dots i[data-cur] {
   box-shadow: 0 0 0 2px #fff;
@@ -224,6 +318,12 @@
   font-weight: 800;
   line-height: 1.45;
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .q {
+  font-size: 18px;
+  font-weight: 700;
+  color: #f6f7f9;
 }
 .q span {
   color: var(--hud-dim, #8a9199);
@@ -249,6 +349,13 @@
   text-align: left;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .modal .opts button {
+  gap: 12px;
+  padding: 0 16px;
+  border-radius: 12px;
+  font-size: 16px;
+}
 .modal .opts button:disabled {
   cursor: default;
   opacity: 0.7;
@@ -273,6 +380,10 @@
   font-size: 14px;
   line-height: 1.5;
 }
+/* 대응표 */
+:where([data-course]) .why {
+  padding: 12px 12px;
+}
 .why[data-ok] {
   background: rgba(91, 209, 122, 0.14);
 }
@@ -284,10 +395,19 @@
   font-size: 15px;
   font-weight: 700;
 }
+/* 대응표 */
+:where([data-course]) .score {
+  font-size: 16px;
+}
 .score b {
   font-size: 32px;
   margin-right: 8px;
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .score b {
+  font-size: 34px;
+  color: #f6f7f9;
 }
 .review {
   margin: 0;
@@ -297,11 +417,19 @@
   gap: 6px;
   font-size: 13px;
 }
+/* 대응표 */
+:where([data-course]) .review {
+  gap: 8px;
+}
 .review li i {
   font-style: normal;
   font-weight: 800;
   margin-right: 6px;
   color: var(--hud-red, #eb4034);
+}
+/* 대응표 */
+:where([data-course]) .review li i {
+  font-weight: 700;
 }
 .review li[data-ok] i {
   color: var(--hud-green, #5bd17a);
@@ -319,6 +447,10 @@
   align-items: center;
   gap: 8px 14px;
 }
+/* 대응표 */
+:where([data-course]) .who {
+  gap: 8px 16px;
+}
 .who label {
   display: inline-flex;
   align-items: center;
@@ -326,6 +458,10 @@
   font-size: 13px;
   font-weight: 700;
   color: var(--hud-sub, #b4bbc2);
+}
+/* 대응표 */
+:where([data-course]) .who label {
+  gap: 8px;
 }
 .who input {
   width: 120px;
@@ -339,9 +475,19 @@
   font: inherit;
   font-weight: 800;
 }
+/* 대응표 */
+:where([data-course]) .who input {
+  border-radius: 8px;
+  color: #f6f7f9;
+  font-weight: 700;
+}
 .who small {
   color: var(--hud-amber, #f0a23b);
   font-size: 12px;
+}
+/* 대응표 */
+:where([data-course]) .who small {
+  font-size: 13px;
 }
 .tableWrap {
   overflow: auto;
@@ -349,6 +495,10 @@
   border-radius: 8px;
   background: var(--hud-groove);
   box-shadow: var(--hud-groove-shadow);
+}
+/* 대응표 */
+:where([data-course]) .tableWrap {
+  max-height: calc(46vh / var(--course-zoom, 1));
 }
 .table {
   width: 100%;
@@ -364,10 +514,18 @@
   font-weight: 800;
   padding: 8px;
 }
+/* 대응표 */
+:where([data-course]) .table th {
+  font-weight: 700;
+}
 .table td {
   padding: 8px;
   border-top: 1px solid rgba(255, 255, 255, 0.07);
   vertical-align: top;
+}
+/* 대응표 */
+:where([data-course]) .table td {
+  border-top-color: rgba(255, 255, 255, 0.18);
 }
 .qrow {
   display: flex;
@@ -375,8 +533,16 @@
   gap: 6px;
   color: var(--hud-sub, #b4bbc2);
 }
+/* 대응표 */
+:where([data-course]) .qrow {
+  gap: 8px;
+}
 .qrow[data-done] {
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .qrow[data-done] {
+  color: #f6f7f9;
 }
 .qrow i {
   font-style: normal;
@@ -384,11 +550,19 @@
   width: 12px;
   color: var(--hud-green, #5bd17a);
 }
+/* 대응표 */
+:where([data-course]) .qrow i {
+  font-weight: 700;
+}
 .qrow small {
   margin-left: auto;
   color: var(--hud-dim, #8a9199);
   font-size: 12px;
   white-space: nowrap;
+}
+/* 대응표 */
+:where([data-course]) .qrow small {
+  font-size: 13px;
 }
 .level {
   display: inline-block;
@@ -399,17 +573,35 @@
   background: rgba(255, 255, 255, 0.1);
   color: var(--hud-sub, #b4bbc2);
 }
+/* 대응표 */
+:where([data-course]) .level {
+  font-size: 13px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.08);
+}
 .level[data-level='잘함'] {
   background: var(--hud-green, #5bd17a);
   color: #0d1a10;
+}
+/* 대응표 */
+:where([data-course]) .level[data-level='잘함'] {
+  color: #14171c;
 }
 .level[data-level='보통'] {
   background: var(--hud-amber, #f0a23b);
   color: #1f1404;
 }
+/* 대응표 */
+:where([data-course]) .level[data-level='보통'] {
+  color: #14171c;
+}
 .level[data-level='노력'] {
   background: var(--hud-red, #eb4034);
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .level[data-level='노력'] {
+  color: #f6f7f9;
 }
 .total {
   margin: 0;
@@ -417,6 +609,10 @@
 }
 .total b {
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .total b {
+  color: #f6f7f9;
 }
 .rubric {
   margin: 0;
@@ -426,6 +622,10 @@
   gap: 4px;
   font-size: 12px;
   color: var(--hud-sub, #b4bbc2);
+}
+/* 대응표 */
+:where([data-course]) .rubric {
+  font-size: 13px;
 }
 .rubric li {
   display: flex;
@@ -446,12 +646,20 @@
   font-weight: 800;
   color: var(--hud-sub, #b4bbc2);
 }
+/* 대응표 */
+:where([data-course]) .set > span {
+  font-weight: 700;
+}
 .seg {
   display: inline-flex;
   flex-wrap: wrap;
   border-radius: 9px;
   overflow: hidden;
   box-shadow: var(--hud-groove-shadow);
+}
+/* 대응표 */
+:where([data-course]) .seg {
+  border-radius: 8px;
 }
 .modal .seg button {
   min-width: 40px;
@@ -464,6 +672,10 @@
   font-size: 13px;
   font-weight: 800;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .modal .seg button {
+  font-weight: 700;
 }
 .modal .seg button[data-on] {
   background: #fff;
@@ -491,11 +703,23 @@
   font-size: 12px;
   overflow-wrap: anywhere;
 }
+/* 대응표 */
+:where([data-course]) .link {
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: #f6f7f9;
+  font-size: 13px;
+}
 .h3 {
   margin: 4px 0 0;
   font-size: 14px;
   font-weight: 800;
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .h3 {
+  font-weight: 700;
+  color: #f6f7f9;
 }
 .file {
   position: relative;
@@ -509,6 +733,11 @@
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .file {
+  padding: 0 16px;
+  border-radius: 8px;
 }
 .file input {
   position: absolute;
@@ -530,6 +759,11 @@
   gap: 18px;
   overflow: auto;
 }
+/* 대응표 */
+:where([data-course]) .projector {
+  padding: 24px 36px;
+  gap: 16px;
+}
 .projector header {
   display: flex;
   align-items: center;
@@ -539,6 +773,12 @@
   font-size: 30px;
   font-weight: 800;
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .projector header b {
+  font-size: 28px;
+  font-weight: 700;
+  color: #f6f7f9;
 }
 .projector header b small {
   font-size: 18px;
@@ -558,6 +798,10 @@
   gap: 28px;
   align-items: start;
 }
+/* 대응표 */
+:where([data-course]) .pGrid {
+  gap: 24px;
+}
 .pGrid h2 {
   display: flex;
   align-items: center;
@@ -567,6 +811,12 @@
   font-weight: 800;
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .pGrid h2 {
+  font-size: 23px;
+  font-weight: 700;
+  color: #f6f7f9;
+}
 .pGrid section > ol {
   margin: 0 0 22px;
   padding-left: 26px;
@@ -574,6 +824,10 @@
   line-height: 1.55;
   display: grid;
   gap: 8px;
+}
+/* 대응표 */
+:where([data-course]) .pGrid section > ol {
+  font-size: 23px;
 }
 .pQuests {
   list-style: none;
@@ -592,11 +846,21 @@
   box-shadow: var(--hud-plate-shadow);
   font-size: 18px;
 }
+/* 대응표 */
+:where([data-course]) .pQuests li {
+  gap: 8px 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+}
 .pQuests li small {
   grid-column: 1 / -1;
   color: var(--hud-sub, #b4bbc2);
   font-size: 15px;
   line-height: 1.5;
+}
+/* 대응표 */
+:where([data-course]) .pQuests li small {
+  font-size: 16px;
 }
 .bigLink {
   display: block;
@@ -609,6 +873,11 @@
   font-size: 18px;
   overflow-wrap: anywhere;
 }
+/* 대응표 */
+:where([data-course]) .bigLink {
+  padding: 12px 16px;
+  color: #f6f7f9;
+}
 .pChecks {
   margin: 0;
   padding-left: 24px;
@@ -617,6 +886,11 @@
   font-size: 17px;
   line-height: 1.5;
 }
+/* 대응표 */
+:where([data-course]) .pChecks {
+  gap: 16px;
+  font-size: 18px;
+}
 .pChecks span {
   display: flex;
   flex-wrap: wrap;
@@ -624,12 +898,20 @@
   margin-top: 4px;
   color: var(--hud-sub, #b4bbc2);
 }
+/* 대응표 */
+:where([data-course]) .pChecks span {
+  gap: 8px 16px;
+}
 .pChecks em {
   font-style: normal;
 }
 .pChecks em[data-right] {
   color: var(--hud-green, #5bd17a);
   font-weight: 800;
+}
+/* 대응표 */
+:where([data-course]) .pChecks em[data-right] {
+  font-weight: 700;
 }
 .pChecks small {
   display: block;
@@ -653,15 +935,27 @@
   cursor: pointer;
   text-align: left;
 }
+/* 대응표 */
+:where([data-course]) .recPill {
+  border-radius: 12px;
+}
 .recPill b {
   display: block;
   font-size: 13px;
   font-weight: 800;
 }
+/* 대응표 */
+:where([data-course]) .recPill b {
+  font-weight: 700;
+}
 .recPill small {
   display: block;
   font-size: 11px;
   color: var(--hud-sub, #b4bbc2);
+}
+/* 대응표 */
+:where([data-course]) .recPill small {
+  font-size: 13px;
 }
 .recBar {
   width: 54px;
@@ -670,6 +964,10 @@
   background: var(--hud-groove);
   box-shadow: var(--hud-groove-shadow);
   overflow: hidden;
+}
+/* 대응표 */
+:where([data-course]) .recBar {
+  border-radius: 8px;
 }
 .recBar i {
   display: block;
@@ -692,6 +990,10 @@
   gap: 8px;
   font-size: 15px !important;
 }
+/* 대응표 */
+:where([data-course]) .pFlow {
+  font-size: 16px !important;
+}
 .pFlow li {
   display: grid;
   gap: 2px;
@@ -700,18 +1002,35 @@
   background: var(--hud-groove);
   box-shadow: var(--hud-groove-shadow);
 }
+/* 대응표 */
+:where([data-course]) .pFlow li {
+  padding: 12px;
+  border-radius: 12px;
+}
 .pFlow li b {
   color: #fff !important;
   font-size: 16px;
+}
+/* 대응표 */
+:where([data-course]) .pFlow li b {
+  color: #f6f7f9 !important;
 }
 .pFlow li span {
   color: var(--hud-amber, #f0a23b);
   font-weight: 800;
 }
+/* 대응표 */
+:where([data-course]) .pFlow li span {
+  font-weight: 700;
+}
 .pFlow li small {
   color: var(--hud-sub, #b4bbc2);
   font-size: 12.5px;
   line-height: 1.4;
+}
+/* 대응표 */
+:where([data-course]) .pFlow li small {
+  font-size: 13px;
 }
 .ghostLink {
   display: inline-flex;
@@ -726,8 +1045,16 @@
   font-weight: 700;
   text-decoration: none;
 }
+/* 대응표 */
+:where([data-course]) .ghostLink {
+  border-radius: 8px;
+}
 .foot a {
   color: #93b4ff;
+}
+/* 대응표 */
+:where([data-course]) .foot a {
+  color: #93c5fd;
 }
 
 /* 입문 트랙 (bare): the question is in the PDF; three big number keys in a row. */
@@ -747,6 +1074,10 @@
 .recPill[data-course] b {
   font-size: 15px;
 }
+/* 대응표 */
+:where([data-course]) .recPill[data-course] b {
+  font-size: 16px;
+}
 /* 입문 과정 5-5: the teacher's check of the card the robot wrote. */
 .cardCheck {
   display: grid;
@@ -759,6 +1090,12 @@
   background: rgba(34, 197, 94, 0.12);
   box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.5);
   font-size: 15px;
+}
+/* 대응표 */
+:where([data-course]) .cardCheck {
+  gap: 4px 16px;
+  padding: 12px 16px;
+  font-size: 16px;
 }
 .cardCheck b {
   font-size: 16px;
@@ -778,6 +1115,12 @@
   font: inherit;
   font-weight: 800;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .cardCheck button {
+  border-radius: 12px;
+  color: #14171c;
+  font-weight: 700;
 }
 .cardCheck button:disabled {
   opacity: 0.5;

@@ -1,12 +1,13 @@
 {
   "name": "myCobot 280 협동로봇 1단계: 기초 조작과 로봇 글씨 쓰기",
-  "about": "절 번호 ↔ 장면 보기 / 실습 하기 ↔ 교안 쪽 ↔ 상태. 플랫폼과 시뮬레이터가 이 파일 하나를 함께 본다. 교안 쪽은 8차시 교안이 나오면 이 파일에서만 바꾼다.",
+  "about": "절 번호 ↔ 장면 보기 / 실습 하기 ↔ 교안 쪽 ↔ 상태. 플랫폼과 시뮬레이터가 이 파일 하나를 함께 본다. 교안 쪽은 8차시 교안이 나오면 이 파일에서만 바꾼다. 절 번호는 장마다 1부터 이어진다 (numbering 2: 옛 번호는 renumbered 에 남긴다).",
   "pagesTemporary": true,
   "words": {
     "status": {
       "open": "열림",
       "soon": "만드는 중",
-      "unused": "사용 안 함",
+      "test": "수행평가 (그 장의 마지막 번호. 수행평가가 있는 과정에서 그 장의 마지막 절 뒤에 열린다)",
+      "unused": "사용 안 함 (번호 없음. 지우지 않고 남긴다: was = 옛 번호)",
       "end": "과정 끝에 열림 (차시 목록에 넣지 않는다. 마지막 절 뒤 6장 화면에서 차례로 열린다)"
     },
     "kind": {
@@ -16,15 +17,29 @@
     },
     "scene": "장면 보기",
     "practice": "실습 하기",
+    "short": "위치 줄에 보이는 짧은 이름 (없으면 절 이름의 쌍점 앞까지). 목록과 인쇄 한 장은 전체 이름을 쓴다",
     "optional": "선택 (실물 로봇: 로봇이 없는 학급은 건너뛴다. 수행평가 결과와 완료율에 넣지 않는다)"
   },
   "address": {
     "path": "/track/life",
     "query": {
-      "sub": "절 번호 (예: 3-4)",
-      "mode": "scene = 장면 보기, practice = 실습 하기"
+      "no": "절 번호 (예: 3-3). 수행평가는 그 장의 마지막 번호 (예: 3-5)",
+      "mode": "scene = 장면 보기, practice = 실습 하기",
+      "sub": "옛 번호 (numbering 1). 이 이름으로 들어오면 renumbered 로 새 번호의 같은 절에 보낸다"
     },
-    "example": "/track/life?sub=3-4&mode=practice"
+    "example": "/track/life?no=3-3&mode=practice"
+  },
+  "numbering": 2,
+  "renumbered": {
+    "about": "옛 번호 (numbering 1) → 새 번호. 여기에 없는 번호는 그대로다. 옛 2-2 · 3-3 은 번호 없는 사용 안 함 (sections 의 was)",
+    "from": {
+      "2-3": "2-2",
+      "2-4": "2-3",
+      "2-5": "2-4",
+      "3-4": "3-3",
+      "3-5": "3-4",
+      "3-6": "3-5"
+    }
   },
   "chapters": [
     {
@@ -34,13 +49,13 @@
     },
     {
       "n": 2,
-      "title": "로봇 준비하기: 연결과 수업 세팅",
-      "test": "2-5"
+      "title": "로봇 준비하기",
+      "test": "2-4"
     },
     {
       "n": 3,
       "title": "기초 제어 ① 관절 제어",
-      "test": "3-6"
+      "test": "3-5"
     },
     {
       "n": 4,
@@ -71,7 +86,7 @@
     {
       "id": "1-2",
       "chapter": 1,
-      "title": "로봇팔의 구조: 관절 · 좌표 · 도구",
+      "title": "로봇팔의 구조: 관절과 손끝",
       "pages": [4, 5],
       "status": "open",
       "scene": "none",
@@ -91,7 +106,7 @@
       "chapter": 1,
       "title": "수행평가",
       "pages": [8, 9],
-      "status": "unused",
+      "status": "test",
       "scene": "none",
       "practice": "none",
       "test": true
@@ -106,7 +121,8 @@
       "practice": "open"
     },
     {
-      "id": "2-2",
+      "id": "unused-setup",
+      "was": "2-2",
       "chapter": 2,
       "title": "PC에 시뮬레이터 설치 · 로봇 연결",
       "pages": [14, 15],
@@ -116,16 +132,16 @@
       "note": "수업 전 준비 안내로 돌림"
     },
     {
-      "id": "2-3",
+      "id": "2-2",
       "chapter": 2,
-      "title": "영점과 기본 자세 확인",
+      "title": "영점 자세와 기본 자세",
       "pages": [18, 19],
       "status": "open",
       "scene": "none",
       "practice": "open"
     },
     {
-      "id": "2-4",
+      "id": "2-3",
       "chapter": 2,
       "title": "펜 끼우고 높이 맞추기",
       "pages": [20, 21],
@@ -134,11 +150,11 @@
       "practice": "open"
     },
     {
-      "id": "2-5",
+      "id": "2-4",
       "chapter": 2,
       "title": "수행평가",
       "pages": [22, 23],
-      "status": "unused",
+      "status": "test",
       "scene": "none",
       "practice": "none",
       "test": true
@@ -155,33 +171,34 @@
     {
       "id": "3-2",
       "chapter": 3,
-      "title": "관절 하나씩 움직이기: 각도와 방향",
+      "title": "관절 하나씩 움직이기: 각도 · 방향 · 한계",
       "pages": [28, 29],
       "status": "open",
       "scene": "none",
       "practice": "open"
     },
     {
-      "id": "3-3",
+      "id": "unused-limits",
+      "was": "3-3",
       "chapter": 3,
       "title": "움직일 수 있는 범위와 한계",
       "pages": [30, 31],
       "status": "unused",
       "scene": "none",
       "practice": "none",
-      "note": "3-2 안에서 다룸"
+      "note": "새 3-2 안에서 다룸"
     },
     {
-      "id": "3-4",
+      "id": "3-3",
       "chapter": 3,
-      "title": "기본 · 영점 자세와 내 자세 저장",
+      "title": "내 자세 저장하기",
       "pages": [34, 35],
       "status": "open",
       "scene": "none",
       "practice": "open"
     },
     {
-      "id": "3-5",
+      "id": "3-4",
       "chapter": 3,
       "title": "속도 조절과 멈추기",
       "pages": [36, 37],
@@ -190,11 +207,11 @@
       "practice": "open"
     },
     {
-      "id": "3-6",
+      "id": "3-5",
       "chapter": 3,
       "title": "수행평가",
       "pages": [38, 39],
-      "status": "unused",
+      "status": "test",
       "scene": "none",
       "practice": "none",
       "test": true
@@ -211,7 +228,7 @@
     {
       "id": "4-2",
       "chapter": 4,
-      "title": "궤적선 켜고 선 긋기: 직선 이동 vs 관절 이동",
+      "title": "궤적선 켜고 선 긋기: 직선 이동과 관절 이동",
       "pages": [44, 45],
       "status": "open",
       "scene": "open",
@@ -240,7 +257,7 @@
       "chapter": 4,
       "title": "수행평가",
       "pages": [54, 55],
-      "status": "unused",
+      "status": "test",
       "scene": "none",
       "practice": "none",
       "test": true
@@ -249,6 +266,7 @@
       "id": "5-1",
       "chapter": 5,
       "title": "글씨 쓰는 로봇의 한 사이클 보기",
+      "short": "한 사이클 보기",
       "pages": [58, 59],
       "status": "open",
       "scene": "open",
@@ -258,6 +276,7 @@
       "id": "5-2",
       "chapter": 5,
       "title": "카드 위치 · 펜 높이 보정",
+      "short": "카드 위치 · 펜 높이 보정",
       "pages": [60, 61],
       "status": "open",
       "scene": "open",
@@ -276,6 +295,7 @@
       "id": "5-4",
       "chapter": 5,
       "title": "내 글자 쓰기 (시뮬레이션)",
+      "short": "내 글자 쓰기",
       "pages": [66, 67],
       "status": "open",
       "scene": "none",
@@ -296,7 +316,7 @@
       "chapter": 5,
       "title": "수행평가",
       "pages": [74, 75],
-      "status": "unused",
+      "status": "test",
       "scene": "none",
       "practice": "none",
       "test": true
@@ -309,7 +329,7 @@
       "status": "end",
       "scene": "none",
       "practice": "none",
-      "note": "8차시: 5장 수행평가 뒤 · 4차시: 5-3 뒤에 열린다"
+      "note": "8차시: 5장 수행평가(5-6) 뒤 · 4차시: 5-3 뒤에 열린다"
     },
     {
       "id": "6-2",
@@ -340,9 +360,9 @@
       "tests": true,
       "lessons": [
         ["1-1", "1-2", "1-3"],
-        ["2-1", "2-3", "2-4"],
+        ["2-1", "2-2", "2-3"],
         ["3-1", "3-2"],
-        ["3-4", "3-5"],
+        ["3-3", "3-4"],
         ["4-1", "4-2"],
         ["4-3", "4-4"],
         ["5-1", "5-2", "5-3"],
@@ -356,7 +376,7 @@
       "tests": false,
       "lessons": [
         ["1-1", "1-3"],
-        ["3-1", "3-2", "3-4"],
+        ["3-1", "3-2", "3-3"],
         ["4-1", "4-3"],
         ["5-1", "5-2", "5-3"]
       ]

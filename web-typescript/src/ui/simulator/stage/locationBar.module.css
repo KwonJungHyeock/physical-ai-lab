@@ -22,6 +22,12 @@
   white-space: nowrap;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .bar {
+  gap: 16px;
+  padding: 4px 16px;
+  color: #f6f7f9;
+}
 .bar:hover,
 .bar[aria-expanded='true'] {
   background: rgba(255, 255, 255, 0.08);
@@ -32,6 +38,11 @@
   letter-spacing: -0.01em;
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .bar b {
+  font-weight: 700;
+  color: #f6f7f9;
+}
 .bar span {
   min-width: 0;
   overflow: hidden;
@@ -39,6 +50,10 @@
   font-size: 23px;
   font-weight: 700;
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .bar span {
+  color: #f6f7f9;
 }
 .bar small {
   flex: none;
@@ -49,11 +64,22 @@
   font-weight: 700;
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .bar small {
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.16);
+  font-size: 18px;
+  color: #f6f7f9;
+}
 .bar i {
   flex: none;
   font-style: normal;
   font-size: 15px;
   color: #c9ced5;
+}
+/* 대응표 */
+:where([data-course]) .bar i {
+  font-size: 16px;
 }
 
 .drop {
@@ -71,11 +97,21 @@
     0 0 0 1px rgba(255, 255, 255, 0.08),
     0 20px 50px rgba(0, 0, 0, 0.5);
 }
+/* 대응표 */
+:where([data-course]) .drop {
+  width: min(470px, calc(46vw / var(--course-zoom, 1)));
+  max-height: min(calc(70vh / var(--course-zoom, 1)), 640px);
+  border-radius: 12px;
+}
 .drop h4 {
   margin: 12px 12px 6px;
   font-size: 14px;
   font-weight: 600;
   color: #a9b1ba;
+}
+/* 대응표 */
+:where([data-course]) .drop h4 {
+  color: #c9ced5;
 }
 
 .row {
@@ -94,8 +130,19 @@
   text-align: left;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .row {
+  padding: 0 16px;
+  border-radius: 12px;
+  color: #f6f7f9;
+  font-size: 18px;
+}
 .row:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.06);
+}
+/* 대응표 */
+:where([data-course]) .row:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
 }
 .row:disabled {
   opacity: 0.45;
@@ -109,6 +156,10 @@
   font-weight: 700;
   color: #a9b1ba;
 }
+/* 대응표 */
+:where([data-course]) .row em {
+  color: #c9ced5;
+}
 .row span {
   flex: 1;
   min-width: 0;
@@ -121,8 +172,16 @@
   font-size: 14px;
   color: #a9b1ba;
 }
+/* 대응표 */
+:where([data-course]) .row small {
+  color: #c9ced5;
+}
 .row[data-state='done'] em {
   color: #4ade80;
+}
+/* 대응표 */
+:where([data-course]) .row[data-state='done'] em {
+  color: #86efac;
 }
 .row[data-state='now'] {
   background: rgba(240, 162, 59, 0.14);
@@ -141,6 +200,10 @@
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.08);
 }
+/* 대응표 */
+:where([data-course]) .kinds {
+  padding: 4px;
+}
 .kinds button {
   height: 38px;
   padding: 0 16px;
@@ -154,8 +217,17 @@
   white-space: nowrap;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .kinds button {
+  border-radius: 8px;
+  color: #f6f7f9;
+}
 .kinds button:hover:not(:disabled):not([data-on]) {
   background: rgba(255, 255, 255, 0.1);
+}
+/* 대응표 */
+:where([data-course]) .kinds button:hover:not(:disabled):not([data-on]) {
+  background: rgba(255, 255, 255, 0.08);
 }
 .kinds button[data-on] {
   background: #f6f7f9;
@@ -184,6 +256,13 @@
   white-space: nowrap;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .replay {
+  gap: 8px;
+  border-color: rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  color: #f6f7f9;
+}
 .replay:disabled {
   opacity: 0.4;
   cursor: default;
@@ -205,4 +284,27 @@
   color: #fff;
   white-space: nowrap;
   pointer-events: none;
+}
+/* 대응표 */
+:where([data-course]) .note {
+  padding: 12px 16px;
+  font-size: 18px;
+  color: #f6f7f9;
+}
+
+/* 수정 지시서 v3 (값을 역할에 맞춘 곳 · 누르는 면 40 px): 차시 · 교안 쪽 16 px, the 목록 mark a drawn chevron. */
+[data-course] .bar small {
+  font-size: 16px;
+  font-weight: 600;
+}
+[data-course] .bar i {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+[data-course] .bar i[data-open] svg {
+  transform: rotate(180deg);
+}
+[data-course] .kinds button {
+  height: 40px;
 }

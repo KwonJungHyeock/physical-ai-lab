@@ -28,6 +28,11 @@
   white-space: nowrap;
   transition: background 0.2s ease, border-color 0.2s ease;
 }
+/* 대응표 */
+:where([data-course]) .chip > span {
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #f6f7f9;
+}
 .chip[data-at='left'] > span {
   right: 0;
   top: -12px;
@@ -66,13 +71,28 @@
   font-weight: 800;
   color: #b8bdc4;
 }
+/* 대응표 */
+:where([data-course]) .chip i {
+  font-size: 13px;
+  font-weight: 700;
+  color: #c9ced5;
+}
 .chip b {
   font-weight: 800;
+}
+/* 대응표 */
+:where([data-course]) .chip b {
+  font-weight: 700;
 }
 .chip em {
   font-style: normal;
   font-size: 11px;
   font-weight: 800;
+}
+/* 대응표 */
+:where([data-course]) .chip em {
+  font-size: 13px;
+  font-weight: 700;
 }
 .chip em:empty {
   display: none;
@@ -88,6 +108,11 @@
 .chip[data-level='1'] i,
 .chip[data-level='2'] i {
   color: #ffe3c2;
+}
+/* 대응표 */
+:where([data-course]) .chip[data-level='1'] i,
+:where([data-course]) .chip[data-level='2'] i {
+  color: #f0a23b;
 }
 
 .tcp {
@@ -105,6 +130,13 @@
   font-size: 12.5px;
   font-variant-numeric: tabular-nums;
 }
+/* 대응표 */
+:where([data-course]) .tcp {
+  border-radius: 12px;
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #f6f7f9;
+  font-size: 13px;
+}
 .layer[data-side='left'] .tcp {
   left: auto;
   right: calc(var(--inset-r, 12px) + 64px);
@@ -119,6 +151,11 @@
   font-weight: 800;
   color: #b8bdc4;
 }
+/* 대응표 */
+:where([data-course]) .tcp i {
+  font-weight: 700;
+  color: #c9ced5;
+}
 .tcp b {
   font-weight: 700;
 }
@@ -132,10 +169,18 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
   color: var(--hud-tx);
 }
+/* 대응표 */
+:where([data-course]) .chip > span {
+  border-radius: 8px;
+}
 .chip i {
   font-weight: 700;
   letter-spacing: 0.14em;
   color: var(--hud-dim);
+}
+/* 대응표 */
+:where([data-course]) .chip i {
+  letter-spacing: 0;
 }
 .chip b {
   font-weight: 600;
@@ -149,6 +194,10 @@
   background: rgba(46, 12, 10, 0.65);
   border-color: rgba(235, 64, 52, 0.9);
   color: #ff6b61;
+}
+/* 대응표 */
+:where([data-course]) .chip[data-level='2'] > span {
+  color: #ff8f86;
 }
 .chip[data-level='1'] i,
 .chip[data-level='2'] i {
@@ -184,6 +233,11 @@
   color: var(--hud-sub);
   font-size: 17px;
 }
+/* 대응표 */
+:where([data-course]) .tcp,
+:where([data-course]) .layer[data-side='left'] .tcp {
+  font-size: 18px;
+}
 [data-dock='closed'] .tcp {
   right: 110px;
 }
@@ -198,6 +252,10 @@
   letter-spacing: 0.14em;
   color: var(--hud-dim);
 }
+/* 대응표 */
+:where([data-course]) .tcp i {
+  letter-spacing: 0;
+}
 .tcp b {
   font-weight: 600;
 }
@@ -208,4 +266,8 @@
 .tcp .flange b {
   color: var(--hud-sub);
   font-weight: 500;
+}
+/* 대응표 */
+:where([data-course]) .tcp .flange b {
+  font-weight: 600;
 }

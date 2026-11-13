@@ -8,6 +8,7 @@
  * verdicts read the ink (the pen's trail on the paper, robot mm). No React.
  */
 
+import { checkName } from './courseText';
 import { CARD_HOME, CARD_MM, LIFT_MM, MAT, readInkFor } from './draw';
 
 export type Pt = readonly [number, number];
@@ -119,7 +120,7 @@ export interface ShapeReport {
 export function shapeReport(ink: Ink, ring: readonly Pt[]): ShapeReport {
   const ss = strokes(ink);
   const pts = ss.flat();
-  if (pts.length < 2) return { ok: false, items: [{ label: '선이 그려졌어요', ok: false, detail: '아무것도 안 그려졌어요' }] };
+  if (pts.length < 2) return { ok: false, items: [{ label: checkName('drawn'), ok: false, detail: '아무것도 안 그려졌어요' }] };
   const miss = ring.map((c) => Math.min(...pts.map((p) => dist(p, c))));
   const worstCorner = round1(Math.max(...miss));
   const first = ss[0][0];
@@ -129,10 +130,10 @@ export function shapeReport(ink: Ink, ring: readonly Pt[]): ShapeReport {
   const sides = ring.map((c, k) => [c, ring[(k + 1) % ring.length]] as const);
   const dev = round1(Math.max(...pts.map((p) => Math.min(...sides.map(([a, b]) => segDist(p, a, b))))));
   const items = [
-    { label: `꼭짓점마다 ${TOL.corner} mm 안`, ok: worstCorner <= TOL.corner, detail: `가장 먼 꼭짓점 ${worstCorner} mm` },
-    { label: '닫힌 도형 (끝이 시작점으로)', ok: gap <= TOL.close, detail: `끝과 시작 ${gap} mm` },
-    { label: `변이 곧음 (선에서 ${TOL.line} mm 안)`, ok: dev <= TOL.line, detail: `가장 많이 휜 곳 ${dev} mm` },
-    { label: '펜을 들지 않고 한 번에', ok: ss.length === 1, detail: ss.length === 1 ? undefined : `선이 ${ss.length}개로 끊겼어요` },
+    { label: checkName('corner', { mm: TOL.corner }), ok: worstCorner <= TOL.corner, detail: `가장 먼 꼭짓점 ${worstCorner} mm` },
+    { label: checkName('closed'), ok: gap <= TOL.close, detail: `끝과 시작 ${gap} mm` },
+    { label: checkName('straight', { mm: TOL.line }), ok: dev <= TOL.line, detail: `가장 많이 휜 곳 ${dev} mm` },
+    { label: checkName('oneStroke'), ok: ss.length === 1, detail: ss.length === 1 ? undefined : `선이 ${ss.length}개로 끊겼어요` },
   ];
   return { ok: items.every((i) => i.ok), items };
 }
@@ -267,9 +268,9 @@ export function myCardReport(ink: Ink, strokes: readonly (readonly Pt[])[]): Sha
     MY_CARD.corner,
   );
   const items = [
-    { label: '획이 2개 이상', ok: strokes.length >= 2, detail: `획 ${strokes.length}개` },
-    { label: '글자 전체가 카드 안 (밖 2 mm 이하)', ok: r.length >= 3 && r.outside <= 2, detail: r.length >= 3 ? `카드 밖 ${Math.round(r.outside)} mm` : '쓴 선이 없어요' },
-    { label: '획 사이에 필요 없는 줄 3 mm 이하', ok: r.length >= 3 && r.stray <= 3, detail: r.length >= 3 ? `필요 없는 줄 ${Math.round(r.stray)} mm` : '쓴 선이 없어요' },
+    { label: checkName('strokes2'), ok: strokes.length >= 2, detail: `획 ${strokes.length}개` },
+    { label: checkName('inCard', { mm: 2 }), ok: r.length >= 3 && r.outside <= 2, detail: r.length >= 3 ? `카드 밖 ${Math.round(r.outside)} mm` : '쓴 선이 없어요' },
+    { label: checkName('noStray', { mm: 3 }), ok: r.length >= 3 && r.stray <= 3, detail: r.length >= 3 ? `필요 없는 줄 ${Math.round(r.stray)} mm` : '쓴 선이 없어요' },
   ];
   return { ok: items.every((i) => i.ok), items };
 }

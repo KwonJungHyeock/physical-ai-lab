@@ -18,6 +18,12 @@
   font-size: 12.5px;
   word-break: keep-all;
 }
+/* 대응표 */
+:where([data-course]) .card {
+  border-radius: 12px;
+  color: #f6f7f9;
+  font-size: 13px;
+}
 .card header {
   display: flex;
   align-items: center;
@@ -28,6 +34,10 @@
 .card header b {
   font-size: 13.5px;
 }
+/* 대응표 */
+:where([data-course]) .card header b {
+  font-size: 14px;
+}
 .reset {
   font-size: 11px;
   border: 1px solid #5e6064;
@@ -36,6 +46,12 @@
   border-radius: 5px;
   padding: 2px 7px;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .reset {
+  font-size: 13px;
+  color: #c9ced5;
+  border-radius: 8px;
 }
 .cmds {
   margin: 0;
@@ -56,6 +72,10 @@
   padding: 2px 4px;
   border-radius: 7px;
 }
+/* 대응표 */
+:where([data-course]) .cmds li {
+  border-radius: 8px;
+}
 .cmds li::before {
   content: counter(c);
   grid-area: n;
@@ -68,6 +88,12 @@
   font-weight: 800;
   display: grid;
   place-items: center;
+}
+/* 대응표 */
+:where([data-course]) .cmds li::before {
+  color: #f6f7f9;
+  font-size: 13px;
+  font-weight: 700;
 }
 .cmds li[data-key] {
   background: #1d3a2e;
@@ -85,6 +111,14 @@
   overflow-x: auto;
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .cmds code {
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  color: #86efac;
+  border-radius: 8px;
+}
 .cmds li > button {
   grid-area: btn;
   font-size: 11px;
@@ -95,11 +129,22 @@
   padding: 2px 8px;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .cmds li > button {
+  font-size: 13px;
+  color: #f6f7f9;
+  border-radius: 8px;
+}
 .cmds small {
   grid-area: what;
   color: #afb3b9;
   font-size: 11px;
   line-height: 1.35;
+}
+/* 대응표 */
+:where([data-course]) .cmds small {
+  color: #c9ced5;
+  font-size: 13px;
 }
 .predict {
   grid-area: pred;
@@ -107,8 +152,17 @@
   font-size: 11.8px;
   color: #d7dce3;
 }
+/* 대응표 */
+:where([data-course]) .predict {
+  font-size: 13px;
+  color: #f6f7f9;
+}
 .predict b {
   color: #ffd166;
+}
+/* 대응표 */
+:where([data-course]) .predict b {
+  color: #f0a23b;
 }
 .predict span {
   display: flex;
@@ -125,18 +179,37 @@
   padding: 2px 7px;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .predict button {
+  font-size: 13px;
+  color: #f6f7f9;
+  border-radius: 8px;
+}
 .predict button[data-on] {
   border-color: #ffd166;
   color: #ffd166;
+}
+/* 대응표 */
+:where([data-course]) .predict button[data-on] {
+  color: #f0a23b;
 }
 .read {
   margin-top: 6px;
   font-size: 11.8px;
   color: #cbd0d7;
 }
+/* 대응표 */
+:where([data-course]) .read {
+  font-size: 13px;
+  color: #c9ced5;
+}
 .read summary {
   cursor: pointer;
   color: #acb0b6;
+}
+/* 대응표 */
+:where([data-course]) .read summary {
+  color: #c9ced5;
 }
 .read ul {
   margin: 4px 0 0;
@@ -150,6 +223,13 @@
   font: 600 11.5px ui-monospace, monospace;
   color: #e6ebef;
 }
+/* 대응표 */
+:where([data-course]) .read code {
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  color: #f6f7f9;
+}
 .verdict {
   margin-top: 6px;
   border-left: 3px solid #c2410c;
@@ -157,6 +237,11 @@
   border-radius: 6px;
   padding: 6px 9px;
   font-size: 12px;
+}
+/* 대응표 */
+:where([data-course]) .verdict {
+  border-radius: 8px;
+  font-size: 13px;
 }
 .verdict[data-right] {
   border-left-color: #0f6b4c;
@@ -166,9 +251,17 @@
   margin: 3px 0 0;
   color: #cbd0d7;
 }
+/* 대응표 */
+:where([data-course]) .verdict p {
+  color: #c9ced5;
+}
 .note {
   margin: 0 0 6px;
   color: #cbd0d7;
+}
+/* 대응표 */
+:where([data-course]) .note {
+  color: #c9ced5;
 }
 .go {
   display: flex;
@@ -184,6 +277,12 @@
   padding: 4px 9px;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .go button {
+  font-size: 13px;
+  color: #f6f7f9;
+  border-radius: 8px;
+}
 .screen {
   flex: 1;
   min-height: 230px;
@@ -197,26 +296,63 @@
   word-break: break-all;
   cursor: text;
 }
+/* 대응표 */
+:where([data-course]) .screen {
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  color: #f6f7f9;
+}
 .out {
   color: #d9dfe7;
+}
+/* 대응표 */
+:where([data-course]) .out {
+  color: #f6f7f9;
 }
 .dim {
   color: #86888e;
 }
+/* 대응표 */
+:where([data-course]) .dim {
+  color: #c9ced5;
+}
 .err {
   color: #ff8c7a;
+}
+/* 대응표 */
+:where([data-course]) .err {
+  color: #ff8f86;
 }
 .ok {
   color: #7ee2a8;
 }
+/* 대응표 */
+:where([data-course]) .ok {
+  color: #86efac;
+}
 .warn {
   color: #ffd166;
+}
+/* 대응표 */
+:where([data-course]) .warn {
+  color: #f0a23b;
 }
 .info {
   color: #acb0b6;
 }
+/* 대응표 */
+:where([data-course]) .info {
+  color: #c9ced5;
+}
 .cmd {
   color: #e6ebef;
+}
+/* 대응표 */
+:where([data-course]) .cmd {
+  color: #f6f7f9;
 }
 .inputLine {
   display: flex;
@@ -225,6 +361,10 @@
 .prompt {
   color: #7ee2a8;
   white-space: nowrap;
+}
+/* 대응표 */
+:where([data-course]) .prompt {
+  color: #86efac;
 }
 .inputLine input,
 .inputLine input:focus,
@@ -240,11 +380,21 @@
   caret-color: #7ee2a8;
   padding: 0;
 }
+/* 대응표 */
+:where([data-course]) .inputLine input,
+:where([data-course]) .inputLine input:focus,
+:where([data-course]) .inputLine input:focus-visible {
+  color: #f6f7f9;
+}
 .running {
   display: flex;
   align-items: center;
   gap: 6px;
   color: #ffd166;
+}
+/* 대응표 */
+:where([data-course]) .running {
+  color: #f0a23b;
 }
 .running kbd,
 .nanoKeys kbd {
@@ -252,6 +402,14 @@
   border: 1px solid #5e6064;
   border-radius: 3px;
   padding: 0 3px;
+}
+/* 대응표 */
+:where([data-course]) .running kbd,
+:where([data-course]) .nanoKeys kbd {
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  border-radius: 8px;
 }
 .running button {
   margin-left: auto;
@@ -262,6 +420,12 @@
   border-radius: 5px;
   padding: 2px 8px;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .running button {
+  font-size: 13px;
+  color: #f6f7f9;
+  border-radius: 8px;
 }
 .ghost {
   width: 1px;
@@ -280,6 +444,14 @@
   overflow: hidden;
   font: 500 12.4px/1.55 ui-monospace, 'D2Coding', 'Noto Sans Mono CJK KR', monospace;
 }
+/* 대응표 */
+:where([data-course]) .nano {
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+}
 .nanoHead {
   display: flex;
   justify-content: space-between;
@@ -287,6 +459,10 @@
   background: #d9dfe7;
   color: #0c1013;
   padding: 3px 10px;
+}
+/* 대응표 */
+:where([data-course]) .nanoHead {
+  color: #14171c;
 }
 .nano textarea:focus,
 .nano textarea:focus-visible {
@@ -305,6 +481,10 @@
   white-space: pre;
   caret-color: #7ee2a8;
 }
+/* 대응표 */
+:where([data-course]) .nano textarea {
+  color: #f6f7f9;
+}
 .nanoKeys,
 .nanoAsk {
   display: flex;
@@ -314,6 +494,12 @@
   border-top: 1px solid #2e3034;
   color: #cbd0d7;
   font-size: 12px;
+}
+/* 대응표 */
+:where([data-course]) .nanoKeys,
+:where([data-course]) .nanoAsk {
+  color: #c9ced5;
+  font-size: 13px;
 }
 .nanoKeys button,
 .nanoAsk button {
@@ -325,13 +511,27 @@
   cursor: pointer;
   font: inherit;
 }
+/* 대응표 */
+:where([data-course]) .nanoKeys button,
+:where([data-course]) .nanoAsk button {
+  color: #f6f7f9;
+  border-radius: 8px;
+}
 .nanoAsk {
   background: #d9dfe7;
   color: #0c1013;
 }
+/* 대응표 */
+:where([data-course]) .nanoAsk {
+  color: #14171c;
+}
 .nanoAsk button {
   color: #0c1013;
   border-color: #0c1013;
+}
+/* 대응표 */
+:where([data-course]) .nanoAsk button {
+  color: #14171c;
 }
 
 .cardWrap {
@@ -363,6 +563,12 @@
   padding: 2px 7px;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .foldBtn {
+  font-size: 13px;
+  color: #c9ced5;
+  border-radius: 8px;
+}
 .unfold {
   flex: none;
   text-align: left;
@@ -373,6 +579,11 @@
   border-radius: 8px;
   padding: 6px 10px;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .unfold {
+  font-size: 13px;
+  color: #c9ced5;
 }
 .modeSeg {
   flex: none;
@@ -393,8 +604,18 @@
   box-shadow: inset 0 0 0 1px #424448;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .modeSeg button {
+  border-radius: 8px;
+  font-size: 13px;
+  color: #c9ced5;
+}
 .modeSeg button[aria-selected='true'] {
   background: #333539;
   color: #fff;
   box-shadow: inset 0 0 0 1px #75787d;
+}
+/* 대응표 */
+:where([data-course]) .modeSeg button[aria-selected='true'] {
+  color: #f6f7f9;
 }

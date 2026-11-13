@@ -11,12 +11,23 @@
   color: #f6f7f9;
   word-break: keep-all;
 }
+/* 대응표 */
+:where([data-course]) .now {
+  gap: 16px;
+  padding: 8px 24px;
+  border-bottom-color: rgba(255, 255, 255, 0.18);
+}
 .now em {
   flex: none;
   font-size: 17px;
   font-style: normal;
   font-weight: 800;
   color: #f0a23b;
+}
+/* 대응표 */
+:where([data-course]) .now em {
+  font-size: 18px;
+  font-weight: 700;
 }
 .now p {
   flex: 1;
@@ -28,6 +39,10 @@
   font-size: 23px;
   font-weight: 700;
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .now p {
+  color: #f6f7f9;
 }
 .n,
 .ok {
@@ -41,19 +56,36 @@
   font-style: normal;
   font-weight: 800;
 }
+/* 대응표 */
+:where([data-course]) .n,
+:where([data-course]) .ok {
+  font-weight: 700;
+}
 .n {
   background: #f0a23b;
   color: #18120a;
 }
+/* 대응표 */
+:where([data-course]) .n {
+  color: #14171c;
+}
 .ok {
   background: #22c55e;
   color: #06210f;
+}
+/* 대응표 */
+:where([data-course]) .ok {
+  color: #14171c;
 }
 .now[data-state='ok'] p {
   color: #86efac;
 }
 .now[data-state='run'] p {
   color: #e5e8ec;
+}
+/* 대응표 */
+:where([data-course]) .now[data-state='run'] p {
+  color: #f6f7f9;
 }
 
 .meter {
@@ -70,11 +102,20 @@
   background: rgba(255, 255, 255, 0.12);
   overflow: hidden;
 }
+/* 대응표 */
+:where([data-course]) .meter > i {
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.16);
+}
 .meter > i > i {
   display: block;
   height: 100%;
   border-radius: 5px;
   background: #f0a23b;
+}
+/* 대응표 */
+:where([data-course]) .meter > i > i {
+  border-radius: 8px;
 }
 .meter output {
   min-width: 96px;
@@ -83,7 +124,43 @@
   color: #fff;
   font-variant-numeric: tabular-nums;
 }
+/* 대응표 */
+:where([data-course]) .meter output {
+  font-size: 18px;
+  color: #f6f7f9;
+}
 
+/* 장면 보기: [다시 보기] at the line's right end (a plain key: no accent). */
+.replay {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 46px;
+  margin-left: auto;
+  padding: 0 20px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 12px;
+  background: transparent;
+  color: #f6f7f9;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .replay {
+  padding: 0 24px;
+}
+.replay:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+}
+.replay:disabled {
+  color: #c9ced5;
+  border-color: rgba(255, 255, 255, 0.18);
+  cursor: default;
+}
 .next {
   flex: none;
   height: 46px;
@@ -97,12 +174,25 @@
   font-weight: 700;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .next {
+  padding: 0 24px;
+  border-radius: 12px;
+}
 .next:hover {
   background: rgba(255, 255, 255, 0.14);
+}
+/* 대응표 */
+:where([data-course]) .next:hover {
+  background: rgba(255, 255, 255, 0.16);
 }
 .next[data-lit] {
   background: #f0a23b;
   color: #18120a;
+}
+/* 대응표 */
+:where([data-course]) .next[data-lit] {
+  color: #14171c;
 }
 
 /* The place to press now (portal over the page). */
@@ -114,6 +204,10 @@
     0 0 0 3px #f0a23b,
     0 0 18px rgba(240, 162, 59, 0.55);
   pointer-events: none;
+}
+/* 대응표 */
+:where([data-course]) .ring {
+  border-radius: 12px;
 }
 .badge {
   position: fixed;
@@ -130,4 +224,24 @@
   font-weight: 800;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
   pointer-events: none;
+}
+/* 대응표 */
+:where([data-course]) .badge {
+  color: #14171c;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+/* 수정 지시서 v3 (값을 역할에 맞춘 곳): 머리말 '지금 할 일' 16 px, [다음으로 →] 굵기 600. */
+[data-course] .now > em {
+  font-size: 16px;
+}
+[data-course] .next {
+  font-size: 16px;
+  font-weight: 600;
+}
+/* On a window shown larger (html[data-zoomed]) the number grows with the screen, away from the ring's corner. */
+:global(html[data-zoomed]) .badge {
+  transform: scale(var(--course-zoom));
+  transform-origin: 100% 100%;
 }

@@ -24,6 +24,10 @@
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
   animation: thirdIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
+/* 대응표 */
+:where([data-course]) .third {
+  color: #f6f7f9;
+}
 @keyframes thirdIn {
   from {
     opacity: 0;
@@ -41,6 +45,13 @@
   letter-spacing: 0.22em;
   color: #c9ced5;
 }
+/* 대응표 */
+:where([data-course]) .third em {
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
 
 .third b {
   display: block;
@@ -49,6 +60,12 @@
   font-weight: 800;
   letter-spacing: 0.02em;
 }
+/* 대응표 */
+:where([data-course]) .third b {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
 
 .third p {
   margin: 6px 0 0;
@@ -56,6 +73,10 @@
   line-height: 1.5;
   word-break: keep-all;
   color: #e4eaf2;
+}
+/* 대응표 */
+:where([data-course]) .third p {
+  color: #f6f7f9;
 }
 
 .dots {
@@ -95,6 +116,13 @@
   font-weight: 700;
   cursor: pointer;
   backdrop-filter: blur(6px);
+}
+/* 대응표 */
+:where([data-course]) .skip {
+  border-radius: 12px;
+  border-color: rgba(255, 255, 255, 0.45);
+  color: #f6f7f9;
+  font-size: 14px;
 }
 
 .skip:hover {

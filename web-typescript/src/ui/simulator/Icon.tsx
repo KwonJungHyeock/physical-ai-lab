@@ -12,6 +12,8 @@ const PATHS: Record<string, string> = {
   chart: 'M4 20h16M7 16v-5M11 16V8M15 16v-7M19 16V5',
   spark: 'M11 3l1.9 5.6L18.5 10.5l-5.6 1.9L11 18l-1.9-5.6L3.5 10.5l5.6-1.9zM18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z',
   play: 'M8 5.5v13l10.5-6.5z',
+  bolt: 'M13.5 2.5L5.5 13.5h5.5l-1 8 8-11h-5.5z',
+  close: 'M6 6l12 12M18 6L6 18',
   stop: 'M7 7h10v10H7z',
   expand: 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5',
   shrink: 'M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5',
@@ -57,7 +59,7 @@ const PATHS: Record<string, string> = {
   shuffle: 'M4 7h3.5c4 0 5 10 9 10H20M4 17h3.5c1.6 0 2.6-1.6 3.4-3.4M13.2 9.4C14 8 15 7 16.5 7H20M18 4.5 20.5 7 18 9.5M18 14.5l2.5 2.5-2.5 2.5',
 };
 
-const FILLED = new Set(['play', 'stop', 'ff', 'ff3', 'dots']);
+const FILLED = new Set(['play', 'stop', 'ff', 'ff3', 'dots', 'bolt']);
 
 export default function Icon({ name, size = 16, className }: { name: keyof typeof PATHS | string; size?: number; className?: string }) {
   const filled = FILLED.has(name);

@@ -29,6 +29,10 @@
   font-size: 15px;
   color: var(--ink, #25272b);
 }
+/* 대응표 */
+:where([data-course]) .step h2 {
+  font-size: 16px;
+}
 .step h2 b {
   display: grid;
   place-items: center;
@@ -38,6 +42,11 @@
   background: var(--accent, #2563eb);
   color: #fff;
   font-size: 12.5px;
+}
+/* 대응표 */
+:where([data-course]) .step h2 b {
+  color: #f6f7f9;
+  font-size: 13px;
 }
 
 .empty {
@@ -53,6 +62,10 @@
   margin: 0;
   font-size: 13.5px;
   line-height: 1.55;
+}
+/* 대응표 */
+:where([data-course]) .empty p {
+  font-size: 14px;
 }
 .empty b {
   color: var(--ink, #25272b);
@@ -96,13 +109,25 @@
   font-size: 14.5px;
   color: var(--ink, #25272b);
 }
+/* 대응표 */
+:where([data-course]) .driveName b {
+  font-size: 14px;
+}
 .driveName b span {
   font-weight: 500;
   color: var(--muted, #72757a);
 }
+/* 대응표 */
+:where([data-course]) .driveName b span {
+  font-weight: 600;
+}
 .driveName small {
   font-size: 12px;
   color: var(--muted, #72757a);
+}
+/* 대응표 */
+:where([data-course]) .driveName small {
+  font-size: 13px;
 }
 
 .chip {
@@ -115,9 +140,17 @@
   background: var(--soft, #f1f4f8);
   color: var(--muted, #72757a);
 }
+/* 대응표 */
+:where([data-course]) .chip {
+  font-size: 13px;
+}
 .chip[data-tone='ok'] {
   background: #e6f6ec;
   color: #1c7c43;
+}
+/* 대응표 */
+:where([data-course]) .chip[data-tone='ok'] {
+  color: #86efac;
 }
 .chip[data-tone='bad'] {
   background: #fdecec;
@@ -126,6 +159,10 @@
 .chip[data-tone='info'] {
   background: #ecf2fa;
   color: #3b4bc8;
+}
+/* 대응표 */
+:where([data-course]) .chip[data-tone='info'] {
+  color: #93c5fd;
 }
 
 .linkBtn {
@@ -137,6 +174,10 @@
   color: var(--muted, #72757a);
   text-decoration: underline;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .linkBtn {
+  font-size: 13px;
 }
 
 .ways {
@@ -156,14 +197,26 @@
   font: inherit;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .ways button {
+  border-radius: 12px;
+}
 .ways button b {
   font-size: 13.5px;
   color: var(--ink, #25272b);
+}
+/* 대응표 */
+:where([data-course]) .ways button b {
+  font-size: 14px;
 }
 .ways button small {
   font-size: 12px;
   color: var(--muted, #72757a);
   word-break: keep-all;
+}
+/* 대응표 */
+:where([data-course]) .ways button small {
+  font-size: 13px;
 }
 .ways button[aria-checked='true'] {
   border-color: var(--accent, #2563eb);
@@ -183,6 +236,10 @@
   font-weight: 600;
   color: var(--ink, #25272b);
 }
+/* 대응표 */
+:where([data-course]) .form label {
+  font-size: 14px;
+}
 .form label i {
   font-style: normal;
   font-weight: 400;
@@ -199,6 +256,11 @@
   font-weight: 500;
   color: var(--ink, #25272b);
   background: #fff;
+}
+/* 대응표 */
+:where([data-course]) .form input {
+  border-radius: 12px;
+  font-weight: 600;
 }
 .form input:focus {
   outline: none;
@@ -219,12 +281,21 @@
   color: var(--muted, #72757a);
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .pass button {
+  border-radius: 12px;
+  font-size: 13px;
+}
 
 .note {
   margin: 0;
   font-size: 12.5px;
   line-height: 1.5;
   color: var(--muted, #72757a);
+}
+/* 대응표 */
+:where([data-course]) .note {
+  font-size: 13px;
 }
 .error {
   margin: 0;
@@ -234,6 +305,10 @@
   color: #b42318;
   font-size: 13px;
   font-weight: 600;
+}
+/* 대응표 */
+:where([data-course]) .error {
+  border-radius: 12px;
 }
 .errorSmall {
   color: #b42318;
@@ -248,6 +323,10 @@
   font-size: 12px;
   color: var(--muted, #72757a);
 }
+/* 대응표 */
+:where([data-course]) .makeRow small {
+  font-size: 13px;
+}
 .primary {
   min-width: 200px;
   height: 46px;
@@ -260,6 +339,11 @@
   font-size: 15.5px;
   font-weight: 700;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .primary {
+  color: #f6f7f9;
+  font-size: 16px;
 }
 .primary:disabled {
   opacity: 0.45;
@@ -278,6 +362,10 @@
   font-weight: 700;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .secondary {
+  border-radius: 8px;
+}
 .secondary:disabled {
   border-color: var(--line, #d7dde5);
   color: var(--muted, #72757a);
@@ -290,6 +378,10 @@
   border-radius: 10px;
   background: var(--soft, #f1f4f8);
   overflow: hidden;
+}
+/* 대응표 */
+:where([data-course]) .bar {
+  border-radius: 12px;
 }
 .bar i {
   position: absolute;
@@ -305,6 +397,10 @@
   font-size: 12.5px;
   font-weight: 600;
   color: var(--ink, #25272b);
+}
+/* 대응표 */
+:where([data-course]) .bar span {
+  font-size: 13px;
 }
 
 .done {
@@ -324,10 +420,20 @@
   font-size: 15.5px;
   color: #1c7c43;
 }
+/* 대응표 */
+:where([data-course]) .done h2 {
+  font-size: 16px;
+  color: #86efac;
+}
 .done h2 small {
   font-size: 12px;
   font-weight: 500;
   color: var(--muted, #72757a);
+}
+/* 대응표 */
+:where([data-course]) .done h2 small {
+  font-size: 13px;
+  font-weight: 600;
 }
 .next {
   margin: 0;
@@ -360,6 +466,11 @@
   font-size: 11.5px;
   font-weight: 700;
 }
+/* 대응표 */
+:where([data-course]) .next li::before {
+  color: #f6f7f9;
+  font-size: 13px;
+}
 .next li > span {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -376,6 +487,11 @@
   background: #fff;
   font-size: 12px;
 }
+/* 대응표 */
+:where([data-course]) .next code {
+  border-radius: 8px;
+  font-size: 13px;
+}
 .cmd {
   display: flex;
   align-items: stretch;
@@ -391,6 +507,10 @@
   border: 1px solid #cfe3d6;
   font-size: 11.5px;
 }
+/* 대응표 */
+:where([data-course]) .cmd code {
+  font-size: 13px;
+}
 .cmd button {
   flex: none;
   padding: 0 12px;
@@ -402,6 +522,12 @@
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .cmd button {
+  border-radius: 8px;
+  color: #86efac;
+  font-size: 13px;
 }
 
 .results {
@@ -454,9 +580,17 @@
   font-size: 12.5px;
   color: var(--ink, #25272b);
 }
+/* 대응표 */
+:where([data-course]) .resMain small {
+  font-size: 13px;
+}
 .resMain .resMeta {
   font-size: 11.5px;
   color: var(--muted, #72757a);
+}
+/* 대응표 */
+:where([data-course]) .resMain .resMeta {
+  font-size: 13px;
 }
 
 @media (max-width: 560px) {
@@ -473,6 +607,23 @@
   .next li > b {
     grid-column: 2;
   }
+}
+/* 대응표 */
+:where(html[data-vq~='3']) .form label {
+  grid-template-columns: 1fr;
+  gap: 4px;
+}
+/* 대응표 */
+:where(html[data-vq~='3']) .next li {
+  grid-template-columns: 22px 1fr;
+}
+/* 대응표 */
+:where(html[data-vq~='3']) .next li > span {
+  grid-column: 2;
+}
+/* 대응표 */
+:where(html[data-vq~='3']) .next li > b {
+  grid-column: 2;
 }
 
 /* More Wi-Fi networks (MoreWifi.tsx): number · name · password · remove. */
@@ -497,6 +648,10 @@
   font-size: 12px;
   font-weight: 700;
 }
+/* 대응표 */
+:where([data-course]) .moreNo {
+  font-size: 13px;
+}
 .moreRow input {
   min-width: 0;
   height: 38px;
@@ -505,6 +660,10 @@
   border-radius: 9px;
   font: inherit;
   font-size: 14px;
+}
+/* 대응표 */
+:where([data-course]) .moreRow input {
+  border-radius: 8px;
 }
 .moreRow input:focus {
   outline: none;
@@ -539,6 +698,10 @@
   color: #fff;
   box-shadow: 0 6px 16px rgba(232, 57, 47, 0.32);
 }
+/* 대응표 */
+:where([data-course]) .headIcon {
+  color: #f6f7f9;
+}
 .step {
   gap: 12px;
   padding: 16px 18px;
@@ -546,9 +709,17 @@
   border-radius: 14px;
   background: #282a2e;
 }
+/* 대응표 */
+:where([data-course]) .step {
+  border-radius: 12px;
+}
 .step h2 {
   font-size: 16px;
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .step h2 {
+  color: #f6f7f9;
 }
 .step h2 b {
   width: 24px;
@@ -560,14 +731,26 @@
   border-color: #54565a;
   color: #b2b7be;
 }
+/* 대응표 */
+:where([data-course]) .empty {
+  color: #c9ced5;
+}
 .empty b {
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .empty b {
+  color: #f6f7f9;
 }
 
 .drive {
   border-color: #54565a;
   background: #222428;
   color: #b2b7be;
+}
+/* 대응표 */
+:where([data-course]) .drive {
+  color: #c9ced5;
 }
 .drive:hover:not(:disabled) {
   border-color: #e8392f;
@@ -577,24 +760,49 @@
   background: rgba(232, 57, 47, 0.12);
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .drive[aria-checked='true'] {
+  color: #f6f7f9;
+}
 .driveName b {
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .driveName b {
+  color: #f6f7f9;
 }
 .driveName b span,
 .driveName small {
   color: #b2b7be;
 }
+/* 대응표 */
+:where([data-course]) .driveName b span,
+:where([data-course]) .driveName small {
+  color: #c9ced5;
+}
 .chip {
   background: #393b3f;
   color: #c5cad1;
+}
+/* 대응표 */
+:where([data-course]) .chip {
+  color: #c9ced5;
 }
 .chip[data-tone='ok'] {
   background: rgba(34, 197, 94, 0.16);
   color: #4ade80;
 }
+/* 대응표 */
+:where([data-course]) .chip[data-tone='ok'] {
+  color: #86efac;
+}
 .chip[data-tone='bad'] {
   background: rgba(232, 57, 47, 0.18);
   color: #ff8a80;
+}
+/* 대응표 */
+:where([data-course]) .chip[data-tone='bad'] {
+  color: #ff8f86;
 }
 .chip[data-tone='info'] {
   background: rgba(96, 165, 250, 0.16);
@@ -616,9 +824,19 @@
   font-size: 14.5px;
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .ways button b {
+  font-size: 14px;
+  color: #f6f7f9;
+}
 .ways button small {
   font-size: 12.5px;
   color: #b2b7be;
+}
+/* 대응표 */
+:where([data-course]) .ways button small {
+  font-size: 13px;
+  color: #c9ced5;
 }
 .ways button[aria-checked='true'] {
   border-color: #e8392f;
@@ -634,8 +852,16 @@
   font-size: 14px;
   color: #dee4ec;
 }
+/* 대응표 */
+:where([data-course]) .form label {
+  color: #f6f7f9;
+}
 .form label i {
   color: #93979d;
+}
+/* 대응표 */
+:where([data-course]) .form label i {
+  color: #c9ced5;
 }
 .form input,
 .moreRow input {
@@ -644,9 +870,19 @@
   background: #1f2125;
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .form input,
+:where([data-course]) .moreRow input {
+  color: #f6f7f9;
+}
 .form input::placeholder,
 .moreRow input::placeholder {
   color: #85888d;
+}
+/* 대응표 */
+:where([data-course]) .form input::placeholder,
+:where([data-course]) .moreRow input::placeholder {
+  color: #c9ced5;
 }
 .form input:focus,
 .moreRow input:focus {
@@ -660,23 +896,44 @@
   color: #fff;
   font-weight: 700;
 }
+/* 대응표 */
+:where([data-course]) .pass button {
+  color: #f6f7f9;
+}
 
 .note {
   font-size: 13px;
   color: #b2b7be;
+}
+/* 대응표 */
+:where([data-course]) .note {
+  color: #c9ced5;
 }
 .error {
   background: rgba(232, 57, 47, 0.14);
   border: 1px solid rgba(232, 57, 47, 0.45);
   color: #ffb4ab;
 }
+/* 대응표 */
+:where([data-course]) .error {
+  color: #f6f7f9;
+}
 .errorSmall {
   color: #ff8a80;
+}
+/* 대응표 */
+:where([data-course]) .errorSmall {
+  color: #ff8f86;
 }
 
 .makeRow small {
   font-size: 12.5px;
   color: #b2b7be;
+}
+/* 대응표 */
+:where([data-course]) .makeRow small {
+  font-size: 13px;
+  color: #c9ced5;
 }
 .primary {
   background: #e8392f;
@@ -691,9 +948,17 @@
   background: #383a3e;
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .secondary {
+  color: #f6f7f9;
+}
 .secondary:disabled {
   border-color: #424448;
   color: #85888d;
+}
+/* 대응표 */
+:where([data-course]) .secondary:disabled {
+  color: #c9ced5;
 }
 
 .bar {
@@ -705,6 +970,10 @@
 .bar span {
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .bar span {
+  color: #f6f7f9;
+}
 
 .done {
   background: rgba(22, 149, 90, 0.14);
@@ -713,11 +982,23 @@
 .done h2 {
   color: #4ade80;
 }
+/* 대응표 */
+:where([data-course]) .done h2 {
+  color: #86efac;
+}
 .done h2 small {
   color: #b2b7be;
 }
+/* 대응표 */
+:where([data-course]) .done h2 small {
+  color: #c9ced5;
+}
 .next li {
   color: #dee4ec;
+}
+/* 대응표 */
+:where([data-course]) .next li {
+  color: #f6f7f9;
 }
 .next li::before {
   background: #16955a;
@@ -726,16 +1007,28 @@
   background: #1f2125;
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .next code {
+  color: #f6f7f9;
+}
 .cmd code {
   border-color: #424448;
   border-radius: 8px;
   background: #1f2125;
   color: #e6ecf4;
 }
+/* 대응표 */
+:where([data-course]) .cmd code {
+  color: #f6f7f9;
+}
 .cmd button {
   border-color: #66696e;
   background: #383a3e;
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .cmd button {
+  color: #f6f7f9;
 }
 
 .results li {
@@ -750,11 +1043,24 @@
 .resMain small {
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .resMain b,
+:where([data-course]) .resMain small {
+  color: #f6f7f9;
+}
 .resMain b span {
   color: #ff8a80;
 }
+/* 대응표 */
+:where([data-course]) .resMain b span {
+  color: #ff8f86;
+}
 .resMain .resMeta {
   color: #b2b7be;
+}
+/* 대응표 */
+:where([data-course]) .resMain .resMeta {
+  color: #c9ced5;
 }
 
 /* More Wi-Fi rows sit under the inputs, not under the labels */
@@ -765,10 +1071,18 @@
   background: #393b3f;
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .moreNo {
+  color: #f6f7f9;
+}
 .moreRow button {
   border-color: #54565a;
   background: #383a3e;
   color: #dee4ec;
+}
+/* 대응표 */
+:where([data-course]) .moreRow button {
+  color: #f6f7f9;
 }
 .linkBtn {
   padding: 7px 12px;
@@ -779,12 +1093,25 @@
   font-weight: 600;
   text-decoration: none;
 }
+/* 대응표 */
+:where([data-course]) .linkBtn {
+  border-radius: 8px;
+  color: #f6f7f9;
+}
 .linkBtn:hover:not(:disabled) {
   border-color: #e8392f;
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .linkBtn:hover:not(:disabled) {
+  color: #f6f7f9;
 }
 @media (max-width: 560px) {
   .form > .more {
     padding-left: 0;
   }
+}
+/* 대응표 */
+:where(html[data-vq~='3']) .form > .more {
+  padding-left: 0;
 }

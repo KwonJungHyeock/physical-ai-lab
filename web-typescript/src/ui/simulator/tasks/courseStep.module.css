@@ -7,6 +7,12 @@
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.04);
 }
+/* 대응표 */
+:where([data-course]) .panel {
+  padding: 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+}
 .panel .run {
   display: flex;
   align-items: center;
@@ -22,6 +28,10 @@
   font-weight: 800;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .panel .run {
+  font-weight: 700;
+}
 .panel .run:disabled {
   opacity: 0.45;
   cursor: default;
@@ -30,6 +40,10 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
+}
+/* 대응표 */
+:where([data-course]) .pair {
+  gap: 12px;
 }
 .pair button {
   height: 48px;
@@ -41,6 +55,12 @@
   font-size: 17px;
   font-weight: 700;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .pair button {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 18px;
 }
 .pair button[data-on] {
   background: rgba(255, 255, 255, 0.16);
@@ -58,18 +78,26 @@
   font-weight: 700;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .switch {
+  padding: 0 16px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 18px;
+}
 .switch input {
   position: absolute;
   opacity: 0;
   pointer-events: none;
 }
+/* On: white, its knob dark (green is for done · right only). Off: a dim track with a line round it. */
 .switch i {
   position: relative;
   flex: none;
   width: 44px;
-  height: 26px;
-  border-radius: 13px;
-  background: rgba(255, 255, 255, 0.2);
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
   transition: background 0.15s;
 }
 .switch i::after {
@@ -77,17 +105,18 @@
   position: absolute;
   left: 3px;
   top: 3px;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  background: #fff;
+  background: #c9ced5;
   transition: transform 0.15s;
 }
 .switch input:checked + i {
-  background: #22c55e;
+  background: #f6f7f9;
 }
 .switch input:checked + i::after {
-  transform: translateX(18px);
+  transform: translateX(20px);
+  background: #14171c;
 }
 
 /* 수행평가: one card over the dimmed scene. */
@@ -114,15 +143,32 @@
     0 24px 60px rgba(0, 0, 0, 0.5);
   word-break: keep-all;
 }
+/* 대응표 */
+:where([data-course]) .test {
+  --cv1: calc(100vh / var(--course-zoom, 1));
+  max-height: calc(var(--cv1) - var(--top, 54px) - 48px);
+  padding: 24px 24px;
+  border-radius: 12px;
+  color: #f6f7f9;
+}
 .test h2 {
   margin: 0 0 4px;
   font-size: 24px;
   font-weight: 800;
 }
+/* 대응표 */
+:where([data-course]) .test h2 {
+  font-size: 23px;
+  font-weight: 700;
+}
 .test > p {
   margin: 0 0 16px;
   font-size: 16px;
   color: #dfe4ea;
+}
+/* 대응표 */
+:where([data-course]) .test > p {
+  color: #f6f7f9;
 }
 .ox {
   display: grid;
@@ -142,6 +188,12 @@
   font-size: 18px;
   font-weight: 700;
 }
+/* 대응표 */
+:where([data-course]) .ox li {
+  gap: 16px;
+  padding: 0 16px;
+  background: rgba(255, 255, 255, 0.08);
+}
 .ox li b {
   flex: 1;
 }
@@ -157,6 +209,13 @@
   font-weight: 800;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .ox li button {
+  border-color: rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  font-size: 23px;
+  font-weight: 700;
+}
 .ox li button[aria-pressed='true'] {
   background: #f6f7f9;
   color: #14171c;
@@ -167,17 +226,33 @@
   font-size: 15px;
   text-align: right;
 }
+/* 대응표 */
+:where([data-course]) .ox li em {
+  font-size: 16px;
+}
 .ox li em[data-ok] {
   color: #4ade80;
 }
+/* 대응표 */
+:where([data-course]) .ox li em[data-ok] {
+  color: #86efac;
+}
 .ox li em[data-no] {
   color: #fca5a5;
+}
+/* 대응표 */
+:where([data-course]) .ox li em[data-no] {
+  color: #f6f7f9;
 }
 .photos {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
   margin: 0 0 18px;
+}
+/* 대응표 */
+:where([data-course]) .photos {
+  gap: 12px;
 }
 .row {
   display: flex;
@@ -188,6 +263,10 @@
   flex: 1;
   font-size: 17px;
   font-weight: 700;
+}
+/* 대응표 */
+:where([data-course]) .row output {
+  font-size: 18px;
 }
 .key {
   height: 48px;
@@ -201,6 +280,11 @@
   font-weight: 800;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .key {
+  font-size: 18px;
+  font-weight: 700;
+}
 /* Locked (O · X not all chosen): its word stays readable — a quiet face, not a faded one. */
 .key.key:disabled {
   opacity: 1;
@@ -209,9 +293,17 @@
   color: #c9ced5;
   cursor: default;
 }
+/* 대응표 */
+:where([data-course]) .key.key:disabled {
+  background: rgba(255, 255, 255, 0.08);
+}
 .key[data-lit] {
   background: #f0a23b;
   color: #18120a;
+}
+/* 대응표 */
+:where([data-course]) .key[data-lit] {
+  color: #14171c;
 }
 .soon {
   margin: 0 0 18px;
@@ -221,8 +313,14 @@
   font-size: 16px;
   color: #dfe4ea;
 }
+/* 대응표 */
+:where([data-course]) .soon {
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f6f7f9;
+}
 
-/* 2-4 · 2장: the tool row, the 보정 card, the pose keys. */
+/* 2-3 · 2장: the tool row, the 보정 card, the pose keys. */
 .toolRow {
   display: flex;
   align-items: center;
@@ -234,9 +332,18 @@
   color: #f6f7f9;
   font-size: 16px;
 }
+/* 대응표 */
+:where([data-course]) .toolRow {
+  padding: 0 8px 0 16px;
+  background: rgba(255, 255, 255, 0.08);
+}
 .toolRow b {
   margin-left: 8px;
   font-size: 17px;
+}
+/* 대응표 */
+:where([data-course]) .toolRow b {
+  font-size: 18px;
 }
 .toolRow button,
 .poses button {
@@ -250,6 +357,12 @@
   font-size: 16px;
   font-weight: 700;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .toolRow button,
+:where([data-course]) .poses button {
+  border-color: rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
 }
 .toolRow button:disabled,
 .poses button:disabled {
@@ -267,8 +380,18 @@
   color: #f6f7f9;
   font-size: 16px;
 }
+/* 대응표 */
+:where([data-course]) .calib {
+  gap: 8px 16px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.08);
+}
 .calib > b {
   font-size: 17px;
+}
+/* 대응표 */
+:where([data-course]) .calib > b {
+  font-size: 18px;
 }
 .calib output {
   margin-left: 4px;
@@ -287,6 +410,12 @@
   font: inherit;
   font-size: 17px;
   font-weight: 700;
+}
+/* 대응표 */
+:where([data-course]) .calib input {
+  border-color: rgba(255, 255, 255, 0.45);
+  color: #f6f7f9;
+  font-size: 18px;
 }
 .calib small {
   flex-basis: 100%;
@@ -308,15 +437,28 @@
   gap: 6px;
   padding: 0 8px;
 }
+/* 대응표 */
+:where([data-course]) .poses button {
+  font-size: 18px;
+  gap: 8px;
+}
 /* 정지: the one that stands out (filled red, as in the fixed row under the 조작판). */
 .poses .stop {
   border-color: #d32f2a;
   background: #d32f2a;
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .poses .stop {
+  color: #f6f7f9;
+}
 .poses kbd {
   font-size: 12px;
   opacity: 0.8;
+}
+/* 대응표 */
+:where([data-course]) .poses kbd {
+  font-size: 13px;
 }
 
 /* 2-1: the box of parts in the panel — five at a glance, each at least 120 px wide. */
@@ -324,6 +466,10 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(140px, 1fr));
   gap: 10px;
+}
+/* 대응표 */
+:where([data-course]) .kit > div {
+  gap: 12px;
 }
 .kit button {
   display: grid;
@@ -337,6 +483,13 @@
   font: inherit;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .kit button {
+  gap: 8px;
+  padding: 8px;
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+}
 .kit button[data-seen] {
   border-color: #22c55e;
 }
@@ -344,8 +497,13 @@
   font-size: 17px;
   font-weight: 800;
 }
-/* 3-5: the two moves' times. */
-/* 3-5: the two times side by side, each on one line with its speed (the six joint rows under it stay clear of the fixed row at 1366 × 768). */
+/* 대응표 */
+:where([data-course]) .kit button > span {
+  font-size: 18px;
+  font-weight: 700;
+}
+/* 3-4: the two moves' times. */
+/* 3-4: the two times side by side, each on one line with its speed (the six joint rows under it stay clear of the fixed row at 1366 × 768). */
 .times {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -355,6 +513,11 @@
   background: rgba(255, 255, 255, 0.06);
   color: #f6f7f9;
   font-size: 16px;
+}
+/* 대응표 */
+:where([data-course]) .times {
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.08);
 }
 .times > b {
   grid-column: 1 / -1;
@@ -376,6 +539,10 @@
   color: #f6f7f9;
   font-size: 16px;
 }
+/* 대응표 */
+:where([data-course]) .confirm {
+  gap: 12px;
+}
 /* 4장: the switch's state beside its name. */
 .switch small {
   margin-left: auto;
@@ -393,8 +560,17 @@
   color: #f6f7f9;
   font-size: 16px;
 }
+/* 대응표 */
+:where([data-course]) .table {
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.08);
+}
 .table > b {
   font-size: 17px;
+}
+/* 대응표 */
+:where([data-course]) .table > b {
+  font-size: 18px;
 }
 .tableHead,
 .tableRow {
@@ -411,6 +587,10 @@
   font-weight: 800;
   text-align: center;
 }
+/* 대응표 */
+:where([data-course]) .tableRow > span {
+  font-weight: 700;
+}
 .table input {
   width: 100%;
   min-width: 0;
@@ -423,6 +603,13 @@
   font: inherit;
   font-size: 17px;
   font-weight: 700;
+}
+/* 대응표 */
+:where([data-course]) .table input {
+  padding: 0 12px;
+  border-color: rgba(255, 255, 255, 0.45);
+  color: #f6f7f9;
+  font-size: 18px;
 }
 .tableKeys {
   display: grid;
@@ -440,6 +627,12 @@
   font-size: 16px;
   font-weight: 700;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .tableKeys button,
+:where([data-course]) .countRow button {
+  border-color: rgba(255, 255, 255, 0.45);
+  border-radius: 12px;
 }
 .tableKeys button:disabled,
 .countRow button:disabled {
@@ -486,6 +679,12 @@
   font-size: 16px;
   font-weight: 600;
 }
+/* 대응표 */
+:where([data-course]) .results {
+  gap: 8px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.08);
+}
 /* A measured number: large (≥ 22 px), its label ≥ 15 px. */
 .measure {
   display: grid;
@@ -496,12 +695,21 @@
   font-weight: 600;
   color: #c9ced5;
 }
+/* 대응표 */
+:where([data-course]) .measure > span {
+  font-size: 16px;
+}
 .measure > b {
   font-size: 28px;
   font-weight: 800;
   line-height: 1.15;
   color: #fff;
   font-variant-numeric: tabular-nums;
+}
+/* 대응표 */
+:where([data-course]) .measure > b {
+  font-weight: 700;
+  color: #f6f7f9;
 }
 .measure > b small {
   margin-left: 4px;
@@ -523,6 +731,15 @@
   font-weight: 700;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .boardKey,
+:where([data-course]) .clearAll,
+:where([data-course]) .realRow button {
+  border-color: rgba(255, 255, 255, 0.45);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 18px;
+}
 .boardKey[data-open] {
   background: #f6f7f9;
   color: #14171c;
@@ -530,6 +747,10 @@
 .clearAll {
   height: 40px;
   font-size: 15px;
+}
+/* 대응표 */
+:where([data-course]) .clearAll {
+  font-size: 16px;
 }
 .boardKey:disabled,
 .clearAll:disabled,
@@ -544,9 +765,17 @@
   min-height: 40px;
   align-items: center;
 }
+/* 대응표 */
+:where([data-course]) .strokes {
+  gap: 8px;
+}
 .strokes small {
   font-size: 15px;
   color: #c9ced5;
+}
+/* 대응표 */
+:where([data-course]) .strokes small {
+  font-size: 16px;
 }
 .strokes button {
   height: 38px;
@@ -561,6 +790,13 @@
   font-weight: 800;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .strokes button {
+  padding: 0 12px;
+  border-color: rgba(255, 255, 255, 0.45);
+  border-radius: 8px;
+  font-weight: 700;
+}
 .strokes button span {
   margin-left: 4px;
   color: #b91c1c;
@@ -573,21 +809,38 @@
   gap: 10px;
   font-size: 16px;
 }
+/* 대응표 */
+:where([data-course]) .realRow {
+  gap: 12px;
+}
 .realRow button {
   height: 44px;
   padding: 0 14px;
   font-size: 16px;
+}
+/* 대응표 */
+:where([data-course]) .realRow button {
+  padding: 0 16px;
 }
 .realSpeed {
   display: grid;
   gap: 6px;
   font-size: 16px;
 }
+/* 대응표 */
+:where([data-course]) .realSpeed {
+  gap: 8px;
+}
 .realSpeed em {
   display: block;
   font-style: normal;
   font-size: 15px;
   color: #fca5a5;
+}
+/* 대응표 */
+:where([data-course]) .realSpeed em {
+  font-size: 16px;
+  color: #f6f7f9;
 }
 .realSpeed input {
   width: 100%;

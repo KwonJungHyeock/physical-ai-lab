@@ -18,6 +18,10 @@
   white-space: nowrap;
   word-break: keep-all;
 }
+/* 대응표 */
+:where([data-course]) .chip {
+  color: #f6f7f9;
+}
 .icon {
   display: grid;
   place-items: center;
@@ -26,6 +30,10 @@
   border-radius: 50%;
   background: #3b82f6;
   font-size: 15px;
+}
+/* 대응표 */
+:where([data-course]) .icon {
+  font-size: 16px;
 }
 .chip[data-off] .icon {
   background: #4b5563;
@@ -38,9 +46,18 @@
   font-size: 15px;
   font-weight: 800;
 }
+/* 대응표 */
+:where([data-course]) .text b {
+  font-size: 16px;
+  font-weight: 700;
+}
 .text small {
   font-size: 13px;
   color: #aab1b9;
+}
+/* 대응표 */
+:where([data-course]) .text small {
+  color: #c9ced5;
 }
 .chip button {
   height: 34px;
@@ -54,6 +71,16 @@
   font-weight: 700;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .chip button {
+  background: rgba(255, 255, 255, 0.16);
+  color: #f6f7f9;
+  font-size: 14px;
+}
 .chip button:hover {
   background: rgba(255, 255, 255, 0.2);
+}
+/* 대응표 */
+:where([data-course]) .chip button:hover {
+  background: rgba(255, 255, 255, 0.16);
 }

@@ -20,11 +20,19 @@
   letter-spacing: 0.2em;
   color: var(--hud-dim);
 }
+/* 대응표 */
+:where([data-course]) .mode {
+  letter-spacing: 0;
+}
 .mode small {
   font-size: 13px;
   font-weight: 500;
   letter-spacing: 0;
   color: var(--hud-sub);
+}
+/* 대응표 */
+:where([data-course]) .mode small {
+  font-weight: 600;
 }
 .mode i {
   width: 9px;
@@ -51,10 +59,20 @@
   color: #e9ecef;
   text-shadow: var(--hud-emboss);
 }
+/* 대응표 */
+:where([data-course]) .arm {
+  font-size: 28px;
+  letter-spacing: 0;
+  color: #f6f7f9;
+}
 .screen {
   margin-top: 4px;
   font-size: 15px;
   color: var(--hud-sub);
+}
+/* 대응표 */
+:where([data-course]) .screen {
+  font-size: 16px;
 }
 .connPill {
   pointer-events: auto;
@@ -83,6 +101,11 @@
 .connPill b {
   font-size: 12px;
   letter-spacing: 0.16em;
+}
+/* 대응표 */
+:where([data-course]) .connPill b {
+  font-size: 13px;
+  letter-spacing: 0;
 }
 .connPill small {
   font-size: 13px;
@@ -211,6 +234,11 @@
   color: var(--hud-dim);
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .gaugeLabel {
+  font-size: 13px;
+  letter-spacing: 0;
+}
 
 @media (max-width: 1280px), (max-height: 760px) {
   .gauges {
@@ -219,6 +247,19 @@
   .arm {
     font-size: 21px;
   }
+  /* 대응표 */
+  :where([data-course]) .arm {
+    font-size: 23px;
+  }
+}
+/* 대응표 */
+:where(html[data-vq~='24']) .gauges {
+  display: none;
+}
+/* 대응표 */
+:where(html[data-vq~='24']) .arm {
+  font-size: 21px;
+  font-size: 23px;
 }
 @keyframes live {
   to {
@@ -238,6 +279,10 @@
   box-shadow: var(--hud-key-shadow);
   backdrop-filter: blur(6px);
 }
+/* 대응표 */
+:where([data-course]) .start {
+  border-radius: 12px;
+}
 .start header {
   display: flex;
   align-items: baseline;
@@ -248,9 +293,17 @@
   font-size: 14px;
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .start header b {
+  color: #f6f7f9;
+}
 .start header small {
   font-size: 12px;
   color: var(--hud-sub);
+}
+/* 대응표 */
+:where([data-course]) .start header small {
+  font-size: 13px;
 }
 .start header button {
   margin-left: auto;
@@ -285,6 +338,10 @@
 .start li button:hover {
   background: rgba(255, 255, 255, 0.06);
 }
+/* 대응표 */
+:where([data-course]) .start li button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
 .start li i {
   flex: none;
   width: 22px;
@@ -298,6 +355,11 @@
   border: 1px solid rgba(255, 255, 255, 0.35);
   color: var(--hud-sub);
 }
+/* 대응표 */
+:where([data-course]) .start li i {
+  font-size: 13px;
+  border-color: rgba(255, 255, 255, 0.45);
+}
 .start li span {
   display: grid;
   gap: 1px;
@@ -308,6 +370,10 @@
 .start li small {
   font-size: 11.5px;
   color: var(--hud-sub);
+}
+/* 대응표 */
+:where([data-course]) .start li small {
+  font-size: 13px;
 }
 .start li[data-now] button {
   background: var(--hud-silver);
@@ -326,6 +392,11 @@
   background: rgba(255, 255, 255, 0.14);
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .start li[data-done] i {
+  background: rgba(255, 255, 255, 0.16);
+  color: #f6f7f9;
+}
 .start li[data-done] b {
   color: var(--hud-sub);
 }
@@ -333,6 +404,10 @@
   margin: 6px 2px 0;
   font-size: 12px;
   color: var(--hud-sub);
+}
+/* 대응표 */
+:where([data-course]) .start p {
+  font-size: 13px;
 }
 .startChip {
   pointer-events: auto;
@@ -350,8 +425,16 @@
   font-size: 12px;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .startChip {
+  font-size: 13px;
+}
 .startChip b {
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .startChip b {
+  color: #f6f7f9;
 }
 .startChip svg {
   width: 12px;

@@ -19,6 +19,13 @@
   word-break: keep-all;
   animation: rmIn 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
+/* 대응표 */
+:where([data-course]) .roadmap {
+  --cv1: calc(4.5vh / var(--course-zoom, 1));
+  --cv2: calc(4vw / var(--course-zoom, 1));
+  padding: clamp(28px, var(--cv1), 56px) clamp(24px, var(--cv2), 64px) 28px;
+  color: #f6f7f9;
+}
 @keyframes rmIn {
   from {
     opacity: 0;
@@ -40,16 +47,34 @@
   letter-spacing: 0.24em;
   color: #c9ced5;
 }
+/* 대응표 */
+:where([data-course]) .head em {
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
 .head h2 {
   margin: 8px 0 0;
   font-size: clamp(26px, 3.2vw, 40px);
   font-weight: 800;
   letter-spacing: 0.01em;
 }
+/* 대응표 */
+:where([data-course]) .head h2 {
+  font-size: clamp(26px, calc(3.2vw / var(--course-zoom, 1)), 40px);
+  font-weight: 700;
+  letter-spacing: 0;
+}
 .head p {
   margin: 8px 0 0;
   font-size: 15px;
   color: #b9c2cc;
+}
+/* 대응표 */
+:where([data-course]) .head p {
+  font-size: 16px;
+  color: #c9ced5;
 }
 .total {
   margin-left: auto;
@@ -63,14 +88,30 @@
     Menlo,
     monospace;
 }
+/* 대응표 */
+:where([data-course]) .total b {
+  font-weight: 700;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+}
 .total b small {
   font-size: 16px;
   color: #8f98a3;
+}
+/* 대응표 */
+:where([data-course]) .total b small {
+  color: #c9ced5;
 }
 .total > small {
   font-size: 12px;
   letter-spacing: 0.08em;
   color: #8f98a3;
+}
+/* 대응표 */
+:where([data-course]) .total > small {
+  font-size: 13px;
+  letter-spacing: 0;
+  color: #c9ced5;
 }
 .close {
   align-self: flex-start;
@@ -83,8 +124,18 @@
   font-size: 22px;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .close {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f6f7f9;
+  font-size: 23px;
+}
 .close:hover {
   background: rgba(255, 255, 255, 0.1);
+}
+/* 대응표 */
+:where([data-course]) .close:hover {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 /* The path: four stops in a row, a hairline through their nodes. */
@@ -97,6 +148,11 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: clamp(14px, 1.6vw, 24px);
   position: relative;
+}
+/* 대응표 */
+:where([data-course]) .path {
+  margin: clamp(26px, calc(5vh / var(--course-zoom, 1)), 54px) 0 0;
+  gap: clamp(14px, calc(1.6vw / var(--course-zoom, 1)), 24px);
 }
 .path::before {
   content: '';
@@ -136,12 +192,23 @@
   font-style: normal;
   color: #c9ced5;
 }
+/* 대응표 */
+:where([data-course]) .node i {
+  font-weight: 700;
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+}
 .stop[data-done] .node {
   background: #0f6b4c;
   box-shadow: inset 0 0 0 2px #34d399;
 }
 .stop[data-done] .node i {
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .stop[data-done] .node i {
+  color: #f6f7f9;
 }
 .stop[data-next] .node {
   background: #fff;
@@ -151,6 +218,10 @@
 }
 .stop[data-next] .node i {
   color: #111418;
+}
+/* 대응표 */
+:where([data-course]) .stop[data-next] .node i {
+  color: #14171c;
 }
 
 .card {
@@ -169,14 +240,27 @@
     box-shadow 0.2s,
     transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
+/* 대응표 */
+:where([data-course]) .card {
+  border-radius: 12px;
+  border-color: rgba(255, 255, 255, 0.18);
+}
 .card:hover:not(:disabled) {
   border-color: rgba(255, 255, 255, 0.35);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
   transform: translateY(-3px);
 }
+/* 대응표 */
+:where([data-course]) .card:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.45);
+}
 .stop[data-next] .card {
   border-color: rgba(255, 255, 255, 0.4);
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.5);
+}
+/* 대응표 */
+:where([data-course]) .stop[data-next] .card {
+  border-color: rgba(255, 255, 255, 0.45);
 }
 .card:disabled {
   cursor: default;
@@ -218,11 +302,21 @@
   font-size: 19px;
   font-weight: 800;
 }
+/* 대응표 */
+:where([data-course]) .body b {
+  font-size: 18px;
+  font-weight: 700;
+}
 .body > small {
   font-size: 13.5px;
   line-height: 1.45;
   color: #b9c2cc;
   min-height: 2.9em;
+}
+/* 대응표 */
+:where([data-course]) .body > small {
+  font-size: 14px;
+  color: #c9ced5;
 }
 .chips {
   display: flex;
@@ -240,6 +334,13 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
   color: #dfe5ec;
 }
+/* 대응표 */
+:where([data-course]) .chips i {
+  font-size: 13px;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #f6f7f9;
+}
 .prog {
   display: flex;
   align-items: center;
@@ -252,6 +353,10 @@
   border-radius: 2px;
   background: rgba(255, 255, 255, 0.1);
   overflow: hidden;
+}
+/* 대응표 */
+:where([data-course]) .bar {
+  background: rgba(255, 255, 255, 0.08);
 }
 .bar span {
   display: block;
@@ -267,6 +372,13 @@
   color: #8f98a3;
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .prog small {
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  color: #c9ced5;
+}
 
 .foot {
   margin-top: auto;
@@ -274,6 +386,12 @@
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   font-size: 12.5px;
   color: #8f98a3;
+}
+/* 대응표 */
+:where([data-course]) .foot {
+  border-top-color: rgba(255, 255, 255, 0.18);
+  font-size: 13px;
+  color: #c9ced5;
 }
 
 @media (max-width: 1100px) {
@@ -283,6 +401,14 @@
   .path::before {
     display: none;
   }
+}
+/* 대응표 */
+:where(html[data-vq~='2']) .path {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+/* 대응표 */
+:where(html[data-vq~='2']) .path::before {
+  display: none;
 }
 
 /* 학습 카테고리 (Metal Mission HUD): one brushed plate cut into five fields by grooves; each field
@@ -301,6 +427,10 @@
   /* a flex child with overflow would shrink to nothing on a 768 px-high screen: the page scrolls instead */
   flex-shrink: 0;
 }
+/* 대응표 */
+:where([data-course]) .fields {
+  margin: clamp(20px, calc(3.4vh / var(--course-zoom, 1)), 34px) 0 0;
+}
 .fields li {
   display: grid;
   align-content: start;
@@ -317,6 +447,10 @@
 .fields li[data-hot] {
   background: rgba(255, 255, 255, 0.05);
 }
+/* 대응표 */
+:where([data-course]) .fields li[data-hot] {
+  background: rgba(255, 255, 255, 0.08);
+}
 .fieldTag {
   display: flex;
   align-items: center;
@@ -330,6 +464,11 @@
   letter-spacing: 0.2em;
   color: var(--hud-dim);
 }
+/* 대응표 */
+:where([data-course]) .fieldTag em {
+  font-size: 13px;
+  letter-spacing: 0;
+}
 .fields li[data-hot] .fieldTag em {
   color: var(--hud-light);
 }
@@ -341,10 +480,19 @@
   color: var(--hud-tx);
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.55);
 }
+/* 대응표 */
+:where([data-course]) .fields b {
+  font-weight: 700;
+  letter-spacing: 0;
+}
 .fields small {
   font-size: 12.5px;
   line-height: 1.45;
   color: var(--hud-sub);
+}
+/* 대응표 */
+:where([data-course]) .fields small {
+  font-size: 13px;
 }
 
 /* The picture's caption, in its shade: the phase and the ticks, a hairline, the fields by name. */
@@ -370,6 +518,11 @@
   font-style: normal;
   letter-spacing: 0.22em;
 }
+/* 대응표 */
+:where([data-course]) .caption em {
+  font-size: 13px;
+  letter-spacing: 0;
+}
 .capTicks {
   margin-left: auto;
 }
@@ -383,6 +536,11 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+/* 대응표 */
+:where([data-course]) .caption small {
+  font-size: 13px;
+  letter-spacing: 0;
 }
 
 /* The stop's state, top right in the picture's top shade: a lamp and a tracked word. */
@@ -400,6 +558,12 @@
   color: var(--hud-light);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
 }
+/* 대응표 */
+:where([data-course]) .flag {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
 .flag::before {
   content: '';
   width: 7px;
@@ -410,6 +574,10 @@
 }
 .flag[data-soon] {
   color: #dfe4ea;
+}
+/* 대응표 */
+:where([data-course]) .flag[data-soon] {
+  color: #f6f7f9;
 }
 .flag[data-soon]::before {
   background: transparent;
@@ -431,4 +599,12 @@
   .fields li + li {
     box-shadow: none;
   }
+}
+/* 대응표 */
+:where(html[data-vq~='2']) .fields {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+/* 대응표 */
+:where(html[data-vq~='2']) .fields li + li {
+  box-shadow: none;
 }

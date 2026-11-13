@@ -79,7 +79,7 @@ export const planFromPlatform = (p: { title?: string; short?: string; lessons: r
 
 /** One thing that happened in a 절. */
 export interface CourseEvent {
-  /** '3-4'. */
+  /** '3-3'. */
   sub: string;
   mode: SubMode;
   /** opened: entered · passed / failed: a 실습's run was graded · done: a tutorial finished. */

@@ -10,6 +10,7 @@ import { useState } from 'react';
 
 import { pagesText, subById } from '@/engine/simulator/cell/course';
 import type { Pt } from '@/engine/simulator/cell/courseDraw';
+import { buttonName } from '@/engine/simulator/cell/courseText';
 
 import css from './courseEnd.module.css';
 
@@ -226,7 +227,7 @@ export default function CourseEnd(p: Props) {
               <div className={css.stars} role="radiogroup" aria-label="별점">
                 {[1, 2, 3, 4, 5].map((n) => (
                   <button key={n} type="button" role="radio" aria-checked={r.stars === n} aria-label={`별 ${n}개`} data-on={n <= r.stars || undefined} onClick={() => set({ stars: n })}>
-                    ★
+                    {n <= r.stars ? '★' : '☆'}
                   </button>
                 ))}
               </div>
@@ -295,7 +296,7 @@ export default function CourseEnd(p: Props) {
           <span>{page === 1 && !reviewed ? '① 별점과 ② 활동을 골라야 다음으로 가요' : page === 2 ? (p.saved ? '인쇄 창을 열었어요' : '인쇄 창에서 PDF로 저장을 고를 수 있어요') : ''}</span>
           {page < 2 ? (
             <button type="button" className={css.key} data-step="end-next" disabled={page === 1 && !reviewed} onClick={() => setPage(page + 1)}>
-              다음 단계 →
+              {buttonName('next')}
             </button>
           ) : (
             <button type="button" className={css.key} data-step="end-save" onClick={save}>

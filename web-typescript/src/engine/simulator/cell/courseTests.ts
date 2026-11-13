@@ -51,7 +51,7 @@ export const CHAPTER_TESTS: Record<number, ChapterTest> = {
   2: {
     chapter: 2,
     answers: OX5(2),
-    // In the scene: 2-3's pose, no tool, the pen 5 mm up — the four in this order (judged as in 2-3 · 2-4).
+    // In the scene: 2-2's pose, no tool, the pen 5 mm up — the four in this order (judged as in 2-2 · 2-3).
     mission: { text: testText(2).mission, ready: true, steps: ['zero', 'home', 'pen', 'dot'], failText: testText(2).fail },
   },
   3: {

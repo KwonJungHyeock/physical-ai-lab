@@ -201,16 +201,18 @@ function Callouts({ world }: { world: RefObject<WorldState | null> }) {
   });
   const g = guideOf(world.current?.cell?.mission ?? null);
   if (!g) return null;
+  // 글씨 쓰기 (입문 과정 5-1 ~ 5-3, 수정 지시서 v3 파트 3-8): a dark plate with white words, 13 px or more — no colour that means something.
+  const plain = (world.current?.cell?.mission ?? '').startsWith('G');
   return (
     <>
       {g.observe
         .filter((o) => shown.includes(o.id))
         .map((o) => (
           <Html key={o.id} position={[m(o.at[0]), m(o.at[1]), m(o.at[2])]} center zIndexRange={[14, 0]} style={{ pointerEvents: 'none' }}>
-            <div data-callout style={{ position: 'relative', background: '#c2410c', color: '#fff', borderRadius: 9, padding: '6px 11px 6px 9px', font: '700 12.5px Pretendard, sans-serif', whiteSpace: 'nowrap', boxShadow: '0 6px 16px rgba(0,0,0,0.3)', transform: 'translateY(-24px)' }}>
-              <span style={{ fontSize: 10.5, fontWeight: 800, opacity: 0.85, marginRight: 6 }}>관찰</span>
+            <div data-callout style={{ position: 'relative', background: plain ? '#24272b' : '#c2410c', color: plain ? '#f6f7f9' : '#fff', borderRadius: plain ? 8 : 9, padding: plain ? '8px 12px' : '6px 11px 6px 9px', font: plain ? '600 14px Pretendard, sans-serif' : '700 12.5px Pretendard, sans-serif', whiteSpace: 'nowrap', boxShadow: plain ? '0 0 0 1px rgba(255,255,255,0.18), 0 6px 16px rgba(0,0,0,0.3)' : '0 6px 16px rgba(0,0,0,0.3)', transform: 'translateY(-24px)' }}>
+              <span style={plain ? { fontSize: 13, fontWeight: 600, color: '#c9ced5', marginRight: 8 } : { fontSize: 10.5, fontWeight: 800, opacity: 0.85, marginRight: 6 }}>관찰</span>
               {o.text}
-              <i style={{ position: 'absolute', left: '50%', bottom: -6, marginLeft: -6, width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '6px solid #c2410c' }} />
+              <i style={{ position: 'absolute', left: '50%', bottom: -6, marginLeft: -6, width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: `6px solid ${plain ? '#24272b' : '#c2410c'}` }} />
             </div>
           </Html>
         ))}

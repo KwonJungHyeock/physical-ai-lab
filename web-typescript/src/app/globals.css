@@ -125,3 +125,20 @@ input[type="radio"] {
     user-select: none;
   }
 }
+
+/* 입문 과정 (수정 지시서 v2 파트 E · v3 파트 1): the text colours of the 대응표 in place of the HUD's own —
+   only while the course is open (<html data-course>, set by Console.tsx). The full version keeps the values above. */
+html[data-course] {
+  --hud-tx: #f6f7f9;
+  --hud-light: #f6f7f9;
+  --hud-sub: #c9ced5;
+  --hud-dim: #c9ced5;
+  --hud-ink: #14171c;
+  --hud-green: #86efac;
+}
+
+/* 입문 과정 shown larger on a wide window: the page itself never scrolls (the screen is one fixed sheet). */
+html[data-zoomed],
+html[data-zoomed] body {
+  overflow: hidden;
+}

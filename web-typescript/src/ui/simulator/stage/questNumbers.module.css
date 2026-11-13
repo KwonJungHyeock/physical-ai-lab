@@ -15,3 +15,8 @@
   font-weight: 800;
   pointer-events: none;
 }
+/* 대응표 */
+:where([data-course]) .n {
+  color: #14171c;
+  font-weight: 700;
+}

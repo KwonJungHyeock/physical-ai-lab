@@ -206,7 +206,7 @@ const courseTotals = (c: CourseRecord) => {
 };
 /** '상 · 중 · 하 (임시) 3장 상 · …', or why there is none yet. */
 const levelsText = (c: CourseRecord) => (c.levels.length ? `상 · 중 · 하 (임시): ${c.levels.map((x) => `${x.chapter}장 ${x.level}`).join(' · ')}` : '상 · 중 · 하 (임시): 아직 없어요 — 수행평가 준비 중');
-/** 4차시 missions: ' · 차시 미션 1-3 통과 · 3-4 아직 …' (one not built yet left out). */
+/** 4차시 missions: ' · 차시 미션 1-3 통과 · 3-3 아직 …' (one not built yet left out). */
 const missionsText = (c: CourseRecord) => {
   const m = (c.missions ?? []).filter((x) => !x.soon);
   return m.length ? ` · 차시 미션 ${m.map((x) => `${x.id} ${x.passed ? '통과' : '아직'}`).join(' · ')}` : '';

@@ -9,6 +9,8 @@
  * No React: Console.tsx reads the arm into a TutCtx; TutorialStrip.tsx shows a step and rings its targets.
  */
 
+import { leadText } from './cell/courseText';
+
 export interface TutCtx {
   /** Joint angles now, degrees. */
   angles: readonly number[];
@@ -141,7 +143,7 @@ const LEAD_SLACK_MM = 6;
 const dist = (tip: TutCtx['tip'], r: readonly [number, number, number]) => Math.hypot(tip.x - r[0], tip.y - r[1], tip.z - r[2]);
 /** The 좌표 jog keys by axis and way (their labels end "(X+)", "(Y−)"), and what each is called on the pad. */
 const TIP_KEYS: Record<string, string> = { 'X+': '앞', 'X−': '뒤', 'Y+': '왼쪽', 'Y−': '오른쪽', 'Z+': '위', 'Z−': '아래' };
-const COORD_KEY: TutTarget = { sel: '[title^="좌표: 손끝"]', say: '좌표 버튼을 눌러요' };
+const COORD_KEY: TutTarget = { sel: '[title^="좌표: 손끝"]', say: leadText('4-1', 'coord') };
 /**
  * The key that brings the tip to the ring: up first, then across (the axis it is furthest off on),
  * down last — the way a tip is carried over the desk. Across first, low past the robot's base, the
@@ -155,7 +157,7 @@ export function ringLead(tip: TutCtx['tip'], r: readonly [number, number, number
   const across = Math.abs(d[0]) >= Math.abs(d[1]) ? 0 : 1;
   const k = d[2] > LEAD_SLACK_MM ? 2 : off(across) ? across : off(1 - across) ? 1 - across : 2;
   const key = `${'XYZ'[k]}${d[k] > 0 ? '+' : '−'}`;
-  return [{ sel: `[aria-label$="(${key})"]`, say: `${TIP_KEYS[key]} (${key}) 키를 눌러요` }, COORD_KEY];
+  return [{ sel: `[aria-label$="(${key})"]`, say: leadText('4-1', 'key', { name: TIP_KEYS[key], axis: key }) }, COORD_KEY];
 }
 /** A 맛보기 step: bring the tip into the ring (the meter: how much of the way is done). */
 function ringStep(n: number, r: readonly [number, number, number]): TutStep {

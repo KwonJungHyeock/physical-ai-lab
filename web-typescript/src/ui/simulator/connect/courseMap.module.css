@@ -22,6 +22,13 @@
     0 24px 60px rgba(0, 0, 0, 0.5);
   word-break: keep-all;
 }
+/* 대응표 */
+:where([data-course]) .map {
+  max-height: calc(calc(100vh / var(--course-zoom, 1)) - 48px);
+  padding: 24px 24px 30px;
+  border-radius: 12px;
+  color: #f6f7f9;
+}
 
 .head {
   display: flex;
@@ -36,11 +43,20 @@
   font-weight: 800;
   letter-spacing: -0.01em;
 }
+/* 대응표 */
+:where([data-course]) .head h2 {
+  font-size: 23px;
+  font-weight: 700;
+}
 .head small {
   display: block;
   margin-top: 6px;
   font-size: 16px;
   color: #a9b1ba;
+}
+/* 대응표 */
+:where([data-course]) .head small {
+  color: #c9ced5;
 }
 .x {
   flex: none;
@@ -53,14 +69,28 @@
   font-size: 26px;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .x {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f6f7f9;
+  font-size: 28px;
+}
 .x:hover {
   background: rgba(255, 255, 255, 0.12);
+}
+/* 대응표 */
+:where([data-course]) .x:hover {
+  background: rgba(255, 255, 255, 0.16);
 }
 
 .chapters {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 14px 28px;
+}
+/* 대응표 */
+:where([data-course]) .chapters {
+  gap: 16px 24px;
 }
 
 .chapter h3 {
@@ -75,11 +105,19 @@
 .chapter h3 b {
   font-weight: 800;
 }
+/* 대응표 */
+:where([data-course]) .chapter h3 b {
+  font-weight: 700;
+}
 .chapter h3 small {
   margin-left: auto;
   font-size: 14px;
   font-weight: 600;
   color: #a9b1ba;
+}
+/* 대응표 */
+:where([data-course]) .chapter h3 small {
+  color: #c9ced5;
 }
 
 .row {
@@ -94,6 +132,12 @@
   color: #eef1f4;
   font-size: 16px;
 }
+/* 대응표 */
+:where([data-course]) .row {
+  gap: 12px;
+  border-radius: 12px;
+  color: #f6f7f9;
+}
 /* Not in the app yet: dimmed only, no word for it. */
 .row[data-soon] {
   opacity: 0.38;
@@ -102,6 +146,11 @@
   font-style: normal;
   font-weight: 800;
   color: #dfe4ea;
+}
+/* 대응표 */
+:where([data-course]) .row i {
+  font-weight: 700;
+  color: #f6f7f9;
 }
 .row > span:not(.kinds) {
   display: flex;
@@ -125,10 +174,22 @@
   text-decoration: none;
   color: #dfe4ea;
 }
+/* 대응표 */
+:where([data-course]) .row b u {
+  padding: 1px 8px;
+  border-color: rgba(255, 255, 255, 0.45);
+  border-radius: 8px;
+  font-size: 13px;
+  color: #f6f7f9;
+}
 .row small {
   font-size: 13px;
   color: #a9b1ba;
   white-space: nowrap;
+}
+/* 대응표 */
+:where([data-course]) .row small {
+  color: #c9ced5;
 }
 .row em {
   font-size: 13px;
@@ -138,8 +199,16 @@
   text-align: right;
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .row em {
+  color: #c9ced5;
+}
 .row[data-state='done'] em {
   color: #4ade80;
+}
+/* 대응표 */
+:where([data-course]) .row[data-state='done'] em {
+  color: #86efac;
 }
 .row[data-lit] {
   background: rgba(240, 162, 59, 0.14);
@@ -154,6 +223,10 @@
   display: flex;
   gap: 6px;
 }
+/* 대응표 */
+:where([data-course]) .kinds {
+  gap: 8px;
+}
 .kinds button {
   height: 36px;
   padding: 0 12px;
@@ -167,8 +240,18 @@
   white-space: nowrap;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .kinds button {
+  border-color: rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+}
 .kinds button:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.14);
+}
+/* 대응표 */
+:where([data-course]) .kinds button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.16);
 }
 .kinds button:disabled {
   opacity: 0.4;
@@ -185,10 +268,20 @@
   font-size: 24px;
   font-weight: 800;
 }
+/* 대응표 */
+:where([data-course]) .missing h2 {
+  font-size: 23px;
+  font-weight: 700;
+}
 .missing p {
   margin: 0 0 20px;
   font-size: 17px;
   color: #dfe4ea;
+}
+/* 대응표 */
+:where([data-course]) .missing p {
+  font-size: 18px;
+  color: #f6f7f9;
 }
 .missing button {
   height: 48px;
@@ -201,4 +294,15 @@
   font-size: 18px;
   font-weight: 800;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .missing button {
+  padding: 0 24px;
+  color: #14171c;
+  font-weight: 700;
+}
+
+/* 수정 지시서 v3: of the state words only '지금' is orange; 40 px keys. */
+[data-course] .row[data-state='now'] em {
+  color: #f0a23b;
 }

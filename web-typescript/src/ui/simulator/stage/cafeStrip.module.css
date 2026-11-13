@@ -21,6 +21,10 @@
   word-break: keep-all;
   max-width: calc(100% - var(--inset-l, 12px) - var(--inset-r, 12px) - 202px);
 }
+/* 대응표 */
+:where([data-course]) .strip {
+  border-radius: 12px;
+}
 
 .order {
   display: grid;
@@ -28,6 +32,10 @@
   gap: 1px;
   padding-right: 12px;
   border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+/* 대응표 */
+:where([data-course]) .order {
+  border-right-color: rgba(255, 255, 255, 0.18);
 }
 .order em {
   font:
@@ -39,13 +47,28 @@
   letter-spacing: 0.18em;
   color: var(--hud-amber);
 }
+/* 대응표 */
+:where([data-course]) .order em {
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
 .order b {
   font-size: 13px;
   font-weight: 800;
 }
+/* 대응표 */
+:where([data-course]) .order b {
+  font-weight: 700;
+}
 .order small {
   font-size: 11.5px;
   color: var(--hud-sub);
+}
+/* 대응표 */
+:where([data-course]) .order small {
+  font-size: 13px;
 }
 
 .flow {
@@ -67,6 +90,10 @@
   background: var(--hud-groove);
   box-shadow: var(--hud-groove-shadow);
 }
+/* 대응표 */
+:where([data-course]) .flow li {
+  border-radius: 8px;
+}
 .flow li + li::before {
   content: '';
   position: absolute;
@@ -81,6 +108,11 @@
   font-weight: 800;
   color: var(--hud-sub);
 }
+/* 대응표 */
+:where([data-course]) .flow b {
+  font-size: 13px;
+  font-weight: 700;
+}
 .flow small {
   white-space: nowrap;
   font:
@@ -89,6 +121,12 @@
     Menlo,
     monospace;
   color: var(--hud-dim);
+}
+/* 대응표 */
+:where([data-course]) .flow small {
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
 }
 .flow li[data-done] b,
 .flow li[data-state='done'] b {
@@ -110,6 +148,11 @@
 .flow li[data-state='on'] small {
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .flow li[data-state='on'] b,
+:where([data-course]) .flow li[data-state='on'] small {
+  color: #f6f7f9;
+}
 
 .timer {
   position: relative;
@@ -119,6 +162,10 @@
   font-size: 11px;
   font-weight: 700;
   color: var(--hud-light);
+}
+/* 대응표 */
+:where([data-course]) .timer {
+  font-size: 13px;
 }
 .timer i {
   position: absolute;
@@ -135,6 +182,10 @@
   gap: 7px;
   padding-left: 12px;
   border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+/* 대응표 */
+:where([data-course]) .cup {
+  border-left-color: rgba(255, 255, 255, 0.18);
 }
 .glass {
   position: relative;
@@ -179,6 +230,12 @@
     monospace;
   line-height: 1.3;
   color: var(--hud-sub);
+}
+/* 대응표 */
+:where([data-course]) .cup small {
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
 }
 .cup small b {
   color: var(--hud-amber);

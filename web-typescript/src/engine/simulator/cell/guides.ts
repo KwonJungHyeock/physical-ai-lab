@@ -19,7 +19,7 @@ import { CARD_HOME, CARD_MM } from './draw';
 import { BOARD, pointXY, robotStones } from './board';
 import { STONE_TRAY } from './cells';
 import type { CellRun } from './run';
-import { quizText } from './courseText';
+import { observeText, quizText } from './courseText';
 
 export interface Observation {
   id: string;
@@ -105,17 +105,17 @@ export const STEP_GUIDES: Record<string, StepGuide> = {
     // (입문 과정 5-1 · 5-2 · 5-3: the question's words are in the 문구 파일, courseText.ts.)
     predict: { ...quizText('5-1'), at: lifted },
     observe: [
-      { id: 'card', text: '[카드 있음]: 손님이 카드를 놓았어요', at: CARD, when: on('카드 있음') },
-      { id: 'ink', text: '펜 끝이 종이에 닿으면 선이 나와요', at: CARD, when: inking },
-      { id: 'lamp', text: '[완성 램프]: 손님이 카드를 가져가요', at: LAMP, when: out('완성 램프') },
+      { id: 'card', text: observeText('5-1', 'card'), at: CARD, when: on('카드 있음') },
+      { id: 'ink', text: observeText('5-1', 'ink'), at: CARD, when: inking },
+      { id: 'lamp', text: observeText('5-1', 'lamp'), at: LAMP, when: out('완성 램프') },
     ],
     concept: { term: '작업 흐름 (한 사이클)', def: '카드 받기 → 쓰기 → 완성 알리기가 한 사이클이에요. 손님마다 같은 사이클을 반복해요.', real: '행사장 그림 · 글씨 로봇 부스는 한 장에 평균 40초쯤 걸려요.' },
   },
   G2: {
     predict: { ...quizText('5-2'), at: on('카드 있음') },
     observe: [
-      { id: 'ink', text: '펜이 종이에 닿았어요: 선이 나와요', at: CARD, when: inking },
-      { id: 'lamp', text: '[완성 램프]: 다 썼어요', at: LAMP, when: out('완성 램프') },
+      { id: 'ink', text: observeText('5-2', 'ink'), at: CARD, when: inking },
+      { id: 'lamp', text: observeText('5-2', 'lamp'), at: LAMP, when: out('완성 램프') },
     ],
     concept: {
       term: '보정 (펜 높이 · 카드 자리)',
@@ -134,9 +134,9 @@ export const STEP_GUIDES: Record<string, StepGuide> = {
   G4: {
     predict: { ...quizText('5-3'), at: inking },
     observe: [
-      { id: 'ink', text: '그리기 이동: 펜이 닿아 있어요', at: CARD, when: inking },
-      { id: 'up', text: '빈 이동: 펜을 들고 옮겨요', at: CARD, when: lifted },
-      { id: 'two', text: '2장 완성: 줄 끝', at: LAMP, when: cardsDone(2) },
+      { id: 'ink', text: observeText('5-3', 'ink'), at: CARD, when: inking },
+      { id: 'up', text: observeText('5-3', 'up'), at: CARD, when: lifted },
+      { id: 'two', text: observeText('5-3', 'two'), at: LAMP, when: cardsDone(2) },
     ],
     concept: { term: '그리기 이동과 빈 이동', def: '일하는 구간(펜이 닿음)과 옮기는 구간(펜을 듦)을 나눠 움직이는 것이에요.', real: '용접 · 도포 로봇도 작업 구간에서만 토치 · 노즐을 켜고, 옮길 때는 끄고 들어 올려요.' },
   },

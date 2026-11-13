@@ -36,6 +36,10 @@
   min-height: 100vh;
   padding: 12px 16px 28px;
 }
+/* 대응표 */
+:where([data-course]) .app {
+  min-height: calc(100vh / var(--course-zoom, 1));
+}
 .app *,
 .app *::before,
 .app *::after {
@@ -104,6 +108,10 @@
   border: 1px solid var(--line);
   border-radius: 14px;
 }
+/* 대응표 */
+:where([data-course]) .toolbar {
+  border-radius: 12px;
+}
 
 .tools {
   display: flex;
@@ -136,6 +144,10 @@
   font-weight: 600;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .ghost {
+  border-radius: 12px;
+}
 .ghost:hover:not(:disabled) {
   background: var(--soft);
 }
@@ -156,6 +168,10 @@
   background: var(--page);
   min-width: 0;
 }
+/* 대응표 */
+:where([data-course]) .card {
+  border-radius: 12px;
+}
 
 /* Stage ------------------------------------------------------------------ */
 .viewport {
@@ -166,6 +182,11 @@
   border-radius: 14px;
   overflow: hidden;
   border: 1px solid var(--line);
+}
+/* 대응표 */
+:where([data-course]) .viewport {
+  height: min(440px, calc(52vh / var(--course-zoom, 1)));
+  border-radius: 12px;
 }
 .badge {
   position: absolute;
@@ -191,6 +212,10 @@
   color: var(--muted);
   pointer-events: none;
 }
+/* 대응표 */
+:where([data-course]) .readout {
+  font-size: 13px;
+}
 .loading {
   position: absolute;
   inset: 0;
@@ -214,6 +239,11 @@
   cursor: pointer;
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .btn {
+  font-size: 16px;
+  color: #f6f7f9;
+}
 .btnSim {
   background: var(--sim);
 }
@@ -231,6 +261,10 @@
   margin: -2px 0 0;
   font-size: 12.5px;
   color: var(--muted);
+}
+/* 대응표 */
+:where([data-course]) .lock {
+  font-size: 13px;
 }
 
 /* Cameras ---------------------------------------------------------------- */
@@ -255,6 +289,10 @@
   border: 1px solid var(--line);
   border-radius: 10px;
   overflow: hidden;
+}
+/* 대응표 */
+:where([data-course]) .seg {
+  border-radius: 12px;
 }
 .seg button {
   border: none;
@@ -287,6 +325,10 @@
   color: var(--muted);
   font-size: 13px;
 }
+/* 대응표 */
+:where([data-course]) .camNone {
+  border-radius: 12px;
+}
 .camGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -305,12 +347,20 @@
   display: block;
   image-rendering: auto;
 }
+/* 대응표 */
+:where([data-course]) .camView canvas {
+  border-radius: 12px;
+}
 .camCaption {
   font-size: 12px;
   color: var(--muted);
   display: flex;
   justify-content: space-between;
   gap: 6px;
+}
+/* 대응표 */
+:where([data-course]) .camCaption {
+  font-size: 13px;
 }
 .camCaption b {
   color: var(--ink);
@@ -327,6 +377,10 @@
   font-family: inherit;
   font-variant-numeric: tabular-nums;
   color: var(--muted);
+}
+/* 대응표 */
+:where([data-course]) .detections {
+  font-size: 13px;
 }
 .detections .sw {
   display: inline-block;
@@ -360,6 +414,11 @@
   border-radius: 5px;
   text-align: center;
 }
+/* 대응표 */
+:where([data-course]) .tag {
+  font-size: 13px;
+  border-radius: 8px;
+}
 .tag_info {
   background: var(--soft);
   color: var(--muted);
@@ -373,6 +432,10 @@
   background: #fff6d8;
   color: #9a6b00;
 }
+/* 대응표 */
+:where([data-course]) .tag_warn {
+  color: #f0a23b;
+}
 .tag_err {
   background: var(--stop-soft);
   color: var(--stop);
@@ -381,6 +444,10 @@
   display: block;
   color: var(--muted);
   font-size: 12.5px;
+}
+/* 대응표 */
+:where([data-course]) .fix {
+  font-size: 13px;
 }
 
 /* Editor ----------------------------------------------------------------- */
@@ -398,6 +465,10 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
+}
+/* 대응표 */
+:where([data-course]) .tab {
+  border-radius: 8px;
 }
 
 .tab[aria-selected='true'] {
@@ -443,6 +514,11 @@
   font-size: 15px;
   cursor: pointer;
   color: var(--ink);
+}
+/* 대응표 */
+:where([data-course]) .jog,
+:where([data-course]) .jogWide {
+  font-size: 16px;
 }
 .jogWide {
   font-size: 13px;
@@ -491,6 +567,10 @@
   color: var(--faint);
   margin: 8px 2px 1px;
 }
+/* 대응표 */
+:where([data-course]) .grp {
+  font-size: 13px;
+}
 .grp:first-child {
   margin-top: 0;
 }
@@ -533,6 +613,12 @@
   font-size: 12.5px;
   font-weight: 700;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .undoBar button {
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #f6f7f9;
+  font-size: 13px;
 }
 .undoBar button:hover:not(:disabled) {
   border-color: #6f9bff;
@@ -580,6 +666,12 @@
   max-width: 100%;
   border: none;
   text-align: left;
+}
+/* 대응표 */
+:where([data-course]) .block {
+  border-radius: 8px;
+  color: #f6f7f9;
+  font-size: 14px;
 }
 .block::after {
   content: '';
@@ -659,6 +751,10 @@ input.field {
   font-variant-numeric: tabular-nums;
   font-weight: 500;
 }
+/* 대응표 */
+:where([data-course]) input.field {
+  font-weight: 600;
+}
 
 .repeat {
   display: grid;
@@ -705,6 +801,10 @@ input.field {
   color: var(--faint);
   margin: 2px 2px 0;
 }
+/* 대응표 */
+:where([data-course]) .hint {
+  font-size: 13px;
+}
 
 /* 3: python */
 
@@ -720,18 +820,35 @@ input.field {
   overflow: hidden;
   font-variant-numeric: tabular-nums;
 }
+/* 대응표 */
+:where([data-course]) .gutter {
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+}
 .gutter span {
   display: block;
   padding-inline: 5px;
   border-radius: 4px;
 }
+/* 대응표 */
+:where([data-course]) .gutter span {
+  border-radius: 8px;
+}
 .gutter .gRunning {
   background: var(--run);
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .gutter .gRunning {
+  color: #f6f7f9;
+}
 .gutter .gErr {
   background: var(--stop);
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .gutter .gErr {
+  color: #f6f7f9;
 }
 .code {
   border: none;
@@ -745,6 +862,11 @@ input.field {
   overflow: auto;
   width: 100%;
   tab-size: 4;
+}
+/* 대응표 */
+:where([data-course]) .code {
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
 }
 .code:focus-visible {
   outline: none;
@@ -762,6 +884,13 @@ input.field {
   max-height: calc(100vh - 48px);
   box-shadow: 0 20px 60px rgba(15, 23, 42, 0.25);
 }
+/* 대응표 */
+:where([data-course]) .dialog,
+:where([data-course]) .app .dialog {
+  border-radius: 12px;
+  width: min(760px, calc(calc(100vw / var(--course-zoom, 1)) - 32px));
+  max-height: calc(calc(100vh / var(--course-zoom, 1)) - 48px);
+}
 .dialog::backdrop {
   background: rgba(15, 23, 42, 0.35);
 }
@@ -774,6 +903,10 @@ input.field {
   margin: 0;
   font-size: 17px;
 }
+/* 대응표 */
+:where([data-course]) .dialogInner h2 {
+  font-size: 18px;
+}
 .dialogInner ol {
   margin: 0;
   padding-left: 20px;
@@ -781,6 +914,10 @@ input.field {
   font-size: 13.5px;
   display: grid;
   gap: 2px;
+}
+/* 대응표 */
+:where([data-course]) .dialogInner ol {
+  font-size: 14px;
 }
 .dialogInner pre {
   margin: 0;
@@ -793,6 +930,14 @@ input.field {
   font-family: var(--font-jetbrains-mono), monospace;
   font-size: 12.5px;
   line-height: 1.6;
+}
+/* 대응표 */
+:where([data-course]) .dialogInner pre {
+  max-height: calc(46vh / var(--course-zoom, 1));
+  border-radius: 12px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
 }
 
 .dialogInner h3 {
@@ -837,6 +982,31 @@ input.field {
     padding-inline: 4px;
   }
 }
+/* 대응표 */
+:where(html[data-vq~='3']) .blocks {
+  grid-template-columns: minmax(0, 1fr);
+}
+/* 대응표 */
+:where(html[data-vq~='3']) .palette {
+  border-right: none;
+  border-bottom: 1px solid var(--line);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-height: none;
+}
+/* 대응표 */
+:where(html[data-vq~='3']) .grp,
+:where(html[data-vq~='3']) .hint {
+  grid-column: 1 / -1;
+}
+/* 대응표 */
+:where(html[data-vq~='3']) .camGrid {
+  grid-template-columns: minmax(0, 1fr);
+}
+/* 대응표 */
+:where(html[data-vq~='3']) .tab {
+  font-size: 13px;
+  padding-inline: 4px;
+}
 
 .camCal {
   margin: 0;
@@ -844,6 +1014,10 @@ input.field {
   color: var(--muted);
   font-family: inherit;
   font-variant-numeric: tabular-nums;
+}
+/* 대응표 */
+:where([data-course]) .camCal {
+  font-size: 13px;
 }
 
 /* 중급 · 고급: output, ROS graph ------------------------------------------ */
@@ -882,6 +1056,11 @@ input.field {
   font-weight: 600;
   color: var(--muted);
 }
+/* 대응표 */
+:where([data-course]) .rosNode small,
+:where([data-course]) .rosTopic small {
+  font-size: 13px;
+}
 .rosTopic {
   display: inline-flex;
   flex-direction: column;
@@ -891,6 +1070,13 @@ input.field {
   color: #137a47;
   font-family: var(--font-jetbrains-mono), monospace;
   font-weight: 700;
+}
+/* 대응표 */
+:where([data-course]) .rosTopic {
+  border-radius: 8px;
+  color: #86efac;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
 }
 .rosArrow {
   color: var(--faint);
@@ -931,11 +1117,19 @@ input.field {
   letter-spacing: -0.01em;
   line-height: 1.2;
 }
+/* 대응표 */
+:where([data-course]) .brand b {
+  font-size: 16px;
+}
 .brand small {
   display: block;
   font-size: 11px;
   color: var(--muted);
   line-height: 1.2;
+}
+/* 대응표 */
+:where([data-course]) .brand small {
+  font-size: 13px;
 }
 
 .checkChips {
@@ -954,6 +1148,10 @@ input.field {
   cursor: pointer;
   transition: transform 0.12s, border-color 0.12s;
 }
+/* 대응표 */
+:where([data-course]) .checkChips button {
+  font-size: 13px;
+}
 .checkChips button:hover:not(:disabled) {
   border-color: var(--accent);
   color: var(--accent);
@@ -964,15 +1162,27 @@ input.field {
   color: #fff;
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
+/* 대응표 */
+:where([data-course]) .checkChips button[aria-current='true'] {
+  color: #f6f7f9;
+}
 .checkChips .chipSim {
   border-color: var(--sim);
   color: #137a47;
   background: var(--sim-soft);
 }
+/* 대응표 */
+:where([data-course]) .checkChips .chipSim {
+  color: #86efac;
+}
 .checkChips .chipRobot {
   border-color: var(--sim);
   background: var(--sim);
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .checkChips .chipRobot {
+  color: #f6f7f9;
 }
 .checkChips button:disabled {
   cursor: not-allowed;
@@ -997,15 +1207,27 @@ input.field {
   font-size: 13px;
   color: var(--muted);
 }
+/* 대응표 */
+:where([data-course]) .conn {
+  border-radius: 12px;
+}
 .conn b {
   display: block;
   font-size: 12.5px;
   color: var(--ink);
 }
+/* 대응표 */
+:where([data-course]) .conn b {
+  font-size: 13px;
+}
 .conn small {
   display: block;
   font-size: 10.5px;
   color: var(--muted);
+}
+/* 대응표 */
+:where([data-course]) .conn small {
+  font-size: 13px;
 }
 
 /* --- left dock: controls ------------------------------------------------------ */
@@ -1030,6 +1252,10 @@ input.field {
   min-height: 0;
   overflow: hidden;
 }
+/* 대응표 */
+:where([data-course]) .panel {
+  border-radius: 12px;
+}
 
 .modeChip {
   margin-left: auto;
@@ -1043,9 +1269,20 @@ input.field {
   background: #ecf2fa;
   color: #3e63dd;
 }
+/* 대응표 */
+:where([data-course]) .modeChip {
+  border-radius: 8px;
+  font-size: 13px;
+  letter-spacing: 0;
+  color: #93c5fd;
+}
 .modeChip[data-mode='real'] {
   background: var(--real-soft);
   color: #b45309;
+}
+/* 대응표 */
+:where([data-course]) .modeChip[data-mode='real'] {
+  color: #f0a23b;
 }
 .dockScroll {
   display: flex;
@@ -1065,6 +1302,10 @@ input.field {
   flex: 0 0 auto;
   font-size: 11.5px;
   color: var(--muted);
+}
+/* 대응표 */
+:where([data-course]) .dockAside {
+  font-size: 13px;
 }
 .dockBody {
   padding: 0 12px 12px;
@@ -1092,10 +1333,18 @@ input.field {
   font-size: 11.5px;
   padding-inline: 4px;
 }
+/* 대응표 */
+:where([data-course]) .robotBtns .jogWide {
+  font-size: 13px;
+}
 .robotCal {
   margin: 0;
   font-size: 11px;
   color: var(--faint);
+}
+/* 대응표 */
+:where([data-course]) .robotCal {
+  font-size: 13px;
 }
 
 /* direct control */
@@ -1110,10 +1359,19 @@ input.field {
   color: var(--muted);
   margin-top: 4px;
 }
+/* 대응표 */
+:where([data-course]) .subHead {
+  font-size: 13px;
+}
 .subNote {
   font-size: 11px;
   font-weight: 500;
   color: var(--faint);
+}
+/* 대응표 */
+:where([data-course]) .subNote {
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .jog,
@@ -1139,10 +1397,19 @@ input.field {
   padding: 0 8px;
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .jogWide {
+  font-size: 13px;
+}
 .jogWide small {
   font-size: 11px;
   font-weight: 500;
   color: var(--muted);
+}
+/* 대응표 */
+:where([data-course]) .jogWide small {
+  font-size: 13px;
+  font-weight: 600;
 }
 .jog:hover:not(:disabled),
 .jogWide:hover:not(:disabled) {
@@ -1185,6 +1452,10 @@ input.field {
   color: var(--muted);
   font-size: 12px;
 }
+/* 대응표 */
+:where([data-course]) .zeroNote {
+  font-size: 13px;
+}
 .zeroNav {
   display: flex;
   justify-content: flex-end;
@@ -1209,10 +1480,19 @@ input.field {
   justify-content: center;
   gap: 2px;
 }
+/* 대응표 */
+:where([data-course]) .zeroPick button {
+  border-radius: 8px;
+  font-size: 13px;
+}
 .zeroPick button[aria-pressed='true'] {
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .zeroPick button[aria-pressed='true'] {
+  color: #f6f7f9;
 }
 .zeroJoint {
   display: flex;
@@ -1231,6 +1511,11 @@ input.field {
   font-variant-numeric: tabular-nums;
   font-size: 11.5px;
 }
+/* 대응표 */
+:where([data-course]) .zeroJoint small {
+  font-weight: 600;
+  font-size: 13px;
+}
 .zeroJointNo {
   display: grid;
   place-items: center;
@@ -1242,6 +1527,12 @@ input.field {
   font-weight: 800;
   font-size: 15px;
   box-shadow: 0 0 0 4px var(--accent-soft);
+}
+/* 대응표 */
+:where([data-course]) .zeroJointNo {
+  color: #f6f7f9;
+  font-weight: 700;
+  font-size: 16px;
 }
 
 .btnPrimary {
@@ -1258,6 +1549,12 @@ input.field {
   background: var(--accent);
   cursor: pointer;
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.15);
+}
+/* 대응표 */
+:where([data-course]) .btnPrimary {
+  border-radius: 8px;
+  font-size: 13px;
+  color: #f6f7f9;
 }
 .btnPrimary:disabled {
   opacity: 0.45;
@@ -1302,6 +1599,11 @@ input.field {
   font-weight: 700;
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .missionTag {
+  color: #f6f7f9;
+  font-size: 13px;
+}
 .missionTagTopic {
   background: var(--accent-soft);
   color: var(--accent);
@@ -1319,6 +1621,10 @@ input.field {
   line-height: 1.3;
   letter-spacing: -0.01em;
 }
+/* 대응표 */
+:where([data-course]) .missionText h2 {
+  font-size: 14px;
+}
 .missionText p {
   min-width: 0;
   margin: 0;
@@ -1328,6 +1634,10 @@ input.field {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+/* 대응표 */
+:where([data-course]) .missionText p {
+  font-size: 13px;
 }
 
 .missionActions {
@@ -1344,6 +1654,12 @@ input.field {
   background: var(--accent);
   cursor: pointer;
   white-space: nowrap;
+}
+/* 대응표 */
+:where([data-course]) .btnAction {
+  border-radius: 8px;
+  font-size: 13px;
+  color: #f6f7f9;
 }
 .btnAction:disabled {
   opacity: 0.5;
@@ -1362,6 +1678,10 @@ input.field {
   background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(6px);
   box-shadow: var(--shadow-sm);
+}
+/* 대응표 */
+:where([data-course]) .readout {
+  border-radius: 8px;
 }
 .pip {
   position: absolute;
@@ -1392,6 +1712,12 @@ input.field {
   font-size: 11px;
   font-weight: 600;
 }
+/* 대응표 */
+:where([data-course]) .pip span {
+  border-radius: 8px;
+  color: #f6f7f9;
+  font-size: 13px;
+}
 .camOverlay {
   position: absolute;
   right: 12px;
@@ -1404,6 +1730,10 @@ input.field {
   border: 1px solid var(--line);
   box-shadow: var(--shadow-lg);
   backdrop-filter: blur(10px);
+}
+/* 대응표 */
+:where([data-course]) .camOverlay {
+  border-radius: 12px;
 }
 .camOverlay[hidden] {
   display: none;
@@ -1440,7 +1770,16 @@ input.field {
   .viewport {
     height: min(480px, 60vh);
   }
+  /* 대응표 */
+  :where([data-course]) .viewport {
+    height: min(480px, calc(60vh / var(--course-zoom, 1)));
+  }
 
+}
+/* 대응표 */
+:where(html[data-vq~='4']) .viewport {
+  height: min(480px, 60vh);
+  height: min(480px, calc(60vh / var(--course-zoom, 1)));
 }
 
 /* --- PC: the console fills the window like a desktop app ------------------------ */
@@ -1455,6 +1794,11 @@ input.field {
     overflow: hidden;
     display: flex;
     flex-direction: column;
+  }
+  /* 대응표 */
+  :where([data-course]) .app {
+    height: calc(100vh / var(--course-zoom, 1));
+    height: calc(100dvh / var(--course-zoom, 1));
   }
   .inner {
     max-width: none;
@@ -1508,6 +1852,81 @@ input.field {
   }
 
 }
+/* 대응표 */
+:where(html[data-vq~='5']) .app {
+  --dock-w: 312px;
+  --editor-w: clamp(420px, 30vw, 560px);
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh / var(--course-zoom, 1));
+  height: calc(100dvh / var(--course-zoom, 1));
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .inner {
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .topBar {
+  flex-wrap: nowrap;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .shell {
+  flex: 1;
+  min-height: 0;
+  grid-template-columns: var(--dock-w) minmax(0, 1fr) var(--editor-w);
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .shell[data-editor='closed'] {
+  --editor-w: 46px;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .dock {
+  min-height: 0;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .dockScroll {
+  flex: 1;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .stageCol {
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .viewport {
+  height: auto;
+  min-height: 0;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .pane {
+  overflow: auto;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .blocks {
+  grid-template-columns: 11rem minmax(0, 1fr);
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .blocks,
+:where(html[data-vq~='5']) .palette,
+:where(html[data-vq~='5']) .workspace {
+  min-height: 0;
+  max-height: none;
+}
 
 /* A laptop-sized window: slimmer columns and labels. */
 @media (min-width: 1000px) and (max-width: 1440px) {
@@ -1527,6 +1946,24 @@ input.field {
   .topBar {
     gap: 8px 12px;
   }
+}
+/* 대응표 */
+:where(html[data-vq~='6']) .app {
+  --dock-w: 272px;
+  --editor-w: 430px;
+}
+/* 대응표 */
+:where(html[data-vq~='6']) .blocks {
+  grid-template-columns: 9.5rem minmax(0, 1fr);
+}
+/* 대응표 */
+:where(html[data-vq~='6']) .brand small,
+:where(html[data-vq~='6']) .conn small {
+  display: none;
+}
+/* 대응표 */
+:where(html[data-vq~='6']) .topBar {
+  gap: 8px 12px;
 }
 
 .sceneNote {
@@ -1565,6 +2002,10 @@ input.field {
   font-size: 13px;
   font-weight: 800;
 }
+/* 대응표 */
+:where([data-course]) .axisName {
+  font-weight: 700;
+}
 
 /* zero calibration, two ways */
 .zeroTabs {
@@ -1575,6 +2016,10 @@ input.field {
   border-radius: 10px;
   background: var(--soft);
   box-shadow: inset 0 0 0 1px var(--line);
+}
+/* 대응표 */
+:where([data-course]) .zeroTabs {
+  border-radius: 12px;
 }
 .zeroTabs button {
   border: none;
@@ -1589,9 +2034,17 @@ input.field {
   display: block;
   font-size: 12.5px;
 }
+/* 대응표 */
+:where([data-course]) .zeroTabs button b {
+  font-size: 13px;
+}
 .zeroTabs button small {
   display: block;
   font-size: 10.5px;
+}
+/* 대응표 */
+:where([data-course]) .zeroTabs button small {
+  font-size: 13px;
 }
 .zeroTabs button[aria-selected='true'] {
   background: var(--page);
@@ -1605,6 +2058,10 @@ input.field {
   gap: 10px;
   font-size: 12.5px;
   line-height: 1.5;
+}
+/* 대응표 */
+:where([data-course]) .zeroFlow {
+  font-size: 13px;
 }
 div.zeroFlow {
   padding-left: 0;
@@ -1621,6 +2078,10 @@ div.zeroFlow {
   border-radius: 9px;
   background: #111827;
 }
+/* 대응표 */
+:where([data-course]) .zeroReadings {
+  border-radius: 8px;
+}
 .zeroReadings span {
   display: flex;
   justify-content: space-between;
@@ -1630,16 +2091,34 @@ div.zeroFlow {
   font-size: 11.5px;
   color: #7dd3fc;
 }
+/* 대응표 */
+:where([data-course]) .zeroReadings span {
+  font-size: 13px;
+  color: #93c5fd;
+}
 .zeroReadings i {
   font-style: normal;
   color: #6f7277;
 }
+/* 대응표 */
+:where([data-course]) .zeroReadings i {
+  color: #c9ced5;
+}
 .zeroReadings .zeroFar {
   color: #fcd34d;
+}
+/* 대응표 */
+:where([data-course]) .zeroReadings .zeroFar {
+  color: #f0a23b;
 }
 .zeroWarn {
   color: #b54708 !important;
   font-size: 11.5px;
+}
+/* 대응표 */
+:where([data-course]) .zeroWarn {
+  color: #f0a23b !important;
+  font-size: 13px;
 }
 /* 영점: the five steps as one line of dots, the joint at hand with its reading */
 .zeroSteps {
@@ -1661,6 +2140,10 @@ div.zeroFlow {
   color: var(--muted);
   word-break: keep-all;
 }
+/* 대응표 */
+:where([data-course]) .zeroSteps li {
+  font-size: 13px;
+}
 .zeroSteps li::before {
   content: counter(zs);
   position: absolute;
@@ -1674,10 +2157,18 @@ div.zeroFlow {
   font-size: 11px;
   line-height: 20px;
 }
+/* 대응표 */
+:where([data-course]) .zeroSteps li::before {
+  font-size: 13px;
+}
 .zeroSteps li[data-state='done']::before {
   content: '✓';
   background: #1f6f4a;
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .zeroSteps li[data-state='done']::before {
+  color: #f6f7f9;
 }
 .zeroSteps li[data-state='now'] {
   color: var(--ink);
@@ -1685,6 +2176,10 @@ div.zeroFlow {
 .zeroSteps li[data-state='now']::before {
   background: #e5322d;
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .zeroSteps li[data-state='now']::before {
+  color: #f6f7f9;
 }
 .zeroLead {
   margin: 4px 0;
@@ -1701,6 +2196,10 @@ div.zeroFlow {
   margin-left: auto;
   font-size: 22px;
   font-variant-numeric: tabular-nums;
+}
+/* 대응표 */
+:where([data-course]) .zeroJoint .zeroNow {
+  font-size: 23px;
 }
 .zeroStepBtns {
   display: flex;
@@ -1720,6 +2219,10 @@ div.zeroFlow {
   font-family: inherit;
   font-variant-numeric: tabular-nums;
   font-size: 12px;
+}
+/* 대응표 */
+:where([data-course]) .nudgeRow .jogWide {
+  font-size: 13px;
 }
 .linkBtn {
   border: none;
@@ -1768,11 +2271,21 @@ div.zeroFlow {
   color: var(--ink);
   margin-bottom: -1px;
 }
+/* 대응표 */
+:where([data-course]) .fileTab {
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+}
 .pyDot {
   width: 10px;
   height: 10px;
   border-radius: 3px;
   background: linear-gradient(135deg, #3776ab 50%, #ffd43b 50%);
+}
+/* 대응표 */
+:where([data-course]) .pyDot {
+  border-radius: 8px;
 }
 .modDot {
   width: 7px;
@@ -1790,6 +2303,11 @@ div.zeroFlow {
   font-size: 13px;
   line-height: 21px;
 }
+/* 대응표 */
+:where([data-course]) .codeBox {
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+}
 .ide .gutter {
   padding: 12px 8px 12px 10px;
   background: #fafbfc;
@@ -1797,6 +2315,11 @@ div.zeroFlow {
   line-height: 21px;
   font-size: 12px;
   color: #b2b7be;
+}
+/* 대응표 */
+:where([data-course]) .ide .gutter {
+  font-size: 13px;
+  color: #c9ced5;
 }
 .ide .gutter span {
   padding-inline: 4px;
@@ -1824,6 +2347,10 @@ div.zeroFlow {
   height: 21px;
   background: #f6f8fa;
 }
+/* 대응표 */
+:where([data-course]) .lineMark {
+  min-width: calc(100vw / var(--course-zoom, 1));
+}
 .lineErr {
   background: #ffebe9;
   box-shadow: inset 3px 0 0 #cf222e;
@@ -1844,10 +2371,20 @@ div.zeroFlow {
   letter-spacing: 0;
   font-variant-ligatures: none;
 }
+/* 대응표 */
+:where([data-course]) .codeHi,
+:where([data-course]) .ide .code {
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+}
 .codeHi {
   position: relative;
   color: #1f2328;
   background: transparent;
+}
+/* 대응표 */
+:where([data-course]) .codeHi {
+  color: #14171c;
 }
 .ide .code {
   position: absolute;
@@ -1869,16 +2406,33 @@ div.zeroFlow {
 .tkKeyword {
   color: #cf222e;
 }
+/* 대응표 */
+:where([data-course]) .tkKeyword {
+  color: #ff8f86;
+}
 .tkString {
   color: #0a3069;
+}
+/* 대응표 */
+:where([data-course]) .tkString {
+  color: #93c5fd;
 }
 .tkComment {
   color: #72757a;
   font-style: italic;
 }
+/* 대응표 */
+:where([data-course]) .tkComment {
+  color: #c9ced5;
+}
 .tkNumber,
 .tkConst {
   color: #0550ae;
+}
+/* 대응표 */
+:where([data-course]) .tkNumber,
+:where([data-course]) .tkConst {
+  color: #93c5fd;
 }
 .tkDef,
 .tkCall {
@@ -1887,6 +2441,11 @@ div.zeroFlow {
 .tkBuiltin,
 .tkSelf {
   color: #953800;
+}
+/* 대응표 */
+:where([data-course]) .tkBuiltin,
+:where([data-course]) .tkSelf {
+  color: #f0a23b;
 }
 .tkDecorator {
   color: #8250df;
@@ -1905,6 +2464,10 @@ div.zeroFlow {
   white-space: nowrap;
   overflow: hidden;
 }
+/* 대응표 */
+:where([data-course]) .statusBar {
+  font-size: 13px;
+}
 .statusGrow {
   flex: 1;
 }
@@ -1916,6 +2479,11 @@ div.zeroFlow {
   font-family: inherit;
   font-variant-numeric: tabular-nums;
   font-size: 10.5px;
+}
+/* 대응표 */
+:where([data-course]) .kbd {
+  border-radius: 8px;
+  font-size: 13px;
 }
 
 /* output panel under the editor */
@@ -1951,6 +2519,11 @@ div.zeroFlow {
   cursor: pointer;
   box-shadow: inset 0 -2px 0 transparent;
 }
+/* 대응표 */
+:where([data-course]) .termTabs button {
+  font-size: 13px;
+  letter-spacing: 0;
+}
 .termTabs button[aria-selected='true'] {
   color: var(--ink);
   box-shadow: inset 0 -2px 0 var(--accent);
@@ -1964,12 +2537,20 @@ div.zeroFlow {
   font-size: 10px;
   color: var(--muted);
 }
+/* 대응표 */
+:where([data-course]) .termTabs i {
+  font-size: 13px;
+}
 .termStatus {
   margin-left: auto;
   align-self: center;
   font-size: 11px;
   font-weight: 600;
   color: var(--accent);
+}
+/* 대응표 */
+:where([data-course]) .termStatus {
+  font-size: 13px;
 }
 .termBody {
   flex: 1;
@@ -1982,6 +2563,10 @@ div.zeroFlow {
   color: var(--faint);
   font-size: 12px;
 }
+/* 대응표 */
+:where([data-course]) .termEmpty {
+  font-size: 13px;
+}
 .termText {
   margin: 0;
   font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
@@ -1991,13 +2576,28 @@ div.zeroFlow {
   word-break: break-word;
   color: #1f2328;
 }
+/* 대응표 */
+:where([data-course]) .termText {
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  color: #14171c;
+}
 .termText i {
   font-style: normal;
   color: #9da1a7;
 }
+/* 대응표 */
+:where([data-course]) .termText i {
+  color: #c9ced5;
+}
 .termText b {
   font-weight: 600;
   color: #1a7f37;
+}
+/* 대응표 */
+:where([data-course]) .termText b {
+  color: #86efac;
 }
 
 /* ===========================================================================
@@ -2012,6 +2612,10 @@ div.zeroFlow {
   font-size: 11px;
   font-weight: 600;
   line-height: 1.35;
+}
+/* 대응표 */
+:where([data-course]) .paletteTip {
+  font-size: 13px;
 }
 .app .numChip {
   color: var(--ink);
@@ -2054,12 +2658,20 @@ div.zeroFlow {
   gap: 8px;
   font-weight: 500;
 }
+/* 대응표 */
+:where([data-course]) .numPop {
+  font-weight: 600;
+}
 .numPopHead {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   font-size: 12px;
   color: var(--muted);
+}
+/* 대응표 */
+:where([data-course]) .numPopHead {
+  font-size: 13px;
 }
 .numPopHead b {
   font-family: inherit;
@@ -2089,6 +2701,12 @@ div.zeroFlow {
   color: var(--ink);
   min-width: 0;
 }
+/* 대응표 */
+:where([data-course]) .numPopKeys button,
+:where([data-course]) .numPopKeys input {
+  border-radius: 8px;
+  font-size: 13px;
+}
 .numPopKeys button {
   cursor: pointer;
 }
@@ -2107,6 +2725,10 @@ div.zeroFlow {
   font-size: 11px;
   color: var(--faint);
 }
+/* 대응표 */
+:where([data-course]) .numPopFoot {
+  font-size: 13px;
+}
 .fillNow {
   border: 1px solid rgba(255, 255, 255, 0.6);
   background: rgba(255, 255, 255, 0.2);
@@ -2116,6 +2738,12 @@ div.zeroFlow {
   font-size: 11.5px;
   font-weight: 700;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .fillNow {
+  border-color: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.16);
+  font-size: 13px;
 }
 .numPop .fillNow {
   border-color: var(--accent);
@@ -2161,8 +2789,18 @@ div.zeroFlow {
   line-height: 1;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .blockKeys button {
+  border-radius: 8px;
+  color: #f6f7f9 !important;
+  font-size: 13px;
+}
 .blockKeys button:hover {
   background: rgba(255, 255, 255, 0.18);
+}
+/* 대응표 */
+:where([data-course]) .blockKeys button:hover {
+  background: rgba(255, 255, 255, 0.16);
 }
 .block:hover > .blockKeys,
 .block:focus-within > .blockKeys,
@@ -2207,6 +2845,10 @@ div.zeroFlow {
   font-size: 10.5px;
   font-weight: 700;
 }
+/* 대응표 */
+:where([data-course]) .displayCount {
+  font-size: 13px;
+}
 .displayMenu {
   position: absolute;
   top: calc(100% + 8px);
@@ -2245,10 +2887,19 @@ div.zeroFlow {
   font-size: 12.5px;
   font-weight: 650;
 }
+/* 대응표 */
+:where([data-course]) .displayItem b {
+  font-size: 13px;
+  font-weight: 600;
+}
 .displayItem small {
   display: block;
   font-size: 11px;
   color: var(--muted);
+}
+/* 대응표 */
+:where([data-course]) .displayItem small {
+  font-size: 13px;
 }
 .displaySwatch {
   display: inline-flex;
@@ -2296,6 +2947,10 @@ div.zeroFlow {
   box-shadow: var(--shadow-lg);
   padding: 22px;
 }
+/* 대응표 */
+:where([data-course]) .pickerBox {
+  border-radius: 12px;
+}
 .pickerHead {
   display: flex;
   align-items: center;
@@ -2311,10 +2966,18 @@ div.zeroFlow {
   font-size: 19px;
   letter-spacing: -0.01em;
 }
+/* 대응표 */
+:where([data-course]) .pickerHead h1 {
+  font-size: 18px;
+}
 .pickerHead p {
   margin: 2px 0 0;
   font-size: 12.5px;
   color: var(--muted);
+}
+/* 대응표 */
+:where([data-course]) .pickerHead p {
+  font-size: 13px;
 }
 .pickerClose {
   margin-left: auto;
@@ -2326,6 +2989,10 @@ div.zeroFlow {
   font-size: 20px;
   cursor: pointer;
   color: var(--muted);
+}
+/* 대응표 */
+:where([data-course]) .pickerClose {
+  font-size: 23px;
 }
 
 /* ===========================================================================
@@ -2341,6 +3008,10 @@ div.zeroFlow {
   --head: #1d2636;
   --head-2: #2f3135;
 }
+/* 대응표 */
+:where([data-course]) .app {
+  font-size: 16px;
+}
 
 /* top bar */
 .topBar {
@@ -2350,8 +3021,16 @@ div.zeroFlow {
 .brand b {
   font-size: 17px;
 }
+/* 대응표 */
+:where([data-course]) .brand b {
+  font-size: 18px;
+}
 .brand small {
   font-size: 12px;
+}
+/* 대응표 */
+:where([data-course]) .brand small {
+  font-size: 13px;
 }
 
 .checkChips button {
@@ -2366,6 +3045,10 @@ div.zeroFlow {
 .conn small {
   font-size: 12px;
 }
+/* 대응표 */
+:where([data-course]) .conn small {
+  font-size: 13px;
+}
 
 /* the centre column's header is the practice line */
 .missionCard {
@@ -2377,13 +3060,26 @@ div.zeroFlow {
   color: #fff;
   font-size: 16px;
 }
+/* 대응표 */
+:where([data-course]) .missionText h2 {
+  color: #f6f7f9;
+}
 .missionText p {
   color: #c4c9d0;
   font-size: 13.5px;
 }
+/* 대응표 */
+:where([data-course]) .missionText p {
+  color: #c9ced5;
+  font-size: 14px;
+}
 .missionTagTopic {
   background: rgba(157, 180, 255, 0.2);
   color: #d0d5dc;
+}
+/* 대응표 */
+:where([data-course]) .missionTagTopic {
+  color: #c9ced5;
 }
 .missionTag {
   font-size: 13px;
@@ -2394,12 +3090,27 @@ div.zeroFlow {
   color: #fff;
   font-size: 13.5px;
 }
+/* 대응표 */
+:where([data-course]) .missionCard .ghost {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #f6f7f9;
+  font-size: 14px;
+}
 .missionCard .ghost:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.2);
+}
+/* 대응표 */
+:where([data-course]) .missionCard .ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.16);
 }
 .missionCard .btnAction {
   font-size: 13.5px;
   padding: 7px 13px;
+}
+/* 대응표 */
+:where([data-course]) .missionCard .btnAction {
+  font-size: 14px;
 }
 
 /* dock: every category is its own card on a grey ground */
@@ -2411,6 +3122,10 @@ div.zeroFlow {
 .dockAside {
   font-size: 12.5px;
 }
+/* 대응표 */
+:where([data-course]) .dockAside {
+  font-size: 13px;
+}
 .dockBody {
   padding: 12px;
   gap: 12px;
@@ -2420,6 +3135,10 @@ div.zeroFlow {
   font-size: 14px;
   font-weight: 600;
   border-radius: 10px;
+}
+/* 대응표 */
+:where([data-course]) .jogWide {
+  border-radius: 12px;
 }
 .robotBtnsBig {
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2437,12 +3156,21 @@ div.zeroFlow {
 .subNote {
   font-size: 12.5px;
 }
+/* 대응표 */
+:where([data-course]) .robotCal,
+:where([data-course]) .subNote {
+  font-size: 13px;
+}
 
 /* wide screens get a wider dock for the larger controls */
 @media (min-width: 1000px) and (min-height: 600px) {
   .app {
     --dock-w: 344px;
   }
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .app {
+  --dock-w: 344px;
 }
 @media (min-width: 1000px) and (max-width: 1440px) {
   .app {
@@ -2456,6 +3184,19 @@ div.zeroFlow {
   .brand b {
     font-size: 16px;
   }
+}
+/* 대응표 */
+:where(html[data-vq~='6']) .app {
+  --dock-w: 310px;
+}
+/* 대응표 */
+:where(html[data-vq~='6']) .topBar {
+  gap: 8px 14px;
+  padding: 8px 14px;
+}
+/* 대응표 */
+:where(html[data-vq~='6']) .brand b {
+  font-size: 16px;
 }
 
 /* lost connection: what to check, and [다시 연결] */
@@ -2477,9 +3218,17 @@ div.zeroFlow {
   font-size: 13px;
   line-height: 1.45;
 }
+/* 대응표 */
+:where([data-course]) .ownerBanner {
+  border-radius: 12px;
+}
 .ownerBanner > b {
   font-size: 14px;
   color: #93370d;
+}
+/* 대응표 */
+:where([data-course]) .ownerBanner > b {
+  color: #f0a23b;
 }
 .ownerActions {
   display: flex;
@@ -2502,6 +3251,10 @@ div.zeroFlow {
   border: 1.5px solid #f3b4ae;
   box-shadow: var(--shadow-lg);
   color: var(--ink);
+}
+/* 대응표 */
+:where([data-course]) .connBanner {
+  border-radius: 12px;
 }
 .connBanner > b {
   font-size: 16px;
@@ -2551,6 +3304,10 @@ div.zeroFlow {
   border-radius: 10px;
   background: var(--work);
 }
+/* 대응표 */
+:where([data-course]) .poseList li {
+  border-radius: 12px;
+}
 .poseName {
   min-width: 0;
 }
@@ -2561,6 +3318,10 @@ div.zeroFlow {
   color: var(--muted);
   word-break: keep-all;
 }
+/* 대응표 */
+:where([data-course]) .poseHelp {
+  font-size: 13px;
+}
 .poseHelp b {
   color: var(--ink);
 }
@@ -2570,6 +3331,10 @@ div.zeroFlow {
   font-weight: 700;
   color: var(--faint);
   padding: 0 6px;
+}
+/* 대응표 */
+:where([data-course]) .poseFixed {
+  font-size: 13px;
 }
 .poseName b {
   display: block;
@@ -2584,6 +3349,10 @@ div.zeroFlow {
   text-overflow: ellipsis;
   font-variant-numeric: tabular-nums;
 }
+/* 대응표 */
+:where([data-course]) .poseName small {
+  font-size: 13px;
+}
 .poseGo,
 .poseDel {
   height: 34px;
@@ -2593,10 +3362,19 @@ div.zeroFlow {
   font-weight: 700;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .poseGo,
+:where([data-course]) .poseDel {
+  font-size: 14px;
+}
 .poseGo {
   border: none;
   background: var(--accent);
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .poseGo {
+  color: #f6f7f9;
 }
 .poseGo:disabled {
   opacity: 0.5;
@@ -2619,6 +3397,10 @@ div.zeroFlow {
   color: #fff;
   background: var(--accent);
   opacity: 1;
+}
+/* 대응표 */
+:where([data-course]) .connBannerRow .btnAction {
+  color: #f6f7f9;
 }
 .connBannerRow .btnAction:disabled {
   opacity: 0.6;
@@ -2652,6 +3434,10 @@ div.zeroFlow {
     border: 1px solid rgba(219, 225, 233, 0.95);
     background: rgba(255, 255, 255, 0.95);
     box-shadow: 0 8px 24px rgba(16, 24, 40, 0.12);
+  }
+  /* 대응표 */
+  :where([data-course]) .topBar {
+    border-radius: 12px;
   }
   /* the top bar's choices share out the width */
 
@@ -2710,6 +3496,10 @@ div.zeroFlow {
     border-radius: 14px;
     border-bottom: none;
   }
+  /* 대응표 */
+  :where([data-course]) .missionCard {
+    border-radius: 12px;
+  }
 
   .badge {
     top: calc(var(--top) + 64px);
@@ -2762,6 +3552,143 @@ div.zeroFlow {
   }
 
 }
+/* 대응표 */
+:where(html[data-vq~='5']) .app {
+  --top: 88px;
+  --gap: 14px;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .inner {
+  position: relative;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .topBar {
+  position: absolute;
+  top: 12px;
+  left: var(--gap);
+  right: var(--gap);
+  z-index: 30;
+  min-height: 64px;
+  border-radius: 16px;
+  border: 1px solid rgba(219, 225, 233, 0.95);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.12);
+  border-radius: 12px;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .topBar .checkChips {
+  flex: 1;
+  justify-content: space-between;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .topStatus {
+  margin-left: 0;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .shell {
+  position: absolute;
+  inset: 0;
+  display: block;
+  --inset-l: calc(var(--dock-w) + var(--gap) * 2);
+  --inset-r: calc(var(--editor-w) + var(--gap) * 2);
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .shell[data-dock='closed'] {
+  --inset-l: 64px;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .shell[data-editor='closed'] {
+  --inset-r: 64px;
+  --editor-w: 0px;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .stageCol {
+  position: absolute;
+  inset: 0;
+  display: block;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background: var(--stage);
+  overflow: visible;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .viewport {
+  position: absolute;
+  inset: 0;
+  border-radius: 0;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .missionCard {
+  position: absolute;
+  z-index: 12;
+  left: calc((var(--inset-l) + 100% - var(--inset-r)) / 2);
+  transform: translateX(-50%);
+  box-shadow: 0 10px 28px rgba(16, 24, 40, 0.18);
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .missionCard {
+  top: var(--top);
+  width: max-content;
+  max-width: calc(100% - var(--inset-l) - var(--inset-r) - 16px);
+  border-radius: 14px;
+  border-bottom: none;
+  border-radius: 12px;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .badge {
+  top: calc(var(--top) + 64px);
+  left: var(--inset-l);
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .readout {
+  left: var(--inset-l);
+  bottom: 132px;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .pip {
+  right: var(--inset-r);
+  bottom: 132px;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .camOverlay {
+  top: calc(var(--top) + 110px);
+  right: var(--inset-r);
+  bottom: 132px;
+  width: min(560px, calc(100% - var(--inset-l) - var(--inset-r)));
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .connBanner {
+  top: calc(var(--top) + 110px);
+  left: calc((var(--inset-l) + 100% - var(--inset-r)) / 2);
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .sceneNote {
+  left: calc((var(--inset-l) + 100% - var(--inset-r)) / 2);
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .dock {
+  position: absolute;
+  top: var(--top);
+  bottom: var(--gap);
+  z-index: 20;
+  box-shadow: 0 14px 36px rgba(16, 24, 40, 0.22);
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .dock {
+  left: var(--gap);
+  width: var(--dock-w);
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .dock[data-open='false'] {
+  top: 50%;
+  bottom: auto;
+  width: auto;
+  transform: translateY(-50%);
+  border: none;
+  background: var(--head);
+  box-shadow: 0 10px 28px rgba(16, 24, 40, 0.3);
+}
 .dockRail {
   display: flex;
   flex-direction: column;
@@ -2775,10 +3702,20 @@ div.zeroFlow {
   font-weight: 700;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .dockRail {
+  color: #f6f7f9;
+  font-size: 16px;
+}
 .dockRail span {
   writing-mode: vertical-rl;
   color: #fff;
   letter-spacing: 0.04em;
+}
+/* 대응표 */
+:where([data-course]) .dockRail span {
+  color: #f6f7f9;
+  letter-spacing: 0;
 }
 .dockRail:hover {
   background: var(--head-2);
@@ -2789,6 +3726,15 @@ div.zeroFlow {
   .pip {
     width: clamp(160px, 17vw, 300px);
   }
+  /* 대응표 */
+  :where([data-course]) .pip {
+    width: clamp(160px, calc(17vw / var(--course-zoom, 1)), 300px);
+  }
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .pip {
+  width: clamp(160px, 17vw, 300px);
+  width: clamp(160px, calc(17vw / var(--course-zoom, 1)), 300px);
 }
 @media (min-width: 1000px) and (max-width: 1440px) {
   .app {
@@ -2798,6 +3744,15 @@ div.zeroFlow {
   .readout {
     display: none;
   }
+}
+/* 대응표 */
+:where(html[data-vq~='6']) .app {
+  --editor-w: 400px;
+  --dock-w: 300px;
+}
+/* 대응표 */
+:where(html[data-vq~='6']) .readout {
+  display: none;
 }
 
 /* 로봇 연결 */
@@ -2857,6 +3812,11 @@ div.zeroFlow {
   color: var(--ink);
   letter-spacing: 0.02em;
 }
+/* 대응표 */
+:where([data-course]) .connectId {
+  font-size: 28px;
+  letter-spacing: 0;
+}
 .connectPrefix:focus,
 .connectId:focus {
   outline: none;
@@ -2871,6 +3831,11 @@ div.zeroFlow {
   font-size: 17px;
   font-weight: 700;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .connectGo {
+  color: #f6f7f9;
+  font-size: 18px;
 }
 .connectGo:disabled {
   opacity: 0.45;
@@ -2906,9 +3871,17 @@ div.zeroFlow {
 .usbHint b {
   font-size: 13.5px;
 }
+/* 대응표 */
+:where([data-course]) .usbHint b {
+  font-size: 14px;
+}
 .usbHint small {
   font-size: 12px;
   color: var(--ink);
+}
+/* 대응표 */
+:where([data-course]) .usbHint small {
+  font-size: 13px;
 }
 /* Wi-Fi tab: the robot's ID, folded under the list (when the search cannot see it). */
 .idFold {
@@ -2923,6 +3896,10 @@ div.zeroFlow {
   font-weight: 700;
   color: var(--ink);
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .idFold summary {
+  font-size: 14px;
 }
 .idFold[open] summary {
   margin-bottom: 10px;
@@ -2949,6 +3926,10 @@ div.zeroFlow {
   font-size: 13.5px;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .connectRecent button {
+  font-size: 14px;
+}
 .connectSteps {
   margin: 16px 0 0;
   padding: 12px 14px 12px 32px;
@@ -2968,6 +3949,10 @@ div.zeroFlow {
   background: #fff;
   color: var(--ink);
 }
+/* 대응표 */
+:where([data-course]) .connectSteps code {
+  border-radius: 8px;
+}
 .connectFoot {
   display: flex;
   justify-content: flex-end;
@@ -2984,6 +3969,11 @@ div.zeroFlow {
   font-size: 11.5px;
   font-weight: 500;
   color: var(--muted);
+}
+/* 대응표 */
+:where([data-course]) .poseRow .jogWide small {
+  font-size: 13px;
+  font-weight: 600;
 }
 
 /* panel finish: icon chips on section headers, softer cards */
@@ -3027,6 +4017,25 @@ div.zeroFlow {
     margin-left: auto;
   }
 }
+/* 대응표 */
+:where(html[data-vq~='5']) .topBar {
+  flex-wrap: nowrap;
+  overflow-x: clip;
+  overflow-y: visible;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .topBar > * {
+  flex: 0 0 auto;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .topBar .checkChips {
+  flex: 0 0 auto;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .topBar > .topStatus {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
 @media (min-width: 1000px) and (max-width: 1760px) {
   .brand small,
 .conn small {
@@ -3036,6 +4045,15 @@ div.zeroFlow {
   .topBar {
     gap: 8px 14px !important;
   }
+}
+/* 대응표 */
+:where(html[data-vq~='7']) .brand small,
+:where(html[data-vq~='7']) .conn small {
+  display: none;
+}
+/* 대응표 */
+:where(html[data-vq~='7']) .topBar {
+  gap: 8px 14px !important;
 }
 @media (min-width: 1000px) and (max-width: 1560px) {
 
@@ -3051,6 +4069,25 @@ div.zeroFlow {
   .brand b {
     font-size: 15px !important;
   }
+  /* 대응표 */
+  :where([data-course]) .brand b {
+    font-size: 16px !important;
+  }
+}
+/* 대응표 */
+:where(html[data-vq~='8']) .checkChips button {
+  width: 28px !important;
+  height: 28px !important;
+  font-size: 13px !important;
+}
+/* 대응표 */
+:where(html[data-vq~='8']) .checkChips {
+  gap: 3px !important;
+}
+/* 대응표 */
+:where(html[data-vq~='8']) .brand b {
+  font-size: 15px !important;
+  font-size: 16px !important;
 }
 
 /* camera window: small, in the view's lower right, beside the robot (not over it) */
@@ -3064,6 +4101,10 @@ div.zeroFlow {
     border-radius: 14px;
     box-shadow: 0 12px 30px rgba(16, 24, 40, 0.22);
   }
+  /* 대응표 */
+  :where([data-course]) .camOverlay {
+    border-radius: 12px;
+  }
   .camOverlay .cams {
     padding: 8px;
     gap: 6px;
@@ -3075,11 +4116,19 @@ div.zeroFlow {
     padding: 4px 9px;
     font-size: 12px;
   }
+  /* 대응표 */
+  :where([data-course]) .camOverlay .seg button {
+    font-size: 13px;
+  }
   .camOverlay .camGrid {
     gap: 6px;
   }
   .camOverlay .camCaption {
     font-size: 11px;
+  }
+  /* 대응표 */
+  :where([data-course]) .camOverlay .camCaption {
+    font-size: 13px;
   }
   .camOverlay .camCaption span {
     display: none;
@@ -3090,6 +4139,58 @@ div.zeroFlow {
     max-height: 96px;
     overflow: auto;
   }
+  /* 대응표 */
+  :where([data-course]) .camOverlay .camCal,
+  :where([data-course]) .camOverlay .detections {
+    font-size: 13px;
+  }
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .camOverlay {
+  top: auto !important;
+  bottom: 132px;
+  right: var(--inset-r);
+  width: min(520px, calc(100% - var(--inset-l) - var(--inset-r) - 24px));
+  max-height: calc(100% - var(--top) - 220px);
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(16, 24, 40, 0.22);
+  border-radius: 12px;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .camOverlay .cams {
+  padding: 8px;
+  gap: 6px;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .camOverlay .camHead h2 {
+  font-size: 13px;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .camOverlay .seg button {
+  padding: 4px 9px;
+  font-size: 12px;
+  font-size: 13px;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .camOverlay .camGrid {
+  gap: 6px;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .camOverlay .camCaption {
+  font-size: 11px;
+  font-size: 13px;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .camOverlay .camCaption span {
+  display: none;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .camOverlay .camCal,
+:where(html[data-vq~='5']) .camOverlay .detections {
+  font-size: 11.5px;
+  max-height: 96px;
+  overflow: auto;
+  font-size: 13px;
 }
 
 /* section headers: the title and its note shrink before they spill out of the card */
@@ -3115,6 +4216,10 @@ div.zeroFlow {
   }
 
 }
+/* 대응표 */
+:where(html[data-vq~='6']) .brand > span {
+  display: none;
+}
 @media (min-width: 1000px) and (max-width: 1279px) {
   .topBar {
     gap: 8px 10px !important;
@@ -3127,6 +4232,19 @@ div.zeroFlow {
   .checkChips {
     gap: 2px !important;
   }
+}
+/* 대응표 */
+:where(html[data-vq~='9']) .topBar {
+  gap: 8px 10px !important;
+}
+/* 대응표 */
+:where(html[data-vq~='9']) .checkChips button {
+  width: 26px !important;
+  height: 26px !important;
+}
+/* 대응표 */
+:where(html[data-vq~='9']) .checkChips {
+  gap: 2px !important;
 }
 
 /* camera window on a laptop screen: one picture at a time, so it covers less of the 3D view */
@@ -3165,6 +4283,43 @@ div.zeroFlow {
     display: none;
   }
 }
+/* 대응표 */
+:where(html[data-vq~='10']) .camOverlay {
+  width: min(300px, calc(100% - var(--inset-l) - var(--inset-r) - 24px));
+}
+/* 대응표 */
+:where(html[data-vq~='10']) .camOverlay .camHead h2,
+:where(html[data-vq~='10']) .camOverlay .camHead .spacer {
+  display: none;
+}
+/* 대응표 */
+:where(html[data-vq~='10']) .camOverlay .camHead {
+  row-gap: 6px;
+}
+/* 대응표 */
+:where(html[data-vq~='10']) .camOverlay .camShowSeg {
+  display: inline-flex !important;
+  flex: 1 1 auto;
+  order: 2;
+}
+/* 대응표 */
+:where(html[data-vq~='10']) .camOverlay .camHead > .ghost {
+  order: 3;
+}
+/* 대응표 */
+:where(html[data-vq~='10']) .camOverlay .camShowSeg button {
+  flex: 1;
+  white-space: nowrap;
+}
+/* 대응표 */
+:where(html[data-vq~='10']) .camOverlay .camGrid {
+  grid-template-columns: minmax(0, 1fr);
+}
+/* 대응표 */
+:where(html[data-vq~='10']) .camOverlay .camGrid[data-show='raw'] > figure:nth-child(2),
+:where(html[data-vq~='10']) .camOverlay .camGrid[data-show='processed'] > figure:nth-child(1) {
+  display: none;
+}
 /* the mission card's buttons keep their words whole; the goal text gives way (…) */
 .missionActions {
   flex-shrink: 0;
@@ -3192,6 +4347,10 @@ div.zeroFlow {
   border-color: var(--blk-move);
   color: #5b3fd6;
   box-shadow: 0 0 0 #d3d8df, inset 0 2px 5px rgba(90, 60, 220, 0.2);
+}
+/* 대응표 */
+:where([data-course]) .dock .jogWide:active:not(:disabled) {
+  color: #93c5fd;
 }
 .dock .jogWide:disabled {
   box-shadow: none;
@@ -3241,6 +4400,10 @@ div.zeroFlow {
   cursor: pointer;
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .connectTabs button {
+  border-radius: 8px;
+}
 .connectTabs button:hover {
   color: var(--ink);
 }
@@ -3279,6 +4442,11 @@ div.zeroFlow {
   color: var(--ink);
   letter-spacing: 0.02em;
 }
+/* 대응표 */
+:where([data-course]) .findNet {
+  font-size: 23px;
+  letter-spacing: 0;
+}
 .findNet:focus {
   outline: none;
   border-color: var(--accent);
@@ -3315,6 +4483,10 @@ div.zeroFlow {
   background: linear-gradient(#fff, var(--work));
   box-shadow: 0 2px 0 var(--line);
 }
+/* 대응표 */
+:where([data-course]) .foundCard {
+  border-radius: 12px;
+}
 .foundId {
   display: grid;
   place-items: center;
@@ -3327,10 +4499,19 @@ div.zeroFlow {
   font: 800 24px var(--font-ui), sans-serif;
   line-height: 1;
 }
+/* 대응표 */
+:where([data-course]) .foundId {
+  font-weight: 700;
+  font-size: 23px;
+}
 .foundId small {
   font-size: 11px;
   font-weight: 700;
   opacity: 0.8;
+}
+/* 대응표 */
+:where([data-course]) .foundId small {
+  font-size: 13px;
 }
 .foundInfo {
   flex: 1;
@@ -3348,6 +4529,10 @@ div.zeroFlow {
   font-size: 15px;
   color: var(--ink);
 }
+/* 대응표 */
+:where([data-course]) .foundInfo b {
+  font-size: 16px;
+}
 .foundInfo em {
   padding: 1px 7px;
   border-radius: 99px;
@@ -3355,6 +4540,10 @@ div.zeroFlow {
   color: var(--real);
   font-size: 11.5px;
   font-style: normal;
+}
+/* 대응표 */
+:where([data-course]) .foundInfo em {
+  font-size: 13px;
 }
 .foundInfo .foundHere {
   background: var(--sim-soft);
@@ -3388,6 +4577,12 @@ div.zeroFlow {
   box-shadow: 0 2px 0 #2440a8;
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .foundGo {
+  border-radius: 12px;
+  color: #f6f7f9;
+  font-size: 16px;
+}
 .foundGo:active:not(:disabled) {
   transform: translateY(2px);
   box-shadow: none;
@@ -3411,6 +4606,10 @@ div.zeroFlow {
   background: var(--work);
   border: 1px solid var(--line);
 }
+/* 대응표 */
+:where([data-course]) .wifiNow {
+  border-radius: 12px;
+}
 .wifiNow > span:nth-child(2) {
   flex: 1;
   min-width: 0;
@@ -3419,14 +4618,26 @@ div.zeroFlow {
   font-size: 12.5px;
   color: var(--muted);
 }
+/* 대응표 */
+:where([data-course]) .wifiNow > span:nth-child(2) {
+  font-size: 13px;
+}
 .wifiNow b {
   font-size: 15.5px;
   color: var(--ink);
   overflow-wrap: anywhere;
 }
+/* 대응표 */
+:where([data-course]) .wifiNow b {
+  font-size: 16px;
+}
 .wifiNow small {
   font-size: 11.5px;
   font-weight: 700;
+}
+/* 대응표 */
+:where([data-course]) .wifiNow small {
+  font-size: 13px;
 }
 .wifiNow .ghost {
   white-space: nowrap;
@@ -3493,6 +4704,11 @@ div.zeroFlow {
   text-align: left;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .wifiNet {
+  border-radius: 8px;
+  font-size: 14px;
+}
 .wifiNet:hover:not(:disabled) {
   background: var(--soft);
 }
@@ -3504,6 +4720,10 @@ div.zeroFlow {
   font-size: 12px;
   font-style: normal;
   color: var(--sim);
+}
+/* 대응표 */
+:where([data-course]) .wifiNet em {
+  font-size: 13px;
 }
 .wifiNet svg {
   color: var(--faint);
@@ -3575,6 +4795,10 @@ div.zeroFlow {
   padding: 0 18px;
   font-size: 15.5px;
 }
+/* 대응표 */
+:where([data-course]) .wifiForm .connectGo {
+  font-size: 16px;
+}
 .wifiError {
   margin: 0 2px;
   padding: 8px 12px;
@@ -3583,6 +4807,10 @@ div.zeroFlow {
   color: #b42318;
   font-size: 13px;
   font-weight: 600;
+}
+/* 대응표 */
+:where([data-course]) .wifiError {
+  border-radius: 12px;
 }
 .wifiMoved {
   display: grid;
@@ -3608,6 +4836,10 @@ div.zeroFlow {
   color: var(--muted);
   text-align: left;
 }
+/* 대응표 */
+:where([data-course]) .wifiMoved ol {
+  font-size: 14px;
+}
 .wifiMoved ol b {
   color: var(--ink);
 }
@@ -3629,6 +4861,27 @@ div.zeroFlow {
     font-size: 13px;
   }
 }
+/* 대응표 */
+:where(html[data-vq~='11']) .foundCard {
+  flex-wrap: wrap;
+}
+/* 대응표 */
+:where(html[data-vq~='11']) .foundActions {
+  width: 100%;
+}
+/* 대응표 */
+:where(html[data-vq~='11']) .foundActions > * {
+  flex: 1;
+  justify-content: center;
+}
+/* 대응표 */
+:where(html[data-vq~='11']) .wifiForm {
+  grid-template-columns: minmax(0, 1fr);
+}
+/* 대응표 */
+:where(html[data-vq~='11']) .connectTabs button {
+  font-size: 13px;
+}
 
 /* ---- Joint jog: the joint's glyph and its position bar (track, fill from 0°, knob, limits) ---- */
 
@@ -3643,6 +4896,11 @@ div.zeroFlow {
   font-size: 12px;
   line-height: 1.5;
 }
+/* 대응표 */
+:where([data-course]) .pumpWarn {
+  border-radius: 8px;
+  font-size: 13px;
+}
 .pumpWarn code {
   font: 600 11px ui-monospace, SFMono-Regular, Menlo, monospace;
   background: #fff;
@@ -3650,6 +4908,13 @@ div.zeroFlow {
   border-radius: 4px;
   padding: 0 4px;
   word-break: break-all;
+}
+/* 대응표 */
+:where([data-course]) .pumpWarn code {
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  border-radius: 8px;
 }
 
 /* ===========================================================================
@@ -3667,6 +4932,11 @@ div.zeroFlow {
   letter-spacing: 0.02em;
   color: var(--muted);
   font-weight: 600;
+}
+/* 대응표 */
+:where([data-course]) .brand small {
+  font-size: 13px;
+  letter-spacing: 0;
 }
 .topStatus {
   display: flex;
@@ -3699,6 +4969,10 @@ div.zeroFlow {
   cursor: pointer;
   text-align: left;
 }
+/* 대응표 */
+:where([data-course]) .taskPick {
+  border-radius: 8px;
+}
 .taskPick:hover:not(:disabled) {
   background: #fff;
   box-shadow: var(--shadow-sm);
@@ -3712,9 +4986,17 @@ div.zeroFlow {
   font-size: 12px;
   font-weight: 700;
 }
+/* 대응표 */
+:where([data-course]) .taskTag {
+  font-size: 13px;
+}
 .taskTag[data-check] {
   background: var(--head);
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .taskTag[data-check] {
+  color: #f6f7f9;
 }
 .taskTitle {
   min-width: 0;
@@ -3722,6 +5004,10 @@ div.zeroFlow {
   white-space: nowrap;
   text-overflow: ellipsis;
   font-size: 15.5px;
+}
+/* 대응표 */
+:where([data-course]) .taskTitle {
+  font-size: 16px;
 }
 
 .goal {
@@ -3733,8 +5019,16 @@ div.zeroFlow {
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
+/* 대응표 */
+:where([data-course]) .goal {
+  font-size: 13px;
+}
 .goal[data-done] {
   color: #137a47;
+}
+/* 대응표 */
+:where([data-course]) .goal[data-done] {
+  color: #86efac;
 }
 .goalText {
   display: flex;
@@ -3747,6 +5041,10 @@ div.zeroFlow {
   font-style: normal;
   font-size: 11px;
   color: var(--real);
+}
+/* 대응표 */
+:where([data-course]) .goalRobot {
+  font-size: 13px;
 }
 .goalTrack {
   height: 5px;
@@ -3783,6 +5081,10 @@ div.zeroFlow {
   cursor: pointer;
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .menuChipBtn {
+  border-radius: 12px;
+}
 .menuChipBtn:hover,
 .menuChipBtn[aria-expanded='true'] {
   background: var(--soft);
@@ -3791,6 +5093,10 @@ div.zeroFlow {
   font-style: normal;
   font-size: 11px;
   color: var(--muted);
+}
+/* 대응표 */
+:where([data-course]) .menuChipBtn i {
+  font-size: 13px;
 }
 .settingsChip .menuChipBtn {
   width: 42px;
@@ -3811,6 +5117,10 @@ div.zeroFlow {
   background: #fff;
   box-shadow: var(--shadow-lg);
 }
+/* 대응표 */
+:where([data-course]) .menuPop {
+  border-radius: 12px;
+}
 .menuPop > button {
   display: grid;
   gap: 1px;
@@ -3822,6 +5132,10 @@ div.zeroFlow {
   text-align: left;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .menuPop > button {
+  border-radius: 12px;
+}
 .menuPop > button b {
   display: inline-flex;
   align-items: center;
@@ -3831,6 +5145,10 @@ div.zeroFlow {
 .menuPop > button small {
   font-size: 12px;
   color: var(--muted);
+}
+/* 대응표 */
+:where([data-course]) .menuPop > button small {
+  font-size: 13px;
 }
 .menuPop > button:hover:not(:disabled) {
   background: var(--soft);
@@ -3849,6 +5167,10 @@ div.zeroFlow {
   font-weight: 700;
   color: var(--faint);
 }
+/* 대응표 */
+:where([data-course]) .menuHead {
+  font-size: 13px;
+}
 
 .menuSeg {
   display: grid;
@@ -3865,10 +5187,19 @@ div.zeroFlow {
   font-weight: 600;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .menuSeg button {
+  border-radius: 8px;
+  font-size: 14px;
+}
 .menuSeg button[aria-pressed='true'] {
   border-color: #3454d1;
   background: #3454d1;
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .menuSeg button[aria-pressed='true'] {
+  color: #f6f7f9;
 }
 .topStop {
   height: 42px;
@@ -3885,6 +5216,13 @@ div.zeroFlow {
   cursor: pointer;
   box-shadow: 0 2px 0 #c7372b;
   flex: 0 0 auto;
+}
+/* 대응표 */
+:where([data-course]) .topStop {
+  border-radius: 12px;
+  color: #f6f7f9;
+  font-size: 16px;
+  font-weight: 700;
 }
 .topStop:hover {
   filter: brightness(1.06);
@@ -3913,6 +5251,11 @@ div.zeroFlow {
   color: #dee4ec;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .sideFold {
+  border-radius: 8px;
+  color: #f6f7f9;
+}
 .sideFold svg {
   transform: rotate(-90deg);
 }
@@ -3921,6 +5264,10 @@ div.zeroFlow {
 }
 .sideFold:hover {
   background: rgba(255, 255, 255, 0.18);
+}
+/* 대응표 */
+:where([data-course]) .sideFold:hover {
+  background: rgba(255, 255, 255, 0.16);
 }
 .side .dockScroll {
   flex: 1;
@@ -3951,6 +5298,10 @@ div.zeroFlow {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: none;
 }
+/* 대응표 */
+:where([data-course]) .side .missionCard {
+  border-top-color: rgba(255, 255, 255, 0.18);
+}
 .side .missionCard {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -3970,6 +5321,10 @@ div.zeroFlow {
   margin: 0;
   font-size: 15.5px;
   line-height: 1.3;
+}
+/* 대응표 */
+:where([data-course]) .side .missionText h2 {
+  font-size: 16px;
 }
 .side .missionText p {
   margin: 3px 0 0;
@@ -4010,6 +5365,10 @@ div.zeroFlow {
   font-weight: 800;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .runDock button {
+  font-weight: 700;
+}
 .runDock button:disabled {
   cursor: default;
 }
@@ -4021,6 +5380,11 @@ div.zeroFlow {
   color: #fff;
   font-size: 15.5px;
   box-shadow: 0 2px 0 #178a51;
+}
+/* 대응표 */
+:where([data-course]) .runSim {
+  color: #f6f7f9;
+  font-size: 16px;
 }
 .runSim:hover:not(:disabled) {
   filter: brightness(1.06);
@@ -4045,12 +5409,22 @@ div.zeroFlow {
   font-weight: 900;
   box-shadow: 0 1px 4px rgba(16, 24, 40, 0.25);
 }
+/* 대응표 */
+:where([data-course]) .runOk {
+  color: #86efac;
+  font-size: 13px;
+  font-weight: 700;
+}
 .runRate {
   display: inline-flex;
   gap: 4px;
   padding: 3px;
   border-radius: 13px;
   background: #e6ecf4;
+}
+/* 대응표 */
+:where([data-course]) .runRate {
+  border-radius: 12px;
 }
 .runRate button {
   width: 52px;
@@ -4062,6 +5436,11 @@ div.zeroFlow {
   background: transparent;
   color: var(--muted);
   font-size: 11px;
+}
+/* 대응표 */
+:where([data-course]) .runRate button {
+  border-radius: 12px;
+  font-size: 13px;
 }
 .runRate button:hover {
   background: rgba(255, 255, 255, 0.7);
@@ -4080,6 +5459,11 @@ div.zeroFlow {
   font-size: 15px;
   box-shadow: 0 2px 0 #c96710;
 }
+/* 대응표 */
+:where([data-course]) .runReal {
+  color: #f6f7f9;
+  font-size: 16px;
+}
 .runReal:hover:not(:disabled) {
   filter: brightness(1.05);
 }
@@ -4097,12 +5481,21 @@ div.zeroFlow {
   font-size: 11px;
   font-weight: 600;
 }
+/* 대응표 */
+:where([data-course]) .runRealText small {
+  font-size: 13px;
+}
 .runReal kbd {
   font: inherit;
   font-size: 12px;
   padding: 1px 6px;
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.25);
+}
+/* 대응표 */
+:where([data-course]) .runReal kbd {
+  font-size: 13px;
+  border-radius: 8px;
 }
 .robotPlay {
   position: relative;
@@ -4130,6 +5523,11 @@ div.zeroFlow {
   background: var(--stop);
   color: #fff;
   box-shadow: 0 2px 0 #c7372b;
+}
+/* 대응표 */
+:where([data-course]) .runStop {
+  font-weight: 700;
+  color: #f6f7f9;
 }
 .runStop:hover {
   filter: brightness(1.06);
@@ -4211,6 +5609,10 @@ div.zeroFlow {
     bottom: 64px;
     width: clamp(170px, 16vw, 280px);
   }
+  /* 대응표 */
+  :where([data-course]) .pip {
+    width: clamp(170px, calc(16vw / var(--course-zoom, 1)), 280px);
+  }
   .camOverlay {
     top: calc(var(--top) + 64px);
     left: var(--inset-l);
@@ -4222,6 +5624,83 @@ div.zeroFlow {
   .connBanner {
     top: calc(var(--top) + 64px);
   }
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .app {
+  --side-w: clamp(460px, 34vw, 600px);
+  --top: 80px;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .topBar {
+  min-height: 58px;
+  padding: 7px 12px 7px 16px;
+  gap: 12px;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .shell {
+  --inset-l: var(--gap);
+  --inset-r: calc(var(--side-w) + var(--gap) * 2);
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .shell[data-side='left'] {
+  --inset-l: calc(var(--side-w) + var(--gap) * 2);
+  --inset-r: var(--gap);
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .shell[data-dock='closed'] {
+  --inset-l: var(--gap);
+  --inset-r: 96px;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .shell[data-side='left'][data-dock='closed'] {
+  --inset-l: 96px;
+  --inset-r: var(--gap);
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .shell .side {
+  position: absolute;
+  top: var(--top);
+  bottom: var(--gap);
+  left: auto;
+  right: var(--gap);
+  width: var(--side-w);
+  z-index: 20;
+  transform: none;
+  box-shadow: 0 14px 36px rgba(16, 24, 40, 0.22);
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .shell[data-side='left'] .side {
+  left: var(--gap);
+  right: auto;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .shell .side[data-open='false'] {
+  top: 50%;
+  bottom: auto;
+  width: auto;
+  transform: translateY(-50%);
+  border: none;
+  background: var(--head);
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .pip {
+  left: var(--inset-l);
+  right: auto;
+  bottom: 64px;
+  width: clamp(170px, 16vw, 280px);
+  width: clamp(170px, calc(16vw / var(--course-zoom, 1)), 280px);
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .camOverlay {
+  top: calc(var(--top) + 64px);
+  left: var(--inset-l);
+  right: auto;
+  bottom: 64px;
+  width: min(560px, calc(100% - var(--inset-l) - var(--inset-r) - 150px));
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .connBanner {
+  top: calc(var(--top) + 64px);
 }
 /* The brand always says what the program is: the logo and "Physical AI Tool". */
 .topBar .brand span {
@@ -4245,11 +5724,36 @@ div.zeroFlow {
   .topBar .brand b {
     font-size: 15px;
   }
+  /* 대응표 */
+  :where([data-course]) .topBar .brand b {
+    font-size: 16px;
+  }
+}
+/* 대응표 */
+:where(html[data-vq~='6']) .app {
+  --side-w: clamp(420px, 34vw, 470px);
+}
+/* 대응표 */
+:where(html[data-vq~='6']) .conn small {
+  display: none;
+}
+/* 대응표 */
+:where(html[data-vq~='6']) .goal {
+  flex-basis: 76px;
+}
+/* 대응표 */
+:where(html[data-vq~='6']) .topBar .brand b {
+  font-size: 15px;
+  font-size: 16px;
 }
 @media (min-width: 1000px) and (max-width: 1279px) {
   .goal {
     display: none;
   }
+}
+/* 대응표 */
+:where(html[data-vq~='9']) .goal {
+  display: none;
 }
 
 /* --- narrow windows: one column, the panel under the 3D view ---------------------------- */
@@ -4282,6 +5786,38 @@ div.zeroFlow {
     width: min(560px, calc(100% - 20px));
   }
 }
+/* 대응표 */
+:where(html[data-vq~='4']) .topBar {
+  flex-wrap: wrap;
+}
+/* 대응표 */
+:where(html[data-vq~='4']) .taskChip {
+  flex-basis: 100%;
+  order: 5;
+}
+/* 대응표 */
+:where(html[data-vq~='4']) .shell {
+  display: flex;
+  flex-direction: column;
+}
+/* 대응표 */
+:where(html[data-vq~='4']) .side {
+  min-height: 620px;
+}
+/* 대응표 */
+:where(html[data-vq~='4']) .pip {
+  left: 10px;
+  right: auto;
+  bottom: 10px;
+}
+/* 대응표 */
+:where(html[data-vq~='4']) .camOverlay {
+  left: 10px;
+  right: auto;
+  top: 52px;
+  bottom: 10px;
+  width: min(560px, calc(100% - 20px));
+}
 
 /* A block's ↑ ↓ ⧉ × keys float above its top edge, over the block before it: the hovered or
    picked block comes to the front so they are never drawn under the neighbour. */
@@ -4301,6 +5837,15 @@ div.zeroFlow {
     height: 29px;
   }
 }
+/* 대응표 */
+:where(html[data-vq~='12']) .taskChip[data-mode='check'] .taskTag {
+  display: none;
+}
+/* 대응표 */
+:where(html[data-vq~='12']) .taskChip .checkChips button {
+  width: 29px;
+  height: 29px;
+}
 /* Phone width: the top bar's right-hand chips wrap, the view buttons scroll sideways. */
 @media (max-width: 640px) {
   .topStatus {
@@ -4311,6 +5856,15 @@ div.zeroFlow {
     display: none;
   }
 
+}
+/* 대응표 */
+:where(html[data-vq~='11']) .topStatus {
+  flex-wrap: wrap;
+  margin-left: 0;
+}
+/* 대응표 */
+:where(html[data-vq~='11']) .topStatus .conn small {
+  display: none;
 }
 
 /* ===========================================================================
@@ -4341,6 +5895,10 @@ div.zeroFlow {
   padding: 3px 12px 3px 3px;
   border-radius: 11px;
 }
+/* 대응표 */
+:where([data-course]) .topBar .taskChip {
+  border-radius: 12px;
+}
 .topBar .taskPick {
   height: calc(var(--tb-h) - 8px);
   padding: 0 10px 0 4px;
@@ -4353,6 +5911,11 @@ div.zeroFlow {
 .topBar .menuChipBtn,
 .topBar .topStop {
   border-radius: 10px;
+}
+/* 대응표 */
+:where([data-course]) .topBar .menuChipBtn,
+:where([data-course]) .topBar .topStop {
+  border-radius: 12px;
 }
 .topBar .settingsChip .menuChipBtn {
   width: var(--tb-h);
@@ -4370,6 +5933,10 @@ div.zeroFlow {
   border-radius: 9px;
   background: color-mix(in srgb, var(--cat, #3454d1) 14%, #fff);
   color: var(--cat, #3454d1);
+}
+/* 대응표 */
+:where([data-course]) .taskGlyph {
+  border-radius: 8px;
 }
 .taskPick[data-cat='move'] {
   --cat: #3454d1;
@@ -4408,6 +5975,10 @@ div.zeroFlow {
   color: #8f9399;
   gap: 0;
 }
+/* 대응표 */
+:where([data-course]) .runDock .runRate {
+  color: #c9ced5;
+}
 .runDock .runRate:hover {
   background: #e2e8f0;
 }
@@ -4422,6 +5993,12 @@ div.zeroFlow {
 .runDock .runReal:not(:disabled),
 .runDock .runStop {
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .runDock .runSim,
+:where([data-course]) .runDock .runReal:not(:disabled),
+:where([data-course]) .runDock .runStop {
+  color: #f6f7f9;
 }
 .runDock .runReal:disabled {
   color: var(--faint);
@@ -4449,6 +6026,10 @@ div.zeroFlow {
   background: #fff;
   box-shadow: 0 14px 36px rgba(16, 24, 40, 0.22);
 }
+/* 대응표 */
+:where([data-course]) .pcOffer {
+  border-radius: 12px;
+}
 .pcOfferIcon {
   width: 42px;
   height: 42px;
@@ -4462,6 +6043,10 @@ div.zeroFlow {
   display: block;
   font-size: 14.5px;
 }
+/* 대응표 */
+:where([data-course]) .pcOfferText b {
+  font-size: 14px;
+}
 .pcOfferText small {
   display: block;
   margin-top: 2px;
@@ -4469,10 +6054,18 @@ div.zeroFlow {
   line-height: 1.45;
   color: var(--muted);
 }
+/* 대응표 */
+:where([data-course]) .pcOfferText small {
+  font-size: 13px;
+}
 .pcOfferText code {
   font: inherit;
   font-weight: 800;
   color: var(--ink);
+}
+/* 대응표 */
+:where([data-course]) .pcOfferText code {
+  font-weight: 700;
 }
 .pcOffer .btnAction {
   display: inline-flex;
@@ -4487,10 +6080,20 @@ div.zeroFlow {
     width: min(660px, calc(100% - var(--inset-l) - var(--inset-r) - 24px));
   }
 }
+/* 대응표 */
+:where(html[data-vq~='5']) .pcOffer {
+  top: calc(var(--top) + 56px);
+  left: calc((var(--inset-l) + 100% - var(--inset-r)) / 2);
+  width: min(660px, calc(100% - var(--inset-l) - var(--inset-r) - 24px));
+}
 @media (max-width: 640px) {
   .pcOffer {
     grid-template-columns: auto minmax(0, 1fr);
   }
+}
+/* 대응표 */
+:where(html[data-vq~='11']) .pcOffer {
+  grid-template-columns: auto minmax(0, 1fr);
 }
 
 /* 색 따라가기 (camera window) ------------------------------------------------ */
@@ -4505,6 +6108,10 @@ div.zeroFlow {
   border-radius: 10px;
   background: var(--page);
   font-size: 13px;
+}
+/* 대응표 */
+:where([data-course]) .trackBar {
+  border-radius: 12px;
 }
 .trackBar > b {
   font-weight: 700;
@@ -4527,6 +6134,10 @@ div.zeroFlow {
   color: var(--muted);
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .trackColors button {
+  font-size: 13px;
+}
 .trackColors button[aria-checked='true'] {
   border-color: var(--ink, #121a2b);
   color: var(--ink, #121a2b);
@@ -4542,6 +6153,10 @@ div.zeroFlow {
   height: 10px;
   border-radius: 3px;
 }
+/* 대응표 */
+:where([data-course]) .trackColors .sw {
+  border-radius: 8px;
+}
 .app .trackGo,
 .app .trackStop {
   height: 30px;
@@ -4552,6 +6167,11 @@ div.zeroFlow {
   font-weight: 700;
   color: #fff;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .app .trackGo,
+:where([data-course]) .app .trackStop {
+  color: #f6f7f9;
 }
 .app .trackGo {
   background: #16955a;
@@ -4568,6 +6188,10 @@ div.zeroFlow {
   font-size: 12.5px;
   min-width: 0;
 }
+/* 대응표 */
+:where([data-course]) .trackNote {
+  font-size: 13px;
+}
 
 /* AI 샘플 결과 (검수 6) ------------------------------------------------------- */
 .pickerBox.aiBox {
@@ -4581,6 +6205,10 @@ div.zeroFlow {
   object-fit: contain;
   border-radius: 12px;
   background: #0f172a;
+}
+/* 대응표 */
+:where([data-course]) .aiImage {
+  max-height: calc(58vh / var(--course-zoom, 1));
 }
 .aiStats {
   margin: 10px 0 6px;
@@ -4615,6 +6243,10 @@ div.zeroFlow {
   font-weight: 700;
   color: #16955a;
 }
+/* 대응표 */
+:where([data-course]) .aiList i {
+  color: #86efac;
+}
 
 /* 검수 준비 점검 ------------------------------------------------------------- */
 .prepList {
@@ -4634,6 +6266,11 @@ div.zeroFlow {
   border-radius: 10px;
   font-size: 13.5px;
 }
+/* 대응표 */
+:where([data-course]) .prepList li {
+  border-radius: 12px;
+  font-size: 14px;
+}
 .prepList li b {
   display: block;
 }
@@ -4643,19 +6280,35 @@ div.zeroFlow {
   font-size: 12.5px;
   margin-top: 2px;
 }
+/* 대응표 */
+:where([data-course]) .prepList li small {
+  font-size: 13px;
+}
 .prepList li em {
   font-style: normal;
   font-size: 12px;
   color: var(--muted);
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .prepList li em {
+  font-size: 13px;
+}
 .prepMark {
   font-weight: 800;
   font-size: 16px;
   text-align: center;
 }
+/* 대응표 */
+:where([data-course]) .prepMark {
+  font-weight: 700;
+}
 .prepList li[data-ok='yes'] .prepMark {
   color: #16955a;
+}
+/* 대응표 */
+:where([data-course]) .prepList li[data-ok='yes'] .prepMark {
+  color: #86efac;
 }
 .prepList li[data-ok='no'] {
   border-color: #f4c7c3;
@@ -4666,6 +6319,10 @@ div.zeroFlow {
 }
 .prepList li[data-ok='unknown'] .prepMark {
   color: #b54708;
+}
+/* 대응표 */
+:where([data-course]) .prepList li[data-ok='unknown'] .prepMark {
+  color: #f0a23b;
 }
 .prepActions {
   display: flex;
@@ -4701,6 +6358,10 @@ div.zeroFlow {
   font-size: 14px;
   margin-bottom: 8px;
 }
+/* 대응표 */
+:where([data-course]) .findFilter {
+  border-radius: 12px;
+}
 
 /* Model choice: one card per product line, all the same size — picture, name, the board in a fixed form, [시작]. */
 .pickerBox.modelBox {
@@ -4728,6 +6389,10 @@ div.zeroFlow {
     border-color 0.15s ease,
     box-shadow 0.15s ease,
     transform 0.15s ease;
+}
+/* 대응표 */
+:where([data-course]) .lineCard {
+  border-radius: 12px;
 }
 .lineCard[data-ready]:hover {
   border-color: #cfd4db;
@@ -4778,6 +6443,11 @@ div.zeroFlow {
   background: var(--accent-soft);
   color: var(--accent);
 }
+/* 대응표 */
+:where([data-course]) .lineText b em {
+  font-size: 13px;
+  font-weight: 700;
+}
 .lineText small {
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -4789,6 +6459,10 @@ div.zeroFlow {
   line-height: 1.4;
   color: var(--muted);
   word-break: keep-all;
+}
+/* 대응표 */
+:where([data-course]) .lineText small {
+  font-size: 13px;
 }
 .lineBoards {
   display: grid;
@@ -4802,6 +6476,10 @@ div.zeroFlow {
   color: var(--faint);
   padding-left: 2px;
 }
+/* 대응표 */
+:where([data-course]) .lineBoards > small {
+  font-size: 13px;
+}
 /* The fixed form: a segmented control, a list, or the one fixed choice — all 36 px tall. */
 .lineSeg {
   display: flex;
@@ -4810,6 +6488,10 @@ div.zeroFlow {
   gap: 3px;
   border-radius: 10px;
   background: #eef0f4;
+}
+/* 대응표 */
+:where([data-course]) .lineSeg {
+  border-radius: 12px;
 }
 .app .lineSeg button {
   flex: 1 1 0;
@@ -4824,6 +6506,10 @@ div.zeroFlow {
   overflow: hidden;
   text-overflow: ellipsis;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .app .lineSeg button {
+  font-size: 13px;
 }
 .app .lineSeg button:hover:not(:disabled):not([aria-checked='true']) {
   color: var(--ink);
@@ -4840,6 +6526,10 @@ div.zeroFlow {
   opacity: 0.7;
   cursor: default;
 }
+/* 대응표 */
+:where([data-course]) .app .lineSeg button:disabled {
+  color: #f0a23b;
+}
 .app .lineSelect {
   height: 36px;
   width: 100%;
@@ -4854,6 +6544,11 @@ div.zeroFlow {
   font-weight: 700;
   color: var(--ink);
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .app .lineSelect {
+  border-radius: 12px;
+  font-size: 13px;
 }
 .app .lineSelect:hover {
   border-color: #cfd4db;
@@ -4872,6 +6567,11 @@ div.zeroFlow {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* 대응표 */
+:where([data-course]) .lineOne {
+  border-radius: 12px;
+  font-size: 13px;
+}
 .app .lineStart {
   display: flex;
   align-items: center;
@@ -4887,6 +6587,12 @@ div.zeroFlow {
   cursor: pointer;
   box-shadow: 0 2px 6px rgba(52, 84, 209, 0.28);
 }
+/* 대응표 */
+:where([data-course]) .app .lineStart {
+  border-radius: 12px;
+  color: #f6f7f9;
+  font-weight: 700;
+}
 .app .lineStart:hover:not(:disabled) {
   background: #2b47bd;
 }
@@ -4901,6 +6607,10 @@ div.zeroFlow {
   color: #9da1a7;
   box-shadow: none;
   cursor: default;
+}
+/* 대응표 */
+:where([data-course]) .app .lineStart:disabled {
+  color: #c9ced5;
 }
 
 /* 직접 제어: [기본 자세] [일자로 펴기] [정지] pinned at the bottom of the panel. */
@@ -4929,6 +6639,12 @@ div.zeroFlow {
   cursor: pointer;
   box-shadow: var(--shadow-sm);
 }
+/* 대응표 */
+:where([data-course]) .app .poseDock button {
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 14px;
+}
 .app .poseDock button:hover:not(:disabled) {
   border-color: var(--accent);
   color: var(--accent);
@@ -4944,10 +6660,18 @@ div.zeroFlow {
   color: #fff;
   box-shadow: 0 2px 0 #c7372b;
 }
+/* 대응표 */
+:where([data-course]) .app .poseDock .poseStop {
+  color: #f6f7f9;
+}
 .app .poseDock .poseStop:hover {
   background: var(--stop);
   filter: brightness(1.06);
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .app .poseDock .poseStop:hover {
+  color: #f6f7f9;
 }
 /* [?] beside the step choice: shows the how-to lines. */
 
@@ -5014,6 +6738,24 @@ div.zeroFlow {
     padding: 8px 14px 8px 16px;
   }
 }
+/* 대응표 */
+:where(html[data-vq~='5']) .app {
+  --top: 64px;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .app .topBar {
+  top: 0;
+  left: 0;
+  right: 0;
+  min-height: 60px;
+  border-radius: 0;
+  border: 0;
+  border-bottom: 1px solid #e4e7ec;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 1px 2px rgba(43, 45, 49, 0.04),
+      0 6px 18px rgba(43, 45, 49, 0.05);
+  padding: 8px 14px 8px 16px;
+}
 .app .topBar .brand {
   gap: 12px;
 }
@@ -5067,6 +6809,22 @@ div.zeroFlow {
     display: block;
   }
 }
+/* 대응표 */
+:where(html[data-vq~='5']) .app .shell {
+  --side-w: clamp(400px, 26vw, 440px);
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .app .shell[data-tab='code'] {
+  --side-w: clamp(440px, 30vw, 540px);
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .app .shell[data-wide] {
+  --side-w: max(440px, min(600px, calc(100vw - 560px)));
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .app .undoBar .wideKey {
+  display: block;
+}
 /* 넓게 보기 on a window under ~1700px leaves the board over the 3D view about 260px: tag, text and
    buttons one under another instead of three columns (the text was squeezed to a letter a line) */
 @media (min-width: 1000px) and (min-height: 600px) and (max-width: 1700px) {
@@ -5086,6 +6844,31 @@ div.zeroFlow {
       inset 0 1px 0 rgba(255, 255, 255, 0.05);
     overflow: hidden;
   }
+  /* 대응표 */
+  :where([data-course]) .app .shell .side {
+    border-color: rgba(255, 255, 255, 0.18);
+    border-radius: 12px;
+  }
+}
+/* 대응표 */
+:where(html[data-vq~='13']) .shell[data-wide] .notice,
+:where(html[data-vq~='13']) .shell[data-wide] .guide {
+  grid-template-columns: minmax(0, 1fr);
+}
+/* 대응표 */
+:where(html[data-vq~='13']) .shell[data-wide] .noticeEnd {
+  justify-self: start;
+}
+/* 대응표 */
+:where(html[data-vq~='13']) .app .shell .side {
+  background: #303236;
+  border: 1px solid rgba(255, 255, 255, 0.084);
+  border-radius: 16px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  border-color: rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
 }
 .app .side {
   background: #303236;
@@ -5127,10 +6910,20 @@ div.zeroFlow {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* 대응표 */
+:where([data-course]) .sideModel b {
+  font-size: 18px;
+  font-weight: 700;
+}
 .sideModel small {
   font-size: 10.5px;
   color: #9da1a7;
   white-space: nowrap;
+}
+/* 대응표 */
+:where([data-course]) .sideModel small {
+  font-size: 13px;
+  color: #c9ced5;
 }
 .sideModel em {
   font-style: normal;
@@ -5141,6 +6934,13 @@ div.zeroFlow {
   border-radius: 999px;
   padding: 1px 7px;
   flex: none;
+}
+/* 대응표 */
+:where([data-course]) .sideModel em {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f6f7f9;
+  border-color: rgba(255, 255, 255, 0.18);
 }
 .app .sideModel:disabled {
   cursor: default;
@@ -5165,6 +6965,10 @@ div.zeroFlow {
 .app .lightsBtn:hover {
   background: rgba(255, 255, 255, 0.05);
 }
+/* 대응표 */
+:where([data-course]) .app .lightsBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
 .light {
   display: flex;
   flex-direction: column;
@@ -5175,6 +6979,12 @@ div.zeroFlow {
   color: #84878c;
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .light {
+  font-size: 13px;
+  font-weight: 700;
+  color: #c9ced5;
+}
 .light i {
   width: 11px;
   height: 11px;
@@ -5183,11 +6993,23 @@ div.zeroFlow {
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
 }
+/* 대응표 */
+:where([data-course]) .light i {
+  border-color: rgba(255, 255, 255, 0.18);
+}
 .light[data-on] i {
   border-color: rgba(255, 255, 255, 0.5);
 }
+/* 대응표 */
+:where([data-course]) .light[data-on] i {
+  border-color: rgba(255, 255, 255, 0.45);
+}
 .light[data-on][data-tone='sim'] {
   color: #9ff0c4;
+}
+/* 대응표 */
+:where([data-course]) .light[data-on][data-tone='sim'] {
+  color: #86efac;
 }
 .light[data-on][data-tone='sim'] i {
   background: #3ddc84;
@@ -5196,12 +7018,20 @@ div.zeroFlow {
 .light[data-on][data-tone='real'] {
   color: #ffcf7a;
 }
+/* 대응표 */
+:where([data-course]) .light[data-on][data-tone='real'] {
+  color: #f0a23b;
+}
 .light[data-on][data-tone='real'] i {
   background: #ffad1f;
   box-shadow: 0 0 10px #ffad1f;
 }
 .light[data-on][data-tone='run'] {
   color: #e4eaf2;
+}
+/* 대응표 */
+:where([data-course]) .light[data-on][data-tone='run'] {
+  color: #f6f7f9;
 }
 .light[data-on][data-tone='run'] i {
   background: #e4eaf2;
@@ -5210,6 +7040,10 @@ div.zeroFlow {
 }
 .light[data-on][data-tone='err'] {
   color: #ff9b93;
+}
+/* 대응표 */
+:where([data-course]) .light[data-on][data-tone='err'] {
+  color: #ff8f86;
 }
 .light[data-on][data-tone='err'] i {
   background: #ff5a4e;
@@ -5241,6 +7075,11 @@ div.zeroFlow {
   line-height: 1.35;
   color: var(--muted);
 }
+/* 대응표 */
+:where([data-course]) .statusRow {
+  border-radius: 8px;
+  font-size: 13px;
+}
 .statusRow i {
   width: 11px;
   height: 11px;
@@ -5251,6 +7090,10 @@ div.zeroFlow {
   color: var(--ink);
   font-size: 12.5px;
   white-space: nowrap;
+}
+/* 대응표 */
+:where([data-course]) .statusRow b {
+  font-size: 13px;
 }
 .statusRow span {
   overflow-wrap: anywhere;
@@ -5315,6 +7158,11 @@ div.zeroFlow {
   display: grid;
   place-items: center;
 }
+/* 대응표 */
+:where([data-course]) .app .sideHeader .sideFold {
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #c9ced5;
+}
 /* tabs: one row, icon + name + level */
 /* sections */
 .app .side .dockScroll {
@@ -5334,6 +7182,11 @@ div.zeroFlow {
   background: rgba(255, 255, 255, 0.063);
   color: #ff9a95;
   flex: none;
+}
+/* 대응표 */
+:where([data-course]) .app .side .dockIcon {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ff8f86;
 }
 .app .side .dockAside {
   display: flex;
@@ -5357,14 +7210,28 @@ div.zeroFlow {
   color: #e4eaf2;
   box-shadow: none;
 }
+/* 대응표 */
+:where([data-course]) .app .side .poseDock button {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #f6f7f9;
+}
 .app .side .poseDock button:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.09);
+}
+/* 대응표 */
+:where([data-course]) .app .side .poseDock button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
 }
 .app .side .poseDock .poseStop {
   background: linear-gradient(180deg, #ff5a4e, #e0372c);
   border-color: #ff7a70;
   color: #fff;
   box-shadow: 0 0 16px rgba(255, 90, 78, 0.3);
+}
+/* 대응표 */
+:where([data-course]) .app .side .poseDock .poseStop {
+  color: #f6f7f9;
 }
 
 /* --- 수동 제어 (ControlPanel) in the dark panel ------------------------------ */
@@ -5375,8 +7242,17 @@ div.zeroFlow {
 .app .side .numChip {
   color: #1f2328;
 }
+/* 대응표 */
+:where([data-course]) .app .side .field,
+:where([data-course]) .app .side .numChip {
+  color: #14171c;
+}
 .app .side input.field {
   color: #137a47;
+}
+/* 대응표 */
+:where([data-course]) .app .side input.field {
+  color: #86efac;
 }
 /* the editor: a dark IDE */
 .app .side .ide {
@@ -5392,6 +7268,10 @@ div.zeroFlow {
   box-shadow: inset 0 2px 0 #ff6b62;
   color: #e4eaf2;
 }
+/* 대응표 */
+:where([data-course]) .app .side .fileTab {
+  color: #f6f7f9;
+}
 .app .side .ide .gutter {
   background: #25272b;
   border-right-color: rgba(255, 255, 255, 0.06);
@@ -5400,8 +7280,16 @@ div.zeroFlow {
 .app .side .ide .gutter .gCursor {
   color: #b8bdc4;
 }
+/* 대응표 */
+:where([data-course]) .app .side .ide .gutter .gCursor {
+  color: #c9ced5;
+}
 .app .side .lineMark {
   background: rgba(255, 255, 255, 0.04);
+}
+/* 대응표 */
+:where([data-course]) .app .side .lineMark {
+  background: rgba(255, 255, 255, 0.08);
 }
 .app .side .lineErr {
   background: rgba(255, 90, 78, 0.14);
@@ -5414,6 +7302,10 @@ div.zeroFlow {
 .app .side .codeHi {
   color: #e6ecf4;
 }
+/* 대응표 */
+:where([data-course]) .app .side .codeHi {
+  color: #f6f7f9;
+}
 .app .side .ide .code {
   caret-color: #e6ecf4;
 }
@@ -5423,33 +7315,69 @@ div.zeroFlow {
 .app .side .tkKeyword {
   color: #ff7b72;
 }
+/* 대응표 */
+:where([data-course]) .app .side .tkKeyword {
+  color: #ff8f86;
+}
 .app .side .tkString {
   color: #a5d6ff;
+}
+/* 대응표 */
+:where([data-course]) .app .side .tkString {
+  color: #93c5fd;
 }
 .app .side .tkComment {
   color: #818489;
 }
+/* 대응표 */
+:where([data-course]) .app .side .tkComment {
+  color: #c9ced5;
+}
 .app .side .tkNumber,
 .app .side .tkConst {
   color: #79c0ff;
+}
+/* 대응표 */
+:where([data-course]) .app .side .tkNumber,
+:where([data-course]) .app .side .tkConst {
+  color: #93c5fd;
 }
 .app .side .tkDef,
 .app .side .tkCall,
 .app .side .tkDecorator {
   color: #b9bec5;
 }
+/* 대응표 */
+:where([data-course]) .app .side .tkDef,
+:where([data-course]) .app .side .tkCall,
+:where([data-course]) .app .side .tkDecorator {
+  color: #c9ced5;
+}
 .app .side .tkBuiltin,
 .app .side .tkSelf {
   color: #ffa657;
+}
+/* 대응표 */
+:where([data-course]) .app .side .tkBuiltin,
+:where([data-course]) .app .side .tkSelf {
+  color: #f0a23b;
 }
 .app .side .statusBar {
   background: #303236;
   border-top-color: rgba(255, 255, 255, 0.07);
   color: #91959b;
 }
+/* 대응표 */
+:where([data-course]) .app .side .statusBar {
+  color: #c9ced5;
+}
 .app .side .kbd {
   background: rgba(255, 255, 255, 0.05);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+/* 대응표 */
+:where([data-course]) .app .side .kbd {
+  background: rgba(255, 255, 255, 0.08);
 }
 .app .side .termPanel {
   background: #25272b;
@@ -5463,21 +7391,45 @@ div.zeroFlow {
   color: #f1f4f9;
   box-shadow: inset 0 -2px 0 #ff6b62;
 }
+/* 대응표 */
+:where([data-course]) .app .side .termTabs button[aria-selected='true'] {
+  color: #f6f7f9;
+}
 .app .side .termTabs i {
   background: rgba(255, 255, 255, 0.07);
+}
+/* 대응표 */
+:where([data-course]) .app .side .termTabs i {
+  background: rgba(255, 255, 255, 0.08);
 }
 .app .side .termText {
   color: #e6ecf4;
 }
+/* 대응표 */
+:where([data-course]) .app .side .termText {
+  color: #f6f7f9;
+}
 .app .side .termText i {
   color: #84878c;
+}
+/* 대응표 */
+:where([data-course]) .app .side .termText i {
+  color: #c9ced5;
 }
 .app .side .termText b {
   color: #3ddc84;
 }
+/* 대응표 */
+:where([data-course]) .app .side .termText b {
+  color: #86efac;
+}
 /* run bar */
 .app .side .runRate {
   background: rgba(255, 255, 255, 0.05);
+}
+/* 대응표 */
+:where([data-course]) .app .side .runRate {
+  background: rgba(255, 255, 255, 0.08);
 }
 .app .side .runRate button,
 .app .side .runRate > button {
@@ -5486,18 +7438,40 @@ div.zeroFlow {
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: none;
 }
+/* 대응표 */
+:where([data-course]) .app .side .runRate button,
+:where([data-course]) .app .side .runRate > button {
+  background: rgba(255, 255, 255, 0.08);
+  color: #c9ced5;
+  border-color: rgba(255, 255, 255, 0.18);
+}
 .app .side .runRate button:hover {
   background: rgba(255, 255, 255, 0.09);
+}
+/* 대응표 */
+:where([data-course]) .app .side .runRate button:hover {
+  background: rgba(255, 255, 255, 0.08);
 }
 .app .side .runRate button[aria-pressed='true'] {
   background: rgba(255, 255, 255, 0.126);
   color: #fff;
   border-color: rgba(255, 255, 255, 0.22);
 }
+/* 대응표 */
+:where([data-course]) .app .side .runRate button[aria-pressed='true'] {
+  background: rgba(255, 255, 255, 0.16);
+  color: #f6f7f9;
+  border-color: rgba(255, 255, 255, 0.18);
+}
 .app .side .runReal:disabled {
   background: rgba(255, 255, 255, 0.04);
   color: #91959b;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+/* 대응표 */
+:where([data-course]) .app .side .runReal:disabled {
+  background: rgba(255, 255, 255, 0.08);
+  color: #c9ced5;
 }
 /* the practice needs a tool that is not on: one amber line with [끼우기] */
 .app .missionCard:has(.missionNeed) {
@@ -5516,12 +7490,22 @@ div.zeroFlow {
   color: #ffdba0;
   font-size: 12.5px;
 }
+/* 대응표 */
+:where([data-course]) .missionNeed {
+  border-radius: 12px;
+  color: #f0a23b;
+  font-size: 13px;
+}
 .missionNeed span {
   flex: 1;
   min-width: 0;
 }
 .missionNeed b {
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .missionNeed b {
+  color: #f6f7f9;
 }
 .app .missionNeed button {
   flex: none;
@@ -5534,6 +7518,12 @@ div.zeroFlow {
   font-size: 12.5px;
   cursor: pointer;
   box-shadow: 0 0 14px rgba(245, 158, 11, 0.35);
+}
+/* 대응표 */
+:where([data-course]) .app .missionNeed button {
+  color: #14171c;
+  font-weight: 700;
+  font-size: 13px;
 }
 .app .missionNeed button:disabled {
   opacity: 0.5;
@@ -5554,6 +7544,12 @@ div.zeroFlow {
   border-radius: 10px;
   background: radial-gradient(circle at 50% 42%, #616367 0%, #333539 58%, #383a3e 100%);
 }
+/* 대응표 */
+:where([data-course]) .toolHero img,
+:where([data-course]) .toolCard img,
+:where([data-course]) .accCard img {
+  border-radius: 12px;
+}
 .toolHero {
   display: flex;
   align-items: center;
@@ -5562,6 +7558,10 @@ div.zeroFlow {
   border-radius: 12px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.063), rgba(255, 255, 255, 0.018));
   border: 1px solid rgba(255, 255, 255, 0.14);
+}
+/* 대응표 */
+:where([data-course]) .toolHero {
+  border-color: rgba(255, 255, 255, 0.18);
 }
 .toolHero img {
   width: 76px;
@@ -5579,15 +7579,33 @@ div.zeroFlow {
   color: #ff9a95;
   letter-spacing: 0.04em;
 }
+/* 대응표 */
+:where([data-course]) .toolHero small {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ff8f86;
+  letter-spacing: 0;
+}
 .toolHero b {
   font-size: 17px;
   font-weight: 800;
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .toolHero b {
+  font-size: 18px;
+  font-weight: 700;
+  color: #f6f7f9;
+}
 .toolHero em {
   font-style: normal;
   font-size: 11.5px;
   color: #a9adb3;
+}
+/* 대응표 */
+:where([data-course]) .toolHero em {
+  font-size: 13px;
+  color: #c9ced5;
 }
 .partsHead {
   margin: 4px 2px 0;
@@ -5595,6 +7613,13 @@ div.zeroFlow {
   font-weight: 800;
   letter-spacing: 0.04em;
   color: #91959b;
+}
+/* 대응표 */
+:where([data-course]) .partsHead {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: #c9ced5;
 }
 .toolCards {
   display: grid;
@@ -5617,6 +7642,13 @@ div.zeroFlow {
     background 0.15s,
     transform 0.1s;
 }
+/* 대응표 */
+:where([data-course]) .app .toolCard {
+  border-radius: 12px;
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  color: #c9ced5;
+}
 .toolCard img {
   width: 100%;
   aspect-ratio: 1;
@@ -5629,9 +7661,18 @@ div.zeroFlow {
   text-align: center;
   word-break: keep-all;
 }
+/* 대응표 */
+:where([data-course]) .toolCard span {
+  font-size: 13px;
+}
 .app .toolCard:hover:not(:disabled) {
   border-color: rgba(255, 255, 255, 0.14);
   background: rgba(255, 255, 255, 0.032);
+}
+/* 대응표 */
+:where([data-course]) .app .toolCard:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
 }
 .app .toolCard:active:not(:disabled) {
   transform: translateY(1px);
@@ -5643,6 +7684,11 @@ div.zeroFlow {
   box-shadow:
     0 0 0 1px #ff6b62,
     0 0 14px rgba(255, 255, 255, 0.113);
+}
+/* 대응표 */
+:where([data-course]) .app .toolCard[aria-pressed='true'] {
+  color: #f6f7f9;
+  background: rgba(255, 255, 255, 0.08);
 }
 .app .toolCard:disabled {
   opacity: 0.5;
@@ -5663,9 +7709,20 @@ div.zeroFlow {
   background: rgba(255, 255, 255, 0.03);
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .accCard {
+  border-radius: 12px;
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+}
 .accCard[data-on] {
   border-color: rgba(255, 255, 255, 0.16);
   background: rgba(255, 255, 255, 0.036);
+}
+/* 대응표 */
+:where([data-course]) .accCard[data-on] {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
 }
 .accCard img {
   width: 52px;
@@ -5681,9 +7738,19 @@ div.zeroFlow {
   font-weight: 800;
   color: #f1f4f9;
 }
+/* 대응표 */
+:where([data-course]) .accText b {
+  font-weight: 700;
+  color: #f6f7f9;
+}
 .accText small {
   font-size: 11px;
   color: #a4a8ae;
+}
+/* 대응표 */
+:where([data-course]) .accText small {
+  font-size: 13px;
+  color: #c9ced5;
 }
 .accCard input[role='switch'] {
   appearance: none;
@@ -5729,6 +7796,11 @@ div.zeroFlow {
   background: rgba(0, 0, 0, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
+/* 대응표 */
+:where([data-course]) .stepper {
+  border-radius: 8px;
+  border-color: rgba(255, 255, 255, 0.18);
+}
 .app .stepper button {
   width: 28px;
   height: 26px;
@@ -5740,8 +7812,20 @@ div.zeroFlow {
   font-weight: 800;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .app .stepper button {
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f6f7f9;
+  font-size: 16px;
+  font-weight: 700;
+}
 .app .stepper button:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.135);
+}
+/* 대응표 */
+:where([data-course]) .app .stepper button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.16);
 }
 .app .stepper button:disabled {
   opacity: 0.4;
@@ -5760,6 +7844,11 @@ div.zeroFlow {
   font-variant-numeric: tabular-nums;
   -moz-appearance: textfield;
 }
+/* 대응표 */
+:where([data-course]) .app .stepper input {
+  color: #f6f7f9;
+  font-weight: 700;
+}
 .app .stepper input::-webkit-inner-spin-button {
   appearance: none;
 }
@@ -5768,6 +7857,11 @@ div.zeroFlow {
   font-size: 11px;
   color: #a4a8ae;
   padding: 0 6px 0 2px;
+}
+/* 대응표 */
+:where([data-course]) .stepper i {
+  font-size: 13px;
+  color: #c9ced5;
 }
 
 /* --- view tools (StageTools ViewTools): the view cube and one column of buttons -------- */
@@ -5820,6 +7914,14 @@ div.zeroFlow {
   backface-visibility: hidden;
   user-select: none;
 }
+/* 대응표 */
+:where([data-course]) .app .cubeFace {
+  border-color: rgba(255, 255, 255, 0.45);
+  border-radius: 8px;
+  color: #f6f7f9;
+  font-size: 13px;
+  font-weight: 700;
+}
 .app button.cubeFace {
   cursor: pointer;
 }
@@ -5828,8 +7930,16 @@ div.zeroFlow {
   border-color: #ff9a95;
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .app button.cubeFace:hover {
+  color: #f6f7f9;
+}
 .app span.cubeFace {
   color: #91959b;
+}
+/* 대응표 */
+:where([data-course]) .app span.cubeFace {
+  color: #c9ced5;
 }
 .viewRail {
   display: flex;
@@ -5841,6 +7951,10 @@ div.zeroFlow {
   border: 1px solid rgba(255, 255, 255, 0.084);
   backdrop-filter: blur(12px);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+}
+/* 대응표 */
+:where([data-course]) .viewRail {
+  border-color: rgba(255, 255, 255, 0.18);
 }
 .app .viewRail button {
   position: relative;
@@ -5855,15 +7969,30 @@ div.zeroFlow {
   color: #b8bdc4;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .app .viewRail button {
+  color: #c9ced5;
+}
 .app .viewRail button:hover {
   background: rgba(255, 255, 255, 0.07);
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .app .viewRail button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f6f7f9;
 }
 .app .viewRail button[aria-pressed='true'],
 .app .viewRail button[aria-expanded='true'] {
   color: #fff;
   background: rgba(255, 255, 255, 0.135);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+}
+/* 대응표 */
+:where([data-course]) .app .viewRail button[aria-pressed='true'],
+:where([data-course]) .app .viewRail button[aria-expanded='true'] {
+  color: #f6f7f9;
+  background: rgba(255, 255, 255, 0.16);
 }
 .railSep {
   height: 1px;
@@ -5895,6 +8024,11 @@ div.zeroFlow {
   --soft: rgba(255, 255, 255, 0.06);
   --accent: #ff6b62;
 }
+/* 대응표 */
+:where([data-course]) .viewRail .displayMenu {
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #f6f7f9;
+}
 /* top bar: the practice chip's [과제 고르기] and goal bar on the light bar */
 
 .app .topBar .goalTrack {
@@ -5915,12 +8049,25 @@ div.zeroFlow {
 .viewRail .displayItem b {
   font-size: 12.5px;
 }
+/* 대응표 */
+:where([data-course]) .viewRail .displayItem b {
+  font-size: 13px;
+}
 .viewRail .displayItem small {
   font-size: 10.5px;
   color: #9da1a7;
 }
+/* 대응표 */
+:where([data-course]) .viewRail .displayItem small {
+  font-size: 13px;
+  color: #c9ced5;
+}
 .viewRail .displayItem:hover {
   background: rgba(255, 255, 255, 0.05);
+}
+/* 대응표 */
+:where([data-course]) .viewRail .displayItem:hover {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 /* --- the situation board (stage/Notices.tsx): over the 3D view, top centre, no card -------- */
@@ -5969,6 +8116,10 @@ div.zeroFlow {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85), 0 0 14px rgba(0, 0, 0, 0.55);
   animation: noticeIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
+/* 대응표 */
+:where([data-course]) .board {
+  color: #f6f7f9;
+}
 @keyframes noticeIn {
   from {
     opacity: 0;
@@ -6010,6 +8161,11 @@ div.zeroFlow {
   word-break: keep-all;
   color: #f4f7fb;
 }
+/* 대응표 */
+:where([data-course]) .notice p,
+:where([data-course]) .guide p {
+  color: #f6f7f9;
+}
 .notice p small {
   display: block;
   margin-top: 2px;
@@ -6017,12 +8173,24 @@ div.zeroFlow {
   font-weight: 600;
   color: rgba(244, 247, 251, 0.8);
 }
+/* 대응표 */
+:where([data-course]) .notice p small {
+  font-size: 13px;
+}
 .notice[data-kind='err'] p small {
   color: #ffb4b0;
+}
+/* 대응표 */
+:where([data-course]) .notice[data-kind='err'] p small {
+  color: #f6f7f9;
 }
 .guide p b {
   margin-right: 8px;
   font-weight: 800;
+}
+/* 대응표 */
+:where([data-course]) .guide p b {
+  font-weight: 700;
 }
 .guideTag {
   margin-top: 1px;
@@ -6031,6 +8199,12 @@ div.zeroFlow {
   font-weight: 800;
   letter-spacing: 0.04em;
   white-space: nowrap;
+}
+/* 대응표 */
+:where([data-course]) .guideTag {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
 }
 .guideTag::before {
   content: '';
@@ -6056,6 +8230,13 @@ div.zeroFlow {
   cursor: pointer;
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .app .guideNext {
+  border-radius: 8px;
+  color: #f6f7f9;
+  font-size: 13px;
+  font-weight: 700;
+}
 .app .guideNext:hover {
   border-color: #f4f7fb;
   background: rgba(244, 247, 251, 0.1);
@@ -6073,9 +8254,18 @@ div.zeroFlow {
   text-shadow: inherit;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .app .noticeClose {
+  border-radius: 8px;
+  font-size: 18px;
+}
 .app .noticeClose:hover {
   background: rgba(244, 247, 251, 0.1);
   color: #f4f7fb;
+}
+/* 대응표 */
+:where([data-course]) .app .noticeClose:hover {
+  color: #f6f7f9;
 }
 .noticeEnd {
   display: flex;
@@ -6098,10 +8288,20 @@ div.zeroFlow {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .app .noticeLog {
+  border-radius: 8px;
+  font-size: 13px;
+}
 .app .noticeLog:hover,
 .app .noticeLog[aria-expanded='true'] {
   background: rgba(244, 247, 251, 0.1);
   color: #f4f7fb;
+}
+/* 대응표 */
+:where([data-course]) .app .noticeLog:hover,
+:where([data-course]) .app .noticeLog[aria-expanded='true'] {
+  color: #f6f7f9;
 }
 .app .notices[data-idle] > .noticeLog {
   height: 26px;
@@ -6126,6 +8326,12 @@ div.zeroFlow {
   --line: rgba(244, 247, 251, 0.1);
   color: #f4f7fb;
 }
+/* 대응표 */
+:where([data-course]) .noticeHistory {
+  width: min(460px, calc(calc(100vw / var(--course-zoom, 1)) - 40px));
+  border-radius: 12px;
+  color: #f6f7f9;
+}
 .noticeHistory .log {
   max-height: 320px;
   overflow: auto;
@@ -6142,6 +8348,13 @@ div.zeroFlow {
   letter-spacing: 0.04em;
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .notice .tag,
+:where([data-course]) .noticeHistory .tag {
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0;
+}
 .notice .tag::before,
 .noticeHistory .tag::before {
   content: '';
@@ -6157,17 +8370,33 @@ div.zeroFlow {
   background: none;
   color: #ccd1d8;
 }
+/* 대응표 */
+:where([data-course]) :is(.notice, .noticeHistory) .tag_info {
+  color: #c9ced5;
+}
 :is(.notice, .noticeHistory) :is(.tag_sim, .tag_ok) {
   background: none;
   color: #4ade80;
+}
+/* 대응표 */
+:where([data-course]) :is(.notice, .noticeHistory) :is(.tag_sim, .tag_ok) {
+  color: #86efac;
 }
 :is(.notice, .noticeHistory) .tag_warn {
   background: none;
   color: #ffb547;
 }
+/* 대응표 */
+:where([data-course]) :is(.notice, .noticeHistory) .tag_warn {
+  color: #f0a23b;
+}
 :is(.notice, .noticeHistory) .tag_err {
   background: none;
   color: #ff5a5a;
+}
+/* 대응표 */
+:where([data-course]) :is(.notice, .noticeHistory) .tag_err {
+  color: #ff8f86;
 }
 
 /* Where to press next (Notices.tsx sets data-hint): a soft ring that breathes; nothing moves. */
@@ -6200,9 +8429,20 @@ div.zeroFlow {
   border: 1px solid rgba(255, 255, 255, 0.16);
   box-shadow: none;
 }
+/* 대응표 */
+:where([data-course]) .app .side .dock .jogWide,
+:where([data-course]) .app .side .jogWide {
+  color: #f6f7f9;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+}
 .app .side .dock .jogWide:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.117);
   border-color: #ff6b62;
+}
+/* 대응표 */
+:where([data-course]) .app .side .dock .jogWide:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.16);
 }
 .app .side .dock .jogWide:active:not(:disabled) {
   color: #fff;
@@ -6210,16 +8450,31 @@ div.zeroFlow {
   border-color: #ff6b62;
   box-shadow: none;
 }
+/* 대응표 */
+:where([data-course]) .app .side .dock .jogWide:active:not(:disabled) {
+  color: #f6f7f9;
+  background: rgba(255, 255, 255, 0.16);
+}
 .app .side .dock .jogWide:disabled {
   color: #84878c;
   background: rgba(255, 255, 255, 0.03);
   border-color: rgba(255, 255, 255, 0.08);
+}
+/* 대응표 */
+:where([data-course]) .app .side .dock .jogWide:disabled {
+  color: #c9ced5;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
 }
 /* The status card (연결 확인 · 서보 풀기 · 영점 맞추기) is white: light buttons there, not the dark panel's. */
 .app .side .lightsPop .jogWide {
   color: #101828;
   background: #f4f6fb;
   border: 1px solid #cfd4db;
+}
+/* 대응표 */
+:where([data-course]) .app .side .lightsPop .jogWide {
+  color: #14171c;
 }
 .app .side .lightsPop .jogWide:hover:not(:disabled) {
   background: #ebf1f9;
@@ -6230,23 +8485,47 @@ div.zeroFlow {
   background: #f9fafb;
   border-color: #eaecf0;
 }
+/* 대응표 */
+:where([data-course]) .app .side .lightsPop .jogWide:disabled {
+  color: #c9ced5;
+}
 .app .side .poseList li,
 .app .side .poseGo {
   background: rgba(255, 255, 255, 0.04);
   border-color: rgba(255, 255, 255, 0.08);
   color: #f1f4f9;
 }
+/* 대응표 */
+:where([data-course]) .app .side .poseList li,
+:where([data-course]) .app .side .poseGo {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #f6f7f9;
+}
 .app .side .poseGo:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.072);
   border-color: rgba(255, 255, 255, 0.18);
 }
+/* 대응표 */
+:where([data-course]) .app .side .poseGo:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+}
 .app .side .poseName {
   color: #f1f4f9;
+}
+/* 대응표 */
+:where([data-course]) .app .side .poseName {
+  color: #f6f7f9;
 }
 .app .side .poseDel {
   background: transparent;
   color: #a4a8ae;
   border-color: rgba(255, 255, 255, 0.08);
+}
+/* 대응표 */
+:where([data-course]) .app .side .poseDel {
+  color: #c9ced5;
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
 /* ===========================================================================
@@ -6261,6 +8540,14 @@ div.zeroFlow {
     background: linear-gradient(180deg, #ffffff, #fbfcfd);
     border-bottom: 1px solid #e4e7ec;
   }
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .app .topBar {
+  min-height: 64px;
+  gap: 14px;
+  padding: 0 14px 0 18px;
+  background: linear-gradient(180deg, #ffffff, #fbfcfd);
+  border-bottom: 1px solid #e4e7ec;
 }
 .app .topBar {
   display: flex;
@@ -6311,6 +8598,11 @@ div.zeroFlow {
   color: #101828;
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .product b {
+  font-size: 16px;
+  color: #14171c;
+}
 .screens {
   display: flex;
   align-self: stretch;
@@ -6331,11 +8623,24 @@ div.zeroFlow {
   white-space: nowrap;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .app .screens button {
+  color: #c9ced5;
+  font-size: 14px;
+}
 .app .screens button:hover:not(:disabled) {
   color: #101828;
 }
+/* 대응표 */
+:where([data-course]) .app .screens button:hover:not(:disabled) {
+  color: #14171c;
+}
 .app .screens button[aria-selected='true'] {
   color: #e5322d;
+}
+/* 대응표 */
+:where([data-course]) .app .screens button[aria-selected='true'] {
+  color: #ff8f86;
 }
 .app .screens button[aria-selected='true']::after {
   content: '';
@@ -6378,10 +8683,18 @@ div.zeroFlow {
   font-size: 14px;
   color: #101828;
 }
+/* 대응표 */
+:where([data-course]) .app .context .taskTitle {
+  color: #14171c;
+}
 
 .app .context .goal {
   flex-basis: 92px;
   color: #6c6f74;
+}
+/* 대응표 */
+:where([data-course]) .app .context .goal {
+  color: #c9ced5;
 }
 .app .context .goalTrack {
   background: #e4e7ec;
@@ -6391,6 +8704,10 @@ div.zeroFlow {
 }
 .app .context .goal[data-done] {
   color: #12a150;
+}
+/* 대응표 */
+:where([data-course]) .app .context .goal[data-done] {
+  color: #86efac;
 }
 .app .context .goal[data-done] .goalTrack span {
   background: #12a150;
@@ -6415,6 +8732,10 @@ div.zeroFlow {
   cursor: pointer;
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
 }
+/* 대응표 */
+:where([data-course]) .app .connPill {
+  color: #14171c;
+}
 .app .connPill:hover {
   background: #ebf1f9;
   border-color: #cfd4db;
@@ -6427,9 +8748,18 @@ div.zeroFlow {
 .connPill b {
   font-size: 13.5px;
 }
+/* 대응표 */
+:where([data-course]) .connPill b {
+  font-size: 14px;
+}
 .connPill small {
   font-size: 10.5px;
   color: #6c6f74;
+}
+/* 대응표 */
+:where([data-course]) .connPill small {
+  font-size: 13px;
+  color: #c9ced5;
 }
 .connOrb {
   position: relative;
@@ -6492,6 +8822,10 @@ div.zeroFlow {
   border-color: #cfd4db;
   color: #3454d1;
 }
+/* 대응표 */
+:where([data-course]) .app .topBar .settingsChip .menuChipBtn[aria-expanded='true'] {
+  color: #93c5fd;
+}
 .app .topBar .topStop {
   height: 42px;
   border-radius: 12px;
@@ -6503,6 +8837,10 @@ div.zeroFlow {
   }
 
 }
+/* 대응표 */
+:where(html[data-vq~='12']) .app .screens button {
+  padding: 0 9px;
+}
 @media (max-width: 1280px) {
   /* Narrow (a tablet held across): the name under its icon, never the icon alone. */
   .app .screens button {
@@ -6513,9 +8851,27 @@ div.zeroFlow {
     font-size: 10.5px;
     line-height: 1.1;
   }
+  /* 대응표 */
+  :where([data-course]) .app .screens button {
+    font-size: 13px;
+  }
   .connPill small {
     display: none;
   }
+}
+/* 대응표 */
+:where(html[data-vq~='14']) .app .screens button {
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  padding: 0 8px;
+  font-size: 10.5px;
+  line-height: 1.1;
+  font-size: 13px;
+}
+/* 대응표 */
+:where(html[data-vq~='14']) .connPill small {
+  display: none;
 }
 @media (prefers-reduced-motion: reduce) {
   .connOrb::before,
@@ -6544,6 +8900,10 @@ div.zeroFlow {
   font-weight: 700;
   box-shadow: var(--shadow-sm);
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .app .pageActions button {
+  border-radius: 12px;
 }
 .app .pageActions button svg {
   color: var(--accent);
@@ -6595,6 +8955,10 @@ div.zeroFlow {
   border: 1px solid var(--line);
   box-shadow: 0 14px 34px rgba(43, 45, 49, 0.22);
 }
+/* 대응표 */
+:where([data-course]) .demoBar {
+  border-radius: 12px;
+}
 .demoBadge {
   flex: none;
   padding: 5px 9px;
@@ -6606,6 +8970,12 @@ div.zeroFlow {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .demoBadge {
+  color: #f6f7f9;
+  font-size: 13px;
+  font-weight: 700;
+}
 .demoText {
   display: grid;
   flex: 1;
@@ -6616,12 +8986,21 @@ div.zeroFlow {
   font-size: 15px;
   font-weight: 800;
 }
+/* 대응표 */
+:where([data-course]) .demoText b {
+  font-size: 16px;
+  font-weight: 700;
+}
 .demoText small {
   overflow: hidden;
   color: var(--muted);
   font-size: 12.5px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+/* 대응표 */
+:where([data-course]) .demoText small {
+  font-size: 13px;
 }
 .demoDots {
   display: flex;
@@ -6653,6 +9032,12 @@ div.zeroFlow {
   font-weight: 800;
   white-space: nowrap;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .app .demoBlocks,
+:where([data-course]) .app .demoStop {
+  border-radius: 12px;
+  font-weight: 700;
 }
 .app .demoBlocks {
   border: 1px solid var(--accent);
@@ -6688,6 +9073,11 @@ div.zeroFlow {
   animation: objTagIn 0.18s ease-out;
   user-select: none;
 }
+/* 대응표 */
+:where([data-course]) .objTag {
+  color: #f6f7f9;
+  font-size: 13px;
+}
 @keyframes objTagIn {
   from {
     opacity: 0;
@@ -6711,6 +9101,11 @@ div.zeroFlow {
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .app .objDelete {
+  color: #f6f7f9;
+  font-size: 16px;
 }
 .app .objDelete:hover {
   background: #ff5a4e;
@@ -6747,6 +9142,11 @@ div.zeroFlow {
     0 30px 80px rgba(16, 24, 40, 0.22),
     0 2px 8px rgba(16, 24, 40, 0.06);
 }
+/* 대응표 */
+:where([data-course]) .app .connectBox {
+  width: min(1040px, calc(calc(100vw / var(--course-zoom, 1)) - 40px));
+  border-radius: 12px;
+}
 .connectMain {
   min-width: 0;
   max-height: calc(100dvh - 60px);
@@ -6755,6 +9155,10 @@ div.zeroFlow {
   display: grid;
   align-content: start;
   gap: 14px;
+}
+/* 대응표 */
+:where([data-course]) .connectMain {
+  max-height: calc(calc(100dvh / var(--course-zoom, 1)) - 60px);
 }
 .app .connectBox .pickerHead {
   padding: 0;
@@ -6896,6 +9300,10 @@ div.zeroFlow {
   border: 1px solid rgba(52, 84, 209, 0.45);
   box-shadow: 0 4px 12px rgba(52, 84, 209, 0.16);
 }
+/* 대응표 */
+:where([data-course]) .radarPc {
+  color: #93c5fd;
+}
 .radarSide p {
   margin: 0;
   font-size: 12.5px;
@@ -6903,8 +9311,18 @@ div.zeroFlow {
   color: #6c6f74;
   letter-spacing: 0.02em;
 }
+/* 대응표 */
+:where([data-course]) .radarSide p {
+  font-size: 13px;
+  color: #c9ced5;
+  letter-spacing: 0;
+}
 .radarSide[data-linked] p {
   color: #12a150;
+}
+/* 대응표 */
+:where([data-course]) .radarSide[data-linked] p {
+  color: #86efac;
 }
 /* the link to the picked robot, checked step by step */
 .linkBox {
@@ -6912,6 +9330,10 @@ div.zeroFlow {
   border-radius: 16px;
   background: #f8faff;
   border: 1px solid #e4e7ec;
+}
+/* 대응표 */
+:where([data-course]) .linkBox {
+  border-radius: 12px;
 }
 .linkLine {
   display: flex;
@@ -6927,6 +9349,10 @@ div.zeroFlow {
   color: #505256;
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .linkNode {
+  font-size: 13px;
+}
 .linkNode i {
   width: 56px;
   height: 56px;
@@ -6936,6 +9362,11 @@ div.zeroFlow {
   color: #3454d1;
   background: #fff;
   border: 1px solid rgba(52, 84, 209, 0.4);
+}
+/* 대응표 */
+:where([data-course]) .linkNode i {
+  border-radius: 12px;
+  color: #93c5fd;
 }
 .linkNode img {
   width: 50px;
@@ -6994,6 +9425,11 @@ div.zeroFlow {
   font-weight: 700;
   color: #9da1a7;
 }
+/* 대응표 */
+:where([data-course]) .linkChecks li {
+  font-size: 13px;
+  color: #c9ced5;
+}
 .linkChecks li i {
   width: 18px;
   height: 18px;
@@ -7005,8 +9441,16 @@ div.zeroFlow {
   font-style: normal;
   font-size: 11px;
 }
+/* 대응표 */
+:where([data-course]) .linkChecks li i {
+  font-size: 13px;
+}
 .linkChecks li[data-state='now'] {
   color: #3454d1;
+}
+/* 대응표 */
+:where([data-course]) .linkChecks li[data-state='now'] {
+  color: #93c5fd;
 }
 .linkChecks li[data-state='now'] i {
   border-color: #3454d1;
@@ -7016,33 +9460,66 @@ div.zeroFlow {
 .linkChecks li[data-state='ok'] {
   color: #12a150;
 }
+/* 대응표 */
+:where([data-course]) .linkChecks li[data-state='ok'] {
+  color: #86efac;
+}
 .linkChecks li[data-state='ok'] i {
   background: #12a150;
   border-color: #12a150;
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .linkChecks li[data-state='ok'] i {
+  color: #f6f7f9;
+}
 .linkChecks li[data-state='ok'] i::before {
   content: '✓';
   font-weight: 900;
 }
+/* 대응표 */
+:where([data-course]) .linkChecks li[data-state='ok'] i::before {
+  font-weight: 700;
+}
 .linkChecks li[data-state='warn'] {
   color: #b45309;
+}
+/* 대응표 */
+:where([data-course]) .linkChecks li[data-state='warn'] {
+  color: #f0a23b;
 }
 .linkChecks li[data-state='warn'] i::before {
   content: '!';
   font-weight: 900;
+}
+/* 대응표 */
+:where([data-course]) .linkChecks li[data-state='warn'] i::before {
+  font-weight: 700;
 }
 .linkNote {
   margin: 12px 0 0;
   font-size: 12.5px;
   color: #6c6f74;
 }
+/* 대응표 */
+:where([data-course]) .linkNote {
+  font-size: 13px;
+  color: #c9ced5;
+}
 .linkChecks li[data-state='fail'] {
   color: #d92d20;
+}
+/* 대응표 */
+:where([data-course]) .linkChecks li[data-state='fail'] {
+  color: #ff8f86;
 }
 .linkChecks li[data-state='fail'] i::before {
   content: '×';
   font-weight: 900;
+}
+/* 대응표 */
+:where([data-course]) .linkChecks li[data-state='fail'] i::before {
+  font-weight: 700;
 }
 /* The robot did not answer: why, and [다시 시도] / [돌아가기] */
 .linkError {
@@ -7065,6 +9542,10 @@ div.zeroFlow {
 .app .linkError .connectGo {
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .app .linkError .connectGo {
+  color: #f6f7f9;
+}
 @media (max-width: 860px) {
   .app .connectBox {
     grid-template-columns: 1fr;
@@ -7072,6 +9553,14 @@ div.zeroFlow {
   .radarSide {
     display: none;
   }
+}
+/* 대응표 */
+:where(html[data-vq~='15']) .app .connectBox {
+  grid-template-columns: 1fr;
+}
+/* 대응표 */
+:where(html[data-vq~='15']) .radarSide {
+  display: none;
 }
 @media (prefers-reduced-motion: reduce) {
   .radarSweep,
@@ -7102,6 +9591,12 @@ div.zeroFlow {
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.32);
   animation: noticeIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
+/* 대응표 */
+:where([data-course]) .timeline {
+  border-radius: 12px;
+  color: #f6f7f9;
+  border-color: rgba(255, 255, 255, 0.18);
+}
 .app .tlPlay {
   width: 38px;
   height: 38px;
@@ -7114,6 +9609,10 @@ div.zeroFlow {
   color: #fff;
   cursor: pointer;
   box-shadow: 0 0 14px rgba(255, 255, 255, 0.18);
+}
+/* 대응표 */
+:where([data-course]) .app .tlPlay {
+  color: #f6f7f9;
 }
 .tlTrack {
   position: relative;
@@ -7134,9 +9633,18 @@ div.zeroFlow {
   height: 6px;
   border-radius: 6px;
 }
+/* 대응표 */
+:where([data-course]) .tlLine,
+:where([data-course]) .tlDone {
+  border-radius: 8px;
+}
 .tlLine {
   right: 0;
   background: rgba(255, 255, 255, 0.09);
+}
+/* 대응표 */
+:where([data-course]) .tlLine {
+  background: rgba(255, 255, 255, 0.08);
 }
 .tlDone {
   background: linear-gradient(90deg, #e5322d, #5ee0e6);
@@ -7152,6 +9660,10 @@ div.zeroFlow {
   background: #1a2333;
   border: 1.5px solid #a4a8ae;
   transform: rotate(45deg);
+}
+/* 대응표 */
+:where([data-course]) .tlMark {
+  border-radius: 8px;
 }
 .tlMark[data-past] {
   background: #ff6b62;
@@ -7181,11 +9693,24 @@ div.zeroFlow {
   color: #fff;
   background: #cf2a25;
 }
+/* 대응표 */
+:where([data-course]) .tlHead em {
+  border-radius: 8px;
+  font-size: 13px;
+  color: #f6f7f9;
+}
 .tlTime {
   flex: none;
   font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
   font-size: 11.5px;
   color: #a9adb3;
+}
+/* 대응표 */
+:where([data-course]) .tlTime {
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  color: #c9ced5;
 }
 .tlRate {
   display: flex;
@@ -7193,6 +9718,10 @@ div.zeroFlow {
   padding: 2px;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.05);
+}
+/* 대응표 */
+:where([data-course]) .tlRate {
+  background: rgba(255, 255, 255, 0.08);
 }
 .app .tlRate button {
   padding: 3px 7px;
@@ -7205,9 +9734,21 @@ div.zeroFlow {
   font-weight: 800;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .app .tlRate button {
+  border-radius: 8px;
+  color: #c9ced5;
+  font-size: 13px;
+  font-weight: 700;
+}
 .app .tlRate button[aria-pressed='true'] {
   color: #fff;
   background: rgba(255, 255, 255, 0.135);
+}
+/* 대응표 */
+:where([data-course]) .app .tlRate button[aria-pressed='true'] {
+  color: #f6f7f9;
+  background: rgba(255, 255, 255, 0.16);
 }
 .app .tlClose,
 .app .resultClose {
@@ -7223,10 +9764,22 @@ div.zeroFlow {
   line-height: 1;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .app .tlClose,
+:where([data-course]) .app .resultClose {
+  border-radius: 8px;
+  color: #c9ced5;
+  font-size: 18px;
+}
 .app .tlClose:hover,
 .app .resultClose:hover {
   background: rgba(255, 255, 255, 0.08);
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .app .tlClose:hover,
+:where([data-course]) .app .resultClose:hover {
+  color: #f6f7f9;
 }
 .resultCard {
   position: absolute;
@@ -7249,6 +9802,11 @@ div.zeroFlow {
   white-space: nowrap;
   animation: resultIn 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
+/* 대응표 */
+:where([data-course]) .resultCard {
+  border-radius: 12px;
+  color: #f6f7f9;
+}
 @keyframes resultIn {
   from {
     transform: translate(-50%, -10px) scale(0.97);
@@ -7265,6 +9823,10 @@ div.zeroFlow {
   background: radial-gradient(circle at 40% 35%, #b6ffd5, #1fae5f);
   box-shadow: 0 0 18px rgba(61, 220, 132, 0.6);
 }
+/* 대응표 */
+:where([data-course]) .resultMedal {
+  color: #14171c;
+}
 .resultText {
   display: grid;
   line-height: 1.25;
@@ -7272,9 +9834,18 @@ div.zeroFlow {
 .resultText b {
   font-size: 15px;
 }
+/* 대응표 */
+:where([data-course]) .resultText b {
+  font-size: 16px;
+}
 .resultText small {
   font-size: 12px;
   color: #9ff0c4;
+}
+/* 대응표 */
+:where([data-course]) .resultText small {
+  font-size: 13px;
+  color: #86efac;
 }
 .resultStat {
   display: grid;
@@ -7283,15 +9854,29 @@ div.zeroFlow {
   border-left: 1px solid rgba(255, 255, 255, 0.09);
   line-height: 1.2;
 }
+/* 대응표 */
+:where([data-course]) .resultStat {
+  border-left-color: rgba(255, 255, 255, 0.18);
+}
 .resultStat em {
   font-style: normal;
   font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
   font-size: 16px;
   font-weight: 600;
 }
+/* 대응표 */
+:where([data-course]) .resultStat em {
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+}
 .resultStat small {
   font-size: 10.5px;
   color: #a9adb3;
+}
+/* 대응표 */
+:where([data-course]) .resultStat small {
+  font-size: 13px;
+  color: #c9ced5;
 }
 .app .resultGhost,
 .app .resultNext {
@@ -7303,16 +9888,32 @@ div.zeroFlow {
   font-weight: 800;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .app .resultGhost,
+:where([data-course]) .app .resultNext {
+  border-radius: 12px;
+  font-weight: 700;
+}
 .app .resultGhost {
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.06);
   color: #e4eaf2;
+}
+/* 대응표 */
+:where([data-course]) .app .resultGhost {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  color: #f6f7f9;
 }
 .app .resultNext {
   border: 0;
   background: linear-gradient(180deg, #ef3f39, #cf2a25);
   color: #fff;
   box-shadow: 0 0 14px rgba(255, 255, 255, 0.158);
+}
+/* 대응표 */
+:where([data-course]) .app .resultNext {
+  color: #f6f7f9;
 }
 
 /* ===========================================================================
@@ -7328,6 +9929,10 @@ div.zeroFlow {
     0 40px 100px rgba(10, 16, 32, 0.35),
     0 2px 8px rgba(16, 24, 40, 0.08);
 }
+/* 대응표 */
+:where([data-course]) .app .connectBox {
+  border-radius: 12px;
+}
 .app .connectBox .radarSide {
   position: relative;
   align-content: center;
@@ -7339,6 +9944,10 @@ div.zeroFlow {
     radial-gradient(120% 70% at 50% 42%, rgba(47, 91, 231, 0.28), transparent 62%),
     radial-gradient(80% 50% at 100% 100%, rgba(14, 165, 183, 0.14), transparent 70%),
     linear-gradient(170deg, #121b2e, #0a1120);
+}
+/* 대응표 */
+:where([data-course]) .app .connectBox .radarSide {
+  color: #f6f7f9;
 }
 .app .connectBox .radarSide::after {
   /* a hairline where the dark side meets the white one */
@@ -7371,9 +9980,21 @@ div.zeroFlow {
   letter-spacing: 0.22em;
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .radarBrand b {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: #f6f7f9;
+}
 .radarBrand small {
   font-size: 11.5px;
   color: #9da1a7;
+}
+/* 대응표 */
+:where([data-course]) .radarBrand small {
+  font-size: 13px;
+  color: #c9ced5;
 }
 .app .connectBox .radar {
   width: 256px;
@@ -7446,6 +10067,13 @@ div.zeroFlow {
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
+/* 대응표 */
+:where([data-course]) .radarBlip b {
+  border-radius: 8px;
+  color: #f6f7f9;
+  font-size: 13px;
+  font-weight: 700;
+}
 .app .connectBox .radarPc {
   z-index: 3;
   width: 46px;
@@ -7459,6 +10087,10 @@ div.zeroFlow {
     0 0 26px rgba(47, 91, 231, 0.55);
   backdrop-filter: blur(4px);
 }
+/* 대응표 */
+:where([data-course]) .app .connectBox .radarPc {
+  color: #f6f7f9;
+}
 .app .connectBox .radarState {
   margin: 0;
   font-size: 13.5px;
@@ -7467,8 +10099,18 @@ div.zeroFlow {
   letter-spacing: 0.01em;
   text-align: center;
 }
+/* 대응표 */
+:where([data-course]) .app .connectBox .radarState {
+  font-size: 14px;
+  color: #c9ced5;
+  letter-spacing: 0;
+}
 .app .connectBox .radarSide[data-linked] .radarState {
   color: #4ade80;
+}
+/* 대응표 */
+:where([data-course]) .app .connectBox .radarSide[data-linked] .radarState {
+  color: #86efac;
 }
 .radarStats {
   justify-self: stretch;
@@ -7484,10 +10126,21 @@ div.zeroFlow {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
+/* 대응표 */
+:where([data-course]) .radarStats div {
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+}
 .radarStats dt {
   font-size: 11px;
   font-weight: 700;
   color: #9da1a7;
+}
+/* 대응표 */
+:where([data-course]) .radarStats dt {
+  font-size: 13px;
+  color: #c9ced5;
 }
 .radarStats dd {
   margin: 2px 0 0;
@@ -7499,15 +10152,30 @@ div.zeroFlow {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* 대응표 */
+:where([data-course]) .radarStats dd {
+  font-size: 18px;
+  font-weight: 700;
+  color: #f6f7f9;
+}
 .radarStats dd small {
   margin-left: 2px;
   font-size: 11px;
   font-weight: 700;
   color: #9da1a7;
 }
+/* 대응표 */
+:where([data-course]) .radarStats dd small {
+  font-size: 13px;
+  color: #c9ced5;
+}
 .radarStats .radarNet {
   font-size: 13.5px;
   line-height: 1.75;
+}
+/* 대응표 */
+:where([data-course]) .radarStats .radarNet {
+  font-size: 14px;
 }
 
 /* the white side */
@@ -7516,10 +10184,19 @@ div.zeroFlow {
   font-weight: 800;
   letter-spacing: -0.01em;
 }
+/* 대응표 */
+:where([data-course]) .app .connectBox .pickerHead h1 {
+  font-size: 23px;
+  font-weight: 700;
+}
 .app .connectBox .connectIcon {
   background: linear-gradient(150deg, #4a6ae0, #2f4cc4);
   color: #fff;
   box-shadow: 0 6px 16px rgba(52, 84, 209, 0.32);
+}
+/* 대응표 */
+:where([data-course]) .app .connectBox .connectIcon {
+  color: #f6f7f9;
 }
 .app .connectBox .foundList {
   gap: 10px;
@@ -7532,6 +10209,10 @@ div.zeroFlow {
     border-color 0.15s,
     box-shadow 0.15s,
     transform 0.15s;
+}
+/* 대응표 */
+:where([data-course]) .app .connectBox .foundCard {
+  border-radius: 12px;
 }
 .app .connectBox .foundCard:hover {
   border-color: rgba(52, 84, 209, 0.38);
@@ -7548,6 +10229,10 @@ div.zeroFlow {
   border-radius: 13px;
   background: radial-gradient(circle at 50% 35%, #ffffff, #e8eef6 70%);
   border: 1px solid #e1e7ef;
+}
+/* 대응표 */
+:where([data-course]) .foundPic {
+  border-radius: 12px;
 }
 .foundPic img {
   width: 58px;
@@ -7575,11 +10260,22 @@ div.zeroFlow {
   font-variant-numeric: tabular-nums;
   box-shadow: 0 2px 6px rgba(16, 24, 40, 0.25);
 }
+/* 대응표 */
+:where([data-course]) .app .connectBox .foundId {
+  color: #f6f7f9;
+  font-weight: 700;
+}
 .app .connectBox .foundId small {
   font-size: 9.5px;
   font-weight: 800;
   letter-spacing: 0.06em;
   opacity: 0.7;
+}
+/* 대응표 */
+:where([data-course]) .app .connectBox .foundId small {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
 }
 .app .connectBox .foundInfo > span > b {
   display: inline;
@@ -7598,12 +10294,21 @@ div.zeroFlow {
   font-weight: 800;
   color: #6c6f74;
 }
+/* 대응표 */
+:where([data-course]) .foundState {
+  font-weight: 700;
+  color: #c9ced5;
+}
 .foundCard[data-state='ready'] .foundDot {
   background: #12a150;
   box-shadow: 0 0 0 3px rgba(18, 161, 80, 0.16);
 }
 .foundCard[data-state='ready'] .foundState {
   color: #0f7a3d;
+}
+/* 대응표 */
+:where([data-course]) .foundCard[data-state='ready'] .foundState {
+  color: #86efac;
 }
 .foundCard[data-state='busy'] .foundDot {
   background: #f59e0b;
@@ -7612,9 +10317,17 @@ div.zeroFlow {
 .foundCard[data-state='busy'] .foundState {
   color: #b45309;
 }
+/* 대응표 */
+:where([data-course]) .foundCard[data-state='busy'] .foundState {
+  color: #f0a23b;
+}
 .app .connectBox .linkBox {
   border-radius: 18px;
   background: linear-gradient(180deg, #f8faff, #fff);
+}
+/* 대응표 */
+:where([data-course]) .app .connectBox .linkBox {
+  border-radius: 12px;
 }
 
 /* --- 반복 안에 넣기 (BlockEditor): the loop's own slot, tapped before a palette block --------- */
@@ -7631,6 +10344,10 @@ div.zeroFlow {
   font-weight: 700;
   text-align: left;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .loopSlot {
+  font-size: 13px;
 }
 .loopSlot:hover {
   border-color: var(--blk-flow);
@@ -7660,6 +10377,10 @@ div.zeroFlow {
     gap: 2px;
     padding: 3px;
     border-radius: 10px;
+  }
+  /* 대응표 */
+  :where([data-course]) .blockKeys {
+    border-radius: 12px;
   }
   .blockKeys button {
     width: 36px;
@@ -7706,6 +10427,15 @@ div.zeroFlow {
     overflow: hidden;
   }
 }
+/* 대응표 */
+:where(html[data-vq~='16']) .lockup > i,
+:where(html[data-vq~='16']) .product {
+  display: none;
+}
+/* 대응표 */
+:where(html[data-vq~='16']) .context {
+  overflow: hidden;
+}
 
 /* The menu bar down the left edge (stage/LeftRail): everything on the 3D view starts right of it. */
 .shell {
@@ -7715,6 +10445,10 @@ div.zeroFlow {
   .shell {
     --bar-w: 80px;
   }
+}
+/* 대응표 */
+:where(html[data-vq~='17']) .shell {
+  --bar-w: 80px;
 }
 .shell,
 .shell[data-dock] {
@@ -7735,6 +10469,11 @@ div.zeroFlow {
     left: auto;
     right: var(--inset-r);
   }
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .shell[data-mini='on'] .pip {
+  left: auto;
+  right: var(--inset-r);
 }
 
 /* --- 조그 (ControlPanel, its own jog.module.css): the panel fills the side panel's height ------------ */
@@ -7765,16 +10504,31 @@ div.zeroFlow {
       0 18px 44px -18px rgba(0, 0, 0, 0.65);
   }
 }
+/* 대응표 */
+:where(html[data-vq~='5']) .app .shell .side {
+  background: linear-gradient(180deg, #35373b, #303236 30%, #2b2d31);
+  border: 1px solid #424448;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      0 18px 44px -18px rgba(0, 0, 0, 0.65);
+}
 .app .sideHeader {
   box-shadow: inset 0 -1px 0 #424448;
 }
 .sideModel small {
   color: #9da1a7;
 }
+/* 대응표 */
+:where([data-course]) .sideModel small {
+  color: #c9ced5;
+}
 .app .side .dockIcon {
   background: rgba(229, 50, 45, 0.16);
   color: #ff6b62;
   box-shadow: inset 0 0 0 1px rgba(229, 50, 45, 0.45);
+}
+/* 대응표 */
+:where([data-course]) .app .side .dockIcon {
+  color: #ff8f86;
 }
 /* the pose row: raised keys; 정지 red with its key (Esc) */
 .app .side .poseDock {
@@ -7786,6 +10540,10 @@ div.zeroFlow {
   background: var(--key);
   box-shadow: var(--key-shadow);
   color: #f1f4f9;
+}
+/* 대응표 */
+:where([data-course]) .app .side .poseDock button {
+  color: #f6f7f9;
 }
 .app .side .poseDock button:hover:not(:disabled) {
   background: linear-gradient(180deg, #515357, #44464a);
@@ -7805,6 +10563,14 @@ div.zeroFlow {
   font: 700 10.5px ui-monospace, SFMono-Regular, Menlo, monospace;
   color: #ffe1df;
 }
+/* 대응표 */
+:where([data-course]) .poseStop kbd {
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  color: #f6f7f9;
+}
 /* buttons in the panel (자세 저장 · 불러오기 and the like): raised slate */
 .app .side .dock .jogWide,
 .app .side .jogWide {
@@ -7812,6 +10578,11 @@ div.zeroFlow {
   background: var(--key);
   box-shadow: var(--key-shadow);
   color: #f1f4f9;
+}
+/* 대응표 */
+:where([data-course]) .app .side .dock .jogWide,
+:where([data-course]) .app .side .jogWide {
+  color: #f6f7f9;
 }
 .app .side .dock .jogWide:hover:not(:disabled) {
   border: 0;
@@ -7843,6 +10614,10 @@ div.zeroFlow {
 }
 .toolHero small {
   color: #ff9a95;
+}
+/* 대응표 */
+:where([data-course]) .toolHero small {
+  color: #ff8f86;
 }
 .toolHero img,
 .toolCard img,
@@ -7923,6 +10698,10 @@ div.zeroFlow {
   border-color: rgba(255, 255, 255, 0.22);
   background: linear-gradient(180deg, rgba(79, 81, 85, 0.96), rgba(53, 55, 59, 0.96));
 }
+/* 대응표 */
+:where([data-course]) .app .cubeFace {
+  border-color: rgba(255, 255, 255, 0.18);
+}
 .app button.cubeFace:hover {
   background: linear-gradient(180deg, #ef3f39, #cf2a25);
   border-color: #ff9a95;
@@ -7931,11 +10710,20 @@ div.zeroFlow {
   background: rgba(43, 45, 49, 0.9);
   border-color: rgba(255, 255, 255, 0.09);
 }
+/* 대응표 */
+:where([data-course]) .viewRail {
+  border-color: rgba(255, 255, 255, 0.18);
+}
 .app .viewRail button[aria-pressed='true'],
 .app .viewRail button[aria-expanded='true'] {
   color: #ff6b62;
   background: linear-gradient(180deg, #4a4c50, #3e4044);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 4px 10px -4px rgba(0, 0, 0, 0.6);
+}
+/* 대응표 */
+:where([data-course]) .app .viewRail button[aria-pressed='true'],
+:where([data-course]) .app .viewRail button[aria-expanded='true'] {
+  color: #ff8f86;
 }
 .app .viewRail button[aria-pressed='true']::after,
 .app .viewRail button[aria-expanded='true']::after {
@@ -7948,6 +10736,11 @@ div.zeroFlow {
   border-radius: 3px;
   background: #e5322d;
 }
+/* 대응표 */
+:where([data-course]) .app .viewRail button[aria-pressed='true']::after,
+:where([data-course]) .app .viewRail button[aria-expanded='true']::after {
+  border-radius: 8px;
+}
 .viewRail .displayCount {
   background: #e5322d;
 }
@@ -7958,6 +10751,11 @@ div.zeroFlow {
 .missionTagTopic {
   background: rgba(255, 255, 255, 0.1);
   color: #e4eaf2;
+}
+/* 대응표 */
+:where([data-course]) .missionTagTopic {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f6f7f9;
 }
 
 /* 공정 짜기: a taught place's pin label in 3D (PlanMarks.tsx). */
@@ -7976,6 +10774,11 @@ div.zeroFlow {
   transform: translateY(-60%);
   user-select: none;
 }
+/* 대응표 */
+:where([data-course]) .planMark {
+  color: #f6f7f9;
+  font-size: 13px;
+}
 .planMark b {
   min-width: 20px;
   padding: 1px 5px;
@@ -7984,6 +10787,12 @@ div.zeroFlow {
   color: #fff;
   text-align: center;
   font-size: 11px;
+}
+/* 대응표 */
+:where([data-course]) .planMark b {
+  border-radius: 8px;
+  color: #f6f7f9;
+  font-size: 13px;
 }
 
 /* --- 블록 코딩 (2026-10-23): a plain workspace, bigger blocks, 한 번에 하는 동작 ----------------- */
@@ -8003,6 +10812,11 @@ div.zeroFlow {
     inset 0 1px 0 rgba(255, 255, 255, 0.2),
     0 3px 0 rgba(0, 0, 0, 0.25);
 }
+/* 대응표 */
+:where([data-course]) .app .side .workspace .block {
+  border-radius: 12px;
+  font-size: 14px;
+}
 .app .side .palette .block {
   padding: 9px 11px;
   border-radius: 10px;
@@ -8012,11 +10826,24 @@ div.zeroFlow {
     inset 0 1px 0 rgba(255, 255, 255, 0.18),
     0 2px 0 rgba(0, 0, 0, 0.25);
 }
+/* 대응표 */
+:where([data-course]) .app .side .palette .block {
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+}
 .app .side .grp {
   font-size: 11.5px;
   font-weight: 800;
   letter-spacing: 0.04em;
   color: #9da1a7;
+}
+/* 대응표 */
+:where([data-course]) .app .side .grp {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: #c9ced5;
 }
 .c_macro {
   background: #e5622d;
@@ -8030,6 +10857,10 @@ div.zeroFlow {
   background: rgba(0, 0, 0, 0.2);
   font-size: 13px;
   line-height: 1;
+}
+/* 대응표 */
+:where([data-course]) .macroIcon {
+  border-radius: 8px;
 }
 /* 고칠 곳 (tutorial): the blocks holding a value this step asks to change */
 .workspace .block[data-hot] {
@@ -8062,6 +10893,11 @@ div.zeroFlow {
     min-height: 64px;
   }
 }
+/* 대응표 */
+:where(html[data-vq~='18']) .app .side .codeTab .termPanel {
+  flex: 0 0 18%;
+  min-height: 64px;
+}
 
 /* 실습 셀 in the coding panel: what the program is for, and the way back to the desk. */
 .cellCodeHead {
@@ -8076,13 +10912,25 @@ div.zeroFlow {
   border: 1px solid rgba(15, 107, 76, 0.35);
   word-break: keep-all;
 }
+/* 대응표 */
+:where([data-course]) .cellCodeHead {
+  border-radius: 12px;
+}
 .cellCodeHead b {
   font-size: 13.5px;
+}
+/* 대응표 */
+:where([data-course]) .cellCodeHead b {
+  font-size: 14px;
 }
 .cellCodeHead small {
   grid-column: 1;
   font-size: 11.5px;
   opacity: 0.8;
+}
+/* 대응표 */
+:where([data-course]) .cellCodeHead small {
+  font-size: 13px;
 }
 /* 입문 (작업 순서 카드): the 학습 로드맵's plate, a silver-edged key. */
 .cellCodeHead[data-life] {
@@ -8113,6 +10961,11 @@ div.zeroFlow {
   padding: 5px 9px;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .cellLeave {
+  border-radius: 8px;
+  font-size: 13px;
+}
 
 /* ===========================================================================
  * 로봇 연결 시안 1 (2026-10-26): the same look as the simulator's work panel — dark slate cards,
@@ -8128,6 +10981,10 @@ div.zeroFlow {
   border: 1px solid #4f5155;
   color: #fff;
   box-shadow: 0 40px 100px rgba(0, 0, 0, 0.55);
+}
+/* 대응표 */
+:where([data-course]) .app .connectBox {
+  color: #f6f7f9;
 }
 .app .connectBox .connectMain {
   gap: 16px;
@@ -8165,9 +11022,18 @@ div.zeroFlow {
   border-color: #66696e;
   box-shadow: none;
 }
+/* 대응표 */
+:where([data-course]) .app .connectBox .radarPc {
+  color: #f6f7f9;
+}
 .app .connectBox .radarState {
   font-size: 15px;
   color: #e4eaf2;
+}
+/* 대응표 */
+:where([data-course]) .app .connectBox .radarState {
+  font-size: 16px;
+  color: #f6f7f9;
 }
 .app .connectBox .radarStats div {
   background: #2b2d31;
@@ -8178,25 +11044,48 @@ div.zeroFlow {
 .radarBrand small {
   color: #a0a4aa;
 }
+/* 대응표 */
+:where([data-course]) .app .connectBox .radarStats dt,
+:where([data-course]) .app .connectBox .radarStats dd small,
+:where([data-course]) .radarBrand small {
+  color: #c9ced5;
+}
 
 /* the working side */
 .app .connectBox .pickerHead h1 {
   color: #fff;
   font-size: 24px;
 }
+/* 대응표 */
+:where([data-course]) .app .connectBox .pickerHead h1 {
+  color: #f6f7f9;
+  font-size: 23px;
+}
 .app .connectBox .pickerHead p {
   color: #c5cad1;
   font-size: 14px;
   line-height: 1.5;
 }
+/* 대응표 */
+:where([data-course]) .app .connectBox .pickerHead p {
+  color: #c9ced5;
+}
 .app .connectBox .pickerClose {
   background: #393b3f;
   color: #dee4ec;
+}
+/* 대응표 */
+:where([data-course]) .app .connectBox .pickerClose {
+  color: #f6f7f9;
 }
 .app .connectBox .connectIcon {
   background: #e8392f;
   color: #fff;
   box-shadow: 0 6px 16px rgba(232, 57, 47, 0.32);
+}
+/* 대응표 */
+:where([data-course]) .app .connectBox .connectIcon {
+  color: #f6f7f9;
 }
 .app .connectBox .connectTabs {
   margin-bottom: 0;
@@ -8210,17 +11099,35 @@ div.zeroFlow {
   font-size: 16.5px;
   color: #c5cad1;
 }
+/* 대응표 */
+:where([data-course]) .app .connectBox .connectTabs button {
+  font-size: 16px;
+  color: #c9ced5;
+}
 .app .connectBox .connectTabs button:hover {
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .app .connectBox .connectTabs button:hover {
+  color: #f6f7f9;
 }
 .app .connectBox .connectTabs .connectTabOn {
   background: #e8392f;
   color: #fff;
   box-shadow: 0 4px 14px rgba(232, 57, 47, 0.35);
 }
+/* 대응표 */
+:where([data-course]) .app .connectBox .connectTabs .connectTabOn {
+  color: #f6f7f9;
+}
 .app .connectBox .connectField {
   color: #b2b7be;
   font-size: 13.5px;
+}
+/* 대응표 */
+:where([data-course]) .app .connectBox .connectField {
+  color: #c9ced5;
+  font-size: 14px;
 }
 .app .connectBox input,
 .app .connectBox .findNet {
@@ -8228,8 +11135,17 @@ div.zeroFlow {
   color: #fff;
   border-color: #54565a;
 }
+/* 대응표 */
+:where([data-course]) .app .connectBox input,
+:where([data-course]) .app .connectBox .findNet {
+  color: #f6f7f9;
+}
 .app .connectBox input::placeholder {
   color: #85888d;
+}
+/* 대응표 */
+:where([data-course]) .app .connectBox input::placeholder {
+  color: #c9ced5;
 }
 .app .connectBox .findNet:focus,
 .app .connectBox .connectAddr:focus-within {
@@ -8244,11 +11160,20 @@ div.zeroFlow {
   color: #c5cad1;
   border-right-color: #54565a;
 }
+/* 대응표 */
+:where([data-course]) .app .connectBox .connectPrefix {
+  color: #c9ced5;
+}
 .app .connectBox .connectGo,
 .app .connectBox .foundGo {
   background: #e8392f;
   color: #fff;
   box-shadow: 0 4px 14px rgba(232, 57, 47, 0.3);
+}
+/* 대응표 */
+:where([data-course]) .app .connectBox .connectGo,
+:where([data-course]) .app .connectBox .foundGo {
+  color: #f6f7f9;
 }
 .app .connectBox .connectGo:hover:not(:disabled),
 .app .connectBox .foundGo:hover:not(:disabled) {
@@ -8269,15 +11194,27 @@ div.zeroFlow {
   color: #95999f;
   box-shadow: none;
 }
+/* 대응표 */
+:where([data-course]) .app .connectBox .connectGo:disabled {
+  color: #c9ced5;
+}
 .app .connectBox .ghost {
   background: transparent;
   border: 1.5px solid #75787d;
   color: #fff;
   font-weight: 700;
 }
+/* 대응표 */
+:where([data-course]) .app .connectBox .ghost {
+  color: #f6f7f9;
+}
 .app .connectBox .ghost:hover:not(:disabled) {
   border-color: #b2b7be;
   background: rgba(255, 255, 255, 0.05);
+}
+/* 대응표 */
+:where([data-course]) .app .connectBox .ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
 }
 .app .connectBox .findProgress {
   background: #222428;
@@ -8289,8 +11226,16 @@ div.zeroFlow {
   color: #c5cad1;
   font-size: 14px;
 }
+/* 대응표 */
+:where([data-course]) .app .connectBox .connectHint {
+  color: #c9ced5;
+}
 .app .connectBox .connectHint b {
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .app .connectBox .connectHint b {
+  color: #f6f7f9;
 }
 .app .connectBox .foundCard {
   background: #383a3e;
@@ -8308,20 +11253,38 @@ div.zeroFlow {
 .app .connectBox .foundInfo {
   color: #c5cad1;
 }
+/* 대응표 */
+:where([data-course]) .app .connectBox .foundInfo {
+  color: #c9ced5;
+}
 .app .connectBox .foundInfo b,
 .app .connectBox .foundInfo .foundIp,
 .app .connectBox .foundInfo > span > b {
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .app .connectBox .foundInfo b,
+:where([data-course]) .app .connectBox .foundInfo .foundIp,
+:where([data-course]) .app .connectBox .foundInfo > span > b {
+  color: #f6f7f9;
 }
 .app .connectBox .foundId {
   background: #1f2125;
   color: #fff;
   border: 1px solid #616367;
 }
+/* 대응표 */
+:where([data-course]) .app .connectBox .foundId {
+  color: #f6f7f9;
+}
 .app .connectBox .findFilter {
   background: #1f2125;
   border-color: #54565a;
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .app .connectBox .findFilter {
+  color: #f6f7f9;
 }
 .app .connectBox .idFold {
   background: transparent;
@@ -8331,25 +11294,50 @@ div.zeroFlow {
   color: #dee4ec;
   font-size: 15px;
 }
+/* 대응표 */
+:where([data-course]) .app .connectBox .idFold summary {
+  color: #f6f7f9;
+  font-size: 16px;
+}
 .app .connectBox .connectRecent {
   color: #b2b7be;
+}
+/* 대응표 */
+:where([data-course]) .app .connectBox .connectRecent {
+  color: #c9ced5;
 }
 .app .connectBox .connectRecent button {
   background: #383a3e;
   border-color: #616367;
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .app .connectBox .connectRecent button {
+  color: #f6f7f9;
+}
 .app .connectBox .connectSteps {
   background: #222428;
   color: #c5cad1;
   font-size: 14px;
 }
+/* 대응표 */
+:where([data-course]) .app .connectBox .connectSteps {
+  color: #c9ced5;
+}
 .app .connectBox .connectSteps b {
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .app .connectBox .connectSteps b {
+  color: #f6f7f9;
 }
 .app .connectBox .connectSteps code {
   background: #383a3e;
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .app .connectBox .connectSteps code {
+  color: #f6f7f9;
 }
 /* 랜선 직결: the order as three numbered cards */
 .app .connectBox .stepCards {
@@ -8371,6 +11359,10 @@ div.zeroFlow {
   border: 1px solid #4f5155;
   line-height: 1.5;
 }
+/* 대응표 */
+:where([data-course]) .app .connectBox .stepCards li {
+  border-radius: 12px;
+}
 .app .connectBox .stepCards li::before {
   content: counter(step);
   display: grid;
@@ -8384,6 +11376,10 @@ div.zeroFlow {
   font-size: 14px;
   font-weight: 700;
 }
+/* 대응표 */
+:where([data-course]) .app .connectBox .stepCards li::before {
+  color: #f6f7f9;
+}
 .app .connectBox .stepCards b {
   font-size: 16px;
 }
@@ -8392,8 +11388,17 @@ div.zeroFlow {
   border: 1.5px dashed #75787d;
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .app .connectBox .usbHint {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f6f7f9;
+}
 .app .connectBox .usbHint small {
   color: #c5cad1;
+}
+/* 대응표 */
+:where([data-course]) .app .connectBox .usbHint small {
+  color: #c9ced5;
 }
 /* a new robot: green, as the setup's done card */
 .app .connectBox .newHint {
@@ -8407,6 +11412,10 @@ div.zeroFlow {
 .app .connectBox .newHint small {
   color: #cfe3d8;
 }
+/* 대응표 */
+:where([data-course]) .app .connectBox .newHint small {
+  color: #c9ced5;
+}
 .app .connectBox .connectFoot {
   border-top-color: #424448;
 }
@@ -8417,16 +11426,32 @@ div.zeroFlow {
 .app .connectBox .linkNode {
   color: #dee4ec;
 }
+/* 대응표 */
+:where([data-course]) .app .connectBox .linkNode {
+  color: #f6f7f9;
+}
 .app .connectBox .linkNode i {
   background: #383a3e;
   border-color: #616367;
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .app .connectBox .linkNode i {
+  color: #f6f7f9;
+}
 .app .connectBox .linkChecks li {
   color: #95999f;
 }
+/* 대응표 */
+:where([data-course]) .app .connectBox .linkChecks li {
+  color: #c9ced5;
+}
 .app .connectBox .linkChecks li[data-state='now'] {
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .app .connectBox .linkChecks li[data-state='now'] {
+  color: #f6f7f9;
 }
 .app .connectBox .linkChecks li[data-state='now'] i {
   border-color: #e8392f;
@@ -8435,13 +11460,25 @@ div.zeroFlow {
 .app .connectBox .linkChecks li[data-state='ok'] {
   color: #4ade80;
 }
+/* 대응표 */
+:where([data-course]) .app .connectBox .linkChecks li[data-state='ok'] {
+  color: #86efac;
+}
 .app .connectBox .linkNote {
   color: #c5cad1;
+}
+/* 대응표 */
+:where([data-course]) .app .connectBox .linkNote {
+  color: #c9ced5;
 }
 .app .connectBox .linkError {
   background: #3a2226;
   border-color: #8a3a35;
   color: #ffd9d5;
+}
+/* 대응표 */
+:where([data-course]) .app .connectBox .linkError {
+  color: #f6f7f9;
 }
 .app .connectBox .wifi,
 .app .connectBox .wifi * {
@@ -8455,6 +11492,10 @@ div.zeroFlow {
 }
 .app .connectBox .connectGo {
   font-size: 17px;
+}
+/* 대응표 */
+:where([data-course]) .app .connectBox .connectGo {
+  font-size: 18px;
 }
 .app .connectBox .foundGo {
   font-size: 16px;
@@ -8472,6 +11513,12 @@ div.zeroFlow {
   font-weight: 700;
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .app .connectBox .newHint::after {
+  border-radius: 12px;
+  color: #f6f7f9;
+  font-size: 16px;
+}
 .app .connectBox .newHint:hover::after {
   background: #1aa866;
 }
@@ -8488,9 +11535,17 @@ div.zeroFlow {
   line-height: 1.5;
   word-break: keep-all;
 }
+/* 대응표 */
+:where([data-course]) .wifiHint {
+  color: #14171c;
+}
 .app .connectBox .wifiHint {
   background: #3a2a2c;
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .app .connectBox .wifiHint {
+  color: #f6f7f9;
 }
 /* ===========================================================================
  * 로봇 USB 만들기 · 새 로봇 설치 (toolBox, 2026-10-27): the connect window's dark slate look, so the
@@ -8506,6 +11561,10 @@ div.zeroFlow {
   box-shadow: 0 40px 100px rgba(0, 0, 0, 0.55);
   padding: 26px 30px 24px;
 }
+/* 대응표 */
+:where([data-course]) .app .toolBox {
+  color: #f6f7f9;
+}
 .app .toolBox .pickerHead {
   align-items: flex-start;
   margin-bottom: 4px;
@@ -8514,16 +11573,29 @@ div.zeroFlow {
   color: #fff;
   font-size: 22px;
 }
+/* 대응표 */
+:where([data-course]) .app .toolBox .pickerHead h1 {
+  color: #f6f7f9;
+  font-size: 23px;
+}
 .app .toolBox .pickerHead p {
   margin-top: 4px;
   color: #c5cad1;
   font-size: 14px;
   line-height: 1.5;
 }
+/* 대응표 */
+:where([data-course]) .app .toolBox .pickerHead p {
+  color: #c9ced5;
+}
 .app .toolBox .pickerClose {
   flex: none;
   background: #393b3f;
   color: #dee4ec;
+}
+/* 대응표 */
+:where([data-course]) .app .toolBox .pickerClose {
+  color: #f6f7f9;
 }
 .app .toolBox .connectTabs {
   margin-bottom: 0;
@@ -8537,13 +11609,26 @@ div.zeroFlow {
   font-size: 15px;
   color: #c5cad1;
 }
+/* 대응표 */
+:where([data-course]) .app .toolBox .connectTabs button {
+  font-size: 16px;
+  color: #c9ced5;
+}
 .app .toolBox .connectTabs button:hover {
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .app .toolBox .connectTabs button:hover {
+  color: #f6f7f9;
 }
 .app .toolBox .connectTabs .connectTabOn {
   background: #e8392f;
   color: #fff;
   box-shadow: 0 4px 14px rgba(232, 57, 47, 0.35);
+}
+/* 대응표 */
+:where([data-course]) .app .toolBox .connectTabs .connectTabOn {
+  color: #f6f7f9;
 }
 
 /* ===========================================================================
@@ -8570,6 +11655,20 @@ div.zeroFlow {
       0 6px 18px rgba(0, 0, 0, 0.35);
   }
 }
+/* 대응표 */
+:where(html[data-vq~='5']) .app {
+  --top: 54px;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .app .topBar {
+  min-height: 54px;
+  height: 54px;
+  background: linear-gradient(180deg, #2c3035, #212428);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.6);
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.05),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      0 6px 18px rgba(0, 0, 0, 0.35);
+}
 .app .topBar {
   color: var(--hud-tx);
   color-scheme: dark;
@@ -8590,10 +11689,18 @@ div.zeroFlow {
   font-size: 14.5px;
   color: var(--hud-tx);
 }
+/* 대응표 */
+:where([data-course]) .product b {
+  font-size: 14px;
+}
 .app .screens button {
   color: var(--hud-dim);
   font-weight: 600;
   letter-spacing: 0.02em;
+}
+/* 대응표 */
+:where([data-course]) .app .screens button {
+  letter-spacing: 0;
 }
 .app .screens button:hover:not(:disabled) {
   color: var(--hud-tx);
@@ -8658,6 +11765,18 @@ div.zeroFlow {
     background: var(--hud-plate);
     box-shadow: var(--hud-plate-shadow);
   }
+  /* 대응표 */
+  :where([data-course]) .app .shell .side {
+    border-radius: 12px;
+  }
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .app .shell .side {
+  border: 0;
+  border-radius: 10px;
+  background: var(--hud-plate);
+  box-shadow: var(--hud-plate-shadow);
+  border-radius: 12px;
 }
 .app .sideHeader {
   box-shadow: inset 0 -1px 0 rgba(213, 218, 225, 0.12);
@@ -8697,13 +11816,25 @@ div.zeroFlow {
   color: #ff6b61;
   box-shadow: var(--hud-key-shadow), 0 0 12px rgba(235, 64, 52, 0.18);
 }
+/* 대응표 */
+:where([data-course]) .app .side .poseDock .poseStop {
+  color: #ff8f86;
+}
 .app .side .poseDock .poseStop:hover:not(:disabled) {
   background: linear-gradient(180deg, #ef3f39, #cf2a25);
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .app .side .poseDock .poseStop:hover:not(:disabled) {
+  color: #f6f7f9;
+}
 .poseStop kbd {
   background: rgba(0, 0, 0, 0.3);
   color: #ffd4d0;
+}
+/* 대응표 */
+:where([data-course]) .poseStop kbd {
+  color: #f6f7f9;
 }
 .app .side .poseList li,
 .app .side .poseGo {
@@ -8736,6 +11867,10 @@ div.zeroFlow {
   border-color: var(--hud-light);
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .app button.cubeFace:hover {
+  color: #f6f7f9;
+}
 .viewRail {
   background: var(--hud-plate);
   border-color: transparent;
@@ -8758,6 +11893,10 @@ div.zeroFlow {
   background: var(--hud-light);
   color: #101214;
   border-color: #2a2d31;
+}
+/* 대응표 */
+:where([data-course]) .viewRail .displayCount {
+  color: #14171c;
 }
 /* 기록: a metal key over the view. */
 .app .noticeLog {
@@ -8810,6 +11949,12 @@ div.zeroFlow {
   border-color: rgba(255, 255, 255, 0.18);
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .app .block select.field,
+:where([data-course]) .app .block .numChip,
+:where([data-course]) .app .block input.field {
+  color: #f6f7f9;
+}
 .app .block select.field option {
   background: #2f3337;
   color: var(--hud-tx);
@@ -8822,6 +11967,11 @@ div.zeroFlow {
   color: var(--hud-ink);
   letter-spacing: 0.04em;
   box-shadow: var(--hud-silver-shadow);
+}
+/* 대응표 */
+:where([data-course]) .runSim,
+:where([data-course]) .app .runDock .runSim {
+  letter-spacing: 0;
 }
 .runSim:hover:not(:disabled) {
   filter: brightness(1.12);
@@ -8839,10 +11989,20 @@ div.zeroFlow {
   color: #ff6b61;
   box-shadow: var(--hud-key-shadow), 0 0 12px rgba(235, 64, 52, 0.18);
 }
+/* 대응표 */
+:where([data-course]) .runStop,
+:where([data-course]) .app .runDock .runStop {
+  color: #ff8f86;
+}
 .runStop:hover:not(:disabled),
 .app .runDock .runStop:hover:not(:disabled) {
   background: linear-gradient(180deg, #ef3f39, #cf2a25);
   color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .runStop:hover:not(:disabled),
+:where([data-course]) .app .runDock .runStop:hover:not(:disabled) {
+  color: #f6f7f9;
 }
 /* the task chip in the top bar: a groove, its kind as a small white tag */
 .app .taskTag {
@@ -8872,8 +12032,17 @@ div.zeroFlow {
   background: var(--hud-plate);
   box-shadow: var(--hud-plate-shadow);
 }
+/* 대응표 */
+:where([data-course]) .app .menuPop,
+:where([data-course]) .app .lightsPop {
+  border-radius: 12px;
+}
 .app .menuPop button:hover {
   background: rgba(255, 255, 255, 0.06);
+}
+/* 대응표 */
+:where([data-course]) .app .menuPop button:hover {
+  background: rgba(255, 255, 255, 0.08);
 }
 .app .displayMenu {
   border: 0;
@@ -8881,6 +12050,10 @@ div.zeroFlow {
   background: var(--hud-plate);
   box-shadow: var(--hud-plate-shadow);
   color: var(--hud-tx);
+}
+/* 대응표 */
+:where([data-course]) .app .displayMenu {
+  border-radius: 12px;
 }
 .app .displayMenu input {
   accent-color: var(--hud-light);
@@ -8953,11 +12126,19 @@ div.zeroFlow {
   background: rgba(16, 18, 21, 0.72);
   box-shadow: inset 0 0 0 1px rgba(214, 219, 224, 0.25), inset 3px 0 0 var(--hud-light);
 }
+/* 대응표 */
+:where([data-course]) .planMark {
+  border-radius: 8px;
+}
 .planMark b {
   border-radius: 3px;
   background: rgba(236, 241, 248, 0.16);
   color: var(--hud-light);
   box-shadow: inset 0 0 0 1px rgba(236, 241, 248, 0.5);
+}
+/* 대응표 */
+:where([data-course]) .planMark b {
+  border-radius: 8px;
 }
 .app .side .workspace {
   background: var(--hud-groove);
@@ -9002,6 +12183,10 @@ div.zeroFlow {
     inset 0 1px 0 rgba(255, 255, 255, 0.12),
     0 2px 6px rgba(0, 0, 0, 0.35);
 }
+/* 대응표 */
+:where([data-course]) .app .side .block {
+  color: #f6f7f9;
+}
 .app .start {
   --c: var(--blk-start);
 }
@@ -9038,6 +12223,11 @@ div.zeroFlow {
     inset 0 1px 0 rgba(255, 255, 255, 0.12),
     0 2px 6px rgba(0, 0, 0, 0.35);
 }
+/* 대응표 */
+:where([data-course]) .app .side .workspace .block {
+  border-radius: 8px;
+  font-size: 14px;
+}
 .app .side .palette .block {
   padding: 7px 10px;
   border-radius: 6px;
@@ -9048,13 +12238,25 @@ div.zeroFlow {
     inset 0 1px 0 rgba(255, 255, 255, 0.12),
     0 2px 6px rgba(0, 0, 0, 0.35);
 }
+/* 대응표 */
+:where([data-course]) .app .side .palette .block {
+  border-radius: 8px;
+}
 .app .side .block .macroIcon {
   background: rgba(255, 255, 255, 0.1);
+}
+/* 대응표 */
+:where([data-course]) .app .side .block .macroIcon {
+  background: rgba(255, 255, 255, 0.08);
 }
 .app .side .grp {
   font-weight: 600;
   letter-spacing: 0.12em;
   color: var(--hud-dim);
+}
+/* 대응표 */
+:where([data-course]) .app .side .grp {
+  letter-spacing: 0;
 }
 .app .block select.field,
 .app .block .numChip,
@@ -9063,6 +12265,13 @@ div.zeroFlow {
   border: 1px solid rgba(255, 255, 255, 0.14);
   color: #fff;
   font-weight: 600;
+}
+/* 대응표 */
+:where([data-course]) .app .block select.field,
+:where([data-course]) .app .block .numChip,
+:where([data-course]) .app .block input.field {
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #f6f7f9;
 }
 
 /* The speed key says its rate under the triangles (×1 · ×2 · ×4). */
@@ -9076,6 +12285,10 @@ div.zeroFlow {
   font-weight: 700;
   line-height: 1;
   font-variant-numeric: tabular-nums;
+}
+/* 대응표 */
+:where([data-course]) .runRateX {
+  font-size: 13px;
 }
 
 /* 실물 검수 N beside the chips (robot connected): a wider key, the robot's green. */
@@ -9112,6 +12325,11 @@ div.zeroFlow {
   letter-spacing: 0.16em;
   color: var(--hud-dim);
 }
+/* 대응표 */
+:where([data-course]) .toolTag em {
+  font-size: 13px;
+  letter-spacing: 0;
+}
 .toolTag b {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -9119,6 +12337,11 @@ div.zeroFlow {
   font-size: 13.5px;
   font-weight: 500;
   color: var(--hud-sub);
+}
+/* 대응표 */
+:where([data-course]) .toolTag b {
+  font-size: 14px;
+  font-weight: 600;
 }
 .app .toolPlate > button {
   flex: 0 0 auto;
@@ -9149,6 +12372,10 @@ div.zeroFlow {
   color: var(--hud-dim);
   letter-spacing: 0.04em;
 }
+/* 대응표 */
+:where([data-course]) .toolHero small {
+  letter-spacing: 0;
+}
 .app .toolCard[aria-pressed='true'] {
   background: linear-gradient(180deg, #3b4046, #2c3035);
   box-shadow:
@@ -9164,6 +12391,10 @@ div.zeroFlow {
   background: var(--hud-silver);
   color: var(--hud-ink);
   box-shadow: var(--hud-silver-shadow);
+}
+/* 대응표 */
+:where([data-course]) .app .toolCard[aria-pressed='true'] span {
+  border-radius: 8px;
 }
 /* 자세: [지금 자세 저장하기] silver; each pose an icon, its name, the angles small, a lock when fixed */
 .app .side .poseSave {
@@ -9187,9 +12418,18 @@ div.zeroFlow {
   background: #2a2e33;
   color: #e9edf2;
 }
+/* 대응표 */
+:where([data-course]) .poseIcon {
+  border-radius: 8px;
+  color: #f6f7f9;
+}
 .app .side .poseList .poseName small {
   font-size: 11.5px;
   color: var(--hud-dim);
+}
+/* 대응표 */
+:where([data-course]) .app .side .poseList .poseName small {
+  font-size: 13px;
 }
 .app .side .poseFixed {
   display: grid;
@@ -9230,6 +12470,11 @@ div.zeroFlow {
   font-weight: 800;
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .trackBadge {
+  color: #f6f7f9;
+  font-weight: 700;
+}
 
 /* 입문 퀘스트 모드: the tutorial's quest card at the top left of the 3D view (the place's quest card stands there in a place). */
 .questSlot {
@@ -9261,6 +12506,11 @@ div.zeroFlow {
   flex: 0 0 48px;
   font-size: 20px;
   font-weight: 800;
+}
+/* 대응표 */
+:where([data-course]) .runMore {
+  font-size: 23px;
+  font-weight: 700;
 }
 .runMenu {
   position: absolute;
@@ -9330,6 +12580,11 @@ div.zeroFlow {
   font-size: 12px;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .runDock .runFast {
+  border-radius: 12px;
+  font-size: 13px;
+}
 .runDock .runFast[aria-pressed='true'] {
   background: var(--hud-silver, #e9edf1);
   box-shadow: var(--hud-silver-shadow, none);
@@ -9338,6 +12593,10 @@ div.zeroFlow {
 .runDock .runFast b {
   font-size: 13px;
   font-weight: 800;
+}
+/* 대응표 */
+:where([data-course]) .runDock .runFast b {
+  font-weight: 700;
 }
 
 /* 입문 트랙: [다음 단계 →] — quiet until the step is passed, then the one accent (지시서 v1 파트 4). */
@@ -9357,10 +12616,20 @@ div.zeroFlow {
   white-space: nowrap;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .runDock .runNext {
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+}
 .runDock .runNext[data-lit] {
   background: #f0a23b;
   box-shadow: none;
   color: #15181c;
+}
+/* 대응표 */
+:where([data-course]) .runDock .runNext[data-lit] {
+  color: #14171c;
 }
 .runDock .runNext:disabled {
   opacity: 0.45;
@@ -9385,9 +12654,19 @@ div.zeroFlow {
   line-height: 1.2;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .runDock .runQuick {
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+}
 .runDock .runQuick b {
   font-size: 16px;
   color: #ffd257;
+}
+/* 대응표 */
+:where([data-course]) .runDock .runQuick b {
+  color: #f0a23b;
 }
 .runDock .runQuick[data-going] {
   box-shadow: 0 0 0 2px #ffd257;
@@ -9413,9 +12692,18 @@ div.zeroFlow {
   text-align: left;
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .moreKey {
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+}
 .moreKey b {
   color: #e9edf1;
   font-weight: 700;
+}
+/* 대응표 */
+:where([data-course]) .moreKey b {
+  color: #f6f7f9;
 }
 
 /* 입문 과정: 지금 할 일 (NowBar) right under the top bar; the panels start below it. */
@@ -9431,6 +12719,18 @@ div.zeroFlow {
     z-index: 29;
   }
 }
+/* 대응표 */
+:where(html[data-vq~='5']) .app[data-nowbar] {
+  --top: 118px;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .app[data-nowbar] .nowSlot {
+  position: absolute;
+  top: 54px;
+  left: 0;
+  right: 0;
+  z-index: 29;
+}
 
 /* 입문 과정 (무대 2단계 7): no text under 14 px in the top line at 1366 × 768. */
 .topBar[data-course] .product em {
@@ -9438,6 +12738,10 @@ div.zeroFlow {
 }
 .topBar[data-course] .product b {
   font-size: 15px;
+}
+/* 대응표 */
+:where([data-course]) .topBar[data-course] .product b {
+  font-size: 16px;
 }
 .topBar[data-course] .trackBadge {
   font-size: 14px;
@@ -9495,6 +12799,10 @@ div.zeroFlow {
   font-weight: 600;
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .app[data-course] .viewRail button[data-named] {
+  font-size: 16px;
+}
 .app[data-course] .viewRail .displayCount {
   background: #f6f7f9;
 }
@@ -9504,12 +12812,21 @@ div.zeroFlow {
   font-size: 15px;
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .app[data-course] .side .poseDock button {
+  font-size: 16px;
+}
 .app[data-course] .side .poseDock .poseStop {
   background: #d32f2a;
   border-color: #d32f2a;
   color: #fff;
   font-weight: 800;
   box-shadow: var(--hud-key-shadow);
+}
+/* 대응표 */
+:where([data-course]) .app[data-course] .side .poseDock .poseStop {
+  color: #f6f7f9;
+  font-weight: 700;
 }
 .app[data-course] .side .poseDock .poseStop:hover:not(:disabled) {
   background: #d32f2a;
@@ -9519,9 +12836,84 @@ div.zeroFlow {
   background: rgba(0, 0, 0, 0.28);
   color: #fff;
 }
+/* 대응표 */
+:where([data-course]) .app[data-course] .poseStop kbd {
+  color: #f6f7f9;
+}
 
 /* B-3 버튼 글자는 한 줄: the run row's 코드 받기 · 로봇 실행 keeps its name only — why it is locked is said by the
    지금 할 일 line and the panel (5-5), and by the key's own tip. */
 .app[data-course] .runRealText small {
   display: none;
+}
+/* 수정 지시서 v3 파트 2-1: the 과정 배지 is off the 위치 줄 (the 절's name takes its room). */
+.topBar[data-course] .trackBadge {
+  display: none;
+}
+
+/* 수정 지시서 v3 (값을 역할 · 뜻에 맞춘 곳, 누르는 면 40 px). */
+/* 실행 줄의 정지: red plate, white word (as the fixed row's). */
+.app[data-course] .runStop {
+  background: #d32f2a;
+  border-color: #d32f2a;
+  color: #fff;
+}
+/* 대응표 */
+:where([data-course]) .app[data-course] .runStop {
+  color: #f6f7f9;
+}
+/* The panel's colours by the 대응표: one white, one grey. */
+[data-course] .app .side {
+  --ink: #f6f7f9;
+  --muted: #c9ced5;
+  --faint: #c9ced5;
+}
+/* 40 px: 다시 보기 줄의 배속 · 닫기, 자세 목록의 [이 자세로] · [지우기], 위 줄의 도움말 · 설정. */
+.app[data-course] .tlRate button {
+  min-width: 40px;
+  height: 40px;
+}
+.app[data-course] .tlClose {
+  width: 40px;
+  height: 40px;
+}
+.app[data-course] .side .poseGo,
+.app[data-course] .side .poseDel {
+  min-height: 40px;
+}
+.app[data-course] .menuChipBtn {
+  min-width: 40px;
+}
+/* The closed panel's own strip is not shown (the app opens and folds the panel). */
+.app[data-course] .sideRail {
+  display: none;
+}
+/* 입문 과정 on a window wider than 1366 px (수정 지시서 v3 파트 1-4): the screen is laid out 1366 px wide and
+   shown --course-zoom times larger, so letters, buttons and panels grow in one ratio and the 3D scene fills
+   what is left. Console.tsx sets html[data-zoomed] and --course-zoom; % here is of the window. */
+:global(html[data-zoomed]) .app[data-course] {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: calc(100% / var(--course-zoom));
+  height: calc(100% / var(--course-zoom));
+  min-height: 0;
+  transform: scale(var(--course-zoom));
+  transform-origin: 0 0;
+}
+/* 5-5's run row holds five keys (시뮬레이션 · 결과 바로 · ×4 · 코드 받기 · 정지): each name on one line
+   (수정 지시서 v2 B-3 · v3 파트 1-2), so the row is set closer there. */
+.app[data-course] .runDock:has(.runReal) {
+  gap: 4px;
+}
+.app[data-course] .runDock:has(.runReal) button {
+  gap: 4px;
+  padding-inline: 4px;
+}
+.app[data-course] .runDock:has(.runReal) .runSim,
+.app[data-course] .runDock:has(.runReal) .runReal,
+.app[data-course] .runDock:has(.runReal) .runStop {
+  flex: 1 1 auto;
+  font-size: 14px;
+  white-space: nowrap;
 }

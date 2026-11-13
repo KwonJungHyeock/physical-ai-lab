@@ -27,7 +27,7 @@ interface Props {
   of: number;
   onNext(): void;
   onClose(): void;
-  /** 입문 12차시: the 서브챕터 number ('3-4') in place of TUTORIAL n, and whether there is a next one to open. */
+  /** 입문 12차시: the 서브챕터 number ('3-3') in place of TUTORIAL n, and whether there is a next one to open. */
   course?: { tag: string; hasNext: boolean };
 }
 
@@ -88,7 +88,7 @@ export default function TutorialStrip(p: Props) {
           </p>
           {(p.course ? p.course.hasNext : p.n < p.of) && (
             <button type="button" className={css.next} onClick={p.onNext}>
-              {p.course ? '다음 단계 →' : p.n ? '다음 튜토리얼 ›' : '1단계 튜토리얼 ›'}
+              {p.course ? '다음으로 →' : p.n ? '다음 튜토리얼 ›' : '1단계 튜토리얼 ›'}
             </button>
           )}
         </div>
