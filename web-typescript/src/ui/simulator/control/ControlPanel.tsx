@@ -50,6 +50,8 @@ interface Props {
   moveOnly?: boolean;
   /** 입문 트랙: Korean only (no English tags over the mode buttons). */
   ko?: boolean;
+  /** 입문 과정: a negative 손 방향 value with '−' (the full version keeps '-'). */
+  minus?: boolean;
   /** Tool tip position for given angles, mm. */
   tipOf(angles: readonly number[]): ToolNow | null;
   busy: boolean;
@@ -662,7 +664,7 @@ export default function ControlPanel(p: Props) {
                     </svg>
                     <em style={{ color }}>{name}</em>
                     <b className={css.turnWhat}>{what}</b>
-                    <output>{v === undefined ? '—' : `${(Math.abs(v) < 0.05 ? 0 : v).toFixed(1)}°`}</output>
+                    <output>{v === undefined ? '—' : `${p.minus ? (Math.abs(v) < 0.05 ? 0 : v).toFixed(1).replace('-', '−') : (Math.abs(v) < 0.05 ? 0 : v).toFixed(1)}°`}</output>
                   </span>
                   <JogKey kind="slim" dir={-1} state={stateOf(axis, -1)} label={`${what} (${name}) −${turnStep}°`} disabled={p.busy} onStep={() => p.onTipStep(axis, -turnStep)} onStart={() => p.onTipJog(axis, -1)} onStop={p.onJogStop} />
                   <JogKey kind="slim" dir={1} state={stateOf(axis, 1)} label={`${what} (${name}) +${turnStep}°`} disabled={p.busy} onStep={() => p.onTipStep(axis, turnStep)} onStart={() => p.onTipJog(axis, 1)} onStop={p.onJogStop} />

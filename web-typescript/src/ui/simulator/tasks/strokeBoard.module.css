@@ -119,3 +119,7 @@
   color: #f6f7f9;
   font-size: 16px;
 }
+/* Near the card's right edge the tag goes to the left of the point, so the panel beside the board does not cut it. */
+.outTag[data-flip] {
+  transform: translate(calc(-100% - 8px), 6px);
+}

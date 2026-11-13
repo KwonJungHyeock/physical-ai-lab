@@ -5442,6 +5442,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     <ControlPanel
       key={jogKey}
       ko={!!track}
+      minus={course}
       startFrame={track && cellAt?.mission && missionById(cellAt.mission)?.target ? 'base' : undefined}
       moveOnly={!!(track && cellAt?.mission && missionById(cellAt.mission)?.target)}
       live={live}

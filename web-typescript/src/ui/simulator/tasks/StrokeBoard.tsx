@@ -109,7 +109,7 @@ export default function StrokeBoard({ strokes, onAdd }: { strokes: readonly (rea
         {outs.map(({ i, p }) => {
           const [x, y] = px(p!);
           return (
-            <span key={`o${i}`} className={css.outTag} style={{ left: x, top: y }}>
+            <span key={`o${i}`} className={css.outTag} data-flip={x > W - 150 ? '' : undefined} style={{ left: x, top: y }}>
               {i + 1}번 획 · 점선 밖
             </span>
           );
