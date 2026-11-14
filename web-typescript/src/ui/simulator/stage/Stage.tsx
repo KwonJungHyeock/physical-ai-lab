@@ -744,6 +744,8 @@ function World({
     const f = own?.shot && !turned ? { position: new Vector3(own.shot.eye[0], own.shot.eye[2], -own.shot.eye[1]).multiplyScalar(0.001), target: new Vector3(own.shot.target[0], own.shot.target[2], -own.shot.target[1]).multiplyScalar(0.001) } : fitView(req.name, root.current, arm.root, area, camera as PerspectiveCamera, home, free);
     // (옆: not kept to the desk — along the 600 mm-deep desk no picture of the whole arm keeps to it; its edge shows.)
     if (courseStage && turned !== 'side') f.position.copy(deskSafe(f.position, f.target, camera as PerspectiveCamera, COURSE_DESK, deskShown()));
+    // (수정 지시서 v5 파트 2: the whole arm in the part of the view left of the panel — slid, not zoomed, after the desk rule.)
+    if (courseStage) keepArmInFrame(f.position, f.target, camera as PerspectiveCamera, arm.root, free);
     void controls.setLookAt(f.position.x, f.position.y, f.position.z, f.target.x, f.target.y, f.target.z, req.animate);
     if (req.name !== 'fit') lastView.current = req.name;
     userMoved.current = false;
@@ -823,6 +825,7 @@ function World({
       let from = new Vector3(eye[0] / 1000, eye[2] / 1000, -eye[1] / 1000);
       // 입문 과정 무대: kept to the desk (deskView.ts).
       if (courseStage) from = deskSafe(from, at, camera as PerspectiveCamera, COURSE_DESK, deskShown());
+      if (courseStage) keepArmInFrame(from, at, camera as PerspectiveCamera, arm.root, freeFrame(frameInsets?.() ?? null, gl.domElement.clientWidth, gl.domElement.clientHeight));
       void c.setLookAt(from.x, from.y, from.z, at.x, at.y, at.z, true);
       userMoved.current = false;
       held.current = true;
@@ -970,6 +973,51 @@ const WORK_AREA: Record<Theme, { min: [number, number, number]; max: [number, nu
 const UPRIGHT = { min: [-60, -60, 0] as const, max: [60, 60, 470] as const };
 
 /** The uncovered part of a w × h view, from the panel insets in pixels. */
+/**
+ * 입문 과정 무대 (수정 지시서 v5 파트 2): slides the view (eye and target together, no zoom) until the whole arm — its
+ * mesh points as posed now — is inside the free part of the picture (`free`, NDC), with a small margin. A side it
+ * cannot fit on both ends is left as it is.
+ */
+function keepArmInFrame(pos: Vector3, target: Vector3, camera: PerspectiveCamera, arm: Group, free?: FreeFrame): void {
+  const shown = (o: Object3D) => {
+    for (let x: Object3D | null = o; x; x = x.parent) if (!x.visible) return false;
+    return true;
+  };
+  arm.updateWorldMatrix(true, true);
+  const pts: Vector3[] = [];
+  arm.traverse((o) => {
+    const m = o as Mesh;
+    const pos3 = m.isMesh && shown(m) ? (m.geometry?.getAttribute('position') as BufferAttribute | undefined) : undefined;
+    if (!pos3) return;
+    const step = Math.max(1, Math.floor(pos3.count / 200));
+    for (let i = 0; i < pos3.count; i += step) pts.push(new Vector3().fromBufferAttribute(pos3, i).applyMatrix4(m.matrixWorld));
+  });
+  if (!pts.length) return;
+  const lo = free ? [free.cx - free.sx, free.cy - free.sy] : [-1, -1];
+  const hi = free ? [free.cx + free.sx, free.cy + free.sy] : [1, 1];
+  const margin = 0.03;
+  const cam = camera.clone();
+  const v = new Vector3();
+  for (let k = 0; k < 6; k += 1) {
+    cam.position.copy(pos);
+    cam.lookAt(target);
+    cam.updateMatrixWorld();
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const p of pts) {
+      v.copy(p).project(cam);
+      x0 = Math.min(x0, v.x); x1 = Math.max(x1, v.x); y0 = Math.min(y0, v.y); y1 = Math.max(y1, v.y);
+    }
+    const dx = x1 - x0 > hi[0] - lo[0] - 2 * margin ? 0 : x0 < lo[0] + margin ? x0 - (lo[0] + margin) : x1 > hi[0] - margin ? x1 - (hi[0] - margin) : 0;
+    const dy = y1 - y0 > hi[1] - lo[1] - 2 * margin ? 0 : y0 < lo[1] + margin ? y0 - (lo[1] + margin) : y1 > hi[1] - margin ? y1 - (hi[1] - margin) : 0;
+    if (Math.abs(dx) < 1e-3 && Math.abs(dy) < 1e-3) return;
+    // NDC to metres at the target's depth.
+    const hh = pos.distanceTo(target) * Math.tan((cam.fov * Math.PI) / 360);
+    const move = new Vector3().setFromMatrixColumn(cam.matrixWorld, 0).multiplyScalar(dx * hh * cam.aspect).add(new Vector3().setFromMatrixColumn(cam.matrixWorld, 1).multiplyScalar(dy * hh));
+    pos.add(move);
+    target.add(move);
+  }
+}
+
 function freeFrame(insets: { l: number; r: number; t: number; b: number } | null, w: number, h: number): FreeFrame | undefined {
   if (!insets || w <= 0 || h <= 0) return undefined;
   const fw = Math.max(0.3 * w, w - insets.l - insets.r);
