@@ -11,7 +11,9 @@
     "replayOf": "{sub} 다시 보기",
     "stepOf": "{n} / {of} 단계",
     "resume": "이어서 하기",
-    "list": "목록"
+    "list": "목록",
+    "meterLimit": "한계 {v}",
+    "meterBelow": "{v} 이하"
   },
   "buttons": {
     "run": "시뮬레이션",
@@ -169,7 +171,7 @@
         "손끝을 고리 2 안으로 넣어요",
         "손끝을 고리 3 안으로 넣어요"
       ],
-      "done": "손끝 (TCP): 로봇이 일하는 곳은 손끝이에요. 관절을 돌리면 손끝이 움직여요",
+      "done": "손끝 (TCP): 로봇이 일하는 곳은 손끝이에요 · 관절을 돌리면 손끝이 움직여요",
       "leads": {
         "coord": "좌표 버튼을 눌러요",
         "key": "{name} ({axis}) 키를 눌러요"
@@ -308,7 +310,8 @@
       "done": "글자는 획의 순서와 방향으로 써요",
       "fails": {
         "twoStrokes": "획을 2개 이상 그려요",
-        "notYet": "아직이에요 · {what} · 다시 그리기로 고쳐요"
+        "notYet": "아직이에요 · {what} · 다시 그리기로 고쳐요",
+        "outStroke": "{n}번 획이 점선 밖으로 나갔어요"
       }
     },
     "5-5": {
@@ -413,7 +416,10 @@
     "wayAgain": "다시 해서 통과",
     "wayFailed": "통과 못 함",
     "photosSoon": "미션 사진은 준비 중이에요 · 준비되면 이 자리에서 고를 수 있어요",
-    "confirmPose": "반투명 로봇과 자세가 같아지면 확인을 눌러요"
+    "confirmPose": "반투명 로봇과 자세가 같아지면 확인을 눌러요",
+    "onlyPassed": "{sub}를 통과했어요 · 미션 통과",
+    "onlyNotYet": "{sub}를 먼저 끝내요",
+    "openSub": "{no} 열기"
   },
   "end": {
     "window": "6장 마무리",
@@ -431,7 +437,7 @@
     "none": "-",
     "missionOnly": "{name} (미션만)",
     "total": "끝낸 절",
-    "totalNote": "(선택 절 빼고)",
+    "totalNote": "(수행평가 포함, 선택 절 빼고)",
     "reviewLead": "① · ②는 꼭 골라요. 쓴 글은 이 컴퓨터의 브라우저에만 남아요",
     "stars": "① 별점",
     "starsName": "별점",

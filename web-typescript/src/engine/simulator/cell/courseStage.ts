@@ -91,8 +91,21 @@ export const COURSE_VIEWS: Record<string, CourseView> = {
  */
 export const MAT_VIEW = { eye: [190, -470, 560] as const, target: [255, -5, 70] as const };
 
+/**
+ * 수정 지시서 v5 파트 2: the 절 whose 처음 시점 is not view A's. 1-2 opens on a fixed shot of its own (Console: courseSteps
+ * PICK_VIEW) and [처음 시점] goes back to that same shot. 4장 (4-2 · 4-3 · 4-4) is framed as D — the arm and the mat, fitted
+ * to the part of the view left of the panel at any window size (its old fixed MAT_VIEW cut the arm at 1280 × 720).
+ */
+const PICK_SHOT = { eye: [228, -553, 803] as P3, target: [100, 0, 250] as P3 };
+const SHOT_VIEWS: Record<string, CourseView> = {
+  '1-2': { dir: from(40, 10), area: { min: [-60, -150, 0], max: [200, 150, 450] }, shot: PICK_SHOT },
+  '4-2': COURSE_VIEWS.D,
+  '4-3': COURSE_VIEWS.D,
+  '4-4': COURSE_VIEWS.D,
+};
+
 /** The home view of a 절 (its own, else its scene kind's; the others fall back to A). */
-export const courseViewOf = (sub: string, scene: string): CourseView => COURSE_VIEWS[sub] ?? COURSE_VIEWS[scene] ?? COURSE_VIEWS.A;
+export const courseViewOf = (sub: string, scene: string): CourseView => SHOT_VIEWS[sub] ?? COURSE_VIEWS[sub] ?? COURSE_VIEWS[scene] ?? COURSE_VIEWS.A;
 
 /**
  * 5-3: where the next customers' cards wait (robot mm, the card's bottom-left corner), the next one

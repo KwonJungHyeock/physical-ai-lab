@@ -44,7 +44,7 @@ export interface TutStep {
    */
   lead?(now: TutCtx): TutTarget[];
   /** How far along, for a step that is a number. */
-  meter?(now: TutCtx, start: TutCtx): { v: number; of: number; unit: string };
+  meter?(now: TutCtx, start: TutCtx): { v: number; of: number; unit: string; label?: string };
   /** Done now? `start`: the context when the step began. */
   done(now: TutCtx, start: TutCtx, mem: TutMem): boolean;
   /** A glowing ring in the 3D view to bring the tool tip into (robot mm; 맛보기). */
@@ -103,7 +103,7 @@ export const LIFE_TUTORIALS: LifeTutorial[] = [
         short: '어깨 +5° 버튼을 눌러 팔을 20° 움직여요',
         panel: 'jog',
         target: [{ sel: '[aria-label^="어깨"][aria-label*="(J2) +"]' }],
-        meter: (n, s) => ({ v: maxDiff(n.angles, s.angles), of: 20, unit: '°' }),
+        meter: (n, s) => ({ v: maxDiff(n.angles, s.angles), of: 20, unit: '°', label: `${Math.round(maxDiff(n.angles, s.angles))}° → 20°` }),
         done: (n, s) => maxDiff(n.angles, s.angles) >= 20,
       },
       { short: "'지금 자세 저장하기' 버튼을 눌러 저장해요", panel: 'pose', target: [{ text: '지금 자세 저장하기' }], done: (n, s) => newPoses(n, s).length > 0 },

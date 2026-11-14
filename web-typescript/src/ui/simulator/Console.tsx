@@ -155,16 +155,16 @@ import { levelOf as courseLevelOf, mayOpen, noticeDue, noticeRead, readPlan, rep
 import { COURSE_LOOK, MAT_VIEW, courseViewOf } from '@/engine/simulator/cell/courseStage';
 import { CARD_HOME, G3_CARD } from '@/engine/simulator/cell/draw';
 import type { DrawRecipe } from '@/engine/simulator/cell/drawRecipe';
-import { CIRCLE_COUNTS, LINE_A, LINE_B, SQUARE, TOL, TRIANGLE, cardCode, circlePoints, circleReport, circleRight, isStarOrder, lineReport, myCardReport, onCard, pathCode, rowsToPoints, sameShape, shapeReport, type Pt } from '@/engine/simulator/cell/courseDraw';
+import { CIRCLE_COUNTS, LINE_A, LINE_B, SQUARE, TOL, TRIANGLE, cardCode, circlePoints, circleReport, circleRight, inArea, isStarOrder, lineReport, myCardReport, onCard, pathCode, rowsToPoints, sameShape, shapeReport, type Pt } from '@/engine/simulator/cell/courseDraw';
 import { AIM, DESK_PLACES, DOT_ABOVE_MM, DOT_AT, DOT_NEAR_MM, FAST_PCT, KIT_PARTS, LIMIT_POSE, PEN_START_MM, POSE_TOL_DEG, PRACTICE_POSE, PREP_POSE, SLOW_PCT, TURN_DEG } from '@/engine/simulator/cell/courseSteps';
 import { G2_COURSE, MY_CARD_KEY, REAL_MAX_PCT, REVIEW_KEY } from '@/engine/simulator/cell/courseSteps';
-import { buttonName, checkName, commonLine, doneLine, endText, failLine, panelText, quizText, stepTexts, testLine, testText, tidy } from '@/engine/simulator/cell/courseText';
+import { buttonName, checkName, commonLine, doneLine, endText, failLine, panelText, quizText, stepTexts, testLine, tidy } from '@/engine/simulator/cell/courseText';
 import { ARM_PARTS, PICK_VIEW, COURSE_STEPS, FOUND_SWING_DEG, HAND_SCENE, HAND_SLOW_S, STEPS_KEY, SWING, isCourseStep, loadSteps, type CourseStepId } from '@/engine/simulator/cell/courseSteps';
 import { CHAPTER_TESTS, MISSION_TRIES, TESTS_KEY, inOrder, loadTests, missionWay, testOver, type MissionStep, type OX, type TestResult } from '@/engine/simulator/cell/courseTests';
 import { COPYRIGHT_NOTICE, COPYRIGHT_RECORD_LINE } from '@/engine/simulator/copyright';
 import { COURSE_MEDIA } from './courseMedia.gen';
 import LocationBar, { LocKindsSwitch, type LocLesson } from './stage/LocationBar';
-import NowBar, { NowMark, QuestNow, TutNow } from './stage/NowBar';
+import NowBar, { LiveNowBar, NowMark, QuestNow, TutNow } from './stage/NowBar';
 import CourseStepPanel, { VerdictLines, type Measure } from './tasks/CourseStepPanel';
 import StrokeBoard from './tasks/StrokeBoard';
 import CourseEnd, { REVIEW_START, type Review } from './tasks/CourseEnd';
@@ -1144,7 +1144,10 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     // The 처음 시작 card under the title: the robot is framed to its right while it is open.
     const guide = rect('[data-panel="start"]');
     if (guide && guide.width) l = Math.max(l, guide.right - v.left + 12);
-    const tools = rect('[data-panel="viewtools"]');
+    // (입문 과정: the 앞 · 옆 · 위 · 처음 시점 row lies across the top of the scene, not down its side — only the
+    // display rail under it, when there is one, takes room on the right; 수정 지시서 v5 파트 2-1.)
+    const toolsEl = sh.ownerDocument.querySelector<HTMLElement>('[data-panel="viewtools"]');
+    const tools = toolsEl?.querySelector('[aria-label="보는 방향"]') ? toolsEl.querySelector<HTMLElement>('[aria-orientation="vertical"]')?.getBoundingClientRect() : toolsEl?.getBoundingClientRect();
     const top = rect('[data-panel="topbar"]');
     return {
       l,
@@ -4679,7 +4682,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       setDraw4({ ...DRAW4_START, linear: id !== '4-2', rows: id === '4-3' ? emptyRows(3) : [] });
       if (id === '4-2') setDisplay((d) => ({ ...d, path: false }));
       if (mode === 'scene') setSceneRun((n) => n + 1);
-      window.setTimeout(() => stageApi.current?.lookAt(MAT_VIEW.eye, MAT_VIEW.target), 1200);
+      // (수정 지시서 v5 파트 2: the 절's own home view — the arm and the mat, framed for the window — as [처음 시점] has it.)
+      window.setTimeout(() => stageApi.current?.view('home'), 1200);
       return;
     }
     if (id === '1-1') {
@@ -5044,6 +5048,9 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     if (st?.id !== '5-4' || busyRef.current || !loaded) return;
     const c = myCardRef.current;
     if (c.strokes.length < 2) return patchStep({ note: failLine('5-4', 'twoStrokes') });
+    // (수정 지시서 v5 파트 5-2: a stroke out of the dotted area, any one, whatever their number — not passed.)
+    const out = c.strokes.findIndex((s) => s.some((q) => !inArea(q)));
+    if (out >= 0) return patchStep({ note: failLine('5-4', 'outStroke', { n: out + 1 }) });
     setMyCard((x) => ({ ...x, open: false }));
     const { steps, errors } = problemsFor(cardCode(c.strokes));
     if (errors.length) return addLog('err', `${errors[0].line}번째 줄: ${errors[0].msg}`);
@@ -5068,6 +5075,13 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     const sol = missionById('G1')?.solution ?? '';
     return sol.replace(/\n\n/, `\n\nrobot.set_speed(${Math.round(speed)})\n`);
   };
+  /** 4차시 마무리 (수정 지시서 v5 파트 4): no [카드 확인] — recorded passed as soon as its 절 (5-3) is. */
+  useEffect(() => {
+    if (!course || cPlan.ox || courseTest !== 5) return;
+    const by = subBeforeTest(cPlan, COURSE.find((x) => x.n === 5)?.test ?? '');
+    if (by && subDone(by) && testResults['5']?.mission !== true) checkCard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the window open and its 절 passed only
+  }, [course, cPlan, courseTest, cellPassed, stepsDone, testResults]);
   /** 5장 미션 [카드 확인]: 5-5 checked by the teacher (실물), else 5-4 passed (시뮬레이션). */
   const checkCard = () => {
     const c = myCardRef.current;
@@ -5313,6 +5327,11 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     setCourseStep(null);
     setLifeTut(null);
     clearSceneTimers();
+    // 4차시 (the mission only, 수정 지시서 v5 파트 4-3): behind the window the 글씨 쓰기 desk as in the 절 it is judged by.
+    if (course && !cPlan.ox) {
+      const by = subBeforeTest(cPlan, COURSE.find((c) => c.n === chapter)?.test ?? '');
+      if (by?.run?.kind === 'quest') openCell('draw', by.run.id);
+    }
     setCourseTest(chapter);
   };
   const gradeTest = (chapter: number, chosen: OX[], right: number) => {
@@ -5385,7 +5404,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     // (A 절 the course's 차시 do not have — 4차시: 1-2, 5-4 … — is not opened either: no 위치 줄 or [다음으로] would follow it.)
     if (!s || (unlisted(s) && !asTest) || (!s.test && !unlisted(s) && lessonIn(cPlan, s.id) === 0) || !modeFor(s, a.mode)) return setSubMissing(a.sub);
     const mode = await requestSub(s, a.mode);
-    if (mode && mode !== a.mode) setSubNote(`${s.id}${topicMark(s.id)} ${MODE_NAME[mode]}만 있어요. ${MODE_NAME[mode]}로 열었어요`);
+    if (mode && mode !== a.mode) setSubNote(`${s.id}${topicMark(s.id)} ${MODE_NAME[mode]}만 있어요 · ${MODE_NAME[mode]}로 열었어요`);
   };
   const subNext = subNow ? nextIn(cPlan, subNow.id) : undefined;
   /** [다음 단계 →]: the next 절 (in the kind open now, if it has it), or the 학습 기록 at the course's end. */
@@ -5396,9 +5415,31 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   // 입문 5-5: a program is not sent to the robot faster than 30 %.
   const speedLocked = course && courseStep?.id === '5-5' && myCard.speed > REAL_MAX_PCT;
   // 5-5: why its second key is locked — the speed, the robot not connected, or the simulation not passed yet (the 문구 파일's lines).
+  // 3장 (수정 지시서 v5 파트 1-2): 지금 값 → 목표 값 where a step has a value to reach (3-1 ① ~ ⑥, 3-2 ① ~ ③, 3-4 ① · ③; 3-3 ①: lifeTutorials).
+  const deg = (x: number) => `${x < 0 ? '−' : '+'}${Math.abs(Math.round(x))}°`;
+  const goalMeter = (a: readonly number[]): { v: number; of: number; unit: string; label: string } | undefined => {
+    const st = courseStep;
+    if (!course || !st) return undefined;
+    if (st.id === '3-1' && st.step < 6) {
+      const v = Math.abs(a[st.step] - (st.from[st.step] ?? a[st.step]));
+      return { v, of: TURN_DEG, unit: '°', label: `${Math.round(v)}° → ${TURN_DEG}°` };
+    }
+    if (st.id === '3-2' && st.step === 0) return { v: Math.max(0, a[0]), of: AIM.base, unit: '°', label: `${deg(a[0])} → ${deg(AIM.base)}` };
+    if (st.id === '3-2' && st.step === 1) return { v: Math.max(0, -a[1]), of: -AIM.shoulder, unit: '°', label: `${deg(a[1])} → ${deg(AIM.shoulder)}` };
+    if (st.id === '3-2' && st.step === 2) {
+      const top = jointMax()[2];
+      return { v: Math.max(0, a[2] - LIMIT_POSE[2]), of: Math.max(1, top - LIMIT_POSE[2]), unit: '°', label: `${deg(a[2])} → ${commonLine('meterLimit', { v: deg(top) })}` };
+    }
+    if (st.id === '3-4' && st.step === 0) return { v: Math.max(0, 100 - jogSpeed), of: 100 - SLOW_PCT, unit: '%', label: `${jogSpeed}% → ${commonLine('meterBelow', { v: `${SLOW_PCT}%` })}` };
+    if (st.id === '3-4' && st.step === 2) return { v: jogSpeed, of: 100, unit: '%', label: `${jogSpeed}% → 100%` };
+    return undefined;
+  };
   const realWhy = !(course && courseStep?.id === '5-5') ? null : speedLocked ? failLine('5-5', 'tooFast') : robotMode && !robot?.connected ? failLine('5-5', 'needRobot') : !gateOpen ? failLine('5-5', 'needSim') : null;
+  /** 입문 글씨 쓰기 절: the panel's own [정지 Esc] row (수정 지시서 v5 파트 3). */
+  const writeStop = course && !sceneView && courseTest === null && !!subNow && ['1-1', '5-1', '5-2', '5-3', '5-4', '5-5'].includes(subNow.id);
   const runBar = (
     <RunBar
+      noStop={writeStop}
       passed={gateOpen}
       robotDone={!!progress[markKey(here)]?.robot}
       robotMode={robotMode}
@@ -6569,7 +6610,10 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
             name={testName(courseTest)}
             range={rangeText(testSub)}
             ox={cPlan.ox}
-            judgedBy={cPlan.ox || !testSub ? undefined : subBeforeTest(cPlan, testSub.id)?.id}
+            judged={(() => {
+              const by = cPlan.ox || !testSub ? undefined : subBeforeTest(cPlan, testSub.id);
+              return by ? { id: by.id, name: `${by.id} ${barTitle(by.id, by.title)}`, done: subDone(by), onOpen: () => void requestSub(by, 'practice') } : undefined;
+            })()}
             result={testResults[String(courseTest)]}
             onGraded={(chosen, right) => gradeTest(courseTest, chosen, right)}
             onMission={() => startMission(courseTest)}
@@ -6634,7 +6678,10 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                 const by = cPlan.ox || !testSub ? undefined : subBeforeTest(cPlan, testSub.id)?.id;
                 if (testOver(t, r, cPlan.ox)) return <NowBar state="ok" text={testLine('testDone', { name: testName(courseTest) })} />;
                 if (cPlan.ox && r?.right == null) return <NowBar text={testLine('testAsk')} />;
-                return <NowBar text={(by && testText(courseTest).missionOnly?.replace('{sub}', by)) || t.mission.text} />;
+                // (4차시: the window's own line — 5-3 to finish first, 수정 지시서 v5 파트 4.)
+                const bySub = by ? subById(by) : undefined;
+                if (bySub) return <NowBar text={panelText('onlyNotYet', { sub: `${bySub.id} ${barTitle(bySub.id, bySub.title)}` })} />;
+                return <NowBar text={t.mission.text} />;
               })()
             )
           ) : courseStep ? (
@@ -6662,7 +6709,15 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                         : line.sel;
               return (
                 <>
-                  <NowBar n={at + 1} steps={{ n: at + 1, of: lines.length }} text={(courseStep.note ?? line.text).replace('{realNow}', buttonName(robotMode ? 'real' : 'export'))} state={courseStep.note ? 'no' : 'do'} next={nx} meter={courseStep.id === '1-2' ? { v: courseStep.found.length, of: ARM_PARTS.length, unit: '곳' } : undefined} />
+                  <LiveNowBar
+                    live={live}
+                    meterOf={(a) => (courseStep.id === '1-2' ? { v: courseStep.found.length, of: ARM_PARTS.length, unit: '곳' } : goalMeter(a))}
+                    n={at + 1}
+                    steps={{ n: at + 1, of: lines.length }}
+                    text={(courseStep.note ?? line.text).replace('{realNow}', buttonName(robotMode ? 'real' : 'export'))}
+                    state={courseStep.note ? 'no' : 'do'}
+                    next={nx}
+                  />
                   {sel && <NowMark key={`${courseStep.id}:${at}:${sel}`} find={() => [...document.querySelectorAll<HTMLElement>(sel)].find((e) => e.getBoundingClientRect().width > 0) ?? null} n={at + 1} />}
                 </>
               );
@@ -7481,6 +7536,14 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                         )}
                         {/* 교실 수업형: the 차시 open now — 오늘 배울 것, its 교안 pages, 확인 문제, 학습 기록. */}
                         {!course && lessonNow && (!questOn || !lifeStep || detail) && <LessonPlate lesson={lessonNow} total={lessons.length} rec={lessonRec} onCheck={() => setLessonUi('check')} onRecord={() => setLessonUi('record')} />}
+                        {/* 입문 글씨 쓰기 절 (수정 지시서 v5 파트 3): [정지 Esc] at the foot, where the 조작판 has it — no pose keys here. */}
+                        {writeStop && (
+                          <div className={css.poseDock} data-stop-only>
+                            <button type="button" className={css.poseStop} data-step="stop" onClick={() => void stop()} title="움직임을 바로 멈춰요 (Esc)">
+                              <Icon name="stop" size={14} /> {buttonName('stop')} <kbd>Esc</kbd>
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ) : cellAt && cellTermOn ? (
                       <div className={css.pane}>

@@ -13047,3 +13047,8 @@ div.zeroFlow {
 .topBar[data-course] .lockup {
   min-height: 40px;
 }
+/* 입문 글씨 쓰기 절 (수정 지시서 v5 파트 3): the [정지 Esc] row at the panel's foot, inset as the 조작판's. */
+.app .side .pane > .poseDock[data-stop-only] {
+  margin: auto 0 0;
+  padding: 14px 10px 2px;
+}

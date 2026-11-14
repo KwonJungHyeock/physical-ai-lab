@@ -123,8 +123,7 @@ function placeAt(places: CoursePlaces, root: Group | null, world: Vector3): numb
   const x = p.x * 1000;
   const y = p.y * 1000;
   const hits = places.rects.map((r, i) => ({ r, i })).filter(({ r, i }) => i >= places.placed && x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1);
-  const next = hits.find((h) => h.i === places.placed);
-  if (next) return next.i;
+  // (수정 지시서 v5 파트 5-1: a press inside the card's outline is the card — before the mat it is not put down.)
   const area = (r: CoursePlaces['rects'][number]) => (r.x1 - r.x0) * (r.y1 - r.y0);
   return hits.sort((a, b) => area(a.r) - area(b.r))[0]?.i ?? places.placed;
 }
@@ -137,7 +136,9 @@ function PlacesHook({ places, root }: { places: CoursePlaces; root: Group | null
     const w = window as unknown as { __placeAt?: () => [number, number][] };
     w.__placeAt = () =>
       places.rects.map((r) => {
-        const v = new Vector3(m((r.x0 + r.x1) / 2), m((r.y0 + r.y1) / 2), 0);
+        // (A place with a smaller one inside it — the mat round the card: a point of its own, left of the inner one.)
+        const inner = places.rects.find((q) => q !== r && q.x0 >= r.x0 && q.x1 <= r.x1 && q.y0 >= r.y0 && q.y1 <= r.y1);
+        const v = new Vector3(m(inner ? (r.x0 + inner.x0) / 2 : (r.x0 + r.x1) / 2), m((r.y0 + r.y1) / 2), 0);
         root?.localToWorld(v);
         v.project(camera);
         return [((v.x + 1) / 2) * size.width, ((1 - v.y) / 2) * size.height];

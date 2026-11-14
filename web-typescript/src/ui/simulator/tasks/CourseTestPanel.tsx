@@ -28,8 +28,8 @@ interface Props {
   range: string;
   /** The course has its O · X (8차시); not: the mission only (4차시). */
   ox: boolean;
-  /** The mission only: the 절 it is judged by ('5-3'). */
-  judgedBy?: string;
+  /** The mission only (4차시): the 절 it is judged by — its number and name ('5-3 획 나누기'), passed or not, and opening it. */
+  judged?: { id: string; name: string; done: boolean; onOpen(): void };
   result?: TestResult;
   onGraded(chosen: OX[], right: number): void;
   /** [다음 단계 →] (none: the course's end is elsewhere). */
@@ -40,11 +40,40 @@ interface Props {
   onCard?: () => void;
 }
 
-export default function CourseTestPanel({ test, number, name, range, ox, judgedBy, result, onGraded, onNext, onMission, onCard }: Props) {
+export default function CourseTestPanel({ test, number, name, range, ox, judged, result, onGraded, onNext, onMission, onCard }: Props) {
   const [chosen, setChosen] = useState<(OX | null)[]>(() => (result?.chosen?.length === 5 ? result.chosen : [null, null, null, null, null]));
   const graded = !ox || result?.right != null;
   const all = chosen.every((c) => c !== null);
   const level = () => panelText('level', { level: levelOf({ chapter: test.chapter, right: result?.right ?? 0, of: 5, mission: !!result?.mission }).level });
+  // 4차시 (수정 지시서 v5 파트 4): one line and one key — passed: [다음으로 →]; not yet: open the 절 it is judged by.
+  if (!ox && judged) {
+    const passed = judged.done || result?.mission === true;
+    return (
+      <div className={css.scrim} role="dialog" aria-label={name}>
+        <div className={css.test}>
+          <h2>
+            {number} {name}
+            {range && <small>{range}</small>}
+          </h2>
+          <div className={css.row}>
+            <output>{panelText(passed ? 'onlyPassed' : 'onlyNotYet', { sub: judged.name })}</output>
+            {passed ? (
+              onNext && (
+                <button type="button" className={css.key} data-lit onClick={onNext}>
+                  {buttonName('next')}
+                </button>
+              )
+            ) : (
+              <button type="button" className={css.key} data-lit onClick={judged.onOpen}>
+                {panelText('openSub', { no: judged.id })}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+  const judgedBy = judged?.id;
   const only = !ox && judgedBy ? testText(test.chapter).missionOnly?.replace('{sub}', judgedBy) : undefined;
   return (
     <div className={css.scrim} role="dialog" aria-label={name}>

@@ -227,7 +227,14 @@ assert.equal(C.modeFor(C.subById('3-5')!, 'scene'), 'practice');
 assert.deepEqual(T.CHAPTER_TESTS[1].answers, ['O', 'X', 'O', 'X', 'O']);
 assert.equal(T.gradeOX(T.CHAPTER_TESTS[1], ['O', 'X', 'O', 'O', 'O']), 4);
 assert.equal(T.CHAPTER_TESTS[1].mission.ready, false, '사진 6장은 팀에서 받기 전까지 준비 중');
-assert.ok(!K.countedIn(full).some((s) => s.test));
+// 완료 수 (수정 지시서 v5 파트 1-3): the 수행평가 count, the 선택 절 does not — 8차시 20, 4차시 11; the 장 cards add up to it.
+assert.equal(K.countedIn(full).length, 20);
+assert.equal(K.countedIn(focus).length, 11);
+assert.ok(K.countedIn(full).some((s) => s.id === '3-5') && K.countedIn(full).some((s) => s.id === '5-6'));
+for (const plan of [full, focus]) {
+  const cards = C.COURSE.filter((ch) => !ch.subs.some((x) => x.status === 'end')).map((ch) => K.stepsIn(plan).filter((x) => x.sub.chapter === ch.n && x.sub.run && !x.sub.optional).length);
+  assert.equal(cards.reduce((a, b) => a + b, 0), K.countedIn(plan).length);
+}
 
 // 상 · 중 · 하 (임시, browser): by the #48 rule, only for a 수행평가 taken.
 assert.equal(P.levelOf({ chapter: 3, right: 5, of: 5, mission: true }).level, '상');

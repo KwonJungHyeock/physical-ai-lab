@@ -101,7 +101,10 @@ export function nextIn(c: CoursePlan, id: string): CourseSub | 'record' | undefi
 }
 
 /** What counts toward 완료: the course's 절 that open, but not a 선택 절 (skipping it never counts against). */
-export const countedIn = (c: CoursePlan): CourseSub[] => subsIn(c).filter((s) => s.run && !s.optional);
+// (수정 지시서 v5 파트 1-3: the 수행평가 count too — the list's head, its 장 cards and the 학습 기록 alike; a 선택 절 does not.)
+export const countedIn = (c: CoursePlan): CourseSub[] => stepsIn(c)
+  .map((x) => x.sub)
+  .filter((s) => s.run && !s.optional);
 
 /** 4차시 (no O · X): the 절 whose mission is recorded — each 차시's last. */
 export const missionSubsIn = (c: CoursePlan): CourseSub[] => (c.ox ? [] : lessonsIn(c).flatMap((l) => l.subs.slice(-1)));

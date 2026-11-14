@@ -54,6 +54,7 @@ import {
   PerspectiveCamera,
   Scene,
   Vector3,
+  type BufferAttribute,
   WebGLRenderTarget,
 } from 'three';
 
@@ -687,6 +688,42 @@ function World({
     const i = frameInsets?.();
     return shownOf(i ? { r: i.hide ?? 0, t: i.t } : null, gl.domElement.clientWidth, gl.domElement.clientHeight);
   };
+  // 입문 과정 무대: a hook for the screen checks (tests · tools): where the whole arm (its mesh points) and given
+  // robot-frame points (mm) land on the canvas, in CSS pixels from the canvas's top left (수정 지시서 v5 파트 2-2).
+  useEffect(() => {
+    if (!courseStage) return;
+    const w = window as unknown as { __stageFrame?: (pts?: readonly (readonly number[])[]) => unknown };
+    w.__stageFrame = (pts = []) => {
+      const cw = gl.domElement.clientWidth;
+      const ch = gl.domElement.clientHeight;
+      const toPx = (v: Vector3) => {
+        v.project(camera);
+        return [Math.round(((v.x + 1) / 2) * cw), Math.round(((1 - v.y) / 2) * ch)];
+      };
+      let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+      const v = new Vector3();
+      arm.root.updateWorldMatrix(true, true);
+      const shown = (o: Object3D) => {
+        for (let x: Object3D | null = o; x; x = x.parent) if (!x.visible) return false;
+        return true;
+      };
+      arm.root.traverse((o) => {
+        const m = o as Mesh;
+        const pos = m.isMesh && shown(m) ? (m.geometry?.getAttribute('position') as BufferAttribute | undefined) : undefined;
+        if (!pos) return;
+        const step = Math.max(1, Math.floor(pos.count / 400));
+        for (let i = 0; i < pos.count; i += step) {
+          const [x, y] = toPx(v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld));
+          x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y);
+        }
+      });
+      const r = gl.domElement.getBoundingClientRect();
+      return { canvas: { x: Math.round(r.left), y: Math.round(r.top), w: cw, h: ch }, arm: Number.isFinite(x0) ? { x0, y0, x1, y1 } : null, pts: pts.map((p) => toPx(new Vector3(p[0], p[2], -p[1]).multiplyScalar(0.001))) };
+    };
+    return () => {
+      delete w.__stageFrame;
+    };
+  }, [courseStage, gl, camera, arm]);
   const lastView = useRef<ViewName>('home');
   const userMoved = useRef(false);
   /** A glide by lookAt (a tour, a station) holds until the next view: a resize does not re-frame it. */

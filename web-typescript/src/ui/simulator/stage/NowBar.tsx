@@ -10,6 +10,7 @@
  *  - QuestNow: a 현장 quest's controls in turn (quests.ts QUEST_LEAD), then the run, then the result.
  */
 
+import { useLive, type Live } from '../liveStore';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -32,7 +33,8 @@ interface BarProps {
   n?: number;
   text: string;
   state?: 'do' | 'run' | 'ok' | 'no';
-  meter?: { v: number; of: number; unit: string } | null;
+  /** `label`: the meter's words instead of 'v / of' (입문 3장: 지금 값 → 목표 값, 수정 지시서 v5 파트 1-2). */
+  meter?: { v: number; of: number; unit: string; label?: string } | null;
   next?: NowNext;
   /** 장면 보기 (수정 지시서 v3 파트 2-2): the line names the scene and carries [다시 보기] (no '지금 할 일', no step). */
   replay?: { onClick(): void; disabled?: boolean };
@@ -51,15 +53,19 @@ export default function NowBar({ n, text, state = 'do', meter, next, replay, ste
         <PlayText text={text} size={26} />
       </p>
       {meter && (
-        <span className={css.meter} aria-label={`${Math.min(meter.v, meter.of).toFixed(0)} / ${meter.of}${meter.unit}`}>
+        <span className={css.meter} aria-label={meter.label ?? `${Math.min(meter.v, meter.of).toFixed(0)} / ${meter.of}${meter.unit}`}>
           <i>
             <i style={{ width: `${Math.min(100, (100 * meter.v) / Math.max(1, meter.of))}%` }} />
           </i>
-          <output>
-            {Math.min(meter.v, meter.of).toFixed(0)}
-            {unit} / {meter.of}
-            {unit}
-          </output>
+          {meter.label ? (
+            <output>{meter.label}</output>
+          ) : (
+            <output>
+              {Math.min(meter.v, meter.of).toFixed(0)}
+              {unit} / {meter.of}
+              {unit}
+            </output>
+          )}
         </span>
       )}
       {steps && steps.of > 0 && (
@@ -90,6 +96,12 @@ export default function NowBar({ n, text, state = 'do', meter, next, replay, ste
 const shown = (e: Element | null): e is HTMLElement => !!e && (e as HTMLElement).getBoundingClientRect().width > 0;
 
 /** The element a tutorial target names (its selector, or a button showing its text), if on screen. */
+/** 지금 할 일 with a meter read from the joint angles as they change (입문 3-1 · 3-2: 지금 값 → 목표 값). */
+export function LiveNowBar({ live, meterOf, ...bar }: BarProps & { live: Live; meterOf(angles: readonly number[]): BarProps['meter'] }) {
+  const angles = useLive(live, (v) => v.angles);
+  return <NowBar {...bar} meter={meterOf(angles)} />;
+}
+
 export function findTarget(t: TutTarget): HTMLElement | null {
   if ('sel' in t) return [...document.querySelectorAll<HTMLElement>(t.sel)].find(shown) ?? null;
   return [...document.querySelectorAll<HTMLElement>('button')].find((b) => shown(b) && (b.textContent ?? '').trim().includes(t.text)) ?? null;

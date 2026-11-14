@@ -43,6 +43,8 @@ interface Props {
   quick?: { onClick(): void; progress: string | null; disabled?: boolean };
   /** 입문 과정: the two run keys' names as the 문구 파일 has them (none: the console's own). */
   names?: { run: string; real: string; stop: string; code?: string };
+  /** The panel has its own [정지 Esc] row at the foot (입문 글씨 쓰기 절): no ■ here. */
+  noStop?: boolean;
   /** 입문 트랙 (지시서 v1): [다음 단계 →] — never automatic; lit (the one accent) once this step is passed. */
   next?: { onClick(): void; lit: boolean; disabled?: boolean };
 }
@@ -174,7 +176,7 @@ export default function RunBar(p: Props) {
       ))}
       </span>
       {/* 입문 퀘스트: ■ only while something runs (Esc still stops at any time). */}
-      {(!p.more || p.busy) && (
+      {!p.noStop && (!p.more || p.busy) && (
         <button type="button" className={css.runStop} onClick={p.onStop} aria-label="정지" title="정지 (Esc · 스페이스)">
           <Icon name="stop" size={16} />
           <span>{p.names?.stop ?? '정지'}</span>
