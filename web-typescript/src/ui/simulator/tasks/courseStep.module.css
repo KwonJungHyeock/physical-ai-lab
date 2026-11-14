@@ -244,6 +244,11 @@
 :where([data-course]) .ox li em[data-no] {
   color: #f6f7f9;
 }
+/* 교안 캡처 확인 (화면 동결 뒤 오류 고침): the five O · X rows lower in the 입문 과정, so at 1366 × 768 and 1920 × 1080
+   the test window's last button stays in view (with the 미션 result under the rows it ran 37 px past the window). */
+[data-course] .ox li {
+  min-height: 44px;
+}
 .photos {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
