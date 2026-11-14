@@ -78,9 +78,6 @@ export const COURSE_VIEWS: Record<string, CourseView> = {
   D: { dir: from(55, 0), area: { min: [40, -150, 0], max: [300, 150, 120] } },
   // E 펜 끝 근접 (5-2): the card and the pen.
   E: { dir: from(50, 5), area: { min: [100, -100, 0], max: [310, 80, 140] } },
-  // 5-2 (수정 지시서 v2 파트 A-5): the whole mat from nearly straight above the customer's side, close enough that its
-  // numbers (4 mm tall) are 13 px or more at 1366 × 768, and left of the panel (a fixed shot: its target is right of the mat's middle).
-  '5-2': { dir: from(72, 0), area: { min: [110, -90, 0], max: [300, 70, 20] }, shot: { eye: [265, -99, 319], target: [265, 4.5, 0] } },
   // 5-3: the card, the pen and the cards waiting behind the mat (a fixed shot: framed with the arm it would not keep to the desk).
   '5-3': { dir: from(50, 5), area: { min: [-20, -90, 0], max: [360, 180, 140] }, shot: { eye: [50, -600, 700], target: [250, -40, 100] } },
 };
@@ -102,6 +99,15 @@ const SHOT_VIEWS: Record<string, CourseView> = {
   '4-2': COURSE_VIEWS.D,
   '4-3': COURSE_VIEWS.D,
   '4-4': COURSE_VIEWS.D,
+};
+
+/**
+ * 5-2 (수정 지시서 v2 파트 A-5 · v5 확인 답 1): it opens on the whole mat from nearly straight above the customer's side,
+ * close enough that its numbers (4 mm tall) are 13 px or more at 1366 × 768 (a fixed shot: its target is right of the
+ * mat's middle). Its [처음 시점] is view A — the arm and the mat — so the robot is there to be seen too.
+ */
+export const START_SHOTS: Record<string, { eye: P3; target: P3 }> = {
+  '5-2': { eye: [265, -99, 319], target: [265, 4.5, 0] },
 };
 
 /** The home view of a 절 (its own, else its scene kind's; the others fall back to A). */

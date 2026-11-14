@@ -152,7 +152,7 @@ import { lessonOfQuest, lessonsOf, siteOf } from '@/engine/simulator/cell/lesson
 import { COURSE, barTitle, fromOldNumber, kindsOf, modeFor, rangeText, retiredTest, subById, subByNumber, subOfRun, testName, topicMark, unlisted, MODE_NAME, type CourseSub, type SubMode } from '@/engine/simulator/cell/course';
 import { DEFAULT_PLAN, countedIn, lessonIn, lessonStepsIn, missionSubsIn, nextIn, stepsIn, subBeforeTest, subsIn, testReady, type CoursePlan } from '@/engine/simulator/cell/courses';
 import { levelOf as courseLevelOf, mayOpen, noticeDue, noticeRead, readPlan, report } from '@/engine/simulator/cell/platform';
-import { COURSE_LOOK, MAT_VIEW, courseViewOf } from '@/engine/simulator/cell/courseStage';
+import { COURSE_LOOK, MAT_VIEW, START_SHOTS, courseViewOf } from '@/engine/simulator/cell/courseStage';
 import { CARD_HOME, G3_CARD } from '@/engine/simulator/cell/draw';
 import type { DrawRecipe } from '@/engine/simulator/cell/drawRecipe';
 import { CIRCLE_COUNTS, LINE_A, LINE_B, SQUARE, TOL, TRIANGLE, cardCode, circlePoints, circleReport, circleRight, inArea, isStarOrder, lineReport, myCardReport, onCard, pathCode, rowsToPoints, sameShape, shapeReport, type Pt } from '@/engine/simulator/cell/courseDraw';
@@ -5372,6 +5372,9 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     setLifeTut(null);
     openCell('draw', s.run.id);
     if (mode === 'scene') setSceneRun((n) => n + 1);
+    // A 절 that opens on a shot of its own, not its [처음 시점] (5-2: the mat close up, 수정 지시서 v5 확인 답 1).
+    const shot = mode === 'practice' ? START_SHOTS[s.id] : undefined;
+    if (shot) window.setTimeout(() => stageApi.current?.lookAt(shot.eye, shot.target), 1200);
   };
   /** Every way into a 절 (the address, the lists, the kinds, [다음 단계]): asked first whether it may open. */
   const requestSub = async (s: CourseSub, want: SubMode) => {
@@ -5441,7 +5444,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   };
   const realWhy = !(course && courseStep?.id === '5-5') ? null : speedLocked ? failLine('5-5', 'tooFast') : robotMode && !robot?.connected ? failLine('5-5', 'needRobot') : !gateOpen ? failLine('5-5', 'needSim') : null;
   /** 입문 글씨 쓰기 절: the panel's own [정지 Esc] row (수정 지시서 v5 파트 3). */
-  const writeStop = course && !sceneView && courseTest === null && !!subNow && ['1-1', '5-1', '5-2', '5-3', '5-4', '5-5'].includes(subNow.id);
+  const writeStop = course && !sceneView && courseTest === null && !!subNow && ['1-1', '4-2', '4-3', '4-4', '5-1', '5-2', '5-3', '5-4', '5-5'].includes(subNow.id);
   const runBar = (
     <RunBar
       noStop={writeStop}
