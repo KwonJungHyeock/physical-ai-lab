@@ -4245,6 +4245,9 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     const start = tutCtx();
     setLifeTut({ id, step: 0, start: id === 'teach' ? { ...start, flowStep: 1 } : start, mem: {} });
     openTutPanel(t.steps[0].panel);
+    // 입문 과정 (3-3 · 4-1, 수정 지시서 v5 파트 2): framed again once its panel is open, as the other 절 are — the
+    // first framing came before the panel, so part of the work area ended up under it.
+    if (course) window.setTimeout(() => stageApi.current?.view('home'), 1200);
   };
 
   /** No tool fitted: the open/close buttons still show, and say what to do. */
