@@ -5336,6 +5336,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       if (by?.run?.kind === 'quest') openCell('draw', by.run.id);
     }
     setCourseTest(chapter);
+    // (수정 지시서 v5 파트 2: framed again once the panel is there, as the 절 are.)
+    if (course) window.setTimeout(() => stageApi.current?.view('home'), 1200);
   };
   const gradeTest = (chapter: number, chosen: OX[], right: number) => {
     setTestResults((r) => {
