@@ -249,6 +249,35 @@
 [data-course] .ox li {
   min-height: 44px;
 }
+/* 동결 뒤 고침 파트 1-4 (확인 답 2): on a window 740 px high or less (1280 × 720) the window sits closer to the screen's
+   edges and its rows lower, so it holds its O · X, the mission and its key without scrolling. */
+@media (max-height: 740px) {
+  [data-course] .scrim {
+    padding: 12px;
+    padding-top: calc(var(--top, 54px) + 12px);
+  }
+  [data-course] .test {
+    max-height: calc(var(--cv1) - var(--top, 54px) - 24px);
+    padding: 16px 24px;
+  }
+  [data-course] .ox li {
+    min-height: 40px;
+  }
+}
+/* 대응표 */
+:where(html[data-vq~='19']) [data-course] .scrim {
+  padding: 12px;
+  padding-top: calc(var(--top, 54px) + 12px);
+}
+/* 대응표 */
+:where(html[data-vq~='19']) [data-course] .test {
+  max-height: calc(var(--cv1) - var(--top, 54px) - 24px);
+  padding: 16px 24px;
+}
+/* 대응표 */
+:where(html[data-vq~='19']) [data-course] .ox li {
+  min-height: 40px;
+}
 .photos {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

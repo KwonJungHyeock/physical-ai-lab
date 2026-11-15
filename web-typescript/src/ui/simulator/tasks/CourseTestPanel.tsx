@@ -74,6 +74,10 @@ export default function CourseTestPanel({ test, number, name, range, ox, judged,
     );
   }
   const judgedBy = judged?.id;
+  // One lit key at a time (동결 뒤 고침 파트 3-1, and 3-5 by the same rule — 확인 답 1): the card mission's [카드 확인] till it
+  // has passed, a mission in the scene's [미션 시작] · [다시 하기] till it is over; then [다음으로 →].
+  const cardOpen = !!test.mission.card && result?.mission !== true;
+  const sceneOpen = !!test.mission.ready && !!(test.mission.steps || test.mission.pose || test.mission.star) && !missionEnd(result);
   const only = !ox && judgedBy ? testText(test.chapter).missionOnly?.replace('{sub}', judgedBy) : undefined;
   return (
     <div className={css.scrim} role="dialog" aria-label={name}>
@@ -181,7 +185,7 @@ export default function CourseTestPanel({ test, number, name, range, ox, judged,
                 <p className={css.soon}>{panelText('photosSoon')}</p>
               </>
             )}
-            {onNext && (
+            {onNext && !cardOpen && !sceneOpen && (
               <div className={css.row}>
                 <output />
                 <button type="button" className={css.key} data-lit onClick={onNext}>

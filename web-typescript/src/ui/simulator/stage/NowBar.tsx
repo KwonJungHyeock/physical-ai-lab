@@ -40,9 +40,11 @@ interface BarProps {
   replay?: { onClick(): void; disabled?: boolean };
   /** 'N / M 단계' and its bar, left of [다음으로 →] (수정 지시서 v4 파트 2-5): the step reached of the 절's steps (all done: M / M). */
   steps?: { n: number; of: number };
+  /** A key of the line's own in [다음으로 →]'s place, lit (입문 3-5 미션: [확인], 동결 뒤 고침 파트 1). */
+  action?: { label: string; onClick(): void; disabled?: boolean };
 }
 
-export default function NowBar({ n, text, state = 'do', meter, next, replay, steps }: BarProps) {
+export default function NowBar({ n, text, state = 'do', meter, next, replay, steps, action }: BarProps) {
   // A number and its unit: a space before mm (110 mm), none before ° or 곳.
   const unit = meter ? (meter.unit === 'mm' ? ' mm' : meter.unit) : '';
   return (
@@ -87,6 +89,11 @@ export default function NowBar({ n, text, state = 'do', meter, next, replay, ste
       {next && (
         <button type="button" className={css.next} data-lit={next.lit || undefined} onClick={next.onClick}>
           {buttonName('next')}
+        </button>
+      )}
+      {action && (
+        <button type="button" className={css.next} data-lit disabled={action.disabled} onClick={action.onClick}>
+          {action.label}
         </button>
       )}
     </div>

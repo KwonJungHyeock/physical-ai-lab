@@ -377,6 +377,8 @@ interface MyCard {
 }
 /** 입문 과정: the 조작판's [자세히 보기 ▸ 좌표 · 속도 · 부하 · 보조 그림] (수정 지시서 v4 파트 0-1: off; its code stays). */
 const COURSE_JOG_DETAIL: boolean = false;
+/** 3장 미션's card over the 조작판 (its sentence + [확인]): off — the [확인] is on the 지금 할 일 line (동결 뒤 고침 파트 1). */
+const MISSION_CARD: boolean = false;
 const MY_CARD_START: MyCard = { strokes: [], open: false, ran: false, passed: false, results: [], speed: 50, ran55: false, checked: false };
 
 /** 입문 과정: the window width its screens are laid out for, px (wider: the whole screen is shown larger). */
@@ -6677,7 +6679,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
           ) : courseTest !== null ? (
             // 수행평가: the one line only (no number badges, no steps).
             missionRun && CHAPTER_TESTS[missionRun.chapter] ? (
-              <NowBar text={CHAPTER_TESTS[missionRun.chapter].mission.text} />
+              // 3장 미션: its [확인] at the line's right, where [다음으로 →] stands otherwise (동결 뒤 고침 파트 1: the card over the 조작판 is off).
+              <NowBar text={CHAPTER_TESTS[missionRun.chapter].mission.text} action={CHAPTER_TESTS[missionRun.chapter].mission.pose ? { label: '확인', onClick: confirmPose, disabled: busy } : undefined} />
             ) : (
               // '… 를 마쳤어요' only once its mission is over too (수정 지시서 v4 파트 1-9); till then: the O · X, then the mission's sentence.
               (() => {
@@ -6726,7 +6729,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                     state={courseStep.note ? 'no' : 'do'}
                     next={nx}
                   />
-                  {sel && <NowMark key={`${courseStep.id}:${at}:${sel}`} find={() => [...document.querySelectorAll<HTMLElement>(sel)].find((e) => e.getBoundingClientRect().width > 0) ?? null} n={at + 1} />}
+                  {/* (동결 뒤 고침 파트 3-2: no number on the ▶ a 잠깐 퀴즈 holds; back once it is answered.) */}
+                  {sel && !moment && <NowMark key={`${courseStep.id}:${at}:${sel}`} find={() => [...document.querySelectorAll<HTMLElement>(sel)].find((e) => e.getBoundingClientRect().width > 0) ?? null} n={at + 1} />}
                 </>
               );
             })()
@@ -7285,7 +7289,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                           <>
                             {/* 3-4: the two moves' times; 3장 미션: its [확인]. Over the usual 조작판. */}
                             {courseStep?.id === '3-4' && <CourseStepPanel id="3-4" busy={busy} times={courseStep.times} />}
-                            {missionRun?.chapter === 3 && <CourseStepPanel busy={busy} confirm={{ text: panelText('confirmPose'), onConfirm: confirmPose }} />}
+                            {MISSION_CARD && missionRun?.chapter === 3 && <CourseStepPanel busy={busy} confirm={{ text: panelText('confirmPose'), onConfirm: confirmPose }} />}
                             {controlPanel}
                             {/* 입문 과정: the tool row is 2-3's own (CourseStepPanel); under the 조작판 it is not used. */}
                             {!course && toolRow}
