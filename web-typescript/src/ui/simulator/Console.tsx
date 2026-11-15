@@ -11,7 +11,7 @@
 
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
-import { memo, useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { Vector3 } from 'three';
 
 import { BLOCK_MM, BLOCK_START, BLOCK_STORED, CAL_BOARD, HAND_PHOTO_DEG, HOME_DEG, KIT_RISE_MM, randomBlockLayout, STORAGE_BOX, type ColorName, type Theme } from '@/engine/simulator/board';
@@ -165,6 +165,9 @@ import { COPYRIGHT_NOTICE, COPYRIGHT_RECORD_LINE } from '@/engine/simulator/copy
 import { COURSE_MEDIA } from './courseMedia.gen';
 import LocationBar, { LocKindsSwitch, type LocLesson } from './stage/LocationBar';
 import NowBar, { LiveNowBar, NowMark, QuestNow, TutNow } from './stage/NowBar';
+import JointReadout from './control/JointReadout';
+import QaPanel from './QaPanel';
+import { isQa } from './qaMode';
 import CourseStepPanel, { VerdictLines, type Measure } from './tasks/CourseStepPanel';
 import StrokeBoard from './tasks/StrokeBoard';
 import CourseEnd, { REVIEW_START, type Review } from './tasks/CourseEnd';
@@ -377,6 +380,8 @@ interface MyCard {
 }
 /** 입문 과정: the 조작판's [자세히 보기 ▸ 좌표 · 속도 · 부하 · 보조 그림] (수정 지시서 v4 파트 0-1: off; its code stays). */
 const COURSE_JOG_DETAIL: boolean = false;
+/** useSyncExternalStore's subscribe for a value that does not change while the page is open (?qa=1). */
+const noSubscribe = () => () => {};
 /** 3장 미션's card over the 조작판 (its sentence + [확인]): off — the [확인] is on the 지금 할 일 line (동결 뒤 고침 파트 1). */
 const MISSION_CARD: boolean = false;
 const MY_CARD_START: MyCard = { strokes: [], open: false, ran: false, passed: false, results: [], speed: 50, ran55: false, checked: false };
@@ -446,6 +451,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   }, [course]);
   // 입문 구성 (courses.ts · platform.ts): the class's, from the platform once linked; today the table's default (8차시).
   const [cPlan, setCPlan] = useState<CoursePlan>(DEFAULT_PLAN);
+  // ?qa=1 (입문 과정 QA): the address read in the browser (none on the server) — the record kept apart is qaMode.ts's, set up as the page loads.
+  const qaOn = useSyncExternalStore(noSubscribe, () => !!course && isQa(), () => false);
   // The 절 the address asks for (?no=3-3&mode=scene · practice): opened once the 저작권 안내 is read.
   // An address with the old name (?sub=) carries an old number: it is read as today's (수정 지시서 v3 파트 8-9) and the address is put right.
   const asked = useRef<{ sub: string; mode: SubMode } | null>(null);
@@ -4817,7 +4824,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     if (!ok && (stopped || stepStopped.current)) {
       patchStep({ stopped: true });
       if (now.range) markStepDone('1-3');
-    } else if (ok) patchStep({ note: failLine('1-3', 'noStop') });
+    // Not stopped: back to ② (동결 뒤 고침 v6 파트 1) — its number on ▶ 시뮬레이션, where the line sends the student.
+    } else if (ok) patchStep({ step: 1, note: failLine('1-3', 'noStop') });
   };
   // 1-3: the range turned on after the stop also finishes it.
   const toggleRange = () => {
@@ -6297,6 +6305,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
         </div>
       )}
       <TouchTips />
+      {/* 입문 과정 QA (?qa=1 only, 동결 뒤 고침 v6 파트 5): first-screen time · 3D fps · [QA 기록 처음부터]. */}
+      {qaOn && <QaPanel ready={!!loaded} />}
       <div className={css.inner}>
         <TopBar
           view={view}
@@ -6722,7 +6732,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                 <>
                   <LiveNowBar
                     live={live}
-                    meterOf={(a) => (courseStep.id === '1-2' ? { v: courseStep.found.length, of: ARM_PARTS.length, unit: '곳' } : goalMeter(a))}
+                    meterOf={(a) => (courseStep.id === '1-2' ? null : goalMeter(a))}
                     n={at + 1}
                     steps={{ n: at + 1, of: lines.length }}
                     text={(courseStep.note ?? line.text).replace('{realNow}', buttonName(robotMode ? 'real' : 'export'))}
@@ -7283,8 +7293,11 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                         {courseStep?.id === '1-3' ? (
                           <CourseStepPanel id="1-3" busy={busy} onRun={() => void runSwing()} range={{ on: courseStep.range, onToggle: toggleRange }} />
                         ) : courseStep?.id === '2-2' ? (
-                          // 2-2: 기본 자세 · 일자로 펴기 · 정지 only.
-                          <CourseStepPanel id="2-2" busy={busy} poses={{ onHome: () => goPose('home'), onZero: () => goPose('zero'), onStop: () => void stop() }} />
+                          // 2-2: the six joints' angles, read only (동결 뒤 고침 v6 파트 3), over 기본 자세 · 영점 자세 · 정지.
+                          <>
+                            <JointReadout live={live} />
+                            <CourseStepPanel id="2-2" busy={busy} poses={{ onHome: () => goPose('home'), onZero: () => goPose('zero'), onStop: () => void stop() }} />
+                          </>
                         ) : (
                           <>
                             {/* 3-4: the two moves' times; 3장 미션: its [확인]. Over the usual 조작판. */}
