@@ -49,7 +49,7 @@
 }
 /* 대응표 */
 :where([data-course]) .order em {
-  font-size: 13px;
+  font-size: 14px;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
@@ -60,6 +60,7 @@
 }
 /* 대응표 */
 :where([data-course]) .order b {
+  font-size: 14px;
   font-weight: 700;
 }
 .order small {
@@ -68,7 +69,7 @@
 }
 /* 대응표 */
 :where([data-course]) .order small {
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .flow {
@@ -110,7 +111,7 @@
 }
 /* 대응표 */
 :where([data-course]) .flow b {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
 }
 .flow small {
@@ -124,7 +125,7 @@
 }
 /* 대응표 */
 :where([data-course]) .flow small {
-  font-size: 13px;
+  font-size: 14px;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
 }
@@ -165,7 +166,7 @@
 }
 /* 대응표 */
 :where([data-course]) .timer {
-  font-size: 13px;
+  font-size: 14px;
 }
 .timer i {
   position: absolute;
@@ -233,7 +234,7 @@
 }
 /* 대응표 */
 :where([data-course]) .cup small {
-  font-size: 13px;
+  font-size: 14px;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
 }

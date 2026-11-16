@@ -57,6 +57,7 @@
 }
 /* 대응표 */
 :where([data-course]) .text small {
+  font-size: 14px;
   color: #c9ced5;
 }
 .chip button {

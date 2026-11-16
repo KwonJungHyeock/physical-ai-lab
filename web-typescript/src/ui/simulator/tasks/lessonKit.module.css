@@ -38,7 +38,7 @@
 :where([data-course]) .mHead em,
 :where([data-course]) .projector header em {
   font-weight: 700;
-  font-size: 13px;
+  font-size: 14px;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
@@ -63,7 +63,7 @@
 }
 /* 대응표 */
 :where([data-course]) .plate header b small {
-  font-size: 13px;
+  font-size: 14px;
 }
 .page {
   margin-left: auto;
@@ -80,7 +80,7 @@
   padding: 4px 8px;
   border-radius: 8px;
   color: #f6f7f9;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
 }
 .goals {
@@ -109,6 +109,7 @@
 /* 대응표 */
 :where([data-course]) .goals li {
   gap: 8px;
+  font-size: 14px;
 }
 .goals li i {
   font-style: normal;
@@ -124,7 +125,7 @@
 /* 대응표 */
 :where([data-course]) .goals li i {
   font-weight: 700;
-  font-size: 13px;
+  font-size: 14px;
   background: rgba(255, 255, 255, 0.08);
 }
 .goals li[data-done] i {
@@ -149,7 +150,7 @@
 }
 /* 대응표 */
 :where([data-course]) .row > small {
-  font-size: 13px;
+  font-size: 14px;
 }
 .foot {
   color: var(--hud-dim, #8a9199);
@@ -158,7 +159,7 @@
 }
 /* 대응표 */
 :where([data-course]) .foot {
-  font-size: 13px;
+  font-size: 14px;
 }
 
 /* Two classes each: the console's `.app button { color: inherit }` outranks one. */
@@ -183,6 +184,7 @@
 :where([data-course]) .projector .key {
   padding: 0 16px;
   border-radius: 8px;
+  font-size: 14px;
   font-weight: 700;
 }
 .plate .ghost,
@@ -206,6 +208,7 @@
 :where([data-course]) .projector .ghost {
   padding: 0 16px;
   border-radius: 8px;
+  font-size: 14px;
 }
 .plate .key:disabled,
 .modal .key:disabled,
@@ -420,6 +423,7 @@
 /* 대응표 */
 :where([data-course]) .review {
   gap: 8px;
+  font-size: 14px;
 }
 .review li i {
   font-style: normal;
@@ -462,6 +466,7 @@
 /* 대응표 */
 :where([data-course]) .who label {
   gap: 8px;
+  font-size: 14px;
 }
 .who input {
   width: 120px;
@@ -487,7 +492,7 @@
 }
 /* 대응표 */
 :where([data-course]) .who small {
-  font-size: 13px;
+  font-size: 14px;
 }
 .tableWrap {
   overflow: auto;
@@ -504,6 +509,10 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+}
+/* 대응표 */
+:where([data-course]) .table {
+  font-size: 14px;
 }
 .table th {
   position: sticky;
@@ -562,7 +571,7 @@
 }
 /* 대응표 */
 :where([data-course]) .qrow small {
-  font-size: 13px;
+  font-size: 14px;
 }
 .level {
   display: inline-block;
@@ -575,7 +584,7 @@
 }
 /* 대응표 */
 :where([data-course]) .level {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   background: rgba(255, 255, 255, 0.08);
 }
@@ -625,7 +634,7 @@
 }
 /* 대응표 */
 :where([data-course]) .rubric {
-  font-size: 13px;
+  font-size: 14px;
 }
 .rubric li {
   display: flex;
@@ -648,6 +657,7 @@
 }
 /* 대응표 */
 :where([data-course]) .set > span {
+  font-size: 14px;
   font-weight: 700;
 }
 .seg {
@@ -675,6 +685,7 @@
 }
 /* 대응표 */
 :where([data-course]) .modal .seg button {
+  font-size: 14px;
   font-weight: 700;
 }
 .modal .seg button[data-on] {
@@ -687,6 +698,10 @@
   gap: 8px;
   font-size: 13px;
   font-weight: 700;
+}
+/* 대응표 */
+:where([data-course]) .check {
+  font-size: 14px;
 }
 .check input {
   width: 18px;
@@ -708,7 +723,7 @@
   padding: 8px 12px;
   border-radius: 8px;
   color: #f6f7f9;
-  font-size: 13px;
+  font-size: 14px;
 }
 .h3 {
   margin: 4px 0 0;
@@ -738,6 +753,7 @@
 :where([data-course]) .file {
   padding: 0 16px;
   border-radius: 8px;
+  font-size: 14px;
 }
 .file input {
   position: absolute;
@@ -946,6 +962,7 @@
 }
 /* 대응표 */
 :where([data-course]) .recPill b {
+  font-size: 14px;
   font-weight: 700;
 }
 .recPill small {
@@ -955,7 +972,7 @@
 }
 /* 대응표 */
 :where([data-course]) .recPill small {
-  font-size: 13px;
+  font-size: 14px;
 }
 .recBar {
   width: 54px;
@@ -1030,7 +1047,7 @@
 }
 /* 대응표 */
 :where([data-course]) .pFlow li small {
-  font-size: 13px;
+  font-size: 14px;
 }
 .ghostLink {
   display: inline-flex;
@@ -1048,6 +1065,7 @@
 /* 대응표 */
 :where([data-course]) .ghostLink {
   border-radius: 8px;
+  font-size: 14px;
 }
 .foot a {
   color: #93b4ff;

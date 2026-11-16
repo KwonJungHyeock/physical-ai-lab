@@ -37,7 +37,7 @@
 /* 대응표 */
 :where([data-course]) .predict em,
 :where([data-course]) .result em {
-  font-size: 13px;
+  font-size: 14px;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
@@ -133,7 +133,7 @@
 }
 /* 대응표 */
 :where([data-course]) .predict small {
-  font-size: 13px;
+  font-size: 14px;
 }
 .x {
   margin-left: auto;
@@ -146,7 +146,7 @@
 }
 /* 대응표 */
 :where([data-course]) .x {
-  font-size: 13px;
+  font-size: 14px;
 }
 .x:hover {
   color: #fff;
@@ -193,7 +193,7 @@
 }
 /* 대응표 */
 :where([data-course]) .result header small {
-  font-size: 13px;
+  font-size: 14px;
 }
 .result header .x {
   font-size: 18px;
@@ -223,6 +223,10 @@
   margin: 10px 0 0;
   padding: 0;
   font-size: 13px;
+}
+/* 대응표 */
+:where([data-course]) .checks {
+  font-size: 14px;
 }
 .checks li {
   display: flex;
@@ -260,12 +264,16 @@
 }
 /* 대응표 */
 :where([data-course]) .checks em {
-  font-size: 13px;
+  font-size: 14px;
 }
 .compare {
   margin: 8px 0 0;
   font-size: 13px;
   color: var(--hud-sub);
+}
+/* 대응표 */
+:where([data-course]) .compare {
+  font-size: 14px;
 }
 .compare[data-ok] {
   color: var(--hud-tx);
@@ -294,6 +302,10 @@
   font-size: 13px;
   line-height: 1.45;
 }
+/* 대응표 */
+:where([data-course]) .concept p {
+  font-size: 14px;
+}
 .concept small {
   display: block;
   margin-top: 4px;
@@ -303,7 +315,7 @@
 }
 /* 대응표 */
 :where([data-course]) .concept small {
-  font-size: 13px;
+  font-size: 14px;
 }
 .result .next {
   margin-top: 11px;
@@ -323,6 +335,7 @@
 :where([data-course]) .result .next {
   padding: 0 16px;
   border-radius: 12px;
+  font-size: 14px;
   font-weight: 700;
 }
 

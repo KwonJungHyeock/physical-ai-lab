@@ -141,7 +141,8 @@ export function NowMark({ find, n, onHit }: { find: () => HTMLElement | null; n:
       const row = t?.closest('[data-row]');
       row?.parentElement?.querySelectorAll<HTMLElement>(':scope > [data-row]').forEach((r) => {
         if (r === row) return;
-        r.style.opacity = '0.55';
+        // (가독성 정리: 0.8, not 0.55 — the rows set back still read at 4.5 : 1; the number and the ring show the one to press.)
+        r.style.opacity = '0.8';
         dimmed.add(r);
       });
     };

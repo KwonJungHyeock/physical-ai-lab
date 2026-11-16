@@ -59,7 +59,7 @@
 }
 /* 대응표 */
 :where([data-course]) .jog .modes button small {
-  font-size: 13px;
+  font-size: 14px;
   color: #c9ced5;
 }
 .jog .modes button:hover:not([aria-pressed='true']) {
@@ -137,7 +137,7 @@
 }
 /* 대응표 */
 :where([data-course]) .jog .chips button i {
-  font-size: 13px;
+  font-size: 14px;
 }
 .jog .chips button:hover:not([aria-pressed='true']) {
   background: #333539;
@@ -353,7 +353,7 @@
 }
 /* 대응표 */
 :where([data-course]) .what {
-  font-size: 13px;
+  font-size: 14px;
   color: #c9ced5;
 }
 .head em {
@@ -367,7 +367,7 @@
 }
 /* 대응표 */
 :where([data-course]) .head em {
-  font-size: 13px;
+  font-size: 14px;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
   color: #c9ced5;
@@ -522,6 +522,7 @@
 }
 /* 대응표 */
 :where([data-course]) .lessonMeter {
+  font-size: 14px;
   font-weight: 700;
   color: #f6f7f9;
 }
@@ -635,7 +636,7 @@
 }
 /* 대응표 */
 :where([data-course]) .jog .learn::before {
-  font-size: 13px;
+  font-size: 14px;
 }
 .jog .learn:hover:not(:disabled) {
   background: rgba(255, 90, 78, 0.26);
@@ -696,7 +697,7 @@
 }
 /* 대응표 */
 :where([data-course]) .readout small {
-  font-size: 13px;
+  font-size: 14px;
   color: #c9ced5;
 }
 .cap {
@@ -721,6 +722,7 @@
 }
 /* 대응표 */
 :where([data-course]) .cap small {
+  font-size: 14px;
   color: #c9ced5;
 }
 .jog .toolDown {
@@ -831,7 +833,7 @@
 }
 /* 대응표 */
 :where([data-course]) .jog .key[data-kind='wedge'] small {
-  font-size: 13px;
+  font-size: 14px;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
   color: #c9ced5;
@@ -908,7 +910,7 @@
 }
 /* 대응표 */
 :where([data-course]) .padHub small {
-  font-size: 13px;
+  font-size: 14px;
   color: #c9ced5;
 }
 
@@ -974,7 +976,7 @@
 }
 /* 대응표 */
 :where([data-course]) .liftName {
-  font-size: 13px;
+  font-size: 14px;
   color: #c9ced5;
 }
 .liftName output {
@@ -1035,7 +1037,7 @@
 }
 /* 대응표 */
 :where([data-course]) .keys {
-  font-size: 13px;
+  font-size: 14px;
   color: #c9ced5;
 }
 .keys kbd {
@@ -1052,7 +1054,7 @@
 /* 대응표 */
 :where([data-course]) .keys kbd {
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 14px;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
   color: #f6f7f9;
@@ -1098,7 +1100,7 @@
 }
 /* 대응표 */
 :where([data-course]) .turnMid em {
-  font-size: 13px;
+  font-size: 14px;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
 }
@@ -1418,7 +1420,7 @@
 }
 /* 대응표 */
 :where([data-course]) .jog .key[data-kind='lift'] small {
-  font-size: 13px;
+  font-size: 14px;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
   color: #c9ced5;
@@ -1492,7 +1494,7 @@
   }
   /* 대응표 */
   :where([data-course]) .jog .modes button small {
-    font-size: 13px;
+    font-size: 14px;
   }
   .optName {
     font-size: 13.5px;
@@ -1545,6 +1547,10 @@
   .tip {
     padding: 7px 10px;
     font-size: 13px;
+  }
+  /* 대응표 */
+  :where([data-course]) .tip {
+    font-size: 14px;
   }
   .readout span {
     padding: 6px 10px;
@@ -1601,6 +1607,7 @@
 :where(html[data-vq~='20']) .tip {
   padding: 7px 10px;
   font-size: 13px;
+  font-size: 14px;
 }
 /* 대응표 */
 :where(html[data-vq~='20']) .readout span {
@@ -1678,7 +1685,7 @@
 }
 /* 대응표 */
 :where([data-course]) .jog .modes button em {
-  font-size: 13px;
+  font-size: 14px;
   letter-spacing: 0;
 }
 .jog .modes button b {
@@ -1688,6 +1695,7 @@
 }
 /* 대응표 */
 :where([data-course]) .jog .modes button b {
+  font-size: 14px;
   font-weight: 600;
 }
 .jog .modes button small {
@@ -1711,7 +1719,7 @@
 }
 /* 대응표 */
 :where([data-course]) .optName {
-  font-size: 13px;
+  font-size: 14px;
   letter-spacing: 0;
 }
 .chips {
@@ -1968,7 +1976,7 @@
 }
 /* 대응표 */
 :where([data-course]) .chips .chipUnit {
-  font-size: 13px;
+  font-size: 14px;
 }
 
 /* --- 좌표 조그: one brushed-metal dial (the round pad and the 위 · 아래 rocker alike), dark glass keys,
@@ -2139,7 +2147,7 @@
 }
 /* 대응표 */
 :where([data-course]) .optName {
-  font-size: 13px;
+  font-size: 14px;
   letter-spacing: 0;
 }
 .jog .chips button {
@@ -2206,7 +2214,7 @@
 }
 /* 대응표 */
 :where([data-course]) .turnMid em {
-  font-size: 13px;
+  font-size: 14px;
   letter-spacing: 0;
 }
 .turnMid .turnWhat {
@@ -2383,4 +2391,22 @@
 :where(html[data-vq~='19']) [data-course] :global(.life-shell) .opts {
   padding-top: 4px;
   padding-bottom: 4px;
+}
+
+/* 가독성 정리 (입문 과정): the key's −5° · +5° in the light text colour (the grey on the key's light top was 4.8 : 1, under
+   4.5 in a row set back); 이동 단위 in 16 px (numbers), as the narrow-panel rule would make them 14; the 속도 slider 40 px
+   high to press, its track still 8 px (the rest of its height is a clear border round it). */
+[data-course] .jog .key:not(:disabled),
+[data-course] .jog .key:not(:disabled) b {
+  color: #f6f7f9;
+}
+[data-course] .jog .chips button {
+  font-size: 16px;
+}
+[data-course] .speed input {
+  box-sizing: border-box;
+  height: 40px;
+  border-top: 16px solid transparent;
+  border-bottom: 16px solid transparent;
+  background-clip: padding-box;
 }

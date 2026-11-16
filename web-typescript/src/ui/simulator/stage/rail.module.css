@@ -37,7 +37,7 @@
 }
 /* 대응표 */
 :where([data-course]) .groupName {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0;
   color: #c9ced5;
@@ -136,7 +136,7 @@
 :where([data-course]) .rail button i {
   border-radius: 8px;
   color: #f6f7f9;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
 }
 /* a smaller window: the bar narrows, the same words in a smaller size */
@@ -150,7 +150,7 @@
   }
   /* 대응표 */
   :where([data-course]) .rail button {
-    font-size: 13px;
+    font-size: 14px;
   }
   .rail button svg {
     width: 21px;
@@ -165,7 +165,7 @@
   }
   /* 대응표 */
   :where([data-course]) .groupName {
-    font-size: 13px;
+    font-size: 14px;
   }
 }
 /* 대응표 */
@@ -176,7 +176,7 @@
 :where(html[data-vq~='17']) .rail button {
   padding: 7px 0 6px;
   font-size: 12.5px;
-  font-size: 13px;
+  font-size: 14px;
 }
 /* 대응표 */
 :where(html[data-vq~='17']) .rail button svg {
@@ -191,7 +191,7 @@
 :where(html[data-vq~='17']) .groupName {
   padding: 8px 2px 3px;
   font-size: 11.5px;
-  font-size: 13px;
+  font-size: 14px;
 }
 @media (max-height: 860px) {
   .rail {
@@ -204,7 +204,7 @@
   }
   /* 대응표 */
   :where([data-course]) .rail button {
-    font-size: 13px;
+    font-size: 14px;
   }
   .rail button svg {
     width: 20px;
@@ -216,7 +216,7 @@
   }
   /* 대응표 */
   :where([data-course]) .groupName {
-    font-size: 13px;
+    font-size: 14px;
   }
 }
 /* 대응표 */
@@ -228,7 +228,7 @@
   padding: 5px 0 4px;
   gap: 2px;
   font-size: 12.5px;
-  font-size: 13px;
+  font-size: 14px;
 }
 /* 대응표 */
 :where(html[data-vq~='25']) .rail button svg {
@@ -239,7 +239,7 @@
 :where(html[data-vq~='25']) .groupName {
   padding: 5px 2px 2px;
   font-size: 11.5px;
-  font-size: 13px;
+  font-size: 14px;
 }
 @media (pointer: coarse) {
   .rail button {
@@ -321,6 +321,7 @@
 }
 /* 대응표 */
 :where([data-course]) .rail button {
+  font-size: 14px;
   font-weight: 600;
 }
 .rail button svg {
@@ -335,7 +336,7 @@
 }
 /* 대응표 */
 :where([data-course]) .rail button em {
-  font-size: 13px;
+  font-size: 14px;
   letter-spacing: 0;
 }
 .rail button:hover:not(:disabled):not([aria-pressed="true"]) {
@@ -377,14 +378,14 @@
   }
   /* 대응표 */
   :where([data-course]) .rail button {
-    font-size: 13px;
+    font-size: 14px;
   }
   .rail button em {
     font-size: 10.5px;
   }
   /* 대응표 */
   :where([data-course]) .rail button em {
-    font-size: 13px;
+    font-size: 14px;
   }
 }
 /* 대응표 */
@@ -399,10 +400,10 @@
 :where(html[data-vq~='25']) .rail button {
   padding: 5px 2px 4px;
   font-size: 12px;
-  font-size: 13px;
+  font-size: 14px;
 }
 /* 대응표 */
 :where(html[data-vq~='25']) .rail button em {
   font-size: 10.5px;
-  font-size: 13px;
+  font-size: 14px;
 }

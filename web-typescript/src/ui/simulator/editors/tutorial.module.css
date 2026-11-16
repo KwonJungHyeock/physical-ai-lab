@@ -49,7 +49,7 @@
 }
 /* 대응표 */
 :where([data-course]) .langs button small {
-  font-size: 13px;
+  font-size: 14px;
   color: #c9ced5;
 }
 .langs button[aria-selected='true'] {
@@ -96,7 +96,7 @@
 /* 대응표 */
 :where([data-course]) .btn {
   color: #f6f7f9;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
 }
 .btn:hover:not(:disabled) {
@@ -120,7 +120,7 @@
 /* 대응표 */
 :where([data-course]) .link {
   color: #c9ced5;
-  font-size: 13px;
+  font-size: 14px;
 }
 .link:hover:not(:disabled) {
   color: #fff;
@@ -189,7 +189,7 @@
 }
 /* 대응표 */
 :where([data-course]) .cardText small {
-  font-size: 13px;
+  font-size: 14px;
   color: #c9ced5;
 }
 .cardActs {
@@ -229,7 +229,7 @@
 }
 /* 대응표 */
 :where([data-course]) .steps small {
-  font-size: 13px;
+  font-size: 14px;
   color: #c9ced5;
 }
 .steps .link {
@@ -250,7 +250,7 @@
 }
 /* 대응표 */
 :where([data-course]) .need {
-  font-size: 13px;
+  font-size: 14px;
   color: #f6f7f9;
 }
 
@@ -279,7 +279,7 @@
 }
 /* 대응표 */
 :where([data-course]) .edBar {
-  font-size: 13px;
+  font-size: 14px;
   color: #c9ced5;
 }
 .edBar b {
@@ -289,7 +289,7 @@
 /* 대응표 */
 :where([data-course]) .edBar b {
   color: #f6f7f9;
-  font-size: 13px;
+  font-size: 14px;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
 }
@@ -316,7 +316,7 @@
 :where([data-course]) .toggle button {
   border-radius: 8px;
   color: #c9ced5;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
 }
 .toggle button[aria-pressed='true'] {
@@ -340,6 +340,7 @@
 /* 대응표 */
 :where([data-course]) .code {
   font-weight: 600;
+  font-size: 14px;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
   color: #c9ced5;
@@ -362,7 +363,7 @@
 }
 /* 대응표 */
 :where([data-course]) .no {
-  font-size: 13px;
+  font-size: 14px;
 }
 .lock {
   font-size: 9px;
@@ -370,7 +371,7 @@
 }
 /* 대응표 */
 :where([data-course]) .lock {
-  font-size: 13px;
+  font-size: 14px;
 }
 .ln:not([data-edit]) code {
   opacity: 0.55;
@@ -419,7 +420,7 @@
 /* 대응표 */
 :where([data-course]) .slot sup {
   font-weight: 700;
-  font-size: 13px;
+  font-size: 14px;
   color: #14171c;
   border-radius: 8px;
 }
@@ -482,7 +483,7 @@
 /* 대응표 */
 :where([data-course]) .fullBar {
   border-radius: 12px;
-  font-size: 13px;
+  font-size: 14px;
   color: #c9ced5;
 }
 
@@ -510,7 +511,7 @@
 }
 /* 대응표 */
 :where([data-course]) .snips h4 {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   color: #f6f7f9;
 }
@@ -521,7 +522,7 @@
 }
 /* 대응표 */
 :where([data-course]) .snips h4 small {
-  font-size: 13px;
+  font-size: 14px;
   color: #c9ced5;
 }
 .snipList {
@@ -548,7 +549,7 @@
 /* 대응표 */
 :where([data-course]) .snip {
   color: #f6f7f9;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
 }
 .snip i {
@@ -626,7 +627,7 @@
 }
 /* 대응표 */
 :where([data-course]) .langs > [role='tablist'] button {
-  font-size: 13px;
+  font-size: 14px;
 }
 
 /* 처음 예제로 · 내 프로그램 sit at the row's end, also when there are no steps (터미널). */

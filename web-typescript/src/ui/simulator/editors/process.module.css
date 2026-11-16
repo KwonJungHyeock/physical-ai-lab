@@ -83,7 +83,7 @@
 /* 대응표 */
 :where([data-course]) .seg button {
   color: #c9ced5;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
 }
 .seg {
@@ -135,7 +135,7 @@
 :where([data-course]) .speed,
 :where([data-course]) .files select {
   color: #f6f7f9;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .tools button,
@@ -158,7 +158,7 @@
 :where([data-course]) .rowTools button {
   border-radius: 8px;
   color: #f6f7f9;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
 }
 .tools button:disabled,
@@ -209,7 +209,7 @@
 :where([data-course]) .edge {
   border-radius: 8px;
   color: #c9ced5;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0;
 }
@@ -222,6 +222,7 @@
 /* 대응표 */
 :where([data-course]) .empty {
   color: #c9ced5;
+  font-size: 14px;
 }
 
 .row {
@@ -292,7 +293,7 @@
 :where([data-course]) .badge {
   border-radius: 8px;
   color: #c9ced5;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
 }
 .badge[data-mode='J'] {
@@ -333,7 +334,7 @@
   color: #c9ced5;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .rowTools {
@@ -370,7 +371,7 @@
 }
 /* 대응표 */
 :where([data-course]) .sec {
-  font-size: 13px;
+  font-size: 14px;
 }
 .sec input {
   width: 64px;

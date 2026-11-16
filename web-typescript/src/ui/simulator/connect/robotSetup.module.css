@@ -11,6 +11,10 @@
   line-height: 1.55;
   color: var(--muted, #72757a);
 }
+/* 대응표 */
+:where([data-course]) .plain {
+  font-size: 14px;
+}
 .plain b {
   color: var(--ink, #25272b);
 }
@@ -56,6 +60,7 @@
 /* 대응표 */
 :where([data-course]) .stages li {
   border-radius: 12px;
+  font-size: 14px;
 }
 .stages li span {
   display: grid;
@@ -69,7 +74,7 @@
 }
 /* 대응표 */
 :where([data-course]) .stages li span {
-  font-size: 13px;
+  font-size: 14px;
 }
 .stages li[data-state='done'] {
   background: #f0faf3;
@@ -130,7 +135,7 @@
 :where([data-course]) .log {
   border-radius: 12px;
   color: #f6f7f9;
-  font-size: 13px;
+  font-size: 14px;
 }
 .result {
   margin: 0;
@@ -147,7 +152,7 @@
 }
 /* 대응표 */
 :where([data-course]) .result small {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
 }
 .row {
@@ -197,7 +202,7 @@
 /* 대응표 */
 :where([data-course]) .plain li::before {
   color: #f6f7f9;
-  font-size: 13px;
+  font-size: 14px;
 }
 .plain b {
   color: #fff;

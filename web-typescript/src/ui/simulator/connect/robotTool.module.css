@@ -116,6 +116,7 @@
 /* 대응표 */
 :where([data-course]) .foot {
   color: #c9ced5;
+  font-size: 14px;
 }
 
 .foot a {

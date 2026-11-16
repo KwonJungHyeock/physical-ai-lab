@@ -179,7 +179,7 @@
   padding: 1px 8px;
   border-color: rgba(255, 255, 255, 0.45);
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 14px;
   color: #f6f7f9;
 }
 .row small {
@@ -189,6 +189,7 @@
 }
 /* 대응표 */
 :where([data-course]) .row small {
+  font-size: 14px;
   color: #c9ced5;
 }
 .row em {
@@ -201,6 +202,7 @@
 }
 /* 대응표 */
 :where([data-course]) .row em {
+  font-size: 14px;
   color: #c9ced5;
 }
 .row[data-state='done'] em {

@@ -19,7 +19,7 @@
 }
 /* 대응표 */
 :where([data-course]) .maker em {
-  font-size: 13px;
+  font-size: 14px;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
@@ -39,6 +39,10 @@
 }
 .order b {
   font-size: 13px;
+}
+/* 대응표 */
+:where([data-course]) .order b {
+  font-size: 14px;
 }
 
 .tabs {
@@ -68,6 +72,7 @@
 :where([data-course]) .maker .tab,
 :where([data-course]) .maker .add {
   border-radius: 8px;
+  font-size: 14px;
 }
 .tab i {
   font-style: normal;
@@ -76,7 +81,7 @@
 }
 /* 대응표 */
 :where([data-course]) .tab i {
-  font-size: 13px;
+  font-size: 14px;
 }
 .maker .tab[data-on] {
   background: linear-gradient(180deg, #565c64 0%, #3d4248 42%, #2e3136 100%);
@@ -103,6 +108,10 @@
 .plate header b {
   font-size: 13px;
 }
+/* 대응표 */
+:where([data-course]) .plate header b {
+  font-size: 14px;
+}
 .cycle {
   margin-left: auto;
   font-size: 12px;
@@ -110,7 +119,7 @@
 }
 /* 대응표 */
 :where([data-course]) .cycle {
-  font-size: 13px;
+  font-size: 14px;
 }
 .cycle b {
   font:
@@ -157,7 +166,7 @@
 }
 /* 대응표 */
 :where([data-course]) .cup small {
-  font-size: 13px;
+  font-size: 14px;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
 }
@@ -206,7 +215,7 @@
 /* 대응표 */
 :where([data-course]) .maker .presets button {
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 14px;
 }
 .maker .presets button[data-on] {
   color: #fff;
@@ -226,6 +235,10 @@
   margin-top: 10px;
   align-items: center;
   font-size: 13px;
+}
+/* 대응표 */
+:where([data-course]) .fields {
+  font-size: 14px;
 }
 .name {
   display: flex;
@@ -393,7 +406,7 @@
 }
 /* 대응표 */
 :where([data-course]) .axis i {
-  font-size: 13px;
+  font-size: 14px;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
 }
@@ -423,13 +436,17 @@
   gap: 1px;
   font-size: 13px;
 }
+/* 대응표 */
+:where([data-course]) .label {
+  font-size: 14px;
+}
 .label small {
   font-size: 11px;
   color: var(--hud-green);
 }
 /* 대응표 */
 :where([data-course]) .label small {
-  font-size: 13px;
+  font-size: 14px;
 }
 .label small[data-v='short'] {
   color: var(--hud-amber);
@@ -448,7 +465,7 @@
 }
 /* 대응표 */
 :where([data-course]) .door {
-  font-size: 13px;
+  font-size: 14px;
   border-radius: 8px;
 }
 .track {
@@ -547,7 +564,7 @@
 }
 /* 대응표 */
 :where([data-course]) .stats span {
-  font-size: 13px;
+  font-size: 14px;
 }
 .stats b {
   font:
@@ -581,7 +598,7 @@
 }
 /* 대응표 */
 :where([data-course]) .why {
-  font-size: 13px;
+  font-size: 14px;
 }
 .why b {
   color: var(--hud-amber);
@@ -607,6 +624,7 @@
 /* 대응표 */
 :where([data-course]) .maker .ghost {
   border-radius: 8px;
+  font-size: 14px;
 }
 .maker .ghost[data-on] {
   background: var(--hud-silver);
@@ -652,7 +670,7 @@
 }
 /* 대응표 */
 :where([data-course]) .more > summary {
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .more > summary::-webkit-details-marker {
@@ -708,7 +726,7 @@
 }
 /* 대응표 */
 :where([data-course]) .doorBig small {
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .doorBig[data-glow] {
@@ -741,7 +759,7 @@
 }
 /* 대응표 */
 :where([data-course]) .sockets li {
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .sockets i {
@@ -762,6 +780,7 @@
 /* 대응표 */
 :where([data-course]) .sockets i {
   font-weight: 700;
+  font-size: 14px;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
 }
@@ -811,7 +830,7 @@
 }
 /* 대응표 */
 :where([data-course]) .repeat > span:first-child small {
-  font-size: 13px;
+  font-size: 14px;
 }
 .repeat .step b {
   font-size: 20px;
@@ -855,7 +874,7 @@
 /* 대응표 */
 :where([data-course]) .aim > em {
   font-weight: 700;
-  font-size: 13px;
+  font-size: 14px;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
@@ -870,7 +889,7 @@
 }
 /* 대응표 */
 :where([data-course]) .aim span {
-  font-size: 13px;
+  font-size: 14px;
 }
 .aim span b {
   font-size: 18px;
@@ -893,7 +912,7 @@
 }
 /* 대응표 */
 :where([data-course]) .aim > small {
-  font-size: 13px;
+  font-size: 14px;
 }
 
 /* 로봇 동작 블록: one block a motion step (a card cut from the plate), wrapped as the quests go on by
@@ -922,6 +941,7 @@
 /* 대응표 */
 :where([data-course]) .block {
   border-radius: 8px;
+  font-size: 14px;
 }
 .block[data-kind='cup'] {
   border-left-color: #c8b28a;
@@ -953,7 +973,7 @@
 }
 /* 대응표 */
 :where([data-course]) .grip {
-  font-size: 13px;
+  font-size: 14px;
 }
 .icon {
   font-size: 17px;
@@ -972,6 +992,7 @@
 }
 /* 대응표 */
 :where([data-course]) .btitle {
+  font-size: 14px;
   font-weight: 700;
 }
 .waitChip {
@@ -997,7 +1018,7 @@
 :where([data-course]) .maker .waitChip button {
   border-radius: 8px;
   color: #f6f7f9;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
 }
 .waitChip em {
@@ -1008,7 +1029,7 @@
 }
 /* 대응표 */
 :where([data-course]) .waitChip em {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
 }
 .waitChip[data-v='short'] em {
@@ -1030,7 +1051,7 @@
 :where([data-course]) .serve select {
   border-radius: 8px;
   color: #f6f7f9;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
 }
 .serve[data-glow] select {
@@ -1056,7 +1077,7 @@
 /* 대응표 */
 :where([data-course]) .maker .moveKeys button {
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 14px;
 }
 .maker .moveKeys button:disabled {
   opacity: 0.25;
@@ -1076,7 +1097,7 @@
 /* 대응표 */
 :where([data-course]) .module {
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 14px;
 }
 .wrap {
   margin-top: 8px;
@@ -1108,6 +1129,7 @@
 }
 /* 대응표 */
 :where([data-course]) .wrapHead {
+  font-size: 14px;
   font-weight: 700;
   color: #f6f7f9;
 }
@@ -1119,7 +1141,7 @@
 }
 /* 대응표 */
 :where([data-course]) .wrapHead small {
-  font-size: 13px;
+  font-size: 14px;
 }
 .wrapHead[data-glow] {
   border-radius: 7px;
@@ -1149,5 +1171,5 @@
 /* 대응표 */
 :where([data-course]) .maker .branchOff {
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 14px;
 }

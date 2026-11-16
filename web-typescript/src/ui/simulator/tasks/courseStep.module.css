@@ -492,7 +492,7 @@
 }
 /* 대응표 */
 :where([data-course]) .poses kbd {
-  font-size: 13px;
+  font-size: 14px;
 }
 
 /* 2-1: the box of parts in the panel — five at a glance, each at least 120 px wide. */
@@ -938,4 +938,39 @@
   font-size: 16px;
   font-weight: 400;
   color: #c9ced5;
+}
+
+/* 가독성 정리 (입문 과정): 2-3's 펜 box 40 px high; a switched-off key at 0.6 (at 0.45 its words were 2.1 : 1). */
+[data-course] .calib input {
+  height: 40px;
+}
+/* (2-2's 정지 key: its Esc at full strength on the red — at 0.8 it read 3.4 : 1.) */
+[data-course] .poses kbd {
+  opacity: 1;
+}
+[data-course] .tableKeys button:disabled,
+[data-course] .countRow button:disabled,
+[data-course] .boardKey:disabled,
+[data-course] .clearAll:disabled,
+[data-course] .realRow button:disabled {
+  opacity: 0.6;
+}
+
+/* 가독성 정리 (입문 과정): the 실습 panel's groups set apart (24 · the scale's widest), so a short panel does not sit
+   bunched at its top with the rest of the column empty. */
+[data-course] .panel {
+  gap: 24px;
+  padding: 24px;
+}
+/* (A window 740 px high or less — 1280 × 720: 16, so 4-3's table and its keys fit without scrolling.) */
+@media (max-height: 740px) {
+  [data-course] .panel {
+    gap: 16px;
+    padding: 16px;
+  }
+}
+/* 대응표 */
+:where(html[data-vq~='19']) [data-course] .panel {
+  gap: 16px;
+  padding: 16px;
 }

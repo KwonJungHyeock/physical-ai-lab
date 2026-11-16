@@ -32,7 +32,7 @@
 }
 /* 대응표 */
 :where([data-course]) .strip header em {
-  font-size: 13px;
+  font-size: 14px;
   letter-spacing: 0;
 }
 
@@ -128,7 +128,7 @@
   border-radius: 8px;
   color: #14171c;
   font-weight: 700;
-  font-size: 13px;
+  font-size: 14px;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
 }
@@ -187,7 +187,7 @@
 }
 /* 대응표 */
 :where([data-course]) .meter output {
-  font-size: 13px;
+  font-size: 14px;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
 }
@@ -204,6 +204,10 @@
   line-height: 1.45;
   color: #c9ced5;
   word-break: keep-all;
+}
+/* 대응표 */
+:where([data-course]) .end p {
+  font-size: 14px;
 }
 
 .end b {
@@ -239,6 +243,7 @@
 :where([data-course]) .next {
   border-radius: 8px;
   color: #14171c;
+  font-size: 14px;
   font-weight: 700;
 }
 

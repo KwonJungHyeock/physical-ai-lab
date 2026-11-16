@@ -49,7 +49,7 @@
 /* 대응표 */
 :where([data-course]) .head p {
   color: #c9ced5;
-  font-size: 13px;
+  font-size: 14px;
 }
 .mark {
   display: inline-grid;
@@ -88,6 +88,7 @@
 }
 /* 대응표 */
 :where([data-course]) .inner h3 {
+  font-size: 14px;
   font-weight: 700;
   color: #93c5fd;
 }
@@ -132,7 +133,7 @@
 /* 대응표 */
 :where([data-course]) .keys kbd {
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 14px;
 }
 .steps {
   display: grid;

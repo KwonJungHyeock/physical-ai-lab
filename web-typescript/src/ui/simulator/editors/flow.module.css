@@ -27,6 +27,10 @@
   font-size: 13px;
   line-height: 1.45;
 }
+/* 대응표 */
+:where([data-course]) .wrap {
+  font-size: 14px;
+}
 .wrap button {
   font: inherit;
   cursor: pointer;
@@ -71,7 +75,7 @@
 /* 대응표 */
 :where([data-course]) .flowbar button {
   font-weight: 700;
-  font-size: 13px;
+  font-size: 14px;
 }
 .flowbar button i {
   flex: none;
@@ -87,7 +91,7 @@
 }
 /* 대응표 */
 :where([data-course]) .flowbar button i {
-  font-size: 13px;
+  font-size: 14px;
 }
 .flowbar button[data-done] {
   color: var(--ink2);
@@ -234,7 +238,7 @@
 }
 /* 대응표 */
 :where([data-course]) .sec > h4 small {
-  font-size: 13px;
+  font-size: 14px;
 }
 .sec > h4 .link {
   margin-left: auto;
@@ -249,7 +253,7 @@
 }
 /* 대응표 */
 :where([data-course]) .link {
-  font-size: 13px;
+  font-size: 14px;
 }
 .link[data-tone='red'] {
   color: #ffb3ae;
@@ -291,7 +295,7 @@
 }
 /* 대응표 */
 :where([data-course]) .chk > i {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
 }
 .chk > i[data-ok] {
@@ -326,7 +330,7 @@
 }
 /* 대응표 */
 :where([data-course]) .chk small {
-  font-size: 13px;
+  font-size: 14px;
 }
 .chkEnd {
   display: flex;
@@ -353,7 +357,7 @@
 :where([data-course]) .btn {
   border-radius: 8px;
   color: #f6f7f9;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
 }
 .btn:hover:not(:disabled) {
@@ -384,7 +388,7 @@
 }
 /* 대응표 */
 :where([data-course]) .stat {
-  font-size: 13px;
+  font-size: 14px;
 }
 .stat b {
   font-weight: 800;
@@ -473,7 +477,7 @@
 }
 /* 대응표 */
 :where([data-course]) .tiles button {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
 }
 .tiles button small {
@@ -487,7 +491,7 @@
 }
 /* 대응표 */
 :where([data-course]) .tiles button small {
-  font-size: 13px;
+  font-size: 14px;
 }
 .tiles button svg {
   width: 22px;
@@ -564,7 +568,7 @@
 :where([data-course]) .jv span,
 :where([data-course]) .xv > span {
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 14px;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
   color: #f6f7f9;
@@ -577,7 +581,7 @@
 /* 대응표 */
 :where([data-course]) .jv small,
 :where([data-course]) .xv small {
-  font-size: 13px;
+  font-size: 14px;
 }
 
 /* movement rules */
@@ -631,7 +635,7 @@
 /* 대응표 */
 :where([data-course]) .pick button {
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
 }
 .pick button[aria-pressed='true'] {
@@ -647,7 +651,7 @@
 }
 /* 대응표 */
 :where([data-course]) .pick em {
-  font-size: 13px;
+  font-size: 14px;
 }
 
 /* practice chooser */
@@ -666,6 +670,7 @@
 }
 /* 대응표 */
 :where([data-course]) .grp h5 {
+  font-size: 14px;
   font-weight: 700;
 }
 .grp h5 small {
@@ -675,7 +680,7 @@
 }
 /* 대응표 */
 :where([data-course]) .grp h5 small {
-  font-size: 13px;
+  font-size: 14px;
 }
 .cards {
   display: grid;
@@ -727,6 +732,7 @@
 }
 /* 대응표 */
 :where([data-course]) .card b {
+  font-size: 14px;
   font-weight: 700;
   color: #f6f7f9;
 }
@@ -737,7 +743,7 @@
 }
 /* 대응표 */
 :where([data-course]) .card small {
-  font-size: 13px;
+  font-size: 14px;
 }
 .card[aria-pressed='true'] {
   background: var(--raised);
@@ -767,7 +773,7 @@
 /* 대응표 */
 :where([data-course]) .lv {
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
 }
 .lv[data-lv='basic'] {
@@ -813,7 +819,7 @@
 }
 /* 대응표 */
 :where([data-course]) .learn b small {
-  font-size: 13px;
+  font-size: 14px;
 }
 .learn ul {
   margin: 0;
@@ -824,7 +830,7 @@
 }
 /* 대응표 */
 :where([data-course]) .learn ul {
-  font-size: 13px;
+  font-size: 14px;
 }
 .need {
   display: flex;
@@ -838,7 +844,7 @@
 }
 /* 대응표 */
 :where([data-course]) .need {
-  font-size: 13px;
+  font-size: 14px;
 }
 .need b {
   color: #fff;
@@ -891,7 +897,7 @@
 }
 /* 대응표 */
 :where([data-course]) .pt > i {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   color: #f6f7f9;
 }
@@ -916,7 +922,7 @@
 }
 /* 대응표 */
 :where([data-course]) .pt small {
-  font-size: 13px;
+  font-size: 14px;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
 }
@@ -949,7 +955,7 @@
 }
 /* 대응표 */
 :where([data-course]) .how {
-  font-size: 13px;
+  font-size: 14px;
 }
 .nums {
   display: flex;
@@ -976,7 +982,7 @@
 /* 대응표 */
 :where([data-course]) .nums input {
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 14px;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
 }
@@ -1005,7 +1011,7 @@
 }
 /* 대응표 */
 :where([data-course]) .fd > small {
-  font-size: 13px;
+  font-size: 14px;
 }
 .fd > div {
   display: flex;
@@ -1076,7 +1082,7 @@
 }
 /* 대응표 */
 :where([data-course]) .chips > span {
-  font-size: 13px;
+  font-size: 14px;
 }
 .chips > span[data-on] {
   color: #fff;
@@ -1096,7 +1102,7 @@
 }
 /* 대응표 */
 :where([data-course]) .chips em {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   border-radius: 8px;
 }
@@ -1151,7 +1157,7 @@
 }
 /* 대응표 */
 :where([data-course]) .chips > i {
-  font-size: 13px;
+  font-size: 14px;
 }
 .chips > b {
   font-size: 12px;
@@ -1160,7 +1166,7 @@
 }
 /* 대응표 */
 :where([data-course]) .chips > b {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
 }
 .checks {
@@ -1171,7 +1177,7 @@
 }
 /* 대응표 */
 :where([data-course]) .checks {
-  font-size: 13px;
+  font-size: 14px;
 }
 .checks span[data-tone='ok'] {
   color: #86ebb3;
@@ -1225,7 +1231,7 @@
 /* 대응표 */
 :where([data-course]) .rows li {
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 14px;
 }
 .rows li > i {
   font-style: normal;
@@ -1236,7 +1242,7 @@
 }
 /* 대응표 */
 :where([data-course]) .rows li > i {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
 }
 .rows li[data-run] {
@@ -1259,7 +1265,7 @@
 }
 /* 대응표 */
 :where([data-course]) .rows li em {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.08);
@@ -1297,7 +1303,7 @@
 /* 대응표 */
 :where([data-course]) .more {
   border-radius: 12px;
-  font-size: 13px;
+  font-size: 14px;
 }
 .more small {
   color: var(--muted);
@@ -1328,7 +1334,7 @@
 }
 /* 대응표 */
 :where([data-course]) .result small {
-  font-size: 13px;
+  font-size: 14px;
 }
 .result b {
   font-size: 16px;
@@ -1384,7 +1390,7 @@
 /* 대응표 */
 :where([data-course]) .modes button {
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
 }
 .modes button[aria-pressed='true'] {
@@ -1418,7 +1424,7 @@
 }
 /* 대응표 */
 :where([data-course]) .top small {
-  font-size: 13px;
+  font-size: 14px;
 }
 .top .modes {
   margin-left: auto;
@@ -1586,7 +1592,7 @@
 }
 /* 대응표 */
 :where([data-course]) .flowbar button {
-  font-size: 13px;
+  font-size: 14px;
 }
 .flowbar button:not(:last-child)::after {
   content: '';
@@ -1689,7 +1695,7 @@
 }
 /* 대응표 */
 :where([data-course]) .head em {
-  font-size: 13px;
+  font-size: 14px;
   letter-spacing: 0;
 }
 .head h3 {
@@ -1790,7 +1796,7 @@
 }
 /* 대응표 */
 :where([data-course]) .item small {
-  font-size: 13px;
+  font-size: 14px;
 }
 .itemEnd {
   display: flex;
@@ -1824,6 +1830,10 @@
   list-style: none;
   cursor: pointer;
   font-size: 13px;
+}
+/* 대응표 */
+:where([data-course]) .fold summary {
+  font-size: 14px;
 }
 .fold summary::-webkit-details-marker {
   display: none;
@@ -1916,7 +1926,7 @@
 }
 /* 대응표 */
 :where([data-course]) .pic text {
-  font-size: 13px;
+  font-size: 14px;
 }
 .pcardHead {
   display: grid;
@@ -1942,12 +1952,16 @@
 }
 /* 대응표 */
 :where([data-course]) .pcardHead small {
-  font-size: 13px;
+  font-size: 14px;
 }
 .pcard p {
   margin: 8px 0 0;
   font-size: 13px;
   color: #c9ced5;
+}
+/* 대응표 */
+:where([data-course]) .pcard p {
+  font-size: 14px;
 }
 .pcard .pneed {
   padding-left: 9px;
@@ -2072,6 +2086,10 @@
   background: #2a2e33;
   color: var(--hud-dim);
 }
+/* 대응표 */
+:where([data-course]) .track i {
+  font-size: 14px;
+}
 .track i svg {
   width: 16px;
   height: 16px;
@@ -2139,7 +2157,7 @@
 }
 /* 대응표 */
 :where([data-course]) .modeNote {
-  font-size: 13px;
+  font-size: 14px;
 }
 
 /* 실행 · 확인: the line running with a ring, the result with icons, the file as two links */
@@ -2195,7 +2213,7 @@
 }
 /* 대응표 */
 :where([data-course]) .running small {
-  font-size: 13px;
+  font-size: 14px;
 }
 .running > span:nth-child(2) b {
   font-size: 14.5px;
@@ -2217,7 +2235,7 @@
 }
 /* 대응표 */
 :where([data-course]) .running em {
-  font-size: 13px;
+  font-size: 14px;
   border-radius: 8px;
   color: #c9ced5;
 }
@@ -2273,7 +2291,7 @@
 /* 대응표 */
 :where([data-course]) .try {
   border-radius: 12px;
-  font-size: 13px;
+  font-size: 14px;
 }
 .try > b {
   font-size: 13.5px;
@@ -2299,7 +2317,7 @@
 /* 대응표 */
 :where([data-course]) .try em[data-k] {
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 14px;
 }
 .try em[data-k='J'] {
   background: rgba(255, 255, 255, 0.06);

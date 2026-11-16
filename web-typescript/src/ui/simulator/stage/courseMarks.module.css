@@ -109,7 +109,7 @@
 }
 /* 대응표 */
 :where([data-course]) .slot small {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
 }
 

@@ -6,6 +6,10 @@
   color: var(--hud-tx, #e9ecef);
   font-size: 13px;
 }
+/* 대응표 */
+:where([data-course]) .hand {
+  font-size: 14px;
+}
 .now {
   margin: 0;
   padding: 9px 11px;
@@ -64,7 +68,7 @@
 }
 /* 대응표 */
 :where([data-course]) .off small {
-  font-size: 13px;
+  font-size: 14px;
 }
 .chip {
   position: absolute;
@@ -78,7 +82,7 @@
 }
 /* 대응표 */
 :where([data-course]) .chip {
-  font-size: 13px;
+  font-size: 14px;
 }
 .chip[data-seen] {
   color: #fff;
@@ -99,7 +103,7 @@
 /* 대응표 */
 :where([data-course]) .warn {
   color: #f0a23b;
-  font-size: 13px;
+  font-size: 14px;
 }
 .keys {
   display: grid;
@@ -141,7 +145,7 @@
 }
 /* 대응표 */
 :where([data-course]) .demo {
-  font-size: 13px;
+  font-size: 14px;
 }
 .demo b {
   color: #fff;
@@ -163,7 +167,7 @@
 /* 대응표 */
 :where([data-course]) .how {
   background: rgba(255, 255, 255, 0.08);
-  font-size: 13px;
+  font-size: 14px;
 }
 .how dt {
   font-weight: 700;
@@ -191,5 +195,5 @@
 /* 대응표 */
 :where([data-course]) .link {
   color: #f6f7f9;
-  font-size: 13px;
+  font-size: 14px;
 }

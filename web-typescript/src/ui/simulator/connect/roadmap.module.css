@@ -49,7 +49,7 @@
 }
 /* 대응표 */
 :where([data-course]) .head em {
-  font-size: 13px;
+  font-size: 14px;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
@@ -109,7 +109,7 @@
 }
 /* 대응표 */
 :where([data-course]) .total > small {
-  font-size: 13px;
+  font-size: 14px;
   letter-spacing: 0;
   color: #c9ced5;
 }
@@ -195,7 +195,7 @@
 /* 대응표 */
 :where([data-course]) .node i {
   font-weight: 700;
-  font-size: 13px;
+  font-size: 14px;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
 }
@@ -336,7 +336,7 @@
 }
 /* 대응표 */
 :where([data-course]) .chips i {
-  font-size: 13px;
+  font-size: 14px;
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.18);
   color: #f6f7f9;
@@ -374,7 +374,7 @@
 }
 /* 대응표 */
 :where([data-course]) .prog small {
-  font-size: 13px;
+  font-size: 14px;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
   color: #c9ced5;
@@ -390,7 +390,7 @@
 /* 대응표 */
 :where([data-course]) .foot {
   border-top-color: rgba(255, 255, 255, 0.18);
-  font-size: 13px;
+  font-size: 14px;
   color: #c9ced5;
 }
 
@@ -466,7 +466,7 @@
 }
 /* 대응표 */
 :where([data-course]) .fieldTag em {
-  font-size: 13px;
+  font-size: 14px;
   letter-spacing: 0;
 }
 .fields li[data-hot] .fieldTag em {
@@ -492,7 +492,7 @@
 }
 /* 대응표 */
 :where([data-course]) .fields small {
-  font-size: 13px;
+  font-size: 14px;
 }
 
 /* The picture's caption, in its shade: the phase and the ticks, a hairline, the fields by name. */
@@ -520,7 +520,7 @@
 }
 /* 대응표 */
 :where([data-course]) .caption em {
-  font-size: 13px;
+  font-size: 14px;
   letter-spacing: 0;
 }
 .capTicks {
@@ -539,7 +539,7 @@
 }
 /* 대응표 */
 :where([data-course]) .caption small {
-  font-size: 13px;
+  font-size: 14px;
   letter-spacing: 0;
 }
 
@@ -560,7 +560,7 @@
 }
 /* 대응표 */
 :where([data-course]) .flag {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0;
 }

@@ -47,7 +47,7 @@
 }
 /* 대응표 */
 :where([data-course]) .third em {
-  font-size: 13px;
+  font-size: 14px;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;

@@ -93,7 +93,7 @@
 }
 /* 대응표 */
 :where([data-course]) .label small {
-  font-size: 13px;
+  font-size: 14px;
 }
 @keyframes ping {
   from {

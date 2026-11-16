@@ -24,8 +24,11 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../s
 
 /* --- the table ------------------------------------------------------------------------------- */
 
-/** Seven sizes, px: 34 절 번호 · 28 측정 숫자 · 23 절 이름 · 문장 · 18 주 버튼 · 머리글 · 16 본문 · 버튼 · 14 라벨 · 13 작은 표시. */
-const size = (px) => (px > 40 ? px : px >= 31 ? 34 : px >= 25.5 ? 28 : px >= 19.5 ? 23 : px >= 16.75 ? 18 : px >= 14.75 ? 16 : px >= 13.25 ? 14 : 13);
+/**
+ * Seven sizes, px: 34 절 번호 · 28 측정 숫자 · 23 절 이름 · 문장 · 18 주 버튼 · 머리글 · 16 본문 · 버튼 · 14 라벨 · 13 작은 표시.
+ * 가독성 정리: text to read is 14 px or more, so what was 13 (작은 표시) is drawn at 14 — the smallest step in use.
+ */
+const size = (px) => (px > 40 ? px : px >= 31 ? 34 : px >= 25.5 ? 28 : px >= 19.5 ? 23 : px >= 16.75 ? 18 : px >= 14.75 ? 16 : 14);
 /** Three weights (the files the app has: 400 · 600 · 700). */
 const weight = (w) => (w <= 450 ? 400 : w <= 650 ? 600 : 700);
 /** Two radii: 8 (keys · boxes · small marks), 12 (plates · cards · the main key); round ends and hairlines stay. */

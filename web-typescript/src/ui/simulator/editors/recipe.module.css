@@ -41,6 +41,7 @@
 /* 대응표 */
 :where([data-course]) .times {
   gap: 8px;
+  font-size: 14px;
 }
 
 .times em {
@@ -74,7 +75,7 @@
 :where([data-course]) .recipe .times button,
 :where([data-course]) .recipe .tools button {
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .times button:disabled,
@@ -133,7 +134,7 @@
 /* 대응표 */
 :where([data-course]) .n {
   font-weight: 700;
-  font-size: 13px;
+  font-size: 14px;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
 }
@@ -182,7 +183,7 @@
 }
 /* 대응표 */
 :where([data-course]) .body small {
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .wait {
@@ -195,6 +196,7 @@
 /* 대응표 */
 :where([data-course]) .wait {
   gap: 8px;
+  font-size: 14px;
 }
 
 .tools {
@@ -214,6 +216,7 @@
 :where([data-course]) .empty {
   padding: 16px 12px;
   border-radius: 12px;
+  font-size: 14px;
 }
 
 .foot {
@@ -235,6 +238,7 @@
 :where([data-course]) .add,
 :where([data-course]) .ghost {
   border-radius: 8px;
+  font-size: 14px;
 }
 
 .recipe .add {
@@ -284,6 +288,7 @@
 /* 대응표 */
 :where([data-course]) .recipe .palette button {
   padding: 8px 12px;
+  font-size: 14px;
 }
 
 /* DrawCards: number boxes and two switches on one card. */
@@ -306,7 +311,7 @@
 }
 /* 대응표 */
 :where([data-course]) .nums small {
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .num {
@@ -320,6 +325,7 @@
 /* 대응표 */
 :where([data-course]) .num {
   gap: 4px;
+  font-size: 14px;
 }
 
 .num input {
@@ -383,7 +389,7 @@
 /* 대응표 */
 :where([data-course]) .order em {
   font-weight: 700;
-  font-size: 13px;
+  font-size: 14px;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
@@ -395,6 +401,7 @@
 }
 /* 대응표 */
 :where([data-course]) .head .order b {
+  font-size: 14px;
   font-weight: 700;
   color: #f6f7f9;
 }
@@ -404,7 +411,7 @@
 }
 /* 대응표 */
 :where([data-course]) .order small {
-  font-size: 13px;
+  font-size: 14px;
 }
 
 /* Under the quest card, the whole panel scrolls: the cards take their own height. */
@@ -444,6 +451,7 @@
 /* 대응표 */
 :where([data-course]) .amt {
   gap: 4px;
+  font-size: 14px;
 }
 .amt input {
   width: 58px;
@@ -508,6 +516,7 @@
 /* 대응표 */
 :where([data-course]) .rows li {
   gap: 8px;
+  font-size: 14px;
   padding: 4px 8px;
   border-radius: 8px;
 }
@@ -523,7 +532,7 @@
 }
 /* 대응표 */
 :where([data-course]) .rows li::before {
-  font-size: 13px;
+  font-size: 14px;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
 }
@@ -558,7 +567,7 @@
 }
 /* 대응표 */
 :where([data-course]) .recipe .palette button small {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
 }
 
@@ -586,7 +595,7 @@
 }
 /* 대응표 */
 :where([data-course]) .unit {
-  font-size: 13px;
+  font-size: 14px;
 }
 .title {
   flex-wrap: wrap;
@@ -611,6 +620,10 @@
   font-weight: 700;
   color: var(--hud-dim, #9aa4ae);
   list-style: none;
+}
+/* 대응표 */
+:where([data-course]) .moreAll > summary {
+  font-size: 14px;
 }
 
 .moreAll > summary::-webkit-details-marker {
@@ -748,4 +761,26 @@
 .recipe[data-course] .order em,
 [data-course] .order em {
   color: #c9ced5;
+}
+
+/* 가독성 정리 (입문 과정): the boxes in a card's title line (5-2 x · y · 펜, 5-3 쓸 글자) 40 px high with 16 px numbers,
+   and a switched-off key (손님 −) at 0.6 so its sign still reads 3 : 1. */
+[data-course] .amt input,
+[data-course] .amt select {
+  height: 40px;
+  font-size: 16px;
+}
+[data-course] .times button:disabled {
+  opacity: 0.6;
+}
+
+/* 가독성 정리 (입문 과정): the 글씨 쓰기 panel's groups set apart (24), its cards with room inside (16). */
+[data-course] .recipe {
+  gap: 24px;
+}
+[data-course] .recipe .list {
+  gap: 12px;
+}
+[data-course] .recipe .card {
+  padding: 16px;
 }
