@@ -52,7 +52,7 @@ export default function NowBar({ n, text, state = 'do', meter, next, replay, ste
   // A number and its unit: a space before mm (110 mm), none before ° or 곳.
   const unit = meter ? (meter.unit === 'mm' ? ' mm' : meter.unit) : '';
   return (
-    <div className={css.now} data-state={state} role="status" aria-live="polite">
+    <div className={css.now} data-state={state} data-now role="status" aria-live="polite">
       {!replay && <em>지금 할 일</em>}
       {n ? <i className={css.n}>{n}</i> : state === 'ok' ? <i className={css.ok}>✓</i> : null}
       <p>

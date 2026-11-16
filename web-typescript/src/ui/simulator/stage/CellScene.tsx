@@ -12,7 +12,7 @@
 import { Html } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useRef, useState, type ReactNode, type RefObject } from 'react';
-import { Vector3, type Group } from 'three';
+import { Vector3, type Group, type Object3D } from 'three';
 
 import { cellLayout, type CellId } from '@/engine/simulator/cell/cells';
 import type { StageLook } from '@/engine/simulator/cell/courseStage';
@@ -29,6 +29,7 @@ import { AssemblyCell } from './cell/cellE';
 import { CafeCell } from './cell/cellF';
 import { DrawCell } from './cell/cellG';
 import { BoardCell } from './cell/cellH';
+import { armBox, asideSlot, ASIDE_BUBBLE } from './asideSlot';
 import GoalRing from './GoalRing';
 import { signalPoint } from './signalPoint';
 import { Backdrop, Cabinet, Conveyor, Fence, Floor, MarkedPlate, Pedestal, StackGlow, Tagged, m } from './cell/kit';
@@ -187,10 +188,30 @@ const EQUIPMENT: Record<CellId, (p: { world: RefObject<WorldState | null>; onHov
 const CALLOUT_S = 5;
 
 /** 단계 안내's 관찰 bubbles: each moment of the step, at its place, for a few seconds after it happens (입문 트랙). */
-function Callouts({ world }: { world: RefObject<WorldState | null> }) {
+/** 입문 과정 (결정 회신 파트 9-2): while a 확인 문제 holds the scene, the bubbles stand at the scene's left — the panel
+    covers the right — where they cover least of the arm, the card and the line (asideSlot.ts). */
+export type CalloutsAside = { arm: Object3D; top: () => number };
+
+function Callouts({ world, aside = null }: { world: RefObject<WorldState | null>; aside?: CalloutsAside | null }) {
   const [shown, setShown] = useState<string[]>([]);
   const key = useRef('');
+  const [slot, setSlot] = useState<[number, number] | null>(null);
+  const { camera, size } = useThree();
+  const frame = useRef<Group>(null);
+  const tick = useRef(0);
   useFrame(() => {
+    // (Aside: the place looked at again a few times a second — the scene is held, the view may still turn.)
+    if (!aside) tick.current = 0;
+    else if (frame.current && tick.current++ % 10 === 0) {
+      const gd = guideOf(world.current?.cell?.mission ?? null);
+      const v = new Vector3();
+      const points = (gd?.observe ?? []).map((o) => {
+        frame.current!.localToWorld(v.set(m(o.at[0]), m(o.at[1]), m(o.at[2]))).project(camera);
+        return [((v.x + 1) / 2) * size.width, ((1 - v.y) / 2) * size.height] as const;
+      });
+      const at = asideSlot({ w: size.width, h: size.height, top: aside.top(), arm: armBox(aside.arm, camera, size.width, size.height), points, n: Math.max(1, key.current.split(':')[1]?.split(',').filter(Boolean).length ?? 1) });
+      if (!slot || at[0] !== slot[0] || at[1] !== slot[1]) setSlot(at);
+    }
     const run = world.current?.cell;
     const g = run?.mission === NARRATED ? null : guideOf(run?.mission ?? null);
     const ids = run && g ? g.observe.filter((o) => run.observed[o.id] !== undefined && run.line.t - run.observed[o.id] < CALLOUT_S).map((o) => o.id) : [];
@@ -203,20 +224,29 @@ function Callouts({ world }: { world: RefObject<WorldState | null> }) {
   if (!g) return null;
   // 글씨 쓰기 (입문 과정 5-1 ~ 5-3, 수정 지시서 v3 파트 3-8): a dark plate with white words, 13 px or more — no colour that means something.
   const plain = (world.current?.cell?.mission ?? '').startsWith('G');
+  const side = aside && slot;
   return (
-    <>
+    <group ref={frame}>
       {g.observe
         .filter((o) => shown.includes(o.id))
-        .map((o) => (
-          <Html key={o.id} position={[m(o.at[0]), m(o.at[1]), m(o.at[2])]} center zIndexRange={[14, 0]} style={{ pointerEvents: 'none' }}>
-            <div data-callout style={{ position: 'relative', background: plain ? '#24272b' : '#c2410c', color: plain ? '#f6f7f9' : '#fff', borderRadius: plain ? 8 : 9, padding: plain ? '8px 12px' : '6px 11px 6px 9px', font: plain ? '600 14px Pretendard, sans-serif' : '700 12.5px Pretendard, sans-serif', whiteSpace: 'nowrap', boxShadow: plain ? '0 0 0 1px rgba(255,255,255,0.18), 0 6px 16px rgba(0,0,0,0.3)' : '0 6px 16px rgba(0,0,0,0.3)', transform: 'translateY(-24px)' }}>
+        .map((o, i) => (
+          <Html
+            key={o.id}
+            position={[m(o.at[0]), m(o.at[1]), m(o.at[2])]}
+            center={!side}
+            // (Aside: the same bubble, at the scene's left edge, one under another — not on the arm, the card or the line.)
+            calculatePosition={side ? () => [side[0], side[1] + i * ASIDE_BUBBLE.row] : undefined}
+            zIndexRange={[14, 0]}
+            style={{ pointerEvents: 'none' }}
+          >
+            <div data-callout data-aside={side ? true : undefined} style={{ position: 'relative', background: plain ? '#24272b' : '#c2410c', color: plain ? '#f6f7f9' : '#fff', borderRadius: plain ? 8 : 9, padding: plain ? '8px 12px' : '6px 11px 6px 9px', font: plain ? '600 14px Pretendard, sans-serif' : '700 12.5px Pretendard, sans-serif', whiteSpace: 'nowrap', boxShadow: plain ? '0 0 0 1px rgba(255,255,255,0.18), 0 6px 16px rgba(0,0,0,0.3)' : '0 6px 16px rgba(0,0,0,0.3)', transform: side ? undefined : 'translateY(-24px)' }}>
               <span style={plain ? { fontSize: 13, fontWeight: 600, color: '#c9ced5', marginRight: 8 } : { fontSize: 10.5, fontWeight: 800, opacity: 0.85, marginRight: 6 }}>관찰</span>
               {o.text}
-              <i style={{ position: 'absolute', left: '50%', bottom: -6, marginLeft: -6, width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: `6px solid ${plain ? '#24272b' : '#c2410c'}` }} />
+              {!side && <i style={{ position: 'absolute', left: '50%', bottom: -6, marginLeft: -6, width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: `6px solid ${plain ? '#24272b' : '#c2410c'}` }} />}
             </div>
           </Html>
         ))}
-    </>
+    </group>
   );
 }
 
@@ -289,6 +319,7 @@ export default function CellScene({
   cell,
   tags = [],
   callouts = false,
+  calloutsAside = null,
   stage = null,
   hide = null,
 }: {
@@ -296,6 +327,8 @@ export default function CellScene({
   cell: CellId;
   tags?: readonly string[];
   callouts?: boolean;
+  /** 입문 과정: a 확인 문제 holds the scene — the 관찰 bubbles at the scene's left (the arm, and the bars over the view). */
+  calloutsAside?: CalloutsAside | null;
   /** 입문 과정 무대 (courseStage.ts): its background, and the booth with only the lesson's things. */
   stage?: StageLook | null;
   /** 입문 과정 2-1: the booth's things not put down yet. */
@@ -323,7 +356,7 @@ export default function CellScene({
           <StackGlow world={world} at={CABINET[cell]} />
         </>
       )}
-      {callouts && <Callouts world={world} />}
+      {callouts && <Callouts world={world} aside={calloutsAside} />}
       {callouts && cell === 'cafe' && <Narrate world={world} />}
       {callouts && <TargetRing world={world} />}
       {shown.map((n) => (

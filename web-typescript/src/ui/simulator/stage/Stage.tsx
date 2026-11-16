@@ -257,6 +257,8 @@ interface StageProps {
   cellTags?: readonly string[];
   /** 입문 트랙: the step's 관찰 bubbles in the cell (cell/guides.ts). */
   cellCallouts?: boolean;
+  /** 입문 과정: a 확인 문제 is open — the 관찰 bubbles at the scene's left (the panel covers the right; asideSlot.ts). */
+  calloutsAside?: boolean;
   /** 입문 맛보기: the ring the tool tip is to go into now, and its tag (lifeTutorials.ts). */
   goalRing?: { at: readonly [number, number, number]; label: string } | null;
   /** 입문 과정 절: press spots on the arm, asset slots in the scene (CourseMarks.tsx); none: nothing. */
@@ -455,6 +457,7 @@ function World({
   cellClock,
   cellTags,
   cellCallouts = false,
+  calloutsAside = false,
   goalRing = null,
   courseMarks = null,
   courseStage = null,
@@ -873,7 +876,7 @@ function World({
       {courseMarks && <CourseMarks marks={courseMarks} joints={arm.joints} flange={arm.flange} tcpMm={tcpMm} />}
       {cell ? (
         <>
-          <CellScene world={world} cell={cell} tags={cellTags} callouts={cellCallouts} stage={courseStage} hide={courseHide} />
+          <CellScene world={world} cell={cell} tags={cellTags} callouts={cellCallouts} calloutsAside={calloutsAside ? { arm: arm.root, top: () => asideTop(gl.domElement, frameInsets?.()?.t ?? 0) } : null} stage={courseStage} hide={courseHide} />
           <CellObjects world={world} />
           <CellPhysics world={world} chain={chain} tcpMm={tcpMm} effector={effector} rate={simRate} clock={cellClock} />
         </>
@@ -1016,6 +1019,15 @@ function keepArmInFrame(pos: Vector3, target: Vector3, camera: PerspectiveCamera
     pos.add(move);
     target.add(move);
   }
+}
+
+/** 입문 과정 (결정 회신 파트 9-2): where the view starts showing under the top bar and the 지금 할 일 line (canvas px). */
+function asideTop(canvas: HTMLCanvasElement, barTop: number): number {
+  const c = canvas.getBoundingClientRect();
+  const now = canvas.ownerDocument.querySelector('[data-now]')?.getBoundingClientRect();
+  // (The course zooms the page: rects are on screen, the canvas's own px are its layout px.)
+  const z = c.height / canvas.clientHeight || 1;
+  return Math.max(barTop, now ? (now.bottom - c.top) / z : 0);
 }
 
 function freeFrame(insets: { l: number; r: number; t: number; b: number } | null, w: number, h: number): FreeFrame | undefined {

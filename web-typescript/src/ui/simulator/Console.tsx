@@ -195,6 +195,7 @@ import css from './console.module.css';
 import { isTouch } from './touch';
 import TouchTips from './TouchTips';
 import { obj } from '@/engine/robot/selfCollision';
+import { useRevealResults } from './tasks/useRevealResults';
 
 // memo: the 3D view re-renders only when one of its own props changes, not with every console update.
 const Stage = memo(
@@ -412,6 +413,8 @@ const signedNum = (n: number) => String(n).replace('-', '−');
  * no numbers. While it is on nothing is recorded: no event to the platform, no 완료 · 기록 in this browser.
  */
 let FREE_ON = false;
+/** 입문 과정: the 절 whose run results the panel moves down to (결정 회신 파트 9-1). */
+const REVEAL_SUBS = ['4-3', '5-2', '5-3'];
 const report = (e: Parameters<typeof reportEvent>[0]) => {
   if (!FREE_ON) reportEvent(e);
 };
@@ -4668,6 +4671,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   // 입문 과정: the 절 open now (a quest, a tutorial, a 절 built for the course, a chapter's 수행평가), done or not, and opening one.
   const testSub = courseTest !== null ? subById(COURSE.find((c) => c.n === courseTest)?.test ?? '') : undefined;
   const subNow = course ? (testSub ?? (courseStep ? subById(courseStep.id) : lifeQuest ? subOfRun('quest', lifeQuest) : lifeTut ? subOfRun('tutorial', lifeTut.id) : undefined)) : undefined;
+  // 입문 과정 (결정 회신 파트 9-1): 4-3 · 5-2 · 5-3 — the panel moved down to a run's results, once.
+  useRevealResults(!!subNow && REVEAL_SUBS.includes(subNow.id), busy);
   const subDone = (s: CourseSub) =>
     s.run?.kind === 'quest' ? !!cellPassed[s.run.id] : s.run?.kind === 'tutorial' ? !!tutDone[s.run.id] : s.run?.kind === 'step' ? !!stepsDone[s.run.id] : s.run?.kind === 'test' ? testOver(CHAPTER_TESTS[Number(s.run.id)], testResults[s.run.id], cPlan.ox) : false;
 
@@ -6991,6 +6996,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   courseHide={courseStep?.id === '2-1' ? { arm: courseStep.placed < 1, mat: courseStep.placed < 2, card: courseStep.placed < 3, lamp: true } : draw4On ? { arm: false, mat: false, card: true, lamp: true } : null}
                   cellClock={cellClock}
                   // (2장's 절 and its mission: no 관찰 bubbles — only the 위치 줄, 지금 할 일 and the place to press.)
+                  // 입문 과정 (결정 회신 파트 9-2): while a 확인 문제 is open (the scene held), the bubbles at the scene's left.
+                  calloutsAside={course && !!moment}
                   cellCallouts={!!track && !missionRun && !(courseStep && (courseStep.id.startsWith('1-') || courseStep.id.startsWith('2-') || courseStep.id.startsWith('4-') || courseStep.id === '5-4' || courseStep.id === '5-5'))}
                   goalRing={(() => {
                     // 입문 맛보기: the ring the tool tip goes into now.
