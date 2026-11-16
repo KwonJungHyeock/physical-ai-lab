@@ -2423,6 +2423,11 @@
 [data-course] .jog:has(.padWrap) {
   gap: 4px;
 }
+/* (The round pad sized by the height the page is laid out in: on a window shown larger (1920 × 1080, ×1.4) the
+   window's own height made it 252 px — the 좌표 tab then ran 80 px past the panel's foot.) */
+[data-course] .padWrap {
+  --pad: clamp(166px, calc(100vh / var(--course-zoom, 1) - 610px), 252px);
+}
 /* (A window 740 px high or less — 1280 × 720: the round pad 140 px across, so the 좌표 tab fits without scrolling.) */
 @media (max-height: 740px) {
   [data-course] .padWrap {
