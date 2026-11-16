@@ -82,6 +82,7 @@
 | [`47-track-life-basic-curriculum.md`](reports/education/47-track-life-basic-curriculum.md) | 보고 #47 — 입문 기초편 커리큘럼 확정: 6챕터 · 서브챕터 18개(번호 = 교안 장 · 절), 세 현장 같은 무게, 로봇 조작 기초, 챕터마다 수행평가(상 · 중 · 하), 10차시 · 개발 순서 |
 | [`48-track-life-basic-calligraphy.md`](reports/education/48-track-life-basic-calligraphy.md) | 보고 #48 — 가오픈 커리큘럼 확정(#47 대체): myCobot 280 협동로봇 1단계 — 기초 조작과 로봇 글씨 쓰기, 12차시 · 6챕터(이론 · 준비 · 관절 제어 · 좌표와 궤적선 · 로봇 글씨 쓰기 시뮬레이션 → 실물 · 학습 기록과 후기 PDF), 챕터마다 O·X + 미션 수행평가 |
 | [`49-track-life-scene-scope.md`](reports/education/49-track-life-scene-scope.md) | 보고 #49 — 1단계 12차시 서브챕터별 장면 범위 · 전개 5칸 · 교안 80쪽 매칭, 입문 트랙을 12차시로 교체(카페 · 보드게임 · 4/6/8차시 숨김), 1장 체험 장면, 4장 꼭짓점 좌표 표 |
+| [`50-track-life-readability.md`](reports/education/50-track-life-readability.md) | 보고 #50 — 입문 과정 전체 가독성 정리(글자 14 · 숫자 16 · 누르는 것 40 · 대비 4.5, 세 크기 전 → 뒤 표), 12차시 구성(기본, 5 · 12차시 수행평가), 절을 마친 뒤 자유 실습(기록 안 함), 3-4 이동 시간을 엔진 계산으로 |
 
 ### [`system/`](reports/system/) — 시스템 구성
 | 문서 | 내용 |
