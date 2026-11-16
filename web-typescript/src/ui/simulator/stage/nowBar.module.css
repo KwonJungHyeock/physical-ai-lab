@@ -345,3 +345,48 @@
   color: #f6f7f9;
   font-variant-numeric: tabular-nums;
 }
+
+/* A line carrying [자유 실습]: its keys and bars set closer, so the sentence stays whole beside [자유 실습] · [다음으로 →]
+   (4-1's 완료 line was cut 43 px at 1366); on a 1280 px window every line so. */
+[data-course] .now:has(.free) .next,
+[data-course] .now:has(.free) .free {
+  padding: 0 16px;
+}
+[data-course] .now:has(.free) .steps {
+  gap: 8px;
+}
+[data-course] .now:has(.free) .steps i {
+  width: 16px;
+}
+@media (max-width: 1340px) {
+  [data-course] .now .next,
+  [data-course] .now .free {
+    padding: 0 16px;
+  }
+  [data-course] .now .steps {
+    gap: 8px;
+  }
+  [data-course] .now .steps i {
+    width: 16px;
+  }
+  [data-course] .now:has(.steps) .meter > i {
+    width: 80px;
+  }
+}
+/* 대응표 */
+:where(html[data-vq~='24']) [data-course] .now .next,
+:where(html[data-vq~='24']) [data-course] .now .free {
+  padding: 0 16px;
+}
+/* 대응표 */
+:where(html[data-vq~='24']) [data-course] .now .steps {
+  gap: 8px;
+}
+/* 대응표 */
+:where(html[data-vq~='24']) [data-course] .now .steps i {
+  width: 16px;
+}
+/* 대응표 */
+:where(html[data-vq~='24']) [data-course] .now:has(.steps) .meter > i {
+  width: 80px;
+}
