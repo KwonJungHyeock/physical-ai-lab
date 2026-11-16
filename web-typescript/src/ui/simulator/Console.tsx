@@ -5253,14 +5253,15 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- the step's own state is read from its ref
   }, [watchJoints]);
   // 3-4: the speed set (①, and ③'s first half), each move timed — slow, fast — and the stop while one runs.
-  const fiveMove = useRef<{ t0: number; pct: number } | null>(null);
+  const fiveMove = useRef<{ t0: number; pct: number; mv: { from: number[]; to: number[]; speed: number } | null } | null>(null);
   useEffect(() => {
     const st = courseStepRef.current;
     if (st?.id !== '3-4') return;
     if (busy) {
-      fiveMove.current = { t0: performance.now(), pct: jogSpeed };
-      stepStopped.current = false;
+      // (the joint move just asked for — goJoints notes it before the run starts)
+      fiveMove.current = { t0: performance.now(), pct: jogSpeed, mv: lastMove.current };
       lastMove.current = null;
+      stepStopped.current = false;
       return;
     }
     const m = fiveMove.current;
@@ -5268,7 +5269,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     if (!m) return;
     // The move's time as the simulation plays it (its joints' travel at the speed set): not the clock on the wall,
     // which a faster simulation (×2 · ×4) and the run's own start and settle would make the same for any speed (지시서 파트 8).
-    const mv = lastMove.current;
+    const mv = m.mv;
     const secs = Math.round((mv ? armMoveDuration(mv.from, mv.to, mv.speed) : (performance.now() - m.t0) / 1000) * 10) / 10;
     if (stepStopped.current) {
       if (st.step === 3) {
