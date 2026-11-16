@@ -16,13 +16,14 @@ const SCROLL_KEYS = ['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End'
 /** Room kept under the results (layout px). */
 const ROOM = 12;
 
-/** The box that scrolls the list (the panel's pane), if any. */
-function scrollerOf(el: Element): HTMLElement | null {
-  for (let s = el.parentElement; s; s = s.parentElement) {
+/** The boxes that scroll the list, the nearest first (a block inside the panel, then the panel's pane). */
+function scrollersOf(el: Element): HTMLElement[] {
+  const out: HTMLElement[] = [];
+  for (let s = el.parentElement; s && s.tagName !== 'BODY'; s = s.parentElement) {
     const y = getComputedStyle(s).overflowY;
-    if ((y === 'auto' || y === 'scroll') && s.scrollHeight > s.clientHeight + 1) return s;
+    if ((y === 'auto' || y === 'scroll') && s.scrollHeight > s.clientHeight + 1) out.push(s);
   }
-  return null;
+  return out;
 }
 
 /** The part of the box the student sees: under its top, over the 정지 row kept at the panel's foot. */
@@ -77,18 +78,18 @@ export function useRevealResults(on: boolean, busy: boolean) {
         seen.current.add(list);
         // The student is moving the panel: leave it.
         if (held.current || performance.now() - touched.current < HANDS_OFF_MS) continue;
-        const box = scrollerOf(list);
-        if (!box) continue;
-        const r = list.getBoundingClientRect();
-        const b = sightOf(box);
-        // (The course zooms the page: rects are on screen, scrollTop in the box's own px.)
-        const scale = b.height / box.clientHeight || 1;
-        const room = ROOM * scale;
-        if (r.bottom <= b.bottom - room / 2 && r.top >= b.top) continue;
-        // Down to the results' end, never past their start.
-        const by = Math.min(r.bottom - (b.bottom - room), r.top - (b.top + room));
-        if (by <= 0) continue;
-        box.scrollBy({ top: by / scale, behavior: 'smooth' });
+        // Each box around the results down as far as it goes, the nearest first — then the next one takes the rest.
+        for (const box of scrollersOf(list)) {
+          const r = list.getBoundingClientRect();
+          const b = sightOf(box);
+          // (The course zooms the page: rects are on screen, scrollTop in the box's own px.)
+          const scale = b.height / box.clientHeight || 1;
+          const room = ROOM * scale;
+          if (r.bottom <= b.bottom - room / 2 && r.top >= b.top) break;
+          // Down to the results' end, never past their start, never past the box's own end.
+          const by = Math.min(r.bottom - (b.bottom - room), r.top - (b.top + room), (box.scrollHeight - box.clientHeight - box.scrollTop) * scale);
+          if (by > 0) box.scrollTop += by / scale;
+        }
       }
     };
     // New results: looked at a moment later, after the step's guide has brought its next control into sight
