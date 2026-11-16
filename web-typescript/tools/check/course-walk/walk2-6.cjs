@@ -174,6 +174,7 @@ const say = async (p, tag) => {
   await sec('3-4f', async (ctx) => {
     const p = await L.open(ctx, U('3-4'));
     const d = D('3-4');
+    await p.waitForSelector('[aria-label="속도 조절"]', { timeout: 180000 });
     await L.range(p, '[aria-label="속도 조절"]', 30);
     await p.waitForTimeout(800);
     await L.range(p, '[aria-label="속도 조절"]', 50);
