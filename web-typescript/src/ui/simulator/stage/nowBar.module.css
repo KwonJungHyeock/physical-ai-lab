@@ -291,3 +291,9 @@
 :where(html[data-vq~='24']) .now:has(.steps) .meter output {
   min-width: 0;
 }
+
+/* 가독성 정리 (입문 과정): a line with both a meter and its steps keeps the meter's track at 120 px at every width
+   (220 left 3-4's sentence cut with '…' at 1366 × 768). */
+[data-course] .now:has(.steps) .meter > i {
+  width: 120px;
+}

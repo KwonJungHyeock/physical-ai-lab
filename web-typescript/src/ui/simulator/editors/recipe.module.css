@@ -784,3 +784,27 @@
 [data-course] .recipe .card {
   padding: 16px;
 }
+
+/* 가독성 정리 (입문 과정): a switched-off key at 0.6 (at 0.35 ~ 0.5 its words fell under 3 : 1). */
+[data-course] .tools button:disabled,
+[data-course] .ghost:disabled,
+[data-course] .blocks li button:disabled {
+  opacity: 0.6;
+}
+
+/* 가독성 정리 (입문 과정): the line being written on the 8 % plate (on 16 %, with the card dimmed while 잠깐 퀴즈 is open,
+   its words read 4.3 : 1). */
+[data-course] .rows li[data-on] {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* (While a 잠깐 퀴즈 is open in the panel, the card list keeps the closer spacing it had, so what is under the quiz is not pushed out.) */
+[data-course] body:has([role='dialog'][aria-modal='false']) .recipe {
+  gap: 12px;
+}
+[data-course] body:has([role='dialog'][aria-modal='false']) .recipe .list {
+  gap: 8px;
+}
+[data-course] body:has([role='dialog'][aria-modal='false']) .recipe .card {
+  padding: 8px 8px 8px 12px;
+}

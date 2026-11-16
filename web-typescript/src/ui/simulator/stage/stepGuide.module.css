@@ -799,3 +799,8 @@
 [data-course] .qSkip {
   min-height: 40px;
 }
+
+/* 가독성 정리 (입문 과정): in the panel, [예측 없이 계속] set 8 under the choices (its 40 px height gives it the room). */
+[data-course] .quizDock .qSkip {
+  margin-top: 8px;
+}

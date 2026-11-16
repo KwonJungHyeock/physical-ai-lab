@@ -2410,3 +2410,30 @@
   border-bottom: 16px solid transparent;
   background-clip: padding-box;
 }
+
+/* 가독성 정리 (입문 과정): a switched-off key at 0.6 (at 0.35 ~ 0.5 its words fell under 3 : 1). */
+[data-course] .jog .lessonGo:disabled,
+[data-course] .jog .learn:disabled,
+[data-course] .jog .toolDown:disabled,
+[data-course] .jog .key:disabled {
+  opacity: 0.6;
+}
+/* (The 좌표 tab — the round pad and the 위 · 아래 rocker under the options: its blocks 4 px apart, so with the 16 px
+   numbers above it the panel still needs no scrolling at 1366 × 768.) */
+[data-course] .jog:has(.padWrap) {
+  gap: 4px;
+}
+/* (A window 740 px high or less — 1280 × 720: the round pad 140 px across, so the 좌표 tab fits without scrolling.) */
+@media (max-height: 740px) {
+  [data-course] .padWrap {
+    --pad: 140px;
+  }
+}
+/* 대응표 */
+:where(html[data-vq~='19']) [data-course] .padWrap {
+  --pad: 140px;
+}
+/* (손 방향's step — 5° — is a number: 16 px.) */
+[data-course] .cap small {
+  font-size: 16px;
+}

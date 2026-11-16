@@ -1148,3 +1148,9 @@
 :global(html[data-course]) .page {
   background: rgba(255, 255, 255, 0.16);
 }
+
+/* 가독성 정리 (입문 과정): a switched-off key at 0.6 (at 0.35 ~ 0.5 its words fell under 3 : 1). */
+[data-course] .projector .ghost:disabled,
+[data-course] .cardCheck button:disabled {
+  opacity: 0.6;
+}

@@ -974,3 +974,23 @@
   gap: 16px;
   padding: 16px;
 }
+/* (A panel with a 표 — 4-3 · 4-4 · 5장 판 · 5-5 — keeps 16 at every size: its rows and the results under 시뮬레이션 need the room.) */
+[data-course] .panel:has(> .table) {
+  gap: 16px;
+  padding: 16px;
+}
+[data-course] .panel:has(> .table) .table {
+  gap: 4px;
+}
+
+/* 가독성 정리 (입문 과정): a switched-off key at 0.6 (at 0.35 ~ 0.5 its words fell under 3 : 1). */
+[data-course] .panel .run:disabled,
+[data-course] .toolRow button:disabled,
+[data-course] .poses button:disabled {
+  opacity: 0.6;
+}
+
+/* 가독성 정리 (입문 과정): 5-4's stroke chips 40 px high (were 38). */
+[data-course] .strokes button {
+  height: 40px;
+}

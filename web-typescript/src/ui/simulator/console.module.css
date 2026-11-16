@@ -13231,3 +13231,48 @@ div.zeroFlow {
   margin: auto 0 0;
   padding: 14px 10px 2px;
 }
+
+/* 가독성 정리 (입문 과정): a switched-off key at 0.6 (at 0.35 ~ 0.5 its words fell under 3 : 1). */
+[data-course] .app .poseDock button:disabled,
+[data-course] .app .missionNeed button:disabled,
+[data-course] .app .toolCard:disabled,
+[data-course] .app .stepper button:disabled,
+[data-course] .app .screens button:disabled,
+[data-course] .app .pageActions button:disabled,
+[data-course] .runDock .runNext:disabled,
+[data-course] .ghost:disabled,
+[data-course] .undoBar button:disabled,
+[data-course] .btnPrimary:disabled,
+[data-course] .btnAction:disabled,
+[data-course] .poseGo:disabled,
+[data-course] .connectGo:disabled,
+[data-course] .menuPop > button:disabled {
+  opacity: 0.6;
+}
+
+/* 가독성 정리 (입문 과정): a saved pose's six angles go on to a second line rather than end in '…' under [이 자세로]. */
+[data-course] .app .side .poseList .poseName small {
+  white-space: normal;
+  overflow: visible;
+}
+
+/* 가독성 정리 (입문 과정): 5-5's [코드 받기] in dark words on its orange (white read 2.4 : 1), and the ✓ on its white
+   badge dark (the light green read 1.4 : 1). */
+[data-course] .app .runDock .runReal:not(:disabled) {
+  color: #14171c;
+}
+[data-course] .app .runOk {
+  color: #14171c;
+}
+
+/* 가독성 정리 (입문 과정): 5-5's 연결 창 — [×] and [시뮬레이션만] 40 px high, the network box's words 16 px. */
+[data-course] .app .connectBox .pickerClose {
+  width: 40px;
+  height: 40px;
+}
+[data-course] .app .connectBox .connectFoot .ghost {
+  min-height: 40px;
+}
+[data-course] .app .connectBox .findNet {
+  font-size: 16px;
+}

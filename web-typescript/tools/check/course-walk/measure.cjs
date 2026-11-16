@@ -13,7 +13,13 @@
  * Run in the page: `await page.evaluate(MEASURE)` → { issues: [...], roles: {...} }.
  */
 
-const MEASURE = () => {
+const MEASURE = async () => {
+  // A card that pops in (scale 0.6 → 1) is read once it has landed: finite animations end first (3 s at most).
+  const moving = document.getAnimations().filter((x) => {
+    const t = x.effect && x.effect.getComputedTiming ? x.effect.getComputedTiming() : null;
+    return t && t.iterations !== Infinity && x.playState === 'running';
+  });
+  await Promise.race([Promise.all(moving.map((x) => x.finished.catch(() => {}))), new Promise((r) => setTimeout(r, 3000))]);
   const TEXT_MIN = 14;
   const VALUE_MIN = 16;
   const HIT_MIN = 40;
@@ -33,6 +39,8 @@ const MEASURE = () => {
       const cs = getComputedStyle(e);
       if (cs.display === 'none' || cs.visibility === 'hidden' || cs.visibility === 'collapse' || Number(cs.opacity) === 0) return false;
       if (e.getAttribute('aria-hidden') === 'true' && e.tagName !== 'I') return false;
+      // Inside a closed fold (only its summary shows).
+      if (e.parentElement && e.parentElement.tagName === 'DETAILS' && !e.parentElement.open && e.tagName !== 'SUMMARY') return false;
     }
     const r = el.getBoundingClientRect();
     return r.width > 0 && r.height > 0 && r.right > 0 && r.bottom > 0 && r.left < vw && r.top < vh;
@@ -142,10 +150,10 @@ const MEASURE = () => {
       const o = opacityOf(el);
       const shownFg = over({ ...fg, a: fg.a * o }, bg);
       const r = ratio(shownFg, bg);
-      // Switched off: a disabled key, a switch whose box is disabled, a row whose only key is disabled (a locked 절 in the list).
+      // Switched off: a disabled key, a switch whose box is disabled, a row whose only key is disabled (a locked 절 in the list), a row not open yet ([data-soon]).
       const row = el.closest('li, [data-row]');
       const rowKeys = row ? [...row.querySelectorAll('button, input')] : [];
-      const off = !!el.closest('button:disabled, [aria-disabled="true"], input:disabled') || !!el.closest('label')?.querySelector('input:disabled') || (rowKeys.length > 0 && rowKeys.every((k) => k.disabled));
+      const off = !!el.closest('button:disabled, [aria-disabled="true"], input:disabled, [data-soon]') || !!el.closest('label')?.querySelector('input:disabled') || (rowKeys.length > 0 && rowKeys.every((k) => k.disabled));
       const need = off ? 3 : 4.5;
       if (r < need - 0.05) add(off ? 'contrast-off' : 'contrast', el, `${r.toFixed(2)} < ${need} · "${t.slice(0, 30)}"`);
     }
@@ -204,6 +212,10 @@ const MEASURE = () => {
   }
 
   // --- 3. overlap: text over text, text over a key it is not part of ---------------------------
+  const clipped = (el) => {
+    for (let e = el; e && e !== document.body; e = e.parentElement) if (getComputedStyle(e).clipPath !== 'none') return true;
+    return false;
+  };
   const boxes = texts.map((x) => ({ el: x.el, r: x.rect, t: x.t }));
   for (const k of keys) boxes.push({ el: k, r: k.getBoundingClientRect(), key: true });
   for (let i = 0; i < boxes.length; i++)
@@ -211,6 +223,8 @@ const MEASURE = () => {
       const a = boxes[i];
       const b = boxes[j];
       if (a.el === b.el || a.el.contains(b.el) || b.el.contains(a.el)) continue;
+      // A key cut to a shape (clip-path — the round 좌표 pad's quarters): its box is not what is drawn or pressed.
+      if (clipped(a.el) || clipped(b.el)) continue;
       if (a.key && b.key) {
         // two keys over each other (not side by side)
       }

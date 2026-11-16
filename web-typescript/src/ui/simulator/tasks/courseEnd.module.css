@@ -360,3 +360,15 @@
   width: 40px;
   height: 40px;
 }
+
+/* 가독성 정리 (입문 과정): 6-2 · 6-3's boxes 40 px high with 16 px words; on the white 한 장 the note under the total
+   in the sheet's dark grey (the HUD's dim grey read 1.5 : 1 there). */
+[data-course] .field input,
+[data-course] .field select,
+[data-course] .who input {
+  min-height: 40px;
+  font-size: 16px;
+}
+[data-course] .preview .total small {
+  color: #4a4f56;
+}

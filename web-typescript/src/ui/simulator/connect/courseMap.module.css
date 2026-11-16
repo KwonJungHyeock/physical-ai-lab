@@ -620,3 +620,18 @@
   background: #22c55e;
   box-shadow: none;
 }
+
+/* 가독성 정리 (입문 과정): a switched-off key at 0.6 (at 0.35 ~ 0.5 its words fell under 3 : 1). */
+[data-course] .kinds button:disabled,
+[data-course] .resume button:disabled {
+  opacity: 0.6;
+}
+
+/* 가독성 정리 (입문 과정): a row not open yet (6장 before the course ends) at 0.6, its [열기] then not dimmed twice. */
+[data-course] .item[data-soon],
+[data-course] .row[data-soon] {
+  opacity: 0.6;
+}
+[data-course] .item[data-soon] .kinds button:disabled {
+  opacity: 1;
+}

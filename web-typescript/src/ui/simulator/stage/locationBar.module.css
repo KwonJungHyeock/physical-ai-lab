@@ -367,3 +367,10 @@
 .kinds[data-top] {
   margin-left: 0;
 }
+
+/* 가독성 정리 (입문 과정): a switched-off key at 0.6 (at 0.35 ~ 0.5 its words fell under 3 : 1). */
+[data-course] .row:disabled,
+[data-course] .kinds button:disabled:not([data-on]),
+[data-course] .replay:disabled {
+  opacity: 0.6;
+}
