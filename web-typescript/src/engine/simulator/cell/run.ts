@@ -62,6 +62,15 @@ export interface CellRun {
   observed: Record<string, number>;
 }
 
+/**
+ * 입문 과정 자유 실습 5-2 ([카드 옮기기], 지시서 파트 6): the card put down at another place for a step's runs
+ * (its mission id and the corner, mm); null: where the step puts it.
+ */
+let cardMoved: { mission: string; at: { x: number; y: number } } | null = null;
+export const moveCardFor = (mission: string | null, at: { x: number; y: number } | null): void => {
+  cardMoved = mission && at ? { mission, at: { ...at } } : null;
+};
+
 /** The cell's start: its run state and the parts it begins with. */
 export function newCellRun(id: CellId, missionId: string | null): { run: CellRun; parts: DeskObject[] } {
   const layout = cellLayout(id);
@@ -78,7 +87,7 @@ export function newCellRun(id: CellId, missionId: string | null): { run: CellRun
   setup.line?.(line);
   const run: CellRun = { id, layout, mission: m?.id ?? null, line, health: newHealth(), alerts: [], fresh: [], halt: null, events: [], next: {}, startT: null, endT: null, lastTip: null, vision: newVision(), observed: {} };
   if (layout.line.cafe) run.cafe = newCafe(layout.line.cafe, setup.orders ?? 1, setup.order, { queue: setup.menuQueue, spawn: setup.spawn });
-  if (layout.line.draw) run.draw = newDraw(setup.orders ?? 1, setup.card);
+  if (layout.line.draw) run.draw = newDraw(setup.orders ?? 1, cardMoved && cardMoved.mission === m?.id ? cardMoved.at : setup.card);
   if (layout.line.board) run.board = newBoard();
   return { run, parts: setup.parts(layout) };
 }

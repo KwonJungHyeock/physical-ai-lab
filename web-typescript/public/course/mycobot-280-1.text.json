@@ -13,7 +13,9 @@
     "resume": "이어서 하기",
     "list": "목록",
     "meterLimit": "한계 {v}",
-    "meterBelow": "{v} 이하"
+    "meterBelow": "{v} 이하",
+    "free": "자유 실습 · 기록하지 않아요",
+    "posesFull": "자세는 {n}개까지 저장해요"
   },
   "buttons": {
     "run": "시뮬레이션",
@@ -33,7 +35,13 @@
     "replay": "다시 보기",
     "path": "궤적선",
     "goPose": "이 자세로",
-    "export": "코드 받기"
+    "export": "코드 받기",
+    "free": "자유 실습",
+    "freeReset": "처음 상태로",
+    "freeEnd": "자유 실습 끝내기",
+    "playPoses": "차례로 실행",
+    "clearLines": "선 모두 지우기",
+    "moveCard": "카드 옮기기"
   },
   "checks": {
     "safe": "충돌 · 고장 · 파손 없이",

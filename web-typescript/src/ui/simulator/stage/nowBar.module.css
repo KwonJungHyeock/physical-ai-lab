@@ -297,3 +297,51 @@
 [data-course] .now:has(.steps) .meter > i {
   width: 120px;
 }
+
+/* 자유 실습 (응용 활동, 지시서 파트 6): [자유 실습] · [처음 상태로] as plain keys beside [다음으로 →] · [자유 실습 끝내기]. */
+.free {
+  flex: none;
+  height: 46px;
+  padding: 0 24px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 12px;
+  background: transparent;
+  color: #f6f7f9;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.free:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+}
+.free:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+/* 4-1's 손끝 X · Y · Z: the measured numbers large (28), each with its name. */
+.values {
+  flex: none;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 24px;
+  margin-left: auto;
+}
+.values > span {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.values small {
+  font-size: 16px;
+  font-weight: 600;
+  color: #c9ced5;
+}
+.values output {
+  min-width: 96px;
+  font-size: 28px;
+  font-weight: 700;
+  color: #f6f7f9;
+  font-variant-numeric: tabular-nums;
+}

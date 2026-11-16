@@ -42,9 +42,13 @@ interface BarProps {
   steps?: { n: number; of: number };
   /** A key of the line's own in [다음으로 →]'s place, lit (입문 3-5 미션: [확인], 동결 뒤 고침 파트 1). */
   action?: { label: string; onClick(): void; disabled?: boolean };
+  /** 자유 실습 (응용 활동, 지시서 파트 6): [자유 실습], left of [다음으로 →], once the 절 is done. */
+  free?: { onClick(): void; disabled?: boolean };
+  /** In 자유 실습: [처음 상태로] · [자유 실습 끝내기] at the line's right (no number, no steps); `values`: numbers shown large (4-1: 손끝 X · Y · Z). */
+  freeKeys?: { onReset(): void; onEnd(): void; disabled?: boolean; values?: readonly { name: string; v: string }[]; extra?: { label: string; onClick(): void } };
 }
 
-export default function NowBar({ n, text, state = 'do', meter, next, replay, steps, action }: BarProps) {
+export default function NowBar({ n, text, state = 'do', meter, next, replay, steps, action, free, freeKeys }: BarProps) {
   // A number and its unit: a space before mm (110 mm), none before ° or 곳.
   const unit = meter ? (meter.unit === 'mm' ? ' mm' : meter.unit) : '';
   return (
@@ -86,6 +90,36 @@ export default function NowBar({ n, text, state = 'do', meter, next, replay, ste
           {buttonName('replay')}
         </button>
       )}
+      {freeKeys?.values && (
+        <span className={css.values}>
+          {freeKeys.values.map((x) => (
+            <span key={x.name}>
+              <small>{x.name}</small>
+              <output>{x.v}</output>
+            </span>
+          ))}
+        </span>
+      )}
+      {freeKeys && (
+        <>
+          {freeKeys.extra && (
+            <button type="button" className={css.free} data-step="free-extra" disabled={freeKeys.disabled} onClick={freeKeys.extra.onClick}>
+              {freeKeys.extra.label}
+            </button>
+          )}
+          <button type="button" className={css.free} data-step="free-reset" disabled={freeKeys.disabled} onClick={freeKeys.onReset}>
+            {buttonName('freeReset')}
+          </button>
+          <button type="button" className={css.next} data-step="free-end" onClick={freeKeys.onEnd}>
+            {buttonName('freeEnd')}
+          </button>
+        </>
+      )}
+      {free && (
+        <button type="button" className={css.free} data-step="free" disabled={free.disabled} onClick={free.onClick}>
+          {buttonName('free')}
+        </button>
+      )}
       {next && (
         <button type="button" className={css.next} data-lit={next.lit || undefined} onClick={next.onClick}>
           {buttonName('next')}
@@ -107,6 +141,12 @@ const shown = (e: Element | null): e is HTMLElement => !!e && (e as HTMLElement)
 export function LiveNowBar({ live, meterOf, ...bar }: BarProps & { live: Live; meterOf(angles: readonly number[]): BarProps['meter'] }) {
   const angles = useLive(live, (v) => v.angles);
   return <NowBar {...bar} meter={meterOf(angles)} />;
+}
+
+/** 자유 실습's line with numbers read from the joint angles as they change (4-1: 손끝 X · Y · Z). */
+export function LiveFreeBar({ live, valuesOf, freeKeys, ...bar }: BarProps & { live: Live; freeKeys: NonNullable<BarProps['freeKeys']>; valuesOf(angles: readonly number[]): { name: string; v: string }[] }) {
+  const angles = useLive(live, (v) => v.angles);
+  return <NowBar {...bar} freeKeys={{ ...freeKeys, values: valuesOf(angles) }} />;
 }
 
 export function findTarget(t: TutTarget): HTMLElement | null {
@@ -177,7 +217,27 @@ const asLead = (say: string) => say.replace(/눌러요$/, '눌러');
 /** 기초 조작 (입문 tutorial) as 지금 할 일: the step's sentence, its meter, its one place to press. */
 /** `shorts` · `done`: the sentences and the line when done as the caller has them (입문 과정: its 문구 파일), in place of the tutorial's own. */
 /** `count`: show 'N / M 단계' (입문 과정). */
-export function TutNow({ tut, step, start, read, next, shorts, done, count }: { tut: LifeTutorial; step: number; start: TutCtx; read(): TutCtx; next?: NowNext; shorts?: readonly string[]; done?: string; count?: boolean }) {
+export function TutNow({
+  tut,
+  step,
+  start,
+  read,
+  next,
+  shorts,
+  done,
+  count,
+  free,
+}: {
+  tut: LifeTutorial;
+  step: number;
+  start: TutCtx;
+  read(): TutCtx;
+  next?: NowNext;
+  shorts?: readonly string[];
+  done?: string;
+  count?: boolean;
+  free?: BarProps['free'];
+}) {
   const cur = tut.steps[step];
   const [now, setNow] = useState<TutCtx | null>(null);
   const readRef = useRef(read);
@@ -189,7 +249,7 @@ export function TutNow({ tut, step, start, read, next, shorts, done, count }: { 
     return () => window.clearInterval(id);
   }, []);
   const of = tut.steps.length;
-  if (!cur) return <NowBar state="ok" text={done ?? `다 했어요 · ${tut.concept.term}: ${tut.concept.def}`} next={next ? { ...next, lit: true } : undefined} steps={count ? { n: of, of } : undefined} />;
+  if (!cur) return <NowBar state="ok" text={done ?? `다 했어요 · ${tut.concept.term}: ${tut.concept.def}`} next={next ? { ...next, lit: true } : undefined} steps={count ? { n: of, of } : undefined} free={free} />;
   const short = shorts?.[step] ?? cur.short;
   const targets = cur.lead && now ? cur.lead(now) : cur.target;
   // The first of the targets on screen is the one to press (a lead's others are where to go first).
@@ -199,7 +259,7 @@ export function TutNow({ tut, step, start, read, next, shorts, done, count }: { 
   const m = cur.meter && now ? cur.meter(now, start) : null;
   return (
     <>
-      <NowBar n={step + 1} text={text} meter={m} next={next ? { ...next, lit: false } : undefined} steps={count ? { n: step + 1, of } : undefined} />
+      <NowBar n={step + 1} text={text} meter={m} next={next ? { ...next, lit: false } : undefined} steps={count ? { n: step + 1, of } : undefined} free={free} />
       {targets.length > 0 && <NowMark key={step} find={pick} n={step + 1} />}
     </>
   );
@@ -218,6 +278,7 @@ export function QuestNow({
   at: atNow,
   done,
   count,
+  free,
 }: {
   steps: readonly string[];
   sels: readonly string[];
@@ -227,6 +288,7 @@ export function QuestNow({
   at?: number;
   done?: string;
   count?: boolean;
+  free?: BarProps['free'];
 }) {
   const [k, setK] = useState(0);
   // A new try starts from the first place again.
@@ -238,13 +300,13 @@ export function QuestNow({
   }
   const of = steps.length;
   const at = Math.min(atNow ?? k, Math.max(0, steps.length - 1));
-  if (phase === 'run') return <NowBar state="run" text={commonLine('running')} next={next} steps={count ? { n: of, of } : undefined} />;
-  if (phase === 'result' && passed) return <NowBar state="ok" text={done ?? '통과했어요'} next={next ? { ...next, lit: true } : undefined} steps={count ? { n: of, of } : undefined} />;
+  if (phase === 'run') return <NowBar state="run" text={commonLine('running')} next={next} steps={count ? { n: of, of } : undefined} free={free} />;
+  if (phase === 'result' && passed) return <NowBar state="ok" text={done ?? '통과했어요'} next={next ? { ...next, lit: true } : undefined} steps={count ? { n: of, of } : undefined} free={free} />;
   const text = phase === 'result' ? commonLine('notYet', { step: steps[at] ?? `▶ ${buttonName('run')}` }) : (steps[at] ?? '');
   const sel = sels[at];
   return (
     <>
-      <NowBar state={phase === 'result' ? 'no' : 'do'} n={at + 1} text={text} next={next} steps={count ? { n: at + 1, of } : undefined} />
+      <NowBar state={phase === 'result' ? 'no' : 'do'} n={at + 1} text={text} next={next} steps={count ? { n: at + 1, of } : undefined} free={free} />
       {sel && <NowMark key={at} find={() => [...document.querySelectorAll<HTMLElement>(sel)].find(shown) ?? null} n={at + 1} onHit={atNow == null ? () => setK((x) => Math.min(x + 1, sels.length - 1)) : undefined} />}
     </>
   );

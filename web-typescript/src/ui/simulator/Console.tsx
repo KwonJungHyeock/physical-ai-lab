@@ -77,7 +77,7 @@ import { blockLayout, buildPlan, carryTargets, freshPlan, makeSolver, practiceOf
 import { CELL_BY_ID, cellLayout, type CellId } from '@/engine/simulator/cell/cells';
 import { missionById, missionsOf } from '@/engine/simulator/cell/missions';
 import { LEVEL_NAME, type CellAlert } from '@/engine/simulator/cell/faults';
-import { cellChecks, repairCell } from '@/engine/simulator/cell/run';
+import { cellChecks, moveCardFor, repairCell } from '@/engine/simulator/cell/run';
 import CellCamera from './stage/CellCamera';
 import CellHud, { QuestCard } from './stage/CellHud';
 import type { CellClock } from './stage/DeskObjects';
@@ -89,7 +89,7 @@ import { runPython, warmPython } from '@/engine/python/client';
 import type { PyOutput, PyResult } from '@/engine/python/types';
 import { buildChain, forwardKinematics, forwardKinematicsFrames, liftChain, solveIk, type ChainSegment } from '@/engine/robot/kinematics';
 import { jointMax, jointMin } from '@/engine/robot/limits';
-import { ARM_STOP_DEC_DEG_S2, tcpPositionMm } from '@/engine/robot/motion';
+import { ARM_STOP_DEC_DEG_S2, armMoveDuration, tcpPositionMm } from '@/engine/robot/motion';
 import { STRAIGHT_DOWN, coordJogBlocked, currentOrientation, shiftTool, solveToolPose, toolTiltDeg, toolYawDeg, turnTool, type PointMm } from '@/engine/robot/tool';
 import { parseUrdf, type UrdfRobot } from '@/engine/robot/urdf';
 import type { ImageLike } from '@/engine/vision/color';
@@ -151,7 +151,7 @@ import { LessonCheck, LessonPlate, Projector, RecordPanel, RecordPill, TeacherKe
 import { lessonOfQuest, lessonsOf, siteOf } from '@/engine/simulator/cell/lessons';
 import { COURSE, barTitle, fromOldNumber, kindsOf, modeFor, rangeText, retiredTest, subById, subByNumber, subOfRun, testName, topicMark, unlisted, MODE_NAME, type CourseSub, type SubMode } from '@/engine/simulator/cell/course';
 import { DEFAULT_PLAN, countedIn, lessonIn, lessonStepsIn, missionSubsIn, nextIn, stepsIn, subBeforeTest, subsIn, testReady, type CoursePlan } from '@/engine/simulator/cell/courses';
-import { levelOf as courseLevelOf, mayOpen, noticeDue, noticeRead, readPlan, report } from '@/engine/simulator/cell/platform';
+import { levelOf as courseLevelOf, mayOpen, noticeDue, noticeRead, readPlan, report as reportEvent } from '@/engine/simulator/cell/platform';
 import { COURSE_LOOK, MAT_VIEW, START_SHOTS, courseViewOf } from '@/engine/simulator/cell/courseStage';
 import { CARD_HOME, G3_CARD } from '@/engine/simulator/cell/draw';
 import type { DrawRecipe } from '@/engine/simulator/cell/drawRecipe';
@@ -164,7 +164,7 @@ import { CHAPTER_TESTS, MISSION_TRIES, TESTS_KEY, inOrder, loadTests, missionWay
 import { COPYRIGHT_NOTICE, COPYRIGHT_RECORD_LINE } from '@/engine/simulator/copyright';
 import { COURSE_MEDIA } from './courseMedia.gen';
 import LocationBar, { LocKindsSwitch, type LocLesson } from './stage/LocationBar';
-import NowBar, { LiveNowBar, NowMark, QuestNow, TutNow } from './stage/NowBar';
+import NowBar, { LiveFreeBar, LiveNowBar, NowMark, QuestNow, TutNow } from './stage/NowBar';
 import JointReadout from './control/JointReadout';
 import QaPanel from './QaPanel';
 import { isQa } from './qaMode';
@@ -406,6 +406,29 @@ function mediaAt(q: string, w: number, h: number): boolean {
 }
 /** A number as the 입문 과정 screens write it: the minus sign '−' (수정 지시서 v3 파트 5-7). */
 const signedNum = (n: number) => String(n).replace('-', '−');
+
+/*
+ * 자유 실습 (응용 활동, 지시서 파트 6): a 절 done can be played with freely — its scene and panel as they are, no steps,
+ * no numbers. While it is on nothing is recorded: no event to the platform, no 완료 · 기록 in this browser.
+ */
+let FREE_ON = false;
+const report = (e: Parameters<typeof reportEvent>[0]) => {
+  if (!FREE_ON) reportEvent(e);
+};
+/** The 절 that have [자유 실습] (the others: none). */
+const FREE_SUBS: readonly string[] = ['3-1', '3-2', '3-3', '3-4', '4-1', '4-3', '4-4', '5-2', '5-3', '5-4'];
+/** 3-3 · 3-4 자유 실습: poses kept, at most. 4-3: the vertex table's rows, at most. */
+const FREE_POSES = 5;
+const FREE_ROWS = 8;
+/** 5-2 [카드 옮기기]: a corner on the mat's 5 mm grid, the whole card (120 × 80) on the mat, away from where it was. */
+const movedCard = (from: { x: number; y: number }) => {
+  const xs = Array.from({ length: 15 }, (_, k) => 110 + 5 * k);
+  const ys = Array.from({ length: 17 }, (_, k) => -90 + 5 * k);
+  for (;;) {
+    const at = { x: xs[Math.floor(Math.random() * xs.length)], y: ys[Math.floor(Math.random() * ys.length)] };
+    if (Math.abs(at.x - from.x) + Math.abs(at.y - from.y) >= 15) return at;
+  }
+};
 
 export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   /** The 트랙 this page sells (engine/simulator/tracks.ts); none = the full package. */
@@ -810,6 +833,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const [detail, setDetail] = useState(false);
   const lessonRecRef = useRef(lessonRec);
   const changeRec = useCallback((f: (r: LessonRecord) => LessonRecord) => {
+    if (FREE_ON) return;
     const next = f(lessonRecRef.current);
     if (next === lessonRecRef.current) return;
     lessonRecRef.current = next;
@@ -868,6 +892,9 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const [missionRun, setMissionRun] = useState<{ chapter: number; seen: MissionStep[]; pen: number } | null>(null);
   // 입문 과정 4장 (4-2 · 4-3 · 4-4 and the 4장 미션): what is set on the panel and what the runs drew (courseDraw.ts).
   const [draw4, setDraw4] = useState<Draw4>(DRAW4_START);
+  /** 자유 실습: the 절 played freely now (null: the 절 as a lesson); my card as it was before (put back after). */
+  const [free, setFree] = useState<string | null>(null);
+  const freeCard = useRef<MyCard | null>(null);
   const draw4Ref = useRef(draw4);
   // 입문 5-4 · 5-5 · 5장 미션: my card — its strokes (card mm), the board open, written yet; 5-4 passed; 5-5's real run and the teacher's check (this browser).
   const [myCard, setMyCard] = useState<MyCard>(MY_CARD_START);
@@ -879,7 +906,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     setMyCard((c) => {
       const n = { ...c, ...p };
       try {
-        localStorage.setItem(MY_CARD_KEY, JSON.stringify({ strokes: n.strokes, passed: n.passed, ran: n.ran55, checked: n.checked }));
+        if (!FREE_ON) localStorage.setItem(MY_CARD_KEY, JSON.stringify({ strokes: n.strokes, passed: n.passed, ran: n.ran55, checked: n.checked }));
       } catch {
         /* this session only */
       }
@@ -2460,7 +2487,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   // question's moment comes (guides.ts askNow) until the student answers over it; each once (this browser).
   const answeredRef = useRef<(key: string) => boolean>(() => false);
   answeredRef.current = (key) => preds[key] !== undefined || !!skipped[key];
-  const askId = busy && questOn && !sceneView && !courseStep && !missionRun && lifeStep && asksOf(lifeStep.id).some((a) => preds[a.key] === undefined && !skipped[a.key]) ? lifeStep.id : null;
+  const askId = busy && questOn && !free && !sceneView && !courseStep && !missionRun && lifeStep && asksOf(lifeStep.id).some((a) => preds[a.key] === undefined && !skipped[a.key]) ? lifeStep.id : null;
   useEffect(() => {
     if (!askId) return;
     const id = window.setInterval(() => {
@@ -2816,6 +2843,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   };
   /** A step passed (by blocks, code or the terminal): the next one opens. */
   const recordPass = (id: string) => {
+    if (FREE_ON) return;
     if (track) changeRec((r) => recPassed(r, id, Date.now()));
     const sub = course ? subOfRun('quest', id) : undefined;
     if (sub) report({ sub: sub.id, mode: 'practice', what: 'passed', at: Date.now() });
@@ -3344,6 +3372,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
    * Move to joint angles from the control panel. `jog`: a held jog key — it
    * skips a tick while the arm is still busy with the previous one, quietly.
    */
+  /** The last joint move asked for (3-4 times it: the move's own length at its speed, as the simulation plays it). */
+  const lastMove = useRef<{ from: number[]; to: number[]; speed: number } | null>(null);
   const goJoints = async (target: number[], what: string, jog = false) => {
     if (!loaded || busy) return;
     if (jog && robotMode && robot?.running) return;
@@ -3378,6 +3408,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       if (!res.ok && !(jog && res.status === 409)) addLog('err', `로봇: ${res.error}`);
       return;
     }
+    lastMove.current = { from: from.angles.slice(), to: to.slice(), speed };
     await runSteps([{ type: 'move', joints: to, speed, line: 0 }], { reset: false });
   };
 
@@ -4164,6 +4195,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   };
 
   const recordPose = () => {
+    if (free && Object.keys(poses).length >= FREE_POSES) return;
     const n = Object.keys(poses).length + 1;
     let name = `내 자세 ${n}`;
     for (let k = n; poses[name]; k += 1) name = `내 자세 ${k + 1}`;
@@ -4207,6 +4239,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       setLifeTut({ ...lifeTut, step: next, start: now, mem: {} });
       // The next step's panel opens by itself (the strip and its ringed control are there).
       if (next < t.steps.length) return void (t.steps[next].panel !== step.panel && openTutPanelRef.current(t.steps[next].panel));
+      if (FREE_ON) return;
       setTutDone((d) => {
         const n = { ...d, [t.id]: true };
         try {
@@ -4341,7 +4374,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const poseNames = Object.keys(poses);
   const recordRow = (
     <div className={css.poseList}>
-      <button className={`${css.jogWide} ${css.poseSave}`} type="button" disabled={busy} onClick={recordPose}>
+      <button className={`${css.jogWide} ${css.poseSave}`} type="button" disabled={busy || (!!free && poseNames.length >= FREE_POSES)} onClick={recordPose}>
         <Icon name="save" size={15} /> {course ? buttonName('savePose') : '지금 자세 저장하기'}
       </button>
       {poseNames.length === 0 && (
@@ -4397,6 +4430,15 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
           ))}
         </ul>
       )}
+      {/* 자유 실습 (3-3 · 3-4): at most five poses, and [차례로 실행] — the saved poses in order at the speed set. */}
+      {free && poseNames.length > 0 && (
+        <div className={css.poseRow}>
+          <button type="button" className={css.jogWide} data-step="play-poses" disabled={busy} onClick={() => void playPoses()}>
+            <Icon name="play" size={15} /> {buttonName('playPoses')}
+          </button>
+        </div>
+      )}
+      {free && poseNames.length >= FREE_POSES && <p className={css.poseHelp}>{commonLine('posesFull', { n: FREE_POSES })}</p>}
       {/* (입문 과정: no word of the blocks — 수정 지시서 v4 파트 6-4.) */}
       {poseNames.length > 0 && !course && (
         <p className={css.subNote}>{level === 'basic' ? '블록의 [자세로 가기]에서도 이 이름으로 쓸 수 있어요.' : '마우스를 올리면 각도가 보여요. send_angles([...]) 에 그대로 쓸 수 있어요.'}</p>
@@ -4632,6 +4674,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   /* --- 입문 과정 절 built for the course (courseSteps.ts) ------------------------------- */
   const patchStep = (p: Partial<NonNullable<typeof courseStep>>) => setCourseStep((c) => (c ? { ...c, ...p } : c));
   const markStepDone = (id: CourseStepId, extra?: { misses?: number }) => {
+    if (FREE_ON) return;
     setStepsDone((d) => {
       const n = { ...d, [id]: true };
       try {
@@ -4954,10 +4997,11 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     const ink: Pt[][] = world.current.trail.filter((s) => s.length > 1).map((s) => s.map(([x, y]) => [x, y] as Pt));
     const scene = !!show;
     const now = courseStepRef.current;
+    // (자유 실습: the lines pile up — a pattern — till [선 모두 지우기].)
     const keep = (color: string) => {
       world.current.trail = [];
       world.current.version += 1;
-      setDraw4((x) => ({ ...x, lines: [...x.lines.filter((l) => l.color !== color), ...ink.map((p) => ({ pts: p, color }))] }));
+      setDraw4((x) => ({ ...x, lines: [...(FREE_ON ? x.lines : x.lines.filter((l) => l.color !== color)), ...ink.map((p) => ({ pts: p, color }))] }));
     };
     if (id === '4-2') {
       const r = lineReport(ink);
@@ -5003,7 +5047,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     }
     const lines: Measure[] = r.items.map((i, k) => ({ key: String(k), label: `${i.ok ? '✓' : '✗'} ${i.label}${i.detail ? ` · ${i.detail}` : ''}` }));
     setDraw4((x) => ({ ...x, results: lines }));
-    if (scene || !now || now.id !== '4-3') return;
+    // (자유 실습: what the ink shows, against the corners typed; not whether it is the 교안's shape.)
+    if (scene || !now || now.id !== '4-3' || FREE_ON) return;
     if (!ok) return say(failLine('4-3', 'notFinished'));
     const want = now.step < 2 ? TRIANGLE : SQUARE;
     const shape = now.step < 2 ? '세모' : '네모';
@@ -5075,7 +5120,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     const items = [...r.items, { label: checkName('safe'), ok, detail: undefined }];
     const passed = ok && r.ok;
     patchCard({ ran: true, passed: c.passed || passed, results: items.map((i, k) => ({ key: String(k), label: `${i.ok ? '✓' : '✗'} ${i.label}${i.detail ? ` · ${i.detail}` : ''}` })) });
-    if (courseStepRef.current?.id !== '5-4') return;
+    if (courseStepRef.current?.id !== '5-4' || FREE_ON) return;
     if (passed) {
       patchStep({ step: 3, note: null });
       markStepDone('5-4');
@@ -5215,12 +5260,16 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     if (busy) {
       fiveMove.current = { t0: performance.now(), pct: jogSpeed };
       stepStopped.current = false;
+      lastMove.current = null;
       return;
     }
     const m = fiveMove.current;
     fiveMove.current = null;
     if (!m) return;
-    const secs = Math.round((performance.now() - m.t0) / 100) / 10;
+    // The move's time as the simulation plays it (its joints' travel at the speed set): not the clock on the wall,
+    // which a faster simulation (×2 · ×4) and the run's own start and settle would make the same for any speed (지시서 파트 8).
+    const mv = lastMove.current;
+    const secs = Math.round((mv ? armMoveDuration(mv.from, mv.to, mv.speed) : (performance.now() - m.t0) / 1000) * 10) / 10;
     if (stepStopped.current) {
       if (st.step === 3) {
         patchStep({ step: 4, note: null });
@@ -5363,9 +5412,10 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     if (t) report({ sub: t, mode: 'practice', what: right === 5 ? 'passed' : 'done', at: Date.now() });
   };
   /** Open a 절 in a kind (장면 보기 · 실습 하기; the one it has when not that). */
-  const openSub = (s: CourseSub, want: SubMode = 'practice') => {
+  const openSub = (s: CourseSub, want: SubMode = 'practice', keepFree = false) => {
     const mode = modeFor(s, want);
     if (busy || !s.run || !mode) return;
+    if (!keepFree) endFree(false);
     drawKeep.current = null;
     setEntered(true);
     toured.current = true;
@@ -5386,6 +5436,94 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     const shot = mode === 'practice' ? START_SHOTS[s.id] : undefined;
     if (shot) window.setTimeout(() => stageApi.current?.lookAt(shot.eye, shot.target), 1200);
   };
+  /* --- 자유 실습 (응용 활동, 지시서 파트 6) ------------------------------------------------- */
+  /** The 절 with its steps behind it (as done): no step to follow, no number; 3-3 · 3-4: the poses panel. */
+  const asDone = (id: string) => {
+    const s = subById(id);
+    if (!s?.run) return;
+    if (s.run.kind === 'step' && isCourseStep(s.run.id)) {
+      const n = COURSE_STEPS[s.run.id].length;
+      setCourseStep((c) => (c ? { ...c, step: n, note: null } : c));
+    }
+    if (s.run.kind === 'tutorial')
+      setLifeTut((t) => {
+        const tt = t ? lifeTutorialById(t.id) : undefined;
+        return t && tt ? { ...t, step: tt.steps.length } : t;
+      });
+  };
+  const enterFree = () => {
+    if (!subNow || busy) return;
+    FREE_ON = true;
+    freeCard.current = myCardRef.current;
+    setFree(subNow.id);
+    asDone(subNow.id);
+    if (subNow.id === '3-3' || subNow.id === '3-4') openSection('pose');
+  };
+  /** Out of 자유 실습: my card as it was; `back`: the 절 opened again as a lesson (done, so no steps to follow). */
+  const endFree = (back = true) => {
+    if (!FREE_ON) return;
+    const id = free;
+    FREE_ON = false;
+    moveCardFor(null, null);
+    if (freeCard.current) setMyCard(freeCard.current);
+    freeCard.current = null;
+    setFree(null);
+    const s = back && id ? subById(id) : undefined;
+    if (!s) return;
+    openSub(s, 'practice', true);
+    asDone(s.id);
+  };
+  /** [처음 상태로]: the 절's start again (its scene and panel), still in 자유 실습. */
+  const resetFree = () => {
+    const s = free ? subById(free) : undefined;
+    if (!s || busy) return;
+    moveCardFor(null, null);
+    if (freeCard.current) setMyCard(freeCard.current);
+    openSub(s, 'practice', true);
+    asDone(s.id);
+    if (s.id === '3-3' || s.id === '3-4') openSection('pose');
+  };
+  /** 5-2 [카드 옮기기]: the card to another place on the mat — read its corner off the grid and set 보정 again. */
+  const moveCard = () => {
+    const run = world.current.cell;
+    const d = run?.draw;
+    if (!run || !d || busy) return;
+    const at = movedCard(d.place);
+    moveCardFor(run.mission, at);
+    d.place = { ...at };
+    if (d.corner) d.corner = { ...at };
+    world.current.trail = [];
+    world.current.version += 1;
+    setCellResult(null);
+  };
+  /** 4-4 [선 모두 지우기]: the lines drawn so far. */
+  const clearLines = () => {
+    world.current.trail = [];
+    world.current.version += 1;
+    setDraw4((x) => ({ ...x, lines: [], counts: [] }));
+  };
+  /** 3-3 · 3-4 [차례로 실행]: the saved poses in the order saved, at the speed set now. */
+  const playPoses = async () => {
+    if (!loaded || busy || robotMode) return;
+    const speed = Math.max(5, Math.round((40 * jogSpeed) / 100));
+    let from = { ...world.current, angles: basePose() };
+    const steps: Step[] = [];
+    for (const n of Object.keys(poses)) {
+      const to = poses[n].map((a, i) => Math.min(jointMax()[i], Math.max(jointMin()[i], a)));
+      const why = moveProblem(loaded.chain, from, to);
+      if (why) {
+        addLog('err', `${n}: ${why}`);
+        setBadge({ kind: 'stop', text: why });
+        return;
+      }
+      steps.push({ type: 'move', joints: to, speed, line: 0 });
+      from = { ...from, angles: to };
+    }
+    if (steps.length) await runSteps(steps, { reset: false });
+  };
+  /** [자유 실습] on the line: the 절 done, one that has it, as a lesson now. */
+  const freeKey = course && !sceneView && !free && subNow && FREE_SUBS.includes(subNow.id) && subDone(subNow) ? { onClick: enterFree, disabled: busy } : undefined;
+
   /** Every way into a 절 (the address, the lists, the kinds, [다음 단계]): asked first whether it may open. */
   const requestSub = async (s: CourseSub, want: SubMode) => {
     const mode = modeFor(s, want);
@@ -6683,7 +6821,26 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
         {/* 입문 과정: 지금 할 일, one line under the 위치 줄 in every scene (피드백 v2 파트 3). */}
         {course && loaded && pastIntro && view === 'sim' && !roadmapOpen && (sceneView || courseStep || courseTest !== null || lifeTut || (cellAt && lifeStep && questPhase)) ? (
           <div className={css.nowSlot}>
-          {sceneView && subNow ? (
+          {free && subNow ? (
+            // 자유 실습: one line — no number, no steps; [처음 상태로] · [자유 실습 끝내기] (4-4 · 5-2: their own key before them).
+            (() => {
+              const extra = free === '4-4' ? { label: buttonName('clearLines'), onClick: clearLines } : free === '5-2' ? { label: buttonName('moveCard'), onClick: moveCard } : undefined;
+              const keys = { onReset: resetFree, onEnd: () => endFree(), disabled: busy, extra };
+              return free === '4-1' ? (
+                <LiveFreeBar
+                  live={live}
+                  text={commonLine('free')}
+                  freeKeys={keys}
+                  valuesOf={(a) => {
+                    const t = tipOf(a);
+                    return t ? (['X', 'Y', 'Z'] as const).map((k) => ({ name: k, v: signedNum(Math.round(t[k.toLowerCase() as 'x' | 'y' | 'z'] * 10) / 10) })) : [];
+                  }}
+                />
+              ) : (
+                <NowBar text={commonLine('free')} freeKeys={keys} />
+              );
+            })()
+          ) : sceneView && subNow ? (
             // 장면 보기: which scene, and [다시 보기] (moved here from the 위치 줄: the 절's name keeps its room there).
             <NowBar text={commonLine('sceneView', { title: barTitle(subNow.id, subNow.title) })} replay={{ onClick: () => setSceneRun((n) => n + 1), disabled: busy }} />
           ) : courseTest !== null ? (
@@ -6711,7 +6868,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
               const done = !!stepsDone[courseStep.id] && (courseStep.step >= lines.length || (courseStep.id === '1-3' && courseStep.stopped && courseStep.range));
               const nx = subNext ? { onClick: () => goNext(subNext), lit: done } : undefined;
               // 'N / M 단계' (수정 지시서 v4 파트 2-5): the step reached of the 절's steps.
-              if (done) return <NowBar state="ok" text={doneLine(courseStep.id)} next={nx} steps={{ n: lines.length, of: lines.length }} />;
+              if (done) return <NowBar state="ok" text={doneLine(courseStep.id)} next={nx} steps={{ n: lines.length, of: lines.length }} free={freeKey} />;
               // 1-1: the card goes on after the hand left — watched, nothing to press.
               if (courseStep.id === '1-1' && courseStep.step === 3) return <NowBar state="run" text={failLine('1-1', 'resume')} next={nx} steps={{ n: lines.length, of: lines.length }} />;
               const at = Math.min(courseStep.step, lines.length - 1);
@@ -6738,6 +6895,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                     text={(courseStep.note ?? line.text).replace('{realNow}', buttonName(robotMode ? 'real' : 'export'))}
                     state={courseStep.note ? 'no' : 'do'}
                     next={nx}
+                    free={freeKey}
                   />
                   {/* (동결 뒤 고침 파트 3-2: no number on the ▶ a 잠깐 퀴즈 holds; back once it is answered.) */}
                   {sel && !moment && <NowMark key={`${courseStep.id}:${at}:${sel}`} find={() => [...document.querySelectorAll<HTMLElement>(sel)].find((e) => e.getBoundingClientRect().width > 0) ?? null} n={at + 1} />}
@@ -6745,7 +6903,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
               );
             })()
           ) : lifeTut && lifeTutorialById(lifeTut.id) ? (
-            <TutNow key={lifeTut.id} count={course} tut={lifeTutorialById(lifeTut.id)!} step={lifeTut.step} start={lifeTut.start} read={() => tutCtxRef.current()} shorts={course && subNow ? stepTexts(subNow.id) : undefined} done={course && subNow ? doneLine(subNow.id) : undefined} next={subNext ? { onClick: () => goNext(subNext), lit: false } : undefined} />
+            <TutNow key={lifeTut.id} count={course} tut={lifeTutorialById(lifeTut.id)!} step={lifeTut.step} start={lifeTut.start} read={() => tutCtxRef.current()} shorts={course && subNow ? stepTexts(subNow.id) : undefined} done={course && subNow ? doneLine(subNow.id) : undefined} next={subNext ? { onClick: () => goNext(subNext), lit: false } : undefined} free={freeKey} />
           ) : lifeStep && questPhase ? (
             <QuestNow
               key={lifeStep.id}
@@ -6757,6 +6915,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
               phase={moment || lessonUi ? 'run' : questPhase}
               passed={cellResult}
               next={subNext ? { onClick: () => goNext(subNext), lit: !!lifeQuest && !!lessonRec.quests[lifeQuest]?.passed } : undefined}
+              free={freeKey}
             />
           ) : null}
           </div>
@@ -7512,7 +7671,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                             id={missionRun ? undefined : (courseStep?.id as CourseStepId)}
                             busy={busy}
                             linear={courseStep?.id === '4-2' && !missionRun ? { on: draw4.linear, locked: courseStep.step < 2, onToggle: toggleLinear } : { on: true, locked: true, onToggle: () => {} }}
-                            vertices={missionRun || courseStep?.id === '4-3' ? { rows: draw4.rows, max: missionRun ? 5 : 4, onChange: (rows) => patchDraw4({ rows }) } : undefined}
+                            vertices={missionRun || courseStep?.id === '4-3' ? { rows: draw4.rows, max: missionRun ? 5 : free === '4-3' ? FREE_ROWS : 4, onChange: (rows) => patchDraw4({ rows }) } : undefined}
                             circle={
                               courseStep?.id === '4-4' && !missionRun
                                 ? { ...draw4.circle, count: draw4.count, counts: CIRCLE_COUNTS, onChange: (circle) => patchDraw4({ circle }), onCount: (count) => patchDraw4({ count }) }
