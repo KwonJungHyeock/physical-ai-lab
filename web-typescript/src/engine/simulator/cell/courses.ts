@@ -1,7 +1,8 @@
 /**
- * 구성 (입문 트랙): the course's 절 grouped into 차시 (8차시 지시서). Two come with the 매칭 표
- * (course.ts): 8차시 (전체, the default) and 4차시 (집중, some 절 of the 8). The platform picks one
- * for a class — or its own list — and hands it over (platform.ts); with none handed over, 8차시.
+ * 구성 (입문 트랙): the course's 절 grouped into 차시 (8차시 지시서). Three come with the 매칭 표
+ * (course.ts): 12차시 (전체, the default), 8차시 and 4차시 (집중, some 절 of the 8). The platform picks one
+ * for a class — or its own list — and hands it over (platform.ts); with none handed over, 12차시.
+ * 12차시 gives a 수행평가 a 차시 of its own (`testLessons`: 3-5 the 5th, 5-6 the 12th with 6장).
  * A 절's number is the same in every course; a 절 a course leaves out is just not in its list.
  *
  * 수행평가 (수정 지시서 v4 파트 1): two — 중간 (3-5) and 마무리 (5-6). A course names those it has; each
@@ -15,13 +16,15 @@ import TABLE from '../../../../public/course/mycobot-280-1.json';
 import { COURSE, COURSE_SUBS, unlisted, type CourseChapter, type CourseSub } from './course';
 
 export interface CoursePlan {
-  /** 'full8', 'focus4', or the platform's own ('class'). */
+  /** 'full12', 'full8', 'focus4', or the platform's own ('class'). */
   id: string;
   title: string;
-  /** '8차시 (전체)'. */
+  /** '12차시 (전체)'. */
   short: string;
-  /** The 절 of each 차시, in order. */
+  /** The 절 of each 차시, in order (a 차시 that holds only a 수행평가 has none). */
   lessons: readonly (readonly string[])[];
+  /** A 수행평가 given a 차시 of its own (12차시): its number → that 차시 (1 = the first); one not named follows its chapter's last 절. */
+  testAt: Readonly<Record<string, number>>;
   /** The 수행평가 the course has, by number ('3-5', '5-6'): each follows its chapter's last 절 in the course. */
   tests: readonly string[];
   /** The 수행평가 have their O · X (8차시: 상 · 중 · 하 from them); not: the mission only, and each 차시's last 절's mission is recorded (4차시). */
@@ -33,16 +36,20 @@ const listable = (id: string) => COURSE_SUBS.some((s) => s.id === id && !unliste
 
 /** A plan from lessons of 절 numbers (the table's or the platform's): unknown and 사용 안 함 절 dropped, empty 차시 too. */
 /** `tests`: the 수행평가 by number; true (or left out): every one in the table; false: none. `testsMissionOnly`: no O · X. */
-export function planOf(p: { id: string; title?: string; short?: string; lessons: readonly (readonly string[])[]; tests?: boolean | readonly string[]; testsMissionOnly?: boolean }): CoursePlan {
-  const lessons = p.lessons.map((l) => l.filter(listable)).filter((l) => l.length);
+/** `testLessons`: a 수행평가's own 차시 (1 = the first); that 차시 is kept though it lists no 절. */
+export function planOf(p: { id: string; title?: string; short?: string; lessons: readonly (readonly string[])[]; tests?: boolean | readonly string[]; testsMissionOnly?: boolean; testLessons?: Readonly<Record<string, number>> }): CoursePlan {
   const every = COURSE.flatMap((c) => (c.test ? [c.test] : []));
   const tests = p.tests === false ? [] : Array.isArray(p.tests) ? every.filter((id) => (p.tests as readonly string[]).includes(id)) : every;
-  return { id: p.id, title: p.title ?? TABLE.name, short: p.short ?? `${lessons.length}차시`, lessons, tests, ox: tests.length > 0 && !p.testsMissionOnly };
+  const own = Object.entries(p.testLessons ?? {}).filter(([id, n]) => tests.includes(id) && n >= 1 && n <= p.lessons.length);
+  const kept = p.lessons.map((l, i) => ({ ids: l.filter(listable), n: i + 1 })).filter((l) => l.ids.length || own.some(([, n]) => n === l.n));
+  const lessons = kept.map((l) => l.ids);
+  const testAt = Object.fromEntries(own.map(([id, n]) => [id, kept.findIndex((l) => l.n === n) + 1]));
+  return { id: p.id, title: p.title ?? TABLE.name, short: p.short ?? `${lessons.length}차시`, lessons, testAt, tests, ox: tests.length > 0 && !p.testsMissionOnly };
 }
 
 export const COURSES: readonly CoursePlan[] = TABLE.courses.map((c) => planOf(c));
 
-/** With no course handed over: the table's default (8차시). */
+/** With no course handed over: the table's default (12차시). */
 export const DEFAULT_PLAN: CoursePlan = COURSES.find((c, i) => TABLE.courses[i].default) ?? COURSES[0];
 
 /** The 절 of a course, in order. */
@@ -78,13 +85,14 @@ export function stepsIn(c: CoursePlan): CourseStep[] {
 /** A chapter's 수행평가 is in the app (its questions came): until then it shows as 준비 중 and is skipped. */
 export const testReady = (t: CourseSub) => !!t.run;
 
-/** The 차시 of a course and their steps (a 수행평가 in the 차시 of the chapter's last 절). */
+/** The 차시 of a course and their steps (a 수행평가 in its own 차시 when the course gives it one, else in the 차시 of the chapter's last 절). */
 export function lessonStepsIn(c: CoursePlan): { n: number; steps: CourseStep[] }[] {
   const out = c.lessons.map((_, i) => ({ n: i + 1, steps: [] as CourseStep[] }));
   let at = 0;
   for (const x of stepsIn(c)) {
     if (x.kind === 'sub') at = lessonIn(c, x.sub.id) - 1;
-    out[at]?.steps.push(x);
+    const own = x.kind === 'test' ? c.testAt[x.sub.id] : undefined;
+    out[own ? own - 1 : at]?.steps.push(x);
   }
   return out;
 }

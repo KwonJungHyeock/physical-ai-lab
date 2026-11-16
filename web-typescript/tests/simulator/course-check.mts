@@ -1,5 +1,5 @@
 /**
- * 입문 과정 (매칭 표 · 구성): the table and the two courses agree — 8차시 by default and 4차시 inside it,
+ * 입문 과정 (매칭 표 · 구성): the table and the three courses agree — 12차시 by default, 8차시, and 4차시 inside it,
  * no 사용 안 함 절 listed, 차시 counted from the course, a 수행평가 after each chapter's last 절 (8차시
  * only), the 학습 기록 at the end, a 선택 절 never counted, and the kinds as decided (3-3 · 4-1: no
  * 장면 보기; 4-3 · 5-1 · 5-2 · 5-3: both).
@@ -11,13 +11,33 @@ import assert from 'node:assert/strict';
 const C = await import('../../src/engine/simulator/cell/course');
 const K = await import('../../src/engine/simulator/cell/courses');
 
-const full = K.DEFAULT_PLAN;
+const whole = K.DEFAULT_PLAN;
+const full = K.COURSES.find((c) => c.id === 'full8')!;
 const focus = K.COURSES.find((c) => c.id === 'focus4');
-assert.ok(focus, '4차시 구성이 있어요');
-assert.equal(K.COURSES.length, 2, '구성은 8차시 · 4차시 둘');
-assert.equal(full.id, 'full8');
+assert.ok(full && focus, '8차시 · 4차시 구성이 있어요');
+assert.equal(K.COURSES.length, 3, '구성은 12차시 · 8차시 · 4차시 셋');
+assert.equal(whole.id, 'full12');
+assert.equal(whole.lessons.length, 12);
 assert.equal(full.lessons.length, 8);
 assert.equal(focus.lessons.length, 4);
+// 12차시 (지시서 파트 5): the same 19 절 as the 8차시, in this order; 3-5 a 차시 of its own (5th), 5-6 with 6장 (12th).
+assert.deepEqual(whole.lessons.flat(), full.lessons.flat(), '12차시와 8차시는 같은 절');
+assert.deepEqual(
+  whole.lessons.map((l) => l.join(' ')),
+  ['1-1 1-2 1-3', '2-1 2-2 2-3', '3-1 3-2', '3-3 3-4', '', '4-1 4-2', '4-3', '4-4', '5-1 5-2', '5-3', '5-4 5-5', ''],
+);
+assert.deepEqual(
+  K.lessonStepsIn(whole).flatMap((l) => l.steps.filter((x) => x.kind === 'test').map((x) => `${l.n}:${x.sub.id}`)),
+  ['5:3-5', '12:5-6'],
+);
+assert.deepEqual([whole.tests, whole.ox, K.countedIn(whole).length], [['3-5', '5-6'], true, 20], '12차시: 수행평가 2 · 완료 20 (8차시와 같음)');
+assert.deepEqual(K.stepsIn(whole).map((x) => x.sub.id), K.stepsIn(full).map((x) => x.sub.id), '절 · 수행평가 차례는 8차시와 같음');
+// 장 카드 차시: 3장 3~5차시 (중간 수행평가 포함), 5장 9~12차시.
+const spanOf = (plan: typeof whole, ch: number) => {
+  const ns = K.lessonStepsIn(plan).filter((l) => l.steps.some((x) => x.sub.chapter === ch)).map((l) => l.n);
+  return `${Math.min(...ns)}~${Math.max(...ns)}`;
+};
+assert.deepEqual([1, 2, 3, 4, 5].map((ch) => spanOf(whole, ch)), ['1~1', '2~2', '3~5', '6~8', '9~12']);
 
 // Every 절 of a course is in the table, listable, and the 4차시 is inside the 8차시.
 const ids = new Set(C.COURSE_SUBS.map((s) => s.id));
@@ -196,10 +216,12 @@ const own = P.planFromPlatform({ lessons: [['1-1', '9-9'], ['unused-limits'], ['
 assert.deepEqual(own.lessons, [['1-1'], ['5-1', '5-2']]);
 assert.deepEqual([own.tests, own.ox], [['3-5', '5-6'], true], '넘겨받은 구성: 표의 수행평가 (그 장의 마지막 절이 있을 때 열림)');
 assert.deepEqual(P.planFromPlatform({ lessons: [['1-1']], tests: false }).tests, []);
-// ?course=4 (시험용): the 4차시 구성; anything else: the default.
+// ?course=12 · 8 · 4: that 구성; anything else (none handed over): the default, 12차시.
 assert.equal((await P.readPlan('4')).lessons.length, 4);
-assert.equal((await P.readPlan(null)).lessons.length, 8);
-assert.equal((await P.readPlan('9')).lessons.length, 8);
+assert.equal((await P.readPlan('8')).lessons.length, 8);
+assert.equal((await P.readPlan('12')).lessons.length, 12);
+assert.equal((await P.readPlan(null)).lessons.length, 12);
+assert.equal((await P.readPlan('9')).lessons.length, 12);
 
 // 수행평가 준비 중: shown in the 차시 of its chapter's last 절, skipped, never counted.
 const ls = K.lessonStepsIn(full);
@@ -385,4 +407,4 @@ assert.deepEqual(
 );
 assert.equal(C.shortTitle('관절 하나씩 움직이기: 방향과 한계'), '관절 하나씩 움직이기');
 
-console.log(`입문 과정: 표 ${C.COURSE_SUBS.length}절 · 8차시 ${full.lessons.flat().length}절 · 4차시 ${focus.lessons.flat().length}절 · 수행평가 ${tests.length} — 통과`);
+console.log(`입문 과정: 표 ${C.COURSE_SUBS.length}절 · 12차시 ${whole.lessons.flat().length}절 · 8차시 ${full.lessons.flat().length}절 · 4차시 ${focus.lessons.flat().length}절 · 수행평가 ${tests.length} — 통과`);
