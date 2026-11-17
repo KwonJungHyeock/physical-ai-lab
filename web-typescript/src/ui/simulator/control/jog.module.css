@@ -2442,3 +2442,8 @@
 [data-course] .cap small {
   font-size: 16px;
 }
+/* 입문 과정 (결정 회신 파트 9-3): the joint 조작판's blocks 16 px apart on a window shown larger (1920 × 1080), 3-4
+   left out (its time box above: 16 there scrolls) — console.module.css has the panel's side. */
+:global(html[data-zoomed][data-course]:not(:has([aria-label='3-4 조작']))) .jog:has(.rows) {
+  gap: 16px;
+}
