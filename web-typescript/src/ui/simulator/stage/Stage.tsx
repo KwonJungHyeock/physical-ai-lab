@@ -52,7 +52,9 @@ import {
   NeutralToneMapping,
   NoToneMapping,
   PerspectiveCamera,
+  PlaneGeometry,
   Scene,
+  ShadowMaterial,
   Vector3,
   type BufferAttribute,
   WebGLRenderTarget,
@@ -512,6 +514,8 @@ function World({
   useEffect(() => {
     if (ghost) ghostArm.setAngles(ghost);
   }, [ghost, ghostArm]);
+  /** 입문 과정 교안 렌더 (파트 13, only with ?render=1): the joint the render tool lights in the course's orange. */
+  const renderFocus = useRef<number | null>(null);
   // A joint in caution or danger (engine/robot/jointAlert.ts: its motor's load, or its limit near):
   // the housing that holds its motor turns amber or red, pulsing when red. Its own copy of the materials.
   const tracker = useMemo(() => new AlertTracker(chain, tcpMm ?? 0, spec.family === 'mycobot280', arm.joints.length), [chain, tcpMm, spec, arm]);
@@ -559,7 +563,7 @@ function World({
     housings.forEach((h, i) => {
       const own = i < arm.joints.length;
       const warn = own ? (touching?.includes(i + 1) ? 2 : (alerts[i]?.level ?? 0)) : 0;
-      const lv = warn || (own && ringJoint === i + 1 ? 3 : 0) || (focusJoint != null && focusJoint === i ? 4 : 0);
+      const lv = warn || (own && ringJoint === i + 1 ? 3 : 0) || ((focusJoint ?? renderFocus.current) != null && (focusJoint ?? renderFocus.current) === i ? 4 : 0);
       if (lv === h.level && lv < 2) return;
       h.level = lv;
       for (const { m, color } of h.mats) {
@@ -891,6 +895,98 @@ function World({
     return attachAt(arm.flange, toolAxes, tcpMm / 1000);
   }, [arm, toolAxes, tcpMm, display.toolAxes]);
   useEffect(() => (display.jointAxes ? addJointAxes(arm.joints, SCREEN_ONLY) : undefined), [arm, display.jointAxes]);
+
+  // 입문 과정 교안 렌더 (파트 13): only on the course stage opened with ?render=1 — a hook for the render tool
+  // (tools/check/course-walk/render13.cjs). It reaches the scene, the camera and the arm, and puts on and off the
+  // drawing aids already here (작업 범위 원 · 손끝 축 · 관절 강조), the same arm see-through (a pose before or a saved
+  // one) and a floor that only takes the shadows. Nothing else is drawn; without ?render=1 none of it exists.
+  const sceneNow = useThree((s) => s.scene);
+  useEffect(() => {
+    if (!courseStage || !new URLSearchParams(window.location.search).has('render')) return;
+    const w = window as unknown as { __render?: unknown };
+    const added: { parent: Object3D; o: Object3D }[] = [];
+    const put = (parent: Object3D, o: Object3D) => {
+      parent.add(o);
+      added.push({ parent, o });
+    };
+    let axesOff: (() => void) | undefined;
+    const three = (p: readonly number[]) => new Vector3(p[0], p[2], -p[1]).multiplyScalar(0.001);
+    w.__render = {
+      gl,
+      scene: sceneNow,
+      camera,
+      world,
+      arm,
+      /** The camera from eye to target (robot frame, mm), at once, kept there (not re-framed on a resize). */
+      look: (eye: readonly number[], target: readonly number[]) => {
+        const c = getThree().controls as CameraControlsImpl | null;
+        const e = three(eye);
+        const t = three(target);
+        held.current = true;
+        userMoved.current = true;
+        if (c) {
+          void c.setLookAt(e.x, e.y, e.z, t.x, t.y, t.z, false);
+          c.update(0);
+        }
+        camera.position.copy(e);
+        camera.lookAt(t);
+        camera.updateMatrixWorld();
+        return { controls: !!c, at: camera.position.toArray() };
+      },
+      /** The arm see-through at these angles (degrees): grey, or the colour given. */
+      ghost: (angles: number[], color = '#7d8a97', opacity = 0.3) => {
+        const g = buildArm(robot, chain, nodes, { dark: spec.dark, flange: spec.flange, textures: spec.textures, flangeLink: spec.flangeLink, finish: spec.finish });
+        const mat = new MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false });
+        // (The base never moves: left out, as the course's own see-through target does — it would only cover the real one.)
+        const moving = new Set<Object3D>();
+        g.joints[0]?.group.traverse((o) => moving.add(o));
+        g.root.traverse((o) => {
+          const m = o as Mesh;
+          if (!m.isMesh) return;
+          m.material = mat;
+          m.castShadow = false;
+          m.receiveShadow = false;
+          if (!moving.has(m)) m.visible = false;
+        });
+        g.setAngles(angles);
+        if (arm.root.parent) put(arm.root.parent, g.root);
+      },
+      /** The 작업 범위 circle; on the render's light background its pale rim is drawn dark (`dark`), or it would not show. */
+      reach: (on: boolean, dark = '#3a4652') => {
+        if (!on || !root.current) return void root.current?.remove(reach);
+        reach.traverse((o) => {
+          const m = o as Mesh;
+          if (m.isMesh && m.geometry?.type !== 'PlaneGeometry') (m.material as MeshBasicMaterial).color.set(dark);
+        });
+        put(root.current, reach);
+      },
+      toolAxes: (on: boolean) => {
+        axesOff?.();
+        axesOff = on ? attachAt(arm.flange, toolAxes, tcpMm / 1000) : undefined;
+      },
+      focus: (joint: number | null) => {
+        renderFocus.current = joint;
+      },
+      /** A floor that shows only the shadows on it, at z (robot frame, mm). */
+      floor: (zMm: number, opacity = 0.18) => {
+        const f = new Mesh(new PlaneGeometry(6, 6), new ShadowMaterial({ opacity }));
+        f.position.set(0, 0, zMm / 1000);
+        f.receiveShadow = true;
+        if (root.current) put(root.current, f);
+      },
+      clear: () => {
+        for (const { parent, o } of added.splice(0)) parent.remove(o);
+        axesOff?.();
+        axesOff = undefined;
+        renderFocus.current = null;
+      },
+    };
+    return () => {
+      for (const { parent, o } of added.splice(0)) parent.remove(o);
+      axesOff?.();
+      delete w.__render;
+    };
+  }, [courseStage, gl, sceneNow, camera, world, arm, robot, chain, nodes, spec, reach, toolAxes, tcpMm, getThree]);
 
   return (
     <group ref={root} rotation={[-Math.PI / 2, 0, 0]}>
