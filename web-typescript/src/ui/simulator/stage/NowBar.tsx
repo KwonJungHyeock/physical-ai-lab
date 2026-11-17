@@ -160,7 +160,7 @@ export function findTarget(t: TutTarget): HTMLElement | null {
  */
 export function NowMark({ find, n, onHit }: { find: () => HTMLElement | null; n: number; onHit?: () => void }) {
   const [at, setAt] = useState<DOMRect | null>(null);
-  const [sight, setSight] = useState<{ top: number; bottom: number }>({ top: 2, bottom: Infinity });
+  const [sight, setSight] = useState<{ top: number; bottom: number; zoom: number }>({ top: 2, bottom: Infinity, zoom: 1 });
   const el = useRef<HTMLElement | null>(null);
   const findRef = useRef(find);
   const hitRef = useRef(onHit);
@@ -210,7 +210,7 @@ export function NowMark({ find, n, onHit }: { find: () => HTMLElement | null; n:
     <>
       <span className={css.ring} style={{ left: at.left - 4, top, width: at.width + 8, height: bottom - top }} aria-hidden="true" />
       {/* The badge sits outside the ring's top-left corner: nothing inside the ring is covered (수정 지시서 v3 파트 4-1). */}
-      <i className={css.badge} style={{ left: Math.max(2, at.left - 28), top: Math.max(2, at.top - 28, sight.top) }} aria-hidden="true">
+      <i className={css.badge} style={{ left: Math.max(2, at.left - 28), top: Math.max(2, at.top - 28, sight.top + 26 * (sight.zoom - 1)) }} aria-hidden="true">
         {n}
       </i>
     </>,
@@ -220,7 +220,7 @@ export function NowMark({ find, n, onHit }: { find: () => HTMLElement | null; n:
 
 /** Where a control to press can show: inside the box that scrolls it (under the panel's head, over the rows kept at the
     panel's foot), and under the 지금 할 일 line — viewport px. */
-function sightOf(el: HTMLElement | null): { top: number; bottom: number } {
+function sightOf(el: HTMLElement | null): { top: number; bottom: number; zoom: number } {
   let top = 2;
   let bottom = window.innerHeight;
   const now = document.querySelector('[data-now]')?.getBoundingClientRect();
@@ -239,7 +239,9 @@ function sightOf(el: HTMLElement | null): { top: number; bottom: number } {
     }
     break;
   }
-  return { top, bottom };
+  // (A window shown larger: the badge is drawn that many times larger, growing up and left from its foot — 26 px × zoom.)
+  const zoom = document.documentElement.hasAttribute('data-zoomed') ? parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--course-zoom')) || 1 : 1;
+  return { top, bottom, zoom };
 }
 
 /** A key's line, said as a sentence lead: "앞 (X+) 키를 눌러요" → "앞 (X+) 키를 눌러". */
