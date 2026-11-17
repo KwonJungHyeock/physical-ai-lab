@@ -982,6 +982,11 @@
 [data-course] .panel:has(> .table) .table {
   gap: 4px;
 }
+/* (파트 11-1: with a run's results under it, the panel's blocks 8 apart — the table's title and all the results then show
+   together once the panel has moved down to them, at 1366 × 768 and larger.) */
+[data-course] .panel:has(> .table):has(> .results) {
+  gap: 8px;
+}
 
 /* 가독성 정리 (입문 과정): a switched-off key at 0.6 (at 0.35 ~ 0.5 its words fell under 3 : 1). */
 [data-course] .panel .run:disabled,

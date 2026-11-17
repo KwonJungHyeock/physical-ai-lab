@@ -160,6 +160,7 @@ export function findTarget(t: TutTarget): HTMLElement | null {
  */
 export function NowMark({ find, n, onHit }: { find: () => HTMLElement | null; n: number; onHit?: () => void }) {
   const [at, setAt] = useState<DOMRect | null>(null);
+  const [sight, setSight] = useState<{ top: number; bottom: number }>({ top: 2, bottom: Infinity });
   const el = useRef<HTMLElement | null>(null);
   const findRef = useRef(find);
   const hitRef = useRef(onHit);
@@ -177,6 +178,7 @@ export function NowMark({ find, n, onHit }: { find: () => HTMLElement | null; n:
       const t = findRef.current();
       el.current = t;
       setAt(t ? t.getBoundingClientRect() : null);
+      setSight(sightOf(t));
       undim();
       const row = t?.closest('[data-row]');
       row?.parentElement?.querySelectorAll<HTMLElement>(':scope > [data-row]').forEach((r) => {
@@ -199,16 +201,45 @@ export function NowMark({ find, n, onHit }: { find: () => HTMLElement | null; n:
     };
   }, [n]);
   if (typeof document === 'undefined' || !at) return null;
+  // (파트 11-2: in a scrolled panel the ring is cut to what shows of it — never over the panel's head or the 정지 row — and
+  // the number stays at or under the top of that part, never over the head row or the 지금 할 일 line.)
+  const top = Math.max(at.top - 4, sight.top);
+  const bottom = Math.min(at.bottom + 4, sight.bottom);
+  if (bottom - top < 8) return null;
   return createPortal(
     <>
-      <span className={css.ring} style={{ left: at.left - 4, top: at.top - 4, width: at.width + 8, height: at.height + 8 }} aria-hidden="true" />
+      <span className={css.ring} style={{ left: at.left - 4, top, width: at.width + 8, height: bottom - top }} aria-hidden="true" />
       {/* The badge sits outside the ring's top-left corner: nothing inside the ring is covered (수정 지시서 v3 파트 4-1). */}
-      <i className={css.badge} style={{ left: Math.max(2, at.left - 28), top: Math.max(2, at.top - 28) }} aria-hidden="true">
+      <i className={css.badge} style={{ left: Math.max(2, at.left - 28), top: Math.max(2, at.top - 28, sight.top) }} aria-hidden="true">
         {n}
       </i>
     </>,
     document.body,
   );
+}
+
+/** Where a control to press can show: inside the box that scrolls it (under the panel's head, over the rows kept at the
+    panel's foot), and under the 지금 할 일 line — viewport px. */
+function sightOf(el: HTMLElement | null): { top: number; bottom: number } {
+  let top = 2;
+  let bottom = window.innerHeight;
+  const now = document.querySelector('[data-now]')?.getBoundingClientRect();
+  const r = el?.getBoundingClientRect();
+  if (now && r && r.top >= now.top) top = Math.max(top, now.bottom);
+  for (let s = el?.parentElement; s && s.tagName !== 'BODY'; s = s.parentElement) {
+    const y = getComputedStyle(s).overflowY;
+    if (y !== 'auto' && y !== 'scroll') continue;
+    const b = s.getBoundingClientRect();
+    top = Math.max(top, b.top);
+    bottom = Math.min(bottom, b.bottom);
+    // The 정지 row kept at the panel's foot, over the box's end.
+    for (const f of s.closest('aside')?.querySelectorAll('[data-foot], [class*="poseDock"]') ?? []) {
+      const t = f.getBoundingClientRect().top;
+      if (!f.contains(el) && t > b.top && t < bottom) bottom = t;
+    }
+    break;
+  }
+  return { top, bottom };
 }
 
 /** A key's line, said as a sentence lead: "앞 (X+) 키를 눌러요" → "앞 (X+) 키를 눌러". */

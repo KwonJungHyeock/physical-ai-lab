@@ -145,7 +145,14 @@ export interface StageApi {
   lookAt(eye: readonly [number, number, number], target: readonly [number, number, number], slow?: boolean): void;
   /** Has the user turned, zoomed or moved the view since the last glide? */
   userMoved(): boolean;
+  /** Where the view looks from and at now (robot frame, mm) — to come back to it with `restore`. */
+  pose(): CamPose | null;
+  /** Glide back to a view read with `pose`, as it was (입문 과정: after a 확인 문제). */
+  restore(p: CamPose): void;
 }
+
+/** A view: the eye and the point looked at, robot frame (z up), mm. */
+export type CamPose = { eye: [number, number, number]; target: [number, number, number] };
 
 /**
  * Viewpoints in three.js coordinates (Y up; robot x -> x, robot y -> -z, robot z -> y), metres.
@@ -834,6 +841,23 @@ function World({
       held.current = true;
     },
     userMoved: () => userMoved.current,
+    pose: () => {
+      const c = getThree().controls as CameraControlsImpl | null;
+      if (!c) return null;
+      // three.js (y up) to the robot frame (z up): x -> x, -z -> y, y -> z.
+      const e = c.getPosition(new Vector3());
+      const t = c.getTarget(new Vector3());
+      const mm = (v: Vector3): [number, number, number] => [v.x * 1000, -v.z * 1000, v.y * 1000];
+      return { eye: mm(e), target: mm(t) };
+    },
+    restore: (p) => {
+      const c = getThree().controls as CameraControlsImpl | null;
+      if (!c) return;
+      c.smoothTime = 0.45;
+      void c.setLookAt(p.eye[0] / 1000, p.eye[2] / 1000, -p.eye[1] / 1000, p.target[0] / 1000, p.target[2] / 1000, -p.target[1] / 1000, true);
+      userMoved.current = false;
+      held.current = true;
+    },
   };
 
   // Drawing aids (표시 menu).

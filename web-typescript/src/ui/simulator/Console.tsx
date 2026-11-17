@@ -189,7 +189,7 @@ import ZeroPanel from './control/ZeroPanel';
 import Icon from './Icon';
 import RobotStatus, { calibratedText } from './control/RobotStatus';
 import StatusLights from './control/StatusLights';
-import type { CameraFrame, StageApi, ViewName } from './stage/Stage';
+import type { CamPose, CameraFrame, StageApi, ViewName } from './stage/Stage';
 import { DEFAULT_DISPLAY, type DisplayOpts } from './stage/sceneHelpers';
 import css from './console.module.css';
 import { isTouch } from './touch';
@@ -413,8 +413,14 @@ const signedNum = (n: number) => String(n).replace('-', '−');
  * no numbers. While it is on nothing is recorded: no event to the platform, no 완료 · 기록 in this browser.
  */
 let FREE_ON = false;
+/** 입문 과정 (파트 10-2): how long the glide to a 확인 문제's view takes to settle (ms). */
+const QUIZ_VIEW_SETTLE_MS = 1500;
+/** Two views the same (eye and target within 5 mm). */
+const samePose = (a: CamPose, b: CamPose) => [...a.eye, ...a.target].every((v, i) => Math.abs(v - [...b.eye, ...b.target][i]) < 5);
 /** 입문 과정: the 절 whose run results the panel moves down to (결정 회신 파트 9-1). */
-const REVEAL_SUBS = ['4-3', '5-2', '5-3'];
+const REVEAL_SUBS = ['4-3', '4-4', '5-2', '5-3'];
+/** 입문 과정 (파트 11-1): the block kept in sight above the results when the panel moves down (its title: 꼭짓점 표 · 원). */
+const REVEAL_KEEP: Record<string, string> = { '4-3': '[data-step="vertices"]', '4-4': '[role="group"][aria-label="원"]' };
 const report = (e: Parameters<typeof reportEvent>[0]) => {
   if (!FREE_ON) reportEvent(e);
 };
@@ -2508,6 +2514,29 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     heldRef.current = false;
     setMoment(null);
   };
+  // 입문 과정 (파트 10-2): while a 확인 문제 is open the view is the 절's own framing (장면 보기 · [처음 시점]); once it is
+  // closed, back to the view from before — unless the student turned the view meanwhile (then it stays as they left it).
+  const quizCam = useRef<{ before: CamPose | null; during: CamPose | null } | null>(null);
+  const quizOpen = course && !!moment;
+  useEffect(() => {
+    const api = stageApi.current;
+    if (!api) return;
+    if (quizOpen) {
+      quizCam.current = { before: api.pose(), during: null };
+      api.view('home');
+      // The view as the glide left it: a different one when the question closes means the student moved it.
+      const id = window.setTimeout(() => {
+        if (quizCam.current) quizCam.current.during = stageApi.current?.pose() ?? null;
+      }, QUIZ_VIEW_SETTLE_MS);
+      return () => window.clearTimeout(id);
+    }
+    const q = quizCam.current;
+    quizCam.current = null;
+    if (!q?.before) return;
+    const now = api.pose();
+    if (api.userMoved() || (q.during && now && !samePose(q.during, now))) return;
+    api.restore(q.before);
+  }, [quizOpen]);
   // Another step (or none): a question still open from the last one goes with it.
   const askMission = cellAt?.mission ?? null;
   useEffect(() => {
@@ -4671,8 +4700,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   // 입문 과정: the 절 open now (a quest, a tutorial, a 절 built for the course, a chapter's 수행평가), done or not, and opening one.
   const testSub = courseTest !== null ? subById(COURSE.find((c) => c.n === courseTest)?.test ?? '') : undefined;
   const subNow = course ? (testSub ?? (courseStep ? subById(courseStep.id) : lifeQuest ? subOfRun('quest', lifeQuest) : lifeTut ? subOfRun('tutorial', lifeTut.id) : undefined)) : undefined;
-  // 입문 과정 (결정 회신 파트 9-1): 4-3 · 5-2 · 5-3 — the panel moved down to a run's results, once.
-  useRevealResults(!!subNow && REVEAL_SUBS.includes(subNow.id), busy);
+  // 입문 과정 (결정 회신 파트 9-1 · 파트 10-3): 4-3 · 4-4 · 5-2 · 5-3 — the panel moved down to a run's results, once.
+  useRevealResults(!!subNow && REVEAL_SUBS.includes(subNow.id), busy, subNow ? REVEAL_KEEP[subNow.id] : undefined);
   const subDone = (s: CourseSub) =>
     s.run?.kind === 'quest' ? !!cellPassed[s.run.id] : s.run?.kind === 'tutorial' ? !!tutDone[s.run.id] : s.run?.kind === 'step' ? !!stepsDone[s.run.id] : s.run?.kind === 'test' ? testOver(CHAPTER_TESTS[Number(s.run.id)], testResults[s.run.id], cPlan.ox) : false;
 

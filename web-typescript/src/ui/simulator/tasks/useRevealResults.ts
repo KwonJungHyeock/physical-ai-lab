@@ -13,8 +13,10 @@ const FOOT = '[data-foot], [class*="poseDock"]';
 const SETTLE_MS = 700;
 /** Keys that scroll a box. */
 const SCROLL_KEYS = ['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '];
+/** Room kept over the kept block's top (layout px): its ring and the number by it stay inside the panel. */
+const KEEP_ROOM = 4;
 /** Room kept under the results (layout px). */
-const ROOM = 12;
+const ROOM = 4;
 
 /** The boxes that scroll the list, the nearest first (a block inside the panel, then the panel's pane). */
 function scrollersOf(el: Element): HTMLElement[] {
@@ -37,7 +39,12 @@ function sightOf(box: HTMLElement) {
   return { top: b.top, bottom, height: b.height };
 }
 
-export function useRevealResults(on: boolean, busy: boolean) {
+/** `keep`: a block above the results kept in sight, its title at the top (입문 과정 파트 11-1: 4-3's 꼭짓점 표, 4-4's 원). */
+export function useRevealResults(on: boolean, busy: boolean, keep?: string) {
+  const keepRef = useRef(keep);
+  useEffect(() => {
+    keepRef.current = keep;
+  }, [keep]);
   /** Results already shown (or skipped) since the last run started. */
   const seen = useRef(new WeakSet<Element>());
   const busyRef = useRef(busy);
@@ -86,8 +93,10 @@ export function useRevealResults(on: boolean, busy: boolean) {
           const scale = b.height / box.clientHeight || 1;
           const room = ROOM * scale;
           if (r.bottom <= b.bottom - room / 2 && r.top >= b.top) break;
-          // Down to the results' end, never past their start, never past the box's own end.
-          const by = Math.min(r.bottom - (b.bottom - room), r.top - (b.top + room), (box.scrollHeight - box.clientHeight - box.scrollTop) * scale);
+          // Down to the results' end, never past their start, never past the box's own end — nor past the kept
+          // block's top (its title stays in sight under the panel's head, room left for the number beside it).
+          const k = keepRef.current ? box.querySelector(keepRef.current)?.getBoundingClientRect() : undefined;
+          const by = Math.min(r.bottom - (b.bottom - room), r.top - (b.top + room), (box.scrollHeight - box.clientHeight - box.scrollTop) * scale, k ? k.top - (b.top + KEEP_ROOM * scale) : Infinity);
           if (by > 0) box.scrollTop += by / scale;
         }
       }
