@@ -897,7 +897,7 @@ function World({
   useEffect(() => (display.jointAxes ? addJointAxes(arm.joints, SCREEN_ONLY) : undefined), [arm, display.jointAxes]);
 
   // 입문 과정 교안 렌더 (파트 13): only on the course stage opened with ?render=1 — a hook for the render tool
-  // (tools/check/course-walk/render13.cjs). It reaches the scene, the camera and the arm, and puts on and off the
+  // (tools/check/course-walk/render13/). It reaches the scene, the camera and the arm, and puts on and off the
   // drawing aids already here (작업 범위 원 · 손끝 축 · 관절 강조), the same arm see-through (a pose before or a saved
   // one) and a floor that only takes the shadows. Nothing else is drawn; without ?render=1 none of it exists.
   const sceneNow = useThree((s) => s.scene);
