@@ -173,6 +173,12 @@ const MEASURE = async () => {
     if (r.width < 1) continue;
     for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
       const cs = getComputedStyle(a);
+      // Scrolled wholly out of a box that scrolls (the panel): put away, not cut — the scrolling is counted as 넘침.
+      if (/auto|scroll/.test(cs.overflowY)) {
+        const b = a.getBoundingClientRect();
+        if (r.bottom <= b.top + 1 || r.top >= b.bottom - 1) break;
+        continue;
+      }
       if (!/hidden|clip/.test(cs.overflowX + cs.overflowY)) continue;
       const b = a.getBoundingClientRect();
       const outX = /hidden|clip/.test(cs.overflowX) && (r.left < b.left - 1 || r.right > b.right + 1);
