@@ -19,8 +19,13 @@ const today = () => {
 const LOG = [];
 const BASE = process.env.WALK_BASE || 'http://localhost:3123';
 
+// WALK_GPU=1: the PC's graphics card (a PC with one — the cloud container has none and draws with swiftshader, ~20 s a 1920 shot).
+// WALK_HEADED=1 with it: a visible window (some drivers give headless Chrome no GPU).
 async function launch() {
-  const b = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+  const gpu = process.env.WALK_GPU === '1';
+  const b = await chromium.launch(
+    gpu ? { headless: process.env.WALK_HEADED !== '1', args: ['--enable-gpu', '--ignore-gpu-blocklist', '--use-angle=default'] } : { args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] },
+  );
   return b;
 }
 async function context(b, opts = {}) {
