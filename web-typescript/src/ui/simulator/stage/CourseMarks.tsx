@@ -61,17 +61,18 @@ export interface CourseStageMarks {
 /** 1-2: 베이스 (J1)'s spot sits down on the turning base, apart from 어깨 (J2) just above it (its frame, m). */
 const J1_SPOT: [number, number, number] = [0, 0, -0.06];
 
-export function AssetSlot({ slot }: { slot: CourseSlot }) {
+/** `bare` (입문 과정 파트 12-1, a slot in the scene — a hand): no file yet, no words on the student's screen — the place is kept, empty. */
+export function AssetSlot({ slot, bare = false }: { slot: CourseSlot; bare?: boolean }) {
   const [missing, setMissing] = useState(false);
   const away = slot.enter && !slot.enter.in;
   const move = slot.enter ? { transform: away ? `translate(${slot.enter.from[0]}px, ${slot.enter.from[1]}px)` : 'translate(0, 0)', opacity: away ? 0 : 1 } : undefined;
   return (
-    <div className={css.slot} style={{ width: slot.w, height: slot.h, ...move }} data-moves={slot.enter ? true : undefined} data-missing={missing || undefined}>
+    <div className={css.slot} style={{ width: slot.w, height: slot.h, ...move }} data-moves={slot.enter ? true : undefined} data-missing={missing || undefined} data-bare={bare || undefined}>
       {!missing && (
         // eslint-disable-next-line @next/next/no-img-element -- an asset slot: the team's picture, also in the static export
         <img src={`/course/assets/${slot.id}.png`} alt={slot.label} onError={() => setMissing(true)} />
       )}
-      {missing && (
+      {missing && !bare && (
         <span>
           에셋 슬롯 · {slot.label}
           <small>{slot.id}.png 준비 중</small>
@@ -193,7 +194,7 @@ export default function CourseMarks({ marks, joints, flange, tcpMm }: { marks: C
       {marks.slots?.map((s) => (
         <group key={s.id} position={[m(s.at[0]), m(s.at[1]), m(s.at[2])]}>
           <Html center zIndexRange={[18, 0]} style={{ pointerEvents: 'none' }}>
-            <AssetSlot slot={s} />
+            <AssetSlot slot={s} bare />
           </Html>
         </group>
       ))}

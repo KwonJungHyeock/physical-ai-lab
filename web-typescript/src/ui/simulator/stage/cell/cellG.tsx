@@ -381,7 +381,7 @@ function HandSlot({ world }: { world: RefObject<WorldState | null> }) {
   return (
     <group position={[m(now.x + CARD_MM.w / 2), m(now.y - 40), m(40)]}>
       <Html center zIndexRange={[18, 0]} style={{ pointerEvents: 'none' }}>
-        <AssetSlot key={now.id} slot={{ id: now.id, label: now.id === 'hand' ? '다가오는 손' : '카드 놓는 손', at: [0, 0, 0], w: 200, h: 120, enter: { in: now.in, from: [0, 260] } }} />
+        <AssetSlot key={now.id} bare slot={{ id: now.id, label: now.id === 'hand' ? '다가오는 손' : '카드 놓는 손', at: [0, 0, 0], w: 200, h: 120, enter: { in: now.in, from: [0, 260] } }} />
       </Html>
     </group>
   );

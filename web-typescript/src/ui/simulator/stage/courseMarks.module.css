@@ -96,6 +96,11 @@
   border-color: rgba(255, 255, 255, 0.45);
   color: #f6f7f9;
 }
+/* (파트 12-1: a slot in the scene with no file yet — the place kept, nothing drawn: no box, no words.) */
+.slot[data-missing][data-bare] {
+  border: 0;
+  background: none;
+}
 .slot span {
   font-size: 14px;
   font-weight: 700;
