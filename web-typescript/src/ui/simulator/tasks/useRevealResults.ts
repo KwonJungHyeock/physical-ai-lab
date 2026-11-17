@@ -13,8 +13,8 @@ const FOOT = '[data-foot], [class*="poseDock"]';
 const SETTLE_MS = 700;
 /** Keys that scroll a box. */
 const SCROLL_KEYS = ['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '];
-/** Room kept over the kept block's top (layout px): its ring and the number by it stay inside the panel. */
-const KEEP_ROOM = 4;
+/** Room kept over the kept block's top (layout px): none — the row above it then goes out of sight whole, not half cut (its ring and number are kept inside the panel by NowMark). */
+const KEEP_ROOM = 0;
 /** Room kept under the results (layout px). */
 const ROOM = 4;
 
