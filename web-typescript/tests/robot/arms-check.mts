@@ -8,12 +8,14 @@
  */
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 import { JSDOM } from 'jsdom';
 import { Vector3 } from 'three';
 
 globalThis.DOMParser = new JSDOM('').window.DOMParser;
-const W = new URL('../..', import.meta.url).pathname;
+// (A file path, not the URL's: on Windows the URL's path starts /C:/.)
+const W = fileURLToPath(new URL('../..', import.meta.url)).replace(/\\/g, '/');
 const { parseUrdf, meshNodeName } = await import('../../src/engine/robot/urdf');
 const { buildChain, forwardKinematicsFrames, solveIk } = await import('../../src/engine/robot/kinematics');
 const { ARMS, setActiveArm } = await import('../../src/engine/robot/arms');

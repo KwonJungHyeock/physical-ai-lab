@@ -79,6 +79,83 @@ async function run53(b, plan, prep) {
   if (todo.length) console.log('missed', todo.map((s) => s.name).join(','), JSON.stringify(seen));
   await ctx.close();
 }
+/**
+ * R15: the run at 1× (a graphics card draws every frame), the world's own pen flag read each step. Between the
+ * first strokes (some ink on the card, the pen up, more strokes to come) the camera follows the pen tip and a burst
+ * of 3D pictures is taken (R15.<k>.raw.png, with the pen's height over the paper in R15.burst.json); the one with
+ * the pen highest over the paper, while it is still over the card, becomes R15.raw.png.
+ */
+async function r15(b) {
+  const fs = require('fs');
+  const ctx = await R.L.context(b, { rate: '1' });
+  const p = await R.open(ctx, '5-3');
+  await p.evaluate(() => [...document.querySelectorAll('aside button')].find((x) => x.textContent.trim() === '−' || x.textContent.trim() === '-')?.click());
+  await p.waitForTimeout(400);
+  // The course starts with the pen kept down between strokes (the student's task is to switch 획 사이 펜 들기 on): on.
+  for (const s of await p.$$('button[aria-label="동작 펼치기"]')) await s.evaluate((e) => e.click());
+  await p.waitForTimeout(300);
+  const lift = await p.evaluate(() => {
+    const box = [...document.querySelectorAll('input[type=checkbox]')].find((x) => (x.closest('label, li, div')?.textContent ?? '').includes('펜 들기'));
+    if (box && !box.checked) box.click();
+    return box ? box.checked : null;
+  });
+  console.log('획 사이 펜 들기', lift);
+  await p.waitForTimeout(300);
+  await R.clean(p, { keep: ['booth'] });
+  await click(p, 'button[aria-label="시뮬레이션"]');
+  const state = () =>
+    p.evaluate(() => {
+      const q = [...document.querySelectorAll('button')].find((x) => x.textContent.includes('예측 없이 계속'));
+      if (q) q.click();
+      const r = window.__render;
+      const w = r.world.current;
+      const v = r.arm.flange.getWorldPosition(r.camera.position.clone());
+      return { down: !!w.penDown, n: (w.trail ?? []).filter((s) => s.length > 1).length, f: [v.x * 1000, -v.z * 1000, v.y * 1000], busy: !!document.querySelector('[data-busy]') };
+    });
+  const shots = [];
+  let zDown = Infinity;
+  let was = false;
+  let lifts = 0;
+  let most = 0;
+  const t0 = Date.now();
+  for (let t = 0; Date.now() - t0 < 600000; t++) {
+    const s = await state();
+    most = Math.max(most, s.n);
+    if (s.down) zDown = Math.min(zDown, s.f[2]);
+    if (was && !s.down && s.n >= 1) {
+      lifts++;
+      console.log('lift', lifts, 'strokes', s.n);
+      // A burst while the pen is up (first two lifts: one of them is between strokes, whatever the letter).
+      if (lifts <= 2)
+        for (let k = 0; k < 60; k++) {
+          const q = await state();
+          if (q.down) break;
+          const tip = [q.f[0], q.f[1], q.f[2] - zDown];
+          const tg = [tip[0], tip[1], Math.max(8, tip[2])];
+          await R.look(p, [tg[0] + 40, tg[1] - 230, tg[2] + 25], tg);
+          await p.evaluate(() => new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(() => ok()))));
+          const url = await p.evaluate(() => window.__render.gl.domElement.toDataURL('image/png'));
+          const name = `R15.${lifts}.${String(k).padStart(2, '0')}`;
+          fs.writeFileSync(`${R.OUT}/${name}.raw.png`, Buffer.from(url.split(',')[1], 'base64'));
+          shots.push({ name, lift: lifts, strokes: q.n, gapMm: +(q.f[2] - zDown).toFixed(1), tip: tip.map((v) => +v.toFixed(1)) });
+        }
+    }
+    was = s.down;
+    if (!s.busy && t > 50) break;
+    await p.waitForTimeout(30);
+  }
+  // (The card taken away takes its ink: the most strokes seen, not those left at the end.)
+  console.log('strokes (most)', most, 'lifts', lifts);
+  fs.writeFileSync(`${R.OUT}/R15.burst.json`, JSON.stringify({ strokes: most, shots }, null, 1));
+  // Between strokes: a lift after which more ink came (strokes then < the most); the pen highest over the paper.
+  const mid = shots.filter((s) => s.strokes < most);
+  const best = mid.sort((a, b) => b.gapMm - a.gapMm)[0];
+  if (best) {
+    fs.copyFileSync(`${R.OUT}/${best.name}.raw.png`, `${R.OUT}/R15.raw.png`);
+    console.log('shot R15 (canvas) from', best.name, 'gap', best.gapMm, 'mm');
+  } else console.log('missed R15');
+  await ctx.close();
+}
 (async () => {
   const b = await R.L.launch();
   // R14 카드 놓인 매트 · 위에서 (책상 포함)
@@ -92,15 +169,7 @@ async function run53(b, plan, prep) {
     await ctx.close();
   }
   // R15 획 사이 펜 든 순간 · 옆에서
-  if (want('R15'))
-    await run53(b, [{ name: 'R15', at: 'up', n: 1, after: 0 }], {
-      cam: async () => async (p) => {
-        // the flange (robot mm); the pen hangs about 60 mm under it — seen from the customer's side, a little above the paper
-        const f = await p.evaluate(() => { const r = window.__render; const v = r.arm.flange.getWorldPosition(r.camera.position.clone()); return [v.x * 1000, -v.z * 1000, v.y * 1000]; });
-        const t = [f[0], f[1], Math.max(10, f[2] - 55)];
-        return { eye: [t[0] + 40, t[1] - 230, t[2] + 25], target: t };
-      },
-    });
+  if (want('R15')) await r15(b);
   // R16 다 쓴 글자 카드 가까이
   if (want('R16'))
     await run53(b, [{ name: 'R16', at: 'take', after: 0 }], {
