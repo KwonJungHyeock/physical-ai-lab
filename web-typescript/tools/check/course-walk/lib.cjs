@@ -174,6 +174,9 @@ async function shot(p, dir, name, o = {}) {
   }
   fs.mkdirSync(ROOT + dir, { recursive: true });
   if (SHOTS) await p.screenshot({ path: ROOT + dir + '/' + name + '.png', timeout: 120000 });
+  // WALK_VIEWS=1: the 절's last step's '후' screen is kept for views() (교안용 구도: 앞 · 옆 · 위).
+  const step = /^(\d+-\d+)_(\d+)_후$/.exec(name);
+  if (VIEWS && step) LAST_STEP = { p, dir, sid: step[1] };
   LOG.push(rec);
   console.log('  shot', name, '|', np ? `[${np.steps || '-'}] ${np.state} ${np.n} ${np.text} ${np.meter}` : '(지금 할 일 줄 없음)', '| 배지', badge, '| 손', hand, rec.busy ? '| 움직이는 중' : '');
   return true;
@@ -196,7 +199,29 @@ function saveLog(tag) {
   fs.mkdirSync(ROOT, { recursive: true });
   fs.writeFileSync(ROOT + `log-${tag}.json`, JSON.stringify({ shots: LOG, errs }, null, 1));
 }
-module.exports = { launch, context, open, shot, click, idle, rest, nowParts, busy, handShown, saveLog, LOG, errs, ROOT, MEASURED, W, H };
+// 교안용 구도 (WALK_VIEWS=1): at a 절's end, its last step's screen again from the scene's own view buttons
+// (앞 · 옆 · 위) — <절>_구도_앞/옆/위.png beside the step pictures — then back to 처음 시점. The app is not changed.
+const VIEWS = process.env.WALK_VIEWS === '1';
+let LAST_STEP = null;
+async function views() {
+  const last = LAST_STEP;
+  LAST_STEP = null;
+  if (!last || last.p.isClosed()) return;
+  const press = (t) => last.p.evaluate((t) => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === t && !x.disabled && x.getClientRects().length); if (b) b.click(); return !!b; }, t);
+  for (const v of ['앞', '옆', '위']) {
+    if (!(await press(v))) {
+      console.log('  (구도 버튼 없음)', last.sid, v);
+      return;
+    }
+    await last.p.waitForTimeout(2500);
+    await rest(last.p);
+    const name = `${last.sid}_구도_${v}`;
+    await last.p.screenshot({ path: ROOT + last.dir + '/' + name + '.png', timeout: 240000 });
+    console.log('  shot', name);
+  }
+  await press('처음 시점');
+}
+module.exports = { launch, context, open, shot, click, idle, rest, nowParts, busy, handShown, saveLog, views, LOG, errs, ROOT, MEASURED, W, H };
 
 // ---- 2장 이후에 더한 도우미 ----
 // 조그 키: 누르고 있는 동안 움직이므로 포커스 + Enter (element.click()은 움직이지 않음)

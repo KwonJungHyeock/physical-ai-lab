@@ -27,6 +27,7 @@ const say = async (p, tag) => {
     const ctx = await L.context(b, opts);
     try {
       await fn(ctx);
+      await L.views();
     } catch (e) {
       console.log(' FAIL', k, e.message.slice(0, 300));
     }
