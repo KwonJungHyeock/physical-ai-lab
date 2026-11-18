@@ -29,7 +29,8 @@ async function launch() {
   return b;
 }
 async function context(b, opts = {}) {
-  const ctx = await b.newContext({ viewport: { width: W, height: H } });
+  // WALK_SCALE=2: the same 1920 × 1080 layout at twice the pixels (3840 × 2160) — the 교안's sharper pictures.
+  const ctx = await b.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: Number(process.env.WALK_SCALE || 1) });
   await ctx.addInitScript(
     ([day, o]) => {
       localStorage.setItem('robot-console-sim-rate', o.rate || '4');
