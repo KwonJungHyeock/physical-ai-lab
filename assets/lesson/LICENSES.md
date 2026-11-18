@@ -13,7 +13,7 @@ I09_a는 SVG 원본(벡터)을 위키미디어가 PNG로 그린 것입니다.
 | ch1/I02_b.jpg | https://commons.wikimedia.org/wiki/File:Kuka_ipari_robot,_Automotive_2017_Hungexpo.jpg | Globetrotter19 | CC BY-SA 3.0 | 2026-11-17 | 1장 교안 · I02 주제 |
 | ch1/I02_c.jpg | https://commons.wikimedia.org/wiki/File:Welding_Robot_Facility.jpg | Antoniusaw | CC BY-SA 4.0 | 2026-11-17 | 1장 교안 · I02 주제 |
 | ch1/I03_a.jpg | https://commons.wikimedia.org/wiki/File:Der_kollaborative_Roboter_Sawyer_von_Rethink_Robotics_beim_Einsatz_in_der_Industrie.jpg | HAHN Group | CC BY-SA 4.0 | 2026-11-17 | 1장 교안 · I03 주제 |
-| ch1/I03_b.jpg | https://commons.wikimedia.org/wiki/File:F18A7347.jpg | RobertRED | CC BY-SA 4.0 | 2026-11-17 | 1장 교안 · I03 주제 |
+| ch1/I03_b.jpg | https://commons.wikimedia.org/wiki/File:F18A7347.jpg | RobertRED | CC BY-SA 4.0 | 2026-11-17 | 사용 안 함 (얼굴이 드러난 인물 사진 · 2026-11-18 결정, 보내는 묶음에서 뺌) |
 | ch1/I03_c.jpg | https://commons.wikimedia.org/wiki/File:Comau_AURA_MADE.jpg | Rechipedia | CC BY-SA 4.0 | 2026-11-17 | 1장 교안 · I03 주제 |
 | ch1/I04_a.jpg | https://commons.wikimedia.org/wiki/File:Cobot.jpg | GrowSkills Robotics | CC BY-SA 4.0 | 2026-11-17 | 1장 교안 · I04 주제 |
 | ch1/I04_b.jpg | https://commons.wikimedia.org/wiki/File:Robot_Lengan_Industri_UR5e.jpg | Dzikra muhammad Imtiyaz | CC BY-SA 4.0 | 2026-11-17 | 1장 교안 · I04 주제 |

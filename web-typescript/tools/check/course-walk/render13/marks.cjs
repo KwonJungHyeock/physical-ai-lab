@@ -36,6 +36,15 @@ const matShot = async (p, name, html) => {
     }
     await R.clean(p, { html: '\\(J\\d\\)|^손끝$' });
     await R.frame(p, FRONT, [0, 0, 220], { pts: BOX, fill: 0.76 });
+    // (파트 15-2, this render only: '손목 돌리기(J5)' lay on the robot's head — moved up and right into the empty room,
+    // its line turned to reach the joint as before; the other tags stay where they are.)
+    const [dx, dy] = [90, -55];
+    const len = Math.hypot(80 + dx, dy);
+    const turn = (Math.atan2(-dy, -(80 + dx)) * 180) / Math.PI - 180;
+    await p.addStyleTag({
+      content: `button[aria-label="손목 돌리기(J5)"] b { left: ${117 + dx}px !important; transform: translateY(calc(-50% + ${dy}px)) !important; }
+        button[aria-label="손목 돌리기(J5)"] b::before { width: ${len}px !important; transform-origin: right center; transform: rotate(${turn}deg); }`,
+    });
     await R.shot(p, 'R03', 2500);
     await ctx.close();
   }
