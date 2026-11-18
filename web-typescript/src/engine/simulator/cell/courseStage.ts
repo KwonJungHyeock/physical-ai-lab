@@ -64,7 +64,11 @@ const from = (el: number, az: number): P3 => {
 export const COURSE_VIEWS: Record<string, CourseView> = {
   // A 실습대 전체: the arm, the mat, the card and the 완성 램프 from the customer's side (the card readable).
   A: { dir: from(40, 10), area: { min: [-60, -150, 0], max: [340, 170, 200] } },
-  // 1-3: the whole 작업 범위 circle on the desk, from high over the customer's side.
+  // 1-1 (파트 16 A-3): A half a step back and up — the arm's elbow out to its left, the mat's near edge, the 완성 램프 and
+  // the card the customer took (HandedCard, in front of the mat) all whole, clear of the picture's edges.
+  '1-1': { dir: from(46, 10), area: { min: [-170, -260, 0], max: [340, 170, 200] } },
+  // 1-3: the whole 작업 범위 circle on the desk, from high over the customer's side (its middle in the middle of the part
+  // left of the 제어 panel — 파트 16 A-4: Console's frameInsets no longer keeps room for a helper arm not shown).
   '1-3': { dir: from(64, 0), area: { min: [-280, -280, 0], max: [280, 280, 120] }, shot: { eye: [250, -500, 1350], target: [250, 0, 300] } },
   // B 책상 (2-1): the empty desk from above — the places for the robot, the mat and the card (the parts are in the right panel).
   '2-1': { dir: from(70, 0), area: { min: [-110, -110, 0], max: [310, 110, 40] } },

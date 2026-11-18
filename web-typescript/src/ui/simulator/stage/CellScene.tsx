@@ -332,7 +332,7 @@ export default function CellScene({
   /** 입문 과정 무대 (courseStage.ts): its background, and the booth with only the lesson's things. */
   stage?: StageLook | null;
   /** 입문 과정 2-1: the booth's things not put down yet. */
-  hide?: { mat?: boolean; card?: boolean; lamp?: boolean } | null;
+  hide?: { mat?: boolean; card?: boolean; lamp?: boolean; handed?: boolean } | null;
 }) {
   const [hover, setHover] = useState<string | null>(null);
   const T = TAGS[cell];

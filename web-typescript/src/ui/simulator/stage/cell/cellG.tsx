@@ -19,7 +19,7 @@ import { Suspense, useMemo, useRef, useState, type RefObject } from 'react';
 import { BufferGeometry, Float32BufferAttribute, type Group, type Mesh, type MeshStandardMaterial } from 'three';
 
 import { WAITING_CARDS } from '@/engine/simulator/cell/courseStage';
-import { CARD_HOME, CARD_MM, MAT } from '@/engine/simulator/cell/draw';
+import { CARD_HOME, CARD_MM, MAT, type DoneCard, type Strokes } from '@/engine/simulator/cell/draw';
 import type { WorldState } from '@/engine/simulator/sim';
 
 import Model from '@/ui/education/lab/ambient/Model';
@@ -241,8 +241,11 @@ function Mat() {
   );
 }
 
-/** The card on the mat (where the customer put it): cream stock with a thin printed frame. */
-function CardOnMat({ world }: { world: RefObject<WorldState | null> }) {
+/**
+ * The card on the mat (where the customer put it): cream stock with a thin printed frame. `to`: where the hand takes it,
+ * mm from its corner (default towards the customer, off the desk's picture; 1-1: the hand-off spot, HandedCard).
+ */
+function CardOnMat({ world, to = HAND_AWAY }: { world: RefObject<WorldState | null>; to?: { dx: number; dy: number } }) {
   const g = useRef<Group>(null);
   const face = useSheet('draw-card', CARD_MM.w * 2, CARD_MM.h * 2, (ctx, w, h) => {
     ctx.fillStyle = '#fbf7ef';
@@ -264,7 +267,7 @@ function CardOnMat({ world }: { world: RefObject<WorldState | null> }) {
     // Being taken: once the hand is on it, the card goes away with the hand (lifted a little).
     const taking = d.hand?.then === 'take' && d.hand.until - t < 0.5;
     const f = taking ? handAt(d, t) : 1;
-    g.current.position.set(m(d.corner.x + CARD_MM.w / 2), m(d.corner.y + CARD_MM.h / 2 - 130 * (1 - f)), m(-CARD_T / 2 + 0.05 + 14 * (1 - f)));
+    g.current.position.set(m(d.corner.x + CARD_MM.w / 2 + to.dx * (1 - f)), m(d.corner.y + CARD_MM.h / 2 + to.dy * (1 - f)), m(-CARD_T / 2 + 0.05 + 14 * (1 - f)));
   });
   return (
     <group ref={g}>
@@ -280,20 +283,24 @@ function CardOnMat({ world }: { world: RefObject<WorldState | null> }) {
   );
 }
 
-/** The ink: the pen's trail as a brush-pen line 0.9 mm wide on the paper (a flat ribbon per segment). */
-function Ink({ world }: { world: RefObject<WorldState | null> }) {
+/**
+ * The ink: the pen's trail as a brush-pen line 0.9 mm wide on the paper (a flat ribbon per segment).
+ * `of`: whose strokes (default the pen's trail on the card on the mat; HandedCard passes the written card's).
+ */
+function Ink({ world, of }: { world: RefObject<WorldState | null>; of?: (w: WorldState) => Strokes | null }) {
   const geo = useMemo(() => new BufferGeometry(), []);
   const seen = useRef(-1);
   useFrame(() => {
     const w = world.current;
     if (!w) return;
-    const n = w.trail.reduce((a, s) => a + s.length, 0) + w.trail.length * 1000;
+    const trail = of ? (of(w) ?? []) : w.trail;
+    const n = trail.reduce((a, s) => a + s.length, 0) + trail.length * 1000 + (of ? (w.cell?.draw?.done.length ?? 0) * 1e6 : 0);
     if (n === seen.current) return;
     seen.current = n;
     const pos: number[] = [];
     const half = 0.45;
     const z = m(0.13);
-    for (const s of w.trail)
+    for (const s of trail)
       for (let i = 1; i < s.length; i += 1) {
         const [ax, ay] = s[i - 1];
         const [bx, by] = s[i];
@@ -319,6 +326,70 @@ function Ink({ world }: { world: RefObject<WorldState | null> }) {
     <mesh geometry={geo} frustumCulled={false}>
       <meshPhysicalMaterial color="#141a33" roughness={0.28} clearcoat={0.6} clearcoatRoughness={0.3} side={2} polygonOffset polygonOffsetFactor={-2} />
     </mesh>
+  );
+}
+
+/** Where the hand takes a written card, mm from its corner: towards the customer, out of the booth's picture. */
+const HAND_AWAY = { dx: 0, dy: -130 };
+/**
+ * 입문 과정 1-1 (파트 16 A-1): the card the customer took stays in the picture — put down where the hand leaves it, just
+ * in front of the mat on the customer's side, left of the 완성 램프 (the 1-1 view keeps it whole: courseStage.ts); CardOnMat
+ * slides it there as it is taken. With its ink; only the last one; switched on by the stage (courseHide.handed).
+ */
+const HANDED = { dx: 0, dy: -135 };
+function HandedCard({ world }: { world: RefObject<WorldState | null> }) {
+  const g = useRef<Group>(null);
+  const face = useSheet('draw-card', CARD_MM.w * 2, CARD_MM.h * 2, (ctx, w, h) => {
+    ctx.fillStyle = '#fbf7ef';
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = '#c9a77c';
+    ctx.lineWidth = w * 0.004;
+    ctx.strokeRect(w * 0.03, h * 0.045, w * 0.94, h * 0.91);
+    ctx.fillStyle = '#b08a5c';
+    ctx.font = `600 ${h * 0.045}px Pretendard, sans-serif`;
+    ctx.textAlign = 'right';
+    ctx.fillText('ROBOT CALLIGRAPHY', w * 0.95, h * 0.92);
+  });
+  const last = (w: WorldState) => {
+    const d = w.cell?.draw;
+    return d && d.done.length ? d.done[d.done.length - 1] : null;
+  };
+  useFrame(() => {
+    const w = world.current;
+    if (!g.current) return;
+    const c = w ? last(w) : null;
+    g.current.visible = !!c;
+    if (!c || !w) return;
+    // Let go of: from the hand's height (14 mm, as CardOnMat leaves it) down onto the desk in 0.4 s.
+    const f = Math.min(1, Math.max(0, ((w.cell?.line.t ?? 0) - c.t) / 0.4));
+    g.current.position.set(m(HANDED.dx), m(HANDED.dy), m(14 * (1 - f)));
+  });
+  return (
+    <group ref={g}>
+      <HandedBody world={world} face={face} last={last} />
+      <Ink world={world} of={(w) => last(w)?.ink ?? null} />
+    </group>
+  );
+}
+
+/** The handed card's stock at its corner (the card's own place; HandedCard moves the whole). */
+function HandedBody({ world, face, last }: { world: RefObject<WorldState | null>; face: ReturnType<typeof useSheet>; last: (w: WorldState) => DoneCard | null }) {
+  const g = useRef<Group>(null);
+  useFrame(() => {
+    const c = world.current ? last(world.current) : null;
+    if (g.current && c) g.current.position.set(m(c.corner.x + CARD_MM.w / 2), m(c.corner.y + CARD_MM.h / 2), m(-CARD_T / 2 + 0.05));
+  });
+  return (
+    <group ref={g}>
+      <mesh castShadow receiveShadow>
+        <boxGeometry args={[m(CARD_MM.w), m(CARD_MM.h), m(CARD_T)]} />
+        <meshPhysicalMaterial color="#f3ede2" roughness={0.82} sheen={0.3} sheenRoughness={0.9} />
+      </mesh>
+      <mesh position={[0, 0, m(CARD_T / 2 + 0.01)]}>
+        <planeGeometry args={[m(CARD_MM.w), m(CARD_MM.h)]} />
+        <meshStandardMaterial map={face} roughness={0.85} />
+      </mesh>
+    </group>
   );
 }
 
@@ -569,7 +640,7 @@ export function DrawCell({
   onHover: (n: string | null) => void;
   bare?: { desk: string } | null;
   /** 입문 과정 2-1: what is not on the desk yet. */
-  hide?: { mat?: boolean; card?: boolean; lamp?: boolean } | null;
+  hide?: { mat?: boolean; card?: boolean; lamp?: boolean; handed?: boolean } | null;
 }) {
   return (
     <>
@@ -589,10 +660,15 @@ export function DrawCell({
       </group>
       <group visible={!hide?.card}>
         <Tagged name="메시지 카드" onHover={onHover}>
-          <CardOnMat world={world} />
+          <CardOnMat world={world} to={bare && hide?.handed ? HANDED : HAND_AWAY} />
         </Tagged>
       </group>
       <Ink world={world} />
+      {bare && hide?.handed && (
+        <Tagged name="메시지 카드" onHover={onHover}>
+          <HandedCard world={world} />
+        </Tagged>
+      )}
       {/* The customer's hand: on the 무대 the team's picture (an asset slot), else the hand drawn here. */}
       {bare ? <HandSlot world={world} /> : <Hand world={world} />}
       {bare && <WaitingCards world={world} />}

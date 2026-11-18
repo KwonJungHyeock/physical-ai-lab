@@ -287,6 +287,8 @@ export interface CourseHide {
   mat?: boolean;
   card?: boolean;
   lamp?: boolean;
+  /** Not a hiding: 1-1 (파트 16 A-1) keeps the written card in view where the customer's hand left it. */
+  handed?: boolean;
 }
 
 /**
@@ -516,6 +518,8 @@ function World({
   }, [ghost, ghostArm]);
   /** 입문 과정 교안 렌더 (파트 13, only with ?render=1): the joint the render tool lights in the course's orange. */
   const renderFocus = useRef<number | null>(null);
+  /** ?render=1 only (파트 16 시점 맞추기): a home view tried in place of the 절's own (null: the 절's). */
+  const renderView = useRef<typeof courseView>(null);
   // A joint in caution or danger (engine/robot/jointAlert.ts: its motor's load, or its limit near):
   // the housing that holds its motor turns amber or red, pulsing when red. Its own copy of the materials.
   const tracker = useMemo(() => new AlertTracker(chain, tcpMm ?? 0, spec.family === 'mycobot280', arm.joints.length), [chain, tcpMm, spec, arm]);
@@ -752,7 +756,8 @@ function World({
     // (robot −y), 30° up; 옆: from the mat's end (robot +x), 25° up; 위: straight down, the desk's long side across the
     // picture.)
     const turned = courseStage && courseView && (req.name === 'front' || req.name === 'side' || req.name === 'top') ? req.name : null;
-    const own = courseStage && courseView && (req.name === 'home' || turned) ? courseView : null;
+    const viewNow = renderView.current ?? courseView;
+    const own = courseStage && viewNow && (req.name === 'home' || turned) ? viewNow : null;
     const area = own ? own.area : cell ? CELL_VIEW[cell] : WORK_AREA[theme];
     const home = turned === 'front' ? COURSE_LOOKS.front : turned === 'side' ? COURSE_LOOKS.side : turned === 'top' ? COURSE_LOOKS.top : own ? [own.dir[0], own.dir[2], -own.dir[1]] : cell && req.name === 'home' ? CELL_VIEW[cell].home : null;
     const f = own?.shot && !turned ? { position: new Vector3(own.shot.eye[0], own.shot.eye[2], -own.shot.eye[1]).multiplyScalar(0.001), target: new Vector3(own.shot.target[0], own.shot.target[2], -own.shot.target[1]).multiplyScalar(0.001) } : fitView(req.name, root.current, arm.root, area, camera as PerspectiveCamera, home, free);
@@ -973,6 +978,11 @@ function World({
         f.position.set(0, 0, zMm / 1000);
         f.receiveShadow = true;
         if (root.current) put(root.current, f);
+      },
+      /** The stage's own home framing (desk rule, arm kept in the free part) of a view tried here (null: the 절's). */
+      home: (v: typeof courseView) => {
+        renderView.current = v;
+        fitReq.current = { name: 'home', animate: false };
       },
       clear: () => {
         for (const { parent, o } of added.splice(0)) parent.remove(o);

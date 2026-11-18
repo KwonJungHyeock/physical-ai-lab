@@ -1166,6 +1166,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const miniShown = useRef(true);
   /** 입문 현장: no mini arm there, and the left menu hidden during a quest — the scene takes that room. */
   const leanFrame = useRef(false);
+  /** 입문 과정 장면 보기 (파트 16 A-1): the 다시 보기 bar comes up over the view's foot as a scene ends — kept clear. */
+  const sceneFrame = useRef(false);
   const frameInsets = useCallback(() => {
     const sh = shellRef.current;
     const vp = sh?.querySelector<HTMLElement>('[data-viewport]');
@@ -1173,22 +1175,25 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     if (!sh || !vp || !panel || getComputedStyle(panel).position !== 'absolute') return null;
     const v = vp.getBoundingClientRect();
     const p = panel.getBoundingClientRect();
+    // (파트 16: the page's own pixels. The 입문 과정 is drawn larger on a big window (--course-zoom, a transform), and a
+    // rect is in the window's pixels while the 3D view frames in the page's: a 1920 window took the panel as 1.4 × wider.)
+    const k = vp.offsetWidth ? v.width / vp.offsetWidth : 1;
     const onRight = p.left > v.left + v.width / 2;
     const bw = leanFrame.current ? (sh.ownerDocument.querySelector<HTMLElement>('nav[aria-label="메뉴"]')?.offsetWidth ?? 0) : barW();
-    let l = onRight ? bw + 12 : Math.max(bw + 12, p.right - v.left + 12);
+    let l = onRight ? bw + 12 : Math.max(bw + 12, (p.right - v.left) / k + 12);
     // The left menu bar and the mini arm beside it: the robot is framed to their right.
     if (miniShown.current && !leanFrame.current) l = Math.max(l, (onRight ? 12 : l) + miniLeft() + MINI.width + 8);
-    const r = onRight ? Math.max(0, v.right - p.left + 12) : 0;
+    const r = onRight ? Math.max(0, (v.right - p.left) / k + 12) : 0;
     // The camera window opens in the free part's lower left: the robot is framed beside it.
     const camEl = sh.querySelector<HTMLElement>('[data-panel="camera"]');
-    if (camEl && !camEl.hidden) l = Math.max(l, camEl.getBoundingClientRect().right - v.left + 12);
+    if (camEl && !camEl.hidden) l = Math.max(l, (camEl.getBoundingClientRect().right - v.left) / k + 12);
     // The monitor's column on the left, the view tools on the right, the top bar over the view.
     const rect = (sel: string) => sh.ownerDocument.querySelector<HTMLElement>(sel)?.getBoundingClientRect();
     const hud = rect('[data-panel="hud"]');
-    if (hud && hud.width) l = Math.max(l, hud.right - v.left + 12);
+    if (hud && hud.width) l = Math.max(l, (hud.right - v.left) / k + 12);
     // The 처음 시작 card under the title: the robot is framed to its right while it is open.
     const guide = rect('[data-panel="start"]');
-    if (guide && guide.width) l = Math.max(l, guide.right - v.left + 12);
+    if (guide && guide.width) l = Math.max(l, (guide.right - v.left) / k + 12);
     // (입문 과정: the 앞 · 옆 · 위 · 처음 시점 row lies across the top of the scene, not down its side — only the
     // display rail under it, when there is one, takes room on the right; 수정 지시서 v5 파트 2-1.)
     const toolsEl = sh.ownerDocument.querySelector<HTMLElement>('[data-panel="viewtools"]');
@@ -1196,11 +1201,11 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     const top = rect('[data-panel="topbar"]');
     return {
       l,
-      r: tools && tools.width ? Math.max(r, v.right - tools.left + 8) : r,
-      t: top ? Math.max(0, top.bottom - v.top + 8) : 0,
-      b: 0,
+      r: tools && tools.width ? Math.max(r, (v.right - tools.left) / k + 8) : r,
+      t: top ? Math.max(0, (top.bottom - v.top) / k + 8) : 0,
+      b: sceneFrame.current ? 84 : 0,
       // What the panel hides of the scene on the right (the 입문 과정 무대 keeps the rest to the desk).
-      hide: onRight && p.width ? Math.max(0, v.right - p.left) : 0,
+      hide: onRight && p.width ? Math.max(0, (v.right - p.left) / k) : 0,
     };
   }, []);
   const cams = useRef<CameraViewsHandle>(null);
@@ -4779,6 +4784,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       // 5-1's booth as it starts (보정 x 150 · y −40 · 펜 0, '사랑해', 손님 1명); its cards hidden.
       openCell('draw', 'G1');
       if (mode === 'scene') setSceneRun((n) => n + 1);
+      // (파트 16 A-2: each start — the 절 or its other mode — from the 절's 처음 시점, as 1-2 · 1-3 do.)
+      window.setTimeout(() => stageApi.current?.view('home'), 1200);
       return;
     }
     // 1-2 · 1-3: the plain desk, the arm at 기본 자세 (1-2 with the pen, so the tool shows apart from the tip).
@@ -5869,11 +5876,16 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   // 입문 과정: the helper arm, its joint tags and the tip's line are in 자세히 보기 (피드백 v2 파트 3).
   const miniOn = miniWanted && !railOpen && !cellAt && (!course || detail);
   useEffect(() => {
-    miniShown.current = miniWanted;
-  }, [miniWanted]);
+    // (파트 16: in the 입문 과정 the room beside the menu is kept only while the helper arm is there — 자세히 보기; it was
+    // kept always, so the 3D view framed the robot 450 px right of where the free part's middle is.)
+    miniShown.current = course ? miniOn : miniWanted;
+  }, [course, miniOn, miniWanted]);
   useEffect(() => {
     leanFrame.current = inCafe;
   }, [inCafe]);
+  useEffect(() => {
+    sceneFrame.current = course && subMode === 'scene';
+  }, [course, subMode]);
   const barFoot: BarItem[] = [{ ...work('zero', '영점', 'zero', robotMode ? '영점 맞추기' : '로봇을 연결하면 영점을 맞춰요'), disabled: !robotMode || (busy && !zeroMode) }];
   /** The 3D view's top-left corner: the arm's name and ROBOT LINK, when no cell or window is there. */
   // (입문 과정: no MYCOBOT 280 · SIMULATION · ROBOT LINK over the scene; the link comes back in 5-5.)
@@ -7022,7 +7034,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   courseStage={course && (!cellAt || cellAt.cell === 'draw') ? COURSE_LOOK : null}
                   courseView={course && subNow ? courseViewOf(subNow.id, subNow.scene) : null}
                   // 2-1: what is not on the desk yet (the arm, the mat, the card; the lamp is not part of it).
-                  courseHide={courseStep?.id === '2-1' ? { arm: courseStep.placed < 1, mat: courseStep.placed < 2, card: courseStep.placed < 3, lamp: true } : draw4On ? { arm: false, mat: false, card: true, lamp: true } : null}
+                  courseHide={courseStep?.id === '2-1' ? { arm: courseStep.placed < 1, mat: courseStep.placed < 2, card: courseStep.placed < 3, lamp: true } : draw4On ? { arm: false, mat: false, card: true, lamp: true } : course && subNow?.id === '1-1' ? { handed: true } : null}
                   cellClock={cellClock}
                   // (2장's 절 and its mission: no 관찰 bubbles — only the 위치 줄, 지금 할 일 and the place to press.)
                   // 입문 과정 (결정 회신 파트 9-2): while a 확인 문제 is open (the scene held), the bubbles at the scene's left.
