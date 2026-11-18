@@ -33,6 +33,9 @@ async function context(b, opts = {}) {
   await ctx.addInitScript(
     ([day, o]) => {
       localStorage.setItem('robot-console-sim-rate', o.rate || '4');
+      // 3D 화질: 보통 (그래픽카드가 있으면 앱이 고화질 — AO · 후처리 톤 곡선 — 을 켜서 배경 #EEF2F6이 #E4E8EC로 어두워진다.
+      // 그동안의 캡처 · 렌더는 그래픽카드 없는 환경의 보통 화질이라, 같은 톤으로 맞춤. WALK_QUALITY=high로 고화질.)
+      localStorage.setItem('robot-console-quality', o.quality || 'normal');
       localStorage.setItem('life-copyright-day', day);
       if (o.seed && !sessionStorage.getItem('seeded')) {
         for (const [k, v] of Object.entries(o.seed)) localStorage.setItem(k, v);
@@ -61,7 +64,7 @@ async function context(b, opts = {}) {
       if (document.documentElement) hide();
       document.addEventListener('DOMContentLoaded', hide);
     },
-    [today(), opts],
+    [today(), { quality: process.env.WALK_QUALITY, ...opts }],
   );
   return ctx;
 }
