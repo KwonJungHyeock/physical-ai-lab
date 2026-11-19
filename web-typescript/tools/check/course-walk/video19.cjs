@@ -93,9 +93,10 @@ const clickAt = async (r, p, sel) => {
   if (!c) return console.log('  MISS', sel);
   await p.mouse.move(c[0], c[1], { steps: 4 });
   await r.frame();
+  // down and up in the same frame: the jog keys move on while held, so no frame passes between
   await p.mouse.down();
-  await r.frame();
   await p.mouse.up();
+  await r.frame();
 };
 const restMouse = (p) => p.mouse.move(5, 1075);
 
@@ -140,7 +141,7 @@ const restMouse = (p) => p.mouse.move(5, 1075);
     await ctx.close();
   }
 
-  // ② 3-1: 베이스(J1) +5° 세 번 (조작판이 보이게)
+  // ② 3-1: 베이스(J1) +5° 두 번 · 어깨(J2) +5° 두 번 (조작판이 보이게)
   if (only.has('c2')) {
     const ctx = await ctx1();
     const p = await L.open(ctx, U('3-1', '&mode=practice'));
@@ -149,10 +150,11 @@ const restMouse = (p) => p.mouse.move(5, 1075);
     await restMouse(p);
     const r = await recorder(ctx, p, 'c2');
     await r.frames(20);
-    for (let k = 0; k < 3; k++) {
-      r.mark(`click ${k + 1}`);
-      await clickAt(r, p, `[aria-label="${K[0]} +5°"]`);
-      await r.frames(40);
+    // 베이스 +5° 두 번(10°: 1단계 끝) → 어깨 +5° 두 번
+    for (const j of [0, 0, 1, 1]) {
+      r.mark(`click ${K[j]}`);
+      await clickAt(r, p, `[aria-label="${K[j]} +5°"]`);
+      await r.frames(32);
     }
     await restMouse(p);
     await r.frames(30);
