@@ -10,3 +10,5 @@
 | `hand-card.png` | 4-3, 5-1 ~ 5-3 | 사람 손 · 카드 놓기 자세 (카드를 쥐고 매트에 내려놓는 손) |
 | `test1-photo1.png` ~ `test1-photo6.png` | 1장 수행평가 | 로봇 사진 6장 (협동로봇 3 · 아닌 것 3), 팀에서 정해 전달 |
 | `part-robot.png` · `part-mat.png` · `part-pen.png` · `part-card.png` · `part-cable.png` | 2-1 | 구성품 상자 속 구성품 5개 그림 (로봇 · 매트 · 펜 · 카드 · 케이블, 실물 키트 사진이나 그림) |
+
+파트 18 (2026-11-19): `part-robot` · `part-mat` · `part-card` · `part-pen`은 앱 3D 장면(?render=1)을 화면 UI 없이 렌더해 넣음(528 × 336, 배경 #EEF2F6). 로봇 메시는 Elephant Robotics mycobot_ros2(BSD 2-Clause, `public/robot/rdkx5/ATTRIBUTION.md`). `part-cable`은 아직 없음.
