@@ -12,3 +12,5 @@
 | `part-robot.png` · `part-mat.png` · `part-pen.png` · `part-card.png` · `part-cable.png` | 2-1 | 구성품 상자 속 구성품 5개 그림 (로봇 · 매트 · 펜 · 카드 · 케이블, 실물 키트 사진이나 그림) |
 
 파트 18 (2026-11-19): `part-robot` · `part-mat` · `part-card` · `part-pen`은 앱 3D 장면(?render=1)을 화면 UI 없이 렌더해 넣음(528 × 336, 배경 #EEF2F6). 로봇 메시는 Elephant Robotics mycobot_ros2(BSD 2-Clause, `public/robot/rdkx5/ATTRIBUTION.md`). `part-cable`은 아직 없음.
+
+파트 18 (2026-11-19): `test1-photo1` ~ `test1-photo6`은 공개 로봇 모델을 같은 배경 · 같은 각도 · 같은 크기 · 한 가지 회색으로 렌더한 것(로고 · 회사 색 없음, 880 × 560). 순서: 1 myCobot 280 · 2 드론(Skydio X2) · 3 두산 A0509 · 4 이동 로봇(myAGV) · 5 4족 로봇(ANYmal C) · 6 레인보우 RB5. 협동로봇 = 1 · 3 · 6. 출처 · 라이선스는 저장소 맨 위 `assets/LICENSES.md`.
