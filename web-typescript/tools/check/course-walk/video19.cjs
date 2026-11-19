@@ -104,10 +104,29 @@ async function recorder(ctx, p, name) {
   return r;
 }
 const busy = (p) => p.evaluate(() => !!document.querySelector('[data-busy]'));
-const center = async (p, sel) => {
-  const b = await p.locator(sel).first().boundingBox();
-  return b && [b.x + b.width / 2, b.y + b.height / 2];
-};
+/** A point that really lands on the element (the pad's wedge keys are rings: their box centre is another key), nearest the centre. */
+const center = (p, sel) =>
+  p.evaluate((sel) => {
+    const e = document.querySelector(sel);
+    if (!e) return null;
+    const r = e.getBoundingClientRect();
+    const cx = r.x + r.width / 2,
+      cy = r.y + r.height / 2;
+    let best = null,
+      bd = Infinity;
+    for (let i = 1; i < 24; i++)
+      for (let j = 1; j < 24; j++) {
+        const x = r.x + (r.width * i) / 24,
+          y = r.y + (r.height * j) / 24;
+        const h = document.elementFromPoint(x, y);
+        const d = (x - cx) ** 2 + (y - cy) ** 2;
+        if (h && e.contains(h) && d < bd) {
+          bd = d;
+          best = [x, y];
+        }
+      }
+    return best;
+  }, sel);
 /** A real mouse click (hover · press look), the clock moving a frame between down and up. */
 const clickAt = async (r, p, sel) => {
   const c = await center(p, sel);
@@ -120,6 +139,20 @@ const clickAt = async (r, p, sel) => {
   await r.frame();
 };
 const restMouse = (p) => p.mouse.move(5, 1075);
+/** One pointer event at (x, y) on whatever is there (the mouse's pointer, id 1). */
+const pe = (p, type, x, y) =>
+  p.evaluate(
+    ([type, x, y]) => {
+      const t = document.elementFromPoint(x, y);
+      const o = { bubbles: true, cancelable: true, composed: true, clientX: x, clientY: y, pointerId: 1, pointerType: 'mouse', isPrimary: true, button: type === 'pointermove' ? -1 : 0, buttons: type === 'pointerup' ? 0 : 1 };
+      try {
+        t && t.dispatchEvent(new PointerEvent(type, o));
+      } catch (e) {
+        console.log('pe', e.message);
+      }
+    },
+    [type, x, y],
+  );
 
 (async () => {
   const b = await L.launch();
@@ -248,7 +281,7 @@ const restMouse = (p) => p.mouse.move(5, 1075);
     await p.waitForTimeout(800);
     await restMouse(p);
     const r = await recorder(ctx, p, 'c4');
-    await r.frames(15);
+    await r.frames(30);
     r.mark('run');
     await clickAt(r, p, '[data-step="run"]');
     await restMouse(p);
@@ -266,7 +299,7 @@ const restMouse = (p) => p.mouse.move(5, 1075);
       return seen && !bz;
     }, 20 * FPS);
     r.mark('end');
-    await r.frames(60);
+    await r.frames(150);
     await r.done();
     await ctx.close();
   }
@@ -303,21 +336,24 @@ const restMouse = (p) => p.mouse.move(5, 1075);
       ],
     ];
     r.mark('draw');
+    console.log('  c5 board', JSON.stringify(svg));
     for (const s of strokes) {
+      console.log('  c5 stroke', JSON.stringify(s));
       const [x, y] = pt(...s[0]);
-      await p.mouse.move(x, y, { steps: 3 });
       await r.frame();
-      await p.mouse.down();
+      // (pointer events sent in the page: Playwright's mouse waits for ever on the board's pointer capture while the clock is paused)
+      await pe(p, 'pointerdown', x, y);
       // 10 frames a segment: the line grows on the board as a hand would draw it
       for (let k = 1; k < s.length; k++) {
         const [ax, ay] = pt(...s[k - 1]);
         const [bx, by] = pt(...s[k]);
         for (let i = 1; i <= 10; i++) {
-          await p.mouse.move(ax + ((bx - ax) * i) / 10, ay + ((by - ay) * i) / 10);
+          await pe(p, 'pointermove', ax + ((bx - ax) * i) / 10, ay + ((by - ay) * i) / 10);
           await r.frame();
         }
       }
-      await p.mouse.up();
+      const [ex, ey] = pt(...s[s.length - 1]);
+      await pe(p, 'pointerup', ex, ey);
       await r.frames(6);
     }
     await r.frames(20);
