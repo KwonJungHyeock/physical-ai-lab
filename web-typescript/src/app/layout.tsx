@@ -17,6 +17,14 @@ const pretendard = localFont({
   ],
 });
 
+// NanumSquareRound ExtraBold (OFL, fonts/NanumSquareRound-LICENSE.txt): titles only — the 입문 과정's 절 number and
+// name and its panel titles, in the face of the 교안's titles (the same 2,350 syllables + Latin subset).
+const nanumRound = localFont({
+  variable: "--font-title",
+  display: "swap",
+  src: [{ path: "./fonts/NanumSquareRound-ExtraBold.subset.woff2", weight: "800" }],
+});
+
 // Code only: the Python / ROS 2 editor and its output.
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
@@ -50,7 +58,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="ko"
-      className={`${pretendard.variable} ${jetbrainsMono.variable} ${michroma.variable} h-full antialiased`}
+      className={`${pretendard.variable} ${nanumRound.variable} ${jetbrainsMono.variable} ${michroma.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

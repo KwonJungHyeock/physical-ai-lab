@@ -460,7 +460,7 @@
 }
 /* 대응표 */
 :where([data-course]) .tag_warn {
-  color: #f0a23b;
+  color: #f67923;
 }
 .tag_err {
   background: var(--stop-soft);
@@ -1336,7 +1336,7 @@ input.field {
 }
 /* 대응표 */
 :where([data-course]) .modeChip[data-mode='real'] {
-  color: #f0a23b;
+  color: #f67923;
 }
 .dockScroll {
   display: flex;
@@ -2168,7 +2168,7 @@ div.zeroFlow {
 }
 /* 대응표 */
 :where([data-course]) .zeroReadings .zeroFar {
-  color: #f0a23b;
+  color: #f67923;
 }
 .zeroWarn {
   color: #b54708 !important;
@@ -2176,7 +2176,7 @@ div.zeroFlow {
 }
 /* 대응표 */
 :where([data-course]) .zeroWarn {
-  color: #f0a23b !important;
+  color: #f67923 !important;
   font-size: 14px;
 }
 /* 영점: the five steps as one line of dots, the joint at hand with its reading */
@@ -2345,6 +2345,7 @@ div.zeroFlow {
 /* 대응표 */
 :where([data-course]) .pyDot {
   border-radius: 8px;
+  background: linear-gradient(135deg, #3776ab 50%, #f67923 50%);
 }
 .modDot {
   width: 7px;
@@ -2506,7 +2507,7 @@ div.zeroFlow {
 /* 대응표 */
 :where([data-course]) .tkBuiltin,
 :where([data-course]) .tkSelf {
-  color: #f0a23b;
+  color: #f67923;
 }
 .tkDecorator {
   color: #8250df;
@@ -3302,7 +3303,7 @@ div.zeroFlow {
 }
 /* 대응표 */
 :where([data-course]) .ownerBanner > b {
-  color: #f0a23b;
+  color: #f67923;
 }
 .ownerActions {
   display: flex;
@@ -6458,7 +6459,7 @@ div.zeroFlow {
 }
 /* 대응표 */
 :where([data-course]) .prepList li[data-ok='unknown'] .prepMark {
-  color: #f0a23b;
+  color: #f67923;
 }
 .prepActions {
   display: flex;
@@ -6668,7 +6669,7 @@ div.zeroFlow {
 }
 /* 대응표 */
 :where([data-course]) .app .lineSeg button:disabled {
-  color: #f0a23b;
+  color: #f67923;
 }
 .app .lineSelect {
   height: 36px;
@@ -7177,11 +7178,16 @@ div.zeroFlow {
 }
 /* 대응표 */
 :where([data-course]) .light[data-on][data-tone='real'] {
-  color: #f0a23b;
+  color: #f67923;
 }
 .light[data-on][data-tone='real'] i {
   background: #ffad1f;
   box-shadow: 0 0 10px #ffad1f;
+}
+/* 대응표 */
+:where([data-course]) .light[data-on][data-tone='real'] i {
+  background: #f67923;
+  box-shadow: 0 0 10px #f67923;
 }
 .light[data-on][data-tone='run'] {
   color: #e4eaf2;
@@ -7266,6 +7272,11 @@ div.zeroFlow {
   background: #ffad1f;
   box-shadow: 0 0 8px #ffad1f;
 }
+/* 대응표 */
+:where([data-course]) .statusRow[data-on][data-tone='real'] i {
+  background: #f67923;
+  box-shadow: 0 0 8px #f67923;
+}
 .statusRow[data-on][data-tone='run'] i {
   background: #e4eaf2;
   box-shadow: 0 0 8px #e4eaf2;
@@ -7276,6 +7287,10 @@ div.zeroFlow {
 }
 .statusRow[data-on][data-tone='warn'] i {
   background: #f59e0b;
+}
+/* 대응표 */
+:where([data-course]) .statusRow[data-on][data-tone='warn'] i {
+  background: #f67923;
 }
 .statusRow[data-on][data-tone='err'] {
   background: var(--stop-soft);
@@ -7517,7 +7532,7 @@ div.zeroFlow {
 /* 대응표 */
 :where([data-course]) .app .side .tkBuiltin,
 :where([data-course]) .app .side .tkSelf {
-  color: #f0a23b;
+  color: #f67923;
 }
 .app .side .statusBar {
   background: #303236;
@@ -7650,7 +7665,9 @@ div.zeroFlow {
 /* 대응표 */
 :where([data-course]) .missionNeed {
   border-radius: 12px;
-  color: #f0a23b;
+  background: rgba(246, 121, 35, 0.1);
+  border: 1px solid rgba(246, 121, 35, 0.35);
+  color: #f67923;
   font-size: 14px;
 }
 .missionNeed span {
@@ -7678,9 +7695,11 @@ div.zeroFlow {
 }
 /* 대응표 */
 :where([data-course]) .app .missionNeed button {
+  background: linear-gradient(180deg, #f67923, #f67923);
   color: #14171c;
   font-weight: 700;
   font-size: 14px;
+  box-shadow: 0 0 14px rgba(246, 121, 35, 0.35);
 }
 .app .missionNeed button:disabled {
   opacity: 0.5;
@@ -8547,7 +8566,7 @@ div.zeroFlow {
 }
 /* 대응표 */
 :where([data-course]) :is(.notice, .noticeHistory) .tag_warn {
-  color: #f0a23b;
+  color: #f67923;
 }
 :is(.notice, .noticeHistory) .tag_err {
   background: none;
@@ -9647,7 +9666,7 @@ div.zeroFlow {
 }
 /* 대응표 */
 :where([data-course]) .linkChecks li[data-state='warn'] {
-  color: #f0a23b;
+  color: #f67923;
 }
 .linkChecks li[data-state='warn'] i::before {
   content: '!';
@@ -10481,12 +10500,17 @@ div.zeroFlow {
   background: #f59e0b;
   box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18);
 }
+/* 대응표 */
+:where([data-course]) .foundCard[data-state='busy'] .foundDot {
+  background: #f67923;
+  box-shadow: 0 0 0 3px rgba(246, 121, 35, 0.18);
+}
 .foundCard[data-state='busy'] .foundState {
   color: #b45309;
 }
 /* 대응표 */
 :where([data-course]) .foundCard[data-state='busy'] .foundState {
-  color: #f0a23b;
+  color: #f67923;
 }
 .app .connectBox .linkBox {
   border-radius: 18px;
@@ -11041,6 +11065,11 @@ div.zeroFlow {
     0 0 0 6px rgba(245, 165, 36, 0.28);
   animation: hotBlink 1.4s ease-in-out infinite;
 }
+/* 대응표 */
+:where([data-course]) .workspace .block[data-hot] {
+  box-shadow: 0 0 0 2.5px #f67923,
+    0 0 0 6px rgba(246, 121, 35, 0.28);
+}
 @keyframes hotBlink {
   50% {
     box-shadow:
@@ -11052,6 +11081,11 @@ div.zeroFlow {
   box-shadow:
     0 0 0 2.5px #f5a524,
     0 0 0 6px rgba(245, 165, 36, 0.28);
+}
+/* 대응표 */
+:where([data-course]) .app .side .workspace .block[data-hot] {
+  box-shadow: 0 0 0 2.5px #f67923,
+    0 0 0 6px rgba(246, 121, 35, 0.28);
 }
 /* 코딩 튜토리얼: the output under the program is smaller, the program gets the room */
 .app .side .codeTab .termPanel {
@@ -12804,6 +12838,7 @@ div.zeroFlow {
 }
 /* 대응표 */
 :where([data-course]) .runDock .runNext[data-lit] {
+  background: #f67923;
   color: #14171c;
 }
 .runDock .runNext:disabled {
@@ -12841,10 +12876,14 @@ div.zeroFlow {
 }
 /* 대응표 */
 :where([data-course]) .runDock .runQuick b {
-  color: #f0a23b;
+  color: #f67923;
 }
 .runDock .runQuick[data-going] {
   box-shadow: 0 0 0 2px #ffd257;
+}
+/* 대응표 */
+:where([data-course]) .runDock .runQuick[data-going] {
+  box-shadow: 0 0 0 2px #f67923;
 }
 .runDock .runQuick:disabled {
   cursor: default;
@@ -13289,4 +13328,74 @@ div.zeroFlow {
 }
 :global(html[data-zoomed][data-course]:not(:has([aria-label='3-4 조작']))) .app .side .dockScroll:has([aria-label^='관절 조그']) .screen {
   gap: 16px;
+}
+
+/* 입문 과정 (파트 16 B-5): the top bar 54 → 44 and 지금 할 일 64 → 48 (the two lines 118 → 92), its keys 34 high. */
+@media (min-width: 1000px) and (min-height: 600px) {
+  .app[data-course] {
+    --top: 44px;
+  }
+  .app[data-course] .topBar {
+    min-height: 44px;
+    height: 44px;
+  }
+  .app[data-course][data-nowbar] {
+    --top: 92px;
+  }
+  .app[data-course][data-nowbar] .nowSlot {
+    top: 44px;
+  }
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .app[data-course] {
+  --top: 44px;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .app[data-course] .topBar {
+  min-height: 44px;
+  height: 44px;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .app[data-course][data-nowbar] {
+  --top: 92px;
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .app[data-course][data-nowbar] .nowSlot {
+  top: 44px;
+}
+.topBar[data-course] .lockup {
+  min-height: 34px;
+}
+.topBar[data-course] .lockup img {
+  height: 26px;
+}
+.app .topBar[data-course] .menuChip,
+.app .topBar[data-course] .menuChipBtn {
+  height: 34px;
+  min-height: 34px;
+  width: 34px;
+}
+/* 입문 과정 (파트 16 B-6): the panel's title in the 교안's title face. */
+[data-course] .sideModel b {
+  font-family: var(--font-title), var(--font-ui), sans-serif;
+  font-weight: 700; /* (the title face has one weight, ExtraBold: the one drawn) */
+}
+/* 입문 과정 (파트 16 B-8): 1-1 · 1-3 — the panel as tall as what it holds ([정지] right under the keys), never past
+   the window's foot (Console: data-fit). */
+@media (min-width: 1000px) and (min-height: 600px) {
+  .app[data-course] .shell .side[data-fit] {
+    bottom: auto;
+    max-height: calc(100% - var(--top) - var(--gap));
+  }
+}
+/* 대응표 */
+:where(html[data-vq~='5']) .app[data-course] .shell .side[data-fit] {
+  bottom: auto;
+  max-height: calc(100% - var(--top) - var(--gap));
+}
+.app[data-course] .side[data-fit] .pane > .poseDock[data-stop-only] {
+  margin: 8px 0 0;
+}
+.app[data-course] .side[data-fit] .dockScroll {
+  flex: none;
 }

@@ -216,8 +216,17 @@
   background: rgba(240, 162, 59, 0.14);
   box-shadow: inset 0 0 0 2px #f0a23b;
 }
+/* 대응표 */
+:where([data-course]) .row[data-lit] {
+  background: rgba(246, 121, 35, 0.14);
+  box-shadow: inset 0 0 0 2px #f67923;
+}
 .row[data-lit] em {
   color: #f0a23b;
+}
+/* 대응표 */
+:where([data-course]) .row[data-lit] em {
+  color: #f67923;
 }
 
 /* A 절's kinds: the ones it has, side by side (만드는 중: dimmed). */
@@ -300,6 +309,7 @@
 /* 대응표 */
 :where([data-course]) .missing button {
   padding: 0 24px;
+  background: #f67923;
   color: #14171c;
   font-weight: 700;
 }
@@ -307,6 +317,10 @@
 /* 수정 지시서 v3: of the state words only '지금' is orange; 40 px keys. */
 [data-course] .row[data-state='now'] em {
   color: #f0a23b;
+}
+/* 대응표 */
+:where([data-course]) [data-course] .row[data-state='now'] em {
+  color: #f67923;
 }
 
 /* ===========================================================================
@@ -374,12 +388,21 @@
   box-shadow: inset 0 0 0 1px #f0a23b;
   white-space: nowrap;
 }
+/* 대응표 */
+:where([data-course]) .resume {
+  background: rgba(246, 121, 35, 0.14);
+  box-shadow: inset 0 0 0 1px #f67923;
+}
 .resume em {
   flex: none;
   font-size: 14px;
   font-style: normal;
   font-weight: 700;
   color: #f0a23b;
+}
+/* 대응표 */
+:where([data-course]) .resume em {
+  color: #f67923;
 }
 .resume b {
   min-width: 0;
@@ -409,6 +432,10 @@
   font-size: 18px;
   font-weight: 700;
   cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .resume button {
+  background: #f67923;
 }
 .resume button:disabled {
   opacity: 0.4;
@@ -591,8 +618,17 @@
   background: rgba(240, 162, 59, 0.14);
   box-shadow: inset 0 0 0 1px #f0a23b;
 }
+/* 대응표 */
+:where([data-course]) .item[data-lit] {
+  background: rgba(246, 121, 35, 0.14);
+  box-shadow: inset 0 0 0 1px #f67923;
+}
 .item[data-lit] > i {
   color: #f0a23b;
+}
+/* 대응표 */
+:where([data-course]) .item[data-lit] > i {
+  color: #f67923;
 }
 .item[data-lit] > b {
   font-weight: 700;
@@ -615,6 +651,10 @@
 }
 .item[data-lit] .mark:not([data-done]) {
   box-shadow: inset 0 0 0 1px #f0a23b;
+}
+/* 대응표 */
+:where([data-course]) .item[data-lit] .mark:not([data-done]) {
+  box-shadow: inset 0 0 0 1px #f67923;
 }
 .mark[data-done] {
   background: #22c55e;

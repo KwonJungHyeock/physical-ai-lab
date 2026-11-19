@@ -568,6 +568,7 @@
 /* 대응표 */
 :where([data-course]) .notice button {
   border-radius: 12px;
+  background: #f67923;
   color: #14171c;
   font-size: 18px;
   font-weight: 700;
@@ -624,6 +625,11 @@
 .tags > b {
   border-color: #f0a23b;
   color: #f0a23b;
+}
+/* 대응표 */
+:where([data-course]) .tags > b {
+  border-color: #f67923;
+  color: #f67923;
 }
 .cover h1 {
   margin: 0;

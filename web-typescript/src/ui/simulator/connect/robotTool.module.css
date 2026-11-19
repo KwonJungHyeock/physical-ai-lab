@@ -104,7 +104,7 @@
 }
 /* 대응표 */
 :where([data-course]) .note {
-  color: #f0a23b;
+  color: #f67923;
   font-size: 16px;
 }
 

@@ -21,11 +21,12 @@ import css from './recipe.module.css';
 
 // The kind of card, as a quiet stripe (the HUD keeps colour for meaning): the setting dark, the
 // writing light; amber where a person is (the customer's card coming and going).
+// (The HUD's amber: #f0a23b, and the 입문 과정's orange there — globals.css --hud-amber.)
 const KIND_COLOR: Record<DrawCard['k'], string> = {
-  receive: '#f0a23b',
+  receive: 'var(--hud-amber)',
   setup: '#5f666e',
   write: '#d6dbe0',
-  give: '#f0a23b',
+  give: 'var(--hud-amber)',
 };
 const CIRCLED = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩'];
 

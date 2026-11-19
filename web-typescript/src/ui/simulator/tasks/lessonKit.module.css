@@ -602,6 +602,7 @@
 }
 /* 대응표 */
 :where([data-course]) .level[data-level='보통'] {
+  background: var(--hud-amber, #f67923);
   color: #14171c;
 }
 .level[data-level='노력'] {

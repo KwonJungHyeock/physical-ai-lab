@@ -182,6 +182,11 @@
     inset 0 0 0 1.5px var(--hud-amber),
     0 0 8px rgba(240, 162, 59, 0.6);
 }
+/* 대응표 */
+:where([data-course]) .cup[data-over] .glass {
+  box-shadow: inset 0 0 0 1.5px var(--hud-amber),
+    0 0 8px rgba(246, 121, 35, 0.6);
+}
 .cup small em {
   color: var(--hud-amber);
   letter-spacing: 0;
@@ -519,6 +524,11 @@
 /* 대응표 */
 :where([data-course]) .wait {
   border-radius: 8px;
+  background: repeating-linear-gradient(
+    135deg,
+    #f67923 0 5px,
+    #f67923 5px 10px
+  );
 }
 .wait[data-signal] {
   background: repeating-linear-gradient(
@@ -732,6 +742,10 @@
 .doorBig[data-glow] {
   box-shadow: 0 0 0 2px #ffd257;
 }
+/* 대응표 */
+:where([data-course]) .doorBig[data-glow] {
+  box-shadow: 0 0 0 2px #f67923;
+}
 
 /* 보기 (WatchPane): the O · X as badge sockets, filled as they are answered. */
 .sockets {
@@ -843,6 +857,10 @@
 }
 .repeat[data-glow] {
   box-shadow: 0 0 0 2px #ffd257;
+}
+/* 대응표 */
+:where([data-course]) .repeat[data-glow] {
+  box-shadow: 0 0 0 2px #f67923;
 }
 
 /* 해 보기 ② (조그): how far the tip is from the ring, axis by axis. */
@@ -1057,6 +1075,10 @@
 .serve[data-glow] select {
   box-shadow: 0 0 0 2px #ffd257;
 }
+/* 대응표 */
+:where([data-course]) .serve[data-glow] select {
+  box-shadow: 0 0 0 2px #f67923;
+}
 .moveKeys {
   display: inline-flex;
   flex-direction: column;
@@ -1118,6 +1140,11 @@
   border-left-color: #f59e0b;
   background: rgba(245, 158, 11, 0.07);
 }
+/* 대응표 */
+:where([data-course]) .wrap[data-kind='event'] {
+  border-left-color: #f67923;
+  background: rgba(246, 121, 35, 0.07);
+}
 .wrapHead {
   display: flex;
   flex-wrap: wrap;
@@ -1151,6 +1178,7 @@
 /* 대응표 */
 :where([data-course]) .wrapHead[data-glow] {
   border-radius: 8px;
+  box-shadow: 0 0 0 2px #f67923;
 }
 .maker .branchOff {
   display: block;

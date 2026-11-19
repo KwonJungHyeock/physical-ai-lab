@@ -36,7 +36,7 @@ const radius = (r) => (r < 3 ? r : r <= 9.5 ? 8 : r <= 40 ? 12 : r);
 /** Gaps and paddings: 4 · 8 · 12 · 16 · 24 (0 ~ 2 and anything over 28 stay). */
 const space = (v) => (v <= 2 || v > 28 ? v : v <= 5 ? 4 : v <= 9 ? 8 : v <= 13 ? 12 : v <= 19 ? 16 : 24);
 
-const TEXT = { light: '#f6f7f9', sub: '#c9ced5', dark: '#14171c', orange: '#f0a23b', green: '#86efac', red: '#ff8f86', blue: '#93c5fd' };
+const TEXT = { light: '#f6f7f9', sub: '#c9ced5', dark: '#14171c', orange: '#f67923', green: '#86efac', red: '#ff8f86', blue: '#93c5fd' };
 /** White laid over a dark plate: 8 % (a raised box), 16 % (chosen · pressed). Lines: 18 %, 45 %. */
 const plate = (a) => (a <= 0 ? a : a <= 0.11 ? 0.08 : a <= 0.24 ? 0.16 : a);
 const line = (a) => (a <= 0 ? a : a <= 0.24 ? 0.18 : a <= 0.7 ? 0.45 : a);
@@ -107,6 +107,23 @@ const textColour = (v) => {
   if (h < 18 || h > 335) return l < 0.45 ? null : TEXT.red;
   return null;
 };
+/**
+ * 파트 16 B-7: the accent orange — the 교안's #E8650A at the same hue and saturation, lightened 47.5 → 55 % for the dark
+ * screen. Every accent orange of the old family (#f0a23b · #f5a524 · #f59e0b · #ff9f1c · #ffb020 …) in a fill, a line, a
+ * frame or a glow becomes it (an alpha kept); the text colour is TEXT.orange, the same one.
+ */
+const ACCENT = { r: 246, g: 121, b: 35 };
+const isAccent = (c) => {
+  if (!c) return false;
+  const { h, s, l } = hsl(c);
+  return h >= 25 && h < 48 && s >= 0.6 && l >= 0.45 && l <= 0.72;
+};
+const accentIn = (v) =>
+  v.replace(/#[0-9a-f]{6}\b|#[0-9a-f]{3}\b|rgba?\([^)]*\)/gi, (tok) => {
+    const c = rgbOf(tok);
+    if (!isAccent(c)) return tok;
+    return c.a >= 0.99 ? '#f67923' : `rgba(${ACCENT.r}, ${ACCENT.g}, ${ACCENT.b}, ${c.a})`;
+  });
 const same = (a, b) => {
   const x = rgbOf(a);
   const y = rgbOf(b);
@@ -272,15 +289,22 @@ function changes(sel, body, file) {
       const t = textColour(v);
       if (t && !same(t, v)) put(prop, `${t}${important}`);
     } else if (prop === 'background' || prop === 'background-color') {
-      const t = whiteAlpha(v, plate);
+      const a = accentIn(v);
+      const t = a !== v ? a : whiteAlpha(v, plate);
       if (t) put(prop, `${t}${important}`);
     } else if (prop === 'border-color') {
-      const t = whiteAlpha(v, line);
+      const a = accentIn(v);
+      const t = a !== v ? a : whiteAlpha(v, line);
       if (t) put(prop, `${t}${important}`);
     } else if (/^border(-top|-right|-bottom|-left)?$/.test(prop)) {
+      const a = accentIn(v);
       const m = /(rgba?\([^)]*\))\s*$/.exec(v);
-      const t = m && whiteAlpha(m[1], line);
-      if (t) put(`${prop}-color`, t);
+      const t = a !== v ? null : m && whiteAlpha(m[1], line);
+      if (a !== v) put(prop, `${a}${important}`);
+      else if (t) put(`${prop}-color`, t);
+    } else if (/^(box-shadow|outline|outline-color|text-decoration-color|caret-color|accent-color|fill|stroke|text-shadow)$/.test(prop) || /^border-(top|right|bottom|left)-color$/.test(prop)) {
+      const a = accentIn(v);
+      if (a !== v) put(prop, `${a}${important}`);
     } else if (SPACED.has(file) && (prop === 'gap' || prop === 'padding')) {
       const parts = v.split(/\s+/);
       if (parts.every((x) => px(x) !== null || x === '0')) {

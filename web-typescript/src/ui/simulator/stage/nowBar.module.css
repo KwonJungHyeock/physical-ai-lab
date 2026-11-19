@@ -28,6 +28,7 @@
 :where([data-course]) .now em {
   font-size: 18px;
   font-weight: 700;
+  color: #f67923;
 }
 .now p {
   flex: 1;
@@ -67,6 +68,7 @@
 }
 /* 대응표 */
 :where([data-course]) .n {
+  background: #f67923;
   color: #14171c;
 }
 .ok {
@@ -116,6 +118,7 @@
 /* 대응표 */
 :where([data-course]) .meter > i > i {
   border-radius: 8px;
+  background: #f67923;
 }
 .meter output {
   min-width: 96px;
@@ -192,6 +195,7 @@
 }
 /* 대응표 */
 :where([data-course]) .next[data-lit] {
+  background: #f67923;
   color: #14171c;
 }
 
@@ -208,6 +212,8 @@
 /* 대응표 */
 :where([data-course]) .ring {
   border-radius: 12px;
+  box-shadow: 0 0 0 3px #f67923,
+    0 0 18px rgba(246, 121, 35, 0.55);
 }
 .badge {
   position: fixed;
@@ -227,6 +233,7 @@
 }
 /* 대응표 */
 :where([data-course]) .badge {
+  background: #f67923;
   color: #14171c;
   font-size: 16px;
   font-weight: 700;
@@ -273,6 +280,10 @@
 }
 .steps i[data-on] {
   background: #f0a23b;
+}
+/* 대응표 */
+:where([data-course]) .steps i[data-on] {
+  background: #f67923;
 }
 /* (A narrow window — 1280 px: where a 절 has both its meter and its steps, the meter's bar is shorter, so the sentence is whole.) */
 @media (max-width: 1340px) {
@@ -389,4 +400,43 @@
 /* 대응표 */
 :where(html[data-vq~='24']) [data-course] .now:has(.steps) .meter > i {
   width: 80px;
+}
+
+/* 입문 과정 (파트 16 B-5): 지금 할 일 one step smaller (문장 18 · 번호 28 · keys 34 high): 48 px with the top bar's 44. */
+[data-course] .now {
+  min-height: 48px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  gap: 12px;
+}
+[data-course] .now em {
+  font-size: 16px;
+}
+[data-course] .now p {
+  font-size: 18px;
+}
+[data-course] .n,
+[data-course] .ok {
+  width: 28px;
+  height: 28px;
+  font-size: 16px;
+}
+[data-course] .next,
+[data-course] .replay {
+  height: 34px;
+  font-size: 16px;
+}
+/* 입문 과정 (파트 16 B-7 시안): the accent in the 교안's orange — #E8650A's hue and saturation, lightened 47.5 → 55 % for
+   the dark screen (#F67923: 6.4 : 1 on the top lines, 6.6 : 1 under dark letters). */
+[data-course] .n,
+[data-course] .badge,
+[data-course] .next[data-lit],
+[data-course] .meter > i > i,
+[data-course] .steps i[data-on] {
+  background: #f67923;
+}
+[data-course] .ring {
+  box-shadow:
+    0 0 0 3px #f67923,
+    0 0 18px rgba(246, 121, 35, 0.55);
 }

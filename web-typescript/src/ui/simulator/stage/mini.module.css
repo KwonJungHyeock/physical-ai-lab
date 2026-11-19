@@ -63,6 +63,10 @@
 .leads circle[data-level='1'] {
   fill: #ff9f1c;
 }
+/* 대응표 */
+:where([data-course]) .leads circle[data-level='1'] {
+  fill: #f67923;
+}
 .leads circle[data-level='2'] {
   fill: #ff3b3b;
 }
@@ -102,6 +106,10 @@
   background: rgba(150, 82, 0, 0.82);
   border-color: #ff9f1c;
 }
+/* 대응표 */
+:where([data-course]) .chip[data-level='1'] > span {
+  border-color: #f67923;
+}
 .chip[data-level='2'] > span {
   background: rgba(170, 20, 28, 0.88);
   border-color: #ff5a5a;
@@ -113,7 +121,7 @@
 /* 대응표 */
 :where([data-course]) .chip[data-level='1'] i,
 :where([data-course]) .chip[data-level='2'] i {
-  color: #f0a23b;
+  color: #f67923;
 }
 
 .tcp {
@@ -190,6 +198,10 @@
   background: rgba(40, 26, 8, 0.6);
   border-color: rgba(240, 162, 59, 0.85);
   color: var(--hud-amber);
+}
+/* 대응표 */
+:where([data-course]) .chip[data-level='1'] > span {
+  border-color: rgba(246, 121, 35, 0.85);
 }
 .chip[data-level='2'] > span {
   background: rgba(46, 12, 10, 0.65);

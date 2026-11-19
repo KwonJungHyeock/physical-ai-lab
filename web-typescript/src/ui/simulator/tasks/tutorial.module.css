@@ -277,6 +277,10 @@
   stroke-width: 2.5;
   animation: spotEdge 1.4s ease-in-out infinite;
 }
+/* 대응표 */
+:where([data-course]) .edge {
+  stroke: #f67923;
+}
 
 @keyframes spotEdge {
   50% {
@@ -300,6 +304,7 @@
 /* 대응표 */
 :where([data-course]) .say {
   border-radius: 12px;
+  background: #f67923;
   color: #14171c;
   font-weight: 700;
 }
@@ -317,10 +322,18 @@
   right: 100%;
   border-right-color: #ffd257;
 }
+/* 대응표 */
+:where([data-course]) .say[data-side='r']::after {
+  border-right-color: #f67923;
+}
 
 .say[data-side='l']::after {
   left: 100%;
   border-left-color: #ffd257;
+}
+/* 대응표 */
+:where([data-course]) .say[data-side='l']::after {
+  border-left-color: #f67923;
 }
 
 @media (prefers-reduced-motion: reduce) {

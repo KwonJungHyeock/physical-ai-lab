@@ -143,6 +143,12 @@
     var(--hud-key-shadow),
     0 0 12px rgba(240, 162, 59, 0.2);
 }
+/* 대응표 */
+:where([data-course]) .connPill[data-state='lost'] {
+  border-color: rgba(246, 121, 35, 0.75);
+  box-shadow: var(--hud-key-shadow),
+    0 0 12px rgba(246, 121, 35, 0.2);
+}
 .connPill[data-state='lost'] b,
 .connPill[data-state='lost'] small {
   color: var(--hud-amber);

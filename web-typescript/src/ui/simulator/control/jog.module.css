@@ -178,6 +178,10 @@
   background: linear-gradient(90deg, #f5a524 var(--fill, 50%), #424448 var(--fill, 50%));
   cursor: pointer;
 }
+/* 대응표 */
+:where([data-course]) .speed input {
+  background: linear-gradient(90deg, #f67923 var(--fill, 50%), #424448 var(--fill, 50%));
+}
 .speed input::-webkit-slider-thumb {
   appearance: none;
   width: 20px;
@@ -186,6 +190,10 @@
   background: #fff;
   box-shadow: 0 0 0 3px #f5a524;
 }
+/* 대응표 */
+:where([data-course]) .speed input::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px #f67923;
+}
 .speed input::-moz-range-thumb {
   width: 18px;
   height: 18px;
@@ -193,6 +201,10 @@
   border-radius: 50%;
   background: #fff;
   box-shadow: 0 0 0 3px #f5a524;
+}
+/* 대응표 */
+:where([data-course]) .speed input::-moz-range-thumb {
+  box-shadow: 0 0 0 3px #f67923;
 }
 
 /* --- the keys --------------------------------------------------------------------------------- */
@@ -341,7 +353,7 @@
 }
 /* 대응표 */
 :where([data-course]) .head output[data-near] {
-  color: #f0a23b;
+  color: #f67923;
 }
 .what {
   font-size: 12.5px;
@@ -437,6 +449,10 @@
 }
 .bar[data-near] .knob {
   border-color: #f5a524;
+}
+/* 대응표 */
+:where([data-course]) .bar[data-near] .knob {
+  border-color: #f67923;
 }
 .bar input {
   position: absolute;
@@ -1872,6 +1888,10 @@
 .row:has(output[data-near]) .mid {
   box-shadow: var(--hud-groove-shadow), inset 0 0 0 1px rgba(240, 162, 59, 0.65);
 }
+/* 대응표 */
+:where([data-course]) .row:has(output[data-near]) .mid {
+  box-shadow: var(--hud-groove-shadow), inset 0 0 0 1px rgba(246, 121, 35, 0.65);
+}
 .track {
   height: 3px;
   background: rgba(213, 218, 225, 0.14);
@@ -1884,6 +1904,10 @@
 .bar[data-near] .fill {
   background: rgba(240, 162, 59, 0.6);
 }
+/* 대응표 */
+:where([data-course]) .bar[data-near] .fill {
+  background: rgba(246, 121, 35, 0.6);
+}
 .knob {
   width: 3px;
   height: 12px;
@@ -1895,6 +1919,10 @@
 .bar[data-near] .knob {
   background: var(--hud-amber);
   box-shadow: 0 0 6px rgba(240, 162, 59, 0.7);
+}
+/* 대응표 */
+:where([data-course]) .bar[data-near] .knob {
+  box-shadow: 0 0 6px rgba(246, 121, 35, 0.7);
 }
 /* the hint under the rows: a quiet line, its button a small metal key */
 .tip {

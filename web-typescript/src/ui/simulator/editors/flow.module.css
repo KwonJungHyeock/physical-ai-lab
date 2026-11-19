@@ -161,6 +161,8 @@
 /* 대응표 */
 :where([data-course]) .now {
   border-radius: 12px;
+  background: rgba(246, 121, 35, 0.14);
+  box-shadow: inset 3px 0 0 #f67923;
 }
 .now b {
   flex: none;
@@ -176,7 +178,7 @@
 }
 /* 대응표 */
 :where([data-course]) .now span {
-  color: #f0a23b;
+  color: #f67923;
 }
 .now[data-tone='ok'] {
   background: rgba(61, 220, 132, 0.12);
@@ -443,6 +445,7 @@
 /* 대응표 */
 :where([data-course]) .mm input {
   border-radius: 8px;
+  box-shadow: inset 0 -1.5px 0 rgba(246, 121, 35, 0.7);
 }
 
 /* raised-tile choosers (start pose, shape, level filter) */
@@ -643,6 +646,11 @@
   background: rgba(245, 165, 36, 0.12);
   box-shadow: inset 0 -2px 0 #f5a524;
 }
+/* 대응표 */
+:where([data-course]) .pick button[aria-pressed='true'] {
+  background: rgba(246, 121, 35, 0.12);
+  box-shadow: inset 0 -2px 0 #f67923;
+}
 .pick em {
   font-style: normal;
   color: var(--muted);
@@ -787,6 +795,10 @@
 .lv[data-lv='apply'] {
   background: rgba(245, 165, 36, 0.16);
   color: var(--amber);
+}
+/* 대응표 */
+:where([data-course]) .lv[data-lv='apply'] {
+  background: rgba(246, 121, 35, 0.16);
 }
 .lv[data-lv='challenge'] {
   background: rgba(229, 50, 45, 0.2);
@@ -985,6 +997,7 @@
   font-size: 14px;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
+  box-shadow: inset 0 -1.5px 0 rgba(246, 121, 35, 0.7);
 }
 
 /* values the student may change */

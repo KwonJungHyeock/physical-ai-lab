@@ -142,6 +142,7 @@
 :where([data-course]) .goal {
   padding: 8px 12px;
   border-radius: 12px;
+  background: #f67923;
   color: #14171c;
   font-size: 18px;
   font-weight: 700;

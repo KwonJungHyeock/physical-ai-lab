@@ -203,6 +203,11 @@
     inset 0 0 0 1.5px var(--hud-amber),
     0 0 10px rgba(240, 162, 59, 0.6);
 }
+/* 대응표 */
+:where([data-course]) .glass[data-over] {
+  box-shadow: inset 0 0 0 1.5px var(--hud-amber),
+    0 0 10px rgba(246, 121, 35, 0.6);
+}
 .glass i {
   display: block;
   flex: none;

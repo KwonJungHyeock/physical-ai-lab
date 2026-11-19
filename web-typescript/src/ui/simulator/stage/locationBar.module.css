@@ -187,8 +187,17 @@
   background: rgba(240, 162, 59, 0.14);
   box-shadow: inset 0 0 0 2px #f0a23b;
 }
+/* 대응표 */
+:where([data-course]) .row[data-state='now'] {
+  background: rgba(246, 121, 35, 0.14);
+  box-shadow: inset 0 0 0 2px #f67923;
+}
 .row[data-state='now'] em {
   color: #f0a23b;
+}
+/* 대응표 */
+:where([data-course]) .row[data-state='now'] em {
+  color: #f67923;
 }
 
 /* 장면 보기 / 실습 하기: the kind open now filled (plain, not the accent); the other one beside it. */
@@ -306,7 +315,7 @@
   transform: rotate(180deg);
 }
 [data-course] .kinds button {
-  height: 40px;
+  height: 32px;
 }
 
 /* 입문 과정 (수정 지시서 v4 파트 2-3): from the left — [목록], the 절's number, its name, its 차시 as a tag. */
@@ -373,4 +382,30 @@
 [data-course] .kinds button:disabled:not([data-on]),
 [data-course] .replay:disabled {
   opacity: 0.6;
+}
+
+/* 입문 과정 (파트 16 B-5 · B-6): the top line one step smaller (절 번호 28 · 절 이름 18 · 차시 16, keys 32 high) for
+   more scene; the 절 number and name in the 교안's title face (나눔스퀘어라운드 ExtraBold). */
+[data-course] .loc[data-flat] {
+  gap: 12px;
+}
+[data-course] .loc[data-flat] > b,
+[data-course] .loc[data-flat] > span {
+  font-family: var(--font-title), var(--font-ui), sans-serif;
+  font-weight: 700; /* (the title face has one weight, ExtraBold: the one drawn) */
+  letter-spacing: 0;
+}
+[data-course] .loc[data-flat] > b {
+  font-size: 28px;
+}
+[data-course] .loc[data-flat] > span {
+  font-size: 18px;
+}
+[data-course] .loc[data-flat] > small {
+  padding: 4px 12px;
+  font-size: 16px;
+}
+[data-course] .list {
+  height: 32px;
+  padding: 0 12px;
 }

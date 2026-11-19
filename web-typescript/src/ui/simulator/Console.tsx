@@ -7419,7 +7419,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
             </div>
           </section>
 
-          <aside className={`${css.panel} ${css.dock} ${css.side}`} aria-label="작업 패널" data-open={dockShown} data-tab={shownTab}>
+          <aside className={`${css.panel} ${css.dock} ${css.side}`} aria-label="작업 패널" data-open={dockShown} data-tab={shownTab} data-fit={course && (subNow?.id === '1-1' || subNow?.id === '1-3') ? '' : undefined}>
             {dockShown ? (
               <>
                 <div className={css.sideHeader}>

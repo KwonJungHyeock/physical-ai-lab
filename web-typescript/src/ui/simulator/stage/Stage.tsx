@@ -1308,7 +1308,8 @@ function readBaseLuminance(gl: WebGLRenderer, camera: Camera, base: Object3D): (
 /** The joint being zero-calibrated: its housing in the accent blue (the warnings' effect, ALERT_COLOR). */
 const FOCUS_COLOR = '#2f8cff';
 /** 입문 3-1: the link the joint being learnt turns, in the 지금 할 일 orange. */
-const COURSE_FOCUS_COLOR = '#f5a524';
+// (파트 16 B-7: the 입문 과정's accent — the 교안's orange lightened for the dark screen.)
+const COURSE_FOCUS_COLOR = '#f67923';
 
 /**
  * The line is always drawn, fully transparent while it has no path: its shader then compiles

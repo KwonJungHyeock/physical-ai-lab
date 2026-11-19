@@ -238,11 +238,18 @@
 }
 /* 대응표 */
 :where([data-course]) .status[data-tone='real'] {
-  color: #f0a23b;
+  color: #f67923;
+  background: rgba(246, 121, 35, 0.1);
+  border-color: rgba(246, 121, 35, 0.35);
 }
 .status[data-tone='real'] i {
   background: #ffad1f;
   box-shadow: 0 0 8px #ffad1f;
+}
+/* 대응표 */
+:where([data-course]) .status[data-tone='real'] i {
+  background: #f67923;
+  box-shadow: 0 0 8px #f67923;
 }
 .status[data-tone='stop'] {
   color: #ff9b93;
@@ -323,6 +330,10 @@
 .dial[data-load='mid'] .ring {
   stroke: #ffad1f;
 }
+/* 대응표 */
+:where([data-course]) .dial[data-load='mid'] .ring {
+  stroke: #f67923;
+}
 .dial[data-load='high'] .ring {
   stroke: #ff5a4e;
 }
@@ -373,6 +384,10 @@
 }
 .dial[data-load='mid'] .loadPct {
   fill: #ffad1f;
+}
+/* 대응표 */
+:where([data-course]) .dial[data-load='mid'] .loadPct {
+  fill: #f67923;
 }
 .dial[data-load='high'] .loadPct {
   fill: #ff5a4e;
@@ -434,8 +449,17 @@
 .dial[data-warn] .glow {
   stroke: #ffad1f;
 }
+/* 대응표 */
+:where([data-course]) .dial[data-warn] .fill,
+:where([data-course]) .dial[data-warn] .glow {
+  stroke: #f67923;
+}
 .dial[data-warn] .knob {
   stroke: #ffad1f;
+}
+/* 대응표 */
+:where([data-course]) .dial[data-warn] .knob {
+  stroke: #f67923;
 }
 .dial[data-warn] .glow {
   animation: warn 1.4s ease-in-out infinite;
@@ -445,14 +469,14 @@
 }
 /* 대응표 */
 :where([data-course]) .dial[data-warn] .val {
-  color: #f0a23b;
+  color: #f67923;
 }
 .dial[data-warn] .spd {
   color: #ffad1f;
 }
 /* 대응표 */
 :where([data-course]) .dial[data-warn] .spd {
-  color: #f0a23b;
+  color: #f67923;
 }
 @keyframes warn {
   50% {

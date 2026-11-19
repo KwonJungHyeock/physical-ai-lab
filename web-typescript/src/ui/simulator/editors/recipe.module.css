@@ -744,6 +744,10 @@
   outline: 2px solid #f0a23b;
   outline-offset: 2px;
 }
+/* 대응표 */
+:where([data-course]) .sw input:focus-visible + i {
+  outline: 2px solid #f67923;
+}
 .sw small {
   margin-left: auto;
   font-size: 14px;

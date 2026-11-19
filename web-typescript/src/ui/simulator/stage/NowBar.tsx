@@ -56,7 +56,7 @@ export default function NowBar({ n, text, state = 'do', meter, next, replay, ste
       {!replay && <em>지금 할 일</em>}
       {n ? <i className={css.n}>{n}</i> : state === 'ok' ? <i className={css.ok}>✓</i> : null}
       <p>
-        <PlayText text={text} size={26} />
+        <PlayText text={text} size={20} />
       </p>
       {meter && (
         <span className={css.meter} aria-label={meter.label ?? `${Math.min(meter.v, meter.of).toFixed(0)} / ${meter.of}${meter.unit}`}>

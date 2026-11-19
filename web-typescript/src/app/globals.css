@@ -135,6 +135,8 @@ html[data-course] {
   --hud-dim: #c9ced5;
   --hud-ink: #14171c;
   --hud-green: #86efac;
+  /* 파트 16 B-7: the accent in the 교안's orange, lightened for the dark screen (#E8650A → #F67923). */
+  --hud-amber: #f67923;
   /* 가독성 정리: the plate starts darker (#34383d, its own middle) so the text on it and on the boxes laid over it keeps
      4.5 : 1 from the panel's top down (the light top made #c9ced5 text 3.4 : 1 there). */
   --hud-plate: linear-gradient(180deg, #34383d 0%, #2e3135 42%, #272a2e 100%);

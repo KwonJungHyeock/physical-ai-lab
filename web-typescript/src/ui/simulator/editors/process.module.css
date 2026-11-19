@@ -318,7 +318,7 @@
 }
 /* 대응표 */
 :where([data-course]) .badge[data-mode='G'] {
-  color: #f0a23b;
+  color: #f67923;
 }
 .xyz {
   overflow: hidden;

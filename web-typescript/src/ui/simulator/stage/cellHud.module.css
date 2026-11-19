@@ -59,7 +59,7 @@
 /* 대응표 */
 :where([data-course]) .soon {
   font-size: 14px;
-  color: #f0a23b;
+  color: #f67923;
   border-radius: 8px;
 }
 .tileWrap {
@@ -327,7 +327,7 @@
 }
 /* 대응표 */
 :where([data-course]) .fix {
-  color: #f0a23b;
+  color: #f67923;
 }
 .repair {
   margin-top: 9px;
@@ -343,6 +343,7 @@
 }
 /* 대응표 */
 :where([data-course]) .repair {
+  background: #f67923;
   color: #14171c;
   font-weight: 700;
 }
@@ -356,7 +357,7 @@
 }
 /* 대응표 */
 :where([data-course]) .stop small {
-  color: #f0a23b;
+  color: #f67923;
 }
 
 /* 자유 실습's equipment panel. */
@@ -422,6 +423,7 @@
 }
 /* 대응표 */
 :where([data-course]) .key[data-on] {
+  background: #f67923;
   color: #14171c;
 }
 .key[data-go] {
@@ -488,6 +490,11 @@
   background: #f59e0b;
   border-color: #fde68a;
   box-shadow: 0 0 7px #f59e0b;
+}
+/* 대응표 */
+:where([data-course]) .lamp[data-out][data-on] i {
+  background: #f67923;
+  box-shadow: 0 0 7px #f67923;
 }
 /* Inputs, outputs, then the record on its own row: the row never breaks between a label and its number. */
 .lamps > .grp {
@@ -1173,6 +1180,11 @@
 .sig[data-out] i {
   box-shadow: inset 0 0 0 1.5px #f0a23b;
 }
+/* 대응표 */
+:where([data-course]) .legend i[data-out],
+:where([data-course]) .sig[data-out] i {
+  box-shadow: inset 0 0 0 1.5px #f67923;
+}
 .boardKpi {
   color: var(--hud-sub, #aab1b9);
 }
@@ -1262,6 +1274,11 @@
 .sig[data-out][data-on] i {
   background: #f0a23b;
   box-shadow: 0 0 8px #f0a23b;
+}
+/* 대응표 */
+:where([data-course]) .sig[data-out][data-on] i {
+  background: #f67923;
+  box-shadow: 0 0 8px #f67923;
 }
 
 /* 보기: one machine only (the one the narrated signal is at). */
@@ -1527,6 +1544,10 @@
   background: var(--hud-amber);
   box-shadow: 0 0 8px rgba(240, 162, 59, 0.7);
 }
+/* 대응표 */
+:where([data-course]) .qGoal[data-phase='run'] > i {
+  box-shadow: 0 0 8px rgba(246, 121, 35, 0.7);
+}
 
 .qGoal p {
   flex: 1;
@@ -1790,6 +1811,10 @@
   stroke: #f0a23b;
   animation-name: trackOut;
 }
+/* 대응표 */
+:where([data-course]) .track path[data-out='1'] {
+  stroke: #f67923;
+}
 @keyframes trackIn {
   to {
     stroke-dashoffset: 14;
@@ -1808,6 +1833,11 @@
 .track circle[data-out='1'] {
   fill: rgba(240, 162, 59, 0.25);
   stroke: #f0a23b;
+}
+/* 대응표 */
+:where([data-course]) .track circle[data-out='1'] {
+  fill: rgba(246, 121, 35, 0.25);
+  stroke: #f67923;
 }
 
 /* 지금 할 일 (지시서 v1 파트 3): one line of numbered steps, then 결과 확인; space and a light face, no inner boxes. */
@@ -1863,6 +1893,7 @@
 }
 /* 대응표 */
 :where([data-course]) .qStep i {
+  background: #f67923;
   color: #14171c;
   font-weight: 700;
 }

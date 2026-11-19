@@ -17,6 +17,7 @@
 }
 /* 대응표 */
 :where([data-course]) .n {
+  background: #f67923;
   color: #14171c;
   font-weight: 700;
 }

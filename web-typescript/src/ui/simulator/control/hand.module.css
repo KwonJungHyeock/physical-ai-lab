@@ -102,7 +102,8 @@
 }
 /* 대응표 */
 :where([data-course]) .warn {
-  color: #f0a23b;
+  background: rgba(246, 121, 35, 0.14);
+  color: #f67923;
   font-size: 14px;
 }
 .keys {
