@@ -8,6 +8,8 @@
  * 수행평가: all of these, nothing lit.
  */
 
+import { useEffect, useRef, useState } from 'react';
+
 import { SLOW_PCT, type CourseStepId } from '@/engine/simulator/cell/courseSteps';
 import { buttonName, checkName, failLine, signed } from '@/engine/simulator/cell/courseText';
 
@@ -75,6 +77,28 @@ export function VerdictLines({ checks }: { checks: readonly { label: string; ok:
 }
 
 export default function CourseStepPanel({ id, busy, onRun, hand, range, tool, pen, poses, kit, confirm, times, linear, vertices, circle, results, board, real }: Props) {
+  // 누름 표시 먼저 (파트 17, INP): ▶ shows it is pressed in the very next frame, and the run (world set-up,
+  // checks, the whole console re-render) starts only after that frame is on screen.
+  const [pressed, setPressed] = useState(false);
+  // The console makes a new onRun on every render; the latest one runs, and a re-render does not restart the wait.
+  const runNow = useRef(onRun);
+  useEffect(() => {
+    runNow.current = onRun;
+  });
+  useEffect(() => {
+    if (!pressed) return;
+    let timer = 0;
+    const frame = requestAnimationFrame(() => {
+      timer = window.setTimeout(() => {
+        setPressed(false);
+        runNow.current?.();
+      }, 0);
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
+    };
+  }, [pressed]);
   return (
     <div className={css.panel} role="group" aria-label={id ? `${id} 조작` : '미션 조작'}>
       {kit && (
@@ -265,7 +289,7 @@ export default function CourseStepPanel({ id, busy, onRun, hand, range, tool, pe
         </div>
       )}
       {onRun && (
-        <button type="button" className={css.run} data-step="run" disabled={busy} onClick={onRun}>
+        <button type="button" className={css.run} data-step="run" data-pressed={pressed || undefined} aria-busy={pressed || undefined} disabled={busy} onClick={() => setPressed(true)}>
           <Icon name="play" size={18} />
           {buttonName('run')}
         </button>

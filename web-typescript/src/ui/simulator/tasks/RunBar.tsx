@@ -8,7 +8,7 @@
  * Esc.
  */
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import Icon from '../Icon';
 import css from '../console.module.css';
@@ -84,6 +84,26 @@ function RobotPlay() {
 
 export default function RunBar(p: Props) {
   const [open, setOpen] = useState(false);
+  // 입문 과정 (파트 17, INP): ▶ looks pressed in the next frame and the run starts after that frame (the console: as before).
+  const [pressed, setPressed] = useState(false);
+  const simNow = useRef(p.onSim);
+  useEffect(() => {
+    simNow.current = p.onSim;
+  });
+  useEffect(() => {
+    if (!pressed) return;
+    let timer = 0;
+    const frame = requestAnimationFrame(() => {
+      timer = window.setTimeout(() => {
+        setPressed(false);
+        simNow.current();
+      }, 0);
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
+    };
+  }, [pressed]);
   const realTitle = p.realBlocked
     ? p.realBlocked === '로봇 연결 필요'
       ? '로봇과 연결되면 열려요'
@@ -110,8 +130,10 @@ export default function RunBar(p: Props) {
         type="button"
         className={css.runSim}
         data-done={p.passed || undefined}
+        data-pressed={pressed || undefined}
+        aria-busy={pressed || undefined}
         disabled={p.busy || !p.ready}
-        onClick={p.onSim}
+        onClick={p.names ? () => setPressed(true) : p.onSim}
         aria-label="시뮬레이션"
         title="프로그램을 시뮬레이터에서 돌려 검사해요 (Ctrl+Enter)"
       >
