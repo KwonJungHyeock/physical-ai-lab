@@ -1,7 +1,8 @@
 // 입문 과정 소개 영상(파트 19) 원본 녹화: 컷 5개를 앱에서 그대로 조작하며 1920 × 1080 · 30 fps로 프레임 단위 녹화(가상 시간).
-// 그래픽카드가 있는 PC에서: 서버(next start -p 3123)를 띄우고
-//   WALK_GPU=1 WALK_HEADED=1 node tools/check/course-walk/video19.cjs <출력 폴더> [컷들: c1,c2,c3,c4,c5]
-// ffmpeg-static이 설치돼 있으면(npm i --no-save ffmpeg-static) 컷마다 mp4(H.264, CRF 14)를, 없으면 JPEG 프레임 폴더를 만든다.
+// 서버(next start -p 3123)를 띄우고: node tools/check/course-walk/video19.cjs <출력 폴더> [컷들: c1,c2,c3,c4,c5]
+// (그래픽카드가 있으면 WALK_GPU=1 WALK_HEADED=1. 없는 기계 — 클라우드 — 에서도 한 프레임 약 1초.)
+// 프레임은 화면 스크린캐스트(CDP)로 받는다: 스크린샷은 그래픽카드 없는 기계에서 한 장 30초, 스크린캐스트는 약 1초.
+// ffmpeg(ffmpeg-static 또는 PATH의 ffmpeg)이 있으면 컷마다 mp4(H.264, CRF 14)를, 없으면 JPEG 프레임 폴더를 만든다.
 // VIDEO_STEP=15: 시험용 — 15프레임마다 한 장만(그래픽카드 없는 기계에서 흐름만 확인).
 // 앱 코드는 바꾸지 않는다. 시뮬레이션 빠르기는 1배(편집에서 1~2배로).
 process.env.WALK_W = '1920';
@@ -21,7 +22,8 @@ let ffmpegPath = null;
 try {
   ffmpegPath = require('ffmpeg-static');
 } catch {
-  /* frames as JPEG files */
+  // the system's ffmpeg, if there is one
+  ffmpegPath = require('child_process').spawnSync('ffmpeg', ['-version']).status === 0 ? 'ffmpeg' : null;
 }
 
 const U = (no, extra = '') => `/track/life?no=${no}${extra}`;
@@ -35,6 +37,20 @@ async function recorder(ctx, p, name) {
       cdp.once('Emulation.virtualTimeBudgetExpired', res);
       cdp.send('Emulation.setVirtualTimePolicy', { policy: 'advance', budget: ms });
     });
+  // frames come from the screencast: each step of the clock draws one, kept as the latest
+  let last = null;
+  let waiter = null;
+  cdp.on('Page.screencastFrame', (f) => {
+    last = Buffer.from(f.data, 'base64');
+    cdp.send('Page.screencastFrameAck', { sessionId: f.sessionId }).catch(() => {});
+    if (waiter) {
+      const w = waiter;
+      waiter = null;
+      w();
+    }
+  });
+  await cdp.send('Page.startScreencast', { format: 'jpeg', quality: 95, maxWidth: 1920, maxHeight: 1080, everyNthFrame: 1 });
+  await new Promise((res) => setTimeout(res, 3000));
   await cdp.send('Emulation.setVirtualTimePolicy', { policy: 'pause' });
   let ff = null;
   const dir = path.join(OUT, name);
@@ -49,8 +65,12 @@ async function recorder(ctx, p, name) {
     /** Move the clock on by one frame (STEP frames when testing) and keep the picture. */
     async frame(before) {
       if (before) await before();
+      const got = new Promise((res) => (waiter = res));
       await advance(DT * STEP);
-      const buf = await p.screenshot({ type: 'jpeg', quality: 95, timeout: 240000 });
+      // a new picture, or (nothing changed on screen) the last one again
+      await Promise.race([got, new Promise((res) => setTimeout(res, 30000))]);
+      waiter = null;
+      const buf = last || (await p.screenshot({ type: 'jpeg', quality: 95, timeout: 240000 }));
       if (ff) await new Promise((res) => (ff.stdin.write(buf) ? res() : ff.stdin.once('drain', res)));
       else fs.writeFileSync(path.join(dir, `f${String(n).padStart(5, '0')}.jpg`), buf);
       n++;
@@ -76,6 +96,7 @@ async function recorder(ctx, p, name) {
         ff.stdin.end();
         await new Promise((res) => ff.on('close', res));
       }
+      await cdp.send('Page.stopScreencast').catch(() => {});
       await cdp.send('Emulation.setVirtualTimePolicy', { policy: 'advance' }).catch(() => {});
       console.log(`  ${name}: ${n} frames`);
     },
