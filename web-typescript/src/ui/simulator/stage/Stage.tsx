@@ -53,6 +53,7 @@ import {
   NoToneMapping,
   PerspectiveCamera,
   PlaneGeometry,
+  Quaternion,
   Scene,
   ShadowMaterial,
   Vector3,
@@ -968,6 +969,21 @@ function World({
       toolAxes: (on: boolean) => {
         axesOff?.();
         axesOff = on ? attachAt(arm.flange, toolAxes, tcpMm / 1000) : undefined;
+      },
+      /**
+       * The robot's own (base) x · y · z at the tool tip — the 좌표 directions of 4-1 (z up), where toolAxes is the tool's
+       * own frame (its z along the pen, down). For the 교안 render R10 only.
+       */
+      baseAxes: (on: boolean) => {
+        axesOff?.();
+        axesOff = undefined;
+        if (!on || !root.current) return;
+        // On the tool tip (as toolAxes), turned from the flange's frame to the robot's.
+        root.current.updateWorldMatrix(true, true);
+        arm.flange.updateWorldMatrix(true, false);
+        const g = axesTriad(0.045, 0.001, ['x', 'y', 'z'], SCREEN_ONLY);
+        g.quaternion.copy(arm.flange.getWorldQuaternion(new Quaternion()).invert().multiply(root.current.getWorldQuaternion(new Quaternion())));
+        axesOff = attachAt(arm.flange, g, tcpMm / 1000);
       },
       focus: (joint: number | null) => {
         renderFocus.current = joint;

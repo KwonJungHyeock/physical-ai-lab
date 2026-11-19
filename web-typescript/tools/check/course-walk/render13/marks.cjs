@@ -48,14 +48,20 @@ const matShot = async (p, name, html) => {
     await R.shot(p, 'R03', 2500);
     await ctx.close();
   }
-  // R04 손끝 + 펜 · R10 손끝 X·Y·Z 축 (펜을 단 1-2의 팔, 기본 자세)
+  // R04 손끝 + 펜 · R10 손끝에 로봇 좌표 X·Y·Z 축 (펜을 단 1-2의 팔, 기본 자세)
   if (want('R04') || want('R10')) {
     const ctx = await R.L.context(b, {});
     const p = await R.open(ctx, '1-2');
     await R.clean(p);
     await R.angles(p, R.HOME);
-    await p.waitForTimeout(800);
-    const f = await tipMm(p);
+    // (The flange is read from the drawn arm: wait until a frame has drawn the pose — on a busy machine 800 ms was not enough.)
+    let f = await tipMm(p);
+    for (let k = 0, still = 0; k < 60 && still < 3; k++) {
+      await p.waitForTimeout(500);
+      const g = await tipMm(p);
+      still = Math.hypot(g[0] - f[0], g[1] - f[1], g[2] - f[2]) < 0.5 && g[2] < 380 ? still + 1 : 0;
+      f = g;
+    }
     console.log('flange', f.map(Math.round));
     const box = (s, dz) => [[f[0] - s, f[1] - s, f[2] + s], [f[0] + s, f[1] + s, f[2] + s], [f[0] - s, f[1] + s, f[2] - dz], [f[0] + s, f[1] - s, f[2] - dz]];
     if (want('R04')) {
@@ -63,9 +69,10 @@ const matShot = async (p, name, html) => {
       await R.shot(p, 'R04');
     }
     if (want('R10')) {
-      await p.evaluate(() => window.__render.toolAxes(true));
+      // (파트 16 뒤: 교안 4-1의 좌표 방향 — 로봇 바닥 좌표 x · y · z를 손끝에, z 위. 앱의 '손끝 축'은 펜 쪽 z가 아래라 쓰지 않음.)
+      await p.evaluate(() => window.__render.baseAxes(true));
       await R.frame(p, [0.8, -0.55, 0.35], f, { pts: box(55, 110), arm: false, fill: 0.85 });
-      await R.shot(p, 'R10');
+      await R.shot(p, 'R10', 6000);
     }
     await ctx.close();
   }
