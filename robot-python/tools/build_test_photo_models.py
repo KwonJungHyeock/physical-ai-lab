@@ -161,6 +161,9 @@ want = lambda n: not only or n in only
 
 if want('drone'):
     save('drone', mjcf(os.path.join(DL, 'menagerie/skydio_x2/x2.xml')))
+if want('drone_cf2'):
+    # Crazyflie 2 (파트 18 검수: X2's propellers are flat blur discs, so it does not read as a drone; this one has blades)
+    save('drone_cf2', mjcf(os.path.join(DL, 'cf2/bitcraze_crazyflie_2/cf2.xml')))
 if want('quadruped'):
     # ANYmal C (no lettering on the body; Go2 has its name embossed on top)
     save('quadruped', mjcf(os.path.join(DL, 'menagerie/anybotics_anymal_c/anymal_c_mjx.xml'), key='standing'))

@@ -320,21 +320,53 @@ const pe = (p, type, x, y) =>
     const svg = await p.locator('[data-board] svg').boundingBox();
     const S = svg.width / 120;
     const pt = (u, v) => [svg.x + u * S, svg.y + (80 - v) * S];
+    // '가나다' (10 strokes, card mm: x right, y up): the robot writes for about 3 s — the cut's core (파트 19 검수 Q3)
     const strokes = [
       [
-        [22, 58],
-        [52, 58],
-        [52, 24],
+        [12, 60],
+        [28, 60],
+        [28, 28],
       ],
       [
-        [72, 64],
-        [72, 18],
+        [34, 66],
+        [34, 16],
       ],
       [
+        [34, 42],
+        [40, 42],
+      ],
+      [
+        [46, 64],
+        [46, 30],
+        [60, 30],
+      ],
+      [
+        [66, 66],
+        [66, 16],
+      ],
+      [
+        [66, 42],
         [72, 42],
-        [90, 42],
+      ],
+      [
+        [80, 62],
+        [94, 62],
+      ],
+      [
+        [80, 62],
+        [80, 30],
+        [94, 30],
+      ],
+      [
+        [100, 66],
+        [100, 16],
+      ],
+      [
+        [100, 42],
+        [106, 42],
       ],
     ];
+    const SEG = 8;
     r.mark('draw');
     console.log('  c5 board', JSON.stringify(svg));
     for (const s of strokes) {
@@ -343,20 +375,20 @@ const pe = (p, type, x, y) =>
       await r.frame();
       // (pointer events sent in the page: Playwright's mouse waits for ever on the board's pointer capture while the clock is paused)
       await pe(p, 'pointerdown', x, y);
-      // 10 frames a segment: the line grows on the board as a hand would draw it
+      // SEG frames a segment: the line grows on the board as a hand would draw it
       for (let k = 1; k < s.length; k++) {
         const [ax, ay] = pt(...s[k - 1]);
         const [bx, by] = pt(...s[k]);
-        for (let i = 1; i <= 10; i++) {
-          await pe(p, 'pointermove', ax + ((bx - ax) * i) / 10, ay + ((by - ay) * i) / 10);
+        for (let i = 1; i <= SEG; i++) {
+          await pe(p, 'pointermove', ax + ((bx - ax) * i) / SEG, ay + ((by - ay) * i) / SEG);
           await r.frame();
         }
       }
       const [ex, ey] = pt(...s[s.length - 1]);
       await pe(p, 'pointerup', ex, ey);
-      await r.frames(6);
+      await r.frames(3);
     }
-    await r.frames(20);
+    await r.frames(10);
     r.mark('close board');
     await clickAt(r, p, '[data-step="board"]');
     await r.frames(20);
