@@ -23,6 +23,8 @@ import css from './intro.module.css';
 
 /** The release number shown as VERSION v1.<n>: one up with each release (the release branch README). */
 export const RELEASE = 14;
+/** 입문 과정's own number (QA 수정 완료 보고 Q2: v1.15); the full simulator keeps RELEASE. */
+export const COURSE_RELEASE = 15;
 
 /** The film's scenes: when each one's name comes up (s into the film, halfway through its fade in). */
 const SCENES = [
@@ -244,7 +246,7 @@ export default function Intro({ progress, ready, note, gate, brand, courses }: P
             </div>
             <span className={css.row}>
               <small className={css.note}>{note}</small>
-              <small className={css.coverVersion}>v1.{RELEASE}</small>
+              <small className={css.coverVersion}>v1.{courses ? COURSE_RELEASE : RELEASE}</small>
             </span>
           </footer>
         </section>
@@ -306,7 +308,7 @@ export default function Intro({ progress, ready, note, gate, brand, courses }: P
         </span>
         <span className={css.version}>
           <small>{courses ? '버전' : 'VERSION'}</small>
-          <b>v1.{RELEASE}</b>
+          <b>v1.{courses ? COURSE_RELEASE : RELEASE}</b>
         </span>
       </header>
 
