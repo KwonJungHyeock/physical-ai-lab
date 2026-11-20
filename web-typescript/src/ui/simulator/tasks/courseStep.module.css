@@ -367,6 +367,10 @@
   background: #f67923;
   color: #14171c;
 }
+/* QA 수정 지시서 A3: the app's `button { color: inherit }` outranks .key, so a plain key in the 수행평가 window ('5-4로 가기') took the window's white words on its white face. */
+:where([data-course]) .test .key:not(:disabled):not([data-lit]) {
+  color: #14171c;
+}
 .soon {
   margin: 0 0 18px;
   padding: 12px 14px;
