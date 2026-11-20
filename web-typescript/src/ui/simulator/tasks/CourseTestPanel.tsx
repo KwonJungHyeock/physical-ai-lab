@@ -10,7 +10,7 @@
  * Its words: the 문구 파일's testPanel (courseText.ts panelText).
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { MISSION_TRIES, gradeOX, missionEnd, missionWay, type ChapterTest, type OX, type TestResult } from '@/engine/simulator/cell/courseTests';
 import { buttonName, panelText, testText } from '@/engine/simulator/cell/courseText';
@@ -38,19 +38,37 @@ interface Props {
   onMission?: () => void;
   /** 5장: the card mission judged from 5-5 (실물, the teacher's check) or 5-4 (시뮬레이션); the mission only: from `judgedBy`. */
   onCard?: () => void;
+  /** QA 수정 지시서 A3: the window closes — its × key, Esc, or a press outside it (the course's list opens behind). */
+  onClose?: () => void;
+  /** QA 수정 지시서 A3 (5장): back to the 절 to finish first ('5-4로 가기'), while the mission has not passed. */
+  back?: { no: string; onClick(): void };
 }
 
-export default function CourseTestPanel({ test, number, name, range, ox, judged, result, onGraded, onNext, onMission, onCard }: Props) {
+export default function CourseTestPanel({ test, number, name, range, ox, judged, result, onGraded, onNext, onMission, onCard, onClose, back }: Props) {
   const [chosen, setChosen] = useState<(OX | null)[]>(() => (result?.chosen?.length === 5 ? result.chosen : [null, null, null, null, null]));
   const graded = !ox || result?.right != null;
   const all = chosen.every((c) => c !== null);
+  useEffect(() => {
+    if (!onClose) return;
+    const key = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', key);
+    return () => window.removeEventListener('keydown', key);
+  }, [onClose]);
+  /** The dark around the window: a press there closes it (A3). */
+  const outside = (e: React.MouseEvent) => e.target === e.currentTarget && onClose?.();
+  const closeKey = onClose && (
+    <button type="button" className={css.testClose} aria-label={panelText('close')} title={panelText('close')} onClick={onClose}>
+      ×
+    </button>
+  );
   const level = () => panelText('level', { level: levelOf({ chapter: test.chapter, right: result?.right ?? 0, of: 5, mission: !!result?.mission }).level });
   // 4차시 (수정 지시서 v5 파트 4): one line and one key — passed: [다음으로 →]; not yet: open the 절 it is judged by.
   if (!ox && judged) {
     const passed = judged.done || result?.mission === true;
     return (
-      <div className={css.scrim} role="dialog" aria-label={name}>
+      <div className={css.scrim} role="dialog" aria-label={name} onClick={outside}>
         <div className={css.test}>
+          {closeKey}
           <h2>
             {number} {name}
             {range && <small>{range}</small>}
@@ -80,8 +98,9 @@ export default function CourseTestPanel({ test, number, name, range, ox, judged,
   const sceneOpen = !!test.mission.ready && !!(test.mission.steps || test.mission.pose || test.mission.star) && !missionEnd(result);
   const only = !ox && judgedBy ? testText(test.chapter).missionOnly?.replace('{sub}', judgedBy) : undefined;
   return (
-    <div className={css.scrim} role="dialog" aria-label={name}>
+    <div className={css.scrim} role="dialog" aria-label={name} onClick={outside}>
       <div className={css.test}>
+        {closeKey}
         {/* Its number (its chapter's last) beside its name (수정 지시서 v3 파트 8-2), and the chapters it covers. */}
         <h2>
           {number} {name}
@@ -184,6 +203,14 @@ export default function CourseTestPanel({ test, number, name, range, ox, judged,
                 </div>
                 <p className={css.soon}>{panelText('photosSoon')}</p>
               </>
+            )}
+            {back && cardOpen && (
+              <div className={css.row} style={{ marginBottom: 18 }}>
+                <output />
+                <button type="button" className={css.key} data-step="test-back" onClick={back.onClick}>
+                  {panelText('goSub', { no: back.no })}
+                </button>
+              </div>
             )}
             {onNext && !cardOpen && !sceneOpen && (
               <div className={css.row}>

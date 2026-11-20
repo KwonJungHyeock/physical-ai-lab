@@ -15,7 +15,10 @@
     "meterLimit": "한계 {v}",
     "meterBelow": "{v} 이하",
     "free": "자유 실습 · 기록하지 않아요",
-    "posesFull": "자세는 {n}개까지 저장해요"
+    "posesFull": "자세는 {n}개까지 저장해요",
+    "busyWait": "로봇이 움직이는 중이에요 · 끝나거나 정지를 누른 뒤에 넘어가요",
+    "sceneWait": "장면이 끝나면 넘어가요 · 결과 바로나 빠르기로 빨리 볼 수 있어요",
+    "bigTurn": "이 방향은 관절이 {deg}° 크게 돌아야 해서 멈췄어요 · 기본 자세로 돌아간 뒤 다시 해요"
   },
   "buttons": {
     "run": "시뮬레이션",
@@ -41,7 +44,9 @@
     "freeEnd": "자유 실습 끝내기",
     "playPoses": "차례로 실행",
     "clearLines": "선 모두 지우기",
-    "moveCard": "카드 옮기기"
+    "moveCard": "카드 옮기기",
+    "skip": "결과 바로",
+    "speed": "빠르기"
   },
   "checks": {
     "safe": "충돌 · 고장 · 파손 없이",
@@ -427,7 +432,9 @@
     "confirmPose": "반투명 로봇과 자세가 같아지면 확인을 눌러요",
     "onlyPassed": "{sub}를 통과했어요 · 미션 통과",
     "onlyNotYet": "{sub}를 먼저 끝내요",
-    "openSub": "{no} 열기"
+    "openSub": "{no} 열기",
+    "goSub": "{no}로 가기",
+    "close": "닫기"
   },
   "end": {
     "window": "6장 마무리",

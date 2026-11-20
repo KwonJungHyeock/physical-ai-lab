@@ -61,7 +61,7 @@ export const CHAPTER_TESTS: Record<number, ChapterTest> = {
     chapter: 3,
     answers: OX5(3),
     // From the 기본 자세 with the joint keys (5° steps reach it); judged on [확인].
-    mission: { text: testText(3).mission, ready: true, pose: [30, 30, -60, -20, 0, 0], tol: 3, failText: testText(3).fail },
+    mission: { text: testText(3).mission, ready: true, pose: [30, 30, -60, -20, 0, 0], tol: 5, failText: testText(3).fail },
   },
   4: {
     chapter: 4,
@@ -77,8 +77,11 @@ export const CHAPTER_TESTS: Record<number, ChapterTest> = {
   },
 };
 
-/** A scene mission may be tried twice (the second try counts as a pass too); the O · X keep their first answers. */
-export const MISSION_TRIES = 2;
+/**
+ * A scene mission may be tried three times (QA 수정 지시서 B1; a later try counts as a pass too); the O · X keep
+ * their first answers.
+ */
+export const MISSION_TRIES = 3;
 
 /** How the mission went (none: not finished yet). */
 export function missionEnd(r: TestResult | undefined): 'once' | 'again' | 'failed' | null {

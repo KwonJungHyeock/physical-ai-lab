@@ -55,7 +55,7 @@ export function LocKindsSwitch({ kinds }: { kinds: LocKinds }) {
   return (
     <span className={css.kinds} data-top role="group" aria-label="장면 보기 · 실습 하기">
       {kinds.has.map((k) => (
-        <button key={k.mode} type="button" data-on={k.mode === kinds.now || undefined} disabled={!k.open || kinds.busy} onClick={() => k.mode !== kinds.now && kinds.onMode(k.mode)}>
+        <button key={k.mode} type="button" data-on={k.mode === kinds.now || undefined} disabled={!k.open} onClick={() => k.mode !== kinds.now && kinds.onMode(k.mode)}>
           {MODE_NAME[k.mode]}
         </button>
       ))}
@@ -132,7 +132,7 @@ export default function LocationBar({
       {kinds && kinds.has.length > 0 && (
         <span className={css.kinds} role="group" aria-label="장면 보기 · 실습 하기">
           {kinds.has.map((k) => (
-            <button key={k.mode} type="button" data-on={k.mode === kinds.now || undefined} disabled={!k.open || kinds.busy} onClick={() => k.mode !== kinds.now && kinds.onMode(k.mode)}>
+            <button key={k.mode} type="button" data-on={k.mode === kinds.now || undefined} disabled={!k.open} onClick={() => k.mode !== kinds.now && kinds.onMode(k.mode)}>
               {MODE_NAME[k.mode]}
             </button>
           ))}

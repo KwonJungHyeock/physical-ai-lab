@@ -172,6 +172,7 @@ import CourseStepPanel, { VerdictLines, type Measure } from './tasks/CourseStepP
 import StrokeBoard from './tasks/StrokeBoard';
 import CourseEnd, { REVIEW_START, type Review } from './tasks/CourseEnd';
 import CourseTestPanel from './tasks/CourseTestPanel';
+import PoseCheck from './tasks/PoseCheck';
 import QuestNumbers from './stage/QuestNumbers';
 import { RECORD_KEY, TEACHER_KEY, answered as recAnswered, emptyRecord, loadRecord, loadTeacher, opened as recOpened, passed as recPassed, questOpen, teacherFromQuery, tried as recTried, type LessonRecord, type TeacherSet } from '@/engine/simulator/cell/lessonRecord';
 import { usePcApp } from './connect/usePcApp';
@@ -272,6 +273,8 @@ const START_THEME: Theme = 'arm';
 const SECTION_KEY = 'robot-console-section';
 /** 입문 튜토리얼s finished (this browser). */
 const TUT_KEY = 'robot-console-life-tutorials';
+/** 입문 과정 4-1 (QA 수정 지시서 A2): the step reached (the rings so far), kept over a reload. */
+const TASTE_STEP_KEY = 'robot-console-course-4-1-step';
 const MOUNT_KEY = 'robot-console-mount';
 const PC_OFFER_KEY = 'robot-console-pc-offered';
 /** Which real camera is which (kit / hand), when the robot has more than one. */
@@ -782,6 +785,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const slowRef = useRef(1);
   /** 입문 해 보기 ①: ▶▶ while the machine pours by hand (the cell 4 ×, this wait only). */
   const fastRef = useRef(1);
+  /** 입문 1-1 장면 보기 ⚡ 결과 바로 (QA 수정 지시서 B3): the scene's arm moves and its cell both run this much faster (1: off). */
+  const skipRef = useRef(1);
   /** 입문 카페: a long pour waited for fast (WaitSkip; set below while a program runs). */
   const waitRef = useRef(1);
   /**
@@ -795,7 +800,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const runRate = useMemo(
     () => ({
       get current() {
-        return heldRef.current ? 0 : simRateRef.current * fastRef.current * waitRef.current * slowRef.current;
+        return heldRef.current ? 0 : simRateRef.current * fastRef.current * skipRef.current * waitRef.current * slowRef.current;
       },
     }),
     [],
@@ -2084,7 +2089,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       let coast: { s: number; left: number } | null = null;
       const step = (now: number) => {
         // (Nothing moves while the scene is held for a 예측.)
-        let dt = (Math.min(now - last, 250) / 1000) * (heldRef.current ? 0 : rate) * slowRef.current;
+        let dt = (Math.min(now - last, 250) / 1000) * (heldRef.current ? 0 : rate) * slowRef.current * skipRef.current;
         if (tk?.aborted && !coast) {
           const at = world.current.angles.slice();
           const ahead = Math.min(durationS, t + 0.02);
@@ -2971,7 +2976,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       slowRef.current = 1;
       void simulateBlocks(sol);
       // 1-1 장면 보기: once the pen is writing, the hand comes in (the arm slows, stops), then goes (it writes on).
-      if (courseStepRef.current?.id === '1-1') {
+      // (Not on ⚡ 결과 바로: the scene runs straight to its end.)
+      if (courseStepRef.current?.id === '1-1' && !sceneSkipRef.current) {
         clearSceneTimers();
         const watch = window.setInterval(() => {
           const ink = world.current.trail.reduce((n, st) => n + st.length, 0);
@@ -2996,6 +3002,31 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   useEffect(() => {
     if (sceneRun) playScene.current();
   }, [sceneRun]);
+  // QA 수정 지시서 B3 (1-1 장면 보기): ⚡ 결과 바로 — the scene goes on at ×8 to its end, the hand's pause left out
+  // (not playing: it starts so). Back to its own speed when the run ends.
+  const [sceneSkip, setSceneSkip] = useState(false);
+  const sceneSkipRef = useRef(false);
+  const skipScene = () => {
+    clearSceneTimers();
+    patchStep({ handNear: false });
+    heldRef.current = false;
+    cancelAnimationFrame(slowRamp.current);
+    slowRef.current = 1;
+    skipRef.current = 8;
+    sceneSkipRef.current = true;
+    skipWasBusy.current = busy;
+    setSceneSkip(true);
+    if (!busy) setSceneRun((n) => n + 1);
+  };
+  const skipWasBusy = useRef(false);
+  useEffect(() => {
+    if (busy && sceneSkip) skipWasBusy.current = true;
+    if (busy || !sceneSkip || !skipWasBusy.current) return;
+    skipWasBusy.current = false;
+    sceneSkipRef.current = false;
+    skipRef.current = 1;
+    setSceneSkip(false);
+  }, [busy, sceneSkip]);
   /**
    * 터미널: python3 a file on the open cell — the same run and checks as the blocks, printed in the
    * terminal as it goes. A pass counts like the blocks' (a student stuck on the blocks can go on).
@@ -3411,7 +3442,22 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
    */
   /** The last joint move asked for (3-4 times it: the move's own length at its speed, as the simulation plays it). */
   const lastMove = useRef<{ from: number[]; to: number[]; speed: number } | null>(null);
+  /**
+   * 입문 과정 (QA 수정 지시서 A2): one step move at a time — a press while the last one still moves is not taken
+   * (presses faster than a render could start two moves at once and pile them up).
+   */
+  const jogLock = useRef(false);
   const goJoints = async (target: number[], what: string, jog = false) => {
+    if (!(course && jog)) return goJointsNow(target, what, jog);
+    if (jogLock.current) return;
+    jogLock.current = true;
+    try {
+      await goJointsNow(target, what, jog);
+    } finally {
+      jogLock.current = false;
+    }
+  };
+  const goJointsNow = async (target: number[], what: string, jog: boolean) => {
     if (!loaded || busy) return;
     if (jog && robotMode && robot?.running) return;
     const to = target.map((a, i) => Math.min(jointMax()[i], Math.max(jointMin()[i], a)));
@@ -3439,7 +3485,10 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     }
     setBadge(null);
     // One step speed for both: 10..100 % → speed 5..40, the same move in the simulator and on the robot.
-    const speed = Math.max(5, Math.round((40 * jogSpeed) / 100));
+    // (QA 수정 지시서 B2, 입문 3-4 ④ '움직이는 동안 정지': that move only at the slow speed — at 100 % it is over in 0.7 s.)
+    const st34 = course ? courseStepRef.current : null;
+    const pct = st34?.id === '3-4' && st34.step === 3 ? Math.min(jogSpeed, SLOW_PCT) : jogSpeed;
+    const speed = Math.max(5, Math.round((40 * pct) / 100));
     if (robotMode) {
       const res = await moveRobot(to, speed);
       if (!res.ok && !(jog && res.status === 409)) addLog('err', `로봇: ${res.error}`);
@@ -3482,7 +3531,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
 
   /** Tool tip one step along x / y / z, the tool kept the way it points now (down). */
   const tipStep = (axis: Axis, delta: number) => {
-    if (!loaded || busy) return;
+    if (!loaded || busy || (course && jogLock.current)) return;
     const base = basePose();
     setTipBlocked(null);
     if (coordRefused(axis, delta < 0 ? -1 : 1, base, true)) return;
@@ -3510,6 +3559,12 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     // A step that needs a big turn of some joint (the tool was not pointing down) is a surprise on a real arm: ask first.
     const turn = Math.max(...sol.anglesDeg.map((a, i) => Math.abs(a - base[i])));
     if (turn > 25) {
+      // 입문 과정 (A2): no browser window that stops the page (it froze the screen behind it) — the step is not taken, and the line says why.
+      if (course) {
+        blocked();
+        setSubNote(commonLine('bigTurn', { deg: Math.round(turn) }));
+        return;
+      }
       if (!window.confirm(`도구를 아래로 향하게 하느라 관절이 최대 ${Math.round(turn)}° 크게 움직여요.\n계속할까요?`)) return;
       addLog('info', '도구가 아래를 향하도록 자세를 바꿔요.');
     }
@@ -4310,6 +4365,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const startTutorial = (id: string) => {
     const t = lifeTutorialById(id);
     if (!t || busy) return;
+    if (course) courseFresh();
     if (track) toPlainDesk();
     else if (cellRef.current) leaveCell();
     // 입문 과정 3-3: from the 기본 자세 always (from 3-2 the arm may be at a limit).
@@ -4322,13 +4378,31 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     // 공정 짜기 from its first screen.
     if (id === 'teach') setFlow({ ...flow, step: 1 });
     const start = tutCtx();
-    setLifeTut({ id, step: 0, start: id === 'teach' ? { ...start, flowStep: 1 } : start, mem: {} });
-    openTutPanel(t.steps[0].panel);
+    // 입문 과정 4-1 (A2): from the step reached before a reload.
+    let from = 0;
+    if (course && id === 'taste') {
+      try {
+        from = Math.max(0, Math.min(t.steps.length, Math.floor(Number(localStorage.getItem(TASTE_STEP_KEY)) || 0)));
+      } catch {
+        /* none kept */
+      }
+    }
+    setLifeTut({ id, step: from, start: id === 'teach' ? { ...start, flowStep: 1 } : start, mem: {} });
+    openTutPanel((t.steps[from] ?? t.steps[0]).panel);
     // 입문 과정 (3-3 · 4-1, 수정 지시서 v5 파트 2): framed again once its panel is open, as the other 절 are — the
     // first framing came before the panel, so part of the work area ended up under it.
     if (course) window.setTimeout(() => stageApi.current?.view('home'), 1200);
   };
 
+  // 입문 과정 4-1 (A2): its step kept as it goes.
+  useEffect(() => {
+    if (!course || lifeTut?.id !== 'taste') return;
+    try {
+      localStorage.setItem(TASTE_STEP_KEY, String(lifeTut.step));
+    } catch {
+      /* this session only */
+    }
+  }, [course, lifeTut?.id, lifeTut?.step]);
   /** No tool fitted: the open/close buttons still show, and say what to do. */
   /** The fitted tool's own buttons: in the jog screen (the 도구 screen only fits and swaps the tool). */
   const toolRow = (
@@ -4745,8 +4819,25 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     sceneTimers.current = [];
   };
   /** A 절 built for the course, from its start state (장별 가이드라인 v1 공통 규칙). */
+  /**
+   * QA 수정 지시서 A1 (입문 과정): every 절 starts from its own state — nothing held or slowed by the 절 before
+   * (1-1's hand, a 예측 at its moment), the 영점 ring off and 조작 (not a cell's 코딩) in the panel; the 절 then
+   * sets its own pose, desk and view as before.
+   */
+  const courseFresh = () => {
+    heldRef.current = false;
+    cancelAnimationFrame(slowRamp.current);
+    slowRef.current = 1;
+    fastRef.current = 1;
+    skipRef.current = 1;
+    setMoment(null);
+    setZeroMode(false);
+    setRingJoint(null);
+    chooseTab('direct');
+  };
   const startCourseStep = (id: string, mode: SubMode) => {
     if (!isCourseStep(id) || busy) return;
+    if (course) courseFresh();
     setLifeTut(null);
     setCourseTest(null);
     clearSceneTimers();
@@ -4790,6 +4881,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     }
     // 1-2 · 1-3: the plain desk, the arm at 기본 자세 (1-2 with the pen, so the tool shows apart from the tip).
     toPlainDesk();
+    // (A1: 1-2 · 2-2 with the 조작 panel, whatever the 절 before left open — 2-2 has 영점 자세 there.)
+    if (course && (id === '1-2' || id === '2-2')) openSection('jog');
     if (id === '1-2' && effector !== 'pen') changeTool('pen', false);
     // 1-2: the arm straight up (일자로 펴기, all 0°), the seven places one above another; 1-3: 기본 자세;
     // 2-2: neither (PREP_POSE).
@@ -5427,6 +5520,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   /** A chapter's 수행평가, opened after its last 절 (or from a list). */
   const startCourseTest = (chapter: number) => {
     if (!CHAPTER_TESTS[chapter] || busy) return;
+    if (course) courseFresh();
     setMissionRun(null);
     setCourseStep(null);
     setLifeTut(null);
@@ -5570,6 +5664,12 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const requestSub = async (s: CourseSub, want: SubMode) => {
     const mode = modeFor(s, want);
     if (!mode) return null;
+    // (QA A1 · B3: a press while the arm moves is answered, not dropped — the 절 opens once it has stopped.)
+    if (course && busy) {
+      // (On the 위치 줄's one-line note: the 입문 과정 shows no log.)
+      setSubNote(commonLine(subMode === 'scene' ? 'sceneWait' : 'busyWait'));
+      return null;
+    }
     if (!(await mayOpen({ course: cPlan.id, sub: s.id, mode }))) {
       setRoadmapOpen(false);
       setDenied(true);
@@ -6383,7 +6483,14 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
           onSetup={usbOk ? () => (setConnectOpen(false), setSetupOpen(true)) : undefined}
           carry={() => (practice.id === 'demo' ? '' : carryHash({ level, theme, id: practice.id, code }))}
           course={course}
-          onClose={() => (setConnectOpen(false), setConnectTo(null))} />
+          onClose={() => (setConnectOpen(false), setConnectTo(null))}
+          // QA 수정 지시서 B4: 5-5 ① (로봇 연결) — [시뮬레이션만 (로봇 없이)] counts as the step done.
+          onSimOnly={course ? () => {
+            setConnectOpen(false);
+            setConnectTo(null);
+            const st = courseStepRef.current;
+            if (st?.id === '5-5' && st.step === 0) patchStep({ step: 1, note: null });
+          } : undefined} />
       )}
       {setupOpen && (
         <RobotSetup
@@ -6824,6 +6931,12 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
             onMission={() => startMission(courseTest)}
             onCard={checkCard}
             onNext={subNext ? () => goNext(subNext) : undefined}
+            // (QA 수정 지시서 A3: never a window with no way out — × · Esc · outside: the list; 5장: back to 5-4 while the mission is open.)
+            onClose={() => setRoadmapOpen(true)}
+            back={(() => {
+              const b = courseTest === 5 && cPlan.ox && lessonIn(cPlan, '5-4') > 0 ? subById('5-4') : undefined;
+              return b ? { no: b.id, onClick: () => void requestSub(b, 'practice') } : undefined;
+            })()}
           />
         )}
         {roadmapOpen && course && (
@@ -6889,7 +7002,11 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
             })()
           ) : sceneView && subNow ? (
             // 장면 보기: which scene, and [다시 보기] (moved here from the 위치 줄: the 절's name keeps its room there).
-            <NowBar text={commonLine('sceneView', { title: barTitle(subNow.id, subNow.title) })} replay={{ onClick: () => setSceneRun((n) => n + 1), disabled: busy }} />
+            <NowBar
+              text={commonLine('sceneView', { title: barTitle(subNow.id, subNow.title) })}
+              replay={{ onClick: () => setSceneRun((n) => n + 1), disabled: busy }}
+              fast={subNow.id === '1-1' ? { onSkip: skipScene, skipping: sceneSkip, rate: simRate, onRate: () => chooseSimRate(simRate >= 4 ? 1 : simRate * 2) } : undefined}
+            />
           ) : courseTest !== null ? (
             // 수행평가: the one line only (no number badges, no steps).
             missionRun && CHAPTER_TESTS[missionRun.chapter] ? (
@@ -7511,6 +7628,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                             {/* 3-4: the two moves' times; 3장 미션: its [확인]. Over the usual 조작판. */}
                             {courseStep?.id === '3-4' && <CourseStepPanel id="3-4" busy={busy} times={courseStep.times} />}
                             {MISSION_CARD && missionRun?.chapter === 3 && <CourseStepPanel busy={busy} confirm={{ text: panelText('confirmPose'), onConfirm: confirmPose }} />}
+                            {/* QA 수정 지시서 B1: 3장 미션 — each joint's distance to the see-through pose, ✓ within its tolerance. */}
+                            {missionRun?.chapter === 3 && CHAPTER_TESTS[3].mission.pose && <PoseCheck live={live} goal={CHAPTER_TESTS[3].mission.pose} tol={CHAPTER_TESTS[3].mission.tol ?? POSE_TOL_DEG} />}
                             {controlPanel}
                             {/* 입문 과정: the tool row is 2-3's own (CourseStepPanel); under the 조작판 it is not used. */}
                             {!course && toolRow}

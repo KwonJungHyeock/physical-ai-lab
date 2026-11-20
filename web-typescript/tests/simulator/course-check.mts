@@ -31,13 +31,22 @@ assert.deepEqual(
   ['5:3-5', '12:5-6'],
 );
 assert.deepEqual([whole.tests, whole.ox, K.countedIn(whole).length], [['3-5', '5-6'], true, 20], '12차시: 수행평가 2 · 완료 20 (8차시와 같음)');
-assert.deepEqual(K.stepsIn(whole).map((x) => x.sub.id), K.stepsIn(full).map((x) => x.sub.id), '절 · 수행평가 차례는 8차시와 같음');
+assert.deepEqual(
+  K.stepsIn(whole).map((x) => x.sub.id),
+  K.stepsIn(full).map((x) => x.sub.id),
+  '절 · 수행평가 차례는 8차시와 같음',
+);
 // 장 카드 차시: 3장 3~5차시 (중간 수행평가 포함), 5장 9~12차시.
 const spanOf = (plan: typeof whole, ch: number) => {
-  const ns = K.lessonStepsIn(plan).filter((l) => l.steps.some((x) => x.sub.chapter === ch)).map((l) => l.n);
+  const ns = K.lessonStepsIn(plan)
+    .filter((l) => l.steps.some((x) => x.sub.chapter === ch))
+    .map((l) => l.n);
   return `${Math.min(...ns)}~${Math.max(...ns)}`;
 };
-assert.deepEqual([1, 2, 3, 4, 5].map((ch) => spanOf(whole, ch)), ['1~1', '2~2', '3~5', '6~8', '9~12']);
+assert.deepEqual(
+  [1, 2, 3, 4, 5].map((ch) => spanOf(whole, ch)),
+  ['1~1', '2~2', '3~5', '6~8', '9~12'],
+);
 
 // Every 절 of a course is in the table, listable, and the 4차시 is inside the 8차시.
 const ids = new Set(C.COURSE_SUBS.map((s) => s.id));
@@ -255,7 +264,10 @@ assert.equal(K.countedIn(focus).length, 11);
 assert.ok(K.countedIn(full).some((s) => s.id === '3-5') && K.countedIn(full).some((s) => s.id === '5-6'));
 for (const plan of [full, focus]) {
   const cards = C.COURSE.filter((ch) => !ch.subs.some((x) => x.status === 'end')).map((ch) => K.stepsIn(plan).filter((x) => x.sub.chapter === ch.n && x.sub.run && !x.sub.optional).length);
-  assert.equal(cards.reduce((a, b) => a + b, 0), K.countedIn(plan).length);
+  assert.equal(
+    cards.reduce((a, b) => a + b, 0),
+    K.countedIn(plan).length,
+  );
 }
 
 // 상 · 중 · 하 (임시, browser): by the #48 rule, only for a 수행평가 taken.
@@ -339,17 +351,21 @@ assert.equal((K.nextIn(full, '3-4') as { id: string }).id, '3-5', '3-4 다음은
 assert.deepEqual(T.CHAPTER_TESTS[3].answers, ['X', 'O', 'X', 'O', 'X']);
 assert.deepEqual(T.CHAPTER_TESTS[5].answers, ['O', 'X', 'X', 'O', 'X']);
 assert.deepEqual(T.CHAPTER_TESTS[3].mission.pose, [30, 30, -60, -20, 0, 0]);
-// 미션: one more try; the 기록 tells first-try, second-try and not-passed apart; a second-try pass is a pass.
+// 미션: three tries (QA 수정 지시서 B1); the 기록 tells first-try, a later try and not-passed apart; a later pass is a pass.
 const tr = (mission: boolean | null, missionTries?: number) => ({ chosen: [], right: 5, mission, missionTries, at: 0 });
 assert.equal(T.missionWay(tr(true, 1)), '한 번에 통과');
 assert.equal(T.missionWay(tr(true, 2)), '다시 해서 통과');
 assert.equal(T.missionWay(tr(false, 1)), null, '한 번 더 할 수 있음');
-assert.equal(T.missionWay(tr(false, 2)), '통과 못 함');
+assert.equal(T.missionWay(tr(false, 2)), null, '세 번째가 남음');
+assert.equal(T.missionWay(tr(false, 3)), '통과 못 함');
+assert.equal(T.missionWay(tr(true, 3)), '다시 해서 통과');
+assert.equal(T.CHAPTER_TESTS[3].mission.tol, 5, '자세 미션 허용 오차 ±5°');
 assert.equal(P.levelOf({ chapter: 3, right: 5, of: 5, mission: true }).level, '상', '다시 해서 통과해도 통과');
 // A 수행평가 is over ('… 를 마쳤어요') only once its mission ended too (수정 지시서 v4 파트 1-9).
 assert.equal(T.testOver(T.CHAPTER_TESTS[3], { chosen: [], right: 5, mission: null, at: 0 }, true), false, 'O · X [확인] 직후에는 아직');
 assert.equal(T.testOver(T.CHAPTER_TESTS[3], tr(false, 1), true), false, '미션 한 번 더 할 수 있으면 아직');
-assert.equal(T.testOver(T.CHAPTER_TESTS[3], tr(false, 2), true), true);
+assert.equal(T.testOver(T.CHAPTER_TESTS[3], tr(false, 2), true), false, '세 번째가 남음');
+assert.equal(T.testOver(T.CHAPTER_TESTS[3], tr(false, 3), true), true);
 assert.equal(T.testOver(T.CHAPTER_TESTS[3], tr(true, 1), true), true);
 assert.equal(T.testOver(T.CHAPTER_TESTS[5], { chosen: [], right: 4, mission: false, missionTries: 1, at: 0 }, true), false, '마무리: 카드가 통과해야 끝');
 assert.equal(T.testOver(T.CHAPTER_TESTS[5], { chosen: [], right: null, mission: true, at: 0 }, false), true, '4차시: 미션만');

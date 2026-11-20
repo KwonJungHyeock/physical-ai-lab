@@ -38,6 +38,8 @@ interface BarProps {
   next?: NowNext;
   /** 장면 보기 (수정 지시서 v3 파트 2-2): the line names the scene and carries [다시 보기] (no '지금 할 일', no step). */
   replay?: { onClick(): void; disabled?: boolean };
+  /** 장면 보기 (QA 수정 지시서 B3, 1-1 as 5-1 has it): ⚡ 결과 바로 (the scene run fast to its end) and the speed key (×1 · ×2 · ×4). */
+  fast?: { onSkip(): void; skipping: boolean; rate: number; onRate(): void };
   /** 'N / M 단계' and its bar, left of [다음으로 →] (수정 지시서 v4 파트 2-5): the step reached of the 절's steps (all done: M / M). */
   steps?: { n: number; of: number };
   /** A key of the line's own in [다음으로 →]'s place, lit (입문 3-5 미션: [확인], 동결 뒤 고침 파트 1). */
@@ -48,7 +50,7 @@ interface BarProps {
   freeKeys?: { onReset(): void; onEnd(): void; disabled?: boolean; values?: readonly { name: string; v: string }[]; extra?: { label: string; onClick(): void } };
 }
 
-export default function NowBar({ n, text, state = 'do', meter, next, replay, steps, action, free, freeKeys }: BarProps) {
+export default function NowBar({ n, text, state = 'do', meter, next, replay, fast, steps, action, free, freeKeys }: BarProps) {
   // A number and its unit: a space before mm (110 mm), none before ° or 곳.
   const unit = meter ? (meter.unit === 'mm' ? ' mm' : meter.unit) : '';
   return (
@@ -89,6 +91,16 @@ export default function NowBar({ n, text, state = 'do', meter, next, replay, ste
           <Icon name="play" size={16} />
           {buttonName('replay')}
         </button>
+      )}
+      {fast && (
+        <>
+          <button type="button" className={css.replay} data-step="skip" disabled={fast.skipping} onClick={fast.onSkip}>
+            ⚡ {buttonName('skip')}
+          </button>
+          <button type="button" className={css.replay} data-step="speed" onClick={fast.onRate} aria-label={`${buttonName('speed')} ${fast.rate}배`}>
+            {buttonName('speed')} ×{fast.rate}
+          </button>
+        </>
       )}
       {freeKeys?.values && (
         <span className={css.values}>

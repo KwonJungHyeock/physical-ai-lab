@@ -75,9 +75,11 @@ interface Props {
   /** Desktop program: a robot never set up → 새 로봇 설치 (over the LAN cable). */
   onSetup?: () => void;
   onClose(): void;
+  /** [시뮬레이션만 (로봇 없이)] chosen (not the ×): the 입문 과정 counts it as the 연결 step done (QA 수정 지시서 B4). None: as [닫기]. */
+  onSimOnly?: () => void;
 }
 
-export default function ConnectDialog({ current, auto, carry, start, onUsb, onSetup, onClose, course }: Props) {
+export default function ConnectDialog({ current, auto, carry, start, onUsb, onSetup, onClose, onSimOnly, course }: Props) {
   // 입문 과정의 표기 (수정 지시서 v4 파트 6-9): the particle closed up, the range's tilde closed up, no period at a line's end.
   const t = (s: string) => (course ? tidy(s).replace(/\.$/, '') : s);
   const [tab, setTab] = useState<Tab>('find');
@@ -325,7 +327,7 @@ export default function ConnectDialog({ current, auto, carry, start, onUsb, onSe
                 연결 끊기 (시뮬레이션으로)
               </button>
             )}
-            <button type="button" className={css.ghost} onClick={onClose}>
+            <button type="button" className={css.ghost} onClick={!current && onSimOnly ? onSimOnly : onClose}>
               {current ? '닫기' : '시뮬레이션만 (로봇 없이)'}
             </button>
           </div>

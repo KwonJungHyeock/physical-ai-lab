@@ -73,10 +73,8 @@ export function AssetSlot({ slot, bare = false }: { slot: CourseSlot; bare?: boo
         <img src={`/course/assets/${slot.id}.png`} alt={slot.label} onError={() => setMissing(true)} />
       )}
       {missing && !bare && (
-        <span>
-          에셋 슬롯 · {slot.label}
-          <small>{slot.id}.png 준비 중</small>
-        </span>
+        // (QA 수정 지시서 A4: the student's words only — the thing's name and 준비 중, no slot or file name.)
+        <span>{slot.label} — 준비 중</span>
       )}
     </div>
   );
@@ -209,7 +207,7 @@ export default function CourseMarks({ marks, joints, flange, tcpMm }: { marks: C
                 <group position={i === 0 ? J1_SPOT : i < 6 ? [0, 0, 0] : [0, 0, tcpMm / 1000]}>
                   <Html center zIndexRange={[22, 0]}>
                     {/* Name tags left and right in turn, a line to the joint (seven never on top of one another). */}
-                    <button type="button" className={css.spot} data-side={i % 2 ? 'left' : 'right'} data-found={pick.found.includes(i) || undefined} aria-label={name} onClick={() => pick.onPick(i)}>
+                    <button type="button" className={css.spot} data-side={i % 2 ? 'left' : 'right'} data-base={i === 0 || undefined} data-found={pick.found.includes(i) || undefined} aria-label={name} onClick={() => pick.onPick(i)}>
                       {shown && <b data-wrong={(!pick.found.includes(i) && pick.flash === i) || undefined}>{name}</b>}
                     </button>
                   </Html>
