@@ -320,33 +320,52 @@ const pe = (p, type, x, y) =>
     const svg = await p.locator('[data-board] svg').boundingBox();
     const S = svg.width / 120;
     const pt = (u, v) => [svg.x + u * S, svg.y + (80 - v) * S];
-    // '가나다' (10 strokes, card mm: x right, y up): the robot writes for about 3 s — the cut's core (파트 19 검수 Q3)
+    // '마바다' (15 strokes, card mm: x right, y up): the robot writes for over 3 s — the cut's core (파트 19 검수 Q3)
     const strokes = [
       [
-        [12, 60],
-        [28, 60],
-        [28, 28],
+        [12, 62],
+        [12, 30],
       ],
       [
-        [34, 66],
-        [34, 16],
+        [12, 62],
+        [28, 62],
+        [28, 30],
       ],
       [
-        [34, 42],
-        [40, 42],
+        [12, 30],
+        [28, 30],
+      ],
+      [
+        [36, 68],
+        [36, 12],
+      ],
+      [
+        [36, 42],
+        [42, 42],
       ],
       [
         [46, 64],
-        [46, 30],
-        [60, 30],
+        [46, 28],
       ],
       [
-        [66, 66],
-        [66, 16],
+        [60, 64],
+        [60, 28],
       ],
       [
-        [66, 42],
-        [72, 42],
+        [46, 46],
+        [60, 46],
+      ],
+      [
+        [46, 28],
+        [60, 28],
+      ],
+      [
+        [68, 68],
+        [68, 12],
+      ],
+      [
+        [68, 42],
+        [74, 42],
       ],
       [
         [80, 62],
@@ -358,15 +377,15 @@ const pe = (p, type, x, y) =>
         [94, 30],
       ],
       [
-        [100, 66],
-        [100, 16],
+        [100, 68],
+        [100, 12],
       ],
       [
         [100, 42],
         [106, 42],
       ],
     ];
-    const SEG = 8;
+    const SEG = 5;
     r.mark('draw');
     console.log('  c5 board', JSON.stringify(svg));
     for (const s of strokes) {
@@ -386,7 +405,7 @@ const pe = (p, type, x, y) =>
       }
       const [ex, ey] = pt(...s[s.length - 1]);
       await pe(p, 'pointerup', ex, ey);
-      await r.frames(3);
+      await r.frames(2);
     }
     await r.frames(10);
     r.mark('close board');
