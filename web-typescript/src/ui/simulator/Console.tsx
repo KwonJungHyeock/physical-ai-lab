@@ -787,6 +787,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const fastRef = useRef(1);
   /** 입문 1-1 장면 보기 ⚡ 결과 바로 (QA 수정 지시서 B3): the scene's arm moves and its cell both run this much faster (1: off). */
   const skipRef = useRef(1);
+  /** ⚡ 결과 바로 (×8): the most simulated time one frame may go on, s (fast PCs never reach it: 60 frames a second × 8 is 0.13 s). */
+  const SKIP_FRAME_S = 0.25;
   /** 입문 카페: a long pour waited for fast (WaitSkip; set below while a program runs). */
   const waitRef = useRef(1);
   /**
@@ -2090,6 +2092,10 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       const step = (now: number) => {
         // (Nothing moves while the scene is held for a 예측.)
         let dt = (Math.min(now - last, 250) / 1000) * (heldRef.current ? 0 : rate) * slowRef.current * skipRef.current;
+        // (경미 묶음 6 · 입문 ⚡ 결과 바로: at most SKIP_FRAME_S a frame. The booth takes a frame's steps a frame later
+        // (cellClock), so a slow PC's ×8 frame of 2 s left the 완성 램프 on while the arm, in the booth, was still over
+        // the card: the customer's hand came in under it, a stop. ×1 there is 0.25 s a frame and never does.)
+        if (skipRef.current > 1) dt = Math.min(dt, SKIP_FRAME_S);
         if (tk?.aborted && !coast) {
           const at = world.current.angles.slice();
           const ahead = Math.min(durationS, t + 0.02);
@@ -2362,7 +2368,12 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
   const chapterNow = !course ? 0 : courseTest !== null ? courseTest : courseStep ? Number(courseStep.id[0]) : lifeTut ? Number(subOfRun('tutorial', lifeTut.id)?.id[0] ?? 0) : 0;
   const axesOff = axesQuiet || (chapterNow >= 1 && chapterNow <= 3);
   const reachOn = courseStep?.id === '1-3' && courseStep.range;
-  const stageDisplay = useMemo(() => (axesOff || reachOn ? { ...display, ...(axesOff ? { baseAxes: false } : {}), ...(reachOn ? { reach: true } : {}) } : display), [axesOff, reachOn, display]);
+  // 경미 묶음 1 (입문 1-1): no tool path — the pen's travel left a white line over the card and back home after writing.
+  const pathOff = course && courseStep?.id === '1-1';
+  const stageDisplay = useMemo(
+    () => (axesOff || reachOn || pathOff ? { ...display, ...(axesOff ? { baseAxes: false } : {}), ...(reachOn ? { reach: true } : {}), ...(pathOff ? { path: false } : {}) } : display),
+    [axesOff, reachOn, pathOff, display],
+  );
   const lifeGuide: Guide | null = lifeStep && view === 'sim' ? { head: `${lifeStep.n}단계 · ${lifeStep.title}`, text: `목표 ${lifeStep.checks?.[0]?.label ?? lifeStep.goal}` } : null;
   // 입문 퀘스트 모드: a place's step (or a 기초 조작 tutorial) is a quest — 브리핑 → 해 보기 → 실행 · 관찰 → 결과.
   // The quest card (top left) says what to do now; the side panel follows the phase; the left menu folds away.
@@ -3019,6 +3030,18 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     if (!busy) setSceneRun((n) => n + 1);
   };
   const skipWasBusy = useRef(false);
+  // 경미 묶음 6 (1-1 실습 하기): the same ⚡ 결과 바로 — the run on at ×8 to its end — once the task is done (손 다가가기,
+  // then 손 치우기: the arm writes on). Before that it is held with a line (the task is the 절's point); 빠르기 any time.
+  const skipPractice = () => {
+    const st = courseStepRef.current;
+    if (!st || st.id !== '1-1') return;
+    if (st.step < 3) return setSubNote(commonLine('taskFirst'));
+    if (!busy) return;
+    skipRef.current = 8;
+    sceneSkipRef.current = true;
+    skipWasBusy.current = true;
+    setSceneSkip(true);
+  };
   useEffect(() => {
     if (busy && sceneSkip) skipWasBusy.current = true;
     if (busy || !sceneSkip || !skipWasBusy.current) return;
@@ -5351,6 +5374,9 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     const placed = st.placed + 1;
     patchStep({ placed, note: null, step: placed >= DESK_PLACES.length ? 2 : 1 });
     if (placed >= DESK_PLACES.length) markStepDone('2-1');
+    // 경미 묶음 2 (회신 (다)): each thing put down, the camera back at the 처음 시점 (the next place in sight, however it
+    // was turned or zoomed); all three down, the 처음 시점 is the whole booth, 2-3's (courseView below) — the arm whole.
+    window.setTimeout(() => stageApi.current?.view('home'), 400);
   };
   /** 3-2 ③: the limit warning came — the 절 is done. */
   const limitWarned = () => {
@@ -7034,7 +7060,9 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
               // 'N / M 단계' (수정 지시서 v4 파트 2-5): the step reached of the 절's steps.
               if (done) return <NowBar state="ok" text={doneLine(courseStep.id)} next={nx} steps={{ n: lines.length, of: lines.length }} free={freeKey} />;
               // 1-1: the card goes on after the hand left — watched, nothing to press.
-              if (courseStep.id === '1-1' && courseStep.step === 3) return <NowBar state="run" text={failLine('1-1', 'resume')} next={nx} steps={{ n: lines.length, of: lines.length }} />;
+              // (경미 묶음 6: 1-1 실습 하기 has 장면 보기's ⚡ 결과 바로 · 빠르기 too.)
+              const fast11 = courseStep.id === '1-1' ? { onSkip: skipPractice, skipping: sceneSkip, rate: simRate, onRate: () => chooseSimRate(simRate >= 4 ? 1 : simRate * 2) } : undefined;
+              if (courseStep.id === '1-1' && courseStep.step === 3) return <NowBar state="run" text={failLine('1-1', 'resume')} next={nx} steps={{ n: lines.length, of: lines.length }} fast={fast11} />;
               const at = Math.min(courseStep.step, lines.length - 1);
               const line = lines[at];
               // 3-4 ③ · ④: two keys in one step — the speed, then 기본 자세; the saved pose, then 정지 while it moves.
@@ -7060,6 +7088,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                     state={courseStep.note ? 'no' : 'do'}
                     next={nx}
                     free={freeKey}
+                    fast={fast11}
                   />
                   {/* (동결 뒤 고침 파트 3-2: no number on the ▶ a 잠깐 퀴즈 holds; back once it is answered.) */}
                   {sel && !moment && <NowMark key={`${courseStep.id}:${at}:${sel}`} find={() => [...document.querySelectorAll<HTMLElement>(sel)].find((e) => e.getBoundingClientRect().width > 0) ?? null} n={at + 1} />}
@@ -7149,7 +7178,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
                   }
                   // 입문 과정 무대 (courseStage.ts): the one desk under every 절 (the 글씨 부스 on it, or the bare arm).
                   courseStage={course && (!cellAt || cellAt.cell === 'draw') ? COURSE_LOOK : null}
-                  courseView={course && subNow ? courseViewOf(subNow.id, subNow.scene) : null}
+                  courseView={course && subNow ? (courseStep?.id === '2-1' && courseStep.placed >= DESK_PLACES.length ? courseViewOf('2-3', subById('2-3')?.scene ?? 'A') : courseViewOf(subNow.id, subNow.scene)) : null}
                   // 2-1: what is not on the desk yet (the arm, the mat, the card; the lamp is not part of it).
                   courseHide={courseStep?.id === '2-1' ? { arm: courseStep.placed < 1, mat: courseStep.placed < 2, card: courseStep.placed < 3, lamp: true } : draw4On ? { arm: false, mat: false, card: true, lamp: true } : course && subNow?.id === '1-1' ? { handed: true } : null}
                   cellClock={cellClock}

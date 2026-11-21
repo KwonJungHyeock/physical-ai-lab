@@ -287,12 +287,23 @@ function CardOnMat({ world, to = HAND_AWAY }: { world: RefObject<WorldState | nu
  * The ink: the pen's trail as a brush-pen line 0.9 mm wide on the paper (a flat ribbon per segment).
  * `of`: whose strokes (default the pen's trail on the card on the mat; HandedCard passes the written card's).
  */
-function Ink({ world, of }: { world: RefObject<WorldState | null>; of?: (w: WorldState) => Strokes | null }) {
+function Ink({ world, of, follow }: { world: RefObject<WorldState | null>; of?: (w: WorldState) => Strokes | null; follow?: { dx: number; dy: number } }) {
   const geo = useMemo(() => new BufferGeometry(), []);
   const seen = useRef(-1);
+  const g = useRef<Group>(null);
   useFrame(() => {
     const w = world.current;
     if (!w) return;
+    // 경미 묶음 1 (입문 1-1, `follow`): the ink is the card's — it goes with the card as the hand takes it (CardOnMat's
+    // move, the same offset) and is not drawn while no card is on the mat (no letters left on the bare mat).
+    if (follow && g.current) {
+      const d = w.cell?.draw;
+      const t = w.cell?.line.t ?? 0;
+      g.current.visible = !d || !!d.corner;
+      const taking = !!d?.corner && d.hand?.then === 'take' && d.hand.until - t < 0.5;
+      const f = taking && d ? handAt(d, t) : 1;
+      g.current.position.set(m(follow.dx * (1 - f)), m(follow.dy * (1 - f)), m(14 * (1 - f)));
+    }
     const trail = of ? (of(w) ?? []) : w.trail;
     const n = trail.reduce((a, s) => a + s.length, 0) + trail.length * 1000 + (of ? (w.cell?.draw?.done.length ?? 0) * 1e6 : 0);
     if (n === seen.current) return;
@@ -323,9 +334,11 @@ function Ink({ world, of }: { world: RefObject<WorldState | null>; of?: (w: Worl
     geo.computeBoundingSphere();
   });
   return (
-    <mesh geometry={geo} frustumCulled={false}>
-      <meshPhysicalMaterial color="#141a33" roughness={0.28} clearcoat={0.6} clearcoatRoughness={0.3} side={2} polygonOffset polygonOffsetFactor={-2} />
-    </mesh>
+    <group ref={g}>
+      <mesh geometry={geo} frustumCulled={false}>
+        <meshPhysicalMaterial color="#141a33" roughness={0.28} clearcoat={0.6} clearcoatRoughness={0.3} side={2} polygonOffset polygonOffsetFactor={-2} />
+      </mesh>
+    </group>
   );
 }
 
@@ -663,7 +676,7 @@ export function DrawCell({
           <CardOnMat world={world} to={bare && hide?.handed ? HANDED : HAND_AWAY} />
         </Tagged>
       </group>
-      <Ink world={world} />
+      <Ink world={world} follow={bare && hide?.handed ? HANDED : undefined} />
       {bare && hide?.handed && (
         <Tagged name="메시지 카드" onHover={onHover}>
           <HandedCard world={world} />

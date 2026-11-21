@@ -10,7 +10,10 @@
 | `hand-card.png` | 4-3, 5-1 ~ 5-3 | 사람 손 · 카드 놓기 자세 (카드를 쥐고 매트에 내려놓는 손) |
 | `test1-photo1.png` ~ `test1-photo6.png` | 1장 수행평가 | 로봇 사진 6장 (협동로봇 3 · 아닌 것 3), 팀에서 정해 전달 |
 | `part-robot.png` · `part-mat.png` · `part-pen.png` · `part-card.png` · `part-cable.png` | 2-1 | 구성품 상자 속 구성품 5개 그림 (로봇 · 매트 · 펜 · 카드 · 케이블, 실물 키트 사진이나 그림) |
+| `chapter-1.png` ~ `chapter-6.png` | 목록 | 장 카드 그림 (장마다 1장, 글자 없음) |
 
 파트 18 (2026-11-19): `part-robot` · `part-mat` · `part-card` · `part-pen`은 앱 3D 장면(?render=1)을 화면 UI 없이 렌더해 넣음(528 × 336, 배경 #EEF2F6). 로봇 메시는 Elephant Robotics mycobot_ros2(BSD 2-Clause, `public/robot/rdkx5/ATTRIBUTION.md`). `part-cable`은 아직 없음.
 
 파트 18 (2026-11-19): `test1-photo1` ~ `test1-photo6`은 공개 로봇 모델을 같은 배경 · 같은 각도 · 같은 크기 · 한 가지 회색으로 렌더한 것(로고 · 회사 색 없음, 880 × 560). 순서: 1 myCobot 280 · 2 드론(Skydio X2) · 3 두산 A0509 · 4 이동 로봇(myAGV) · 5 4족 로봇(ANYmal C) · 6 레인보우 RB5. 협동로봇 = 1 · 3 · 6. 출처 · 라이선스는 저장소 맨 위 `assets/LICENSES.md`.
+
+경미 묶음 4 (2026-11-21): `chapter-1` ~ `chapter-6`은 목록 장 카드 그림(카드 칸 112 × 56의 4배, 448 × 224, 글자 없음). 앱 3D 장면(?render=1)을 화면 UI 없이 렌더(`tools/check/course-walk/render13/thumbs.cjs`, 배경 #EEF2F6). 1장 1-1 글씨 부스 · 2장 2-1 처음(빈 자리) · 3장 3-1 처음(칠해진 관절) · 4장 4-1 처음(고리, 좌표축 글자 끔) · 5장 5-1 처음(매트 끝에서) · 6장 1-1을 끝까지 돌린 뒤(켜진 완성 램프 · 건넨 카드, 카드 글씨는 끔 — 6장은 3D 장면이 없음).

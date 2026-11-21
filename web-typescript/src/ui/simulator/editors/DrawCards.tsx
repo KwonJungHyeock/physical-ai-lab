@@ -17,6 +17,7 @@ import { MAT, type Phrase } from '@/engine/simulator/cell/draw';
 import { missionById } from '@/engine/simulator/cell/missions';
 import { QUESTS } from '@/engine/simulator/cell/quests';
 
+import NumberBox from '../tasks/NumberBox';
 import css from './recipe.module.css';
 
 // The kind of card, as a quiet stripe (the HUD keeps colour for meaning): the setting dark, the
@@ -52,11 +53,16 @@ interface Props {
 }
 
 /** A number box that only takes what it may (whole mm), written as it is typed. */
-function Num({ value, min, max, busy, label, onChange }: { value: number; min: number; max: number; busy: boolean; label: string; onChange(v: number): void }) {
+function Num({ value, min, max, busy, label, onChange, course }: { value: number; min: number; max: number; busy: boolean; label: string; onChange(v: number): void; course?: boolean }) {
   return (
     <label className={css.amt}>
       <span>{label}</span>
-      <input type="number" inputMode="numeric" min={min} max={max} step={1} value={value} disabled={busy} aria-label={label} onChange={(e) => onChange(Math.max(min, Math.min(max, Math.round(Number(e.target.value) || 0))))} />
+      {course ? (
+        // 입문 과정 (경미 묶음 3): the whole value selected when pressed, min · max only once set (blur · Enter).
+        <NumberBox inputMode="numeric" min={min} max={max} step={1} whole value={value} disabled={busy} aria-label={label} onValue={(v) => onChange(Number(v))} />
+      ) : (
+        <input type="number" inputMode="numeric" min={min} max={max} step={1} value={value} disabled={busy} aria-label={label} onChange={(e) => onChange(Math.max(min, Math.min(max, Math.round(Number(e.target.value) || 0))))} />
+      )}
     </label>
   );
 }
@@ -114,9 +120,9 @@ export default function DrawCards({ mission, busy, runningLine, onCode, glow, gl
       case 'setup':
         return (
           <>
-            <Num label="x" value={c.x} min={MAT.x0} max={MAT.x1} busy={busy} onChange={(x) => edit(k, { ...c, x })} />
-            <Num label="y" value={c.y} min={MAT.y0} max={MAT.y1} busy={busy} onChange={(y) => edit(k, { ...c, y })} />
-            <Num label="펜" value={c.z} min={PEN_Z.min} max={PEN_Z.max} busy={busy} onChange={(z) => edit(k, { ...c, z })} />
+            <Num course={course} label="x" value={c.x} min={MAT.x0} max={MAT.x1} busy={busy} onChange={(x) => edit(k, { ...c, x })} />
+            <Num course={course} label="y" value={c.y} min={MAT.y0} max={MAT.y1} busy={busy} onChange={(y) => edit(k, { ...c, y })} />
+            <Num course={course} label="펜" value={c.z} min={PEN_Z.min} max={PEN_Z.max} busy={busy} onChange={(z) => edit(k, { ...c, z })} />
             <span className={css.unit}>mm</span>
           </>
         );

@@ -15,6 +15,7 @@ import { buttonName, checkName, failLine, signed } from '@/engine/simulator/cell
 
 import Icon from '../Icon';
 import { AssetSlot } from '../stage/CourseMarks';
+import NumberBox from './NumberBox';
 
 import css from './courseStep.module.css';
 
@@ -173,7 +174,7 @@ export default function CourseStepPanel({ id, busy, onRun, hand, range, tool, pe
           </label>
           <label>
             펜
-            <input type="number" step={0.5} min={-5} max={10} value={pen.z} disabled={busy} aria-label="펜 높이 (종이 위, mm)" onChange={(e) => e.target.value !== '' && pen.onZ(Number(e.target.value))} />
+            <NumberBox step={0.5} min={-5} max={10} value={pen.z} disabled={busy} aria-label="펜 높이 (종이 위, mm)" onValue={(v) => pen.onZ(Number(v))} />
             mm
           </label>
           <small>x · y는 맞는 값으로 잠겨 있어요 · 펜: 점을 찍을 때 펜 끝 높이 (종이 위)</small>
@@ -204,8 +205,8 @@ export default function CourseStepPanel({ id, busy, onRun, hand, range, tool, pe
           {vertices.rows.map((r, i) => (
             <div key={i} className={css.tableRow}>
               <span>{i + 1}</span>
-              <input type="number" step={1} value={r.x} disabled={busy} aria-label={`${i + 1}번 점 x`} onChange={(e) => vertices.onChange(vertices.rows.map((q, k) => (k === i ? { ...q, x: e.target.value } : q)))} />
-              <input type="number" step={1} value={r.y} disabled={busy} aria-label={`${i + 1}번 점 y`} onChange={(e) => vertices.onChange(vertices.rows.map((q, k) => (k === i ? { ...q, y: e.target.value } : q)))} />
+              <NumberBox step={1} empty value={r.x} disabled={busy} aria-label={`${i + 1}번 점 x`} onValue={(v) => vertices.onChange(vertices.rows.map((q, k) => (k === i ? { ...q, x: v } : q)))} />
+              <NumberBox step={1} empty value={r.y} disabled={busy} aria-label={`${i + 1}번 점 y`} onValue={(v) => vertices.onChange(vertices.rows.map((q, k) => (k === i ? { ...q, y: v } : q)))} />
             </div>
           ))}
           <div className={css.tableKeys}>
@@ -224,13 +225,13 @@ export default function CourseStepPanel({ id, busy, onRun, hand, range, tool, pe
           <b>원</b>
           <div className={css.circleRow} data-step="circle">
             <label>
-              중심 x <input type="number" step={1} value={circle.x} disabled={busy} aria-label="원 중심 x" onChange={(e) => circle.onChange({ x: e.target.value, y: circle.y, r: circle.r })} />
+              중심 x <NumberBox step={1} empty value={circle.x} disabled={busy} aria-label="원 중심 x" onValue={(v) => circle.onChange({ x: v, y: circle.y, r: circle.r })} />
             </label>
             <label>
-              y <input type="number" step={1} value={circle.y} disabled={busy} aria-label="원 중심 y" onChange={(e) => circle.onChange({ x: circle.x, y: e.target.value, r: circle.r })} />
+              y <NumberBox step={1} empty value={circle.y} disabled={busy} aria-label="원 중심 y" onValue={(v) => circle.onChange({ x: circle.x, y: v, r: circle.r })} />
             </label>
             <label>
-              반지름 <input type="number" step={1} min={1} value={circle.r} disabled={busy} aria-label="원 반지름" onChange={(e) => circle.onChange({ x: circle.x, y: circle.y, r: e.target.value })} />
+              반지름 <NumberBox step={1} min={1} empty value={circle.r} disabled={busy} aria-label="원 반지름" onValue={(v) => circle.onChange({ x: circle.x, y: circle.y, r: v })} />
             </label>
           </div>
           <div className={css.countRow} data-step="count" role="group" aria-label="점 개수">
