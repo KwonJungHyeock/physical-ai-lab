@@ -22,8 +22,8 @@ const CH = [
   { n: 4, no: '4-1&mode=practice', target: [80, 0, 150], pts: [...RINGS, ...PLATE], axesOff: true, dir: [0.35, -0.85, 0.45] },
   // 5장: 5-1 처음, 매트 끝에서 카드 너머로 펜을 단 로봇
   { n: 5, no: '5-1&mode=practice', target: [120, 0, 100], pts: [...CARD, ...PLATE], dir: [0.95, -0.3, 0.4] },
-  // 6장 (마무리, 3D 장면 없음): 1-1을 끝까지 돌린 뒤, 켜진 완성 램프 너머로 로봇과 다 쓴 카드 (카드의 글씨는 끔: 그림에 글자 없음)
-  { n: 6, no: '1-1&mode=scene', target: [180, -60, 60], pts: [...PLATE, ...HANDED, ...LAMP], dir: [0.15, -0.95, 0.22], end: true, noInk: true },
+  // 6장 (마무리, 3D 장면 없음): 1-1을 끝까지 돌린 뒤, 켜진 완성 램프와 '사랑해'를 쓴 카드 (작품 손글씨는 내용물이라 글자 금지의 예외: 경미 묶음 검수 회신 Q2)
+  { n: 6, no: '1-1&mode=scene', target: [170, -70, 40], pts: [...MAT, ...HANDED, ...LAMP, [-60, -60, 0], [0, 0, 250]], arm: false, dir: [0.15, -0.7, 0.85], fill: 0.62, end: true },
 ];
 (async () => {
   const b = await R.L.launch();
@@ -38,7 +38,7 @@ const CH = [
       await p.waitForTimeout(3000);
     }
     await R.clean(p, { keep: ['desk', 'lamp', 'booth'] });
-    // (6장: no letters in the picture — the written card's ink (#141a33) off; the card itself, handed, stays.)
+    // (noInk: the written card's ink (#141a33) off — no longer used: 6장 shows its '사랑해', the work done.)
     if (c.noInk) await p.evaluate(() => window.__render.scene.traverse((o) => { if (o.isMesh && o.material?.color?.getHexString?.() === '141a33') o.visible = false; }));
     // (4장: the 좌표축 and its X · Y · Z letters are screen-only overlays: off, no letters in the picture.)
     if (c.axesOff) await p.evaluate(() => window.__render.scene.traverse((o) => { if (!(o.layers.mask & 1)) o.visible = false; }));
