@@ -39,6 +39,8 @@ const SCENES = [
 const BACK_TO_FIRST = 20.33;
 /** How long the sequence plays before the intro may step aside, ms. */
 const SEQUENCE_MS = 3200;
+/** 입문 과정's cover: how long it stays at least before the course opens (2026-11-23 회신: it went by too fast), ms. A click skips it. */
+const COVER_MS = 5000;
 
 const SKIP_KEY = 'intro-skip-once';
 /** Call before the program reloads itself (connecting to a robot, leaving it): the next start does not play the intro. */
@@ -122,7 +124,7 @@ export default function Intro({ progress, ready, note, gate, brand, courses }: P
         setQuiet(again);
         setPlayed(true);
       },
-      again ? 0 : quick ? 600 : SEQUENCE_MS,
+      again ? 0 : quick ? 600 : courses ? COVER_MS : SEQUENCE_MS,
     );
     return () => window.clearTimeout(t);
   }, []);
@@ -173,7 +175,9 @@ export default function Intro({ progress, ready, note, gate, brand, courses }: P
   const straight = !!courses && !courses.ask;
   useEffect(() => {
     if (!straight) return;
-    const t = window.setTimeout(() => setPlayed(true), 0);
+    // (The cover stays COVER_MS before going in on its own; a click on it goes in at once.)
+    const quick = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const t = window.setTimeout(() => setPlayed(true), introSkipped() ? 0 : quick ? 600 : COVER_MS);
     return () => window.clearTimeout(t);
   }, [straight]);
   useEffect(() => {

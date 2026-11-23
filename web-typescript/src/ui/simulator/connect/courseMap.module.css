@@ -675,3 +675,33 @@
 [data-course] .item[data-soon] .kinds button:disabled {
   opacity: 1;
 }
+/* 수업 초기화 (2026-11-23 회신): beside ×, quieter than it (an outline key; asked before it does anything). */
+.topKeys {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+}
+/* 대응표 */
+:where([data-course]) .topKeys {
+  gap: 12px;
+}
+.reset {
+  height: 44px;
+  padding: 0 16px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 12px;
+  background: transparent;
+  color: #f6f7f9;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+/* 대응표 */
+:where([data-course]) .reset {
+  border-color: rgba(255, 255, 255, 0.45);
+}
+.reset:hover {
+  background: rgba(255, 255, 255, 0.08);
+}

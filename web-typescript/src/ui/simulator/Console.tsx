@@ -168,6 +168,7 @@ import NowBar, { LiveFreeBar, LiveNowBar, NowMark, QuestNow, TutNow } from './st
 import JointReadout from './control/JointReadout';
 import QaPanel from './QaPanel';
 import { isQa } from './qaMode';
+import { resetCourse } from './courseReset';
 import CourseStepPanel, { VerdictLines, type Measure } from './tasks/CourseStepPanel';
 import StrokeBoard from './tasks/StrokeBoard';
 import CourseEnd, { REVIEW_START, type Review } from './tasks/CourseEnd';
@@ -392,6 +393,25 @@ const MY_CARD_START: MyCard = { strokes: [], open: false, ran: false, passed: fa
 
 /** 입문 과정: the window width its screens are laid out for, px (wider: the whole screen is shown larger). */
 const COURSE_WIDTH = 1366;
+/** 입문 과정 (2026-11-23 회신): the logo was pressed — the next start shows the cover and waits for its start key (sessionStorage). */
+const HOME_KEY = 'life-course-home';
+/** The logo: back to the first screen — the course's cover (its 절 left out of the address: then the list). The record stays. */
+function goHome() {
+  try {
+    sessionStorage.setItem(HOME_KEY, '1');
+  } catch {
+    /* storage blocked: the cover still shows, then goes in */
+  }
+  const q = new URLSearchParams(window.location.search);
+  const keep = new URLSearchParams();
+  for (const k of ['course', 'qa']) {
+    const v = q.get(k);
+    if (v) keep.set(k, v);
+  }
+  window.location.href = window.location.pathname + (keep.toString() ? `?${keep}` : '');
+}
+/** Whether a window wider than COURSE_WIDTH shows the course larger (off: shown at its own size, the browser's zoom works as on any page). */
+const COURSE_UPSCALE = false;
 /** …and the least height it keeps when shown larger, px (the desk layout's own floor is 600). */
 const COURSE_MIN_HEIGHT = 640;
 /** Does a CSS size condition (`(max-height: 820px)`, `A and B`, `A, B`, `not (…)`) hold for a w × h px screen? */
@@ -460,7 +480,9 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
     // (letters, keys and the panel in one ratio; the 3D view fills what is left). A narrower one is not shrunk.
     const fit = () => {
       // As wide as the window; a low window keeps COURSE_MIN_HEIGHT of layout (then the screen is laid out wider than COURSE_WIDTH).
-      const z = Math.max(1, Math.round(Math.min(window.innerWidth / COURSE_WIDTH, window.innerHeight / COURSE_MIN_HEIGHT) * 1000) / 1000);
+      // (2026-11-23 회신: off — on a 32-inch screen at 100 % everything was 1.4× as large, and the browser's own zoom could not make it
+      // smaller (a smaller zoom is a wider window, scaled up again). The course is shown at its own size like any page; COURSE_UPSCALE turns it back on.)
+      const z = COURSE_UPSCALE ? Math.max(1, Math.round(Math.min(window.innerWidth / COURSE_WIDTH, window.innerHeight / COURSE_MIN_HEIGHT) * 1000) / 1000) : 1;
       root.style.setProperty('--course-zoom', String(z));
       setCourseZoom(z);
       if (z === 1) {
@@ -504,8 +526,15 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
       if (sub && !q.has('no')) q.set('no', sub);
       window.history.replaceState(null, '', `${window.location.pathname}?${q.toString()}`);
     }
-    // Read after hydration (this browser's day).
-    setNoticeAsk(noticeDue((k) => localStorage.getItem(k), Date.now()));
+    // Read after hydration (this browser's day). Back from the logo (goHome): the cover waits for its start key this once.
+    let home = false;
+    try {
+      home = sessionStorage.getItem(HOME_KEY) === '1';
+      sessionStorage.removeItem(HOME_KEY);
+    } catch {
+      /* storage blocked: as any start */
+    }
+    setNoticeAsk(home || noticeDue((k) => localStorage.getItem(k), Date.now()));
     let live = true;
     // (?course=4: 시험용 — the 4차시 구성's screens; the class's own 구성 still comes from the platform. Not ?plan=:
     // that name is the older class link's — lessonRecord.ts.)
@@ -6636,6 +6665,7 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
           robotStop={robotMode && !!robot?.connected}
           onStop={stop}
           onHelp={() => setHelpOpen(true)}
+          onHome={course ? goHome : undefined}
           context={
             // A coding task belongs to the coding tabs (and the library): 수동 제어 shows none.
             // 입문: a place's step card (top left) already says where you are; 입문 과정: always the 위치 줄.
@@ -6976,6 +7006,8 @@ export default function Console({ track: trackId }: { track?: TrackId } = {}) {
               onOpen: (page) => { setRoadmapOpen(false); openEnd(page); },
             }}
             onClose={() => setRoadmapOpen(false)}
+            // (2026-11-23 회신: 수업 초기화 — the record kept aside, courseReset.ts.)
+            onReset={resetCourse}
             onPick={(x, m) => {
               setRoadmapOpen(false);
               void requestSub(x, m);

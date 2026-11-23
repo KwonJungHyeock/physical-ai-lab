@@ -315,7 +315,12 @@
   transform: rotate(180deg);
 }
 [data-course] .kinds button {
-  height: 32px;
+  height: 30px;
+  font-size: 15px;
+}
+/* 대응표 */
+:where([data-course]) [data-course] .kinds button {
+  font-size: 16px;
 }
 
 /* 입문 과정 (수정 지시서 v4 파트 2-3): from the left — [목록], the 절's number, its name, its 차시 as a tag. */
@@ -395,15 +400,28 @@
   font-weight: 700; /* (the title face has one weight, ExtraBold: the one drawn) */
   letter-spacing: 0;
 }
+/* (2026-11-23 회신: shown at its own size now, the 44 px line was full — 절 번호 22 · 절 이름 17 · 차시 14, room above and below.) */
 [data-course] .loc[data-flat] > b {
-  font-size: 28px;
+  font-size: 22px;
+}
+/* 대응표 */
+:where([data-course]) [data-course] .loc[data-flat] > b {
+  font-size: 23px;
 }
 [data-course] .loc[data-flat] > span {
+  font-size: 17px;
+}
+/* 대응표 */
+:where([data-course]) [data-course] .loc[data-flat] > span {
   font-size: 18px;
 }
 [data-course] .loc[data-flat] > small {
+  padding: 3px 10px;
+  font-size: 14px;
+}
+/* 대응표 */
+:where([data-course]) [data-course] .loc[data-flat] > small {
   padding: 4px 12px;
-  font-size: 16px;
 }
 [data-course] .list {
   height: 32px;

@@ -29,6 +29,8 @@ interface Props {
   onClose(): void;
   /** 6장 (과정 끝에 열림): whether it opens yet (the course's last step done), and opening one of its pages (0 · 1 · 2). */
   end?: { open: boolean; onOpen(page: number): void };
+  /** 수업 초기화: the record put aside (kept, not deleted) and the course from 1-1 again (asked first). */
+  onReset?: () => void;
 }
 
 /** '3차시' or '3~4차시'. */
@@ -49,7 +51,7 @@ function ChapterArt({ n }: { n: number }) {
   );
 }
 
-export default function CourseMap({ plan, now, done, onPick, onClose, end }: Props) {
+export default function CourseMap({ plan, now, done, onPick, onClose, end, onReset }: Props) {
   useEffect(() => {
     const esc = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', esc);
@@ -90,9 +92,22 @@ export default function CourseMap({ plan, now, done, onPick, onClose, end }: Pro
               완료 {got} / {counted.length}
             </small>
           </span>
-          <button type="button" className={css.x} onClick={onClose} aria-label="닫기">
-            ×
-          </button>
+          <span className={css.topKeys}>
+            {onReset && (
+              <button
+                type="button"
+                className={css.reset}
+                onClick={() => {
+                  if (window.confirm('수업을 처음부터 다시 시작할까요?\n지금까지의 학습 기록은 지워지지 않고 이 PC에 따로 보관돼요.')) onReset();
+                }}
+              >
+                수업 초기화
+              </button>
+            )}
+            <button type="button" className={css.x} onClick={onClose} aria-label="닫기">
+              ×
+            </button>
+          </span>
         </header>
         {/* 이어서 하기: the 절 to do now, and the one big key. */}
         <div className={css.resume}>

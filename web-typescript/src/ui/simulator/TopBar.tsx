@@ -37,6 +37,8 @@ interface Props {
   onStop(): void;
   /** [?] 도움말: the screen, the order of work, the keys, the manual. */
   onHelp(): void;
+  /** 입문 과정: the logo goes back to the first screen (the cover) instead of the simulator. */
+  onHome?: () => void;
   /** A 트랙 page (engine/simulator/tracks.ts): its badge, and only its screens. */
   track?: { name: string; grade: string; color: string; screens: readonly string[]; course?: boolean };
 }
@@ -114,11 +116,11 @@ function FullscreenChip() {
   );
 }
 
-export default function TopBar({ view, onView, busy, context, settings, status, robotStop, onStop, onHelp, track }: Props) {
+export default function TopBar({ view, onView, busy, context, settings, status, robotStop, onStop, onHelp, track, onHome }: Props) {
   return (
     // data-course: the 입문 과정 (no text under 14 px in its top line).
     <header className={css.topBar} data-panel="topbar" data-course={track?.course || undefined}>
-      <button type="button" className={css.lockup} onClick={() => onView('sim')} title="ROBODYNE SYSTEMS · Physical AI 로봇 학습 시뮬레이터 (시뮬레이터로)">
+      <button type="button" className={css.lockup} onClick={() => (onHome ? onHome() : onView('sim'))} title={onHome ? '처음 화면으로' : 'ROBODYNE SYSTEMS · Physical AI 로봇 학습 시뮬레이터 (시뮬레이터로)'}>
         {/* eslint-disable-next-line @next/next/no-img-element -- a small fixed logo, also in the static export for the robot */}
         <img src="/brand/sim-logo-white.svg" alt="ROBODYNE SYSTEMS" width={73} height={36} />
         <i aria-hidden="true" />
