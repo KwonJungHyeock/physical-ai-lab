@@ -1000,7 +1000,9 @@ WIFI = None
 CROSS_ORIGIN = ("/api/state",)
 # Web sites (https) whose own screens drive the arm, like the PC program on this network: the
 # platform's simulator. More can be listed, one https://… per line, in web_origins.txt beside this file.
-WEB_ORIGINS = {"https://physical-ai-lab-lake.vercel.app"}
+# robot-calligraphy.vercel.app: 「내 글씨를 쓰는 로봇팔」 (the 입문 과정 on a site of its own, 2026-11-24) — on every
+# robot from this kit on, so its classes need no per-robot step (before: ssh into each robot and add it to web_origins.txt).
+WEB_ORIGINS = {"https://physical-ai-lab-lake.vercel.app", "https://robot-calligraphy.vercel.app"}
 # WEB_HOME: where this robot's own address sends a browser (the newest screens, connected to this robot);
 # the first line of web_origins.txt when there is one.
 WEB_HOME = "https://physical-ai-lab-lake.vercel.app"

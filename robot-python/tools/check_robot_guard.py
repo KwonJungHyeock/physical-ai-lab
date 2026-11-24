@@ -30,6 +30,7 @@ EVIL = "https://evil.example"
 PC = "http://127.0.0.1:47280"
 CLASS = "http://192.168.0.5:47280"
 WEB = "https://physical-ai-lab-lake.vercel.app"
+WEB2 = "https://robot-calligraphy.vercel.app"   # 「내 글씨를 쓰는 로봇팔」 사이트 (2026-11-24부터 기본 허용)
 
 
 def free_port():
@@ -118,7 +119,7 @@ try:
     code, _, h = call(ARM, "/api/identify", method="OPTIONS", origin=PC)
     ok(code == 204 and h.get("Access-Control-Allow-Origin") == PC and h.get("Access-Control-Allow-Private-Network") == "true",
        "PC 프로그램 창의 사전 요청은 받음")
-    for origin, who in ((PC, "PC 프로그램 창 (127.0.0.1:47280)"), (CLASS, "다른 PC (사설 주소)"), (WEB, "웹 사이트 (Vercel)"), (None, "로봇 자기 화면 (같은 주소)")):
+    for origin, who in ((PC, "PC 프로그램 창 (127.0.0.1:47280)"), (CLASS, "다른 PC (사설 주소)"), (WEB, "웹 사이트 (Vercel)"), (WEB2, "글씨 로봇팔 사이트 (Vercel)"), (None, "로봇 자기 화면 (같은 주소)")):
         code, r, h = call(ARM, "/api/identify", {}, origin=origin)
         ok(code == 200 and r.get("ok") and (origin is None or h.get("Access-Control-Allow-Origin") == origin), f"{who} 의 움직여 확인은 받음")
         wait_idle(ARM)
