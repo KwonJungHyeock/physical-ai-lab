@@ -54,7 +54,8 @@ const (
 type kitData struct {
 	zip     *zip.Reader
 	version string
-	size    int64 // what the eduino/ folder takes on a stick
+	web     string // the site the kit's robots send a browser to (server.py WEB_HOME, "" when not found)
+	size    int64  // what the eduino/ folder takes on a stick
 }
 
 var (
@@ -132,6 +133,7 @@ func openKit(ra io.ReaderAt, size int64) (*kitData, error) {
 				b, _ := io.ReadAll(rc)
 				rc.Close()
 				k.version = consoleVersion(bytes.NewReader(b), int64(len(b)))
+				k.web = consoleWebHome(bytes.NewReader(b), int64(len(b)))
 			}
 		}
 	}
@@ -167,6 +169,39 @@ func consoleVersion(ra io.ReaderAt, size int64) string {
 			rc.Close()
 			return strings.TrimSpace(string(b))
 		}
+	}
+	return ""
+}
+
+// consoleWebHome: the WEB_HOME line of robot_console/server.py in a robot_console.zip — the site this
+// kit's robots (their own address, the tool's [이 로봇에 연결]) open. "" when not there or not https.
+func consoleWebHome(ra io.ReaderAt, size int64) string {
+	zr, err := zip.NewReader(ra, size)
+	if err != nil {
+		return ""
+	}
+	for _, f := range zr.File {
+		if path.Clean(f.Name) != "robot_console/server.py" {
+			continue
+		}
+		rc, err := f.Open()
+		if err != nil {
+			return ""
+		}
+		b, _ := io.ReadAll(io.LimitReader(rc, 4<<20))
+		rc.Close()
+		for _, line := range strings.Split(string(b), "\n") {
+			rest, ok := strings.CutPrefix(strings.TrimSpace(line), `WEB_HOME = "`)
+			if !ok {
+				continue
+			}
+			web, _, ok := strings.Cut(rest, `"`)
+			if ok && strings.HasPrefix(web, "https://") && !strings.ContainsAny(web, " <>'\\") {
+				return strings.TrimRight(web, "/")
+			}
+			return ""
+		}
+		return ""
 	}
 	return ""
 }
@@ -729,7 +764,7 @@ func usbState() map[string]any {
 	}
 	out := map[string]any{"drives": drives, "job": jobSnapshot(), "kit": nil}
 	if k != nil {
-		out["kit"] = map[string]any{"version": k.version, "size": k.size}
+		out["kit"] = map[string]any{"version": k.version, "size": k.size, "web": k.web}
 	}
 	return out
 }

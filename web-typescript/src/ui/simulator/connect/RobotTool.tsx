@@ -9,7 +9,7 @@
 
 import { useEffect, useState } from 'react';
 
-import { usbAvailable } from '@/engine/simulator/usbKit';
+import { usbAvailable, usbState } from '@/engine/simulator/usbKit';
 
 import Icon from '../Icon';
 import css from '../console.module.css';
@@ -20,15 +20,27 @@ import t from './robotTool.module.css';
 /** The simulator on the web (Vercel). */
 const SIMULATOR_URL = 'https://physical-ai-lab-lake.vercel.app/console';
 
+/** The site to name under the cards: the one the kit beside the program sends its robots to (its server.py
+ *  WEB_HOME — the same place [이 로봇에 연결] opens), else the simulator. */
+const siteOf = (web?: string) => (web && !SIMULATOR_URL.startsWith(web) ? web : SIMULATOR_URL);
+
 /** A robot just set up or read from a USB result: its own console in the browser. */
 const openRobot = (addr: string) => window.open(`http://${addr}/console`, '_blank');
 
 export default function RobotTool() {
   const [ok, setOk] = useState<boolean | null>(null);
   const [open, setOpen] = useState<'usb' | 'setup' | null>(null);
+  const [site, setSite] = useState(SIMULATOR_URL);
   useEffect(() => {
     let live = true;
-    void usbAvailable().then((v) => live && setOk(v));
+    void usbAvailable().then((v) => {
+      if (!live) return;
+      setOk(v);
+      if (v)
+        usbState()
+          .then((st) => live && setSite(siteOf(st.kit?.web)))
+          .catch(() => {});
+    });
     return () => {
       live = false;
     };
@@ -64,8 +76,8 @@ export default function RobotTool() {
 
       <footer className={t.foot}>
         시뮬레이터와 수업은 웹에서 열어요:{' '}
-        <a href={SIMULATOR_URL} target="_blank" rel="noreferrer">
-          {SIMULATOR_URL.replace('https://', '')}
+        <a href={site} target="_blank" rel="noreferrer">
+          {site.replace('https://', '')}
         </a>
       </footer>
 

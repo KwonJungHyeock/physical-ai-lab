@@ -25,7 +25,7 @@ func testKit(t *testing.T, version string) *kitData {
 	f, _ := iz.Create("robot_console/VERSION")
 	f.Write([]byte(version + "\n"))
 	f, _ = iz.Create("robot_console/server.py")
-	f.Write([]byte("print('hi')\n"))
+	f.Write([]byte("import os\nWEB_HOME = \"https://robot-calligraphy.vercel.app\"\nprint('hi')\n"))
 	iz.Close()
 	var outer bytes.Buffer
 	oz := zip.NewWriter(&outer)
@@ -46,6 +46,27 @@ func testKit(t *testing.T, version string) *kitData {
 		t.Fatal(err)
 	}
 	return k
+}
+
+// TestKitWebHome: the tool shows the site the kit's robots open (server.py WEB_HOME), "" when it is not there.
+func TestKitWebHome(t *testing.T) {
+	if k := testKit(t, "v1"); k.web != "https://robot-calligraphy.vercel.app" {
+		t.Fatalf("web %q", k.web)
+	}
+	for body, want := range map[string]string{
+		"WEB_HOME = \"https://physical-ai-lab-lake.vercel.app/\"\n": "https://physical-ai-lab-lake.vercel.app",
+		"WEB_HOME = \"http://plain.example\"\n":                     "",
+		"x = 1\n":                                                   "",
+	} {
+		var b bytes.Buffer
+		z := zip.NewWriter(&b)
+		w, _ := z.Create("robot_console/server.py")
+		w.Write([]byte(body))
+		z.Close()
+		if got := consoleWebHome(bytes.NewReader(b.Bytes()), int64(b.Len())); got != want {
+			t.Fatalf("%q → %q, want %q", body, got, want)
+		}
+	}
 }
 
 func TestWifiForm(t *testing.T) {

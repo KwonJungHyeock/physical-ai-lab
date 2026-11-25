@@ -53,8 +53,8 @@ export interface UsbJob {
 }
 
 export interface UsbState {
-  /** The kit this program carries; null: built without one. */
-  kit: { version: string; size: number } | null;
+  /** The kit this program carries; null: built without one. `web`: the site its robots open (server.py WEB_HOME). */
+  kit: { version: string; size: number; web?: string } | null;
   drives: UsbDrive[];
   job: UsbJob | null;
 }
