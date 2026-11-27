@@ -18,6 +18,7 @@
 # web-typescript/ 에서 npm run build:robot 한 뒤
 EDUINO_SIGNING_KEY=~/keys/eduino-kit-signing.pem python3 robot-python/tools/make_usb_kit.py -o dist
 python3 robot-python/tools/make_usb_kit.py --key ~/keys/eduino-kit-signing.pem -o dist   # 같은 것
+python3 robot-python/tools/sign_kit.py dist/eduino_usb.zip --key ~/keys/eduino-kit-signing.pem   # 키 없이 만든 키트를 키 있는 PC 에서 서명 (Python 만, OpenSSL 없이)
 python3 robot-python/tools/check_usb_update.py   # 자동 업데이트 자체 시험 (로봇 없이, openssl 필요)
 ```
 
