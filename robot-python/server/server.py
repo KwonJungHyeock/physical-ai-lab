@@ -76,7 +76,9 @@ ARRIVE_DEG = 2.0        # final arrival tolerance (J1 measured 1.4° on the real
 VIA_DEG = 5.0           # intermediate waypoint of a straight line: send the next one early
 POLL_S = 0.1            # live angle refresh for the console
 ARM_SILENT_S = 3.0      # the arm has not answered an angle read for this long (switched off, robot just booted)
-REOPEN_EVERY_S = 5.0    # ... then the port is reopened by itself this often, until it answers again
+REOPEN_EVERY_S = 5.0    # ... then the port is reopened by itself this often, until it answers again,
+REOPEN_SLOW_S = 10.0    # ... and this often once it has been failing for REOPEN_SLOW_AFTER_S
+REOPEN_SLOW_AFTER_S = 60.0
 IDENTIFY_SPEED = 25     # 로봇 찾기 [움직여 확인]: straightening, slow enough to stop by hand
 DEADMAN_S = 8.0         # stop a run when the console has not polled for this long (0 = off; --deadman);
                         # 8 s rides out a Wi-Fi roam or a busy classroom network without letting a lost arm go on,
@@ -167,6 +169,7 @@ class DemoArm:
         self.target, self.speed, self.t = list(self.angles), 30, time.time()
         self.limp = [False] * 6
         self.grip, self.grip_target, self.grip_speed, self.grip_t = 100.0, 100.0, 50, time.time()
+        self.silent = False          # --demo only (/api/demo/arm): the arm as if switched off, to try the console's notices
 
     def _tick(self):
         now = time.time()
@@ -176,6 +179,8 @@ class DemoArm:
         self.angles = [a if limp else a + max(-step, min(step, b - a)) for a, b, limp in zip(self.angles, self.target, self.limp)]
 
     def get_angles(self):
+        if self.silent:
+            return -1
         self._tick()
         time.sleep(0.004)
         return [round(a + random.uniform(-0.05, 0.05), 2) for a in self.angles]
@@ -418,6 +423,9 @@ class Robot:
             "gripperValue": None,
             # Every settled arrival of the latest run: target and measured angles, degrees.
             "arrivals": [],
+            # The link to the arm, for the console's notices and its 실물 기록: how many times it came back
+            # (by itself or [다시 연결]), and since when it has been silent (unix time, None while it answers).
+            "armLink": 0, "armSilentSince": None,
         }
         self.start_lock = threading.Lock()
         self.last_seen = time.time()
@@ -426,6 +434,7 @@ class Robot:
         # When to reopen the port by itself next (no port, or an arm that stopped answering), see _auto_reopen.
         self.reopen_at = time.time() + REOPEN_EVERY_S
         self.reopen_tries = 0       # reopens in a row that found no arm (logged once, not every 5 s)
+        self.failing_since = 0.0    # when those reopens started failing
         self.lost = False           # the current run was stopped by the dead-man check
         self.pump = Pump(demo)   # stays as it is on Stop: switching off would drop a held block
         self.abort = threading.Event()
@@ -448,11 +457,14 @@ class Robot:
         except Exception:                       # serial hiccup: keep going, report it
             a = None
         if isinstance(a, list) and len(a) == 6 and all(isinstance(v, (int, float)) for v in a):
-            self.state.update(angles=[round(float(v), 2) for v in a], updated=time.time(), connected=True)
+            self.state.update(angles=[round(float(v), 2) for v in a], updated=time.time(), connected=True,
+                              armSilentSince=None)
             return a
         self.state["read_errors"] += 1
         if time.time() - self.state["updated"] > 2.0:
             self.state["connected"] = False
+            if self.state["armSilentSince"] is None:
+                self.state["armSilentSince"] = self.state["updated"] or time.time()
         return None
 
     def _auto_reopen(self, now):
@@ -461,13 +473,16 @@ class Robot:
         server still holds), or the robot just booted and the server came up before the arm's firmware. Never
         while a program or a jog runs. A released arm stays released (no power_on), so it never stiffens under a
         hand that is holding it."""
-        if self.demo or self.state["running"] or self.jog_at or now < self.reopen_at:
+        if self.state["running"] or self.jog_at or now < self.reopen_at:
             return
         silent = isinstance(self.arm, NoArm) or now - self.state["updated"] > ARM_SILENT_S
         if not silent:
             self.reopen_tries = 0
             return
-        self.reopen_at = now + REOPEN_EVERY_S
+        if self.reopen_tries == 0:
+            self.failing_since = now
+        slow = now - self.failing_since > REOPEN_SLOW_AFTER_S
+        self.reopen_at = now + (REOPEN_SLOW_S if slow else REOPEN_EVERY_S)
         self.reopen_tries += 1
         err = self.reconnect(auto=True)
         if err is None:
@@ -793,6 +808,7 @@ class Robot:
         for _ in range(5):
             if self.read_angles():
                 log("[연결] 다시 연결됐어요" + (" (스스로)" if auto else ""))
+                self.state["armLink"] += 1
                 return None
             time.sleep(0.2)
         if not auto:
@@ -1458,6 +1474,10 @@ class Handler(SimpleHTTPRequestHandler):
             if route == "/api/wifi/connect":
                 err = WIFI.connect(body.get("ssid"), body.get("password") or "", on_done=lambda: refresh_identity(True))
                 return self.send_json({"ok": err is None, "error": err}, 200 if err is None else 409)
+            if route == "/api/demo/arm" and ROBOT.demo:
+                # --demo only: the stand-in arm stops answering (as if switched off) or answers again.
+                ROBOT.arm.silent = not body.get("on", True)
+                return self.send_json({"ok": True, "silent": ROBOT.arm.silent})
             if route == "/api/reconnect":
                 err = ROBOT.reconnect()
                 return self.send_json({"ok": err is None, "error": err}, 200 if err is None else 503)

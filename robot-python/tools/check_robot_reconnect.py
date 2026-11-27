@@ -8,7 +8,9 @@ A stand-in pymycobot whose arm can be switched off and on, as the real one:
     other end restarted), only a reopened one answers; the server must reopen it by itself;
   - the port will not open at first (cable out): it is opened once it can be;
   - a released arm is reopened without power_on (its servos would lock under a holding hand);
-  - nothing is reopened while a program runs.
+  - nothing is reopened while a program runs;
+  - the state tells the console: armSilentSince while silent, armLink counts each return;
+  - after REOPEN_SLOW_AFTER_S of failing, it tries every REOPEN_SLOW_S instead.
 
     python3 robot-python/tools/check_robot_reconnect.py
 """
@@ -57,6 +59,8 @@ import server  # noqa: E402
 server.log = lambda text: None
 server.ARM_SILENT_S = 0.4
 server.REOPEN_EVERY_S = 0.5
+server.REOPEN_SLOW_S = 2.0
+server.REOPEN_SLOW_AFTER_S = 1.5
 FAILS = []
 
 
@@ -93,10 +97,16 @@ check("arm firmware up: connected by itself within 4 s", wait(robot, True, 4))
 
 # 2. Switched off and on while running the server: the old handle stays dead.
 opens = Hw.opens
-power_cycle()
-check("arm off: shown as not connected", wait(robot, False, 3) or robot.state["connected"] is False)
+link = robot.state["armLink"]
+Hw.on = False
+check("arm off: shown as not connected", wait(robot, False, 3))
+check("... silent since is set", isinstance(robot.state["armSilentSince"], float))
+time.sleep(0.3)
+Hw.generation += 1
+Hw.on = True
 check("arm on again: reconnected by itself within 4 s", wait(robot, True, 4))
 check("... by reopening the port", Hw.opens > opens)
+check("... armLink counted, silent since cleared", robot.state["armLink"] > link and robot.state["armSilentSince"] is None)
 
 # 3. Released arm: reopened without power_on.
 robot.state["released"] = True
@@ -115,7 +125,18 @@ check("running: the port is not reopened", Hw.opens == opens)
 robot.state["running"] = False
 check("run over: reconnected by itself", wait(robot, True, 4))
 
-# 5. Port will not open at first (NoArm), then can.
+# 5. Failing for long: slower tries.
+Hw.on = False
+wait(robot, False, 3)
+time.sleep(2.5)                      # past REOPEN_SLOW_AFTER_S
+t0 = Hw.opens
+time.sleep(3.0)
+check("failing past a minute (scaled): tries slow down (<= 2 in 3 s)", Hw.opens - t0 <= 2)
+Hw.generation += 1
+Hw.on = True
+check("... and still reconnects", wait(robot, True, 5))
+
+# 6. Port will not open at first (NoArm), then can.
 Hw.port_ok = False
 robot2 = server.Robot(False, "/dev/fake2", 1000000)
 check("no port: NoArm, error said", isinstance(robot2.arm, server.NoArm) and bool(robot2.state["error"]))
