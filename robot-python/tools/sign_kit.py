@@ -2,6 +2,11 @@
 """Sign a USB kit on the PC that holds the signing key — Python only, no OpenSSL, no repository needed.
 
     python sign_kit.py eduino_usb.zip --key C:\\Users\\USER\\keys\\eduino-kit-signing.pem
+    python sign_kit.py eduino_usb.zip --key <키> --put server.py      # a signed kit with a newer server.py
+
+--put FILE (any number): the console file of that name (robot_console/<name>, e.g. server.py) is replaced
+by FILE and the console gets a newer VERSION (`YYYYMMDD-HHMMSS-update`, UTC), so a robot updates from the
+stick (kit_update.py takes only a newer VERSION). Works on an already signed kit: it is signed again.
 
 A kit made without a key (make_usb_kit.py with no --key) has eduino/robot_console.zip but no
 eduino/robot_console.zip.sig. This adds that signature (Ed25519 of the zip's bytes, the same as
@@ -20,6 +25,7 @@ import hashlib
 import io
 import os
 import sys
+import time
 import zipfile
 
 # --------------------------------------------------------------------------- #
@@ -130,11 +136,40 @@ def read_public(pem_bytes):
     return der[12:]
 
 
+def replace_files(rc, paths):
+    """robot_console.zip with robot_console/<name> replaced by each file, and a newer VERSION."""
+    new = {}
+    for path in paths:
+        name = os.path.basename(path)
+        with open(path, "rb") as f:
+            new["robot_console/" + name] = f.read()
+    version = time.strftime("%Y%m%d-%H%M%S", time.gmtime()) + "-update"
+    out = io.BytesIO()
+    with zipfile.ZipFile(io.BytesIO(rc)) as old, zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
+        missing = [n for n in new if n not in old.namelist()]
+        if missing:
+            sys.exit(f"키트의 콘솔에 없는 파일이에요: {', '.join(m.split('/', 1)[1] for m in missing)}")
+        for info in old.infolist():
+            data = new.get(info.filename)
+            if info.filename == "robot_console/VERSION":
+                data = (version + "\n").encode()
+            if data is None:
+                z.writestr(info, old.read(info.filename))
+            else:
+                fresh = zipfile.ZipInfo(info.filename, time.localtime()[:6])
+                fresh.external_attr, fresh.compress_type = info.external_attr, zipfile.ZIP_DEFLATED
+                z.writestr(fresh, data)
+    for name in new:
+        print(f"  바꿈: {name.split('/', 1)[1]} ({len(new[name])} 바이트)")
+    return out.getvalue(), version
+
+
 def main():
     ap = argparse.ArgumentParser(description="USB 키트 서명 (서명 키가 있는 PC 에서)")
     ap.add_argument("kit", help="서명하지 않은 eduino_usb.zip")
     ap.add_argument("--key", required=True, help="서명 키 (예: C:\\Users\\USER\\keys\\eduino-kit-signing.pem)")
     ap.add_argument("-o", "--out", help="만들 파일 (기본: eduino_usb.signed.zip, 키트 옆)")
+    ap.add_argument("--put", action="append", default=[], help="콘솔 파일 바꾸기 (예: server.py), 여러 번 가능")
     args = ap.parse_args()
 
     with zipfile.ZipFile(args.kit) as kit:
@@ -145,6 +180,8 @@ def main():
         with zipfile.ZipFile(io.BytesIO(rc)) as console:
             pub = read_public(console.read("robot_console/kit_signing_public.pem"))
             version = console.read("robot_console/VERSION").decode().strip()
+        if args.put:
+            rc, version = replace_files(rc, args.put)
         seed = read_seed(args.key)
         if public_of(seed) != pub:
             sys.exit("이 키는 로봇이 믿는 공개 키와 짝이 아니에요. 로봇이 받아들이지 않을 키트라 서명하지 않았어요.")
@@ -154,7 +191,7 @@ def main():
             for info in kit.infolist():
                 if info.filename == "eduino/robot_console.zip.sig":
                     continue
-                z.writestr(info, kit.read(info.filename))
+                z.writestr(info, rc if info.filename == "eduino/robot_console.zip" else kit.read(info.filename))
             info = zipfile.ZipInfo("eduino/robot_console.zip.sig", kit.getinfo("eduino/robot_console.zip").date_time)
             info.external_attr = 0o644 << 16
             z.writestr(info, sig)
