@@ -10,7 +10,8 @@ Serves the classroom console (the web app, exported as static files into
     POST /api/target   real-time jog: the next target of a held jog key (sent a few times a second)
     POST /api/jog      smooth joint jog: the robot's own continuous jog (jog_angle) while the key is held
     POST /api/stop     stop now
-    POST /api/reconnect  open the robot's serial port again (after a cable or power hiccup)
+    POST /api/reconnect  open the robot's serial port again (after a cable or power hiccup; the server also
+                         does it by itself while the arm is silent, see Robot._auto_reopen)
     POST /api/release  servos off, arm can be moved by hand
     POST /api/focus    servos on again
     POST /api/joint      one joint's servo off or on (zero calibration, joint by joint)
@@ -74,6 +75,8 @@ SPEED_CAP = 50          # classroom speed limit (same as the console)
 ARRIVE_DEG = 2.0        # final arrival tolerance (J1 measured 1.4° on the real robot)
 VIA_DEG = 5.0           # intermediate waypoint of a straight line: send the next one early
 POLL_S = 0.1            # live angle refresh for the console
+ARM_SILENT_S = 3.0      # the arm has not answered an angle read for this long (switched off, robot just booted)
+REOPEN_EVERY_S = 5.0    # ... then the port is reopened by itself this often, until it answers again
 IDENTIFY_SPEED = 25     # 로봇 찾기 [움직여 확인]: straightening, slow enough to stop by hand
 DEADMAN_S = 8.0         # stop a run when the console has not polled for this long (0 = off; --deadman);
                         # 8 s rides out a Wi-Fi roam or a busy classroom network without letting a lost arm go on,
@@ -420,7 +423,9 @@ class Robot:
         self.last_seen = time.time()
         # Until then the dead-man check waits (a short move asked by another PC: 로봇 찾기 [움직여 확인]).
         self.grace_until = 0.0
-        self.reopen_at = time.time() + 10   # with no arm (NoArm): when to try the port again
+        # When to reopen the port by itself next (no port, or an arm that stopped answering), see _auto_reopen.
+        self.reopen_at = time.time() + REOPEN_EVERY_S
+        self.reopen_tries = 0       # reopens in a row that found no arm (logged once, not every 5 s)
         self.lost = False           # the current run was stopped by the dead-man check
         self.pump = Pump(demo)   # stays as it is on Stop: switching off would drop a held block
         self.abort = threading.Event()
@@ -450,12 +455,30 @@ class Robot:
             self.state["connected"] = False
         return None
 
+    def _auto_reopen(self, now):
+        """Reconnect by itself, so nobody has to press [다시 연결]: while the port would not open, or while the
+        arm has been silent for ARM_SILENT_S — switched off and on (its firmware starts afresh behind a port the
+        server still holds), or the robot just booted and the server came up before the arm's firmware. Never
+        while a program or a jog runs. A released arm stays released (no power_on), so it never stiffens under a
+        hand that is holding it."""
+        if self.demo or self.state["running"] or self.jog_at or now < self.reopen_at:
+            return
+        silent = isinstance(self.arm, NoArm) or now - self.state["updated"] > ARM_SILENT_S
+        if not silent:
+            self.reopen_tries = 0
+            return
+        self.reopen_at = now + REOPEN_EVERY_S
+        self.reopen_tries += 1
+        err = self.reconnect(auto=True)
+        if err is None:
+            self.state["error"] = ""
+            self.reopen_tries = 0
+        elif self.reopen_tries == 1:
+            log(f"[연결] 팔이 대답하지 않아요. {REOPEN_EVERY_S:g}초마다 스스로 다시 연결해 볼게요: {err}")
+
     def _poll(self):
         while True:
-            if isinstance(self.arm, NoArm) and time.time() > self.reopen_at and not self.state["running"]:
-                self.reopen_at = time.time() + 10
-                if self.reconnect() is None:
-                    self.state["error"] = ""
+            self._auto_reopen(time.time())
             if not self.state["running"]:       # the runner reads angles itself while moving
                 before = self.state["angles"]
                 self.read_angles()
@@ -738,12 +761,16 @@ class Robot:
         save_calibration(self.state["calibrated"])
         return None
 
-    def reconnect(self):
+    def reconnect(self, auto=False):
         """Close and reopen the serial port (the arm was switched off and on, or the cable came
-        loose), then read the angles once. Returns an error message, or None when the arm answers."""
+        loose), then read the angles once. Returns an error message, or None when the arm answers.
+        `auto`: asked by the poll loop (_auto_reopen), quiet until it works, and a released arm is not
+        powered on (its servos would lock under the hand holding it)."""
         if self.state["running"]:
             return "움직이는 중에는 다시 연결할 수 없어요."
-        log("[연결] 로봇과 다시 연결해요")
+        if not auto:
+            log("[연결] 로봇과 다시 연결해요")
+        power = not (auto and self.state["released"])
         if not self.demo:
             with self.lock:
                 try:
@@ -755,18 +782,21 @@ class Robot:
                     from pymycobot import MyCobot280RDKX5
                     self.arm = MyCobot280RDKX5(self.port, self.baud)
                     time.sleep(0.3)
-                    self.arm.power_on()
+                    if power:
+                        self.arm.power_on()
                 except Exception as exc:
-                    log(f"[연결] 포트를 열지 못했어요: {exc}")
+                    if not auto:
+                        log(f"[연결] 포트를 열지 못했어요: {exc}")
                     return f"로봇 포트({self.port})를 열 수 없어요: {exc}. 로봇 포트를 쓰는 다른 프로그램을 꺼 주세요."
             time.sleep(0.3)
         self.state["read_errors"] = 0
         for _ in range(5):
             if self.read_angles():
-                log("[연결] 다시 연결됐어요")
+                log("[연결] 다시 연결됐어요" + (" (스스로)" if auto else ""))
                 return None
             time.sleep(0.2)
-        log("[연결] 로봇이 대답하지 않아요")
+        if not auto:
+            log("[연결] 로봇이 대답하지 않아요")
         return "로봇이 대답하지 않아요. 로봇 전원이 켜져 있는지(베이스의 불빛), 케이블이 꽂혀 있는지 확인해 주세요."
 
     def set_joint(self, joint, off):

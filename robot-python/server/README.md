@@ -33,7 +33,7 @@ sudo python3 autostart.py --agv    # myAGV 에서 자동 시작
 | `POST /api/jog` | 부드러운 관절 조그: 로봇 자체의 연속 조그(`jog_angle`). 키를 누르고 있는 동안 0.2초마다 같은 요청이 오면 계속, 0.8초 끊기면·정지하면·한계 3° 앞이면 멈춤 |
 | `POST /api/target` | 실시간 조그: 누르고 있는 동안 0.1초마다 오는 "조금 앞의 목표" 로 바로 이어서 움직임 (기다리지 않음). 지금 자세보다 15° 넘게 앞선 목표는 거절, 0.8초 동안 목표가 안 오면 스스로 정지 |
 | `POST /api/stop` | 즉시 정지 |
-| `POST /api/reconnect` | 로봇 포트를 닫고 다시 열어 각도를 읽어 봄 (팔 전원을 껐다 켰거나 케이블이 빠졌다 꽂혔을 때) |
+| `POST /api/reconnect` | 로봇 포트를 닫고 다시 열어 각도를 읽어 봄 (팔 전원을 껐다 켰거나 케이블이 빠졌다 꽂혔을 때). 서버도 팔이 3초 넘게 대답하지 않으면 5초마다 스스로 다시 열어요 (실행 · 조그 중에는 안 함, 서보를 푼 팔은 power_on 없이). 점검: `python3 robot-python/tools/check_robot_reconnect.py` |
 | `POST /api/release`, `/api/focus` | 서보 풀기 / 고정 |
 | `POST /api/joint` | 관절 하나만 서보 풀기 / 고정 (`release_servo` / `focus_servo`) — 관절별 영점 맞추기 |
 | `POST /api/calibrate` | 영점: 풀어 둔 관절의 지금 위치(표시선을 맞춘 위치)를 0° 로 (`set_servo_calibration`) 한 뒤 다시 고정. 날짜는 `~/.robot_console_calibration.json` 에 저장 |
